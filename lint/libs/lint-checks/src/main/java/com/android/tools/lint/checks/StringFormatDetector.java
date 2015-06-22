@@ -43,7 +43,6 @@ import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
-import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.tools.lint.client.api.JavaParser;
@@ -402,7 +401,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
      * Checks whether the text begins with a non-unit word, pointing to a string
      * that should probably be a plural instead. This
      */
-    private boolean checkPotentialPlural(XmlContext context, Element element, String text,
+    private static boolean checkPotentialPlural(XmlContext context, Element element, String text,
             int wordBegin) {
         // This method should only be called if the text is known to start with a word
         assert Character.isLetter(text.charAt(wordBegin));

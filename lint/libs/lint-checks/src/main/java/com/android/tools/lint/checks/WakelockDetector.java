@@ -185,7 +185,7 @@ public class WakelockDetector extends Detector implements ClassScanner {
         }
     }
 
-    private void checkFlow(@NonNull ClassContext context, @NonNull ClassNode classNode,
+    private static void checkFlow(@NonNull ClassContext context, @NonNull ClassNode classNode,
             @NonNull MethodNode method, @NonNull MethodInsnNode acquire) {
         // Track allocations such that we know whether the type of the call
         // is on a SecureRandom rather than a Random

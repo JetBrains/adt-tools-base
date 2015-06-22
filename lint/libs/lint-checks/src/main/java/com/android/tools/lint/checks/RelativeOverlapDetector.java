@@ -389,7 +389,7 @@ public class RelativeOverlapDetector extends LayoutDetector {
                     continue;
                 }
                 Set<LayoutNode> canGrowRight = left.canGrowRight();
-                if (canGrowLeft.size() > 0 || canGrowRight.size() > 0) {
+                if (!canGrowLeft.isEmpty() || !canGrowRight.isEmpty()) {
                     canGrowRight.addAll(canGrowLeft);
                     LayoutNode nodeToBlame = right;
                     LayoutNode otherNode = left;

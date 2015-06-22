@@ -380,7 +380,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                             isYes ? YES_LABEL : NO_LABEL,
                             isYes ? ANDROID_OK_RESOURCE : ANDROID_CANCEL_RESOURCE,
                             isYes ? YES_LABEL : NO_LABEL);
-                    context.report(CASE, element, location, message, null);
+                    context.report(CASE, element, location, message);
                 }
             }
         }

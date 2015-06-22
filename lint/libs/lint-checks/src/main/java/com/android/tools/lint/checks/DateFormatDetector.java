@@ -18,9 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
@@ -38,8 +36,6 @@ import java.util.List;
 
 import lombok.ast.AstVisitor;
 import lombok.ast.ConstructorInvocation;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.Node;
 
 /**
  * Checks for errors related to Date Formats

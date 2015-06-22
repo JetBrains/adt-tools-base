@@ -463,7 +463,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
         mEnabled = Collections.singleton(REMOTE_VERSION);
         try {
             HashMap<String, String> data = Maps.newHashMap();
-            GradleDetector.ourMockData = data;
+            GradleDetector.sMockData = data;
             data.put("http://search.maven.org/solrsearch/select?q=g:%22joda-time%22+AND+a:%22joda-time%22&core=gav&rows=1&wt=json",
                     "{\"responseHeader\":{\"status\":0,\"QTime\":1,\"params\":{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"joda-time\\\" AND a:\\\"joda-time\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"rows\":\"1\",\"version\":\"2.2\"}},\"response\":{\"numFound\":17,\"start\":0,\"docs\":[{\"id\":\"joda-time:joda-time:2.3\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.3\",\"p\":\"jar\",\"timestamp\":1376674285000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\".pom\"]}]}}");
             data.put("http://search.maven.org/solrsearch/select?q=g:%22com.squareup.dagger%22+AND+a:%22dagger%22&core=gav&rows=1&wt=json",
@@ -480,7 +480,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
                     lintProject("gradle/RemoteVersions.gradle=>build.gradle"));
         } finally {
-            GradleDetector.ourMockData = null;
+            GradleDetector.sMockData = null;
         }
     }
 
@@ -489,7 +489,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
         mEnabled = Collections.singleton(REMOTE_VERSION);
         try {
             HashMap<String, String> data = Maps.newHashMap();
-            GradleDetector.ourMockData = data;
+            GradleDetector.sMockData = data;
             data.put("http://search.maven.org/solrsearch/select?q=g:%22com.google.guava%22+AND+a:%22guava%22&core=gav&rows=1&wt=json",
                     "{\"responseHeader\":{\"status\":0,\"QTime\":0,\"params\":{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.google.guava\\\" AND a:\\\"guava\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"rows\":\"1\",\"version\":\"2.2\"}},\"response\":{\"numFound\":38,\"start\":0,\"docs\":[{\"id\":\"com.google.guava:guava:18.0-rc1\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"18.0-rc1\",\"p\":\"bundle\",\"timestamp\":1407266204000,\"tags\":[\"spec\",\"libraries\",\"classes\",\"google\",\"code\",\"expanded\",\"much\",\"include\",\"annotation\",\"dependency\",\"that\",\"more\",\"utility\",\"guava\",\"javax\",\"only\",\"core\",\"suite\",\"collections\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\"-site.jar\",\".pom\"]}]}}");
             data.put("http://search.maven.org/solrsearch/select?q=g:%22com.google.guava%22+AND+a:%22guava%22&core=gav&wt=json",
@@ -506,7 +506,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
                     lintProject("gradle/RemoteVersions2.gradle=>build.gradle"));
         } finally {
-            GradleDetector.ourMockData = null;
+            GradleDetector.sMockData = null;
         }
     }
 

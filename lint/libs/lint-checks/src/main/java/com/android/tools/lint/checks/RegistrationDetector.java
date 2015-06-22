@@ -203,7 +203,7 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
                     String.format(
                             "`%1$s` is a `<%2$s>` but is registered in the manifest as a `<%3$s>`",
                             className, tag, classToTag(wrongClass)));
-        } else if (!tag.equals(TAG_RECEIVER)) { // don't need to be registered
+        } else if (!TAG_RECEIVER.equals(tag)) { // don't need to be registered
             if (context.getMainProject().isGradleProject()) {
                 // Disabled for now; we need to formalize the difference between
                 // the *manifest* package and the variant package, since in some contexts
