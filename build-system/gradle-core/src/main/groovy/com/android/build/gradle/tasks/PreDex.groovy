@@ -205,11 +205,11 @@ public class PreDex extends BaseTask {
 
         VariantScope scope;
 
-        PostCompilationData pcData
+        private Callable<Collection<File>> inputLibraries;
 
         ConfigAction(VariantScope scope, PostCompilationData pcData) {
             this.scope = scope
-            this.pcData = pcData
+            this.inputLibraries = pcData.getInputLibrariesCallable();
         }
 
         @Override
@@ -237,7 +237,7 @@ public class PreDex extends BaseTask {
             preDexTask.dexOptions = scope.globalScope.getExtension().dexOptions
             preDexTask.multiDex = isMultiDexEnabled
 
-            ConventionMappingHelper.map(preDexTask, "inputFiles", pcData.inputLibrariesCallable)
+            ConventionMappingHelper.map(preDexTask, "inputFiles", inputLibraries)
             ConventionMappingHelper.map(preDexTask, "outputFolder") {
                 scope.getPreDexOutputDir();
             }
