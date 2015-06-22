@@ -146,6 +146,9 @@ public class MergeAssets extends IncrementalTask {
             println e.getMessage()
             merger.cleanBlob(getIncrementalFolder())
             throw new ResourceException(e.getMessage(), e)
+        } finally {
+            // some clean up after the task to help multi variant/module builds.
+            fileValidity.clear();
         }
     }
 
