@@ -928,7 +928,7 @@ public class AvdManager {
                 values.put(AVD_INI_SKIN_PATH, skinPath);
             }
 
-            if (sdcard != null && sdcard.length() > 0) {
+            if (sdcard != null && !sdcard.isEmpty()) {
                 // Sdcard is possibly a size. In that case we create a file called 'sdcard.img'
                 // in the AVD folder, and do not put any value in config.ini.
 
@@ -1088,7 +1088,7 @@ public class AvdManager {
             report.append(String.format(", %s processor", AvdInfo.getPrettyAbiType(tag, abiType)));
 
             // display the chosen hardware config
-            if (finalHardwareValues.size() > 0) {
+            if (!finalHardwareValues.isEmpty()) {
                 report.append(",\nwith the following hardware config:\n");
                 List<String> keys = new ArrayList<String>(finalHardwareValues.keySet());
                 Collections.sort(keys);
@@ -1868,7 +1868,7 @@ public class AvdManager {
             Map<String, String> map = new HashMap<String, String>();
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                if (line.length() > 0 && line.charAt(0) != '#') {
+                if (!line.isEmpty() && line.charAt(0) != '#') {
 
                     Matcher m = INI_LINE_PATTERN.matcher(line);
                     if (m.matches()) {

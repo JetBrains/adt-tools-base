@@ -58,7 +58,7 @@ public class DependencyHelper {
      * Advanced version of the {@link LibraryProcessor} that provides the library properties
      * to the processor.
      */
-    public static abstract class AdvancedLibraryProcessor implements LibraryProcessor {
+    public abstract static class AdvancedLibraryProcessor implements LibraryProcessor {
 
         public abstract void processLibrary(String libRootPath, IPropertySource properties);
 

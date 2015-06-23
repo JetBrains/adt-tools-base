@@ -390,7 +390,7 @@ public class EventContainer {
         }
     }
 
-    private final Object getValue(Object data, int valueIndex, boolean recursive) {
+    private Object getValue(Object data, int valueIndex, boolean recursive) {
         EventValueType type = getType(data);
 
         switch (type) {
@@ -410,7 +410,7 @@ public class EventContainer {
         return null;
     }
 
-    private final double getValueAsDouble(Object data, int valueIndex, boolean recursive)
+    private double getValueAsDouble(Object data, int valueIndex, boolean recursive)
             throws InvalidTypeException {
         EventValueType type = getType(data);
 
@@ -433,7 +433,7 @@ public class EventContainer {
         throw new InvalidTypeException();
     }
 
-    private final String getValueAsString(Object data, int valueIndex, boolean recursive)
+    private String getValueAsString(Object data, int valueIndex, boolean recursive)
             throws InvalidTypeException {
         EventValueType type = getType(data);
 

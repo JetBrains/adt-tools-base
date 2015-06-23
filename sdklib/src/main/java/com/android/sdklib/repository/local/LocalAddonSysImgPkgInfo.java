@@ -37,7 +37,8 @@ import java.util.Properties;
 public class LocalAddonSysImgPkgInfo extends LocalPkgInfo {
 
 
-    private final @NonNull IPkgDesc mDesc;
+    @NonNull
+    private final IPkgDesc mDesc;
 
     public LocalAddonSysImgPkgInfo(@NonNull LocalSdk localSdk,
                               @NonNull File localDir,

@@ -98,7 +98,7 @@ public class DependencyData {
         return processDependencyData(content);
     }
 
-    private static enum ParseMode {
+    private enum ParseMode {
         OUTPUT, MAIN, SECONDARY, DONE
     }
 

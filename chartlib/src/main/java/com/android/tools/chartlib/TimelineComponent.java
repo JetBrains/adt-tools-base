@@ -660,7 +660,7 @@ public class TimelineComponent extends AnimatedComponent
         }
     }
 
-    public static enum Style {
+    public enum Style {
         NONE,
         SOLID,
         DASHED

@@ -68,12 +68,12 @@ public class GetEmmaFilterTask extends Task {
 
         String libraryPackagesValue = getProject().getProperty(mLibraryPackagesRefId);
 
-        if (libraryPackagesValue != null && libraryPackagesValue.length() > 0) {
+        if (libraryPackagesValue != null && !libraryPackagesValue.isEmpty()) {
             // split the app packages.
             String[] libPackages = libraryPackagesValue.split(";");
 
             for (String libPackage : libPackages) {
-                if (libPackage.length() > 0) {
+                if (!libPackage.isEmpty()) {
                     for (String filterClass : FILTER_CLASSES) {
                         sb.append(libPackage).append('.').append(filterClass).append(',');
                     }

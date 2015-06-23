@@ -215,7 +215,7 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
     @Override
     public String getLongDescription() {
         String s = getDescription();
-        if (s == null || s.length() == 0) {
+        if (s == null || s.isEmpty()) {
             s = getShortDescription();
         }
 

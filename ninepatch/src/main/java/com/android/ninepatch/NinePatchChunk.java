@@ -119,7 +119,7 @@ public class NinePatchChunk implements Serializable {
                 RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
         try {
-            if (mPatches.size() == 0) {
+            if (mPatches.isEmpty()) {
                 g.drawImage(image, x, y, scaledWidth, scaledHeight, null);
                 return;
             }
@@ -272,7 +272,7 @@ public class NinePatchChunk implements Serializable {
         data.mRemainderVertical = scaledHeight - remainderVertical;
 
         data.mHorizontalPatchesSum = 0;
-        if (mHorizontalPatches.size() > 0) {
+        if (!mHorizontalPatches.isEmpty()) {
             int start = -1;
             for (Rectangle rect : mHorizontalPatches) {
                 if (rect.x > start) {
@@ -291,7 +291,7 @@ public class NinePatchChunk implements Serializable {
         }
 
         data.mVerticalPatchesSum = 0;
-        if (mVerticalPatches.size() > 0) {
+        if (!mVerticalPatches.isEmpty()) {
             int start = -1;
             for (Rectangle rect : mVerticalPatches) {
                 if (rect.y > start) {
@@ -341,14 +341,14 @@ public class NinePatchChunk implements Serializable {
         mFixed = getRectangles(left.mFirst, top.mFirst);
         mPatches = getRectangles(left.mSecond, top.mSecond);
 
-        if (mFixed.size() > 0) {
+        if (!mFixed.isEmpty()) {
             mHorizontalPatches = getRectangles(left.mFirst, top.mSecond);
             mVerticalPatches = getRectangles(left.mSecond, top.mFirst);
         } else {
-            if (top.mFirst.size() > 0) {
+            if (!top.mFirst.isEmpty()) {
                 mHorizontalPatches = new ArrayList<Rectangle>(0);
                 mVerticalPatches = getVerticalRectangles(height, top.mFirst);
-            } else if (left.mFirst.size() > 0) {
+            } else if (!left.mFirst.isEmpty()) {
                 mHorizontalPatches = getHorizontalRectangles(width, left.mFirst);
                 mVerticalPatches = new ArrayList<Rectangle>(0);
             } else {
@@ -393,7 +393,7 @@ public class NinePatchChunk implements Serializable {
     }
 
     private Pair<Integer> getPadding(List<Pair<Integer>> pairs) {
-        if (pairs.size() == 0) {
+        if (pairs.isEmpty()) {
             return new Pair<Integer>(0, 0);
         } else if (pairs.size() == 1) {
             if (pairs.get(0).mFirst == 0) {
@@ -471,7 +471,7 @@ public class NinePatchChunk implements Serializable {
             fixed.add(new Pair<Integer>(lastIndex, pixels.length));
         }
 
-        if (patches.size() == 0) {
+        if (patches.isEmpty()) {
             patches.add(new Pair<Integer>(1, pixels.length));
             startWithPatch[0] = true;
             fixed.clear();

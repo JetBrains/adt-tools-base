@@ -54,7 +54,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
     private static final Pattern PATTERN_USB_IDS = Pattern.compile(
            "^0x[a-f0-9]{4}$", Pattern.CASE_INSENSITIVE);                    //$NON-NLS-1$
 
-    private final @NonNull IPkgDescAddon mAddonDesc;
+    @NonNull
+    private final IPkgDescAddon mAddonDesc;
 
     public LocalAddonPkgInfo(@NonNull LocalSdk localSdk,
                              @NonNull File localDir,

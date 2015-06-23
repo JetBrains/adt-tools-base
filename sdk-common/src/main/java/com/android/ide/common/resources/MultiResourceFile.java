@@ -132,7 +132,7 @@ public final class MultiResourceFile extends ResourceFile implements IValueResou
     @Override
     public boolean hasResources(ResourceType type) {
         Map<String, ResourceValue> list = mResourceItems.get(type);
-        return (list != null && list.size() > 0);
+        return (list != null && !list.isEmpty());
     }
 
     private void updateResourceItems(ScanningContext context) {

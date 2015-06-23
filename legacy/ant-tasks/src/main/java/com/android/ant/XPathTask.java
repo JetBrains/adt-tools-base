@@ -76,7 +76,7 @@ public class XPathTask extends Task {
 
             String file = mManifestFile.list()[0];
             String result = xpath.evaluate(mExpression, new InputSource(new FileInputStream(file)));
-            if (result.length() == 0 && mDefault != null) {
+            if (result.isEmpty() && mDefault != null) {
                 result = mDefault;
             }
 

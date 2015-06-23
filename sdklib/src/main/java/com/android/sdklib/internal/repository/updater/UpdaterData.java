@@ -789,7 +789,7 @@ public class UpdaterData implements IUpdaterData {
 
         Collections.sort(archives);
 
-        if (archives.size() > 0) {
+        if (!archives.isEmpty()) {
             return installArchives(archives, flags);
         }
         return null;
@@ -845,7 +845,7 @@ public class UpdaterData implements IUpdaterData {
         List<ArchiveInfo> archives = getRemoteArchives_NoGUI(includeAll);
 
         // Filter the selected archives to only keep the ones matching the filter
-        if (pkgFilter != null && pkgFilter.size() > 0 && archives != null && archives.size() > 0) {
+        if (pkgFilter != null && !pkgFilter.isEmpty() && archives != null && !archives.isEmpty()) {
             // Map filter types to an SdkRepository Package type,
             // e.g. create a map "platform" => PlatformPackage.class
             HashMap<String, Class<? extends Package>> pkgMap =
@@ -862,7 +862,7 @@ public class UpdaterData implements IUpdaterData {
                     Package p = a.getParentPackage();
                     if (p != null) {
                         String iid = p.installId().toLowerCase(Locale.US);
-                        if (iid != null && iid.length() > 0 && !installIdMap.containsKey(iid)) {
+                        if (iid != null && !iid.isEmpty() && !installIdMap.containsKey(iid)) {
                             installIdMap.put(iid, p);
                         }
                     }
@@ -886,7 +886,7 @@ public class UpdaterData implements IUpdaterData {
                 if (installIdMap.containsKey(iid)) {
                     userFilteredInstallIds.add(iid);
 
-                } else if (iid.replaceAll("[0-9]+", "").length() == 0) {//$NON-NLS-1$ //$NON-NLS-2$
+                } else if (iid.replaceAll("[0-9]+", "").isEmpty()) {//$NON-NLS-1$ //$NON-NLS-2$
                     // An all-digit number is a package index requested by the user.
                     int index = Integer.parseInt(iid);
                     userFilteredIndices.put(index, index);
@@ -1144,9 +1144,9 @@ public class UpdaterData implements IUpdaterData {
                 License lic = p.getLicense();
                 if (lic != null &&
                         lic.getLicenseRef() != null &&
-                        lic.getLicense().length() > 0 &&
+                        !lic.getLicense().isEmpty() &&
                         lic.getLicense() != null &&
-                        lic.getLicense().length() > 0) {
+                        !lic.getLicense().isEmpty()) {
                     return lic;
                 }
             }
@@ -1246,7 +1246,7 @@ public class UpdaterData implements IUpdaterData {
      * This can be called from any thread.
      */
     public void broadcastOnSdkLoaded() {
-        if (mListeners.size() > 0) {
+        if (!mListeners.isEmpty()) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -1267,7 +1267,7 @@ public class UpdaterData implements IUpdaterData {
      * This can be called from any thread.
      */
     private void broadcastOnSdkReload() {
-        if (mListeners.size() > 0) {
+        if (!mListeners.isEmpty()) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -1288,7 +1288,7 @@ public class UpdaterData implements IUpdaterData {
      * This can be called from any thread.
      */
     private void broadcastPreInstallHook() {
-        if (mListeners.size() > 0) {
+        if (!mListeners.isEmpty()) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -1309,7 +1309,7 @@ public class UpdaterData implements IUpdaterData {
      * This can be called from any thread.
      */
     private void broadcastPostInstallHook() {
-        if (mListeners.size() > 0) {
+        if (!mListeners.isEmpty()) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {

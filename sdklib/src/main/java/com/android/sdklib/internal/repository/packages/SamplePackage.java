@@ -88,7 +88,7 @@ public class SamplePackage extends MinToolsPackage
             PackageParserUtils.getXmlInt   (packageNode, SdkRepoConstants.NODE_API_LEVEL, 0);
         String codeName =
             PackageParserUtils.getXmlString(packageNode, SdkRepoConstants.NODE_CODENAME);
-        if (codeName.length() == 0) {
+        if (codeName.isEmpty()) {
             codeName = null;
         }
         mVersion = new AndroidVersion(apiLevel, codeName);
@@ -272,7 +272,7 @@ public class SamplePackage extends MinToolsPackage
     @Override
     public String getLongDescription() {
         String s = getDescription();
-        if (s == null || s.length() == 0) {
+        if (s == null || s.isEmpty()) {
             s = getShortDescription();
         }
 
@@ -359,7 +359,7 @@ public class SamplePackage extends MinToolsPackage
         if (installFolder != null && installFolder.isDirectory()) {
             // Get the hash computed during the last installation
             String storedHash = readContentHash(installFolder);
-            if (storedHash != null && storedHash.length() > 0) {
+            if (storedHash != null && !storedHash.isEmpty()) {
 
                 // Get the hash of the folder now
                 String currentHash = computeContentHash(installFolder);

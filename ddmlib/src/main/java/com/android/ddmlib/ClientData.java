@@ -332,7 +332,7 @@ public class ClientData {
     }
 
     public static class HprofData {
-        public static enum Type {
+        public enum Type {
             FILE,
             DATA
         }

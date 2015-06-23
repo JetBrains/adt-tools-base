@@ -1446,7 +1446,7 @@ public class LocaleTableGenerator {
     }
 
     private void generateZones(int level, Collection<TimeZone> zones) {
-        assert zones.size() > 0;
+        assert !zones.isEmpty();
 
         // See if they all map to the same region
         boolean regionsDiffer = false;

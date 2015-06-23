@@ -697,7 +697,7 @@ public class SdkUpdaterLogic {
             }
         }
 
-        if (aiFound.size() > 0) {
+        if (!aiFound.isEmpty()) {
             ArchiveInfo[] result = aiFound.toArray(new ArchiveInfo[aiFound.size()]);
             Arrays.sort(result);
             return result;
@@ -1372,7 +1372,7 @@ public class SdkUpdaterLogic {
     protected void fetchRemotePackages(
             final Collection<Package> remotePkgs,
             final SdkSource[] remoteSources) {
-        if (remotePkgs.size() > 0) {
+        if (!remotePkgs.isEmpty()) {
             return;
         }
 

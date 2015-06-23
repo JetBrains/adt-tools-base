@@ -137,7 +137,7 @@ public class SignApkTask extends SingleInputOutputTask {
         }
     }
 
-    private final static class NullZipFilter implements IZipEntryFilter {
+    private static final class NullZipFilter implements IZipEntryFilter {
 
         @Override
         public boolean checkEntry(String archivePath) throws ZipAbortException {

@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 
 public class ApkBuilderTask extends SingleDependencyTask {
 
-    private final static Pattern PATTERN_JAR_EXT = Pattern.compile("^.+\\.jar$",
+    private static final Pattern PATTERN_JAR_EXT = Pattern.compile("^.+\\.jar$",
             Pattern.CASE_INSENSITIVE);
 
     private String mOutFolder;

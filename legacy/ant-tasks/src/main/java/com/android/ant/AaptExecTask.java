@@ -77,7 +77,7 @@ public final class AaptExecTask extends SingleDependencyTask {
      * If the extension is null, this will disable compression for all  files in assets/ and
      * res/raw/
      */
-    public final static class NoCompress {
+    public static final class NoCompress {
         String mExtension;
 
         /**
@@ -149,7 +149,7 @@ public final class AaptExecTask extends SingleDependencyTask {
         }
     }
 
-    private final static InputPathFactory sPathFactory = new InputPathFactory() {
+    private static final InputPathFactory sPathFactory = new InputPathFactory() {
 
         @Override
         public InputPath createPath(File file, Set<String> extensionsToCheck) {
@@ -206,7 +206,7 @@ public final class AaptExecTask extends SingleDependencyTask {
     }
 
     public void setVersioncode(String versionCode) {
-        if (versionCode.length() > 0) {
+        if (!versionCode.isEmpty()) {
             try {
                 mVersionCode = Integer.decode(versionCode);
             } catch (NumberFormatException e) {
@@ -245,7 +245,7 @@ public final class AaptExecTask extends SingleDependencyTask {
      * @param packageName The package ID the APK should have.
      */
     public void setManifestpackage(String packageName) {
-        if (packageName != null && packageName.length() != 0) {
+        if (packageName != null && !packageName.isEmpty()) {
             mManifestPackage = packageName;
         }
     }
@@ -332,7 +332,7 @@ public final class AaptExecTask extends SingleDependencyTask {
     }
 
     public void setresourcefilter(String filter) {
-        if (filter != null && filter.length() > 0) {
+        if (filter != null && !filter.isEmpty()) {
             mResourceFilter = filter;
         }
     }
@@ -559,7 +559,7 @@ public final class AaptExecTask extends SingleDependencyTask {
         }
 
         // filters if needed
-        if (mResourceFilter != null && mResourceFilter.length() > 0) {
+        if (mResourceFilter != null && !mResourceFilter.isEmpty()) {
             task.createArg().setValue("-c");
             task.createArg().setValue(mResourceFilter);
         }
@@ -588,7 +588,7 @@ public final class AaptExecTask extends SingleDependencyTask {
         }
 
         // if this is a library or there are library dependencies
-        if (mNonConstantId || (libPkgProp != null && libPkgProp.length() > 0)) {
+        if (mNonConstantId || (libPkgProp != null && !libPkgProp.isEmpty())) {
             if (mBinFolder == null) {
                 throw new BuildException(
                         "Missing attribute binFolder when compiling libraries or projects with libraries.");
@@ -607,13 +607,13 @@ public final class AaptExecTask extends SingleDependencyTask {
             task.createArg().setValue(Integer.toString(mVersionCode));
         }
 
-        if (mVersionName != null && mVersionName.length() > 0) {
+        if (mVersionName != null && !mVersionName.isEmpty()) {
             task.createArg().setValue("--version-name");
             task.createArg().setValue(mVersionName);
         }
 
         // manifest location
-        if (mManifestFile != null && mManifestFile.length() > 0) {
+        if (mManifestFile != null && !mManifestFile.isEmpty()) {
             task.createArg().setValue("-M");
             task.createArg().setValue(mManifestFile);
         }
@@ -625,7 +625,7 @@ public final class AaptExecTask extends SingleDependencyTask {
         }
 
         // resources locations.
-        if (mResources.size() > 0) {
+        if (!mResources.isEmpty()) {
             for (Path pathList : mResources) {
                 for (String path : pathList.list()) {
                     // This may not exists, and aapt doesn't like it, so we check first.
@@ -681,7 +681,7 @@ public final class AaptExecTask extends SingleDependencyTask {
         }
 
         // ignore assets flag
-        if (mIgnoreAssets != null && mIgnoreAssets.length() > 0) {
+        if (mIgnoreAssets != null && !mIgnoreAssets.isEmpty()) {
             task.createArg().setValue("--ignore-assets");
             task.createArg().setValue(mIgnoreAssets);
         }
@@ -690,7 +690,7 @@ public final class AaptExecTask extends SingleDependencyTask {
         task.createArg().setValue("--generate-dependencies");
 
         // use the proguard file
-        if (mProguardFile != null && mProguardFile.length() > 0) {
+        if (mProguardFile != null && !mProguardFile.isEmpty()) {
             task.createArg().setValue("-G");
             task.createArg().setValue(mProguardFile);
         }

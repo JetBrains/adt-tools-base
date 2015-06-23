@@ -263,7 +263,7 @@ public class SdkRepoSource extends SdkSource {
         }
 
         // we must have found the root node, and it must have an XML namespace prefix.
-        if (oldRoot == null || prefix == null || prefix.length() == 0) {
+        if (oldRoot == null || prefix == null || prefix.isEmpty()) {
             return null;
         }
 
@@ -362,7 +362,7 @@ public class SdkRepoSource extends SdkSource {
 
                             Node node = findChild(archive, null, prefix, RepoConstants.NODE_URL);
                             String url = node == null ? null : node.getTextContent().trim();
-                            if (url == null || url.length() == 0) {
+                            if (url == null || url.isEmpty()) {
                                 continue;
                             }
 

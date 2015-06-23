@@ -80,7 +80,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
             PackageParserUtils.getXmlInt(packageNode, SdkRepoConstants.NODE_API_LEVEL, 0);
         String codeName =
             PackageParserUtils.getXmlString(packageNode, SdkRepoConstants.NODE_CODENAME);
-        if (codeName.length() == 0) {
+        if (codeName.isEmpty()) {
             codeName = null;
         }
         mVersion = new AndroidVersion(apiLevel, codeName);
@@ -284,7 +284,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
     @Override
     public String getLongDescription() {
         String s = getDescription();
-        if (s == null || s.length() == 0) {
+        if (s == null || s.isEmpty()) {
             s = getShortDescription();
         }
 

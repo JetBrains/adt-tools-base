@@ -263,28 +263,28 @@ public abstract class Package implements IDescription, IListDescription, Compara
     public void saveProperties(@NonNull Properties props) {
         if (mLicense != null) {
             String license = mLicense.getLicense();
-            if (license != null && license.length() > 0) {
+            if (license != null && !license.isEmpty()) {
                 props.setProperty(PkgProps.PKG_LICENSE, license);
             }
             String licenseRef = mLicense.getLicenseRef();
-            if (licenseRef != null && licenseRef.length() > 0) {
+            if (licenseRef != null && !licenseRef.isEmpty()) {
                 props.setProperty(PkgProps.PKG_LICENSE_REF, licenseRef);
             }
         }
-        if (mListDisplay != null && mListDisplay.length() > 0) {
+        if (mListDisplay != null && !mListDisplay.isEmpty()) {
             props.setProperty(PkgProps.PKG_LIST_DISPLAY, mListDisplay);
         }
-        if (mDescription != null && mDescription.length() > 0) {
+        if (mDescription != null && !mDescription.isEmpty()) {
             props.setProperty(PkgProps.PKG_DESC, mDescription);
         }
-        if (mDescUrl != null && mDescUrl.length() > 0) {
+        if (mDescUrl != null && !mDescUrl.isEmpty()) {
             props.setProperty(PkgProps.PKG_DESC_URL, mDescUrl);
         }
 
-        if (mReleaseNote != null && mReleaseNote.length() > 0) {
+        if (mReleaseNote != null && !mReleaseNote.isEmpty()) {
             props.setProperty(PkgProps.PKG_RELEASE_NOTE, mReleaseNote);
         }
-        if (mReleaseUrl != null && mReleaseUrl.length() > 0) {
+        if (mReleaseUrl != null && !mReleaseUrl.isEmpty()) {
             props.setProperty(PkgProps.PKG_RELEASE_URL, mReleaseUrl);
         }
         if (mObsolete != null) {
@@ -572,17 +572,17 @@ public abstract class Package implements IDescription, IListDescription, Compara
                 isObsolete() ? " (Obsolete)" : ""));
 
         s = getDescUrl();
-        if (s != null && s.length() > 0) {
+        if (s != null && !s.isEmpty()) {
             sb.append(String.format("\n\nMore information at %1$s", s));
         }
 
         s = getReleaseNote();
-        if (s != null && s.length() > 0) {
+        if (s != null && !s.isEmpty()) {
             sb.append("\n\nRelease note:\n").append(s);
         }
 
         s = getReleaseNoteUrl();
-        if (s != null && s.length() > 0) {
+        if (s != null && !s.isEmpty()) {
             sb.append("\nRelease note URL: ").append(s);
         }
 

@@ -768,7 +768,7 @@ public class LocalSdkParser {
                 props.load(fis);
 
                 // To be valid, there must be at least one property in it.
-                if (props.size() > 0) {
+                if (!props.isEmpty()) {
                     return props;
                 }
             }
