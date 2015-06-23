@@ -20,10 +20,13 @@ import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONE
 
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.ProductFlavorCombo;
+import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.ndk.internal.NdkConfiguration;
 import com.android.build.gradle.ndk.internal.NdkExtensionConvention;
+import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.BuildType;
@@ -302,6 +305,34 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
     }
 
+
+    public static void configureScopeForNdk(VariantScope scope) {
+        VariantConfiguration config = scope.getVariantConfiguration();
+        ImmutableSet.Builder<File> builder = ImmutableSet.builder();
+        for (Abi abi : NdkHandler.getAbiList()) {
+            scope.addNdkDebuggableLibraryFolders(
+                    abi,
+                    new File(
+                            scope.getGlobalScope().getBuildDir(),
+                            NdkNamingScheme.getDebugLibraryDirectoryName(
+                                    config.getBuildType().getName(),
+                                    config.getFlavorName(),
+                                    abi.getName())));
+
+            // Return the parent directory of the binaries' output.
+            // If output directory is "/path/to/lib/platformName".  We want to return
+            // "/path/to/lib".
+            builder.add(new File(
+                    scope.getGlobalScope().getBuildDir(),
+                    NdkNamingScheme.getOutputDirectoryName(
+                            config.getBuildType().getName(),
+                            config.getFlavorName(),
+                            abi.getName())).getParentFile());
+        }
+        scope.setNdkSoFolder(builder.build());
+    }
+
+
     private static Collection<SharedLibraryBinarySpec> getNativeBinaries(
             NativeLibrarySpec library,
             final BuildType buildType,
@@ -347,19 +378,5 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                                     binary.getTargetPlatform().getName())));
                     }
                 });
-    }
-
-    /**
-     * Return the output directory of the native binary tasks for a VariantConfiguration.
-     */
-    public Collection<File> getOutputDirectories(VariantConfiguration variantConfig) {
-        // Return the parent's parent directory of the binaries' output.
-        // A binary's output file is set to something in the form of
-        // "/path/to/lib/platformName/libmodulename.so".  We want to return "/path/to/lib".
-        ImmutableSet.Builder<File> builder = ImmutableSet.builder();
-        for (SharedLibraryBinarySpec binary : getBinaries(variantConfig)) {
-            builder.add(binary.getSharedLibraryFile().getParentFile().getParentFile());
-        }
-        return builder.build();
     }
 }

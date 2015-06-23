@@ -16,16 +16,19 @@
 
 package com.android.build.gradle.integration.component
 
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
+
 /**
  * Tests for NdkComponentModelPlugin
  */
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 
 /**
  * Basic integration test for ndk component plugin.
@@ -64,5 +67,8 @@ model {
     @Test
     public void assemble() {
         project.execute("assemble");
+        assertThat(project.file("build/intermediates/binaries/debug/obj/x86/libhello-jni.so")).exists()
+        assertThat(project.file("build/intermediates/binaries/debug/lib/x86/libhello-jni.so")).exists()
+        assertThat(project.file("build/intermediates/binaries/release/lib/x86/libhello-jni.so")).exists()
     }
 }
