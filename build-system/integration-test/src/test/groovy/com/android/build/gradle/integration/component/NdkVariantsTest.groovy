@@ -16,12 +16,14 @@
 
 package com.android.build.gradle.integration.component
 
+import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+import org.junit.experimental.categories.Category
 
 /**
  * Assemble tests for ndkVariants.
@@ -48,5 +50,11 @@ class NdkVariantsTest {
     @Test
     void lint() {
         project.execute("lint")
+    }
+
+    @Test
+    @Category(DeviceTests.class)
+    public void connnectedAndroidTest() {
+        project.executeConnectedCheck();
     }
 }
