@@ -53,7 +53,7 @@ public class SplitOutputMatcher {
      * @param outputs the tested variant outpts.
      * @param variantAbiFilters a list of abi filters applied to the variant. This is used in place
      *                          of the outputs, if there is a single output with no abi filters.
-     *                          If the list is null, then the variant does not restrict ABI
+     *                          If the list is null or empty, then the variant does not restrict ABI
      *                          packaging.
      * @return the list of APK files to install.
      * @throws ProcessException
@@ -226,7 +226,9 @@ public class SplitOutputMatcher {
             Collection<String> variantAbiFilters,
             Collection<String> deviceAbis) {
         // so far, we are not dealing with the pure split files...
-        if (getFilter(mainOutputFile, OutputFile.ABI) == null && variantAbiFilters != null) {
+        if (getFilter(mainOutputFile, OutputFile.ABI) == null
+                && variantAbiFilters != null
+                && !variantAbiFilters.isEmpty()) {
             // if we have a match that has no abi filter, and we have variant-level filters, then
             // we need to make sure that the variant filters are compatible with the device abis.
             for (String abi : deviceAbis) {
