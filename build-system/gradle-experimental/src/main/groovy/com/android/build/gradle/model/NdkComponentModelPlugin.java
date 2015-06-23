@@ -108,6 +108,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             ndk.setToolchainVersion("");
             ndk.setCFlags(Lists.<String>newArrayList());
             ndk.setCppFlags(Lists.<String>newArrayList());
+            ndk.setLdFlags(Lists.<String>newArrayList());
             ndk.setLdLibs(Lists.<String>newArrayList());
             ndk.setAbiFilters(Sets.<String>newHashSet());
             ndk.setStl("");

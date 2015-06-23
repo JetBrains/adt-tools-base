@@ -31,7 +31,7 @@ import org.junit.experimental.categories.Category
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 
 /**
- * Tests setting C/C++ flags in an NDK project.
+ * Tests C/C++/ld flags in an NDK project.
  */
 @CompileStatic
 class NdkFlagsTest {
@@ -86,8 +86,8 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
 }
 """
         ))
-    }
 
+    }
 
     @ClassRule
     public static GradleTestProject cppProject = GradleTestProject.builder()
@@ -95,6 +95,28 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
             .fromTestApp(cppApp)
             .forExpermimentalPlugin(true)
             .create();
+
+    static AndroidTestApp ldApp = new HelloWorldJniApp()
+    static {
+        ldApp.addFile(new TestSourceFile("src/main/jni", "log.c",
+                """
+#include <android/log.h>
+
+// Simple function that uses function from an external library.  Should fail unless -llog is set
+// when linking.
+void log() {
+    __android_log_print(ANDROID_LOG_INFO, "hello-world", "Hello World!");
+}
+"""))
+    }
+
+    @ClassRule
+    public static GradleTestProject ldProject = GradleTestProject.builder()
+            .withName("ld_project")
+            .fromTestApp(ldApp)
+            .forExpermimentalPlugin(true)
+            .create();
+
 
     @BeforeClass
     public static void setUp() {
@@ -127,6 +149,21 @@ model {
     }
 }
 """
+
+        ldProject.getBuildFile() << """
+apply plugin: 'com.android.model.application'
+
+model {
+    android {
+        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+    }
+    android.ndk {
+        moduleName = "hello-jni"
+        ldFlags += "-llog"
+    }
+}
+"""
     }
 
     @AfterClass
@@ -144,6 +181,12 @@ model {
     public void "assemble C++ project"() {
         cppProject.execute("assembleDebug")
         assertThatZip(cppProject.getApk("debug")).contains("lib/x86/libhello-jni.so")
+    }
+
+    @Test
+    public void "assemble ld project"() {
+        ldProject.execute("assembleDebug")
+        assertThatZip(ldProject.getApk("debug")).contains("lib/x86/libhello-jni.so")
     }
 
     @Test
