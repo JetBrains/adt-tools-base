@@ -146,6 +146,10 @@ public class NdkConfiguration {
                             getCppCompiler(binary).args(flag);
                         }
 
+                        for (String flag : ndkConfig.getLdFlags()) {
+                            binary.getLinker().args(flag);
+                        }
+
                         for (String ldLib : ndkConfig.getLdLibs()) {
                             binary.getLinker().args("-l" + ldLib);
                         }
