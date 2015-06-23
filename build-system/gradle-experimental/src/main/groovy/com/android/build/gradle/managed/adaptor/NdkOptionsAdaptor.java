@@ -18,7 +18,8 @@ package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.managed.NdkConfig;
+import com.android.build.gradle.internal.dsl.CoreNdkOptions;
+import com.android.build.gradle.managed.NdkOptions;
 import com.google.common.base.Joiner;
 
 import java.util.List;
@@ -27,43 +28,43 @@ import java.util.Set;
 /**
  * An adaptor to convert a NdkConfig to NdkConfig.
  */
-public class NdkConfigAdaptor implements com.android.build.gradle.internal.core.NdkConfig {
+public class NdkOptionsAdaptor implements CoreNdkOptions {
 
-    NdkConfig ndkConfig;
+    NdkOptions ndkOptions;
 
-    public NdkConfigAdaptor(@NonNull NdkConfig ndkConfig) {
-        this.ndkConfig = ndkConfig;
+    public NdkOptionsAdaptor(@NonNull NdkOptions ndkOptions) {
+        this.ndkOptions = ndkOptions;
     }
 
     @Nullable
     @Override
     public String getModuleName() {
-        return ndkConfig.getModuleName();
+        return ndkOptions.getModuleName();
     }
 
     @Nullable
     @Override
     public String getcFlags() {
-        return Joiner.on(' ').join(ndkConfig.getCFlags());
+        return Joiner.on(' ').join(ndkOptions.getCFlags());
     }
 
     @Nullable
     @Override
     public List<String> getLdLibs() {
-        return ndkConfig.getLdLibs();
+        return ndkOptions.getLdLibs();
     }
 
     @Nullable
     @Override
     public Set<String> getAbiFilters() {
         // null is considered to be no filter, which is different from an empty filter list.
-        return (ndkConfig.getAbiFilters().isEmpty() ? null : ndkConfig.getAbiFilters());
+        return (ndkOptions.getAbiFilters().isEmpty() ? null : ndkOptions.getAbiFilters());
     }
 
     @Nullable
     @Override
     public String getStl() {
-        return ndkConfig.getStl();
+        return ndkOptions.getStl();
     }
 
     @Nullable

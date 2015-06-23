@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.model;
 
-import com.android.builder.model.BuildType;
-import com.android.builder.model.ProductFlavor;
+import com.android.build.gradle.managed.BuildType;
+import com.android.build.gradle.managed.ProductFlavor;
 
 import org.gradle.platform.base.BinarySpec;
 
@@ -29,5 +29,5 @@ import java.util.List;
 public interface AndroidBinary extends BinarySpec {
     BuildType getBuildType();
 
-    List<? extends ProductFlavor> getProductFlavors();
+    List<ProductFlavor> getProductFlavors();
 }

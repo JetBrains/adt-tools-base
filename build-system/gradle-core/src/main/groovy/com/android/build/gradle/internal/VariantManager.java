@@ -457,12 +457,15 @@ public class VariantManager implements VariantModel {
                             });
 
             // Get a list of all combinations of product flavors.
-            List<ProductFlavorCombo> flavorComboList = ProductFlavorCombo.createCombinations(
-                    flavorDimensionList,
-                    flavorDsl);
+            List<ProductFlavorCombo<CoreProductFlavor>> flavorComboList =
+                    ProductFlavorCombo.createCombinations(
+                            flavorDimensionList,
+                            flavorDsl);
 
-            for (ProductFlavorCombo flavorCombo : flavorComboList) {
-                createVariantDataForProductFlavors(flavorCombo.getFlavorList());
+            for (ProductFlavorCombo<CoreProductFlavor>  flavorCombo : flavorComboList) {
+                //noinspection unchecked
+                createVariantDataForProductFlavors(
+                        (List<ProductFlavor>) (List) flavorCombo.getFlavorList());
             }
         }
     }

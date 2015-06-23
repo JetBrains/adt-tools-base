@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.core;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -27,7 +28,7 @@ import java.util.Set;
 /**
  * Implementation of NdkConfig used to merge multiple configs together.
  */
-public class MergedNdkConfig implements NdkConfig {
+public class MergedNdkConfig implements CoreNdkOptions {
 
     private String moduleName;
     private String cFlags;
@@ -79,7 +80,7 @@ public class MergedNdkConfig implements NdkConfig {
         return jobs;
     }
 
-    public void append(@NonNull NdkConfig ndkConfig) {
+    public void append(@NonNull CoreNdkOptions ndkConfig) {
         // override
         if (ndkConfig.getModuleName() != null) {
             moduleName = ndkConfig.getModuleName();

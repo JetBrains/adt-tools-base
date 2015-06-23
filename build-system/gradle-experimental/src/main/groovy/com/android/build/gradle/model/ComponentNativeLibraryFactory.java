@@ -19,7 +19,7 @@ package com.android.build.gradle.model;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
-import com.android.build.gradle.internal.core.NdkConfig;
+import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.model.NativeLibraryFactory;
 import com.android.build.gradle.internal.model.NativeLibraryImpl;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -86,7 +86,7 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
             return Optional.absent();
         }
 
-        NdkConfig ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
+        CoreNdkOptions ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
         // The DSL currently do not support all options available in the model such as the
         // include dirs and the defines.  Therefore, just pass an empty collection for now.
         return Optional.<NativeLibrary>of(new NativeLibraryImpl(

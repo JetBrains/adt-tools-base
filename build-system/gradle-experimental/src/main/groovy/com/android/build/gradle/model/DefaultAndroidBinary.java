@@ -16,9 +16,12 @@
 
 package com.android.build.gradle.model;
 
+import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.builder.model.BuildType;
-import com.android.builder.model.ProductFlavor;
+import com.android.build.gradle.managed.BuildType;
+import com.android.build.gradle.managed.NdkConfig;
+import com.android.build.gradle.managed.NdkOptions;
+import com.android.build.gradle.managed.ProductFlavor;
 import com.google.common.collect.Lists;
 
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
@@ -33,7 +36,9 @@ public class DefaultAndroidBinary extends BaseBinarySpec implements AndroidBinar
 
     private BuildType buildType;
 
-    private List<? extends ProductFlavor> productFlavors;
+    private List<ProductFlavor> productFlavors;
+
+    private NdkConfig mergedNdkConfig = new NdkConfigImpl();
 
     private BaseVariantData variantData;
 
@@ -51,12 +56,16 @@ public class DefaultAndroidBinary extends BaseBinarySpec implements AndroidBinar
     }
 
     @Override
-    public List<? extends ProductFlavor> getProductFlavors() {
+    public List<ProductFlavor> getProductFlavors() {
         return productFlavors;
     }
 
-    public void setProductFlavors(List<? extends ProductFlavor> productFlavors) {
+    public void setProductFlavors(List<ProductFlavor> productFlavors) {
         this.productFlavors = productFlavors;
+    }
+
+    public NdkConfig getMergedNdkConfig() {
+        return mergedNdkConfig;
     }
 
     public BaseVariantData getVariantData() {
@@ -73,5 +82,27 @@ public class DefaultAndroidBinary extends BaseBinarySpec implements AndroidBinar
 
     public List<String> getTargetAbi() {
         return targetAbi;
+    }
+
+    public void computeMergedNdk(
+            NdkConfig ndkConfig,
+            List<com.android.build.gradle.managed.ProductFlavor> flavors,
+            com.android.build.gradle.managed.BuildType buildType) {
+
+
+        if (ndkConfig != null) {
+            NdkOptionsHelper.merge(mergedNdkConfig, ndkConfig);
+        }
+
+        for (int i = flavors.size() - 1 ; i >= 0 ; i--) {
+            NdkOptions ndkOptions = flavors.get(i).getNdk();
+            if (ndkOptions != null) {
+                NdkOptionsHelper.merge(mergedNdkConfig, ndkOptions);
+            }
+        }
+
+        if (buildType.getNdk() != null) {
+            NdkOptionsHelper.merge(mergedNdkConfig, buildType.getNdk());
+        }
     }
 }

@@ -33,18 +33,18 @@ model {
 
     android.productFlavors {
         create("x86") {
-            ndkConfig.abiFilters += "x86"
+            ndk.abiFilters += "x86"
             // this is the flavor part of the version code.
             // It must be higher than the arm one for devices supporting
             // both, as x86 is preferred.
             versionCode = 3
         }
         create("arm") {
-            ndkConfig.abiFilters += "armeabi-v7a"
+            ndk.abiFilters += "armeabi-v7a"
             versionCode = 2
         }
         create("mips") {
-            ndkConfig.abiFilters += "mips"
+            ndk.abiFilters += "mips"
             versionCode = 1
         }
         create("fat") {
