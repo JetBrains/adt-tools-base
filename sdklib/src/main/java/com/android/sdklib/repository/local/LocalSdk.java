@@ -455,7 +455,7 @@ public class LocalSdk {
         synchronized (mLocalPackages) {
             Collection<LocalPkgInfo> existing = mLocalPackages.get(filter);
             assert existing.size() <= 1;
-            if (existing.size() > 0) {
+            if (!existing.isEmpty()) {
                 return existing.iterator().next();
             }
 
@@ -1220,7 +1220,7 @@ public class LocalSdk {
                 props.load(fis);
 
                 // To be valid, there must be at least one property in it.
-                if (props.size() > 0) {
+                if (!props.isEmpty()) {
                     return props;
                 }
             }

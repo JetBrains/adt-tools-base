@@ -47,11 +47,11 @@ public class VdPreview {
 
         public static Size createSizeFromWidth(int imageWidth) {
             return new Size(true, imageWidth, 0.0f);
-        };
+        }
 
         public static Size createSizeFromScale(float imageScale) {
             return new Size(false, 0, imageScale);
-        };
+        }
     }
 
     /**

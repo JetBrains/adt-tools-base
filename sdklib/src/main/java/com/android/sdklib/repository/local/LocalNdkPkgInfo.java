@@ -28,7 +28,8 @@ import java.util.Properties;
  * Local package representing the Android NDK
  */
 public class LocalNdkPkgInfo extends LocalPkgInfo {
-  private final @NonNull IPkgDesc mDesc;
+  @NonNull
+  private final IPkgDesc mDesc;
 
   protected LocalNdkPkgInfo(@NonNull LocalSdk localSdk,
                             @NonNull File localDir,

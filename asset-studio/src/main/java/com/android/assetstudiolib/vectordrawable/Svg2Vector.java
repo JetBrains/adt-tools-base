@@ -585,7 +585,7 @@ public class Svg2Vector {
         }
     }
 
-    private final static String head = "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\"\n";
+    private static final String head = "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\"\n";
 
     private static String getSizeString(float w, float h, float scaleFactor) {
         String size = "        android:width=\"" + (w * scaleFactor) + "dp\"\n" +

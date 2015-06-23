@@ -73,7 +73,7 @@ public class RenderScriptTask extends BuildTypedTask {
     private int mTargetApi = 0;
     private boolean mSupportMode = false;
 
-    public enum OptLevel { O0, O1, O2, O3 };
+    public enum OptLevel { O0, O1, O2, O3 }
 
     private OptLevel mOptLevel;
     private boolean mDebug = false;

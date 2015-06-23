@@ -55,7 +55,7 @@ final class TaskHelper {
         String sdkOsPath = antProject.getProperty(ProjectProperties.PROPERTY_SDK);
 
         // check if it's valid and exists
-        if (sdkOsPath == null || sdkOsPath.length() == 0) {
+        if (sdkOsPath == null || sdkOsPath.isEmpty()) {
             throw new BuildException("SDK Location is not set.");
         }
 

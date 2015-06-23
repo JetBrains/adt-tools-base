@@ -226,11 +226,11 @@ public class SdkUpdaterNoWindow {
 
         Properties props = System.getProperties();
 
-        if (proxyHost != null && proxyHost.length() > 0) {
+        if (proxyHost != null && !proxyHost.isEmpty()) {
             props.setProperty(JAVA_PROP_HTTP_PROXY_HOST,  proxyHost);
             props.setProperty(JAVA_PROP_HTTPS_PROXY_HOST, proxyHost);
         }
-        if (proxyPort != null && proxyPort.length() > 0) {
+        if (proxyPort != null && !proxyPort.isEmpty()) {
             props.setProperty(JAVA_PROP_HTTP_PROXY_PORT,  proxyPort);
             props.setProperty(JAVA_PROP_HTTPS_PROXY_PORT, proxyPort);
         }
@@ -453,7 +453,7 @@ public class SdkUpdaterNoWindow {
                     byte[] readBuffer = new byte[2048];
                     String reply = readLine(readBuffer).trim();
                     mSdkLog.info("\n");               //$NON-NLS-1$
-                    if (reply.length() > 0 && reply.length() <= 3) {
+                    if (!reply.isEmpty() && reply.length() <= 3) {
                         char c = reply.charAt(0);
                         if (c == 'y' || c == 'Y') {
                             return true;

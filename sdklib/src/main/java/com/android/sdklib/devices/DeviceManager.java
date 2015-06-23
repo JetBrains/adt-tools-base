@@ -523,13 +523,13 @@ public class DeviceManager {
             return;
         }
 
-        if (mUserDevices.size() == 0) {
+        if (mUserDevices.isEmpty()) {
             userDevicesFile.delete();
             return;
         }
 
         synchronized (mLock) {
-            if (mUserDevices.size() > 0) {
+            if (!mUserDevices.isEmpty()) {
                 try {
                     DeviceWriter.writeToXml(new FileOutputStream(userDevicesFile), mUserDevices);
                 } catch (FileNotFoundException e) {
@@ -573,7 +573,7 @@ public class DeviceManager {
         props.put(HardwareProperties.HW_ORIENTATION_SENSOR,
                 getBooleanVal(sensors.contains(Sensor.GYROSCOPE)));
         props.put(HardwareProperties.HW_AUDIO_INPUT, getBooleanVal(hw.hasMic()));
-        props.put(HardwareProperties.HW_SDCARD, getBooleanVal(hw.getRemovableStorage().size() > 0));
+        props.put(HardwareProperties.HW_SDCARD, getBooleanVal(!hw.getRemovableStorage().isEmpty()));
         props.put(HardwareProperties.HW_LCD_DENSITY,
                 Integer.toString(hw.getScreen().getPixelDensity().getDpiValue()));
         props.put(HardwareProperties.HW_PROXIMITY_SENSOR,

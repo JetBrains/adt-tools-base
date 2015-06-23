@@ -224,7 +224,7 @@ class LocalDirInfo {
             return mDir.equals(((MapComparator) obj).mDir);
         }
         return false;
-    };
+    }
 
     /**
      * Helper for Map.contains() to make sure we're comparing the inner directory File
@@ -270,6 +270,6 @@ class LocalDirInfo {
                 return mDir.equals(((MapComparator) obj).mDir);
             }
             return false;
-        };
+        }
     }
 }

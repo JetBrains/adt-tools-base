@@ -26,7 +26,8 @@ import java.util.Properties;
 
 public class LocalPlatformToolPkgInfo extends LocalPkgInfo {
 
-    private final @NonNull IPkgDesc mDesc;
+    @NonNull
+    private final IPkgDesc mDesc;
 
     public LocalPlatformToolPkgInfo(@NonNull LocalSdk localSdk,
                                     @NonNull File localDir,

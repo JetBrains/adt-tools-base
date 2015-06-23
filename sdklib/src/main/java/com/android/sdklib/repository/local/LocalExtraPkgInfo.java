@@ -29,7 +29,8 @@ import java.util.Properties;
 
 public class LocalExtraPkgInfo extends LocalPkgInfo {
 
-    private final @NonNull IPkgDescExtra mDesc;
+    @NonNull
+    private final IPkgDescExtra mDesc;
 
     public LocalExtraPkgInfo(@NonNull  LocalSdk localSdk,
                              @NonNull  File localDir,
@@ -76,7 +77,7 @@ public class LocalExtraPkgInfo extends LocalPkgInfo {
         // and that "vendor" would end up in the path when we reload the extra from
         // disk. Detect this and compensate.
         String disp = vendor == null ? null : vendor.getDisplay();
-        if (disp != null && disp.length() > 0) {
+        if (disp != null && !disp.isEmpty()) {
             if (name.startsWith(disp + "-")) {  //$NON-NLS-1$
                 name = name.substring(disp.length() + 1);
             }
@@ -86,11 +87,11 @@ public class LocalExtraPkgInfo extends LocalPkgInfo {
         if (name != null) {
             name = name.replaceAll("[ _\t\f-]+", " ").trim();   //$NON-NLS-1$ //$NON-NLS-2$
         }
-        if (name == null || name.length() == 0) {
+        if (name == null || name.isEmpty()) {
             name = "Unknown Extra";
         }
 
-        if (disp != null && disp.length() > 0) {
+        if (disp != null && !disp.isEmpty()) {
             name = disp + " " + name;  //$NON-NLS-1$
             name = name.replaceAll("[ _\t\f-]+", " ").trim();   //$NON-NLS-1$ //$NON-NLS-2$
         }

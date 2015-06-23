@@ -298,6 +298,7 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
         // Regression test for
         // https://code.google.com/p/android/issues/detail?id=79066
         mEnableIds = false;
+        //noinspection ClassNameDiffersFromFileName
         assertEquals("No warnings.",
 
                 lintProject(

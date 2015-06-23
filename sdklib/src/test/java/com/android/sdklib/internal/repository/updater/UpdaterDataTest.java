@@ -100,7 +100,7 @@ public class UpdaterDataTest extends SdkManagerTestCase {
         public void clear() {
             mLog.clear();
         }
-    };
+    }
 
     public final void testAcceptLicenses_Empty() {
         SdkManager sdkman = getSdkManager();

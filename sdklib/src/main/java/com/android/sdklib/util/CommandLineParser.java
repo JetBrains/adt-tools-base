@@ -510,7 +510,7 @@ public class CommandLineParser {
      */
     public void printHelpAndExitForAction(String verb, String directObject,
             String errorFormat, Object... args) {
-        if (errorFormat != null && errorFormat.length() > 0) {
+        if (errorFormat != null && !errorFormat.isEmpty()) {
             stderr(errorFormat, args);
         }
 
@@ -587,7 +587,7 @@ public class CommandLineParser {
                 } else {
                     if (arg.getDefaultValue() instanceof String[]) {
                         for (String v : (String[]) arg.getDefaultValue()) {
-                            if (value.length() > 0) {
+                            if (!value.isEmpty()) {
                                 value += ", ";
                             }
                             value += v;
@@ -598,7 +598,7 @@ public class CommandLineParser {
                             value = v.toString();
                         }
                     }
-                    if (value.length() > 0) {
+                    if (!value.isEmpty()) {
                         value = " [Default: " + value + "]";
                     }
                 }
@@ -611,10 +611,10 @@ public class CommandLineParser {
                 // where either the 1-letter arg or the long arg are optional.
                 String output = String.format(
                         "  %1$-2s %2$-" + longArgWidth + "s: %3$s%4$s%5$s", //$NON-NLS-1$ //$NON-NLS-2$
-                        arg.getShortArg().length() > 0 ?
+                        !arg.getShortArg().isEmpty() ?
                                 "-" + arg.getShortArg() :                              //$NON-NLS-1$
                                 "",                                                    //$NON-NLS-1$
-                        arg.getLongArg().length() > 0 ?
+                        !arg.getLongArg().isEmpty() ?
                                 "--" + arg.getLongArg() :                              //$NON-NLS-1$
                                 "",                                                    //$NON-NLS-1$
                         arg.getDescription(),
@@ -923,7 +923,7 @@ public class CommandLineParser {
         // We should always have at least a short or long name, ideally both but never none.
         assert shortName != null;
         assert longName != null;
-        assert shortName.length() > 0 || longName.length()  > 0;
+        assert !shortName.isEmpty() || !longName.isEmpty();
 
         if (directObject == null) {
             directObject = NO_VERB_OBJECT;

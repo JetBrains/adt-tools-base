@@ -72,7 +72,7 @@ public abstract class GeneratorTest extends TestCase implements GraphicGenerator
 
             fileCount += previews.values().size();
         }
-        if (errors.size() > 0) {
+        if (!errors.isEmpty()) {
             fail(errors.toString());
         }
 

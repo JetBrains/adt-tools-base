@@ -120,7 +120,7 @@ public final class ApkBuilderMain {
                 }
             } while (index < args.length);
 
-            if (zipArchives.size() == 0) {
+            if (zipArchives.isEmpty()) {
                 printAndExit("No zip archive, there must be one for the resources");
             }
 

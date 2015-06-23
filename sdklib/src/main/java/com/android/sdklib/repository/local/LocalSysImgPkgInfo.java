@@ -47,7 +47,8 @@ import java.util.Properties;
 public class LocalSysImgPkgInfo extends LocalPkgInfo {
 
 
-    private final @NonNull IPkgDesc mDesc;
+    @NonNull
+    private final IPkgDesc mDesc;
 
     public LocalSysImgPkgInfo(@NonNull  LocalSdk localSdk,
       @NonNull  File localDir,
@@ -99,7 +100,7 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
         name = name.replaceAll(" +", " ");                  //$NON-NLS-1$ //$NON-NLS-2$
         name = name.trim();
 
-        if (name.length() > 0) {
+        if (!name.isEmpty()) {
             char c = name.charAt(0);
             if (!Character.isUpperCase(c)) {
                 StringBuilder sb = new StringBuilder(name);

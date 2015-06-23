@@ -46,7 +46,7 @@ public class GetLibraryPathTask extends Task {
     private boolean mVerbose = false;
 
     private static class LeafProcessor extends AdvancedLibraryProcessor {
-        private final static Pattern PH = Pattern.compile("^\\@\\{(.*)\\}$");
+        private static final Pattern PH = Pattern.compile("^\\@\\{(.*)\\}$");
 
         private Path mPath;
         private final String[] mLeafSegments;

@@ -29,8 +29,10 @@ import java.util.Properties;
 public class LocalBuildToolPkgInfo extends LocalPkgInfo {
 
 
-    private final @Nullable BuildToolInfo mBuildToolInfo;
-    private final @NonNull  IPkgDesc mDesc;
+    @Nullable
+    private final BuildToolInfo mBuildToolInfo;
+    @NonNull
+    private final IPkgDesc mDesc;
 
     public LocalBuildToolPkgInfo(@NonNull LocalSdk localSdk,
                                  @NonNull File localDir,

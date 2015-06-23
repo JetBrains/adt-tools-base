@@ -89,7 +89,7 @@ public class GetTypeTask extends Task {
                     ":" + AndroidManifest.ATTRIBUTE_TARGET_PACKAGE,
                     new InputSource(new FileInputStream(manifest)));
 
-            if (value != null && value.length() > 0) {
+            if (value != null && !value.isEmpty()) {
                 System.out.println("Project Type: Self-Tested Application");
 
                 antProject.setProperty(mProjectTypeOut, "test-app");

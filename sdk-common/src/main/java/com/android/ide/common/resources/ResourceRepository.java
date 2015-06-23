@@ -515,7 +515,7 @@ public abstract class ResourceRepository {
         ensureInitialized();
 
         Map<String, ResourceItem> items = mResourceMap.get(type);
-        return (items != null && items.size() > 0);
+        return (items != null && !items.isEmpty());
     }
 
     /**

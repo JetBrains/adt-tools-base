@@ -29,7 +29,7 @@ public class FolderTypeRelationShipTest extends TestCase {
         // loop on all the enum, and make sure there's at least one folder type for it.
         for (ResourceType type : ResourceType.values()) {
             assertTrue(type.getDisplayName(),
-                    FolderTypeRelationship.getRelatedFolders(type).size() > 0);
+                    !FolderTypeRelationship.getRelatedFolders(type).isEmpty());
         }
     }
 
@@ -38,7 +38,7 @@ public class FolderTypeRelationShipTest extends TestCase {
         // loop on all the enum, and make sure there's at least one res type for it.
         for (ResourceFolderType type : ResourceFolderType.values()) {
             assertTrue(type.getName(),
-                    FolderTypeRelationship.getRelatedResourceTypes(type).size() > 0);
+                    !FolderTypeRelationship.getRelatedResourceTypes(type).isEmpty());
         }
     }
 }

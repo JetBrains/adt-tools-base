@@ -166,7 +166,8 @@ public class CreatingCache<K, V> {
      * State of values.
      */
     @VisibleForTesting
-    enum State { EXISTING_VALUE, NEW_VALUE, PROCESSED_VALUE; }
+    enum State { EXISTING_VALUE, NEW_VALUE, PROCESSED_VALUE
+    }
 
     /**
      * A Value State. This contains the Type as {@link State}, and a optional value {@link V}

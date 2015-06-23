@@ -413,7 +413,7 @@ public class BSPatchTest extends TestCase {
                     throw new PatchException("Failed to read control data") ;
                 }
                 ctrl[i] = offtin(buf, 0);
-            };
+            }
 
             /* Sanity-check */
             if (newpos + ctrl[0] > newsize) {

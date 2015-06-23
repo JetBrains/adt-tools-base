@@ -33,7 +33,8 @@ import java.util.Properties;
  */
 public class LocalSamplePkgInfo extends LocalPkgInfo {
 
-    private final @NonNull IPkgDesc mDesc;
+    @NonNull
+    private final IPkgDesc mDesc;
 
     public LocalSamplePkgInfo(@NonNull LocalSdk localSdk,
                               @NonNull File localDir,

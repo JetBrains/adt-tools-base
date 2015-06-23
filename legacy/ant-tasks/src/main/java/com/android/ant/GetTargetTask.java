@@ -259,7 +259,7 @@ public class GetTargetTask extends Task {
                 antProject.setProperty(mMinSdkVersionOut,
                         Integer.toString(androidVersion.getApiLevel()));
 
-            } else if (value.length() > 0) {
+            } else if (!value.isEmpty()) {
                 // for normal platform, we'll only display warnings if the value is lower or higher
                 // than the target api level.
                 // First convert to an int.

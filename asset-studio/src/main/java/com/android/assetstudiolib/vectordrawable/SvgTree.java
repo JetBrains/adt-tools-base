@@ -52,7 +52,7 @@ class SvgTree {
 
     public enum SvgLogLevel {
         ERROR,
-        WARNING;
+        WARNING
     }
 
     public Document parse(File f) throws Exception {
@@ -109,7 +109,7 @@ class SvgTree {
      */
     public String getErrorLog() {
         StringBuilder errorBuilder = new StringBuilder();
-        if (mErrorLines.size() > 0) {
+        if (!mErrorLines.isEmpty()) {
             errorBuilder.append("In " + mFileName + ":\n");
         }
         for (String log : mErrorLines) {

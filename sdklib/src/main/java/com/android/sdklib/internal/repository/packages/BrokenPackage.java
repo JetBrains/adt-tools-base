@@ -165,12 +165,12 @@ public class BrokenPackage extends MajorRevisionPackage
     public String getLongDescription() {
 
         String s = mLongDescription;
-        if (s != null && s.length() != 0) {
+        if (s != null && !s.isEmpty()) {
             return s;
         }
 
         s = getDescription();
-        if (s != null && s.length() != 0) {
+        if (s != null && !s.isEmpty()) {
             return s;
         }
         return getShortDescription();

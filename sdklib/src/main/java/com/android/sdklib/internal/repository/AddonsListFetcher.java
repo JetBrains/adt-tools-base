@@ -579,7 +579,7 @@ public class AddonsListFetcher {
                             strUrl = baseUrl + strUrl;
                         }
 
-                        if (strUrl.length() > 0 && strName.length() > 0) {
+                        if (!strUrl.isEmpty() && !strName.isEmpty()) {
                             sites.add(new Site(strUrl, strName, type));
                         }
                     }

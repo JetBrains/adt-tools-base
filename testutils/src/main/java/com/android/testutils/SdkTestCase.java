@@ -184,7 +184,7 @@ public abstract class SdkTestCase extends TestCase {
             // cannot happen
         }
 
-        assertTrue(xml.length() > 0);
+        assertTrue(!xml.isEmpty());
 
         // Remove any references to the project name such that we are isolated from
         // that in golden file.
