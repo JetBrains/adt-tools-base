@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl;
+package com.android.builder.model;
 
 import com.android.annotations.Nullable;
-import com.android.builder.model.BuildType;
 
 /**
- * A build type with addition properties for building with Gradle plugin.
+ * Interface for objects has a dimension.
  */
-public interface CoreBuildType extends BuildType {
+public interface DimensionAware {
 
+    /**
+     * Returns the dimension or null if the object do not have a dimension.
+     */
     @Nullable
-    CoreNdkOptions getNdkConfig();
+    String getDimension();
 
-    @Nullable
-    Boolean getUseJack();
-
-    boolean isShrinkResources();
 }

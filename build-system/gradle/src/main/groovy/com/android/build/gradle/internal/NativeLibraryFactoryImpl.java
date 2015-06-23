@@ -17,9 +17,8 @@
 package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
-import com.android.build.gradle.internal.core.NdkConfig;
+import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.model.NativeLibraryFactory;
 import com.android.build.gradle.internal.model.NativeLibraryImpl;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -29,8 +28,6 @@ import com.android.build.gradle.tasks.NdkCompile;
 import com.android.builder.model.NativeLibrary;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-
-import org.gradle.api.Project;
 
 import java.io.File;
 import java.util.Collections;
@@ -59,7 +56,7 @@ public class NativeLibraryFactoryImpl implements NativeLibraryFactory {
             return Optional.absent();
         }
 
-        NdkConfig ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
+        CoreNdkOptions ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
 
         String sysrootFlag = "--sysroot=" + ndkHandler.getSysroot(abi);
         List<String> cFlags = ndkConfig.getcFlags() == null

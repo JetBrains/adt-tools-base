@@ -31,7 +31,7 @@ import java.util.Map;
  * @see ProductFlavorContainer
  * @see BaseArtifact#getDependencies()
  */
-public interface ProductFlavor extends BaseConfig {
+public interface ProductFlavor extends BaseConfig, DimensionAware {
 
     /**
      * Returns the name of the flavor.
@@ -41,12 +41,6 @@ public interface ProductFlavor extends BaseConfig {
     @Override
     @NonNull
     String getName();
-
-    /**
-     * Returns the flavor dimension or null if not applicable.
-     */
-    @Nullable
-    String getDimension();
 
     /**
      * Returns the name of the product flavor. This is only the value set on this product flavor.

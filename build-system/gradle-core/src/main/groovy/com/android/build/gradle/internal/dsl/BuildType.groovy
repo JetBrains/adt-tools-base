@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.dsl
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.annotations.VisibleForTesting
-import com.android.build.gradle.internal.core.NdkConfig
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
@@ -66,7 +65,7 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     }
 
     @Nullable
-    public NdkConfig getNdkConfig() {
+    public CoreNdkOptions getNdkConfig() {
         return ndkConfig;
     }
 
