@@ -71,6 +71,9 @@ public class NdkNamingScheme {
         }
     }
 
+    /**
+     * Return the name of the directory that will contain the final output of the native binary.
+     */
     public static String getOutputDirectoryName(String buildType, String productFlavor, String abi) {
         return Joiner.on(File.separator).join(
                 FD_INTERMEDIATES,
@@ -83,6 +86,26 @@ public class NdkNamingScheme {
 
     public static String getOutputDirectoryName(NativeBinarySpec binary) {
         return getOutputDirectoryName(
+                binary.getBuildType().getName(),
+                binary.getFlavor().getName(),
+                binary.getTargetPlatform().getName());
+    }
+
+    /**
+     * Return the name of the directory that will contain the native library with debug symbols.
+     */
+    public static String getDebugLibraryDirectoryName(String buildType, String productFlavor, String abi) {
+        return Joiner.on(File.separator).join(
+                FD_INTERMEDIATES,
+                "binaries",
+                buildType,
+                productFlavor,
+                "obj",
+                abi);
+    }
+
+    public static String getDebugLibraryDirectoryName(NativeBinarySpec binary) {
+        return getDebugLibraryDirectoryName(
                 binary.getBuildType().getName(),
                 binary.getFlavor().getName(),
                 binary.getTargetPlatform().getName());
