@@ -36,6 +36,7 @@ import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 import lombok.ast.Position;
+import lombok.ast.StrictListAccessor;
 
 /**
  * A {@link Context} used when checking Java files.
@@ -226,6 +227,26 @@ public class JavaContext extends Context {
     @Nullable
     public TypeDescriptor getType(@NonNull Node node) {
         return mParser.getType(this, node);
+    }
+
+    @Nullable
+    public static Node getParameter(@NonNull MethodInvocation call, int parameter) {
+        StrictListAccessor<Expression, MethodInvocation> parameters = call.astArguments();
+        if (parameters.size() <= parameter) {
+            return null;
+        }
+
+        if (parameter == 0) {
+            return parameters.first();
+        } else if (parameter == parameters.size() - 1) {
+            return parameters.last();
+        } else {
+            Iterator<Expression> iterator = parameters.iterator();
+            for (int i = 0; i < parameter - 1; i++) {
+                iterator.next();
+            }
+            return iterator.next();
+        }
     }
 
     /**
