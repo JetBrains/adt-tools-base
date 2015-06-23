@@ -18,7 +18,7 @@ package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.core.NdkConfig;
+import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.builder.core.BuilderConstants;
@@ -241,8 +241,8 @@ public class ProductFlavorAdaptor implements CoreProductFlavor {
     }
 
     @Override
-    public NdkConfig getNdkConfig() {
-        return new NdkConfigAdaptor(productFlavor.getNdkConfig());
+    public CoreNdkOptions getNdkConfig() {
+        return new NdkOptionsAdaptor(productFlavor.getNdk());
     }
 
     @Override

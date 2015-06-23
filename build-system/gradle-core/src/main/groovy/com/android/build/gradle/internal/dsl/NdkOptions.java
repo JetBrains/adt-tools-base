@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.core.NdkConfig;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -34,7 +33,7 @@ import java.util.Set;
 /**
  * DSL object for NDK-related settings.
  */
-public class NdkOptions implements NdkConfig, Serializable {
+public class NdkOptions implements CoreNdkOptions, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String moduleName;

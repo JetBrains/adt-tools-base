@@ -30,8 +30,8 @@ import com.android.build.gradle.internal.ProductFlavorData;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.core.NdkConfig;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
@@ -41,7 +41,6 @@ import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
-import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.AaptOptions;
 import com.android.builder.model.AndroidArtifact;
@@ -364,7 +363,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         List<? extends BaseVariantOutputData> variantOutputs = variantData.getOutputs();
         List<AndroidArtifactOutput> outputs = Lists.newArrayListWithCapacity(variantOutputs.size());
 
-        NdkConfig ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
+        CoreNdkOptions ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
         Collection<NativeLibrary> nativeLibraries = ImmutableList.of();;
         if (ndkHandler.getNdkDirectory() != null) {
             if (config.getSplits().getAbi().isEnable()) {

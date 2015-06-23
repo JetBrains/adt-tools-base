@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.tasks
 
-import com.android.build.gradle.internal.core.NdkConfig
+import com.android.build.gradle.internal.dsl.CoreNdkOptions
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 
@@ -25,7 +25,7 @@ import org.gradle.api.tasks.Optional
  */
 class NdkTask extends BaseTask {
 
-    NdkConfig ndkConfig
+    CoreNdkOptions ndkConfig
 
     @Input @Optional
     String getModuleName() {

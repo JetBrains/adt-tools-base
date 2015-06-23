@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.AndroidConfigHelper;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
@@ -42,6 +43,7 @@ import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.ClassField;
 import com.android.build.gradle.managed.NdkConfig;
+import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.build.gradle.managed.SigningConfig;
 import com.android.build.gradle.managed.adaptor.AndroidConfigAdaptor;
@@ -61,7 +63,9 @@ import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.android.utils.ILogger;
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -79,6 +83,7 @@ import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.model.Defaults;
 import org.gradle.model.Model;
 import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
@@ -94,6 +99,7 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -193,19 +199,12 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         // com.android.build.gradle.AndroidConfig do not contain an NdkConfig.  Copy it to the
         // defaultConfig for now.
-        @Mutate
+        @Defaults
         public void copyNdkConfig(
-                @Path("android.defaultConfig.ndkConfig") NdkConfig defaultNdkConfig,
+                @Path("android.defaultConfig.ndk") NdkOptions defaultNdkConfig,
                 @Path("android.ndk") NdkConfig pluginNdkConfig) {
-            defaultNdkConfig.setModuleName(pluginNdkConfig.getModuleName());
-            defaultNdkConfig.setToolchain(pluginNdkConfig.getToolchain());
-            defaultNdkConfig.setToolchainVersion(pluginNdkConfig.getToolchainVersion());
-            defaultNdkConfig.setCFlags(pluginNdkConfig.getCFlags());
-            defaultNdkConfig.setCppFlags(pluginNdkConfig.getCppFlags());
-            defaultNdkConfig.setLdLibs(pluginNdkConfig.getLdLibs());
-            defaultNdkConfig.setAbiFilters(pluginNdkConfig.getAbiFilters());
-            defaultNdkConfig.setStl(pluginNdkConfig.getStl());
-            defaultNdkConfig.setRenderscriptNdkMode(pluginNdkConfig.getRenderscriptNdkMode());
+            NdkOptionsHelper.init(defaultNdkConfig);
+            NdkOptionsHelper.merge(defaultNdkConfig, pluginNdkConfig);
         }
 
        // TODO: Remove code duplicated from BasePlugin.
@@ -447,8 +446,14 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 @Override
                 public void execute(AndroidBinary androidBinary) {
                     DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;
-                    binary.setVariantData(variantManager
-                            .createVariantData(binary.getBuildType(), binary.getProductFlavors()));
+                    List<ProductFlavorAdaptor> adaptedFlavors = Lists.newArrayList();
+                    for (ProductFlavor flavor : binary.getProductFlavors()) {
+                        adaptedFlavors.add(new ProductFlavorAdaptor(flavor));
+                    }
+                    binary.setVariantData(
+                            variantManager.createVariantData(
+                                    new BuildTypeAdaptor(binary.getBuildType()),
+                                    adaptedFlavors));
                     variantManager.getVariantDataList().add(binary.getVariantData());
                 }
             });

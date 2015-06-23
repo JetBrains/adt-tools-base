@@ -9,13 +9,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Configuration model for android-ndk plugin.
+ * Root configuration model for android-ndk plugin.
  */
 @Managed
-public interface NdkConfig {
-
-    String getModuleName();
-    void setModuleName(@NonNull String moduleName);
+public interface NdkConfig extends NdkOptions {
 
     /**
      * The toolchain version.
@@ -30,30 +27,4 @@ public interface NdkConfig {
      */
     String getToolchainVersion();
     void setToolchainVersion(@NonNull String toolchainVersion);
-
-    @Unmanaged
-    Set<String> getAbiFilters();
-    void setAbiFilters(@NonNull Set<String> filters);
-
-    @Unmanaged
-    List<String> getCFlags();
-    void setCFlags(@NonNull List<String> cFlags);
-
-    @Unmanaged
-    List<String> getCppFlags();
-    void setCppFlags(@NonNull List<String> cppFlags);
-
-    @Unmanaged
-    List<String> getLdFlags();
-    void setLdFlags(@NonNull List<String> ldFlags);
-
-    @Unmanaged
-    List<String> getLdLibs();
-    void setLdLibs(@NonNull List<String> ldLibs);
-
-    String getStl();
-    void setStl(@NonNull String stl);
-
-    Boolean getRenderscriptNdkMode();
-    void setRenderscriptNdkMode(Boolean renderscriptNdkMode);
 }

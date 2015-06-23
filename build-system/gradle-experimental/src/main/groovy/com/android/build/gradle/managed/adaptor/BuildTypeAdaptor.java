@@ -18,17 +18,15 @@ package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.core.NdkConfig;
+import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.managed.BuildType;
 import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.io.File;
@@ -194,8 +192,8 @@ public class BuildTypeAdaptor implements CoreBuildType {
     }
 
     @Override
-    public NdkConfig getNdkConfig() {
-        return null;
+    public CoreNdkOptions getNdkConfig() {
+        return new NdkOptionsAdaptor(buildType.getNdk());
     }
 
     @Override

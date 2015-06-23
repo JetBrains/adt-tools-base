@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
+import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
@@ -86,7 +87,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
     }
 
     @NonNull
-    public NdkConfig getNdkConfig() {
+    public CoreNdkOptions getNdkConfig() {
         return mMergedNdkConfig;
     }
 
@@ -143,7 +144,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
 
         final List<CoreProductFlavor> flavors = getProductFlavors();
         for (int i = flavors.size() - 1 ; i >= 0 ; i--) {
-            NdkConfig ndkConfig = flavors.get(i).getNdkConfig();
+            CoreNdkOptions ndkConfig = flavors.get(i).getNdkConfig();
             if (ndkConfig != null) {
                 mMergedNdkConfig.append(ndkConfig);
             }

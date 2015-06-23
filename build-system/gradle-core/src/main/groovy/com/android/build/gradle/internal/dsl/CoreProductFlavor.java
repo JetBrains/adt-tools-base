@@ -17,16 +17,17 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.core.NdkConfig;
 import com.android.builder.model.ProductFlavor;
+
+import org.gradle.api.Named;
 
 /**
  * A product flavor with addition properties for building with Gradle plugin.
  */
-public interface CoreProductFlavor extends ProductFlavor {
+public interface CoreProductFlavor extends ProductFlavor, Named {
 
     @Nullable
-    NdkConfig getNdkConfig();
+    CoreNdkOptions getNdkConfig();
 
     @Nullable
     Boolean getUseJack();

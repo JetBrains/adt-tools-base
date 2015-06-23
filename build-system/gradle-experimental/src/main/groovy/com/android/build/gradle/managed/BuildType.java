@@ -215,4 +215,6 @@ public interface BuildType extends Named {
 
     Boolean getShrinkResources();
     void setShrinkResources(Boolean shrinkResources);
+
+    NdkOptions getNdk();
 }
