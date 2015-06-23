@@ -46,6 +46,8 @@ import lombok.ast.Select;
 import lombok.ast.VariableDefinitionEntry;
 
 /**
+ * TODO: Add firstApi/lastApi fields; used for historical lookup
+ *
  * A permission requirement is a boolean expression of permission names that a
  * caller must satisfy for a given Android API.
  */

@@ -92,19 +92,16 @@ public class PermissionFinder {
     /**
      * Searches for a permission requirement for the given parameter in the given call
      *
-     * @param operation      the operation to look up
-     * @param context        the context to use for lookup
-     * @param call           the relevant call (e.g. for an intent, the {@code startActivity()}
-     *                       call
-     * @param parameterIndex the index of the parameter in the call
+     * @param operation the operation to look up
+     * @param context   the context to use for lookup
+     * @param parameter the parameter which contains the value which implies the permission
      * @return the result with the permission requirement, or null if nothing is found
      */
     @Nullable
     public static Result findRequiredPermissions(
             @NonNull Operation operation,
             @NonNull JavaContext context,
-            @NonNull Node call,
-            int parameterIndex) {
+            @NonNull Node parameter) {
 
         // To find the permission required by an intent, we proceed in 3 steps:
         // (1) Locate the parameter in the start call that corresponds to
@@ -116,12 +113,7 @@ public class PermissionFinder {
         // (3) Find the place where the action is defined, and look for permission
         //     annotations on that action declaration!
 
-        Node arg = JavaContext.getParameter(call, parameterIndex);
-        if (arg == null) {
-            return null;
-        }
-
-        return new PermissionFinder(context, operation).search(arg);
+        return new PermissionFinder(context, operation).search(parameter);
     }
 
     private PermissionFinder(@NonNull JavaContext context, @NonNull Operation operation) {
