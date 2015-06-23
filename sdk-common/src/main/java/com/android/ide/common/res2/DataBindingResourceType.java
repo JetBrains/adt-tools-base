@@ -18,7 +18,8 @@ package com.android.ide.common.res2;
 import com.android.SdkConstants;
 
 public enum DataBindingResourceType {
-    VARIABLE(SdkConstants.ATTR_NAME, SdkConstants.ATTR_TYPE);
+    VARIABLE(SdkConstants.ATTR_NAME, SdkConstants.ATTR_TYPE),
+    IMPORT(SdkConstants.ATTR_ALIAS, SdkConstants.ATTR_TYPE);
 
     public final String[] attributes;
 
