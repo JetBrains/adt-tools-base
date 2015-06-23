@@ -445,7 +445,7 @@ public class PackageLoader {
         // We override SdkRepoConstants.URL_GOOGLE_SDK_SITE if this is defined
         String baseUrl = System.getenv("SDK_TEST_BASE_URL");            //$NON-NLS-1$
         if (baseUrl != null) {
-            if (baseUrl.length() > 0 && baseUrl.endsWith("/")) {        //$NON-NLS-1$
+            if (!baseUrl.isEmpty() && baseUrl.endsWith("/")) {        //$NON-NLS-1$
                 if (url.startsWith(SdkRepoConstants.URL_GOOGLE_SDK_SITE)) {
                     url = baseUrl + url.substring(SdkRepoConstants.URL_GOOGLE_SDK_SITE.length());
                 }

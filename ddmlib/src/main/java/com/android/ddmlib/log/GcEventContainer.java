@@ -296,7 +296,7 @@ final class GcEventContainer extends EventContainer {
      * @param valueIndex the index of the value.
      * @throws InvalidTypeException if index is 0 as it is a string value.
      */
-    private final long getValueAsLong(int valueIndex) throws InvalidTypeException {
+    private long getValueAsLong(int valueIndex) throws InvalidTypeException {
         switch (valueIndex) {
             case 0:
                 throw new InvalidTypeException();

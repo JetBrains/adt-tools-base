@@ -556,7 +556,7 @@ public class SdkStats {
                                 getTextContent().trim();
 
                         if (codeName == null || versName == null ||
-                                codeName.length() == 0 || versName.length() == 0) {
+                                codeName.isEmpty() || versName.isEmpty()) {
                             // bad names. ignore.
                             continue;
                         }

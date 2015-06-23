@@ -288,9 +288,9 @@ public class ArchiveInstaller {
                     String etag = props.getProperty(HttpHeaders.ETAG);
                     String lastMod = props.getProperty(HttpHeaders.LAST_MODIFIED);
 
-                    if (etag != null && etag.length() > 0) {
+                    if (etag != null && !etag.isEmpty()) {
                         headers.add(new BasicHeader(HttpHeaders.IF_MATCH, etag));
-                    } else if (lastMod != null && lastMod.length() > 0) {
+                    } else if (lastMod != null && !lastMod.isEmpty()) {
                         headers.add(new BasicHeader(HttpHeaders.IF_MATCH, lastMod));
                     }
 

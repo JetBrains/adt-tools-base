@@ -43,11 +43,11 @@ class CaptureErrorHandler implements ErrorHandler {
      * Also fails the unit test if any error was generated.
      */
     public void verify() {
-        if (mWarnings.length() > 0) {
+        if (!mWarnings.isEmpty()) {
             System.err.println(mWarnings);
         }
 
-        if (mErrors.length() > 0) {
+        if (!mErrors.isEmpty()) {
             System.err.println(mErrors);
             junit.framework.Assert.fail(mErrors);
         }

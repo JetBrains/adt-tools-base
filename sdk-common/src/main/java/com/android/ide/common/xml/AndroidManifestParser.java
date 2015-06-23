@@ -531,7 +531,7 @@ public class AndroidManifestParser {
                 if (attributeName.equals(attributes.getLocalName(i)) &&
                         ((hasNamespace &&
                                 SdkConstants.NS_RESOURCES.equals(attributes.getURI(i))) ||
-                                (hasNamespace == false && attributes.getURI(i).length() == 0))) {
+                                (hasNamespace == false && attributes.getURI(i).isEmpty()))) {
                     return attributes.getValue(i);
                 }
             }
@@ -555,7 +555,7 @@ public class AndroidManifestParser {
                 if (attributeName.equals(attributes.getLocalName(i)) &&
                         ((hasNamespace &&
                                 SdkConstants.NS_RESOURCES.equals(attributes.getURI(i))) ||
-                                (hasNamespace == false && attributes.getURI(i).length() == 0))) {
+                                (hasNamespace == false && attributes.getURI(i).isEmpty()))) {
                     String attr = attributes.getValue(i);
                     if (attr != null) {
                         return Boolean.valueOf(attr);

@@ -27,7 +27,8 @@ import java.util.Properties;
 
 public class LocalDocPkgInfo extends LocalPkgInfo {
 
-    private final @NonNull IPkgDesc mDesc;
+    @NonNull
+    private final IPkgDesc mDesc;
 
     public LocalDocPkgInfo(@NonNull LocalSdk localSdk,
                            @NonNull File localDir,

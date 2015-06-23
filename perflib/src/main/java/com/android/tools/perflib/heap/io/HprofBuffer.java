@@ -18,7 +18,7 @@ package com.android.tools.perflib.heap.io;
 import java.nio.ByteOrder;
 
 public interface HprofBuffer {
-    public static final ByteOrder HPROF_BYTE_ORDER = ByteOrder.BIG_ENDIAN;
+    ByteOrder HPROF_BYTE_ORDER = ByteOrder.BIG_ENDIAN;
 
     byte readByte();
 

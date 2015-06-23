@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  */
 class SvgGroupNode extends SvgNode {
     private static Logger logger = Logger.getLogger(SvgGroupNode.class.getSimpleName());
-    private final static String INDENT_LEVEL = "    ";
+    private static final String INDENT_LEVEL = "    ";
     private ArrayList<SvgNode> mChildren = new ArrayList<SvgNode>();
 
     public SvgGroupNode(SvgTree svgTree, Node docNode, String name) {

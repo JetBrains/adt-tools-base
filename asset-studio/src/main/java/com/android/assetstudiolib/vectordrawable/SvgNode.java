@@ -53,20 +53,20 @@ abstract class SvgNode {
     /**
      * dump the current node's debug info.
      */
-    abstract public void dumpNode(String indent);
+    public abstract void dumpNode(String indent);
 
     /**
      * Write the Node content into the VectorDrawable's XML file.
      */
-    abstract public void writeXML(OutputStreamWriter writer) throws IOException;
+    public abstract void writeXML(OutputStreamWriter writer) throws IOException;
 
     /**
      * @return true the node is a group node.
      */
-    abstract public boolean isGroupNode();
+    public abstract boolean isGroupNode();
 
     /**
      * Transform the current Node with the transformation matrix.
      */
-    abstract public void transform(float a, float b, float c, float d, float e, float f);
+    public abstract void transform(float a, float b, float c, float d, float e, float f);
 }

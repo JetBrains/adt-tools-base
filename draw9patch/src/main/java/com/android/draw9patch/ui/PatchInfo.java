@@ -135,7 +135,7 @@ public class PatchInfo {
     }
 
     private Pair<Integer> getPadding(List<Pair<Integer>> pairs) {
-        if (pairs.size() == 0) {
+        if (pairs.isEmpty()) {
             return new Pair<Integer>(0, 0);
         } else if (pairs.size() == 1) {
             if (pairs.get(0).first == 1) {

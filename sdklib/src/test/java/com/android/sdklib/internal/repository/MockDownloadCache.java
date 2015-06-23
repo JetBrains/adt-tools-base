@@ -57,7 +57,7 @@ public class MockDownloadCache extends DownloadCache {
 
     private Strategy mOverrideStrategy;
 
-    public final static int THROW_FNF = -1;
+    public static final int THROW_FNF = -1;
 
     /**
      * Creates a download cache with a {@code DIRECT} strategy and

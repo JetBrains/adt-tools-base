@@ -468,7 +468,7 @@ class UrlOpener {
                 String domain = result.getDomain();
 
                 // proceed in case there is indeed a user
-                if (user != null && user.length() > 0) {
+                if (user != null && !user.isEmpty()) {
                     Credentials credentials = new NTCredentials(user, password,
                             workstation, domain);
                     httpClient.getCredentialsProvider().setCredentials(authScope, credentials);

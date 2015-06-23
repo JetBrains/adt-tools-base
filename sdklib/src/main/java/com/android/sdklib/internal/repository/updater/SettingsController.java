@@ -379,11 +379,11 @@ public class SettingsController {
 
         // Only change the proxy if have something in the preferences.
         // Do not erase the default settings by empty values.
-        if (proxyHost != null && proxyHost.length() > 0) {
+        if (proxyHost != null && !proxyHost.isEmpty()) {
             props.setProperty(JAVA_PROP_HTTP_PROXY_HOST,  proxyHost);
             props.setProperty(JAVA_PROP_HTTPS_PROXY_HOST, proxyHost);
         }
-        if (proxyPort != null && proxyPort.length() > 0) {
+        if (proxyPort != null && !proxyPort.isEmpty()) {
             props.setProperty(JAVA_PROP_HTTP_PROXY_PORT,  proxyPort);
             props.setProperty(JAVA_PROP_HTTPS_PROXY_PORT, proxyPort);
         }

@@ -411,7 +411,7 @@ public final class SdkConstants {
      * Note: if you need an URI specifically for the "android" namespace, consider using
      * {@link SdkConstants#NS_RESOURCES} instead.
      */
-    public final static String NS_CUSTOM_RESOURCES_S = "http://schemas.android.com/apk/res/%1$s"; //$NON-NLS-1$
+    public static final String NS_CUSTOM_RESOURCES_S = "http://schemas.android.com/apk/res/%1$s"; //$NON-NLS-1$
 
 
     /** The name of the uses-library that provides "android.test.runner" */

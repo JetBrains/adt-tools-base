@@ -131,7 +131,7 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
                     return false;
                 }
 
-            };
+            }
         };
     }
 

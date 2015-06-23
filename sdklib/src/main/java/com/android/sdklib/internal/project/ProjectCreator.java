@@ -1224,7 +1224,7 @@ public class ProjectCreator {
             // with an actual AndroidManifest.xml file. The nodes may not have the requested
             // attributes though, if which case we should warn.
 
-            if (packageName == null || packageName.length() == 0) {
+            if (packageName == null || packageName.isEmpty()) {
                 mLog.error(null,
                         "Missing <manifest package=\"...\"> in '%1$s'",
                         manifestFile.getName());
@@ -1252,7 +1252,7 @@ public class ProjectCreator {
                 }
             }
 
-            if (activityName.length() == 0) {
+            if (activityName.isEmpty()) {
                 mLog.warning("Missing <activity %1$s:name=\"...\"> in '%2$s'.\n" +
                         "No activity will be generated.",
                         AndroidXPathFactory.DEFAULT_NS_PREFIX, manifestFile.getName());

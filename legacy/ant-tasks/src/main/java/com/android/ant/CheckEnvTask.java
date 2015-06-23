@@ -34,7 +34,7 @@ import java.io.File;
  */
 public class CheckEnvTask extends Task {
 
-    private final static String ANT_MIN_VERSION = "1.8.0";
+    private static final String ANT_MIN_VERSION = "1.8.0";
 
     @Override
     public void execute() {

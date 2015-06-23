@@ -39,7 +39,7 @@ public abstract class BaseTestCase extends TestCase {
 
         for (String resKey : dataItemKeys) {
             List<? extends DataItem> items = map.get(resKey);
-            assertTrue("resource '" + resKey + "' is missing!", items.size() > 0);
+            assertTrue("resource '" + resKey + "' is missing!", !items.isEmpty());
         }
     }
 

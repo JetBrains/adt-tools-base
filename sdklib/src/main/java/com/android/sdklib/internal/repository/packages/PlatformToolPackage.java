@@ -231,7 +231,7 @@ public class PlatformToolPackage extends FullRevisionPackage {
     @Override
     public String getLongDescription() {
         String s = getDescription();
-        if (s == null || s.length() == 0) {
+        if (s == null || s.isEmpty()) {
             s = getShortDescription();
         }
 
