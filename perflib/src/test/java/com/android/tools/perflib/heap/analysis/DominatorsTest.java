@@ -186,27 +186,54 @@ public class DominatorsTest extends TestCase {
     }
 
     public void testReachableInstances() {
-        mSnapshot = new SnapshotBuilder(10, 2)
+        mSnapshot = new SnapshotBuilder(11, 2, 1)
                 .addReferences(1, 2, 3)
-                .insertSoftRefences(1, 10)
+                .insertSoftReference(1, 11)
                 .addReferences(2, 4)
                 .addReferences(3, 5, 6)
+                .insertSoftReference(4, 9)
                 .addReferences(5, 7)
                 .addReferences(6, 7)
-                .addReferences(7, 8)
-                .insertSoftRefences(8, 9)
+                .addReferences(7, 8, 10)
+                .insertSoftAndHardReference(8, 10, 9)
                 .addRoot(1)
                 .build();
 
         mSnapshot.computeDominators();
         for (Heap heap : mSnapshot.getHeaps()) {
-            ClassObj classObj = heap.getClass(SnapshotBuilder.SOFT_REFERENCE_ID);
-            if (classObj != null) {
-                assertTrue(classObj.getIsSoftReference());
+            ClassObj softClass = heap.getClass(SnapshotBuilder.SOFT_REFERENCE_ID);
+            if (softClass != null) {
+                assertTrue(softClass.getIsSoftReference());
+            }
+
+            ClassObj softAndHardClass = heap.getClass(SnapshotBuilder.SOFT_AND_HARD_REFERENCE_ID);
+            if (softAndHardClass != null) {
+                assertTrue(softAndHardClass.getIsSoftReference());
             }
         }
 
-        assertEquals(10, mSnapshot.getReachableInstances().size());
+        Instance instance9 = mSnapshot.findInstance(9);
+        assertNotNull(instance9);
+        assertNotNull(instance9.getSoftReferences());
+        assertEquals(1, instance9.getHardReferences().size());
+        assertEquals(1, instance9.getSoftReferences().size());
+        assertEquals(6, instance9.getDistanceToGcRoot());
+
+        Instance instance10 = mSnapshot.findInstance(10);
+        assertNotNull(instance10);
+        assertNotNull(instance10.getSoftReferences());
+        assertEquals(1, instance10.getHardReferences().size());
+        assertEquals(1, instance10.getSoftReferences().size());
+        assertEquals(4, instance10.getDistanceToGcRoot());
+
+        Instance instance11 = mSnapshot.findInstance(11);
+        assertNotNull(instance11);
+        assertNotNull(instance11.getSoftReferences());
+        assertEquals(0, instance11.getHardReferences().size());
+        assertEquals(1, instance11.getSoftReferences().size());
+        assertEquals(Integer.MAX_VALUE, instance11.getDistanceToGcRoot());
+
+        assertEquals(13, mSnapshot.getReachableInstances().size());
     }
 
     public void testSampleHprof() throws Exception {
@@ -224,7 +251,7 @@ public class DominatorsTest extends TestCase {
         }
         assertEquals(43687, totalInstanceCount);
 
-        assertEquals(42584, mSnapshot.getReachableInstances().size());
+        assertEquals(42839, mSnapshot.getReachableInstances().size());
 
         // An object reachable via two GC roots, a JNI global and a Thread.
         Instance instance = mSnapshot.findInstance(0xB0EDFFA0);

@@ -65,7 +65,7 @@ public class ClassInstance extends Instance {
         for (FieldValue field : getValues()) {
             if (field.getValue() instanceof Instance) {
                 if (!mReferencesAdded) {
-                    ((Instance) field.getValue()).addReference(this);
+                    ((Instance) field.getValue()).addReference(field.getField(), this);
                 }
                 visitor.visitLater(this, (Instance) field.getValue());
             }
