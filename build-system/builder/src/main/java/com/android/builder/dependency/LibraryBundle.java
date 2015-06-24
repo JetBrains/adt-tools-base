@@ -185,7 +185,7 @@ public abstract class LibraryBundle implements LibraryDependency {
     @Override
     @NonNull
     public File getLintJar() {
-        return new File(mBundleFolder, "lint.jar");
+        return new File(getJarsRootFolder(), "lint.jar");
     }
 
     @Override
