@@ -57,8 +57,7 @@ public class NdkOptionsAdaptor implements CoreNdkOptions {
     @Nullable
     @Override
     public Set<String> getAbiFilters() {
-        // null is considered to be no filter, which is different from an empty filter list.
-        return (ndkOptions.getAbiFilters().isEmpty() ? null : ndkOptions.getAbiFilters());
+        return ndkOptions.getAbiFilters();
     }
 
     @Nullable
