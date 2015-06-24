@@ -38,6 +38,7 @@ class AppComponentPluginTest {
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldApp())
             .forExpermimentalPlugin(true)
+            .withoutNdk()
             .create();
 
     @Before
