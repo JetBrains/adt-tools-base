@@ -20,6 +20,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
@@ -73,4 +76,15 @@ public class FileUtils {
     public static String sha1(@NonNull File file) throws IOException {
         return Hashing.sha1().hashBytes(Files.toByteArray(file)).toString();
     }
+
+    public static String getNamesAsCommaSeparatedList(Iterable<File> files) {
+        return Joiner.on(", ").join(Iterables.transform(files, GET_NAME));
+    }
+
+    private static final Function<File, String> GET_NAME = new Function<File, String>() {
+        @Override
+        public String apply(File file) {
+            return file.getName();
+        }
+    };
 }
