@@ -98,8 +98,6 @@ public class MergedNdkConfig implements CoreNdkOptions {
         if (ndkConfig.getAbiFilters() != null) {
             if (abiFilters == null) {
                 abiFilters = Sets.newHashSetWithExpectedSize(ndkConfig.getAbiFilters().size());
-            } else {
-                abiFilters.clear();
             }
             abiFilters.addAll(ndkConfig.getAbiFilters());
         }
@@ -113,8 +111,6 @@ public class MergedNdkConfig implements CoreNdkOptions {
         if (ndkConfig.getLdLibs() != null) {
             if (ldLibs == null) {
                 ldLibs = Lists.newArrayListWithCapacity(ndkConfig.getLdLibs().size());
-            } else {
-                ldLibs.clear();
             }
             ldLibs.addAll(ndkConfig.getLdLibs());
         }
