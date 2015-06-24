@@ -174,7 +174,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
     @SuppressWarnings("MethodMayBeStatic")
     public static class Rules extends RuleSource {
 
-        @Mutate
+        @Defaults
         public void configureAndroidModel(
                 AndroidConfig androidModel,
                 ServiceRegistry serviceRegistry) {

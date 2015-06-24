@@ -196,7 +196,7 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
 
     @Override
     public Boolean getPackageBuildConfig() {
-        return false;
+        return true;
     }
 
     public AndroidComponentModelSourceSet getSources() {
