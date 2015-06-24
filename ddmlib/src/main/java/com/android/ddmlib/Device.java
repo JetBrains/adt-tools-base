@@ -372,7 +372,7 @@ final class Device implements IDevice {
     }
 
     // The full list of features can be obtained from /etc/permissions/features*
-    // However, since we only support the "watch" feature, we can determine that by simply
+    // However, the smaller set of features we are interested in can be obtained by
     // reading the build characteristics property.
     @Override
     public boolean supportsFeature(@NonNull HardwareFeature feature) {
