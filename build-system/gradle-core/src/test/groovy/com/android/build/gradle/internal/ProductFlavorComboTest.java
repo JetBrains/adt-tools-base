@@ -20,18 +20,13 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import com.android.builder.model.ProductFlavor;
+import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.builder.model.DimensionAware;
 import com.google.common.collect.ImmutableList;
 
-import org.gradle.api.Project;
-import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
-import org.gradle.internal.reflect.DirectInstantiator;
-import org.gradle.internal.reflect.Instantiator;
-import org.gradle.testfixtures.ProjectBuilder;
+import org.gradle.api.Named;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -40,25 +35,22 @@ import java.util.Collections;
 import java.util.List;
 
 public class ProductFlavorComboTest {
-    private Instantiator instantiator = new DirectInstantiator();
-    private Project project = ProjectBuilder.builder().build();
-    private Logger logger = Logging.getLogger(this.getClass());
 
     private static final String DIMENSION1 = "dimension1";
     private static final String DIMENSION2 = "dimension2";
 
     @Mock
-    private ProductFlavor f1;
+    private CoreProductFlavor f1;
     @Mock
-    private ProductFlavor f2;
+    private CoreProductFlavor f2;
     @Mock
-    private ProductFlavor f1d1;
+    private CoreProductFlavor f1d1;
     @Mock
-    private ProductFlavor f2d1;
+    private CoreProductFlavor f2d1;
     @Mock
-    private ProductFlavor f1d2;
+    private CoreProductFlavor f1d2;
     @Mock
-    private ProductFlavor f2d2;
+    private CoreProductFlavor f2d2;
 
     @Before
     public void setup() {
@@ -81,33 +73,33 @@ public class ProductFlavorComboTest {
 
     @Test
     public void getNameEmpty() {
-        assertEquals("", new ProductFlavorCombo().getName());
+        assertEquals("", new ProductFlavorCombo<CoreProductFlavor>().getName());
     }
 
     @Test
     public void getNameSingleFlavor() {
-        assertEquals("flavor1", new ProductFlavorCombo(f1).getName());
+        assertEquals("flavor1", new ProductFlavorCombo<CoreProductFlavor>(f1).getName());
     }
 
     @Test
     public void getNameMultiFlavor() {
-        assertEquals("flavor1Flavor2", new ProductFlavorCombo(f1, f2).getName());
+        assertEquals("flavor1Flavor2", new ProductFlavorCombo<CoreProductFlavor>(f1, f2).getName());
     }
 
     @Test
     public void createGroupListEmpty() throws Exception {
         assertEqualGroupList(
-                ImmutableList.<ProductFlavorCombo>of(),
+                ImmutableList.<ProductFlavorCombo<CoreProductFlavor>>of(),
                 ProductFlavorCombo.createCombinations(
                         Collections.<String>emptyList(),
-                        Collections.<ProductFlavor>emptyList()));
+                        Collections.<CoreProductFlavor>emptyList()));
     }
 
     @Test
     public void createGroupListNullDimension() throws Exception {
         assertEqualGroupList(
                 ImmutableList.of(
-                        new ProductFlavorCombo(f1)
+                        new ProductFlavorCombo<CoreProductFlavor>(f1)
                 ),
                 ProductFlavorCombo.createCombinations(
                         null,
@@ -118,8 +110,8 @@ public class ProductFlavorComboTest {
     public void createGroupListEmptyDimension() throws Exception {
         assertEqualGroupList(
                 ImmutableList.of(
-                        new ProductFlavorCombo(f1),
-                        new ProductFlavorCombo(f2)
+                        new ProductFlavorCombo<CoreProductFlavor>(f1),
+                        new ProductFlavorCombo<CoreProductFlavor>(f2)
                 ),
                 ProductFlavorCombo.createCombinations(
                         ImmutableList.<String>of(),
@@ -129,7 +121,7 @@ public class ProductFlavorComboTest {
     @Test
     public void createGroupListSingleDimension() throws Exception {
         assertEqualGroupList(
-                ImmutableList.of(new ProductFlavorCombo(f1d1)),
+                ImmutableList.of(new ProductFlavorCombo<CoreProductFlavor>(f1d1)),
                 ProductFlavorCombo.createCombinations(
                         ImmutableList.of(DIMENSION1),
                         ImmutableList.of(f1d1)));
@@ -139,10 +131,10 @@ public class ProductFlavorComboTest {
     public void createGroupListMultiDimensions() throws Exception {
         assertEqualGroupList(
                 ImmutableList.of(
-                        new ProductFlavorCombo(f1d1, f1d2),
-                        new ProductFlavorCombo(f1d1, f2d2),
-                        new ProductFlavorCombo(f2d1, f1d2),
-                        new ProductFlavorCombo(f2d1, f2d2)),
+                        new ProductFlavorCombo<CoreProductFlavor>(f1d1, f1d2),
+                        new ProductFlavorCombo<CoreProductFlavor>(f1d1, f2d2),
+                        new ProductFlavorCombo<CoreProductFlavor>(f2d1, f1d2),
+                        new ProductFlavorCombo<CoreProductFlavor>(f2d1, f2d2)),
                 ProductFlavorCombo.createCombinations(
                         ImmutableList.of(DIMENSION1, DIMENSION2),
                         ImmutableList.of(f1d1, f1d2, f2d1, f2d2)));
@@ -181,7 +173,9 @@ public class ProductFlavorComboTest {
         }
     }
 
-    private static void assertEqualGroupList(List<ProductFlavorCombo> expected, List<ProductFlavorCombo> actual) {
+    private static <S extends DimensionAware & Named> void assertEqualGroupList(
+            List<ProductFlavorCombo<S>> expected,
+            List<ProductFlavorCombo<S>> actual) {
         assertEquals(expected.size(), actual.size());
         for (int i = 0; i < expected.size(); i++) {
             assertArrayEquals(
