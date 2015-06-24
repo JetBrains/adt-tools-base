@@ -79,7 +79,7 @@ public class ClassInstance extends Instance {
     }
 
     public final String toString() {
-        return String.format("%s@%d", getClassObj().getClassName(), getUniqueId());
+        return String.format("%s@%d (0x%x)", getClassObj().getClassName(), getUniqueId(), getUniqueId());
     }
 
     public static class FieldValue {

@@ -108,6 +108,6 @@ public class ArrayInstance extends Instance {
         if (className.endsWith("[]")) {
             className = className.substring(0, className.length() - 2);
         }
-        return String.format("%s[%d]@%d", className, mLength, getUniqueId());
+        return String.format("%s[%d]@%d (0x%x)", className, mLength, getUniqueId(), getUniqueId());
     }
 }
