@@ -2234,9 +2234,11 @@ public abstract class TaskManager {
             @Override
             public File call() throws Exception {
                 final TargetInfo info = androidBuilder.getTargetInfo();
-                String path = (info == null ? null : info.getBuildTools()).getPath(ZIP_ALIGN);
-                if (path != null) {
-                    return new File(path);
+                if (info != null) {
+                    String path = info.getBuildTools().getPath(ZIP_ALIGN);
+                    if (path != null) {
+                        return new File(path);
+                    }
                 }
 
                 return null;
