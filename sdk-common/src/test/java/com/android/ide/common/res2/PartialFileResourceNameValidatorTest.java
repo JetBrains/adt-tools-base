@@ -16,18 +16,12 @@
 
 package com.android.ide.common.res2;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-
-import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 

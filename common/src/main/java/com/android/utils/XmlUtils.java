@@ -33,8 +33,6 @@ import static com.google.common.base.Charsets.UTF_8;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.google.common.base.CaseFormat;
-import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
 import org.w3c.dom.Attr;
@@ -48,14 +46,10 @@ import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
-import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Locale;
 

@@ -17,7 +17,6 @@
 package com.android.build.gradle.managed;
 
 import org.gradle.model.Managed;
-import org.gradle.model.ModelSet;
 import org.gradle.model.Unmanaged;
 
 import java.util.Set;

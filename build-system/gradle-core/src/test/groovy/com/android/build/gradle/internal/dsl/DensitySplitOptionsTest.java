@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.android.build.OutputFile;
 import com.android.resources.Density;
 
 import org.junit.Test;

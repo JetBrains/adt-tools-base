@@ -17,9 +17,6 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
-import com.android.resources.Density;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
 import org.gradle.internal.reflect.Instantiator;

@@ -18,11 +18,9 @@ package com.android.manifmerger;
 
 import static com.android.manifmerger.MergingReport.Record.Severity;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
-import static org.mockito.Matchers.any;
 
 import com.android.ide.common.blame.SourceFile;
 import com.android.utils.ILogger;
-import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 

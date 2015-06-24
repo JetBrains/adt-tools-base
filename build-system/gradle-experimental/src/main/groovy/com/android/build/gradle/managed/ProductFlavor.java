@@ -28,9 +28,10 @@ import org.gradle.model.Managed;
 import org.gradle.model.ModelSet;
 import org.gradle.model.Unmanaged;
 
-import java.io.File;
 import java.util.List;
 import java.util.Set;
+
+import java.io.File;
 
 /**
  * A Managed product flavor.

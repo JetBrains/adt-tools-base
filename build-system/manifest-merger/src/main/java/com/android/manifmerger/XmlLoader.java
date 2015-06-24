@@ -19,16 +19,11 @@ package com.android.manifmerger;
 import static com.android.manifmerger.ManifestMerger2.SystemProperty;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourceFile;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
-import com.google.common.base.Strings;
 
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.BufferedInputStream;

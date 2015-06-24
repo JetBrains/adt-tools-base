@@ -17,7 +17,6 @@
 package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.packaging.PackagingUtils;
 import com.android.utils.ILogger;
 
 import org.w3c.dom.Attr;

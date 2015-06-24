@@ -19,8 +19,6 @@ package com.android.build.gradle.ndk.internal;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.android.annotations.Nullable;
-import com.android.builder.core.BuilderConstants;
-import com.android.builder.model.AndroidProject;
 import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
 

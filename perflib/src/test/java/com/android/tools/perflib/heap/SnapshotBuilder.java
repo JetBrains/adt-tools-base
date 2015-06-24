@@ -20,7 +20,6 @@ import com.android.tools.perflib.heap.io.InMemoryBuffer;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Map;
 
 /**
  * Utility for creating Snapshot objects to be used in tests.

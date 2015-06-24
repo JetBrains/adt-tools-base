@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.model;
 
-import com.android.builder.model.ProductFlavor;
-
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.file.SourceDirectorySet;

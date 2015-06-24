@@ -21,8 +21,6 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 
-import junit.framework.TestCase;
-
 import org.junit.Test;
 
 import java.util.ArrayList;

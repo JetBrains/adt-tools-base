@@ -19,7 +19,6 @@ package com.android.build.gradle.ndk.internal;
 import com.android.build.gradle.internal.NdkHandler;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 
 import org.gradle.api.Action;
@@ -32,7 +31,6 @@ import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Configuration to setup STL for NDK.

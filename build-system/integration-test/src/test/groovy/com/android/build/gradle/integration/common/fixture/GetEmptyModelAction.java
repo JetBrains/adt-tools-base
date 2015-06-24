@@ -17,13 +17,9 @@
 package com.android.build.gradle.integration.common.fixture;
 
 import com.android.builder.model.AndroidProject;
-import com.google.common.collect.Maps;
 
 import org.gradle.tooling.BuildAction;
 import org.gradle.tooling.BuildController;
-import org.gradle.tooling.model.DomainObjectSet;
-import org.gradle.tooling.model.gradle.BasicGradleProject;
-import org.gradle.tooling.model.gradle.GradleBuild;
 
 import java.util.Collections;
 import java.util.Map;
