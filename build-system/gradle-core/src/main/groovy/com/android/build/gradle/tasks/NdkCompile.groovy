@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.tasks
+
 import com.android.annotations.NonNull
 import com.android.build.gradle.internal.dsl.CoreNdkOptions
 import com.android.build.gradle.internal.tasks.NdkTask
@@ -84,10 +85,15 @@ class NdkCompile extends NdkTask {
     @TaskAction
     void taskAction(IncrementalTaskInputs inputs) {
          if (!project.hasProperty(USE_DEPRECATED_NDK)) {
-             // TODO: Link to documentation on the new component model plugin.
-             logger.warn("Warning: NDK integration is deprecated.  Set " +
-                     "\"$USE_DEPRECATED_NDK=true\" in gradle.properties to continue using.");
-             return;
+             // Normally, we would catch the user when they try to configure the NDK, but NDK do
+             // not need to be configured by default.  Throw this exception during task execution in
+             // case we miss it.
+             throw new RuntimeException(
+                     "Error: NDK integration is deprecated in the current plugin.  Consider trying " +
+                             "the new experimental plugin.  For details, see " +
+                             "http://tools.android.com/tech-docs/new-build-system/gradle-experimental.  " +
+                             "Set \"$USE_DEPRECATED_NDK=true\" in gradle.properties to " +
+                             "continue using the current NDK integration.");
          }
 
 
