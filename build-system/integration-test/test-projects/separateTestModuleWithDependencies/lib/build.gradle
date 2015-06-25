@@ -1,0 +1,17 @@
+apply plugin: 'com.android.library'
+
+dependencies {
+    compile project(':jar')
+}
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        versionCode 12
+        versionName "2.0"
+        minSdkVersion 16
+        targetSdkVersion 16
+    }
+}
