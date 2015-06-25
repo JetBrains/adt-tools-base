@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.internal.dsl
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.internal.LoggingUtil
@@ -29,6 +30,9 @@ import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
+
+import static com.android.build.gradle.tasks.NdkCompile.USE_DEPRECATED_NDK
+
 /**
  * DSL object used to configure product flavors.
  */
@@ -359,10 +363,14 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
 
     void ndk(Action<NdkOptions> action) {
         action.execute(ndkConfig)
-        LoggingUtil.displayDeprecationWarning(
-                logger,
-                project,
-                "Current NDK support is deprecated.  Alternative will be provided in the future.");
+        if (!project.hasProperty(USE_DEPRECATED_NDK)) {
+            throw new RuntimeException(
+                    "Error: NDK integration is deprecated in the current plugin.  Consider trying " +
+                            "the new experimental plugin.  For details, see " +
+                            "http://tools.android.com/tech-docs/new-build-system/gradle-experimental.  " +
+                            "Set \"$USE_DEPRECATED_NDK=true\" in gradle.properties to " +
+                            "continue using the current NDK integration.");
+        }
     }
 
     /**
