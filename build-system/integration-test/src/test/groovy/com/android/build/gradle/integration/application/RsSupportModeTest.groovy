@@ -42,6 +42,7 @@ class RsSupportModeTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("rsSupportMode")
+            .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
     static AndroidProject model
 
