@@ -14,43 +14,79 @@
  * limitations under the License.
  */
 
-package com.android.ide.common.blame.output;
+package com.android.ide.common.blame;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.blame.*;
 import com.android.ide.common.blame.parser.ParsingFailedException;
 import com.android.ide.common.blame.parser.PatternAwareOutputParser;
 import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.res2.RecordingLogger;
 import com.android.utils.ILogger;
+import com.google.common.base.Charsets;
 
-import junit.framework.TestCase;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
-public class GradleMessageRewriterTest extends TestCase {
+public class ParsingProcessOutputHandlerTest {
 
-    private GradleMessageRewriter mMessageRewriter;
+    private static ParsingProcessOutputHandler sParsingProcessOutputHandler;
 
-    private ILogger mLogger;
+    private static RecordingLogger sLogger;
 
-    private PatternAwareOutputParser mFakePatternParser;
+    private static PatternAwareOutputParser sFakePatternParser;
 
-    @Override
-    public void setUp() throws Exception {
-        mLogger = new RecordingLogger();
-        mFakePatternParser = new FakePatternAwareOutputParser();
+    private static MessageReceiver sMessageReceiver;
 
-        mMessageRewriter = new GradleMessageRewriter(
-                new ToolOutputParser(mFakePatternParser, mLogger),
-                GradleMessageRewriter.ErrorFormatMode.MACHINE_PARSABLE);
+    @BeforeClass
+    public static void setUp() throws Exception {
+        sLogger = new RecordingLogger();
+        sFakePatternParser = new FakePatternAwareOutputParser();
+
+        sMessageReceiver = Mockito.mock(MessageReceiver.class);
+        sParsingProcessOutputHandler = new ParsingProcessOutputHandler(
+                new ToolOutputParser(sFakePatternParser, sLogger),
+                sMessageReceiver);
     }
 
-    public void testRewriteMessages() {
+    @Test
+    public void testRewriteMessages() throws IOException, ProcessException {
+
         String original = "error example\ntwo line error\nnext line\nsomething else";
-        String rewriten = mMessageRewriter.rewriteMessages(original);
+
+        sParsingProcessOutputHandler.handleOutput(processOutputFromErrorString(original));
+
+        Mockito.verify(sMessageReceiver).receiveMessage(new Message(
+                Message.Kind.ERROR,
+                "errorText",
+                "originalText",
+                new SourceFilePosition(
+                        new SourceFile(FakePatternAwareOutputParser.ERROR_EXAMPLE_FILE),
+                        new SourcePosition(1, 2, 3, 4, 5, 6)
+                )));
+
+        Mockito.verify(sMessageReceiver).receiveMessage(new Message(
+                Message.Kind.WARNING,
+                "two line warning",
+                new SourceFilePosition(
+                        new SourceFile(FakePatternAwareOutputParser.TWO_LINE_ERROR_FILE),
+                        new SourcePosition(1, 2, -1)
+                )));
+
+
+        Mockito.verify(sMessageReceiver).receiveMessage(new Message(
+                Message.Kind.SIMPLE,
+                "something else",
+                SourceFilePosition.UNKNOWN));
+        Mockito.verifyNoMoreInteractions(sMessageReceiver);
+
         String expected = "AGPBI: {"
                 + "\"kind\":\"error\","
                 + "\"text\":\"errorText\","
@@ -67,13 +103,21 @@ public class GradleMessageRewriterTest extends TestCase {
                 + "AGPBI: {\"kind\":\"simple\","
                 + "\"text\":\"something else\","
                 + "\"sources\":[{}]}";
-        assertEquals(expected.trim(), rewriten.trim());
     }
 
-    public void testParseException() {
+    @Test
+    public void parseException() throws IOException, ProcessException {
         String original = "two line error";
-        String rewriten = mMessageRewriter.rewriteMessages(original);
-        assertEquals(original, rewriten);
+
+        sParsingProcessOutputHandler.handleOutput(processOutputFromErrorString(original));
+
+        Mockito.verifyNoMoreInteractions(sMessageReceiver);
+    }
+
+    private static ProcessOutput processOutputFromErrorString(String original) throws IOException {
+        ProcessOutput processOutput = sParsingProcessOutputHandler.createOutput();
+        processOutput.getErrorOutput().write(original.getBytes(Charsets.UTF_8));
+        return processOutput;
     }
 
     private static class FakePatternAwareOutputParser implements PatternAwareOutputParser {

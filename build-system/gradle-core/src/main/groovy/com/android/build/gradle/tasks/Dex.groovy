@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
+import com.android.ide.common.process.LoggedProcessOutputHandler
 import com.android.utils.FileUtils
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import com.android.build.gradle.internal.PostCompilationData
@@ -164,7 +165,7 @@ public class Dex extends BaseTask {
                 tmpFolder,
                 incremental,
                 getOptimize(),
-                )
+                new LoggedProcessOutputHandler(getILogger()))
     }
 
 

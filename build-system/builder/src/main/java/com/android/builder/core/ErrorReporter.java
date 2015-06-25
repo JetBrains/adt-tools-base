@@ -18,15 +18,16 @@ package com.android.builder.core;
 
 import com.android.annotations.NonNull;
 import com.android.builder.model.SyncIssue;
+import com.android.ide.common.blame.MessageReceiver;
 
 /**
- * An error reporter for project evaluation.
+ * An error reporter for project evaluation and execution.
  *
  * The behavior of the reporter must vary depending on the evaluation mode
- * ({@link EvaluationErrorReporter.EvaluationMode}), indicating whether
+ * ({@link ErrorReporter.EvaluationMode}), indicating whether
  * the IDE is querying the project or not.
  */
-public abstract class EvaluationErrorReporter {
+public abstract class ErrorReporter implements MessageReceiver {
 
     public enum EvaluationMode {
         /** Standard mode, errors should be breaking */
@@ -42,7 +43,7 @@ public abstract class EvaluationErrorReporter {
     @NonNull
     private final EvaluationMode mMode;
 
-    protected EvaluationErrorReporter(@NonNull EvaluationMode mode) {
+    protected ErrorReporter(@NonNull EvaluationMode mode) {
         mMode = mode;
     }
 

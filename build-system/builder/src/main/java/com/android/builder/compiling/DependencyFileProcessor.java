@@ -32,8 +32,8 @@ import java.io.IOException;
  *
  * The instance will be called for each dependency file that is created during compilation.
  *
- * @see com.android.builder.core.AndroidBuilder#compileAllAidlFiles(java.util.List, java.io.File, java.io.File, java.util.List, DependencyFileProcessor)
- * @see com.android.builder.core.AndroidBuilder#compileAidlFile(java.io.File, java.io.File, java.io.File, java.io.File, java.util.List, DependencyFileProcessor)
+ * @see com.android.builder.core.AndroidBuilder#compileAllAidlFiles(java.util.List, File, File, java.util.List, DependencyFileProcessor, com.android.ide.common.process.ProcessOutputHandler)
+ * @see com.android.builder.core.AndroidBuilder#compileAidlFile(File, File, File, File, java.util.List, DependencyFileProcessor, com.android.ide.common.process.ProcessOutputHandler)
  */
 public interface DependencyFileProcessor {
 

@@ -28,9 +28,14 @@ import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.AaptPackageProcessBuilder;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.LibraryDependency;
+import com.android.ide.common.blame.ParsingProcessOutputHandler;
+import com.android.ide.common.blame.parser.ToolOutputParser;
+import com.android.ide.common.blame.parser.aapt.AaptOutputParser;
 import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -107,6 +112,7 @@ public class ProcessAndroidResources extends IncrementalTask {
         if (resOutBaseNameFile != null) {
             for (File file : packageOutputFolder.listFiles()) {
                 if (!isSplitPackage(file, resOutBaseNameFile)) {
+                    //noinspection ResultOfMethodCallIgnored
                     file.delete();
                 }
             }
@@ -129,10 +135,18 @@ public class ProcessAndroidResources extends IncrementalTask {
                         .setSplits(getSplits())
                         .setPreferredDensity(getPreferredDensity());
 
+        @NonNull
+        AndroidBuilder builder = getBuilder();
+        ProcessOutputHandler processOutputHandler = new ParsingProcessOutputHandler(
+                new ToolOutputParser(new AaptOutputParser(), getILogger()),
+                builder.getErrorReporter());
         try {
-            getBuilder().processResources(
+            builder.processResources(
                     aaptPackageCommandBuilder,
-                    getEnforceUniquePackageName());
+                    getEnforceUniquePackageName(),
+                    processOutputHandler);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } catch (ProcessException e) {
@@ -327,12 +341,13 @@ public class ProcessAndroidResources extends IncrementalTask {
         this.manifestFile = manifestFile;
     }
 
+    @NonNull
     @InputDirectory
     public File getResDir() {
         return resDir;
     }
 
-    public void setResDir(File resDir) {
+    public void setResDir(@NonNull File resDir) {
         this.resDir = resDir;
     }
 
