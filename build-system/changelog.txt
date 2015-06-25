@@ -31,6 +31,13 @@
 
     INSTRUMENTATION_TEST_RUNNER_ARGS="size=medium,foo=bar" ./gradlew cC
     ./gradlew cC -Pcom.android.tools.instrumentationTestRunnerArgs=size=medium,foo=bar
+- Arbitrary additional AAPT parameters can be set in build.gradle:
+    android {
+      aaptOptions {
+        additionalParameters "--custom_option", "value"
+      }
+    }
+- Resource names are validated before they are merged.
 
 1.2.0
 - Unit testing improvements
