@@ -55,9 +55,12 @@ import org.gradle.platform.base.ComponentType;
 import org.gradle.platform.base.ComponentTypeBuilder;
 import org.gradle.platform.base.LanguageType;
 import org.gradle.platform.base.LanguageTypeBuilder;
+import org.gradle.tooling.BuildException;
 
+import java.io.File;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Plugin to set up infrastructure for other android plugins.
@@ -69,9 +72,38 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
      */
     public static final String COMPONENT_NAME = "android";
 
+    //public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.5.*");
+    public static final String GRADLE_ACCEPTABLE_VERSION = "2.5";
+
+    private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
+            "com.android.build.gradle.overrideVersionCheck";
+
     @Override
     public void apply(Project project) {
+        checkGradleVersion(project);
         project.getPlugins().apply(ComponentModelBasePlugin.class);
+    }
+
+    private static void checkGradleVersion(Project project) {
+        String gradleVersion = project.getGradle().getGradleVersion();
+        if (!gradleVersion.startsWith(GRADLE_ACCEPTABLE_VERSION)) {
+            boolean allowNonMatching = Boolean.getBoolean(GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY);
+            File file = new File("gradle" + File.separator + "wrapper" + File.separator +
+                    "gradle-wrapper.properties");
+            String errorMessage = String.format(
+                    "Gradle version %s is required. Current version is %s. " +
+                            "If using the gradle wrapper, try editing the distributionUrl in %s " +
+                            "to gradle-%s-all.zip",
+                    GRADLE_ACCEPTABLE_VERSION, gradleVersion, file.getAbsolutePath(),
+                    GRADLE_ACCEPTABLE_VERSION);
+            if (allowNonMatching) {
+                project.getLogger().warn(errorMessage);
+                project.getLogger().warn("As %s is set, continuing anyways.",
+                        GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY);
+            } else {
+                throw new BuildException(errorMessage, null);
+            }
+        }
     }
 
     @SuppressWarnings("MethodMayBeStatic")
