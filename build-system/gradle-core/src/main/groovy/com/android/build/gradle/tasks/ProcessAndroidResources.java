@@ -13,97 +13,133 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.tasks
+package com.android.build.gradle.tasks;
 
-import com.android.annotations.NonNull
-import com.android.build.gradle.internal.LoggingUtil
-import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
-import com.android.build.gradle.internal.dsl.AaptOptions
-import com.android.build.gradle.internal.scope.ConventionMappingHelper
-import com.android.build.gradle.internal.scope.TaskConfigAction
-import com.android.build.gradle.internal.scope.VariantOutputScope
-import com.android.build.gradle.internal.tasks.IncrementalTask
-import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.builder.core.AaptPackageProcessBuilder
-import com.android.builder.core.VariantConfiguration
-import com.android.builder.core.VariantType
-import com.android.builder.dependency.LibraryDependency
-import com.google.common.collect.Iterators
-import com.google.common.collect.Lists
-import org.gradle.api.logging.Logging
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.Nested
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.ParallelizableTask
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.LoggingUtil;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl;
+import com.android.build.gradle.internal.dsl.AaptOptions;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantOutputScope;
+import com.android.build.gradle.internal.tasks.IncrementalTask;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.core.AaptPackageProcessBuilder;
+import com.android.builder.core.VariantType;
+import com.android.builder.dependency.LibraryDependency;
+import com.android.ide.common.process.ProcessException;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
+import org.gradle.api.logging.Logging;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Nested;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.ParallelizableTask;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class ProcessAndroidResources extends IncrementalTask {
 
-    // ----- PUBLIC TASK API -----
+    private File manifestFile;
 
-    @InputFile
-    File manifestFile
+    private File resDir;
 
-    @InputDirectory
-    File resDir
+    private File assetsDir;
 
-    @InputDirectory @Optional
-    File assetsDir
+    private File sourceOutputDir;
 
-    @OutputDirectory @Optional
-    File sourceOutputDir
+    private File textSymbolOutputDir;
 
-    @OutputDirectory @Optional
-    File textSymbolOutputDir
+    private File packageOutputFile;
 
-    @OutputFile @Optional
-    File packageOutputFile
+    private File proguardOutputFile;
 
-    @OutputFile @Optional
-    File proguardOutputFile
+    private Collection<String> resourceConfigs;
 
-    @Input
-    Collection<String> resourceConfigs
+    private String preferredDensity;
 
-    @Input @Optional
-    String preferredDensity
+    private List<SymbolFileProviderImpl> libraries;
 
-    // ----- PRIVATE TASK API -----
-    @Input
-    String getBuildToolsVersion() {
-        getBuildTools().getRevision()
+    private String packageForR;
+
+    private Collection<String> splits;
+
+    private boolean enforceUniquePackageName;
+
+    private VariantType type;
+
+    private boolean debuggable;
+
+    private boolean pseudoLocalesEnabled;
+
+    private AaptOptions aaptOptions;
+
+
+    @Override
+    protected void doFullTaskAction() {
+        // we have to clean the source folder output in case the package name changed.
+        File srcOut = getSourceOutputDir();
+        if (srcOut != null) {
+            emptyFolder(srcOut);
+        }
+
+        File resOutBaseNameFile = getPackageOutputFile();
+
+        // we have to check the resource output folder in case some splits were removed, we should
+        // manually remove them.
+        File packageOutputFolder = getResDir();
+        if (resOutBaseNameFile != null) {
+            for (File file : packageOutputFolder.listFiles()) {
+                if (!isSplitPackage(file, resOutBaseNameFile)) {
+                    file.delete();
+                }
+            }
+        }
+
+        AaptPackageProcessBuilder aaptPackageCommandBuilder =
+                new AaptPackageProcessBuilder(getManifestFile(), getAaptOptions())
+                        .setAssetsFolder(getAssetsDir())
+                        .setResFolder(getResDir())
+                        .setLibraries(getLibraries())
+                        .setPackageForR(getPackageForR())
+                        .setSourceOutputDir(absolutePath(srcOut))
+                        .setSymbolOutputDir(absolutePath(getTextSymbolOutputDir()))
+                        .setResPackageOutput(absolutePath(resOutBaseNameFile))
+                        .setProguardOutput(absolutePath(getProguardOutputFile()))
+                        .setType(getType())
+                        .setDebuggable(getDebuggable())
+                        .setPseudoLocalesEnabled(getPseudoLocalesEnabled())
+                        .setResourceConfigs(getResourceConfigs())
+                        .setSplits(getSplits())
+                        .setPreferredDensity(getPreferredDensity());
+
+        try {
+            getBuilder().processResources(
+                    aaptPackageCommandBuilder,
+                    getEnforceUniquePackageName());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ProcessException e) {
+            throw new RuntimeException(e);
+        }
     }
-
-    @Nested @Optional
-    List<SymbolFileProviderImpl> libraries
-
-    @Input @Optional
-    String packageForR
-
-    @Nested @Optional
-    Collection<String> splits
-
-    @Input
-    boolean enforceUniquePackageName
-
-    // this doesn't change from one build to another, so no need to annotate
-    VariantType type
-
-    @Input
-    boolean debuggable
-
-    @Input
-    boolean pseudoLocalesEnabled
-
-    @Nested
-    AaptOptions aaptOptions
 
     private boolean isSplitPackage(File file, File resBaseName) {
         if (file.getName().startsWith(resBaseName.getName())) {
@@ -116,187 +152,337 @@ public class ProcessAndroidResources extends IncrementalTask {
         return false;
     }
 
-    @Override
-    protected void doFullTaskAction() {
-        // we have to clean the source folder output in case the package name changed.
-        File srcOut = getSourceOutputDir()
-        if (srcOut != null) {
-            emptyFolder(srcOut)
-        }
-
-        File resOutBaseNameFile = getPackageOutputFile()
-
-        // we have to check the resource output folder in case some splits were removed, we should
-        // manually remove them.
-        File packageOutputFolder = getResDir()
-        if (resOutBaseNameFile != null) {
-            for (File file : packageOutputFolder.listFiles()) {
-                if (!isSplitPackage(file, resOutBaseNameFile)) {
-                    file.delete();
-                }
-            }
-        }
-
-        AaptPackageProcessBuilder aaptPackageCommandBuilder =
-                new AaptPackageProcessBuilder(getManifestFile(), getAaptOptions())
-                    .setAssetsFolder(getAssetsDir())
-                    .setResFolder(getResDir())
-                    .setLibraries(getLibraries())
-                    .setPackageForR(getPackageForR())
-                    .setSourceOutputDir(srcOut?.absolutePath)
-                    .setSymbolOutputDir(getTextSymbolOutputDir()?.absolutePath)
-                    .setResPackageOutput(resOutBaseNameFile?.absolutePath)
-                    .setProguardOutput(getProguardOutputFile()?.absolutePath)
-                    .setType(getType())
-                    .setDebuggable(getDebuggable())
-                    .setPseudoLocalesEnabled(getPseudoLocalesEnabled())
-                    .setResourceConfigs(getResourceConfigs())
-                    .setSplits(getSplits())
-                    .setPreferredDensity(getPreferredDensity())
-
-        getBuilder().processResources(
-                aaptPackageCommandBuilder,
-                getEnforceUniquePackageName())
+    @Nullable
+    private static String absolutePath(@Nullable File file) {
+        return file == null ? null : file.getAbsolutePath();
     }
 
     public static class ConfigAction implements TaskConfigAction<ProcessAndroidResources> {
 
-        VariantOutputScope scope;
-        File symbolLocation;
-        boolean generateResourcePackage;
+        private VariantOutputScope scope;
+        private File symbolLocation;
+        private boolean generateResourcePackage;
 
-        ConfigAction(VariantOutputScope scope, File symbolLocation, generateResourcePackage) {
-            this.scope = scope
-            this.symbolLocation = symbolLocation
-            this.generateResourcePackage = generateResourcePackage
+        public ConfigAction(
+                VariantOutputScope scope, File symbolLocation, boolean generateResourcePackage) {
+            this.scope = scope;
+            this.symbolLocation = symbolLocation;
+            this.generateResourcePackage = generateResourcePackage;
         }
 
         @Override
-        String getName() {
-            return scope.getTaskName("process", "Resources")
+        public String getName() {
+            return scope.getTaskName("process", "Resources");
         }
 
         @Override
-        Class<ProcessAndroidResources> getType() {
+        public Class<ProcessAndroidResources> getType() {
             return ProcessAndroidResources.class;
         }
 
         @Override
-        void execute(ProcessAndroidResources processResources) {
-            BaseVariantOutputData variantOutputData = scope.variantOutputData
-            BaseVariantData variantData = scope.variantScope.variantData
-            variantOutputData.processResourcesTask = processResources
-            VariantConfiguration config = variantData.getVariantConfiguration()
+        public void execute(ProcessAndroidResources processResources) {
+            final BaseVariantOutputData variantOutputData = scope.getVariantOutputData();
+            final BaseVariantData<? extends BaseVariantOutputData> variantData =
+                    scope.getVariantScope().getVariantData();
+            variantOutputData.processResourcesTask = processResources;
+            final GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
-            processResources.androidBuilder = scope.globalScope.androidBuilder
+            processResources.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
 
             if (variantData.getSplitHandlingPolicy() ==
                     BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
-                Set<String> allFilters = new HashSet<>();
-                allFilters.addAll(variantData.getFilters(com.android.build.OutputFile.FilterType.DENSITY))
-                allFilters.addAll(variantData.getFilters(com.android.build.OutputFile.FilterType.LANGUAGE))
+                Set<String> allFilters = new HashSet<String>();
+                allFilters.addAll(
+                        variantData.getFilters(com.android.build.OutputFile.FilterType.DENSITY));
+                allFilters.addAll(
+                        variantData.getFilters(com.android.build.OutputFile.FilterType.LANGUAGE));
                 processResources.splits = allFilters;
             }
 
             // only generate code if the density filter is null, and if we haven't generated
             // it yet (if you have abi + density splits, then several abi output will have no
             // densityFilter)
-            if (variantOutputData.getMainOutputFile().getFilter(com.android.build.OutputFile.DENSITY) == null
+            if (variantOutputData.getMainOutputFile()
+                    .getFilter(com.android.build.OutputFile.DENSITY) == null
                     && variantData.generateRClassTask == null) {
-                variantData.generateRClassTask = processResources
-                processResources.enforceUniquePackageName = scope.globalScope.getExtension().getEnforceUniquePackageName()
+                variantData.generateRClassTask = processResources;
+                processResources.enforceUniquePackageName = scope.getGlobalScope().getExtension()
+                        .getEnforceUniquePackageName();
 
-                ConventionMappingHelper.map(processResources, "libraries") {
-                    getTextSymbolDependencies(config.allLibraries)
-                }
-                ConventionMappingHelper.map(processResources, "packageForR") {
-                    config.originalApplicationId
-                }
+                ConventionMappingHelper.map(processResources, "libraries",
+                        new Callable<List<SymbolFileProviderImpl>>() {
+                            @Override
+                            public List<SymbolFileProviderImpl> call() throws Exception {
+                                return getTextSymbolDependencies(config.getAllLibraries());
+                            }
+                        });
+                ConventionMappingHelper.map(processResources, "packageForR",
+                        new Callable<String>() {
+                            @Override
+                            public String call() throws Exception {
+                                return config.getOriginalApplicationId();
+                            }
+                        });
 
                 // TODO: unify with generateBuilderConfig, compileAidl, and library packaging somehow?
-                ConventionMappingHelper.map(processResources, "sourceOutputDir") {
-                    scope.getVariantScope().getRClassSourceOutputDir();
-                }
+                processResources
+                        .setSourceOutputDir(scope.getVariantScope().getRClassSourceOutputDir());
+                processResources.setTextSymbolOutputDir(symbolLocation);
 
-                ConventionMappingHelper.map(processResources, "textSymbolOutputDir") {
-                    symbolLocation
-                }
-
-                if (config.buildType.isMinifyEnabled()) {
-                    if (config.buildType.shrinkResources && config.useJack) {
-                        LoggingUtil.displayWarning(Logging.getLogger(this.class), scope.globalScope.project,
-                                "shrinkResources does not yet work with useJack=true")
+                if (config.getBuildType().isMinifyEnabled()) {
+                    if (config.getBuildType().isShrinkResources() && config.getUseJack()) {
+                        LoggingUtil.displayWarning(Logging.getLogger(getClass()),
+                                scope.getGlobalScope().getProject(),
+                                "shrinkResources does not yet work with useJack=true");
                     }
-                    ConventionMappingHelper.map(processResources, "proguardOutputFile") {
-                        new File(
-                                "$scope.globalScope.buildDir/${FD_INTERMEDIATES}/proguard-rules/${config.dirName}/aapt_rules.txt")
-                    }
-                } else if (config.buildType.shrinkResources) {
-                    LoggingUtil.displayWarning(Logging.getLogger(this.class), scope.globalScope.project,
-                            "To shrink resources you must also enable ProGuard")
+                    processResources.setProguardOutputFile(
+                            scope.getVariantScope().getProcessAndroidResourcesProguardOutputFile());
+
+                } else if (config.getBuildType().isShrinkResources()) {
+                    LoggingUtil.displayWarning(Logging.getLogger(getClass()),
+                            scope.getGlobalScope().getProject(),
+                            "To shrink resources you must also enable ProGuard");
                 }
             }
 
-            ConventionMappingHelper.map(processResources, "manifestFile") {
-                variantOutputData.manifestProcessorTask.getOutputFile()
-            }
+            ConventionMappingHelper.map(processResources, "manifestFile", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return variantOutputData.manifestProcessorTask.getOutputFile();
+                }
+            });
 
-            ConventionMappingHelper.map(processResources, "resDir") {
-                variantData.finalResourcesDir
-            }
+            ConventionMappingHelper.map(processResources, "resDir", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return variantData.getFinalResourcesDir();
+                }
+            });
 
-            ConventionMappingHelper.map(processResources, "assetsDir") {
-                variantData.mergeAssetsTask.outputDir
-            }
+            ConventionMappingHelper.map(processResources, "assetsDir", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return variantData.mergeAssetsTask.getOutputDir();
+                }
+            });
 
             if (generateResourcePackage) {
-                ConventionMappingHelper.map(processResources, "packageOutputFile") {
-                    scope.getProcessResourcePackageOutputFile()
-                }
+                processResources.setPackageOutputFile(scope.getProcessResourcePackageOutputFile());
             }
 
-            ConventionMappingHelper.map(processResources, "type") { config.type }
-            ConventionMappingHelper.map(processResources, "debuggable") { config.buildType.debuggable }
-            ConventionMappingHelper.map(processResources, "aaptOptions") { scope.globalScope.getExtension().aaptOptions }
-            ConventionMappingHelper.map(processResources, "pseudoLocalesEnabled") { config.buildType.pseudoLocalesEnabled }
+            processResources.setType(config.getType());
+            processResources.setDebuggable(config.getBuildType().isDebuggable());
+            processResources.setAaptOptions(scope.getGlobalScope().getExtension().getAaptOptions());
+            processResources
+                    .setPseudoLocalesEnabled(config.getBuildType().isPseudoLocalesEnabled());
 
-            ConventionMappingHelper.map(processResources, "resourceConfigs") {
-                Collection<String> resConfigs = config.mergedFlavor.resourceConfigurations;
-                if (resConfigs != null && resConfigs.size() == 1
-                        && Iterators.getOnlyElement(resConfigs.iterator()).equals("auto")) {
+            ConventionMappingHelper.map(processResources, "resourceConfigs",
+                    new Callable<Collection<String>>() {
+                        @Override
+                        public Collection<String> call() throws Exception {
+                            Collection<String> resConfigs =
+                                    config.getMergedFlavor().getResourceConfigurations();
+                            if (resConfigs.size() == 1 &&
+                                    Iterators.getOnlyElement(resConfigs.iterator())
+                                            .equals("auto")) {
+                                return variantData.discoverListOfResourceConfigs();
+                            }
+                            return config.getMergedFlavor().getResourceConfigurations();
+                        }
+                    });
 
-                    return variantData.discoverListOfResourceConfigs();
-                }
-                return config.mergedFlavor.resourceConfigurations
-            }
+            ConventionMappingHelper.map(processResources, "preferredDensity",
+                    new Callable<String>() {
+                        @Override
+                        public String call() throws Exception {
+                            return variantOutputData.getMainOutputFile()
+                                    .getFilter(com.android.build.OutputFile.DENSITY);
+                        }
+                    });
 
-            ConventionMappingHelper.map(processResources, "preferredDensity") {
-                variantOutputData.getMainOutputFile().getFilter(com.android.build.OutputFile.DENSITY)
-            }
 
-        }
-
-        private static <T> Set<T> removeAllNullEntries(Set<T> input) {
-            HashSet<T> output = new HashSet<T>();
-            for (T element : input) {
-                if (element != null) {
-                    output.add(element);
-                }
-            }
-            return output;
         }
 
         @NonNull
         private static List<SymbolFileProviderImpl> getTextSymbolDependencies(
                 List<LibraryDependency> libraries) {
 
-            List<SymbolFileProviderImpl> list = Lists.newArrayListWithCapacity(libraries.size())
+            List<SymbolFileProviderImpl> list = Lists.newArrayListWithCapacity(libraries.size());
 
             for (LibraryDependency lib : libraries) {
-                list.add(new SymbolFileProviderImpl(lib))
+                list.add(new SymbolFileProviderImpl(lib));
             }
 
-            return list
+            return list;
         }
+    }
+
+    @InputFile
+    public File getManifestFile() {
+        return manifestFile;
+    }
+
+    public void setManifestFile(File manifestFile) {
+        this.manifestFile = manifestFile;
+    }
+
+    @InputDirectory
+    public File getResDir() {
+        return resDir;
+    }
+
+    public void setResDir(File resDir) {
+        this.resDir = resDir;
+    }
+
+    @OutputDirectory
+    @Optional
+    public File getAssetsDir() {
+        return assetsDir;
+    }
+
+    public void setAssetsDir(File assetsDir) {
+        this.assetsDir = assetsDir;
+    }
+
+    @OutputDirectory
+    @Optional
+    public File getSourceOutputDir() {
+        return sourceOutputDir;
+    }
+
+    public void setSourceOutputDir(File sourceOutputDir) {
+        this.sourceOutputDir = sourceOutputDir;
+    }
+
+    @OutputDirectory
+    @Optional
+    public File getTextSymbolOutputDir() {
+        return textSymbolOutputDir;
+    }
+
+    public void setTextSymbolOutputDir(File textSymbolOutputDir) {
+        this.textSymbolOutputDir = textSymbolOutputDir;
+    }
+
+    @OutputFile
+    @Optional
+    public File getPackageOutputFile() {
+        return packageOutputFile;
+    }
+
+    public void setPackageOutputFile(File packageOutputFile) {
+        this.packageOutputFile = packageOutputFile;
+    }
+
+    @OutputFile
+    @Optional
+    public File getProguardOutputFile() {
+        return proguardOutputFile;
+    }
+
+    public void setProguardOutputFile(File proguardOutputFile) {
+        this.proguardOutputFile = proguardOutputFile;
+    }
+
+    @Input
+    public Collection<String> getResourceConfigs() {
+        return resourceConfigs;
+    }
+
+    public void setResourceConfigs(Collection<String> resourceConfigs) {
+        this.resourceConfigs = resourceConfigs;
+    }
+
+    @Input
+    @Optional
+    public String getPreferredDensity() {
+        return preferredDensity;
+    }
+
+    public void setPreferredDensity(String preferredDensity) {
+        this.preferredDensity = preferredDensity;
+    }
+
+    @Input
+    String getBuildToolsVersion() {
+        return getBuildTools().getRevision().toString();
+    }
+
+    @Nested
+    @Optional
+    public List<SymbolFileProviderImpl> getLibraries() {
+        return libraries;
+    }
+
+    public void setLibraries(
+            List<SymbolFileProviderImpl> libraries) {
+        this.libraries = libraries;
+    }
+
+    @Input
+    @Optional
+    public String getPackageForR() {
+        return packageForR;
+    }
+
+    public void setPackageForR(String packageForR) {
+        this.packageForR = packageForR;
+    }
+
+    @Nested
+    @Optional
+    public Collection<String> getSplits() {
+        return splits;
+    }
+
+    public void setSplits(Collection<String> splits) {
+        this.splits = splits;
+    }
+
+    @Input
+    public boolean getEnforceUniquePackageName() {
+        return enforceUniquePackageName;
+    }
+
+    public void setEnforceUniquePackageName(boolean enforceUniquePackageName) {
+        this.enforceUniquePackageName = enforceUniquePackageName;
+    }
+
+    /** Does not change between incremental builds, so does not need to be @Input. */
+    public VariantType getType() {
+        return type;
+    }
+
+    public void setType(VariantType type) {
+        this.type = type;
+    }
+
+    @Input
+    public boolean getDebuggable() {
+        return debuggable;
+    }
+
+    public void setDebuggable(boolean debuggable) {
+        this.debuggable = debuggable;
+    }
+
+    @Input
+    public boolean getPseudoLocalesEnabled() {
+        return pseudoLocalesEnabled;
+    }
+
+    public void setPseudoLocalesEnabled(boolean pseudoLocalesEnabled) {
+        this.pseudoLocalesEnabled = pseudoLocalesEnabled;
+    }
+
+    @Nested
+    public AaptOptions getAaptOptions() {
+        return aaptOptions;
+    }
+
+    public void setAaptOptions(AaptOptions aaptOptions) {
+        this.aaptOptions = aaptOptions;
     }
 }
