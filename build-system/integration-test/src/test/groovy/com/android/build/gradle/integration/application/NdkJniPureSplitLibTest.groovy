@@ -32,6 +32,7 @@ class NdkJniPureSplitLibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("ndkJniPureSplitLib")
+            .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
 
     @BeforeClass
