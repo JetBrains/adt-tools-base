@@ -20,10 +20,10 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.scope.AndroidTask;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.TestAndroidConfig;
+import com.android.build.gradle.internal.scope.AndroidTask;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask;
 import com.android.build.gradle.internal.test.TestApplicationTestData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -47,7 +47,6 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -128,19 +127,32 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
     @Override
     @Nullable
     public File maybeCreateProguardTasks(
-            final TaskFactory tasks,
-            final VariantScope scope,
+            @NonNull final TaskFactory tasks,
+            @NonNull final VariantScope scope,
             @NonNull final PostCompilationData pcData) {
+        DependencyHandler dependencyHandler = project.getDependencies();
+        TestAndroidConfig testExtension = (TestAndroidConfig) extension;
+        Configuration testTargetMapping = project.getConfigurations().create("testTargetMapping");
+
+        dependencyHandler.add("testTargetMapping", dependencyHandler.project(
+                ImmutableMap.of(
+                        "path", testExtension.getTargetProjectPath(),
+                        "configuration", testExtension.getTargetVariant() + "-mapping"
+                )));
+
+        if (testTargetMapping.getFiles().isEmpty()
+                || scope.getVariantConfiguration().getProvidedOnlyJars().isEmpty()) {
+            return null;
+        }
+
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
 
         final TestModuleProGuardTask proguardTask = project.getTasks().create(
-                "proguard"+ variantData.getVariantConfiguration().getFullName().toUpperCase(
-                        Locale.getDefault()),
+                scope.getTaskName("proguard"),
                 TestModuleProGuardTask.class);
 
         variantData.obfuscationTask = proguardTask;
         proguardTask.setLogger(getLogger());
-        proguardTask.setVariantConfiguration(scope.getVariantConfiguration());
 
         // --- Output File ---
 
@@ -156,8 +168,6 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
                         variantData.getVariantConfiguration().getDirName()));
         variantData.obfuscatedClassesJar = outFile;
 
-        DependencyHandler dependencyHandler = project.getDependencies();
-        TestAndroidConfig testExtension = (TestAndroidConfig) extension;
 
         // and create the configuration for the project's classes.jar file.
         Configuration testClassesMapping = project.getConfigurations().create("testTargetClasses");
@@ -172,16 +182,9 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
         proguardTask.setClassesConfiguration(testClassesMapping);
 
         // and create the configuration for the project's mapping file.
-        Configuration testTargetMapping = project.getConfigurations().create("testTargetMapping");
-
-        dependencyHandler.add("testTargetMapping", dependencyHandler.project(
-                ImmutableMap.of(
-                        "path", testExtension.getTargetProjectPath(),
-                        "configuration", testExtension.getTargetVariant() + "-mapping"
-                )));
-
         // Input the mapping from the tested app so that we can deal with obfuscated code.
         proguardTask.setMappingConfiguration(testTargetMapping);
+        proguardTask.setVariantConfiguration(scope.getVariantConfiguration());
 
         // --- Proguard Config ---
 
