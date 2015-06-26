@@ -30,12 +30,19 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
 import javax.imageio.ImageIO;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Generates PNG images (and XML copies) from VectorDrawable files.
@@ -133,11 +140,32 @@ public class VectorDrawableRenderer {
         return folderType == ResourceFolderType.DRAWABLE;
     }
 
+    /**
+     * Parse the root element of the file, return true if it is a vector.
+     * TODO: Combine this with the drawing code, such that we don't parse the file twice.
+     */
+    private boolean isRootVector(File resourceFile) {
+        DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+        boolean result = false;
+        try {
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(resourceFile);
+            Element root = doc.getDocumentElement();
+            if (root != null && root.getNodeName().equalsIgnoreCase("vector")) {
+                result = true;
+            }
+        } catch (Exception e) {
+            mLogger.error(e, "Exception in parsing the XML resource" + e.getMessage());
+        } finally {
+            return result;
+        }
+    }
+
     public boolean needsPreprocessing(File resourceFile) {
-        // TODO: parse the root element of the file to check.
         return resourceFile.getPath().endsWith(".xml")
                 && isInDrawable(resourceFile)
-                && getEffectiveVersion(resourceFile) < MIN_SDK_WITH_VECTOR_SUPPORT;
+                && getEffectiveVersion(resourceFile) < MIN_SDK_WITH_VECTOR_SUPPORT
+                && isRootVector(resourceFile);
     }
 
     private int getEffectiveVersion(File resourceFile) {
