@@ -285,4 +285,22 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     public static String getReferenceClassName() {
         return "java.lang.ref.Reference";
     }
+
+    @NonNull
+    public List<ClassObj> getDescendantClasses() {
+        List<ClassObj> descendants = new ArrayList<ClassObj>();
+
+        Stack<ClassObj> searchStack = new Stack<ClassObj>();
+        searchStack.push(this);
+
+        while (!searchStack.isEmpty()) {
+            ClassObj classObj = searchStack.pop();
+            descendants.add(classObj);
+            for (ClassObj subClass : classObj.getSubclasses()) {
+                searchStack.push(subClass);
+            }
+        }
+
+        return descendants;
+    }
 }
