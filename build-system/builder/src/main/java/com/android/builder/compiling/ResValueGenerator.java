@@ -17,7 +17,6 @@ package com.android.builder.compiling;
 
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TYPE;
-import static com.android.SdkConstants.TAG_STRING;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_RESOURCES;
 import static com.google.common.base.Preconditions.checkNotNull;

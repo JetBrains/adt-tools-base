@@ -35,7 +35,6 @@ import com.android.sdklib.repository.FullRevision;
 import org.gradle.model.Managed;
 import org.gradle.model.ModelMap;
 import org.gradle.model.Unmanaged;
-import org.gradle.model.ModelSet;
 
 import java.util.Collection;
 import java.util.List;

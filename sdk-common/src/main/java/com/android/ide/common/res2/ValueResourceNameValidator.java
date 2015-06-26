@@ -18,7 +18,6 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.blame.SourceFilePosition;
 import com.android.resources.ResourceType;
 
 import java.io.File;

@@ -19,20 +19,16 @@ package com.android.builder.profile;
 import com.android.annotations.NonNull;
 import com.android.builder.tasks.Job;
 import com.android.builder.tasks.JobContext;
-import com.android.builder.tasks.QueueThreadContext;
 import com.android.builder.tasks.QueueThreadContextAdapter;
 import com.android.builder.tasks.Task;
 import com.android.builder.tasks.WorkQueue;
 import com.android.utils.ILogger;
 import com.google.gson.Gson;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Records all the {@link ExecutionRecord} for a process, in order it was received and sends then

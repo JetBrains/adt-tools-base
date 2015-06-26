@@ -16,7 +16,6 @@
 package com.android.ide.common.blame;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;

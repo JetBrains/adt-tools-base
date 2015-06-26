@@ -18,9 +18,6 @@ package com.android.sdklib.internal.repository;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.internal.repository.CanceledByUserException;
-import com.android.sdklib.internal.repository.DownloadCache;
-import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.utils.Pair;
 
 import org.apache.http.Header;

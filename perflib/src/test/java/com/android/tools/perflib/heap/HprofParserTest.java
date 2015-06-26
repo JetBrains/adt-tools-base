@@ -21,7 +21,6 @@ import com.android.tools.perflib.heap.io.MemoryMappedFileBuffer;
 import junit.framework.TestCase;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 

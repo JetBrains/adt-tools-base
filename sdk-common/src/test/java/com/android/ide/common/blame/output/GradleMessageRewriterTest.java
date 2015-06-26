@@ -24,7 +24,7 @@ import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
 import com.android.ide.common.res2.RecordingLogger;
 import com.android.utils.ILogger;
-import com.google.gson.GsonBuilder;
+
 import junit.framework.TestCase;
 
 import java.io.File;

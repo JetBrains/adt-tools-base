@@ -24,8 +24,6 @@ import static com.android.sdklib.SdkVersionInfo.getCodeName;
 import static com.android.sdklib.SdkVersionInfo.getVersion;
 import static com.android.sdklib.SdkVersionInfo.underlinesToCamelCase;
 
-import com.android.sdklib.SdkVersionInfo;
-
 import junit.framework.TestCase;
 
 public class SdkVersionInfoTest extends TestCase {

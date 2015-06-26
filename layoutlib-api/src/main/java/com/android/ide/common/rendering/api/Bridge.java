@@ -23,9 +23,7 @@ import com.android.ide.common.rendering.api.Result.Status;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.Collections;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Map;
 
 /**

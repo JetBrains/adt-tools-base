@@ -16,10 +16,6 @@
 
 package com.android.resources;
 
-import com.android.resources.FolderTypeRelationship;
-import com.android.resources.ResourceFolderType;
-import com.android.resources.ResourceType;
-
 import junit.framework.TestCase;
 
 public class FolderTypeRelationShipTest extends TestCase {

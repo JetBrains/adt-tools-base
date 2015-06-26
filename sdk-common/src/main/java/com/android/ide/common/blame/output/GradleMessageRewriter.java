@@ -19,7 +19,6 @@ import com.android.annotations.NonNull;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.MessageJsonSerializer;
 import com.android.ide.common.blame.SourceFilePosition;
-import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

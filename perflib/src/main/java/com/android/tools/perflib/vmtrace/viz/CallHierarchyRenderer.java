@@ -21,7 +21,6 @@ import com.android.tools.perflib.vmtrace.Call;
 import com.android.tools.perflib.vmtrace.ClockType;
 import com.android.tools.perflib.vmtrace.MethodInfo;
 import com.android.tools.perflib.vmtrace.ThreadInfo;
-import com.android.tools.perflib.vmtrace.TimeSelector;
 import com.android.tools.perflib.vmtrace.VmTraceData;
 import com.android.utils.HtmlBuilder;
 

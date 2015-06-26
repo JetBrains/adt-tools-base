@@ -27,7 +27,6 @@ import org.gradle.api.plugins.MavenPlugin;
 import org.gradle.api.tasks.Upload;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 /**

@@ -23,16 +23,12 @@ import com.android.build.gradle.internal.VariantModel;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.BuildType;
-import com.android.build.gradle.internal.dsl.CoreBuildType;
-import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.builder.core.VariantType;
 
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
-
-import java.util.Set;
 
 /**
  * Interface for Variant Factory.

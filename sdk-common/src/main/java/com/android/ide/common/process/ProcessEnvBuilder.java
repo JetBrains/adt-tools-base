@@ -34,7 +34,7 @@ public abstract class ProcessEnvBuilder<T extends ProcessEnvBuilder> {
      * @return this
      */
     @NonNull
-    public T addEnvironments(@NonNull Map<String, ? extends Object> map) {
+    public T addEnvironments(@NonNull Map<String, ?> map) {
         mEnvironment.putAll(map);
         return thisAsT();
     }

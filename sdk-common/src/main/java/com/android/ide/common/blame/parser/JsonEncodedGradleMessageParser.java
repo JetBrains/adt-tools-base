@@ -18,8 +18,6 @@ package com.android.ide.common.blame.parser;
 import com.android.annotations.NonNull;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.MessageJsonSerializer;
-import com.android.ide.common.blame.SourcePosition;
-import com.android.ide.common.blame.SourcePositionJsonTypeAdapter;
 import com.android.ide.common.blame.output.GradleMessageRewriter;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
 import com.android.utils.ILogger;

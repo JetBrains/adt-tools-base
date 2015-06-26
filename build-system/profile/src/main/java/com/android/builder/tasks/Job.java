@@ -17,7 +17,6 @@
 package com.android.builder.tasks;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.google.common.base.Objects;
 
 import java.io.IOException;

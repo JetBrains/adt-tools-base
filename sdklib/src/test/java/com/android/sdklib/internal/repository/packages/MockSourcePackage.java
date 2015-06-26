@@ -17,8 +17,6 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.internal.repository.packages.SourcePackage;
-import com.android.sdklib.internal.repository.packages.SystemImagePackage;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 
 

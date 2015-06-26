@@ -18,8 +18,6 @@ package com.android.build.gradle.ndk.internal;
 
 import org.gradle.api.plugins.ExtensionAware;
 import org.gradle.language.nativeplatform.internal.DefaultPreprocessingTool;
-import org.gradle.nativeplatform.Tool;
-import org.gradle.nativeplatform.internal.AbstractNativeBinarySpec;
 import org.gradle.platform.base.BinarySpec;
 
 /**
