@@ -31,6 +31,7 @@ import com.android.ide.common.res2.FileStatus
 import com.android.ide.common.res2.FileValidity
 import com.android.ide.common.res2.MergedAssetWriter
 import com.android.ide.common.res2.MergingException
+import com.android.utils.FileUtils
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.ParallelizableTask
@@ -65,7 +66,7 @@ public class MergeAssets extends IncrementalTask {
     protected void doFullTaskAction() {
         // this is full run, clean the previous output
         File destinationDir = getOutputDir()
-        emptyFolder(destinationDir)
+        FileUtils.emptyFolder(destinationDir)
 
         List<AssetSet> assetSets = getInputAssetSets()
 

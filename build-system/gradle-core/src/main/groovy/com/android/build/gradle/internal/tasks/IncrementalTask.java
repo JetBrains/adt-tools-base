@@ -27,6 +27,7 @@ import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 import org.gradle.api.tasks.incremental.InputFileDetails;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +58,7 @@ public abstract class IncrementalTask extends BaseTask {
      * {@link #isIncremental()} returns false.
      *
      */
-    protected abstract void doFullTaskAction();
+    protected abstract void doFullTaskAction() throws IOException;
 
     /**
      * Optional incremental task action.
@@ -65,7 +66,7 @@ public abstract class IncrementalTask extends BaseTask {
      *
      * @param changedInputs the changed input files.
      */
-    protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) {
+    protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
         // do nothing.
     }
 
@@ -74,7 +75,7 @@ public abstract class IncrementalTask extends BaseTask {
      * Calls out to the doTaskAction as needed.
      */
     @TaskAction
-    void taskAction(IncrementalTaskInputs inputs) {
+    void taskAction(IncrementalTaskInputs inputs) throws IOException {
         if (!isIncremental()) {
             doFullTaskAction();
             return;

@@ -41,6 +41,7 @@ import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestException;
 import com.android.ide.common.process.ProcessExecutor;
+import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableList;
 
@@ -85,10 +86,10 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
             TestRunner.NoAuthorizedDeviceFoundException, TestException {
 
         File resultsOutDir = getResultsDir();
-        emptyFolder(resultsOutDir);
+        FileUtils.emptyFolder(resultsOutDir);
 
         File coverageOutDir = getCoverageDir();
-        emptyFolder(coverageOutDir);
+        FileUtils.emptyFolder(coverageOutDir);
 
         boolean success = false;
         // If there are tests to run, and the test runner returns with no results, we fail (since
@@ -127,7 +128,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
 
         // run the report from the results.
         File reportOutDir = getReportsDir();
-        emptyFolder(reportOutDir);
+        FileUtils.emptyFolder(reportOutDir);
 
         TestReport report = new TestReport(ReportType.SINGLE_FLAVOR, resultsOutDir, reportOutDir);
         report.generateReport();

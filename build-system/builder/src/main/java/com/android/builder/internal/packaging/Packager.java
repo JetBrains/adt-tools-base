@@ -556,11 +556,12 @@ public final class Packager implements IArchiveBuilder {
             if (!file.canWrite()) {
                 throw new PackagerException("Cannot write %s", file);
             }
-            FileUtils.deleteFolder(file);
         }
 
-        if (!file.mkdirs()) {
-            throw new PackagerException("Failed to create %s", file);
+        try {
+            FileUtils.emptyFolder(file);
+        } catch (IOException e) {
+            throw new PackagerException(e);
         }
     }
 
