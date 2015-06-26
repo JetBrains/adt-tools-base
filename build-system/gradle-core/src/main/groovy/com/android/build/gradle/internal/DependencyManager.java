@@ -376,7 +376,7 @@ public class DependencyManager {
         gatherJarDependencies(jarInfoSet, packagedJars, false /*compiled*/, true /*packaged*/);
         // at this step, we know that libraries have been checked and libraries can only
         // be in both compiled and packaged scope.
-        gatherJarDependenciesFromLibraries(jarInfoSet, compiledAndroidLibraries, true, true);
+        gatherJarDependenciesFromLibraries(jarInfoSet, compiledAndroidLibraries);
 
         // the final list of JarDependency, created from the list of JarInfo.
         List<JarDependency> jars = Lists.newArrayListWithCapacity(jarInfoSet.size());
@@ -644,18 +644,14 @@ public class DependencyManager {
 
     private static void gatherJarDependenciesFromLibraries(
             Set<JarInfo> outJarInfos,
-            Collection<LibInfo> inLibraryDependencies,
-            boolean compiled,
-            boolean packaged) {
+            Collection<LibInfo> inLibraryDependencies) {
         for (LibInfo libInfo : inLibraryDependencies) {
-            gatherJarDependencies(outJarInfos, libInfo.getJarDependencies(), compiled, packaged);
+            gatherJarDependencies(outJarInfos, libInfo.getJarDependencies(),
+                    true, !libInfo.isOptional());
 
-            //noinspection unchecked
             gatherJarDependenciesFromLibraries(
                     outJarInfos,
-                    (Collection<LibInfo>) (Collection<?>) libInfo.getDependencies(),
-                    compiled,
-                    packaged);
+                    libInfo.getLibInfoDependencies());
         }
     }
 
