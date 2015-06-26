@@ -16,6 +16,8 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ddmlib.AdbHelper.AdbResponse;
 import com.android.ddmlib.FileListingService.FileEntry;
 import com.android.ddmlib.SyncException.SyncError;
@@ -29,6 +31,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Sync service class to push/pull to/from devices/emulators, through the debug bridge.
@@ -107,6 +110,30 @@ public class SyncService {
          * @param work the amount of work done.
          */
         void advance(int work);
+    }
+
+    public static class FileStat {
+      private final int myMode;
+      private final int mySize;
+      private final Date myLastModified;
+
+      public FileStat(int mode, int size, int lastModifiedSecs) {
+        myMode = mode;
+        mySize = size;
+        myLastModified = new Date((long)(lastModifiedSecs) * 1000);
+      }
+
+      public int getMode() {
+        return myMode;
+      }
+
+      public int getSize() {
+        return mySize;
+      }
+
+      public Date getLastModified() {
+        return myLastModified;
+      }
     }
 
     /**
@@ -307,10 +334,10 @@ public class SyncService {
      */
     public void pullFile(String remoteFilepath, String localFilename,
             ISyncProgressMonitor monitor) throws TimeoutException, IOException, SyncException {
-        Integer mode = readMode(remoteFilepath);
-        if (mode == null) {
+        FileStat fileStat = statFile(remoteFilepath);
+        if (fileStat == null) {
             // attempts to download anyway
-        } else if (mode == 0) {
+        } else if (fileStat.getMode() == 0) {
             throw new SyncException(SyncError.NO_REMOTE_OBJECT);
         }
 
@@ -626,6 +653,7 @@ public class SyncService {
         byte[] msg;
 
         final int timeOut = DdmPreferences.getTimeOut();
+        File f = new File(localPath);
 
         try {
             byte[] remotePathContent = remotePath.getBytes(AdbHelper.DEFAULT_ENCODING);
@@ -633,8 +661,6 @@ public class SyncService {
             if (remotePathContent.length > REMOTE_PATH_MAX_LENGTH) {
                 throw new SyncException(SyncError.REMOTE_PATH_LENGTH);
             }
-
-            File f = new File(localPath);
 
             // create the stream to read the file
             fis = new FileInputStream(f);
@@ -683,7 +709,7 @@ public class SyncService {
         }
 
         // create the DONE message
-        long time = System.currentTimeMillis() / 1000;
+        long time = f.lastModified() / 1000;
         msg = createReq(ID_DONE, (int)time);
 
         // and send it.
@@ -727,14 +753,15 @@ public class SyncService {
     }
 
     /**
-     * Returns the mode of the remote file.
+     * Returns the stat info of the remote file.
      * @param path the remote file
-     * @return an Integer containing the mode if all went well or null
+     * @return an FileStat containing the mode, size and last modified info if all went well or null
      *      otherwise
      * @throws IOException
      * @throws TimeoutException in case of a timeout reading responses from the device.
      */
-    private Integer readMode(String path) throws TimeoutException, IOException {
+    @Nullable
+    public FileStat statFile(@NonNull String path) throws TimeoutException, IOException {
         // create the stat request message.
         byte[] msg = createFileReq(ID_STAT, path);
 
@@ -750,8 +777,10 @@ public class SyncService {
             return null;
         }
 
-        // we return the mode (2nd int in the array)
-        return ArrayHelper.swap32bitFromArray(statResult, 4);
+        final int mode = ArrayHelper.swap32bitFromArray(statResult, 4);
+        final int size = ArrayHelper.swap32bitFromArray(statResult, 8);
+        final int lastModifiedSecs = ArrayHelper.swap32bitFromArray(statResult, 12);
+        return new FileStat(mode, size, lastModifiedSecs);
     }
 
     /**
