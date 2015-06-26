@@ -18,14 +18,12 @@ package com.android.build.gradle.tasks;
 
 import com.android.builder.core.VariantConfiguration;
 
+import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
-import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.tasks.TaskAction;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.LinkedHashMap;
 
 import proguard.ParseException;
 import proguard.gradle.ProGuardTask;
@@ -68,11 +66,6 @@ public class TestModuleProGuardTask extends ProGuardTask {
     @Override
     @TaskAction
     public void proguard() throws ParseException, IOException {
-        if (mappingConfiguration.getFiles().isEmpty()
-                || variantConfiguration.getProvidedOnlyJars().isEmpty()) {
-            return;
-        }
-
         if (logger.isEnabled(LogLevel.INFO)) {
             logger.info("test module mapping file " + mappingConfiguration.getSingleFile());
             for (Object file : variantConfiguration.getPackagedJars()) {

@@ -16,6 +16,11 @@
 
 package com.android.build.gradle.internal;
 
+import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
+import static com.android.SdkConstants.LIBS_FOLDER;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -62,10 +67,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
-
-import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
-import static com.android.SdkConstants.LIBS_FOLDER;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * TaskManager for creating tasks in an Android library project.
@@ -379,6 +380,7 @@ public class LibraryTaskManager extends TaskManager {
                         public Void call() throws Exception {
                             File outFile = maybeCreateProguardTasks(tasks, variantScope,
                                     pcData);
+                            checkNotNull(outFile);
                             pcData.setInputFiles(Collections.singletonList(outFile));
                             pcData.setInputDirCallable(null);
                             pcData.setInputLibraries(Collections.<File>emptyList());
