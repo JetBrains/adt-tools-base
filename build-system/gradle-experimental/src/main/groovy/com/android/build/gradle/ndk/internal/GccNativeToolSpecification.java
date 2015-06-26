@@ -20,15 +20,11 @@ import com.android.SdkConstants;
 import com.android.builder.core.BuilderConstants;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 
 import org.gradle.nativeplatform.BuildType;
 import org.gradle.nativeplatform.platform.NativePlatform;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * Flag configuration for GCC toolchain.

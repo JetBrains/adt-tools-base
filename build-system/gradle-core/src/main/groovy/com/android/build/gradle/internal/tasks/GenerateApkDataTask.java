@@ -21,18 +21,14 @@ import static com.android.SdkConstants.FD_RES_RAW;
 import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApkVariantData;
-import com.android.build.gradle.tasks.AidlCompile;
 import com.android.builder.core.AndroidBuilder;
-import com.android.builder.core.VariantConfiguration;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.process.ProcessException;
-import com.android.utils.StringHelper;
 import com.google.common.io.Files;
 
 import org.gradle.api.artifacts.Configuration;

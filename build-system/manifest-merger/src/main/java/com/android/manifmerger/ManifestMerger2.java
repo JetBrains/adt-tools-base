@@ -867,7 +867,7 @@ public class ManifestMerger2 {
             /**
              * Do no perform placeholders replacement.
              */
-            NO_PLACEHOLDER_REPLACEMENT;
+            NO_PLACEHOLDER_REPLACEMENT
         }
 
         /**

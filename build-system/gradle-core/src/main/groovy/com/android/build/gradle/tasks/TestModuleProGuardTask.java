@@ -23,9 +23,7 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.tasks.TaskAction;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.LinkedHashMap;
 
 import proguard.ParseException;
 import proguard.gradle.ProGuardTask;

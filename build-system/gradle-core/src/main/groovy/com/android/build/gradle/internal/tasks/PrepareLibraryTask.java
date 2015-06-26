@@ -16,8 +16,7 @@
 package com.android.build.gradle.internal.tasks;
 
 import com.android.build.gradle.internal.LibraryCache;
-import com.android.builder.Version;
-import org.gradle.api.tasks.Input;
+
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;

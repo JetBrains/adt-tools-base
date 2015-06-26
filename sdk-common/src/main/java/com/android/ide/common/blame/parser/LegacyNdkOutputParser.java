@@ -28,6 +28,7 @@ import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Parses output from the legacy NDK support.
@@ -116,8 +117,8 @@ public class LegacyNdkOutputParser implements PatternAwareOutputParser {
                             Message.Kind kind = Message.Kind.INFO;
 
                             String severity =
-                                    line.substring(colonIndex3 + 1, colonIndex4).toLowerCase()
-                                            .trim();
+                                    line.substring(colonIndex3 + 1,
+                                            colonIndex4).toLowerCase(Locale.getDefault()).trim();
                             if (severity.endsWith("error")) {
                                 kind = Message.Kind.ERROR;
                             } else if (severity.endsWith("warning")) {

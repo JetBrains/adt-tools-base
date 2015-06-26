@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -387,7 +388,7 @@ class VdParser {
             float size = 0;
             if (matcher.matches()) {
                 float v = Float.parseFloat(matcher.group(1));
-                String unit = matcher.group(3).toLowerCase();
+                String unit = matcher.group(3).toLowerCase(Locale.getDefault());
                 size = v;
             }
             // -- Extract dimension units.

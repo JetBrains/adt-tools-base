@@ -20,10 +20,8 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.SyncIssue;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.utils.Pair;
 import com.android.utils.StringHelper;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 import org.gradle.api.GradleException;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
@@ -31,7 +29,6 @@ import org.gradle.api.tasks.TaskAction;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class PrepareDependenciesTask extends BaseTask {
 

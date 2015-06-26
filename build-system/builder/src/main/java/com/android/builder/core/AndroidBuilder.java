@@ -127,8 +127,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * This is the main builder class. It is given all the data to process the build (such as

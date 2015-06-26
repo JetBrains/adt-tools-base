@@ -9,7 +9,6 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.utils.StringHelper;
 
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;

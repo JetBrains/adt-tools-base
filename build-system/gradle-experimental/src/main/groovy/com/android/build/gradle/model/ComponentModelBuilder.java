@@ -35,7 +35,6 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.AndroidProject;
 
 import org.gradle.api.Project;
-import org.gradle.model.ModelMap;
 import org.gradle.model.internal.core.ModelPath;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.model.internal.type.ModelType;

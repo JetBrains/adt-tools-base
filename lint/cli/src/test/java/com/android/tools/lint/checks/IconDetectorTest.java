@@ -799,8 +799,8 @@ public class IconDetectorTest extends AbstractCheckTest {
                         List<OutputFile> outputFiles = Collections.singletonList(outputFile);
                         OngoingStubbing<? extends Collection<? extends OutputFile>> when = when(
                                 artifactOutput.getOutputs());
-                        //noinspection unchecked
-                        ((OngoingStubbing<Collection<? extends OutputFile>>) when)
+                        //noinspection unchecked,RedundantCast
+                        ((OngoingStubbing<Collection<? extends OutputFile>>) (OngoingStubbing<?>) when)
                                 .thenReturn(outputFiles);
 
                         return artifactOutput;

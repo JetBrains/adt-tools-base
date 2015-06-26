@@ -17,9 +17,7 @@
 package com.android.build.gradle.internal.tasks;
 
 import com.android.builder.testing.MockableJarGenerator;
-import com.android.sdklib.internal.project.ProjectProperties;
 
-import groovy.transform.CompileStatic;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;

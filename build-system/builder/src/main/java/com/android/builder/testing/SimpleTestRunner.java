@@ -21,7 +21,6 @@ import com.android.annotations.Nullable;
 import com.android.builder.internal.InstallUtils;
 import com.android.builder.internal.testing.CustomTestRunListener;
 import com.android.builder.internal.testing.SimpleTestCallable;
-import com.android.builder.testing.api.DeviceConfig;
 import com.android.builder.testing.api.DeviceConfigProviderImpl;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;

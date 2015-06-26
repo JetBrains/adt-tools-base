@@ -364,7 +364,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         List<AndroidArtifactOutput> outputs = Lists.newArrayListWithCapacity(variantOutputs.size());
 
         CoreNdkOptions ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
-        Collection<NativeLibrary> nativeLibraries = ImmutableList.of();;
+        Collection<NativeLibrary> nativeLibraries = ImmutableList.of();
         if (ndkHandler.getNdkDirectory() != null) {
             if (config.getSplits().getAbi().isEnable()) {
                 nativeLibraries = createNativeLibraries(
