@@ -698,17 +698,17 @@ final class Device implements IDevice {
         removeClientInfo(client);
     }
 
-    /**
-     * Sets the client monitoring socket.
-     * @param socketChannel the sockets
-     */
-    void setClientMonitoringSocket(SocketChannel socketChannel) {
+    /** Sets the socket channel on which a track-jdwp command for this device has been sent. */
+    void setClientMonitoringSocket(@NonNull SocketChannel socketChannel) {
         mSocketChannel = socketChannel;
     }
 
     /**
-     * Returns the client monitoring socket.
+     * Returns the channel on which responses to the track-jdwp command will be available if it
+     * has been set, null otherwise. The channel is set via {@link #setClientMonitoringSocket(SocketChannel)},
+     * which is usually invoked when the device goes online.
      */
+    @Nullable
     SocketChannel getClientMonitoringSocket() {
         return mSocketChannel;
     }

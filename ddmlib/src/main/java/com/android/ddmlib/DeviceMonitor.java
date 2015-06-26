@@ -16,10 +16,13 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ddmlib.AdbHelper.AdbResponse;
 import com.android.ddmlib.ClientData.DebuggerStatus;
 import com.android.ddmlib.DebugPortManager.IDebugPortProvider;
 import com.android.ddmlib.IDevice.DeviceState;
+import com.google.common.util.concurrent.Uninterruptibles;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -38,18 +41,30 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
- * A Device monitor. This connects to the Android Debug Bridge and get device and
- * debuggable process information from it.
+ * The {@link DeviceMonitor} monitors devices attached to adb.
+ *
+ * On one thread, it first establishes a socket connection to the adb host, and issues a
+ * {@link #ADB_TRACK_DEVICES_COMMAND}. It then monitors that socket for all changes about device
+ * connection and device state.
+ *
+ * For each device that is detected to be online, it then opens a new socket connection to adb,
+ * and issues a "track-jdwp" command to that device. On this connection, it monitors active
+ * clients on the device. Note: a single thread monitors jdwp connections from all devices.
+ * The different socket connections to adb (one per device) are multiplexed over a single selector.
  */
 final class DeviceMonitor {
-    private byte[] mLengthBuffer = new byte[4];
-    private byte[] mLengthBuffer2 = new byte[4];
+    private static final String ADB_TRACK_DEVICES_COMMAND = "host:track-devices";
+    private static final String ADB_TRACK_JDWP_COMMAND = "track-jdwp";
 
-    private boolean mQuit = false;
+    private final byte[] mLengthBuffer = new byte[4];
+    private final byte[] mLengthBuffer2 = new byte[4];
 
-    private AndroidDebugBridge mServer;
+    private volatile boolean mQuit = false;
+
+    private final AndroidDebugBridge mServer;
 
     private SocketChannel mMainAdbConnection = null;
     private boolean mMonitoring = false;
@@ -59,20 +74,17 @@ final class DeviceMonitor {
 
     private Selector mSelector;
 
-    private final ArrayList<Device> mDevices = new ArrayList<Device>();
-
-    private final ArrayList<Integer> mDebuggerPorts = new ArrayList<Integer>();
-
-    private final HashMap<Client, Integer> mClientsToReopen = new HashMap<Client, Integer>();
+    private final List<Device> mDevices = new ArrayList<Device>();
+    private final List<Integer> mDebuggerPorts = new ArrayList<Integer>();
+    private final Map<Client, Integer> mClientsToReopen = new HashMap<Client, Integer>();
 
     /**
      * Creates a new {@link DeviceMonitor} object and links it to the running
      * {@link AndroidDebugBridge} object.
      * @param server the running {@link AndroidDebugBridge}.
      */
-    DeviceMonitor(AndroidDebugBridge server) {
+    DeviceMonitor(@NonNull AndroidDebugBridge server) {
         mServer = server;
-
         mDebuggerPorts.add(DdmPreferences.getDebugPortBase());
     }
 
@@ -112,7 +124,6 @@ final class DeviceMonitor {
 
     /**
      * Returns if the monitor is currently connected to the debug bridge server.
-     * @return
      */
     boolean isMonitoring() {
         return mMonitoring;
@@ -129,7 +140,7 @@ final class DeviceMonitor {
     /**
      * Returns the devices.
      */
-    Device[] getDevices() {
+    @NonNull Device[] getDevices() {
         synchronized (mDevices) {
             return mDevices.toArray(new Device[mDevices.size()]);
         }
@@ -139,6 +150,7 @@ final class DeviceMonitor {
         return mInitialDeviceListDone;
     }
 
+    @NonNull
     AndroidDebugBridge getServer() {
         return mServer;
     }
@@ -146,7 +158,7 @@ final class DeviceMonitor {
     void addClientToDropAndReopen(Client client, int port) {
         synchronized (mClientsToReopen) {
             Log.d("DeviceMonitor",
-                    "Adding " + client + " to list of client to reopen (" + port +").");
+                    "Adding " + client + " to list of client to reopen (" + port + ").");
             if (mClientsToReopen.get(client) == null) {
                 mClientsToReopen.put(client, port);
             }
@@ -202,14 +214,14 @@ final class DeviceMonitor {
             } catch (AsynchronousCloseException ace) {
                 // this happens because of a call to Quit. We do nothing, and the loop will break.
             } catch (TimeoutException ioe) {
-                handleExpectionInMonitorLoop(ioe);
+                handleExceptionInMonitorLoop(ioe);
             } catch (IOException ioe) {
-                handleExpectionInMonitorLoop(ioe);
+                handleExceptionInMonitorLoop(ioe);
             }
         } while (!mQuit);
     }
 
-    private void handleExpectionInMonitorLoop(Exception e) {
+    private void handleExceptionInMonitorLoop(@NonNull Exception e) {
         if (!mQuit) {
             if (e instanceof TimeoutException) {
                 Log.e("DeviceMonitor", "Adb connection Error: timeout");
@@ -245,18 +257,16 @@ final class DeviceMonitor {
     /**
      * Sleeps for a little bit.
      */
-    private void waitABit() {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e1) {
-        }
+    private static void waitABit() {
+        Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
     }
 
     /**
      * Attempts to connect to the debug bridge server.
      * @return a connect socket if success, null otherwise
      */
-    private SocketChannel openAdbConnection() {
+    @Nullable
+    private static SocketChannel openAdbConnection() {
         Log.d("DeviceMonitor", "Connecting to adb for Device List Monitoring...");
 
         SocketChannel adbChannel = null;
@@ -269,20 +279,13 @@ final class DeviceMonitor {
         return adbChannel;
     }
 
-    /**
-     *
-     * @return
-     * @throws IOException
-     */
     private boolean sendDeviceListMonitoringRequest() throws TimeoutException, IOException {
-        byte[] request = AdbHelper.formAdbRequest("host:track-devices"); //$NON-NLS-1$
+        byte[] request = AdbHelper.formAdbRequest(ADB_TRACK_DEVICES_COMMAND); //$NON-NLS-1$
 
         try {
             AdbHelper.write(mMainAdbConnection, request);
 
-            AdbResponse resp = AdbHelper.readAdbResponse(mMainAdbConnection,
-                    false /* readDiagString */);
-
+            AdbResponse resp = AdbHelper.readAdbResponse(mMainAdbConnection, false);
             if (!resp.okay) {
                 // request was refused by adb!
                 Log.e("DeviceMonitor", "adb refused request: " + resp.message);
@@ -303,8 +306,7 @@ final class DeviceMonitor {
         if (length > 0) {
             byte[] buffer = new byte[length];
             String result = read(mMainAdbConnection, buffer);
-
-            String[] devices = result.split("\n"); //$NON-NLS-1$
+            String[] devices = result == null ? new String[0] : result.split("\n"); //$NON-NLS-1$
 
             for (String d : devices) {
                 String[] param = d.split("\t"); //$NON-NLS-1$
@@ -324,16 +326,17 @@ final class DeviceMonitor {
     }
 
     /**
-     *  Updates the device list with the new items received from the monitoring service.
+     * Updates the device list with the new items received from the monitoring service.
      */
-    private void updateDevices(ArrayList<Device> newList) {
+    private void updateDevices(@NonNull List<Device> newList) {
         // because we are going to call mServer.deviceDisconnected which will acquire this lock
         // we lock it first, so that the AndroidDebugBridge lock is always locked first.
         synchronized (AndroidDebugBridge.getLock()) {
             // array to store the devices that must be queried for information.
             // it's important to not do it inside the synchronized loop as this could block
             // the whole workspace (this lock is acquired during build too).
-            ArrayList<Device> devicesToQuery = new ArrayList<Device>();
+            List<Device> devicesToQuery = new ArrayList<Device>();
+
             synchronized (mDevices) {
                 // For each device in the current list, we look for a matching the new list.
                 // * if we find it, we update the current object with whatever new information
@@ -424,7 +427,7 @@ final class DeviceMonitor {
         newList.clear();
     }
 
-    private void removeDevice(Device device) {
+    private void removeDevice(@NonNull Device device) {
         device.clearClientList();
         mDevices.remove(device);
 
@@ -442,7 +445,7 @@ final class DeviceMonitor {
      * Queries a device for its build info.
      * @param device the device to query.
      */
-    private void queryNewDeviceForInfo(Device device) {
+    private static void queryNewDeviceForInfo(@NonNull Device device) {
         // TODO: do this in a separate thread.
         try {
             queryProperties(device);
@@ -462,18 +465,15 @@ final class DeviceMonitor {
         } catch (TimeoutException e) {
             Log.w("DeviceMonitor", String.format("Connection timeout getting info for device %s",
                     device.getSerialNumber()));
-
         } catch (AdbCommandRejectedException e) {
             // This should never happen as we only do this once the device is online.
             Log.w("DeviceMonitor", String.format(
                     "Adb rejected command to get  device %1$s info: %2$s",
                     device.getSerialNumber(), e.getMessage()));
-
         } catch (ShellCommandUnresponsiveException e) {
             Log.w("DeviceMonitor", String.format(
                     "Adb shell command took too long returning info for device %s",
                     device.getSerialNumber()));
-
         } catch (IOException e) {
             Log.w("DeviceMonitor", String.format(
                     "IO Error getting info for device %s",
@@ -489,14 +489,16 @@ final class DeviceMonitor {
         }
     }
 
-    private void queryProperties(Device device) throws InterruptedException, ExecutionException {
+    private static void queryProperties(@NonNull Device device)
+            throws InterruptedException, ExecutionException {
         // first attempt to populate the list of properties by querying arbitrary prop
         // TODO: consider removing this call and just let properties be loaded on demand
         Future<String> prop = device.getSystemProperty("ro.build.id");
         prop.get();
     }
 
-    private void queryNewDeviceForMountingPoint(final Device device, final String name)
+    private static void queryNewDeviceForMountingPoint(@NonNull final Device device,
+            @NonNull final String name)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException {
         device.executeShellCommand("echo $" + name, new MultiLineReceiver() { //$NON-NLS-1$
@@ -522,7 +524,7 @@ final class DeviceMonitor {
      * @param device the device to monitor.
      * @return true if success.
      */
-    private boolean startMonitoringDevice(Device device) {
+    private boolean startMonitoringDevice(@NonNull Device device) {
         SocketChannel socketChannel = openAdbConnection();
 
         if (socketChannel != null) {
@@ -687,17 +689,14 @@ final class DeviceMonitor {
         } while (!mQuit);
     }
 
-    private boolean sendDeviceMonitoringRequest(SocketChannel socket, Device device)
+    private static boolean sendDeviceMonitoringRequest(@NonNull SocketChannel socket,
+            @NonNull Device device)
             throws TimeoutException, AdbCommandRejectedException, IOException {
 
         try {
             AdbHelper.setDevice(socket, device);
-
-            byte[] request = AdbHelper.formAdbRequest("track-jdwp"); //$NON-NLS-1$
-
-            AdbHelper.write(socket, request);
-
-            AdbResponse resp = AdbHelper.readAdbResponse(socket, false /* readDiagString */);
+            AdbHelper.write(socket, AdbHelper.formAdbRequest(ADB_TRACK_JDWP_COMMAND));
+            AdbResponse resp = AdbHelper.readAdbResponse(socket, false);
 
             if (!resp.okay) {
                 // request was refused by adb!
@@ -714,8 +713,8 @@ final class DeviceMonitor {
         }
     }
 
-    private void processIncomingJdwpData(Device device, SocketChannel monitorSocket, int length)
-            throws IOException {
+    private void processIncomingJdwpData(@NonNull Device device,
+            @NonNull SocketChannel monitorSocket, int length) throws IOException {
 
         // This methods reads @length bytes from the @monitorSocket channel.
         // These bytes correspond to the pids of the current set of processes on the device.
@@ -733,7 +732,7 @@ final class DeviceMonitor {
                 String result = read(monitorSocket, buffer);
 
                 // split each line in its own list and create an array of integer pid
-                String[] pids = result.split("\n"); //$NON-NLS-1$
+                String[] pids = result == null ? new String[0] : result.split("\n"); //$NON-NLS-1$
 
                 for (String pid : pids) {
                     try {
@@ -752,9 +751,7 @@ final class DeviceMonitor {
 
             synchronized (clients) {
                 for (Client c : clients) {
-                    existingClients.put(
-                            c.getClientData().getPid(),
-                            c);
+                    existingClients.put(c.getClientData().getPid(), c);
                 }
             }
 
@@ -781,11 +778,9 @@ final class DeviceMonitor {
         }
     }
 
-    /**
-     * Opens and creates a new client.
-     * @return
-     */
-    private void openClient(Device device, int pid, int port, MonitorThread monitorThread) {
+    /** Opens and creates a new client. */
+    private static void openClient(@NonNull Device device, int pid, int port,
+            @NonNull MonitorThread monitorThread) {
 
         SocketChannel clientSocket;
         try {
@@ -815,16 +810,9 @@ final class DeviceMonitor {
         createClient(device, pid, clientSocket, port, monitorThread);
     }
 
-    /**
-     * Creates a client and register it to the monitor thread
-     * @param device
-     * @param pid
-     * @param socket
-     * @param debuggerPort the debugger port.
-     * @param monitorThread the {@link MonitorThread} object.
-     */
-    private void createClient(Device device, int pid, SocketChannel socket, int debuggerPort,
-            MonitorThread monitorThread) {
+    /** Creates a client and register it to the monitor thread */
+    private static void createClient(@NonNull Device device, int pid, @NonNull SocketChannel socket,
+            int debuggerPort, @NonNull MonitorThread monitorThread) {
 
         /*
          * Successfully connected to something. Create a Client object, add
@@ -858,8 +846,6 @@ final class DeviceMonitor {
         if (client.isValid()) {
             device.addClient(client);
             monitorThread.addClient(client);
-        } else {
-            client = null;
         }
     }
 
@@ -911,7 +897,8 @@ final class DeviceMonitor {
      * @return the length, or 0 (zero) if no data is available from the socket.
      * @throws IOException if the connection failed.
      */
-    private int readLength(SocketChannel socket, byte[] buffer) throws IOException {
+    private static int readLength(@NonNull SocketChannel socket, @NonNull byte[] buffer)
+            throws IOException {
         String msg = read(socket, buffer);
 
         if (msg != null) {
@@ -920,20 +907,20 @@ final class DeviceMonitor {
             } catch (NumberFormatException nfe) {
                 // we'll throw an exception below.
             }
-       }
+        }
 
         // we receive something we can't read. It's better to reset the connection at this point.
         throw new IOException("Unable to read length");
     }
 
     /**
-     * Fills a buffer from a socket.
-     * @param socket
-     * @param buffer
+     * Fills a buffer by reading data from a socket.
      * @return the content of the buffer as a string, or null if it failed to convert the buffer.
-     * @throws IOException
+     * @throws IOException if there was not enough data to fill the buffer
      */
-    private String read(SocketChannel socket, byte[] buffer) throws IOException {
+    @Nullable
+    private static String read(@NonNull SocketChannel socket, @NonNull byte[] buffer)
+            throws IOException {
         ByteBuffer buf = ByteBuffer.wrap(buffer, 0, buffer.length);
 
         while (buf.position() != buf.limit()) {
@@ -948,10 +935,8 @@ final class DeviceMonitor {
         try {
             return new String(buffer, 0, buf.position(), AdbHelper.DEFAULT_ENCODING);
         } catch (UnsupportedEncodingException e) {
-            // we'll return null below.
+            return null;
         }
-
-        return null;
     }
 
 }
