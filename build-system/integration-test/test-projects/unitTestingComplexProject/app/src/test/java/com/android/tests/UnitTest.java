@@ -180,6 +180,14 @@ public class UnitTest {
         assertEquals("lib prod", s);
     }
 
+    @Test
+    public void testLibJavaResourcesNotOnClasspath() throws Exception {
+        URL url = UnitTest.class.getClassLoader().getResource("lib_resource_file.txt");
+        assertNull(url);
+
+        InputStream stream = UnitTest.class.getClassLoader().getResourceAsStream("lib_resource_file.txt");
+        assertNull(stream);
+    }
 
     @Test
     public void prodRClass() {
