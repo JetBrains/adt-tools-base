@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.MavenCoordinates;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.Collection;
@@ -38,7 +39,7 @@ public class LibInfo extends LibraryDependencyImpl {
     @NonNull
     private final Collection<JarInfo> jarDependencies;
 
-    private boolean isOptional = false;
+    private boolean mutableIsOptional = false;
 
     public LibInfo(@NonNull File bundle,
             @NonNull File explodedBundle,
@@ -65,12 +66,28 @@ public class LibInfo extends LibraryDependencyImpl {
      * Mark the dependency as optional.
      */
     public void setIsOptional(boolean isOptional) {
-        this.isOptional = isOptional;
+        this.mutableIsOptional = isOptional;
+        for (LibInfo libInfo : getLibInfoDependencies()) {
+            libInfo.setIsOptional(isOptional);
+        }
     }
 
     @Override
     public boolean isOptional() {
-        return isOptional;
+        return mutableIsOptional;
+    }
+
+    @NonNull
+    public List<LibInfo> getLibInfoDependencies() {
+        ImmutableList.Builder<LibInfo> libInfoBuilder = ImmutableList.builder();
+        for (LibraryDependency libraryDependency : getDependencies()) {
+            if (libraryDependency instanceof LibInfo) {
+                libInfoBuilder.add((LibInfo) libraryDependency);
+            } else {
+                throw new RuntimeException("Mixed LibInfo and LibraryDependencies instances !");
+            }
+        }
+        return libInfoBuilder.build();
     }
 
     @NonNull
