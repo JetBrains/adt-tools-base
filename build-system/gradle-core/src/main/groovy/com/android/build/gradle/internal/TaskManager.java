@@ -27,6 +27,7 @@ import static com.android.builder.core.VariantType.DEFAULT;
 import static com.android.builder.core.VariantType.UNIT_TEST;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.android.SdkConstants;
@@ -1723,6 +1724,8 @@ public abstract class TaskManager {
      *
      */
     public void createPostCompilationTasks(TaskFactory tasks, @NonNull final VariantScope scope) {
+        checkNotNull(scope.getJavacTask());
+
         final ApkVariantData variantData = (ApkVariantData) scope.getVariantData();
         final GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
