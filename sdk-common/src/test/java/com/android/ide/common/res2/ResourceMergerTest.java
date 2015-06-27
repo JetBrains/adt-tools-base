@@ -1564,7 +1564,9 @@ public class ResourceMergerTest extends BaseTestCase {
             file = file.getAbsoluteFile();
             assertEquals(
                     file.getPath() +
-                            ": Error: File-based resource names must start with a lowercase letter",
+                            ": Error: 'A' is not a valid file-based resource name character: "
+                            + "File-based resource names must contain only lowercase a-z, 0-9,"
+                            + " or underscore",
                     e.getMessage());
             return;
         }
@@ -1584,7 +1586,7 @@ public class ResourceMergerTest extends BaseTestCase {
             file = file.getAbsoluteFile();
             assertEquals(
                     file.getPath() +
-                            ": Error: File-based resource names must start with a lowercase letter",
+                            ": Error: The resource name must start with a letter",
                     e.getMessage());
             return;
         }

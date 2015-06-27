@@ -167,8 +167,8 @@ public final class FileResourceNameValidator {
     public static String getErrorTextForNameWithoutExtension(
             @NonNull final String fileNameWithoutExt) {
         char first = fileNameWithoutExt.charAt(0);
-        if (!(first >= 'a' && first <= 'z')) {
-            return "File-based resource names must start with a lowercase letter";
+        if (!Character.isJavaIdentifierStart(first)) {
+            return "The resource name must start with a letter";
         }
 
         // AAPT only allows lowercase+digits+_:
