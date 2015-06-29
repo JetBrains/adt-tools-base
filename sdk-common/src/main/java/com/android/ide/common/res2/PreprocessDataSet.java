@@ -53,7 +53,7 @@ public class PreprocessDataSet extends DataSet<PreprocessDataItem, PreprocessDat
      * @param configName the name of the config this set is associated with.
      */
     public PreprocessDataSet(String configName, ResourcesDirectory resourcesDirectory) {
-        super(configName + ":" + resourcesDirectory.name());
+        super(configName + ":" + resourcesDirectory.name(), true /*validateEnabled*/);
         mResourcesDirectory = resourcesDirectory;
     }
 
