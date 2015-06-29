@@ -73,6 +73,15 @@ final class DeviceMonitor {
     private int mRestartAttemptCount = 0;
     private boolean mInitialDeviceListDone = false;
 
+    /**
+     * Whenever a new channel has to be registered with the {@link #mSelector}, we first need to
+     * ensure that the selector is not waiting on a select() call. This is achieved by the following
+     * architecture:
+     *  - The selector loop waits to acquire this lock before waiting on select.
+     *  - Any threads that need to register with the selector will acquire this lock, then wakeup
+     *    the selector, and perform the registration before releasing this lock.
+     */
+    private final Object mSelectorRegisterLock = new Object();
     private Selector mSelector;
 
     private final List<Device> mDevices = new ArrayList<Device>();
@@ -539,7 +548,7 @@ final class DeviceMonitor {
 
                     device.setClientMonitoringSocket(socketChannel);
 
-                    synchronized (mDevices) {
+                    synchronized (mSelectorRegisterLock) {
                         // always wakeup before doing the register. The synchronized block
                         // ensure that the selector won't select() before the end of this block.
                         // @see deviceClientMonitorLoop
@@ -603,7 +612,7 @@ final class DeviceMonitor {
                 // This synchronized block stops us from doing the select() if a new
                 // Device is being added.
                 // @see startMonitoringDevice()
-                synchronized (mDevices) {
+                synchronized (mSelectorRegisterLock) {
                 }
 
                 int count = mSelector.select();
