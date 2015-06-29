@@ -18,11 +18,14 @@ package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.ddmlib.AdbHelper.AdbResponse;
 import com.android.ddmlib.ClientData.DebuggerStatus;
 import com.android.ddmlib.DebugPortManager.IDebugPortProvider;
 import com.android.ddmlib.IDevice.DeviceState;
 import com.android.ddmlib.utils.DebuggerPorts;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.Uninterruptibles;
 
 import java.io.IOException;
@@ -34,6 +37,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -47,7 +51,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * The {@link DeviceMonitor} monitors devices attached to adb.
  *
- * On one thread, it first establishes a socket connection to the adb host, and issues a
+ * On one thread, it runs the {@link com.android.ddmlib.DeviceMonitor.DeviceListMonitorTask}.
+ * This  establishes a socket connection to the adb host, and issues a
  * {@link #ADB_TRACK_DEVICES_COMMAND}. It then monitors that socket for all changes about device
  * connection and device state.
  *
@@ -60,18 +65,12 @@ final class DeviceMonitor {
     private static final String ADB_TRACK_DEVICES_COMMAND = "host:track-devices";
     private static final String ADB_TRACK_JDWP_COMMAND = "track-jdwp";
 
-    private final byte[] mLengthBuffer = new byte[4];
     private final byte[] mLengthBuffer2 = new byte[4];
 
     private volatile boolean mQuit = false;
 
     private final AndroidDebugBridge mServer;
-
-    private SocketChannel mMainAdbConnection = null;
-    private boolean mMonitoring = false;
-    private int mConnectionAttempt = 0;
-    private int mRestartAttemptCount = 0;
-    private boolean mInitialDeviceListDone = false;
+    private DeviceListMonitorTask mDeviceListMonitorTask;
 
     /**
      * Whenever a new channel has to be registered with the {@link #mSelector}, we first need to
@@ -102,12 +101,8 @@ final class DeviceMonitor {
      * Starts the monitoring.
      */
     void start() {
-        new Thread("Device List Monitor") { //$NON-NLS-1$
-            @Override
-            public void run() {
-                deviceMonitorLoop();
-            }
-        }.start();
+        mDeviceListMonitorTask = new DeviceListMonitorTask(mServer, new DeviceListUpdateListener());
+        new Thread(mDeviceListMonitorTask, "Device List Monitor").start(); //$NON-NLS-1$
     }
 
     /**
@@ -116,12 +111,8 @@ final class DeviceMonitor {
     void stop() {
         mQuit = true;
 
-        // wakeup the main loop thread by closing the main connection to adb.
-        try {
-            if (mMainAdbConnection != null) {
-                mMainAdbConnection.close();
-            }
-        } catch (IOException e1) {
+        if (mDeviceListMonitorTask != null) {
+            mDeviceListMonitorTask.stop();
         }
 
         // wake up the secondary loop by closing the selector.
@@ -130,21 +121,24 @@ final class DeviceMonitor {
         }
     }
 
-
-
     /**
      * Returns if the monitor is currently connected to the debug bridge server.
      */
     boolean isMonitoring() {
-        return mMonitoring;
+        return mDeviceListMonitorTask != null && mDeviceListMonitorTask.isMonitoring();
     }
 
     int getConnectionAttemptCount() {
-        return mConnectionAttempt;
+        return mDeviceListMonitorTask == null ? 0
+                : mDeviceListMonitorTask.getConnectionAttemptCount();
     }
 
     int getRestartAttemptCount() {
-        return mRestartAttemptCount;
+        return mDeviceListMonitorTask == null ? 0 : mDeviceListMonitorTask.getRestartAttemptCount();
+    }
+
+    boolean hasInitialDeviceList() {
+        return mDeviceListMonitorTask != null && mDeviceListMonitorTask.hasInitialDeviceList();
     }
 
     /**
@@ -154,10 +148,6 @@ final class DeviceMonitor {
         synchronized (mDevices) {
             return mDevices.toArray(new Device[mDevices.size()]);
         }
-    }
-
-    boolean hasInitialDeviceList() {
-        return mInitialDeviceListDone;
     }
 
     @NonNull
@@ -177,94 +167,6 @@ final class DeviceMonitor {
     }
 
     /**
-     * Monitors the devices. This connects to the Debug Bridge
-     */
-    private void deviceMonitorLoop() {
-        do {
-            try {
-                if (mMainAdbConnection == null) {
-                    Log.d("DeviceMonitor", "Opening adb connection");
-                    mMainAdbConnection = openAdbConnection();
-                    if (mMainAdbConnection == null) {
-                        mConnectionAttempt++;
-                        Log.e("DeviceMonitor", "Connection attempts: " + mConnectionAttempt);
-                        if (mConnectionAttempt > 10) {
-                            if (!mServer.startAdb()) {
-                                mRestartAttemptCount++;
-                                Log.e("DeviceMonitor",
-                                        "adb restart attempts: " + mRestartAttemptCount);
-                            } else {
-                                Log.i("DeviceMonitor", "adb restarted");
-                                mRestartAttemptCount = 0;
-                            }
-                        }
-                        waitABit();
-                    } else {
-                        Log.d("DeviceMonitor", "Connected to adb for device monitoring");
-                        mConnectionAttempt = 0;
-                    }
-                }
-
-                if (mMainAdbConnection != null && !mMonitoring) {
-                    mMonitoring = sendDeviceListMonitoringRequest();
-                }
-
-                if (mMonitoring) {
-                    // read the length of the incoming message
-                    int length = readLength(mMainAdbConnection, mLengthBuffer);
-
-                    if (length >= 0) {
-                        // read the incoming message
-                        processIncomingDeviceData(length);
-
-                        // flag the fact that we have build the list at least once.
-                        mInitialDeviceListDone = true;
-                    }
-                }
-            } catch (AsynchronousCloseException ace) {
-                // this happens because of a call to Quit. We do nothing, and the loop will break.
-            } catch (TimeoutException ioe) {
-                handleExceptionInMonitorLoop(ioe);
-            } catch (IOException ioe) {
-                handleExceptionInMonitorLoop(ioe);
-            }
-        } while (!mQuit);
-    }
-
-    private void handleExceptionInMonitorLoop(@NonNull Exception e) {
-        if (!mQuit) {
-            if (e instanceof TimeoutException) {
-                Log.e("DeviceMonitor", "Adb connection Error: timeout");
-            } else {
-                Log.e("DeviceMonitor", "Adb connection Error:" + e.getMessage());
-            }
-            mMonitoring = false;
-            if (mMainAdbConnection != null) {
-                try {
-                    mMainAdbConnection.close();
-                } catch (IOException ioe) {
-                    // we can safely ignore that one.
-                }
-                mMainAdbConnection = null;
-
-                // remove all devices from list
-                // because we are going to call mServer.deviceDisconnected which will acquire this
-                // lock we lock it first, so that the AndroidDebugBridge lock is always locked
-                // first.
-                synchronized (AndroidDebugBridge.getLock()) {
-                    synchronized (mDevices) {
-                        for (int n = mDevices.size() - 1; n >= 0; n--) {
-                            Device device = mDevices.get(0);
-                            removeDevice(device);
-                            mServer.deviceDisconnected(device);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * Sleeps for a little bit.
      */
     private static void waitABit() {
@@ -277,62 +179,13 @@ final class DeviceMonitor {
      */
     @Nullable
     private static SocketChannel openAdbConnection() {
-        Log.d("DeviceMonitor", "Connecting to adb for Device List Monitoring...");
-
-        SocketChannel adbChannel = null;
         try {
-            adbChannel = SocketChannel.open(AndroidDebugBridge.getSocketAddress());
+            SocketChannel adbChannel = SocketChannel.open(AndroidDebugBridge.getSocketAddress());
             adbChannel.socket().setTcpNoDelay(true);
+            return adbChannel;
         } catch (IOException e) {
+            return null;
         }
-
-        return adbChannel;
-    }
-
-    private boolean sendDeviceListMonitoringRequest() throws TimeoutException, IOException {
-        byte[] request = AdbHelper.formAdbRequest(ADB_TRACK_DEVICES_COMMAND); //$NON-NLS-1$
-
-        try {
-            AdbHelper.write(mMainAdbConnection, request);
-
-            AdbResponse resp = AdbHelper.readAdbResponse(mMainAdbConnection, false);
-            if (!resp.okay) {
-                // request was refused by adb!
-                Log.e("DeviceMonitor", "adb refused request: " + resp.message);
-            }
-
-            return resp.okay;
-        } catch (IOException e) {
-            Log.e("DeviceMonitor", "Sending Tracking request failed!");
-            mMainAdbConnection.close();
-            throw e;
-        }
-    }
-
-    /** Processes an incoming device message from the socket */
-    private void processIncomingDeviceData(int length) throws IOException {
-        ArrayList<Device> list = new ArrayList<Device>();
-
-        if (length > 0) {
-            byte[] buffer = new byte[length];
-            String result = read(mMainAdbConnection, buffer);
-            String[] devices = result == null ? new String[0] : result.split("\n"); //$NON-NLS-1$
-
-            for (String d : devices) {
-                String[] param = d.split("\t"); //$NON-NLS-1$
-                if (param.length == 2) {
-                    // new adb uses only serial numbers to identify devices
-                    Device device = new Device(this, param[0] /*serialnumber*/,
-                            DeviceState.getState(param[1]));
-
-                    //add the device to the list
-                    list.add(device);
-                }
-            }
-        }
-
-        // now merge the new devices with the old ones.
-        updateDevices(list);
     }
 
     /**
@@ -915,4 +768,207 @@ final class DeviceMonitor {
         }
     }
 
+    private class DeviceListUpdateListener implements DeviceListMonitorTask.UpdateListener {
+        @Override
+        public void connectionError(@NonNull Exception e) {
+            // remove all devices from list
+            // because we are going to call mServer.deviceDisconnected which will acquire this
+            // lock we lock it first, so that the AndroidDebugBridge lock is always locked
+            // first.
+            synchronized (AndroidDebugBridge.getLock()) {
+                synchronized (mDevices) {
+                    for (int n = mDevices.size() - 1; n >= 0; n--) {
+                        Device device = mDevices.get(0);
+                        removeDevice(device);
+                        mServer.deviceDisconnected(device);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void deviceListUpdate(@NonNull Map<String, DeviceState> devices) {
+            List<Device> l = Lists.newArrayListWithExpectedSize(devices.size());
+            for (Map.Entry<String, DeviceState> entry : devices.entrySet()) {
+                l.add(new Device(DeviceMonitor.this, entry.getKey(), entry.getValue()));
+            }
+            // now merge the new devices with the old ones.
+            updateDevices(l);
+        }
+    }
+
+    @VisibleForTesting
+    static class DeviceListMonitorTask implements Runnable {
+        private final byte[] mLengthBuffer = new byte[4];
+
+        private final AndroidDebugBridge mBridge;
+        private final UpdateListener mListener;
+
+        private SocketChannel mAdbConnection = null;
+        private boolean mMonitoring = false;
+        private int mConnectionAttempt = 0;
+        private int mRestartAttemptCount = 0;
+        private boolean mInitialDeviceListDone = false;
+
+        private volatile boolean mQuit;
+
+        private interface UpdateListener {
+            void connectionError(@NonNull Exception e);
+            void deviceListUpdate(@NonNull Map<String,DeviceState> devices);
+        }
+
+        public DeviceListMonitorTask(@NonNull AndroidDebugBridge bridge,
+                @NonNull UpdateListener listener) {
+            mBridge = bridge;
+            mListener = listener;
+        }
+
+        @Override
+        public void run() {
+            do {
+                if (mAdbConnection == null) {
+                    Log.d("DeviceMonitor", "Opening adb connection");
+                    mAdbConnection = openAdbConnection();
+                    if (mAdbConnection == null) {
+                        mConnectionAttempt++;
+                        Log.e("DeviceMonitor", "Connection attempts: " + mConnectionAttempt);
+                        if (mConnectionAttempt > 10) {
+                            if (!mBridge.startAdb()) {
+                                mRestartAttemptCount++;
+                                Log.e("DeviceMonitor",
+                                        "adb restart attempts: " + mRestartAttemptCount);
+                            } else {
+                                Log.i("DeviceMonitor", "adb restarted");
+                                mRestartAttemptCount = 0;
+                            }
+                        }
+                        waitABit();
+                    } else {
+                        Log.d("DeviceMonitor", "Connected to adb for device monitoring");
+                        mConnectionAttempt = 0;
+                    }
+                }
+
+                try {
+                    if (mAdbConnection != null && !mMonitoring) {
+                        mMonitoring = sendDeviceListMonitoringRequest();
+                    }
+
+                    if (mMonitoring) {
+                        int length = readLength(mAdbConnection, mLengthBuffer);
+
+                        if (length >= 0) {
+                            // read the incoming message
+                            processIncomingDeviceData(length);
+
+                            // flag the fact that we have build the list at least once.
+                            mInitialDeviceListDone = true;
+                        }
+                    }
+                } catch (AsynchronousCloseException ace) {
+                    // this happens because of a call to Quit. We do nothing, and the loop will break.
+                } catch (TimeoutException ioe) {
+                    handleExceptionInMonitorLoop(ioe);
+                } catch (IOException ioe) {
+                    handleExceptionInMonitorLoop(ioe);
+                }
+            } while (!mQuit);
+        }
+
+        private boolean sendDeviceListMonitoringRequest() throws TimeoutException, IOException {
+            byte[] request = AdbHelper.formAdbRequest(ADB_TRACK_DEVICES_COMMAND);
+
+            try {
+                AdbHelper.write(mAdbConnection, request);
+                AdbResponse resp = AdbHelper.readAdbResponse(mAdbConnection, false);
+                if (!resp.okay) {
+                    // request was refused by adb!
+                    Log.e("DeviceMonitor", "adb refused request: " + resp.message);
+                }
+
+                return resp.okay;
+            } catch (IOException e) {
+                Log.e("DeviceMonitor", "Sending Tracking request failed!");
+                mAdbConnection.close();
+                throw e;
+            }
+        }
+
+        private void handleExceptionInMonitorLoop(@NonNull Exception e) {
+            if (!mQuit) {
+                if (e instanceof TimeoutException) {
+                    Log.e("DeviceMonitor", "Adb connection Error: timeout");
+                } else {
+                    Log.e("DeviceMonitor", "Adb connection Error:" + e.getMessage());
+                }
+                mMonitoring = false;
+                if (mAdbConnection != null) {
+                    try {
+                        mAdbConnection.close();
+                    } catch (IOException ioe) {
+                        // we can safely ignore that one.
+                    }
+                    mAdbConnection = null;
+
+                    mListener.connectionError(e);
+                }
+            }
+        }
+
+        /** Processes an incoming device message from the socket */
+        private void processIncomingDeviceData(int length) throws IOException {
+            Map<String, DeviceState> result;
+            if (length <= 0) {
+                result = Collections.emptyMap();
+            } else {
+                String response = read(mAdbConnection, new byte[length]);
+                result = parseDeviceListResponse(response);
+            }
+
+            mListener.deviceListUpdate(result);
+        }
+
+        @VisibleForTesting
+        static Map<String, DeviceState> parseDeviceListResponse(@Nullable String result) {
+            Map<String, DeviceState> deviceStateMap = Maps.newHashMap();
+            String[] devices = result == null ? new String[0] : result.split("\n"); //$NON-NLS-1$
+
+            for (String d : devices) {
+                String[] param = d.split("\t"); //$NON-NLS-1$
+                if (param.length == 2) {
+                    // new adb uses only serial numbers to identify devices
+                    deviceStateMap.put(param[0], DeviceState.getState(param[1]));
+                }
+            }
+            return deviceStateMap;
+        }
+
+        boolean isMonitoring() {
+            return mMonitoring;
+        }
+
+        boolean hasInitialDeviceList() {
+            return mInitialDeviceListDone;
+        }
+
+        int getConnectionAttemptCount() {
+            return mConnectionAttempt;
+        }
+
+        int getRestartAttemptCount() {
+            return mRestartAttemptCount;
+        }
+
+        public void stop() {
+            mQuit = true;
+
+            // wakeup the main loop thread by closing the main connection to adb.
+            if (mAdbConnection != null) {
+                try {
+                    mAdbConnection.close();
+                } catch (IOException ignored) {
+                }
+            }
+        }
+    }
 }
