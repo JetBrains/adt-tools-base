@@ -37,8 +37,6 @@ public class AndroidTask<T extends Task> {
     private String name;
     @NonNull
     private final Class<T> taskType;
-    @Nullable
-    private T task;
     @NonNull
     private final List<AndroidTask<? extends Task>> upstreamTasks;
     @NonNull
@@ -154,11 +152,22 @@ public class AndroidTask<T extends Task> {
     }
 
     /**
-     * Add a configration action for this task.
+     * Add a configuration action for this task.
      * @param taskFactory TaskFactory used to configure the task.
      * @param configAction An Action to be executed.
      */
     public void configure(TaskFactory taskFactory, Action<? super Task> configAction) {
         taskFactory.named(name, configAction);
+    }
+
+    /**
+     * Potentially instantiates and return the task. Should only be called once the task is
+     * configured.
+     * @param taskFactory the factory for tasks
+     * @return the task instance.
+     */
+    @SuppressWarnings("unchecked")
+    public T get(TaskFactory taskFactory) {
+        return (T) taskFactory.named(name);
     }
 }

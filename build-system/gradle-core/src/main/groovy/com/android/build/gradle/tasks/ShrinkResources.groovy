@@ -89,7 +89,7 @@ public class ShrinkResources extends BaseTask {
             // Analyze resources and usages and strip out unused
             def analyzer = new ResourceUsageAnalyzer(
                     sourceDir,
-                    variantData.obfuscatedClassesJar,
+                    variantData.getScope().getProguardOutputFile(),
                     mergedManifest,
                     variantData.getMappingFile(),
                     resourceDir)

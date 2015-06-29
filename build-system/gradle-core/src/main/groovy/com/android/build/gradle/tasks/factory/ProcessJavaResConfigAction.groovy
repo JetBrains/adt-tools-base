@@ -20,19 +20,15 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
-import com.android.builder.core.BuilderConstants
-import com.android.builder.core.VariantType
-import com.android.builder.model.AndroidProject
 import com.android.builder.model.SourceProvider
-import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.Sync
 
 import static com.android.builder.core.VariantType.ANDROID_TEST
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 /**
  * Configuration Action for a ProcessJavaRes task.
  */
-class ProcessJavaResConfigAction implements TaskConfigAction<Copy> {
+class ProcessJavaResConfigAction implements TaskConfigAction<Sync> {
 
     VariantScope scope;
 
@@ -46,12 +42,12 @@ class ProcessJavaResConfigAction implements TaskConfigAction<Copy> {
     }
 
     @Override
-    Class<Copy> getType() {
-        return Copy.class
+    Class<Sync> getType() {
+        return Sync.class
     }
 
     @Override
-    void execute(Copy processResources) {
+    void execute(Sync processResources) {
         scope.variantData.processJavaResourcesTask = processResources
 
         // set the input
@@ -71,7 +67,7 @@ class ProcessJavaResConfigAction implements TaskConfigAction<Copy> {
         }
 
         ConventionMappingHelper.map(processResources, "destinationDir") {
-            scope.getJavaResourcesDestinationDir()
+            new File(scope.getSourceFoldersJavaResDestinationDir(), "src");
         }
 
     }

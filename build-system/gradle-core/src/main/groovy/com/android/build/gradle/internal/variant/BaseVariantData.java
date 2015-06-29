@@ -53,6 +53,7 @@ import com.google.common.collect.Lists;
 import org.gradle.api.Task;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -118,7 +119,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
     public PreprocessResourcesTask preprocessResourcesTask;
 
-    public Copy processJavaResourcesTask;
+    public Sync processJavaResourcesTask;
     public NdkCompile ndkCompileTask;
 
     /** Can be JavaCompile or JackTask depending on user's settings. */
@@ -135,7 +136,6 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
     // TODO : why is Jack not registered as the obfuscationTask ???
     public Task obfuscationTask;
-    public File obfuscatedClassesJar;
 
     // Task to assemble the variant and all its output.
     public Task assembleVariantTask;

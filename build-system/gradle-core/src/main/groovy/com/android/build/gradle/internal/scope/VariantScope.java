@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
+import com.android.build.gradle.internal.tasks.MergeJavaResourcesTask;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.variant.ApkVariantData;
@@ -39,6 +40,7 @@ import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
+import com.android.build.gradle.tasks.JavaResourcesProvider;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
@@ -47,13 +49,14 @@ import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
+import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.StringHelper;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 
@@ -115,7 +118,9 @@ public class VariantScope {
     @Nullable
     private AndroidTask<PreprocessResourcesTask> preprocessResourcesTask;
 
-    private AndroidTask<Copy> processJavaResourcesTask;
+    private AndroidTask<Sync> processJavaResourcesTask;
+    private AndroidTask<MergeJavaResourcesTask> mergeJavaResourcesTask;
+    private JavaResourcesProvider javaResourcesProvider;
     private AndroidTask<NdkCompile> ndkCompileTask;
 
     /** @see BaseVariantData#javaCompilerTask */
@@ -371,6 +376,18 @@ public class VariantScope {
     }
 
     @NonNull
+    public File getPackagedJarsJavaResDestinationDir() {
+        return new File(globalScope.getIntermediatesDir(),
+                "packagedJarsJavaResources/" + getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public File getSourceFoldersJavaResDestinationDir() {
+        return new File(globalScope.getIntermediatesDir(),
+                "sourceFolderJavaResources/" + getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
     public File getJavaResourcesDestinationDir() {
         return new File(globalScope.getIntermediatesDir(),
                 "javaResources/" + getVariantConfiguration().getDirName());
@@ -586,13 +603,55 @@ public class VariantScope {
         this.preprocessResourcesTask = preprocessResourcesTask;
     }
 
-    public AndroidTask<Copy> getProcessJavaResourcesTask() {
+    public AndroidTask<Sync> getProcessJavaResourcesTask() {
         return processJavaResourcesTask;
     }
 
     public void setProcessJavaResourcesTask(
-            AndroidTask<Copy> processJavaResourcesTask) {
+            AndroidTask<Sync> processJavaResourcesTask) {
         this.processJavaResourcesTask = processJavaResourcesTask;
+    }
+
+    SignedJarBuilder.IZipEntryFilter packagingOptionsFilter;
+
+    public void setPackagingOptionsFilter(SignedJarBuilder.IZipEntryFilter filter) {
+        this.packagingOptionsFilter = filter;
+    }
+
+    /**
+     * Returns the {@link SignedJarBuilder.IZipEntryFilter} instance
+     * that manages all resources inclusion in the final APK following the rules defined in
+     * {@link com.android.builder.model.PackagingOptions} settings.
+     */
+    public SignedJarBuilder.IZipEntryFilter getPackagingOptionsFilter() {
+        return packagingOptionsFilter;
+    }
+
+    public void setMergeJavaResourcesTask(AndroidTask<MergeJavaResourcesTask> mergeJavaResourcesTask) {
+        this.mergeJavaResourcesTask = mergeJavaResourcesTask;
+    }
+
+    /**
+     * Returns the task extracting java resources from libraries and merging those with java
+     * resources coming from the variant's source folders.
+     * @return the task merging resources.
+     */
+    public AndroidTask<MergeJavaResourcesTask> getMergeJavaResourcesTask() {
+        return mergeJavaResourcesTask;
+    }
+
+    public void setJavaResourcesProvider(JavaResourcesProvider javaResourcesProvider) {
+        this.javaResourcesProvider = javaResourcesProvider;
+    }
+
+    /**
+     * Returns the {@link JavaResourcesProvider} responsible for providing final merged and possibly
+     * obfuscated java resources for inclusion in the final APK. The provider might change during
+     * the variant build process.
+     * @return the java resources provider.
+     */
+    public JavaResourcesProvider getJavaResourcesProvider() {
+        return javaResourcesProvider;
     }
 
     @Nullable
