@@ -143,7 +143,7 @@ public class ApplicationTaskManager extends TaskManager {
                         createProcessResTask(tasks, variantScope, true /*generateResourcePackage*/);
 
                         // Add a task to process the java resources
-                        createProcessJavaResTask(tasks, variantScope);
+                        createProcessJavaResTasks(tasks, variantScope);
                         return null;
                     }
                 });

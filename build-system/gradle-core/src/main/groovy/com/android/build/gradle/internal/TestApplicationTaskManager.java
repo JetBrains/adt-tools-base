@@ -154,21 +154,6 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
         variantData.obfuscationTask = proguardTask;
         proguardTask.setLogger(getLogger());
 
-        // --- Output File ---
-
-        final File outFile = variantData instanceof LibraryVariantData ?
-                project.file(String.format("%s/%s/%s/%s/classes.jar",
-                        project.getBuildDir(),
-                        AndroidProject.FD_INTERMEDIATES,
-                        TaskManager.DIR_BUNDLES,
-                        variantData.getVariantConfiguration().getDirName())) :
-                project.file(String.format("%s/%s/classes-proguard/%s/classes.jar",
-                        project.getBuildDir(),
-                        AndroidProject.FD_INTERMEDIATES,
-                        variantData.getVariantConfiguration().getDirName()));
-        variantData.obfuscatedClassesJar = outFile;
-
-
         // and create the configuration for the project's classes.jar file.
         Configuration testClassesMapping = project.getConfigurations().create("testTargetClasses");
 
@@ -250,7 +235,7 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
 
             // --- Out files ---
 
-            proguardTask.outjars(outFile);
+            proguardTask.outjars(scope.getProguardOutputFile());
 
             final File proguardOut = project.file(
                     new File(project.getBuildDir(),
@@ -281,7 +266,7 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
             pcData.setClassGeneratingTasks(ImmutableList.of(proguardTask));
 
             // Update the inputs
-            return outFile;
+            return scope.getProguardOutputFile();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

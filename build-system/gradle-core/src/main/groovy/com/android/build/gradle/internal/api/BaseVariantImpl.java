@@ -34,7 +34,7 @@ import com.android.builder.model.SourceProvider;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Task;
-import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 
@@ -212,7 +212,7 @@ abstract class BaseVariantImpl implements BaseVariant {
 
     @Override
     @NonNull
-    public Copy getProcessJavaResources() {
+    public Sync getProcessJavaResources() {
         return getVariantData().processJavaResourcesTask;
     }
 

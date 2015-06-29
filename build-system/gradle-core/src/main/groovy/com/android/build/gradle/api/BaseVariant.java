@@ -29,7 +29,7 @@ import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SourceProvider;
 
 import org.gradle.api.Task;
-import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.AbstractCopyTask;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 
@@ -205,7 +205,7 @@ public interface BaseVariant {
      * Returns the Java resource processing task.
      */
     @NonNull
-    Copy getProcessJavaResources();
+    AbstractCopyTask getProcessJavaResources();
 
     /**
      * Returns the assemble task for all this variant's output

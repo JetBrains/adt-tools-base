@@ -24,6 +24,7 @@ import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.dsl.PackagingOptions
 import com.android.build.gradle.internal.model.FilterDataImpl
 import com.android.builder.model.SigningConfig
+import com.android.builder.signing.SignedJarBuilder
 import com.google.common.base.Joiner
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSet
@@ -83,6 +84,9 @@ class PackageSplitAbi extends SplitRelatedTask {
         return null;
     }
 
+    SignedJarBuilder.IZipEntryFilter packagingOptionsFilter;
+
+
     @NonNull
     public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
 
@@ -136,6 +140,7 @@ class PackageSplitAbi extends SplitRelatedTask {
                         getJniDebuggable(),
                         getSigningConfig(),
                         getPackagingOptions(),
+                        getPackagingOptionsFilter(),
                         outFile.absolutePath)
                 unprocessedSplits.remove(matcher.group(1));
             }

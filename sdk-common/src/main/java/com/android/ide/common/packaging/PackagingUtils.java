@@ -16,6 +16,8 @@
 
 package com.android.ide.common.packaging;
 
+import com.google.common.collect.ImmutableList;
+
 /**
  * Utility class for packaging.
  */
@@ -59,20 +61,55 @@ public class PackagingUtils {
     public static boolean checkFileForPackaging(String fileName, String extension) {
         // ignore hidden files and backup files
         return !(fileName.charAt(0) == '.' || fileName.charAt(fileName.length() - 1) == '~') &&
-                !"aidl".equalsIgnoreCase(extension) &&        // Aidl files
-                !"rs".equalsIgnoreCase(extension) &&          // RenderScript files
-                !"fs".equalsIgnoreCase(extension) &&          // FilterScript files
-                !"rsh".equalsIgnoreCase(extension) &&         // RenderScript header files
-                !"d".equalsIgnoreCase(extension) &&           // Dependency files
-                !"java".equalsIgnoreCase(extension) &&        // Java files
-                !"scala".equalsIgnoreCase(extension) &&       // Scala files
-                !"class".equalsIgnoreCase(extension) &&       // Java class files
-                !"scc".equalsIgnoreCase(extension) &&         // VisualSourceSafe
-                !"swp".equalsIgnoreCase(extension) &&         // vi swap file
-                !"thumbs.db".equalsIgnoreCase(fileName) &&    // image index file
-                !"picasa.ini".equalsIgnoreCase(fileName) &&   // image index file
-                !"about.html".equalsIgnoreCase(fileName) &&   // Javadoc
-                !"package.html".equalsIgnoreCase(fileName) && // Javadoc
-                !"overview.html".equalsIgnoreCase(fileName);  // Javadoc
+                !isOfNonResourcesExtensions(extension) &&
+                !isNotAResourceFile(fileName);
     }
+
+    private static boolean isOfNonResourcesExtensions(String extension) {
+        for (String ext : NON_RESOURCES_EXTENSIONS) {
+            if (ext.equalsIgnoreCase(extension)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isNotAResourceFile(String fileName) {
+        for (String name : NON_RESOURCES_FILENAMES) {
+            if (name.equalsIgnoreCase(fileName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the list of file extensions that represents non resources files.
+     */
+    public static final ImmutableList<String> NON_RESOURCES_EXTENSIONS =
+            ImmutableList.<String>builder()
+                    .add("aidl")            // Aidl files
+                    .add("rs")              // RenderScript files
+                    .add("fs")              // FilterScript files
+                    .add("rsh")             // RenderScript header files
+                    .add("d")               // Dependency files
+                    .add("java")            // Java files
+                    .add("scala")           // Scala files
+                    .add("class")           // Java class files
+                    .add("so")              // native .so libraries
+                    .add("scc")             // VisualSourceSafe
+                    .add("swp")             // vi swap file
+                    .build();
+
+    /**
+     * Return file names that are not resource files.
+     */
+    public static final ImmutableList<String> NON_RESOURCES_FILENAMES =
+            ImmutableList.<String>builder()
+                    .add("thumbs.db")       // image index file
+                    .add("picasa.ini")      // image index file
+                    .add("about.html")      // Javadoc
+                    .add("package.html")    // Javadoc
+                    .add("overview.html")   // Javadoc
+                    .build();
 }
