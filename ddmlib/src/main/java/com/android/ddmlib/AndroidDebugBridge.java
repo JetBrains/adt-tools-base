@@ -1087,7 +1087,7 @@ public final class AndroidDebugBridge {
      * This includes adding/removing listeners, but also notifying listeners of new bridges,
      * devices, and clients.
      */
-    static Object getLock() {
+    private static Object getLock() {
         return sLock;
     }
 

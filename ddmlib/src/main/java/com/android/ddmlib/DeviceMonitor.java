@@ -83,7 +83,7 @@ final class DeviceMonitor {
     private final Object mSelectorRegisterLock = new Object();
     private Selector mSelector;
 
-    private final List<Device> mDevices = new ArrayList<Device>();
+    private final List<Device> mDevices = Lists.newCopyOnWriteArrayList();
     private final DebuggerPorts mDebuggerPorts =
             new DebuggerPorts(DdmPreferences.getDebugPortBase());
     private final Map<Client, Integer> mClientsToReopen = new HashMap<Client, Integer>();
@@ -122,7 +122,7 @@ final class DeviceMonitor {
     }
 
     /**
-     * Returns if the monitor is currently connected to the debug bridge server.
+     * Returns whether the monitor is currently connected to the debug bridge server.
      */
     boolean isMonitoring() {
         return mDeviceListMonitorTask != null && mDeviceListMonitorTask.isMonitoring();
@@ -145,9 +145,11 @@ final class DeviceMonitor {
      * Returns the devices.
      */
     @NonNull Device[] getDevices() {
-        synchronized (mDevices) {
-            return mDevices.toArray(new Device[mDevices.size()]);
-        }
+        // Since this is a copy of write array list, we don't want to do a compound operation
+        // (toArray with an appropriate size) without locking, so we just let the container provide
+        // an appropriately sized array
+        //noinspection ToArrayCallWithZeroLengthArrayArgument
+        return mDevices.toArray(new Device[0]);
     }
 
     @NonNull
@@ -164,13 +166,6 @@ final class DeviceMonitor {
             }
         }
         mSelector.wakeup();
-    }
-
-    /**
-     * Sleeps for a little bit.
-     */
-    private static void waitABit() {
-        Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
     }
 
     /**
@@ -192,102 +187,84 @@ final class DeviceMonitor {
      * Updates the device list with the new items received from the monitoring service.
      */
     private void updateDevices(@NonNull List<Device> newList) {
-        // because we are going to call mServer.deviceDisconnected which will acquire this lock
-        // we lock it first, so that the AndroidDebugBridge lock is always locked first.
-        synchronized (AndroidDebugBridge.getLock()) {
-            // array to store the devices that must be queried for information.
-            // it's important to not do it inside the synchronized loop as this could block
-            // the whole workspace (this lock is acquired during build too).
-            List<Device> devicesToQuery = new ArrayList<Device>();
+        List<Device> devicesToQuery = Lists.newArrayListWithExpectedSize(newList.size());
 
-            synchronized (mDevices) {
-                // For each device in the current list, we look for a matching the new list.
-                // * if we find it, we update the current object with whatever new information
-                //   there is
-                //   (mostly state change, if the device becomes ready, we query for build info).
-                //   We also remove the device from the new list to mark it as "processed"
-                // * if we do not find it, we remove it from the current list.
-                // Once this is done, the new list contains device we aren't monitoring yet, so we
-                // add them to the list, and start monitoring them.
+        // For each device in the current list, we look for a matching the new list.
+        // * if we find it, we update the current object with whatever new information
+        //   there is (mostly state change, if the device becomes ready, we query for build info).
+        //   We also remove the device from the new list to mark it as "processed"
+        // * if we do not find it, we remove it from the current list.
+        // Once this is done, the new list contains device we aren't monitoring yet, so we
+        // add them to the list, and start monitoring them.
 
-                for (int d = 0 ; d < mDevices.size() ;) {
-                    Device device = mDevices.get(d);
+        for (Device device : mDevices) {
+            // look for a similar device in the new list.
+            int count = newList.size();
+            boolean foundMatch = false;
+            for (int dd = 0; dd < count; dd++) {
+                Device newDevice = newList.get(dd);
 
-                    // look for a similar device in the new list.
-                    int count = newList.size();
-                    boolean foundMatch = false;
-                    for (int dd = 0 ; dd < count ; dd++) {
-                        Device newDevice = newList.get(dd);
-                        // see if it matches in id and serial number.
-                        if (newDevice.getSerialNumber().equals(device.getSerialNumber())) {
-                            foundMatch = true;
+                if (newDevice.getSerialNumber().equals(device.getSerialNumber())) {
+                    foundMatch = true;
 
-                            // update the state if needed.
-                            if (device.getState() != newDevice.getState()) {
-                                device.setState(newDevice.getState());
-                                device.update(Device.CHANGE_STATE);
+                    // update the state if needed.
+                    if (device.getState() != newDevice.getState()) {
+                        device.setState(newDevice.getState());
+                        device.update(Device.CHANGE_STATE);
 
-                                // if the device just got ready/online, we need to start
-                                // monitoring it.
-                                if (device.isOnline()) {
-                                    if (AndroidDebugBridge.getClientSupport()) {
-                                        if (!startMonitoringDevice(device)) {
-                                            Log.e("DeviceMonitor",
-                                                    "Failed to start monitoring "
-                                                    + device.getSerialNumber());
-                                        }
-                                    }
-
-                                    if (device.getPropertyCount() == 0) {
-                                        devicesToQuery.add(device);
-                                    }
+                        // if the device just got ready/online, we need to start monitoring it.
+                        if (device.isOnline()) {
+                            if (AndroidDebugBridge.getClientSupport()) {
+                                if (!startMonitoringDevice(device)) {
+                                    Log.e("DeviceMonitor", "Failed to start monitoring "
+                                            + device.getSerialNumber());
                                 }
                             }
 
-                            // remove the new device from the list since it's been used
-                            newList.remove(dd);
-                            break;
+                            if (device.getPropertyCount() == 0) {
+                                devicesToQuery.add(device);
+                            }
                         }
                     }
 
-                    if (!foundMatch) {
-                        // the device is gone, we need to remove it, and keep current index
-                        // to process the next one.
-                        removeDevice(device);
-                        mServer.deviceDisconnected(device);
-                    } else {
-                        // process the next one
-                        d++;
-                    }
-                }
-
-                // at this point we should still have some new devices in newList, so we
-                // process them.
-                for (Device newDevice : newList) {
-                    // add them to the list
-                    mDevices.add(newDevice);
-                    mServer.deviceConnected(newDevice);
-
-                    // start monitoring them.
-                    if (AndroidDebugBridge.getClientSupport()) {
-                        if (newDevice.isOnline()) {
-                            startMonitoringDevice(newDevice);
-                        }
-                    }
-
-                    // look for their build info.
-                    if (newDevice.isOnline()) {
-                        devicesToQuery.add(newDevice);
-                    }
+                    // remove the new device from the list since it's been used
+                    newList.remove(dd);
+                    break;
                 }
             }
 
-            // query the new devices for info.
-            for (Device d : devicesToQuery) {
-                queryNewDeviceForInfo(d);
+            if (!foundMatch) {
+                // the device is gone, we need to remove it, and keep current index
+                // to process the next one.
+                removeDevice(device);
+                mServer.deviceDisconnected(device);
             }
         }
-        newList.clear();
+
+        // at this point we should still have some new devices in newList, so we
+        // process them.
+        for (Device newDevice : newList) {
+            // add them to the list
+            mDevices.add(newDevice);
+            mServer.deviceConnected(newDevice);
+
+            // start monitoring them.
+            if (AndroidDebugBridge.getClientSupport()) {
+                if (newDevice.isOnline()) {
+                    startMonitoringDevice(newDevice);
+                }
+            }
+
+            // look for their build info.
+            if (newDevice.isOnline()) {
+                devicesToQuery.add(newDevice);
+            }
+        }
+
+        // query the new devices for info.
+        for (Device d : devicesToQuery) {
+            queryNewDeviceForInfo(d);
+        }
     }
 
     private void removeDevice(@NonNull Device device) {
@@ -487,7 +464,7 @@ final class DeviceMonitor {
 
                             // This is kinda bad, but if we don't wait a bit, the client
                             // will never answer the second handshake!
-                            waitABit();
+                            Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
 
                             int port = mClientsToReopen.get(client);
 
@@ -533,12 +510,10 @@ final class DeviceMonitor {
                                     socket.close();
 
                                     // restart the monitoring of that device
-                                    synchronized (mDevices) {
-                                        if (mDevices.contains(device)) {
-                                            Log.d("DeviceMonitor",
-                                                    "Restarting monitoring service for " + device);
-                                            startMonitoringDevice(device);
-                                        }
+                                    if (mDevices.contains(device)) {
+                                        Log.d("DeviceMonitor",
+                                                "Restarting monitoring service for " + device);
+                                        startMonitoringDevice(device);
                                     }
                                 }
                             }
@@ -771,18 +746,9 @@ final class DeviceMonitor {
     private class DeviceListUpdateListener implements DeviceListMonitorTask.UpdateListener {
         @Override
         public void connectionError(@NonNull Exception e) {
-            // remove all devices from list
-            // because we are going to call mServer.deviceDisconnected which will acquire this
-            // lock we lock it first, so that the AndroidDebugBridge lock is always locked
-            // first.
-            synchronized (AndroidDebugBridge.getLock()) {
-                synchronized (mDevices) {
-                    for (int n = mDevices.size() - 1; n >= 0; n--) {
-                        Device device = mDevices.get(0);
-                        removeDevice(device);
-                        mServer.deviceDisconnected(device);
-                    }
-                }
+            for (Device device : mDevices) {
+                removeDevice(device);
+                mServer.deviceDisconnected(device);
             }
         }
 
@@ -842,7 +808,7 @@ final class DeviceMonitor {
                                 mRestartAttemptCount = 0;
                             }
                         }
-                        waitABit();
+                        Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
                     } else {
                         Log.d("DeviceMonitor", "Connected to adb for device monitoring");
                         mConnectionAttempt = 0;
