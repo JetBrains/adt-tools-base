@@ -36,7 +36,7 @@ public class AssetSet extends DataSet<AssetItem, AssetFile> {
      * @param configName the name of the config this set is associated with.
      */
     public AssetSet(String configName) {
-        super(configName);
+        super(configName, true /*validateEnabled*/);
     }
 
     @Override
