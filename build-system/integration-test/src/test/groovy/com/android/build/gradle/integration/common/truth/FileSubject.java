@@ -35,6 +35,12 @@ public class FileSubject extends Subject<FileSubject, File> {
         }
     }
 
+    public void doesNotExist() {
+        if (getSubject().exists()) {
+            fail("does not exist");
+        }
+    }
+
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void isFile() {
         if (!getSubject().exists()) {
@@ -47,5 +53,12 @@ public class FileSubject extends Subject<FileSubject, File> {
         if (!getSubject().isDirectory()) {
             fail("is a directory");
         }
+    }
+
+    public FileSubject subFile(String path) {
+        if (!getSubject().isDirectory()) {
+            fail("is a directory");
+        }
+        return new FileSubject(failureStrategy, new File(getSubject(), path));
     }
 }
