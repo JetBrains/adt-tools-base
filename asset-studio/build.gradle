@@ -1,10 +1,12 @@
 apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'sdk-java-lib'
+apply plugin: 'application'
 
 group = 'com.android.tools'
 archivesBaseName = 'asset-studio'
 version = rootProject.ext.baseVersion
+mainClassName = 'com.android.assetstudiolib.vectordrawable.VdPreview'
 
 dependencies {
     compile project(':base:layoutlib-api')

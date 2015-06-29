@@ -26,6 +26,8 @@ import java.io.*;
 
 /**
  * Generate a Image based on the VectorDrawable's XML content.
+ *
+ * <p>This class also contains a main method, which can be used to preview a vector drawable file.
  */
 public class VdPreview {
     /**
@@ -107,5 +109,9 @@ public class VdPreview {
         g.fillRect(0, 0, image.getWidth(), image.getHeight());
         vdTree.draw(g, image.getWidth(), image.getHeight());
         return image;
+    }
+
+    public static void main(String[] args) {
+        System.out.println("Hello from asset-lib.");
     }
 }
