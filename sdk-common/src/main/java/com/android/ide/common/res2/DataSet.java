@@ -64,6 +64,8 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
     private final String mConfigName;
 
+    private final boolean mValidateEnabled;
+
     /**
      * List of source files. The may not have been loaded yet.
      */
@@ -93,8 +95,9 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      *
      * @param configName the name of the config this set is associated with.
      */
-    public DataSet(String configName) {
+    public DataSet(String configName, boolean validateEnabled) {
         mConfigName = configName;
+        mValidateEnabled = validateEnabled;
     }
 
     protected abstract DataSet<I, F> createSet(String name);
@@ -374,6 +377,9 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @throws DuplicateDataException if a duplicated item is found.
      */
     protected void checkItems() throws DuplicateDataException {
+        if (!mValidateEnabled) {
+            return;
+        }
         Collection<Collection<I>> duplicateCollections = Lists.newArrayList();
         // check a list for duplicate, ignoring removed items.
         for (Map.Entry<String, Collection<I>> entry : mItems.asMap().entrySet()) {
@@ -602,5 +608,9 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         }
 
         return ignore;
+    }
+
+    protected boolean getValidateEnabled() {
+        return mValidateEnabled;
     }
 }
