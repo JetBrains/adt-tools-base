@@ -43,8 +43,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -222,7 +220,7 @@ final class DeviceMonitor {
         }
 
         for (Device device : newlyOnline) {
-            queryNewDeviceForInfo(device);
+            queryAvdName(device);
         }
     }
 
@@ -240,82 +238,16 @@ final class DeviceMonitor {
         }
     }
 
-    /**
-     * Queries a device for its build info.
-     * @param device the device to query.
-     */
-    private static void queryNewDeviceForInfo(@NonNull Device device) {
-        // TODO: do this in a separate thread.
-        try {
-            queryProperties(device);
-
-            queryNewDeviceForMountingPoint(device, IDevice.MNT_EXTERNAL_STORAGE);
-            queryNewDeviceForMountingPoint(device, IDevice.MNT_DATA);
-            queryNewDeviceForMountingPoint(device, IDevice.MNT_ROOT);
-
-            // now get the emulator Virtual Device name (if applicable).
-            if (device.isEmulator()) {
-                EmulatorConsole console = EmulatorConsole.getConsole(device);
-                if (console != null) {
-                    device.setAvdName(console.getAvdName());
-                    console.close();
-                }
-            }
-        } catch (TimeoutException e) {
-            Log.w("DeviceMonitor", String.format("Connection timeout getting info for device %s",
-                    device.getSerialNumber()));
-        } catch (AdbCommandRejectedException e) {
-            // This should never happen as we only do this once the device is online.
-            Log.w("DeviceMonitor", String.format(
-                    "Adb rejected command to get  device %1$s info: %2$s",
-                    device.getSerialNumber(), e.getMessage()));
-        } catch (ShellCommandUnresponsiveException e) {
-            Log.w("DeviceMonitor", String.format(
-                    "Adb shell command took too long returning info for device %s",
-                    device.getSerialNumber()));
-        } catch (IOException e) {
-            Log.w("DeviceMonitor", String.format(
-                    "IO Error getting info for device %s",
-                    device.getSerialNumber()));
-        } catch (InterruptedException e) {
-            Log.w("DeviceMonitor", String.format(
-                    "Interrupted getting info for device %s",
-                    device.getSerialNumber()));
-        } catch (ExecutionException e) {
-            Log.w("DeviceMonitor", String.format(
-                    "ExecutionException getting info for device %s",
-                    device.getSerialNumber()));
+    private static void queryAvdName(@NonNull Device device) {
+        if (!device.isEmulator()) {
+            return;
         }
-    }
 
-    private static void queryProperties(@NonNull Device device)
-            throws InterruptedException, ExecutionException {
-        // first attempt to populate the list of properties by querying arbitrary prop
-        // TODO: consider removing this call and just let properties be loaded on demand
-        Future<String> prop = device.getSystemProperty("ro.build.id");
-        prop.get();
-    }
-
-    private static void queryNewDeviceForMountingPoint(@NonNull final Device device,
-            @NonNull final String name)
-            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
-            IOException {
-        device.executeShellCommand("echo $" + name, new MultiLineReceiver() { //$NON-NLS-1$
-            @Override
-            public boolean isCancelled() {
-                return false;
-            }
-
-            @Override
-            public void processNewLines(String[] lines) {
-                for (String line : lines) {
-                    if (!line.isEmpty()) {
-                        // this should be the only one.
-                        device.setMountingPoint(name, line);
-                    }
-                }
-            }
-        });
+        EmulatorConsole console = EmulatorConsole.getConsole(device);
+        if (console != null) {
+            device.setAvdName(console.getAvdName());
+            console.close();
+        }
     }
 
     /**
