@@ -15,8 +15,14 @@
  */
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
+
 import junit.framework.TestCase;
 
+import org.easymock.EasyMock;
+
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 public class DeviceMonitorTest extends TestCase {
@@ -26,5 +32,36 @@ public class DeviceMonitorTest extends TestCase {
 
         assertEquals(IDevice.DeviceState.ONLINE, map.get("R32C801BL5K"));
         assertEquals(IDevice.DeviceState.UNAUTHORIZED, map.get("0079864fd1d150fd"));
+    }
+
+    public void testDeviceListComparator() {
+        List<IDevice> previous = Arrays.asList(
+                mockDevice("1", IDevice.DeviceState.ONLINE),
+                mockDevice("2", IDevice.DeviceState.BOOTLOADER)
+        );
+        List<IDevice> current = Arrays.asList(
+                mockDevice("2", IDevice.DeviceState.ONLINE),
+                mockDevice("3", IDevice.DeviceState.OFFLINE)
+        );
+
+        DeviceMonitor.DeviceListComparisonResult result = DeviceMonitor.DeviceListComparisonResult
+                .compare(previous, current);
+
+        assertEquals(1, result.updated.size());
+        assertEquals(IDevice.DeviceState.ONLINE, result.updated.get(previous.get(1)));
+
+        assertEquals(1, result.removed.size());
+        assertEquals("1", result.removed.get(0).getSerialNumber());
+
+        assertEquals(1, result.added.size());
+        assertEquals("3", result.added.get(0).getSerialNumber());
+    }
+
+    private IDevice mockDevice(@NonNull String serial, @NonNull IDevice.DeviceState state) {
+        IDevice device = EasyMock.createMock(IDevice.class);
+        EasyMock.expect(device.getSerialNumber()).andStubReturn(serial);
+        EasyMock.expect(device.getState()).andStubReturn(state);
+        EasyMock.replay(device);
+        return device;
     }
 }

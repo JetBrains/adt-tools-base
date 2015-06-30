@@ -36,7 +36,6 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -187,83 +186,43 @@ final class DeviceMonitor {
      * Updates the device list with the new items received from the monitoring service.
      */
     private void updateDevices(@NonNull List<Device> newList) {
-        List<Device> devicesToQuery = Lists.newArrayListWithExpectedSize(newList.size());
+        DeviceListComparisonResult result = DeviceListComparisonResult.compare(mDevices, newList);
+        for (IDevice device : result.removed) {
+            removeDevice((Device) device);
+            mServer.deviceDisconnected(device);
+        }
 
-        // For each device in the current list, we look for a matching the new list.
-        // * if we find it, we update the current object with whatever new information
-        //   there is (mostly state change, if the device becomes ready, we query for build info).
-        //   We also remove the device from the new list to mark it as "processed"
-        // * if we do not find it, we remove it from the current list.
-        // Once this is done, the new list contains device we aren't monitoring yet, so we
-        // add them to the list, and start monitoring them.
+        List<Device> newlyOnline = Lists.newArrayListWithExpectedSize(mDevices.size());
 
-        for (Device device : mDevices) {
-            // look for a similar device in the new list.
-            int count = newList.size();
-            boolean foundMatch = false;
-            for (int dd = 0; dd < count; dd++) {
-                Device newDevice = newList.get(dd);
+        for (Map.Entry<IDevice, DeviceState> entry : result.updated.entrySet()) {
+            Device device = (Device) entry.getKey();
+            device.setState(entry.getValue());
+            device.update(Device.CHANGE_STATE);
 
-                if (newDevice.getSerialNumber().equals(device.getSerialNumber())) {
-                    foundMatch = true;
-
-                    // update the state if needed.
-                    if (device.getState() != newDevice.getState()) {
-                        device.setState(newDevice.getState());
-                        device.update(Device.CHANGE_STATE);
-
-                        // if the device just got ready/online, we need to start monitoring it.
-                        if (device.isOnline()) {
-                            if (AndroidDebugBridge.getClientSupport()) {
-                                if (!startMonitoringDevice(device)) {
-                                    Log.e("DeviceMonitor", "Failed to start monitoring "
-                                            + device.getSerialNumber());
-                                }
-                            }
-
-                            if (device.getPropertyCount() == 0) {
-                                devicesToQuery.add(device);
-                            }
-                        }
-                    }
-
-                    // remove the new device from the list since it's been used
-                    newList.remove(dd);
-                    break;
-                }
-            }
-
-            if (!foundMatch) {
-                // the device is gone, we need to remove it, and keep current index
-                // to process the next one.
-                removeDevice(device);
-                mServer.deviceDisconnected(device);
+            if (device.isOnline()) {
+                newlyOnline.add(device);
             }
         }
 
-        // at this point we should still have some new devices in newList, so we
-        // process them.
-        for (Device newDevice : newList) {
-            // add them to the list
-            mDevices.add(newDevice);
-            mServer.deviceConnected(newDevice);
-
-            // start monitoring them.
-            if (AndroidDebugBridge.getClientSupport()) {
-                if (newDevice.isOnline()) {
-                    startMonitoringDevice(newDevice);
-                }
-            }
-
-            // look for their build info.
-            if (newDevice.isOnline()) {
-                devicesToQuery.add(newDevice);
+        for (IDevice device : result.added) {
+            mDevices.add((Device) device);
+            mServer.deviceConnected(device);
+            if (device.isOnline()) {
+                newlyOnline.add((Device) device);
             }
         }
 
-        // query the new devices for info.
-        for (Device d : devicesToQuery) {
-            queryNewDeviceForInfo(d);
+        if (AndroidDebugBridge.getClientSupport()) {
+            for (Device device : newlyOnline) {
+                if (!startMonitoringDevice(device)) {
+                    Log.e("DeviceMonitor", "Failed to start monitoring "
+                            + device.getSerialNumber());
+                }
+            }
+        }
+
+        for (Device device : newlyOnline) {
+            queryNewDeviceForInfo(device);
         }
     }
 
@@ -760,6 +719,59 @@ final class DeviceMonitor {
             }
             // now merge the new devices with the old ones.
             updateDevices(l);
+        }
+    }
+
+    @VisibleForTesting
+    static class DeviceListComparisonResult {
+        @NonNull public final Map<IDevice,DeviceState> updated;
+        @NonNull public final List<IDevice> added;
+        @NonNull public final List<IDevice> removed;
+
+        private DeviceListComparisonResult(@NonNull Map<IDevice,DeviceState> updated,
+                @NonNull List<IDevice> added,
+                @NonNull List<IDevice> removed) {
+            this.updated = updated;
+            this.added = added;
+            this.removed = removed;
+        }
+
+        @NonNull
+        public static DeviceListComparisonResult compare(@NonNull List<? extends IDevice> previous,
+                @NonNull List<? extends IDevice> current) {
+            current = Lists.newArrayList(current);
+
+            final Map<IDevice,DeviceState> updated = Maps.newHashMapWithExpectedSize(current.size());
+            final List<IDevice> added = Lists.newArrayListWithExpectedSize(1);
+            final List<IDevice> removed = Lists.newArrayListWithExpectedSize(1);
+
+            for (IDevice device : previous) {
+                IDevice currentDevice = find(current, device);
+                if (currentDevice != null) {
+                    if (currentDevice.getState() != device.getState()) {
+                        updated.put(device, currentDevice.getState());
+                    }
+                    current.remove(currentDevice);
+                } else {
+                    removed.add(device);
+                }
+            }
+
+            added.addAll(current);
+
+            return new DeviceListComparisonResult(updated, added, removed);
+        }
+
+        @Nullable
+        private static IDevice find(@NonNull List<? extends IDevice> devices,
+                @NonNull IDevice device) {
+            for (IDevice d : devices) {
+                if (d.getSerialNumber().equals(device.getSerialNumber())) {
+                    return d;
+                }
+            }
+
+            return null;
         }
     }
 
