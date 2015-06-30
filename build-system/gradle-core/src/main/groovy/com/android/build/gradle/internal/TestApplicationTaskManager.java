@@ -69,7 +69,7 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
     }
 
     @Override
-    public void createTasksForVariantData(TaskFactory tasks,
+    public void createTasksForVariantData(@NonNull TaskFactory tasks,
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
 
         super.createTasksForVariantData(tasks, variantData);
@@ -153,18 +153,6 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
 
         variantData.obfuscationTask = proguardTask;
         proguardTask.setLogger(getLogger());
-
-        // and create the configuration for the project's classes.jar file.
-        Configuration testClassesMapping = project.getConfigurations().create("testTargetClasses");
-
-        dependencyHandler.add("testTargetClasses", dependencyHandler.project(
-                ImmutableMap.of(
-                        "path", testExtension.getTargetProjectPath(),
-                        "configuration", testExtension.getTargetVariant() + "-classes"
-                )));
-
-        // Input the original .class files so the compiler can compile the test code correctly.
-        proguardTask.setClassesConfiguration(testClassesMapping);
 
         // and create the configuration for the project's mapping file.
         // Input the mapping from the tested app so that we can deal with obfuscated code.
@@ -255,7 +243,10 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
             proguardTask.doFirst(new Action<Task>() {
                 @Override
                 public void execute(Task task) {
-                    proguardOut.mkdirs();
+                    if (!proguardOut.mkdirs()) {
+                        throw new RuntimeException(
+                                "Cannot create proguard output folder " + proguardOut);
+                    }
                 }
             });
 
