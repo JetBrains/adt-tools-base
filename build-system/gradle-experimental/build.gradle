@@ -29,13 +29,13 @@ dependencies {
 
 group = 'com.android.tools.build'
 archivesBaseName = 'gradle-experimental'
-version = rootProject.ext.buildVersion
+version = rootProject.ext.experimentalVersion
 
 project.ext.pomName = 'Gradle Plug-in for Android Using Component Model'
 project.ext.pomDesc = 'Gradle plug-in to build Android applications.'
 
-//apply from: "$rootDir/buildSrc/base/publish.gradle"
-//apply from: "$rootDir/buildSrc/base/bintray.gradle"
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
 
 jar.manifest.attributes("Plugin-Version": version)
 jar.manifest.attributes("Inception-Date":"${Calendar.getInstance().get(Calendar.YEAR)}:" +
