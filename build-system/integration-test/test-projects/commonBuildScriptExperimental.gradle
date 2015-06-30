@@ -19,7 +19,7 @@ apply from: "commonGradlePluginVersion.gradle", to: env
 apply from: "commonLocalRepo.gradle"
 
 dependencies {
-    classpath "com.android.tools.build:gradle-experimental:$env.gradleVersion"
+    classpath "com.android.tools.build:gradle-experimental:$env.experimentalGradleVersion"
     if (System.env.TEST_CLASSPATH_DEPENDENCY) {
         classpath System.env.TEST_CLASSPATH_DEPENDENCY
     }
