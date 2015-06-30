@@ -34,7 +34,6 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
-import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
 import java.io.BufferedWriter;
@@ -87,14 +86,6 @@ public class AaptOutputParserTest extends TestCase {
         }
 
         return sb.toString();
-    }
-
-    public static void assertEquals(String expected, String actual) {
-        if (expected != null || actual != null) {
-            if (expected == null || !expected.equals(actual)) {
-                throw new ComparisonFailure(null, expected, actual);
-            }
-        }
     }
 
     @Override
@@ -799,24 +790,5 @@ public class AaptOutputParserTest extends TestCase {
                         "9: Simple::AudioPlayer:processDebugResources FAILED\n",
                 toString(parser.parseToolOutput(output)));
         sourceFile.delete();
-    }
-
-    private static class ComparisonFailure extends AssertionFailedError {
-
-        private final String fExpected;
-
-        private final String fActual;
-
-        public ComparisonFailure(String message, String expected, String actual) {
-            super(message);
-            this.fExpected = expected;
-            this.fActual = actual;
-        }
-
-        @Override
-        public String getMessage() {
-            return "expected:<" + fExpected + "> but was:<" + fActual + ">";
-
-        }
     }
 }
