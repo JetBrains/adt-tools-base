@@ -24,8 +24,10 @@ import com.android.ddmlib.ClientData.DebuggerStatus;
 import com.android.ddmlib.DebugPortManager.IDebugPortProvider;
 import com.android.ddmlib.IDevice.DeviceState;
 import com.android.ddmlib.utils.DebuggerPorts;
+import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.Uninterruptibles;
 
 import java.io.IOException;
@@ -43,6 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -69,21 +72,14 @@ final class DeviceMonitor {
     private final AndroidDebugBridge mServer;
     private DeviceListMonitorTask mDeviceListMonitorTask;
 
-    /**
-     * Whenever a new channel has to be registered with the {@link #mSelector}, we first need to
-     * ensure that the selector is not waiting on a select() call. This is achieved by the following
-     * architecture:
-     *  - The selector loop waits to acquire this lock before waiting on select.
-     *  - Any threads that need to register with the selector will acquire this lock, then wakeup
-     *    the selector, and perform the registration before releasing this lock.
-     */
-    private final Object mSelectorRegisterLock = new Object();
     private Selector mSelector;
 
     private final List<Device> mDevices = Lists.newCopyOnWriteArrayList();
     private final DebuggerPorts mDebuggerPorts =
             new DebuggerPorts(DdmPreferences.getDebugPortBase());
     private final Map<Client, Integer> mClientsToReopen = new HashMap<Client, Integer>();
+    private final BlockingQueue<Pair<SocketChannel,Device>> mChannelsToRegister =
+            Queues.newLinkedBlockingQueue();
 
     /**
      * Creates a new {@link DeviceMonitor} object and links it to the running
@@ -269,15 +265,14 @@ final class DeviceMonitor {
 
                     device.setClientMonitoringSocket(socketChannel);
 
-                    synchronized (mSelectorRegisterLock) {
-                        // always wakeup before doing the register. The synchronized block
-                        // ensure that the selector won't select() before the end of this block.
-                        // @see deviceClientMonitorLoop
-                        mSelector.wakeup();
+                    socketChannel.configureBlocking(false);
 
-                        socketChannel.configureBlocking(false);
-                        socketChannel.register(mSelector, SelectionKey.OP_READ, device);
+                    try {
+                        mChannelsToRegister.put(Pair.of(socketChannel, device));
+                    } catch (InterruptedException e) {
+                        // the queue is unbounded, and isn't going to block
                     }
+                    mSelector.wakeup();
 
                     return true;
                 }
@@ -330,12 +325,6 @@ final class DeviceMonitor {
     private void deviceClientMonitorLoop() {
         do {
             try {
-                // This synchronized block stops us from doing the select() if a new
-                // Device is being added.
-                // @see startMonitoringDevice()
-                synchronized (mSelectorRegisterLock) {
-                }
-
                 int count = mSelector.select();
 
                 if (mQuit) {
@@ -368,6 +357,17 @@ final class DeviceMonitor {
                         }
 
                         mClientsToReopen.clear();
+                    }
+                }
+
+                // register any new channels
+                while (!mChannelsToRegister.isEmpty()) {
+                    try {
+                        Pair<SocketChannel, Device> data = mChannelsToRegister.take();
+                        data.getFirst().register(mSelector, SelectionKey.OP_READ, data.getSecond());
+                    } catch (InterruptedException e) {
+                        // doesn't block: this thread is the only reader and it reads only when
+                        // there is data
                     }
                 }
 
