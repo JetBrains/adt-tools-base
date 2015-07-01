@@ -2337,6 +2337,7 @@ public abstract class TaskManager {
     private void createPreBuildTasks(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         variantData.preBuildTask = project.getTasks().create(scope.getTaskName("pre", "Build"));
+        variantData.preBuildTask.dependsOn(MAIN_PREBUILD);
 
         PrepareDependenciesTask prepareDependenciesTask = project.getTasks().create(
                 scope.getTaskName("prepare", "Dependencies"), PrepareDependenciesTask.class);
