@@ -20,9 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.ddmlib.Log.LogLevel;
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 
 import java.io.BufferedReader;
@@ -37,7 +35,8 @@ import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A connection to the host-side android debug bridge (adb)
@@ -479,6 +478,7 @@ public final class AndroidDebugBridge {
      * Returns the devices.
      * @see #hasInitialDeviceList()
      */
+    @NonNull
     public IDevice[] getDevices() {
         synchronized (sLock) {
             if (mDeviceMonitor != null) {
@@ -1087,7 +1087,7 @@ public final class AndroidDebugBridge {
      * This includes adding/removing listeners, but also notifying listeners of new bridges,
      * devices, and clients.
      */
-    static Object getLock() {
+    private static Object getLock() {
         return sLock;
     }
 
