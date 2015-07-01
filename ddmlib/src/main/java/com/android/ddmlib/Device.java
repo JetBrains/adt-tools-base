@@ -27,6 +27,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Atomics;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -46,6 +47,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -425,11 +427,47 @@ final class Device implements IDevice {
         return !value.endsWith("No such file or directory");
     }
 
+    @Nullable
     @Override
-    public String getMountPoint(String name) {
-        return mMountPoints.get(name);
+    public String getMountPoint(@NonNull String name) {
+        String mount = mMountPoints.get(name);
+        if (mount == null) {
+            try {
+                mount = queryMountPoint(name);
+                mMountPoints.put(name, mount);
+            } catch (TimeoutException ignored) {
+            } catch (AdbCommandRejectedException ignored) {
+            } catch (ShellCommandUnresponsiveException ignored) {
+            } catch (IOException ignored) {
+            }
+        }
+        return mount;
     }
 
+    @Nullable
+    private String queryMountPoint(@NonNull final String name)
+            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
+            IOException {
+
+        final AtomicReference<String> ref = Atomics.newReference();
+        executeShellCommand("echo $" + name, new MultiLineReceiver() { //$NON-NLS-1$
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+
+            @Override
+            public void processNewLines(String[] lines) {
+                for (String line : lines) {
+                    if (!line.isEmpty()) {
+                        // this should be the only one.
+                        ref.set(line);
+                    }
+                }
+            }
+        });
+        return ref.get();
+    }
 
     @Override
     public String toString() {
@@ -698,17 +736,17 @@ final class Device implements IDevice {
         removeClientInfo(client);
     }
 
-    /**
-     * Sets the client monitoring socket.
-     * @param socketChannel the sockets
-     */
-    void setClientMonitoringSocket(SocketChannel socketChannel) {
+    /** Sets the socket channel on which a track-jdwp command for this device has been sent. */
+    void setClientMonitoringSocket(@NonNull SocketChannel socketChannel) {
         mSocketChannel = socketChannel;
     }
 
     /**
-     * Returns the client monitoring socket.
+     * Returns the channel on which responses to the track-jdwp command will be available if it
+     * has been set, null otherwise. The channel is set via {@link #setClientMonitoringSocket(SocketChannel)},
+     * which is usually invoked when the device goes online.
      */
+    @Nullable
     SocketChannel getClientMonitoringSocket() {
         return mSocketChannel;
     }

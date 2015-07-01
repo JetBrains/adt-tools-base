@@ -240,7 +240,8 @@ public interface IDevice extends IShellEnabledDevice {
      * @see #MNT_ROOT
      * @see #MNT_DATA
      */
-    String getMountPoint(String name);
+    @Nullable
+    String getMountPoint(@NonNull String name);
 
     /**
      * Returns if the device is ready.

@@ -112,7 +112,7 @@ class PropertyFetcher {
         SettableFuture<String> result;
         if (mCacheState.equals(CacheState.FETCHING)) {
             result = addPendingRequest(name);
-        } else if (mCacheState.equals(CacheState.UNPOPULATED) || !isRoProp(name)) {
+        } else if (mDevice.isOnline() && mCacheState.equals(CacheState.UNPOPULATED) || !isRoProp(name)) {
             // cache is empty, or this is a volatile prop that requires a query
             result = addPendingRequest(name);
             mCacheState = CacheState.FETCHING;
