@@ -16,27 +16,37 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ATTR_VALUE;
 import static com.android.SdkConstants.FQCN_SUPPRESS_LINT;
+import static com.android.SdkConstants.INT_DEF_ANNOTATION;
 import static com.android.SdkConstants.SUPPRESS_LINT;
+import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
+import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import lombok.ast.Annotation;
+import lombok.ast.AnnotationDeclaration;
 import lombok.ast.AnnotationElement;
 import lombok.ast.AnnotationValue;
 import lombok.ast.ArrayInitializer;
@@ -59,8 +69,13 @@ import lombok.ast.VariableDefinitionEntry;
  * Checks annotations to make sure they are valid
  */
 public class AnnotationDetector extends Detector implements Detector.JavaScanner {
+
+    public static final Implementation IMPLEMENTATION = new Implementation(
+              AnnotationDetector.class,
+              Scope.JAVA_FILE_SCOPE);
+
     /** Placing SuppressLint on a local variable doesn't work for class-file based checks */
-    public static final Issue ISSUE = Issue.create(
+    public static final Issue INSIDE_METHOD = Issue.create(
             "LocalSuppress", //$NON-NLS-1$
             "@SuppressLint on invalid element",
 
@@ -75,9 +90,28 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
             Category.CORRECTNESS,
             3,
             Severity.ERROR,
-            new Implementation(
-                    AnnotationDetector.class,
-                    Scope.JAVA_FILE_SCOPE));
+            IMPLEMENTATION);
+
+    /** IntDef annotations should be unique */
+    public static final Issue UNIQUE = Issue.create(
+            "UniqueConstants", //$NON-NLS-1$
+            "Overlapping Enumeration Constants",
+
+            "The `@IntDef` annotation, when used without the `flag` parameter, allows you to " +
+            "create a light-weight \"enum\" or type definition. However, it's possible to " +
+            "accidentally specify the same value for two or more of the values, which can " +
+            "lead to hard-to-detect bugs. This check looks for this scenario and flags any " +
+            "repeated constants.\n" +
+            "\n" +
+            "In some cases, the repeated constant is intentional (for example, renaming a " +
+            "constant to a more intuitive name, and leaving the old name in place for " +
+            "compatibility purposes.)  In that case, simply suppress this check by adding a " +
+            "`@SuppressLint(\"UniqueConstants\")` annotation.",
+
+            Category.CORRECTNESS,
+            3,
+            Severity.ERROR,
+            IMPLEMENTATION);
 
     /** Constructs a new {@link AnnotationDetector} check */
     public AnnotationDetector() {
@@ -139,9 +173,7 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                                 if (expressions == null) {
                                     continue;
                                 }
-                                Iterator<Expression> arrayIterator = expressions.iterator();
-                                while (arrayIterator.hasNext()) {
-                                    Expression arrayElement = arrayIterator.next();
+                                for (Expression arrayElement : expressions) {
                                     if (arrayElement instanceof StringLiteral) {
                                         String id = ((StringLiteral) arrayElement).astValue();
                                         if (!checkId(node, id)) {
@@ -153,9 +185,86 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                         }
                     }
                 }
+            } else if (INT_DEF_ANNOTATION.equals(type) || "IntDef".equals(type)) {
+                // Make sure that all the constants are unique
+                ResolvedNode resolved = mContext.resolve(node);
+                if (resolved instanceof ResolvedAnnotation) {
+                    ensureUniqueValues(((ResolvedAnnotation)resolved), node);
+                }
             }
 
             return super.visitAnnotation(node);
+        }
+
+        private void ensureUniqueValues(@NonNull ResolvedAnnotation annotation,
+                @NonNull Annotation node) {
+            boolean flag = annotation.getValue(TYPE_DEF_FLAG_ATTRIBUTE) == Boolean.TRUE;
+            if (flag) {
+                return;
+            }
+
+            Object allowed = annotation.getValue();
+            if (allowed instanceof Object[]) {
+                Object[] allowedValues = (Object[]) allowed;
+                Map<Integer,Integer> valueToIndex =
+                        Maps.newHashMapWithExpectedSize(allowedValues.length);
+
+                List<Node> constants = null;
+                for (AnnotationElement element : node.astElements()) {
+                    if (element.astName() == null
+                            || ATTR_VALUE.equals(element.astName().astValue())) {
+                        AnnotationValue value = element.astValue();
+                        if (value instanceof ArrayInitializer) {
+                            ArrayInitializer initializer = (ArrayInitializer)value;
+                            constants = Lists.newArrayListWithExpectedSize(allowedValues.length);
+                            for (Expression expression : initializer.astExpressions()) {
+                                constants.add(expression);
+                            }
+                        }
+                        break;
+                    }
+                }
+                if (constants != null && constants.size() != allowedValues.length) {
+                    constants = null;
+                }
+
+                for (int index = 0; index < allowedValues.length; index++) {
+                    Object o = allowedValues[index];
+                    if (o instanceof Integer) {
+                        Integer integer = (Integer)o;
+                        if (valueToIndex.containsKey(integer)) {
+                            int repeatedValue = integer;
+
+                            Location location;
+                            String message;
+                            if (constants != null) {
+                                Node constant = constants.get(index);
+                                int prevIndex = valueToIndex.get(integer);
+                                Node prevConstant = constants.get(prevIndex);
+                                message = String.format(
+                                        "Constants `%1$s` and `%2$s` specify the same exact "
+                                                + "value (%3$d) and this is not marked as a flag",
+                                        constant.toString(), prevConstant.toString(),
+                                        repeatedValue);
+                                location = mContext.getLocation(constant);
+                                Location secondary = mContext.getLocation(prevConstant);
+                                secondary.setMessage("Previous same value");
+                                location.setSecondary(secondary);
+                            } else {
+                                message = String.format(
+                                        "More than one constant specifies the same exact "
+                                                + "value (%1$d) and this is not marked as a flag",
+                                        repeatedValue);
+                                location = mContext.getLocation(node);
+                            }
+                            Node scope = getAnnotationScope(node);
+                            mContext.report(UNIQUE, scope, location, message);
+                            break;
+                        }
+                        valueToIndex.put(integer, index);
+                    }
+                }
+            }
         }
 
         private boolean checkId(Annotation node, String id) {
@@ -193,7 +302,8 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
 
                 // This issue doesn't have AST access: annotations are not
                 // available for local variables or parameters
-                mContext.report(ISSUE, node, mContext.getLocation(node), String.format(
+                Node scope = getAnnotationScope(node);
+                mContext.report(INSIDE_METHOD, scope, mContext.getLocation(node), String.format(
                     "The `@SuppressLint` annotation cannot be used on a local " +
                     "variable with the lint check '%1$s': move out to the " +
                     "surrounding method", id));
@@ -202,5 +312,22 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
 
             return true;
         }
+    }
+
+    /**
+     * Returns the node to use as the scope for the given annotation node.
+     * You can't annotate an annotation itself (with {@code @SuppressLint}), but
+     * you should be able to place an annotation next to it, as a sibling, to only
+     * suppress the error on this annotated element, not the whole surrounding class.
+     */
+    @NonNull
+    private static Node getAnnotationScope(@NonNull Annotation node) {
+        //
+        Node scope = getParentOfType(node,
+              AnnotationDeclaration.class, true);
+        if (scope == null) {
+            scope = node;
+        }
+        return scope;
     }
 }

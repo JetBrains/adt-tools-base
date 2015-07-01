@@ -551,6 +551,11 @@ public class EcjParser extends JavaParser {
         } else if (nativeNode instanceof ExplicitConstructorCall) {
             return resolve(((ExplicitConstructorCall) nativeNode).binding);
         } else if (nativeNode instanceof Annotation) {
+            AnnotationBinding compilerAnnotation =
+                    ((Annotation) nativeNode).getCompilerAnnotation();
+            if (compilerAnnotation != null) {
+                return new EcjResolvedAnnotation(compilerAnnotation);
+            }
             return resolve(((Annotation) nativeNode).resolvedType);
         } else if (nativeNode instanceof AbstractMethodDeclaration) {
             return resolve(((AbstractMethodDeclaration) nativeNode).binding);

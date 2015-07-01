@@ -26,6 +26,7 @@ import com.android.annotations.NonNull;
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.checks.SdCardDetector;
 import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.LintUtilsTest;
 import com.android.tools.lint.detector.api.Project;
@@ -456,14 +457,14 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                            PROPERTY: name = x\n" +
                 "        [ClassDeclaration Other], type: test.pkg.TypeResolutionTest.Other, resolved class: test.pkg.TypeResolutionTest.Other \n" +
                 "          [Modifiers], type: test.pkg.TypeResolutionTest.Other, resolved class: test.pkg.TypeResolutionTest.Other \n" +
-                "            [Annotation SuppressWarnings], type: java.lang.SuppressWarnings, resolved class: java.lang.SuppressWarnings \n" +
+                "            [Annotation SuppressWarnings], type: java.lang.SuppressWarnings, resolved annotation: java.lang.SuppressWarnings \n" +
                 "              [TypeReference SuppressWarnings], type: java.lang.SuppressWarnings, resolved class: java.lang.SuppressWarnings \n" +
                 "                PROPERTY: WildcardKind = NONE\n" +
                 "                PROPERTY: arrayDimensions = 0\n" +
                 "                [TypeReferencePart], type: java.lang.SuppressWarnings, resolved class: java.lang.SuppressWarnings \n" +
                 "                  [Identifier SuppressWarnings]\n" +
                 "                    PROPERTY: name = SuppressWarnings\n" +
-                "              [AnnotationElement null], type: java.lang.SuppressWarnings, resolved class: java.lang.SuppressWarnings \n" +
+                "              [AnnotationElement null], type: java.lang.SuppressWarnings, resolved annotation: java.lang.SuppressWarnings \n" +
                 "                [StringLiteral all], type: java.lang.String\n" +
                 "                  PROPERTY: value = \"all\"\n" +
                 "            [KeywordModifier public]\n" +
@@ -684,6 +685,8 @@ public class EcjParserTest extends AbstractCheckTest {
                     c = "variable";
                     ResolvedVariable variable = (ResolvedVariable) resolved;
                     extra = variable.getType().getName();
+                } else if (resolved instanceof ResolvedAnnotation) {
+                    c = "annotation";
                 }
                 resolutionDescription = String.format(", resolved %1$s: %2$s %3$s",
                         c, resolved.getName(), extra);
