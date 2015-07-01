@@ -15,6 +15,7 @@
  */
 
 gradleVersion = System.env.CUSTOM_GRADLE
+experimentalGradleVersion = System.env.CUSTOM_EXPERIMENTAL_GRADLE
 
 if (gradleVersion == null && System.env.CUSTOM_REPO != null) {
     // Extract the version from the top level buildSrc, relative to CUSTOM_REPO.
@@ -30,9 +31,6 @@ if (gradleVersion == null && System.env.CUSTOM_REPO != null) {
         }
     }
     apply from: "$System.env.CUSTOM_REPO/../../tools/buildSrc/base/version.gradle", to: env
-    print env.project.ext.buildVersion
-    print env.project.ext.experimentalVersion
-    print env.project.ext.apiVersion
     gradleVersion = env.project.ext.buildVersion
     experimentalGradleVersion = env.project.ext.experimentalVersion
 }
