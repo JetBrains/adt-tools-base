@@ -28,6 +28,7 @@ import com.android.builder.model.ProductFlavorContainer
 import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
 import com.android.builder.model.Variant
+import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -175,5 +176,13 @@ class ArtifactApiTest {
             assertNotNull("java artifact deps null-check", deps)
             assertFalse(deps.getJavaLibraries().isEmpty())
         }
+    }
+
+    @Test
+    public void backwardsCompatible() throws Exception {
+        // ATTENTION Author and Reviewers - please make sure required changes to the build file
+        // are backwards compatible before updating this test.
+        assertThat(FileUtils.sha1(project.file("build.gradle")))
+                .isEqualTo("cf6fa23a32f342718b1f342fc97846f56665a155")
     }
 }

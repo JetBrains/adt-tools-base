@@ -20,6 +20,7 @@ import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.JavaArtifact
 import com.android.builder.model.Variant
+import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -83,5 +84,13 @@ class GenFolderApi2Test {
             assertThat(sortedFolders[1].absolutePath).startsWith(sourceFolderStart)
             assertThat(sortedFolders[1].absolutePath).endsWith("-2")
         }
+    }
+
+    @Test
+    public void backwardsCompatible() throws Exception {
+        // ATTENTION Author and Reviewers - please make sure required changes to the build file
+        // are backwards compatible before updating this test.
+        assertThat(FileUtils.sha1(project.file("build.gradle")))
+                .isEqualTo("93b7507ce31a087a4efa4cae66474ad320e25b6c")
     }
 }
