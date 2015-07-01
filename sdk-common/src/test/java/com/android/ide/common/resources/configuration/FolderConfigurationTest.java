@@ -22,6 +22,7 @@ import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.resources.ScreenOrientation;
+import com.android.resources.ScreenRound;
 import com.android.resources.UiMode;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -227,6 +228,26 @@ public class FolderConfigurationTest extends TestCase {
         assertEquals(ImmutableSet.of(configurables.get(1), configurables.get(3)),
                 ImmutableSet.copyOf(matchingConfigurables));
 
+    }
+
+    public void testIsRoundMatch() {
+        FolderConfiguration configForFolder = FolderConfiguration
+                .getConfigForFolder("values-en-round");
+        assertNotNull(configForFolder);
+        assertNotNull(configForFolder.getScreenRoundQualifier());
+        assertEquals(ScreenRound.ROUND, configForFolder.getScreenRoundQualifier().getValue());
+        runConfigMatchTest("en-rgb-Round-Port-HDPI-notouch-12key", 4,
+                "",
+                "en",
+                "fr-rCa",
+                "en-notround-hdpi",
+                "en-notouch");
+
+        runConfigMatchTest("en-rgb-Round-Port-HDPI-notouch-12key", 2,
+                "",
+                "en",
+                "en-round-hdpi",
+                "port-12key");
     }
 
     // --- helper methods
