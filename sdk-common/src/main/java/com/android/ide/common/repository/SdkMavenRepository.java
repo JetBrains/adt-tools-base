@@ -110,7 +110,7 @@ public enum SdkMavenRepository {
     }
 
     /**
-     * Find the best matching {@link com.android.ide.common.repository.GradleCoordinate}
+     * Find the best matching {@link GradleCoordinate}
      *
      * @param sdkHome the SDK installation
      * @param groupId the artifact group id
@@ -136,7 +136,7 @@ public enum SdkMavenRepository {
     }
 
     /**
-     * Find the best matching {@link com.android.ide.common.repository.GradleCoordinate}
+     * Find the best matching {@link GradleCoordinate}
      *
      * @param groupId the artifact group id
      * @param artifactId the artifact id
@@ -183,6 +183,20 @@ public enum SdkMavenRepository {
             if (!versionCoordinates.isEmpty()) {
                 return Collections.max(versionCoordinates, COMPARE_PLUS_HIGHER);
             }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public static SdkMavenRepository getByGroupId(@NonNull String groupId) {
+        if ("com.android.support".equals(groupId) || "com.android.support.test".equals(groupId)) {
+            return ANDROID;
+        }
+        if (groupId.startsWith("com.google.android.")) {
+            // com.google.android.gms, com.google.android.support.wearable,
+            // com.google.android.wearable, ... possibly more in the future
+            return GOOGLE;
         }
 
         return null;
