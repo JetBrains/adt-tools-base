@@ -68,10 +68,13 @@ import org.w3c.dom.NodeList;
 public class ResourceItem extends DataItem<ResourceFile>
         implements Configurable, Comparable<ResourceItem> {
 
+    @NonNull
     private final ResourceType mType;
 
+    @Nullable
     private Node mValue;
 
+    @Nullable
     protected ResourceValue mResourceValue;
 
     /**
@@ -148,7 +151,7 @@ public class ResourceItem extends DataItem<ResourceFile>
      *
      * @param from the resource to copy the value from.
      */
-    void setValue(ResourceItem from) {
+    void setValue(@NonNull ResourceItem from) {
         mValue = from.mValue;
         setTouched();
     }
@@ -181,11 +184,12 @@ public class ResourceItem extends DataItem<ResourceFile>
         }
         String qualifiers = getQualifiers();
 
-        final String typeName;
-        if (mType == ResourceType.PUBLIC) {
-            typeName = "public_" + ((Element) mValue).getAttribute(ATTR_TYPE);
-        } else {
-            typeName = mType.getName();
+        String typeName = mType.getName();
+        if (mType == ResourceType.PUBLIC && mValue != null) {
+            String typeAttribute = ((Element) mValue).getAttribute(ATTR_TYPE);
+            if (typeAttribute != null) {
+                typeName += "_" + typeAttribute;
+            }
         }
 
         if (!qualifiers.isEmpty()) {
