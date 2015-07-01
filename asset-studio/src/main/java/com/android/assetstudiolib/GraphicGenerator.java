@@ -244,7 +244,7 @@ public abstract class GraphicGenerator {
      */
     public static float getMdpiScaleFactor(Density density) {
         if (density == Density.ANYDPI) {
-            density = Density.XXHIGH;
+            density = Density.XXXHIGH;
         }
         return density.getDpiValue() / (float) Density.MEDIUM.getDpiValue();
     }
@@ -311,10 +311,9 @@ public abstract class GraphicGenerator {
      *
      * @return an iterator for the available image names
      */
-    public static Iterator<String> getClipartNames() {
+    public static Iterator<String> getResourcesNames(String pathPrefix, String filenameExtension) {
         List<String> names = new ArrayList<String>(80);
         try {
-            String pathPrefix = "images/clipart/big/"; //$NON-NLS-1$
             ZipFile zipFile = null;
             ProtectionDomain protectionDomain = GraphicGenerator.class.getProtectionDomain();
             URL url = protectionDomain.getCodeSource().getLocation();
@@ -340,7 +339,7 @@ public abstract class GraphicGenerator {
             while (enumeration.hasMoreElements()) {
                 ZipEntry zipEntry = enumeration.nextElement();
                 String name = zipEntry.getName();
-                if (!name.startsWith(pathPrefix) || !name.endsWith(".png")) { //$NON-NLS-1$
+                if (!name.startsWith(pathPrefix) || !name.endsWith(filenameExtension)) { //$NON-NLS-1$
                     continue;
                 }
 
