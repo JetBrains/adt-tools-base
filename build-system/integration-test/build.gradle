@@ -74,7 +74,7 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
     outputs.upToDateWhen { false }
 
     forkEvery= 1
-    maxParallelForks = System.env.containsKey("REMOTE_TEST_PROVIDER") ? 50 : 1
+    maxParallelForks = System.env.containsKey("REMOTE_TEST_PROVIDER") ? Runtime.runtime.availableProcessors() : 1
 
     useJUnit {
         includeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
