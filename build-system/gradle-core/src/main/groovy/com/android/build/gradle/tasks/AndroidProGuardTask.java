@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.tasks;
 
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 import com.android.SdkConstants;
@@ -195,7 +194,7 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier, J
 
             // --- Output File ---
 
-            proguardTask.obfuscatedClassesJar = scope.getProguardOutputFile();;
+            proguardTask.obfuscatedClassesJar = scope.getProguardOutputFile();
 
             // --- Proguard Config ---
 
