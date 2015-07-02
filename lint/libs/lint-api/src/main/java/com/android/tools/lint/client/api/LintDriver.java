@@ -100,6 +100,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lombok.ast.Annotation;
+import lombok.ast.AnnotationDeclaration;
 import lombok.ast.AnnotationElement;
 import lombok.ast.AnnotationValue;
 import lombok.ast.ArrayInitializer;
@@ -111,6 +112,7 @@ import lombok.ast.Modifiers;
 import lombok.ast.Node;
 import lombok.ast.StrictListAccessor;
 import lombok.ast.StringLiteral;
+import lombok.ast.TypeDeclaration;
 import lombok.ast.TypeReference;
 import lombok.ast.VariableDefinition;
 
@@ -2374,9 +2376,9 @@ public class LintDriver {
                 if (isSuppressed(issue, declaration.astModifiers())) {
                     return true;
                 }
-            } else if (type == ClassDeclaration.class) {
-                // Class
-                ClassDeclaration declaration = (ClassDeclaration) scope;
+            } else if (TypeDeclaration.class.isAssignableFrom(type)) {
+                // Class, annotation, enum, interface
+                TypeDeclaration declaration = (TypeDeclaration) scope;
                 if (isSuppressed(issue, declaration.astModifiers())) {
                     return true;
                 }

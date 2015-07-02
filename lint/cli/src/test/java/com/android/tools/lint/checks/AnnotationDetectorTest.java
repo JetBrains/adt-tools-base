@@ -47,6 +47,46 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
             ));
     }
 
+    @SuppressWarnings("ClassNameDiffersFromFileName")
+    public void testUniqueValues() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/IntDefTest.java:9: Error: Constants STYLE_NO_INPUT and STYLE_NO_FRAME specify the same exact value (2) and this is not marked as a flag [UniqueConstants]\n"
+                + "    @IntDef({STYLE_NORMAL, STYLE_NO_TITLE, STYLE_NO_FRAME, STYLE_NO_INPUT})\n"
+                + "                                                           ~~~~~~~~~~~~~~\n"
+                + "    src/test/pkg/IntDefTest.java:9: Previous same value\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/IntDefTest.java", ""
+                                + "package test.pkg;\n"
+                                + "import android.support.annotation.IntDef;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "@SuppressLint(\"UnusedDeclaration\")\n"
+                                + "public class IntDefTest {\n"
+                                + "    @IntDef({STYLE_NORMAL, STYLE_NO_TITLE, STYLE_NO_FRAME, STYLE_NO_INPUT})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    private @interface DialogStyle {}\n"
+                                + "\n"
+                                + "    public static final int STYLE_NORMAL = 0;\n"
+                                + "    public static final int STYLE_NO_TITLE = 1;\n"
+                                + "    public static final int STYLE_NO_FRAME = 2;\n"
+                                + "    public static final int STYLE_NO_INPUT = 2;\n"
+                                + "\n"
+                                + "    @IntDef({STYLE_NORMAL, STYLE_NO_TITLE, STYLE_NO_FRAME, STYLE_NO_INPUT})\n"
+                                + "    @SuppressWarnings(\"UniqueConstants\")\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    private @interface SuppressedDialogStyle {}\n"
+                                + "\n"
+
+                                + ""
+                                + "}"),
+                        copy("src/android/support/annotation/IntDef.java.txt",
+                                "src/android/support/annotation/IntDef.java")));
+    }
+
     @Override
     protected Detector getDetector() {
         return new AnnotationDetector();
