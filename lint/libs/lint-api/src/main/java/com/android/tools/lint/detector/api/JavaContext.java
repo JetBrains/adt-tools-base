@@ -25,18 +25,20 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.LintDriver;
+import com.google.common.collect.Iterators;
 
 import java.io.File;
 import java.util.Iterator;
 
 import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
+import lombok.ast.ConstructorInvocation;
+import lombok.ast.EnumConstant;
 import lombok.ast.Expression;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 import lombok.ast.Position;
-import lombok.ast.StrictListAccessor;
 
 /**
  * A {@link Context} used when checking Java files.
@@ -230,23 +232,42 @@ public class JavaContext extends Context {
     }
 
     @Nullable
-    public static Node getParameter(@NonNull MethodInvocation call, int parameter) {
-        StrictListAccessor<Expression, MethodInvocation> parameters = call.astArguments();
-        if (parameters.size() <= parameter) {
+    public static String getMethodName(@NonNull Node call) {
+        if (call instanceof MethodInvocation) {
+            return ((MethodInvocation)call).astName().astValue();
+        } else if (call instanceof ConstructorInvocation) {
+            return ((ConstructorInvocation)call).astTypeReference().getTypeName();
+        } else if (call instanceof EnumConstant) {
+            return ((EnumConstant)call).astName().astValue();
+        } else {
             return null;
         }
+    }
 
-        if (parameter == 0) {
-            return parameters.first();
-        } else if (parameter == parameters.size() - 1) {
-            return parameters.last();
+    @NonNull
+    public static Iterator<Expression> getParameters(@NonNull Node call) {
+        if (call instanceof MethodInvocation) {
+            return ((MethodInvocation) call).astArguments().iterator();
+        } else if (call instanceof ConstructorInvocation) {
+            return ((ConstructorInvocation) call).astArguments().iterator();
+        } else if (call instanceof EnumConstant) {
+            return ((EnumConstant) call).astArguments().iterator();
         } else {
-            Iterator<Expression> iterator = parameters.iterator();
-            for (int i = 0; i < parameter - 1; i++) {
-                iterator.next();
-            }
-            return iterator.next();
+            return Iterators.emptyIterator();
         }
+    }
+
+    @Nullable
+    public static Node getParameter(@NonNull Node call, int parameter) {
+        Iterator<Expression> iterator = getParameters(call);
+
+        for (int i = 0; i < parameter - 1; i++) {
+            if (!iterator.hasNext()) {
+                return null;
+            }
+            iterator.next();
+        }
+        return iterator.hasNext() ? iterator.next() : null;
     }
 
     /**

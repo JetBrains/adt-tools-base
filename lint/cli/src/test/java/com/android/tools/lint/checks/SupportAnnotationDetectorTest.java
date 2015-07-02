@@ -359,6 +359,81 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                         "src/android/support/annotation/DrawableRes.java.txt=>src/android/support/annotation/DrawableRes.java"));
     }
 
+    public void testTypes2() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/ActivityType.java:5: Error: Expected resource of type drawable [ResourceType]\n"
+                + "    SKI(1),\n"
+                + "        ~\n"
+                + "src/test/pkg/ActivityType.java:6: Error: Expected resource of type drawable [ResourceType]\n"
+                + "    SNOWBOARD(2);\n"
+                + "              ~\n"
+                + "2 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/ActivityType.java", ""
+                                + "import android.support.annotation.DrawableRes;\n"
+                                + "\n"
+                                + "enum ActivityType {\n"
+                                + "\n"
+                                + "    SKI(1),\n"
+                                + "    SNOWBOARD(2);\n"
+                                + "\n"
+                                + "    private final int mIconResId;\n"
+                                + "\n"
+                                + "    ActivityType(@DrawableRes int iconResId) {\n"
+                                + "        mIconResId = iconResId;\n"
+                                + "    }\n"
+                                + "}"),
+                        copy("src/android/support/annotation/DrawableRes.java.txt",
+                                "src/android/support/annotation/DrawableRes.java")));
+    }
+
+    @SuppressWarnings({"MethodMayBeStatic", "ResultOfObjectAllocationIgnored"})
+    public void testConstructor() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/ConstructorTest.java:14: Error: Expected resource of type drawable [ResourceType]\n"
+                + "        new ConstructorTest(1, 3);\n"
+                + "                            ~\n"
+                + "src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]\n"
+                + "        new ConstructorTest(1, 3);\n"
+                + "                               ~\n"
+                + "src/test/pkg/ConstructorTest.java:19: Error: Method test.pkg.ConstructorTest must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "        new ConstructorTest(res, range);\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "3 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/ConstructorTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.DrawableRes;\n"
+                                + "import android.support.annotation.IntRange;\n"
+                                + "import android.support.annotation.UiThread;\n"
+                                + "import android.support.annotation.WorkerThread;\n"
+                                + "\n"
+                                + "public class ConstructorTest {\n"
+                                + "    @UiThread\n"
+                                + "    ConstructorTest(@DrawableRes int iconResId, @IntRange(from = 5) int start) {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void testParameters() {\n"
+                                + "        new ConstructorTest(1, 3);\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @WorkerThread\n"
+                                + "    public void testMethod(int res, int range) {\n"
+                                + "        new ConstructorTest(res, range);\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mWorkerThreadPermission,
+                        mUiThreadPermission,
+                        copy("src/android/support/annotation/DrawableRes.java.txt",
+                                "src/android/support/annotation/DrawableRes.java"),
+                        copy("src/android/support/annotation/IntRange.java.txt",
+                                "src/android/support/annotation/IntRange.java")
+                ));
+    }
+
     public void testColorAsDrawable() throws Exception {
         assertEquals(
                 "No warnings.",

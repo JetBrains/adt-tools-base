@@ -70,6 +70,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -83,6 +84,8 @@ import lombok.ast.AstVisitor;
 import lombok.ast.BinaryExpression;
 import lombok.ast.BinaryOperator;
 import lombok.ast.Catch;
+import lombok.ast.ConstructorInvocation;
+import lombok.ast.EnumConstant;
 import lombok.ast.Expression;
 import lombok.ast.ExpressionStatement;
 import lombok.ast.FloatingPointLiteral;
@@ -282,7 +285,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     private void checkMethodAnnotation(
             @NonNull JavaContext context,
             @NonNull ResolvedMethod method,
-            @NonNull MethodInvocation node,
+            @NonNull Node node,
             @NonNull ResolvedAnnotation annotation) {
         String signature = annotation.getSignature();
         if (CHECK_RESULT_ANNOTATION.equals(signature)
@@ -355,7 +358,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private void checkPermission(
             @NonNull JavaContext context,
-            @NonNull MethodInvocation node,
+            @NonNull Node node,
             @Nullable ResolvedMethod method,
             @Nullable Result result,
             @NonNull PermissionRequirement requirement) {
@@ -610,10 +613,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
     }
 
-    private static void checkResult(@NonNull JavaContext context, @NonNull MethodInvocation node,
+    private static void checkResult(@NonNull JavaContext context, @NonNull Node node,
             @NonNull ResolvedAnnotation annotation) {
         if (node.getParent() instanceof ExpressionStatement) {
-            String methodName = node.astName().astValue();
+            String methodName = JavaContext.getMethodName(node);
             Object suggested = annotation.getValue(ATTR_SUGGEST);
 
             // Failing to check permissions is a potential security issue (and had an existing
@@ -621,7 +624,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             // custom severity in their LintOptions etc) so continue to use that issue
             // (which also has category Security rather than Correctness) for these:
             Issue issue = CHECK_RESULT;
-            if (methodName.startsWith("check") && methodName.contains("Permission")) {
+            if (methodName != null && methodName.startsWith("check")
+                    && methodName.contains("Permission")) {
                 issue = CHECK_PERMISSION;
             }
 
@@ -640,7 +644,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private static void checkThreading(
             @NonNull JavaContext context,
-            @NonNull MethodInvocation node,
+            @NonNull Node node,
             @NonNull ResolvedMethod method,
             @NonNull String annotation) {
         String threadContext = getThreadContext(context, node);
@@ -692,7 +696,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     /** Attempts to infer the current thread context at the site of the given method call */
     @Nullable
     private static String getThreadContext(@NonNull JavaContext context,
-            @NonNull MethodInvocation methodCall) {
+            @NonNull Node methodCall) {
         Node node = findSurroundingMethod(methodCall);
         if (node != null) {
             ResolvedNode resolved = context.resolve(node);
@@ -1357,7 +1361,11 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     @Override
     public
     List<Class<? extends Node>> getApplicableNodeTypes() {
-        return Collections.<Class<? extends Node>>singletonList(MethodInvocation.class);
+        //noinspection unchecked
+        return Arrays.<Class<? extends Node>>asList(
+                MethodInvocation.class,
+                ConstructorInvocation.class,
+                EnumConstant.class);
     }
 
     @Nullable
@@ -1378,56 +1386,82 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             ResolvedNode resolved = mContext.resolve(call);
             if (resolved instanceof ResolvedMethod) {
                 ResolvedMethod method = (ResolvedMethod) resolved;
-                Iterable<ResolvedAnnotation> annotations = method.getAnnotations();
-                for (ResolvedAnnotation annotation : annotations) {
-                    annotation = getRelevantAnnotation(annotation);
-                    if (annotation != null) {
-                        checkMethodAnnotation(mContext, method, call, annotation);
-                    }
-                }
-
-                // Look for annotations on the class as well: these trickle
-                // down to all the methods in the class
-                ResolvedClass containingClass = method.getContainingClass();
-                annotations = containingClass.getAnnotations();
-                for (ResolvedAnnotation annotation : annotations) {
-                    annotation = getRelevantAnnotation(annotation);
-                    if (annotation != null) {
-                        checkMethodAnnotation(mContext, method, call, annotation);
-                    }
-                }
-
-                Iterator<Expression> arguments = call.astArguments().iterator();
-                for (int i = 0, n = method.getArgumentCount();
-                        i < n && arguments.hasNext();
-                        i++) {
-                    Expression argument = arguments.next();
-
-                    annotations = method.getParameterAnnotations(i);
-                    for (ResolvedAnnotation annotation : annotations) {
-                        annotation = getRelevantAnnotation(annotation);
-                        if (annotation != null) {
-                            checkParameterAnnotation(mContext, argument, annotation);
-                        }
-                    }
-                }
-
-                checkIndirectPermissions(call, method, mContext);
+                checkCall(call, method);
             }
 
             return false;
         }
+
+        @Override
+        public boolean visitConstructorInvocation(@NonNull ConstructorInvocation call) {
+            ResolvedNode resolved = mContext.resolve(call);
+            if (resolved instanceof ResolvedMethod) {
+                ResolvedMethod method = (ResolvedMethod) resolved;
+                checkCall(call, method);
+            }
+
+            return false;
+        }
+
+        @Override
+        public boolean visitEnumConstant(EnumConstant node) {
+            final ResolvedNode resolved = mContext.resolve(node);
+            if (resolved instanceof ResolvedMethod) {
+                ResolvedMethod method = (ResolvedMethod) resolved;
+                checkCall(node, method);
+            }
+
+            return false;
+        }
+
+        private void checkCall(@NonNull Node call, ResolvedMethod method) {
+            Iterable<ResolvedAnnotation> annotations = method.getAnnotations();
+            for (ResolvedAnnotation annotation : annotations) {
+                annotation = getRelevantAnnotation(annotation);
+                if (annotation != null) {
+                    checkMethodAnnotation(mContext, method, call, annotation);
+                }
+            }
+
+            // Look for annotations on the class as well: these trickle
+            // down to all the methods in the class
+            ResolvedClass containingClass = method.getContainingClass();
+            annotations = containingClass.getAnnotations();
+            for (ResolvedAnnotation annotation : annotations) {
+                annotation = getRelevantAnnotation(annotation);
+                if (annotation != null) {
+                    checkMethodAnnotation(mContext, method, call, annotation);
+                }
+            }
+
+            Iterator<Expression> arguments = JavaContext.getParameters(call);
+            for (int i = 0, n = method.getArgumentCount();
+                    i < n && arguments.hasNext();
+                    i++) {
+                Expression argument = arguments.next();
+
+                annotations = method.getParameterAnnotations(i);
+                for (ResolvedAnnotation annotation : annotations) {
+                    annotation = getRelevantAnnotation(annotation);
+                    if (annotation != null) {
+                        checkParameterAnnotation(mContext, argument, annotation);
+                    }
+                }
+            }
+
+            checkIndirectPermissions(call, method, mContext);
+        }
     }
 
     private void checkIndirectPermissions(
-            @NonNull MethodInvocation call,
+            @NonNull Node call,
             @NonNull ResolvedMethod method,
             @NonNull JavaContext context) {
-        String name = call.astName().astValue();
         if (method.getArgumentCount() == 0) {
             return;
         }
 
+        String name = JavaContext.getMethodName(call);
         Operation operation = getPermissionOperation(name);
         if (operation != null) {
             if (operation == ACTION) {

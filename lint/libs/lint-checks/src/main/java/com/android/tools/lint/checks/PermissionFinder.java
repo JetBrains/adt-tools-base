@@ -37,7 +37,6 @@ import lombok.ast.ConstructorInvocation;
 import lombok.ast.Expression;
 import lombok.ast.ExpressionStatement;
 import lombok.ast.InlineIfExpression;
-import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 import lombok.ast.NullLiteral;
 import lombok.ast.Select;
@@ -104,7 +103,7 @@ public class PermissionFinder {
     public static Result findRequiredPermissions(
             @NonNull Operation operation,
             @NonNull JavaContext context,
-            @NonNull MethodInvocation call,
+            @NonNull Node call,
             int parameterIndex) {
 
         // To find the permission required by an intent, we proceed in 3 steps:
