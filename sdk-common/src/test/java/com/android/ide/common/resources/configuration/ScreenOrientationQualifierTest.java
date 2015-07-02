@@ -46,7 +46,7 @@ public class ScreenOrientationQualifierTest extends TestCase {
         assertEquals("port", config.getScreenOrientationQualifier().toString()); //$NON-NLS-1$
     }
 
-    public void testLanscape() {
+    public void testLandscape() {
         assertEquals(true, soq.checkAndSet("land", config)); //$NON-NLS-1$
         assertTrue(config.getScreenOrientationQualifier() != null);
         assertEquals(ScreenOrientation.LANDSCAPE,

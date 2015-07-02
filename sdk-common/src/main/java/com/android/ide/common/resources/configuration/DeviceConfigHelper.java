@@ -18,6 +18,7 @@ package com.android.ide.common.resources.configuration;
 
 import com.android.annotations.Nullable;
 import com.android.resources.NightMode;
+import com.android.resources.ScreenRound;
 import com.android.resources.UiMode;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.devices.Hardware;
@@ -58,6 +59,12 @@ public class DeviceConfigHelper {
         config.setScreenSizeQualifier(new ScreenSizeQualifier(screen.getSize()));
         config.setTextInputMethodQualifier(new TextInputMethodQualifier(hw.getKeyboard()));
         config.setTouchTypeQualifier(new TouchScreenQualifier(screen.getMechanism()));
+        ScreenRound screenRound = screen.getScreenRound();
+        if (screenRound == null) {
+            // The default is not round.
+            screenRound = ScreenRound.NOTROUND;
+        }
+        config.setScreenRoundQualifier(new ScreenRoundQualifier(screenRound));
 
         config.setKeyboardStateQualifier(new KeyboardStateQualifier(state.getKeyState()));
         config.setNavigationStateQualifier(new NavigationStateQualifier(state.getNavState()));
