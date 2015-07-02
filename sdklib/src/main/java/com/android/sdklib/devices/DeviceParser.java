@@ -33,6 +33,7 @@ import com.android.resources.ScreenRound;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
 import com.android.resources.UiMode;
+import com.google.common.base.Splitter;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -56,7 +57,7 @@ import javax.xml.validation.Schema;
 public class DeviceParser {
 
     private static class DeviceHandler extends DefaultHandler {
-        private static final String sSpaceRegex = "[\\s]+";
+        private static final Splitter sSpaceSplitter = Splitter.on(' ').omitEmptyStrings();
         private static final String ROUND_BOOT_PROP = "ro.emulator.circular";
 
         private final List<Device> mDevices = new ArrayList<Device>();
@@ -373,9 +374,9 @@ public class DeviceParser {
             }
         }
 
-        private List<String> getStringList(StringBuilder stringAccumulator) {
+        private static List<String> getStringList(StringBuilder stringAccumulator) {
             List<String> filteredStrings = new ArrayList<String>();
-            for (String s : getString(mStringAccumulator).split(sSpaceRegex)) {
+            for (String s : sSpaceSplitter.split(stringAccumulator)) {
                 if (s != null && !s.isEmpty()) {
                     filteredStrings.add(s.trim());
                 }

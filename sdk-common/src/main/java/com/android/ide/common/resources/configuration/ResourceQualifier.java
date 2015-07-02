@@ -95,7 +95,7 @@ public abstract class ResourceQualifier implements Comparable<ResourceQualifier>
     public boolean isBetterMatchThan(ResourceQualifier compareTo, ResourceQualifier reference) {
         // the default is to always return false. This gives less overhead than always returning
         // true, as it would only compare same values anyway.
-        return false;
+        return compareTo == null;
     }
 
     @Override
