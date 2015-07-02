@@ -2314,7 +2314,7 @@ public abstract class TaskManager {
      */
     @Nullable
     public File maybeCreateProguardTasks(
-            final @NonNull TaskFactory tasks,
+            @NonNull final TaskFactory tasks,
             @NonNull VariantScope scope,
             @NonNull final PostCompilationData pcData) {
         if (!scope.getVariantData().getVariantConfiguration().isMinifyEnabled()) {

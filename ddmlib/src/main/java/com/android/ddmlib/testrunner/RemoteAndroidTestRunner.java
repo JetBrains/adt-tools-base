@@ -18,7 +18,6 @@ package com.android.ddmlib.testrunner;
 
 import com.android.annotations.NonNull;
 import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellEnabledDevice;
 import com.android.ddmlib.Log;
@@ -31,8 +30,6 @@ import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -252,7 +249,7 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
     public void run(Collection<ITestRunListener> listeners)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException {
-        final String runCaseCommandStr = String.format("am instrument -w %1$s-r %2$s %3$s",
+        final String runCaseCommandStr = String.format("am instrument -w -r %1$s %2$s %3$s",
                 getRunOptions(), getArgsCommand(), getRunnerPath());
         Log.i(LOG_TAG, String.format("Running %1$s on %2$s", runCaseCommandStr,
                 mRemoteDevice.getName()));
