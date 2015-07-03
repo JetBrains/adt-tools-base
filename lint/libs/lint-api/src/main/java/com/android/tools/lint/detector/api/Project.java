@@ -55,6 +55,7 @@ import com.android.sdklib.SdkVersionInfo;
 import com.android.tools.lint.client.api.CircularDependencyException;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.LintClient;
+import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.SdkInfo;
 import com.google.common.annotations.Beta;
 import com.google.common.base.CharMatcher;
@@ -564,12 +565,13 @@ public class Project {
     /**
      * Gets the configuration associated with this project
      *
+     * @param driver the current driver, if any
      * @return the configuration associated with this project
      */
     @NonNull
-    public Configuration getConfiguration() {
+    public Configuration getConfiguration(@Nullable LintDriver driver) {
         if (mConfiguration == null) {
-            mConfiguration = mClient.getConfiguration(this);
+            mConfiguration = mClient.getConfiguration(this, driver);
         }
         return mConfiguration;
     }
