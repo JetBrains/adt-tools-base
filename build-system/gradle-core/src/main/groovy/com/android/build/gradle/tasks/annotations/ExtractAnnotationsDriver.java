@@ -90,7 +90,7 @@ public class ExtractAnnotationsDriver {
         List<String> classpath = Lists.newArrayList();
         List<File> sources = Lists.newArrayList();
         List<File> mergePaths = Lists.newArrayList();
-        File apiFilter = null;
+        List<File> apiFilters = null;
         File rmTypeDefs = null;
         boolean verbose = true;
         boolean allowMissingTypes = false;
@@ -168,10 +168,16 @@ public class ExtractAnnotationsDriver {
             } else if (flag.equals("--encoding")) {
                 encoding = value;
             } else if (flag.equals("--api-filter")) {
-                apiFilter = new File(value);
-                if (!apiFilter.isFile()) {
-                    String message = apiFilter + " does not exist or is not a file";
-                    abort(message);
+                if (apiFilters == null) {
+                    apiFilters = Lists.newArrayList();
+                }
+                for (String path : Splitter.on(",").omitEmptyStrings().split(value)) {
+                    File apiFilter = new File(path);
+                    if (!apiFilter.isFile()) {
+                        String message = apiFilter + " does not exist or is not a file";
+                        abort(message);
+                    }
+                    apiFilters.add(apiFilter);
                 }
             } else if (flag.equals("--language-level")) {
                 if ("1.6".equals(value)) {
@@ -201,13 +207,17 @@ public class ExtractAnnotationsDriver {
             abort("Must specify output path with --output or a proguard path with --proguard");
         }
 
-        // API definition file
+        // API definition files
         ApiDatabase database = null;
-        if (apiFilter != null && apiFilter.exists()) {
+        if (apiFilters != null && !apiFilters.isEmpty()) {
             try {
-                database = new ApiDatabase(apiFilter);
+                List<String> lines = Lists.newArrayList();
+                for (File file : apiFilters) {
+                    lines.addAll(Files.readLines(file, Charsets.UTF_8));
+                }
+                database = new ApiDatabase(lines);
             } catch (IOException e) {
-                abort("Could not open API database " + apiFilter + ": " + e.getLocalizedMessage());
+                abort("Could not open API database " + apiFilters + ": " + e.getLocalizedMessage());
             }
         }
 

@@ -96,6 +96,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -912,7 +913,12 @@ public class Extractor {
             Document document = XmlUtils.parseDocument(xml, false);
             mergeDocument(document);
         } catch (Exception e) {
-            warning("Failed to merge " + path + ": " + e.toString());
+            String message = "Failed to merge " + path + ": " + e.toString();
+            if (e instanceof SAXParseException) {
+                SAXParseException spe = (SAXParseException)e;
+                message = "Line " + spe.getLineNumber() + ":" + spe.getColumnNumber() + ": " + message;
+            }
+            error(message);
             if (!(e instanceof IOException)) {
                 e.printStackTrace();
             }
@@ -1300,8 +1306,9 @@ public class Extractor {
 
             annotation = new AnnotationData(
                     valName.equals("stringValues") ? STRING_DEF_ANNOTATION : INT_DEF_ANNOTATION,
-                    TYPE_DEF_VALUE_ATTRIBUTE, value,
-                    flag ? TYPE_DEF_FLAG_ATTRIBUTE : null, flag ? VALUE_TRUE : null);
+                    new String[] {
+                            TYPE_DEF_VALUE_ATTRIBUTE, value,
+                            flag ? TYPE_DEF_FLAG_ATTRIBUTE : null, flag ? VALUE_TRUE : null });
         } else if (STRING_DEF_ANNOTATION.equals(name) || ANDROID_STRING_DEF.equals(name) ||
                 INT_DEF_ANNOTATION.equals(name) || ANDROID_INT_DEF.equals(name)) {
             List<Element> children = getChildren(annotationElement);
@@ -1318,14 +1325,14 @@ public class Extractor {
             boolean intDef = INT_DEF_ANNOTATION.equals(name) || ANDROID_INT_DEF.equals(name);
             annotation = new AnnotationData(
                     intDef ? INT_DEF_ANNOTATION : STRING_DEF_ANNOTATION,
-                    TYPE_DEF_VALUE_ATTRIBUTE, value,
-                    flag ? TYPE_DEF_FLAG_ATTRIBUTE : null, flag ? VALUE_TRUE : null);
+                    new String[] { TYPE_DEF_VALUE_ATTRIBUTE, value,
+                    flag ? TYPE_DEF_FLAG_ATTRIBUTE : null, flag ? VALUE_TRUE : null});
         } else if (IDEA_CONTRACT.equals(name)) {
             List<Element> children = getChildren(annotationElement);
             assert children.size() == 1 : children.size();
             Element valueElement = children.get(0);
             String value = valueElement.getAttribute(ATTR_VAL);
-            annotation = new AnnotationData(name, TYPE_DEF_VALUE_ATTRIBUTE, value, null, null);
+            annotation = new AnnotationData(name, new String[] { TYPE_DEF_VALUE_ATTRIBUTE, value });
         } else if (isNonNull(name)) {
             annotation = new AnnotationData(SUPPORT_NOTNULL);
         } else if (isNullable(name)) {
@@ -1335,7 +1342,17 @@ public class Extractor {
             }
             annotation = new AnnotationData(SUPPORT_NULLABLE);
         } else {
-            annotation = new AnnotationData(name, null, null, null, null);
+            List<Element> children = getChildren(annotationElement);
+            if (children.isEmpty()) {
+                return new AnnotationData(name);
+            }
+            List<String> attributeStrings = Lists.newArrayList();
+            for (Element valueElement : children) {
+                attributeStrings.add(valueElement.getAttribute(ATTR_NAME));
+                attributeStrings.add(valueElement.getAttribute(ATTR_VAL));
+            }
+            annotation = new AnnotationData(name, attributeStrings.toArray(
+                    new String[attributeStrings.size()]));
         }
         return annotation;
     }
@@ -1418,38 +1435,25 @@ public class Extractor {
         public final String name;
 
         @Nullable
-        public final String attributeName1;
-
-        @Nullable
-        public final String attributeValue1;
-
-        @Nullable
-        public final String attributeName2;
-
-        @Nullable
-        public final String attributeValue2;
+        public String[] attributeStrings;
 
         @Nullable
         public MemberValuePair[] attributes;
 
         private AnnotationData(@NonNull String name) {
-            this(name, null, null, null, null);
+            this.name = name;
         }
 
         private AnnotationData(@NonNull String name, @Nullable MemberValuePair[] pairs) {
-            this(name, null, null, null, null);
+            this(name);
             attributes = pairs;
             assert attributes == null || attributes.length > 0;
         }
 
-        private AnnotationData(@NonNull String name,
-                @Nullable String attributeName1, @Nullable String attributeValue1,
-                @Nullable String attributeName2, @Nullable String attributeValue2) {
-            this.name = name;
-            this.attributeName1 = attributeName1;
-            this.attributeValue1 = attributeValue1;
-            this.attributeName2 = attributeName2;
-            this.attributeValue2 = attributeValue2;
+        private AnnotationData(@NonNull String name, @Nullable String[] attributeStrings) {
+            this(name);
+            this.attributeStrings = attributeStrings;
+            assert attributeStrings != null && attributeStrings.length > 0;
         }
 
         void write(PrintWriter writer) {
@@ -1520,19 +1524,19 @@ public class Extractor {
                 }
                 writer.println("    </annotation>");
 
-            } else if (attributeValue1 != null) {
+            } else if (attributeStrings != null) {
                 writer.print("\">");
                 writer.println();
-                writer.print("      <val name=\"");
-                writer.print(attributeName1);
-                writer.print("\" val=\"");
-                writer.print(escapeXml(attributeValue1));
-                writer.println("\" />");
-                if (attributeValue2 != null) {
+                for (int i = 0; i < attributeStrings.length; i += 2) {
+                    String name = attributeStrings[i];
+                    String value = attributeStrings[i + 1];
+                    if (name == null) {
+                        continue;
+                    }
                     writer.print("      <val name=\"");
-                    writer.print(attributeName2);
+                    writer.print(name);
                     writer.print("\" val=\"");
-                    writer.print(escapeXml(attributeValue2));
+                    writer.print(escapeXml(value));
                     writer.println("\" />");
                 }
                 writer.println("    </annotation>");
