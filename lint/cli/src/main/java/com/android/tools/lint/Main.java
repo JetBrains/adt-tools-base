@@ -32,6 +32,7 @@ import com.android.annotations.Nullable;
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Issue;
@@ -145,19 +146,22 @@ public class Main {
                     Location location = Location.create(project.getDir());
                     Context context = new Context(mDriver, project, project, project.getDir());
                     if (context.isEnabled(IssueRegistry.LINT_ERROR) &&
-                            !getConfiguration(project).isIgnored(context, IssueRegistry.LINT_ERROR,
-                            location, message)) {
+                            !getConfiguration(project, null).isIgnored(context,
+                                    IssueRegistry.LINT_ERROR, location, message)) {
                         report(context,
-                               IssueRegistry.LINT_ERROR,
-                               project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
-                               location, message, TextFormat.RAW);
+                                IssueRegistry.LINT_ERROR,
+                                project.getConfiguration(null).getSeverity(
+                                        IssueRegistry.LINT_ERROR), location, message,
+                                TextFormat.RAW);
                     }
                 }
                 return project;
             }
 
+            @NonNull
             @Override
-            public Configuration getConfiguration(@NonNull final Project project) {
+            public Configuration getConfiguration(@NonNull final Project project,
+                    @Nullable LintDriver driver) {
                 if (project.isGradleProject()) {
                     // Don't report any issues when analyzing a Gradle project from the
                     // non-Gradle runner; they are likely to be false, and will hide the real
@@ -184,7 +188,7 @@ public class Main {
                        }
                    };
                 }
-                return super.getConfiguration(project);
+                return super.getConfiguration(project, driver);
             }
         };
 

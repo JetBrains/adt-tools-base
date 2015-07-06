@@ -553,8 +553,10 @@ public abstract class LintDetectorTest extends SdkTestCase {
             }
         }
 
+        @NonNull
         @Override
-        public Configuration getConfiguration(@NonNull Project project) {
+        public Configuration getConfiguration(@NonNull Project project,
+                @Nullable LintDriver driver) {
             return LintDetectorTest.this.getConfiguration(this, project);
         }
 

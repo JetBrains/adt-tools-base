@@ -182,8 +182,9 @@ public class LintCliClient extends LintClient {
         return new LintCliXmlParser();
     }
 
+    @NonNull
     @Override
-    public Configuration getConfiguration(@NonNull Project project) {
+    public Configuration getConfiguration(@NonNull Project project, @Nullable LintDriver driver) {
         return new CliConfiguration(getConfiguration(), project, mFlags.isFatalOnly());
     }
 

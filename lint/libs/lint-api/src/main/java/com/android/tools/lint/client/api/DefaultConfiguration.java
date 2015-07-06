@@ -267,7 +267,7 @@ public class DefaultConfiguration extends Configuration {
         }, mClient);
         mClient.report(new Context(driver, mProject, mProject, mConfigFile),
                 IssueRegistry.LINT_ERROR,
-                mProject.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
+                mProject.getConfiguration(driver).getSeverity(IssueRegistry.LINT_ERROR),
                 Location.create(mConfigFile), message, TextFormat.RAW);
     }
 
