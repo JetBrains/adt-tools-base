@@ -1053,27 +1053,36 @@ public class EcjParser extends JavaParser {
         @NonNull
         @Override
         public Iterable<ResolvedAnnotation> getParameterAnnotations(int index) {
-            List<ResolvedAnnotation> compiled = null;
-            AnnotationBinding[][] parameterAnnotations = mBinding.getParameterAnnotations();
-            if (parameterAnnotations != null &&
-                    index >= 0 && index < parameterAnnotations.length) {
-                AnnotationBinding[] annotations = parameterAnnotations[index];
-                int count = annotations.length;
-                if (count > 0) {
-                    compiled = Lists.newArrayListWithExpectedSize(count);
-                    for (AnnotationBinding annotation : annotations) {
-                        if (annotation != null) {
-                            compiled.add(new EcjResolvedAnnotation(annotation));
+            List<ResolvedAnnotation> all = Lists.newArrayListWithExpectedSize(4);
+            ExternalAnnotationRepository manager = ExternalAnnotationRepository.get(mClient);
+
+            MethodBinding binding = this.mBinding;
+            while (binding != null) {
+                AnnotationBinding[][] parameterAnnotations = binding.getParameterAnnotations();
+                if (parameterAnnotations != null &&
+                        index >= 0 && index < parameterAnnotations.length) {
+                    AnnotationBinding[] annotations = parameterAnnotations[index];
+                    int count = annotations.length;
+                    if (count > 0) {
+                        for (AnnotationBinding annotation : annotations) {
+                            if (annotation != null) {
+                                all.add(new EcjResolvedAnnotation(annotation));
+                            }
                         }
                     }
                 }
+
+                // Look for external annotations
+                Collection<ResolvedAnnotation> external = manager.getAnnotations(
+                        new EcjResolvedMethod(binding), index);
+                if (external != null) {
+                    all.addAll(external);
+                }
+
+                binding = findSuperMethodBinding(binding);
             }
 
-            // Look for external annotations
-            ExternalAnnotationRepository manager = ExternalAnnotationRepository.get(mClient);
-            Collection<ResolvedAnnotation> external = manager.getAnnotations(this, index);
-
-            return merge(compiled, external);
+            return all;
         }
 
         @Override
