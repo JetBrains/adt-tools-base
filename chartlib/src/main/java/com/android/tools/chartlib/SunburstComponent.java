@@ -35,7 +35,12 @@ import java.util.Map;
 
 import javax.swing.tree.TreeNode;
 
-public class SunburstComponent extends AnimatedComponent {
+/**
+ * Component which renders a
+ * <a href="https://en.wikipedia.org/wiki/Pie_chart#Ring_chart_.2F_Sunburst_chart_.2F_Multilevel_pie_chart">
+ * sunburst chart</a> that can be unrolled by setting its angle.
+ */
+public final class SunburstComponent extends AnimatedComponent {
 
     private static final Color[] COLORS = {
             new Color(0x6baed6),
