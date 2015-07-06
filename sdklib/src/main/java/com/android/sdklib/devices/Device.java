@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.dvlib.DeviceSchema;
 import com.android.resources.ScreenOrientation;
+import com.android.resources.ScreenRound;
 
 import java.awt.Dimension;
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ import java.util.regex.Pattern;
  * the {@link DeviceSchema} standards.
  */
 public final class Device {
+
     /** Name of the device */
     @NonNull
     private final String mName;
@@ -262,8 +264,16 @@ public final class Device {
      *
      * @return the optional boot.props of the device. Can be null or empty.
      */
+    @NonNull
     public Map<String, String> getBootProps() {
         return mBootProps;
+    }
+
+    /**
+     * A convenience method to get if the screen for this device is round.
+     */
+    public boolean isScreenRound() {
+        return getDefaultHardware().getScreen().getScreenRound() == ScreenRound.ROUND;
     }
 
     public static class Builder {
@@ -345,6 +355,14 @@ public final class Device {
                 }
             }
             return false;
+        }
+
+        /**
+         * Only for use by the {@link DeviceParser}, so that it can modify the states after they've
+         * been added.
+         */
+        List<State> getAllStates() {
+            return mState;
         }
 
         public void setMeta(@NonNull Meta meta) {

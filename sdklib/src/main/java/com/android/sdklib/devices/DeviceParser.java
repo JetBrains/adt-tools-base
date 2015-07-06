@@ -16,6 +16,9 @@
 
 package com.android.sdklib.devices;
 
+import static com.android.SdkConstants.VALUE_FALSE;
+import static com.android.SdkConstants.VALUE_TRUE;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.dvlib.DeviceSchema;
@@ -26,6 +29,7 @@ import com.android.resources.Navigation;
 import com.android.resources.NavigationState;
 import com.android.resources.ScreenOrientation;
 import com.android.resources.ScreenRatio;
+import com.android.resources.ScreenRound;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
 import com.android.resources.UiMode;
@@ -53,6 +57,8 @@ public class DeviceParser {
 
     private static class DeviceHandler extends DefaultHandler {
         private static final String sSpaceRegex = "[\\s]+";
+        private static final String ROUND_BOOT_PROP = "ro.emulator.circular";
+
         private final List<Device> mDevices = new ArrayList<Device>();
         private final StringBuilder mStringAccumulator = new StringBuilder();
         private final File mParentFolder;
@@ -338,6 +344,7 @@ public class DeviceParser {
                 assert mBootProp != null && mBootProp.length == 2 &&
                        mBootProp[0] != null && mBootProp[1] != null;
                 mBuilder.addBootProp(mBootProp[0], mBootProp[1]);
+                checkAndSetIfRound(mBootProp[0], mBootProp[1]);
                 mBootProp = null;
             } else if (DeviceSchema.NODE_SKIN.equals(localName)) {
                 String path = getString(mStringAccumulator).replace('/', File.separatorChar);
@@ -348,6 +355,22 @@ public class DeviceParser {
         @Override
         public void error(SAXParseException e) throws SAXParseException {
             throw e;
+        }
+
+        private void checkAndSetIfRound(String bootPropKey, String bootPropValue) {
+            // This is a ugly hack. To keep the existing devices.xmls working, the roundness of the
+            // screen is stored in a boot property.
+            ScreenRound roundness = null;
+            if (ROUND_BOOT_PROP.equals(bootPropKey)) {
+                if (VALUE_TRUE.equals(bootPropValue)) {
+                    roundness = ScreenRound.ROUND;
+                } else if (VALUE_FALSE.equals(bootPropValue)) {
+                    roundness = ScreenRound.NOTROUND;
+                }
+            }
+            for (State state : mBuilder.getAllStates()) {
+                state.getHardware().getScreen().setScreenRound(roundness);
+            }
         }
 
         private List<String> getStringList(StringBuilder stringAccumulator) {
