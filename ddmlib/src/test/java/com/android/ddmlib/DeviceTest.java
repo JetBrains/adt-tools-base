@@ -78,6 +78,7 @@ public class DeviceTest extends TestCase {
     static IDevice createMockDevice() {
         IDevice mockDevice = EasyMock.createMock(IDevice.class);
         EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("serial");
+        EasyMock.expect(mockDevice.isOnline()).andStubReturn(Boolean.TRUE);
         return mockDevice;
     }
 }
