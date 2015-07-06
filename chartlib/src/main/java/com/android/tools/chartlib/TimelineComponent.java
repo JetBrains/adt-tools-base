@@ -43,7 +43,7 @@ import gnu.trove.TIntObjectHashMap;
  * modifications to it while it's begin rendered, but objects of this class should not be accessed
  * from different threads.
  */
-public class TimelineComponent extends AnimatedComponent
+public final class TimelineComponent extends AnimatedComponent
         implements ActionListener, HierarchyListener {
 
     private static final Color TEXT_COLOR = new Color(128, 128, 128);
