@@ -50,7 +50,7 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
     @SuppressWarnings("ClassNameDiffersFromFileName")
     public void testUniqueValues() throws Exception {
         assertEquals(""
-                + "src/test/pkg/IntDefTest.java:9: Error: Constants STYLE_NO_INPUT and STYLE_NO_FRAME specify the same exact value (2) and this is not marked as a flag [UniqueConstants]\n"
+                + "src/test/pkg/IntDefTest.java:9: Error: Constants STYLE_NO_INPUT and STYLE_NO_FRAME specify the same exact value (2); this is usually a cut & paste or merge error [UniqueConstants]\n"
                 + "    @IntDef({STYLE_NORMAL, STYLE_NO_TITLE, STYLE_NO_FRAME, STYLE_NO_INPUT})\n"
                 + "                                                           ~~~~~~~~~~~~~~\n"
                 + "    src/test/pkg/IntDefTest.java:9: Previous same value\n"
