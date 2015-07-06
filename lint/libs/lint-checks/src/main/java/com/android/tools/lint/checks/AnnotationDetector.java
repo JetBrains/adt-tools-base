@@ -20,7 +20,6 @@ import static com.android.SdkConstants.ATTR_VALUE;
 import static com.android.SdkConstants.FQCN_SUPPRESS_LINT;
 import static com.android.SdkConstants.INT_DEF_ANNOTATION;
 import static com.android.SdkConstants.SUPPRESS_LINT;
-import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 
 import com.android.annotations.NonNull;
@@ -97,7 +96,7 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
             "UniqueConstants", //$NON-NLS-1$
             "Overlapping Enumeration Constants",
 
-            "The `@IntDef` annotation, when used without the `flag` parameter, allows you to " +
+            "The `@IntDef` annotation allows you to " +
             "create a light-weight \"enum\" or type definition. However, it's possible to " +
             "accidentally specify the same value for two or more of the values, which can " +
             "lead to hard-to-detect bugs. This check looks for this scenario and flags any " +
@@ -198,11 +197,6 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
 
         private void ensureUniqueValues(@NonNull ResolvedAnnotation annotation,
                 @NonNull Annotation node) {
-            boolean flag = annotation.getValue(TYPE_DEF_FLAG_ATTRIBUTE) == Boolean.TRUE;
-            if (flag) {
-                return;
-            }
-
             Object allowed = annotation.getValue();
             if (allowed instanceof Object[]) {
                 Object[] allowedValues = (Object[]) allowed;
@@ -243,7 +237,8 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                                 Node prevConstant = constants.get(prevIndex);
                                 message = String.format(
                                         "Constants `%1$s` and `%2$s` specify the same exact "
-                                                + "value (%3$d) and this is not marked as a flag",
+                                                + "value (%3$d); this is usually a cut & paste or "
+                                                + "merge error",
                                         constant.toString(), prevConstant.toString(),
                                         repeatedValue);
                                 location = mContext.getLocation(constant);
@@ -253,7 +248,8 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                             } else {
                                 message = String.format(
                                         "More than one constant specifies the same exact "
-                                                + "value (%1$d) and this is not marked as a flag",
+                                                + "value (%1$d); this is usually a cut & paste or"
+                                                + "merge error",
                                         repeatedValue);
                                 location = mContext.getLocation(node);
                             }
