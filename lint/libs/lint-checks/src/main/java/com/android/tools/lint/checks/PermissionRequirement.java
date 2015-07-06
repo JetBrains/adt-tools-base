@@ -24,6 +24,7 @@ import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_CONDI
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.detector.api.Context;
@@ -46,8 +47,6 @@ import lombok.ast.Select;
 import lombok.ast.VariableDefinitionEntry;
 
 /**
- * TODO: Add firstApi/lastApi fields; used for historical lookup
- *
  * A permission requirement is a boolean expression of permission names that a
  * caller must satisfy for a given Android API.
  */
@@ -55,13 +54,20 @@ public abstract class PermissionRequirement {
     public static final String ATTR_PROTECTION_LEVEL = "protectionLevel"; //$NON-NLS-1$
     public static final String VALUE_DANGEROUS = "dangerous"; //$NON-NLS-1$
 
-    private final ResolvedAnnotation annotation;
+    protected final ResolvedAnnotation annotation;
+    private int firstApi;
+    private int lastApi;
 
     @SuppressWarnings("ConstantConditions")
     public static final PermissionRequirement NONE = new PermissionRequirement(null) {
         @Override
         public boolean isSatisfied(@NonNull PermissionHolder available) {
             return true;
+        }
+
+        @Override
+        public boolean appliesTo(@NonNull PermissionHolder available) {
+            return false;
         }
 
         @Override
@@ -150,6 +156,64 @@ public abstract class PermissionRequirement {
         }
 
         return NONE;
+    }
+
+    /**
+     * Returns false if this permission does not apply given the specified minimum and
+     * target sdk versions
+     *
+     * @param minSdkVersion the minimum SDK version
+     * @param targetSdkVersion the target SDK version
+     * @return true if this permission requirement applies for the given versions
+     */
+    /**
+     * Returns false if this permission does not apply given the specified minimum and target
+     * sdk versions
+     *
+     * @param available   the permission holder which also knows the min and target versions
+     * @return true if this permission requirement applies for the given versions
+     */
+    protected boolean appliesTo(@NonNull PermissionHolder available) {
+        if (firstApi == 0) { // initialized?
+            firstApi = -1; // initialized, not specified
+
+            // Not initialized
+            Object o = annotation.getValue("apis");
+            if (o instanceof String) {
+                String range = (String)o;
+                // Currently only support the syntax "a..b" where a and b are inclusive end points
+                // and where "a" and "b" are optional
+                int index = range.indexOf("..");
+                if (index != -1) {
+                    try {
+                        if (index > 0) {
+                            firstApi = Integer.parseInt(range.substring(0, index));
+                        } else {
+                            firstApi = 1;
+                        }
+                        if (index + 2 < range.length()) {
+                            lastApi = Integer.parseInt(range.substring(index + 2));
+                        } else {
+                            lastApi = Integer.MAX_VALUE;
+                        }
+                    } catch (NumberFormatException ignore) {
+                    }
+                }
+            }
+        }
+
+        if (firstApi != -1) {
+            AndroidVersion minSdkVersion = available.getMinSdkVersion();
+            if (minSdkVersion.getFeatureLevel() > lastApi) {
+                return false;
+            }
+
+            AndroidVersion targetSdkVersion = available.getTargetSdkVersion();
+            if (targetSdkVersion.getFeatureLevel() < firstApi) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -279,7 +343,7 @@ public abstract class PermissionRequirement {
 
         @Override
         public boolean isSatisfied(@NonNull PermissionHolder available) {
-            return available.hasPermission(name);
+            return available.hasPermission(name) || !appliesTo(available);
         }
 
         @Override
@@ -362,7 +426,7 @@ public abstract class PermissionRequirement {
         public boolean isSatisfied(@NonNull PermissionHolder available) {
             if (operator == BinaryOperator.LOGICAL_AND) {
                 for (PermissionRequirement requirement : permissions) {
-                    if (!requirement.isSatisfied(available)) {
+                    if (!requirement.isSatisfied(available) && requirement.appliesTo(available)) {
                         return false;
                     }
                 }
@@ -370,7 +434,7 @@ public abstract class PermissionRequirement {
             } else {
                 assert operator == BinaryOperator.LOGICAL_OR : operator;
                 for (PermissionRequirement requirement : permissions) {
-                    if (requirement.isSatisfied(available)) {
+                    if (requirement.isSatisfied(available) || !requirement.appliesTo(available)) {
                         return true;
                     }
                 }
@@ -497,8 +561,8 @@ public abstract class PermissionRequirement {
 
         @Override
         public boolean isSatisfied(@NonNull PermissionHolder available) {
-            boolean satisfiedLeft = left.isSatisfied(available);
-            boolean satisfiedRight = right.isSatisfied(available);
+            boolean satisfiedLeft = left.isSatisfied(available) || !left.appliesTo(available);
+            boolean satisfiedRight = right.isSatisfied(available) || !right.appliesTo(available);
             if (operator == BinaryOperator.LOGICAL_AND) {
                 return satisfiedLeft && satisfiedRight;
             } else if (operator == BinaryOperator.LOGICAL_OR) {

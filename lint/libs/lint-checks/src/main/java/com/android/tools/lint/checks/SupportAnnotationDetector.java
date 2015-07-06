@@ -41,6 +41,7 @@ import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
+import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.checks.PermissionFinder.Operation;
 import com.android.tools.lint.checks.PermissionFinder.Result;
 import com.android.tools.lint.checks.PermissionHolder.SetPermissionLookup;
@@ -604,7 +605,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 }
             }
 
-            mPermissions = new SetPermissionLookup(permissions, revocable);
+            AndroidVersion minSdkVersion = mainProject.getMinSdkVersion();
+            AndroidVersion targetSdkVersion = mainProject.getTargetSdkVersion();
+            mPermissions = new SetPermissionLookup(permissions, revocable, minSdkVersion,
+                targetSdkVersion);
         }
 
         return mPermissions;

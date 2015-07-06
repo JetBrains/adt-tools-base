@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks;
 
+import com.android.sdklib.AndroidVersion;
 import com.android.tools.lint.checks.PermissionHolder.SetPermissionLookup;
 import com.google.common.collect.Sets;
 
@@ -42,5 +43,11 @@ public class PermissionHolderTest extends TestCase {
         assertTrue(SetPermissionLookup.join(lookup1, Sets.newHashSet("baz")).hasPermission("bar"));
         assertTrue(SetPermissionLookup.join(lookup1, Sets.newHashSet("baz")).hasPermission("baz"));
         assertFalse(SetPermissionLookup.join(lookup1, Sets.newHashSet("baz")).hasPermission("a"));
+
+        AndroidVersion version = new AndroidVersion(5, null);
+        assertSame(version, new SetPermissionLookup(Sets.newHashSet("foo"), Sets.newHashSet("bar"),
+                version, AndroidVersion.DEFAULT).getMinSdkVersion());
+        assertSame(version, new SetPermissionLookup(Sets.newHashSet("foo"), Sets.newHashSet("bar"),
+                AndroidVersion.DEFAULT, version).getTargetSdkVersion());
     }
 }

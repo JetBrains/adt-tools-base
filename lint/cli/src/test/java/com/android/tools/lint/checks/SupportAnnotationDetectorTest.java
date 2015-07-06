@@ -624,6 +624,10 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "}\n");
 
     private TestFile getManifestWithPermissions(int targetSdk, String... permissions) {
+        return getManifestWithPermissions(1, targetSdk, permissions);
+    }
+
+    private TestFile getManifestWithPermissions(int minSdk, int targetSdk, String... permissions) {
         StringBuilder permissionBlock = new StringBuilder();
         for (String permission : permissions) {
             permissionBlock.append("    <uses-permission android:name=\"").append(permission)
@@ -786,7 +790,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "        ~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
                 lintProject(
-                        getManifestWithPermissions(14, "android.permission.ACCESS_FINE_LOCATION"),
+                        getManifestWithPermissions(14, 14, "android.permission.ACCESS_FINE_LOCATION"),
                         java("src/test/pkg/PermissionTest2.java", ""
                                 + "package test.pkg;\n"
                                 + "import android.support.annotation.RequiresPermission;\n"
@@ -1053,6 +1057,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "20 errors, 0 warnings\n",
 
                 lintProject(
+                        getManifestWithPermissions(14, 23),
                         java("src/test/pkg/ActionTest.java", ""
                                 + "package test.pkg;\n"
                                 + "\n"
