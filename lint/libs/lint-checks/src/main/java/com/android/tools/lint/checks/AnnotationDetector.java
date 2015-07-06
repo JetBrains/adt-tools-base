@@ -200,7 +200,7 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
             Object allowed = annotation.getValue();
             if (allowed instanceof Object[]) {
                 Object[] allowedValues = (Object[]) allowed;
-                Map<Integer,Integer> valueToIndex =
+                Map<Number,Integer> valueToIndex =
                         Maps.newHashMapWithExpectedSize(allowedValues.length);
 
                 List<Node> constants = null;
@@ -224,23 +224,24 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
 
                 for (int index = 0; index < allowedValues.length; index++) {
                     Object o = allowedValues[index];
-                    if (o instanceof Integer) {
-                        Integer integer = (Integer)o;
-                        if (valueToIndex.containsKey(integer)) {
-                            int repeatedValue = integer;
+                    if (o instanceof Number) {
+                        Number number = (Number)o;
+                        if (valueToIndex.containsKey(number)) {
+                            @SuppressWarnings("UnnecessaryLocalVariable")
+                            Number repeatedValue = number;
 
                             Location location;
                             String message;
                             if (constants != null) {
                                 Node constant = constants.get(index);
-                                int prevIndex = valueToIndex.get(integer);
+                                int prevIndex = valueToIndex.get(number);
                                 Node prevConstant = constants.get(prevIndex);
                                 message = String.format(
                                         "Constants `%1$s` and `%2$s` specify the same exact "
-                                                + "value (%3$d); this is usually a cut & paste or "
+                                                + "value (%3$s); this is usually a cut & paste or "
                                                 + "merge error",
                                         constant.toString(), prevConstant.toString(),
-                                        repeatedValue);
+                                        repeatedValue.toString());
                                 location = mContext.getLocation(constant);
                                 Location secondary = mContext.getLocation(prevConstant);
                                 secondary.setMessage("Previous same value");
@@ -248,16 +249,16 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                             } else {
                                 message = String.format(
                                         "More than one constant specifies the same exact "
-                                                + "value (%1$d); this is usually a cut & paste or"
+                                                + "value (%1$s); this is usually a cut & paste or"
                                                 + "merge error",
-                                        repeatedValue);
+                                        repeatedValue.toString());
                                 location = mContext.getLocation(node);
                             }
                             Node scope = getAnnotationScope(node);
                             mContext.report(UNIQUE, scope, location, message);
                             break;
                         }
-                        valueToIndex.put(integer, index);
+                        valueToIndex.put(number, index);
                     }
                 }
             }
