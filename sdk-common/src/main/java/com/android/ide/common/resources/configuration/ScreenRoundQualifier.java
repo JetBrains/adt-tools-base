@@ -16,6 +16,7 @@
 
 package com.android.ide.common.resources.configuration;
 
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceEnum;
 import com.android.resources.ScreenRound;
 
@@ -23,12 +24,13 @@ public class ScreenRoundQualifier extends EnumBasedResourceQualifier {
 
     public static final String NAME = "Screen Roundness";
 
+    @Nullable
     private ScreenRound mValue = null;
 
     public ScreenRoundQualifier() {
     }
 
-    public ScreenRoundQualifier(ScreenRound value) {
+    public ScreenRoundQualifier(@Nullable ScreenRound value) {
         mValue = value;
     }
 

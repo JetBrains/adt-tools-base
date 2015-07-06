@@ -16,8 +16,10 @@
 
 package com.android.ide.common.rendering.api;
 
+import com.android.annotations.Nullable;
 import com.android.resources.Density;
 import com.android.resources.ScreenOrientation;
+import com.android.resources.ScreenRound;
 import com.android.resources.ScreenSize;
 
 /**
@@ -35,6 +37,7 @@ public class HardwareConfig {
     private final float mYdpi;
     private final ScreenOrientation mOrientation;
     private final ScreenSize mScreenSize;
+    private final ScreenRound mScreenRound;
 
     private final boolean mSoftwareButtons;
 
@@ -46,6 +49,7 @@ public class HardwareConfig {
             float ydpi,
             ScreenSize screenSize,
             ScreenOrientation orientation,
+            ScreenRound screenRoundness,
             boolean softwareButtons) {
         mScreenWidth = screenWidth;
         mScreenHeight = screenHeight;
@@ -54,6 +58,7 @@ public class HardwareConfig {
         mYdpi = ydpi;
         mScreenSize = screenSize;
         mOrientation = orientation;
+        mScreenRound = screenRoundness;
         mSoftwareButtons = softwareButtons;
     }
 
@@ -87,5 +92,13 @@ public class HardwareConfig {
 
     public boolean hasSoftwareButtons() {
         return mSoftwareButtons;
+    }
+
+  /**
+   * @since 15
+   */
+  @Nullable
+  public ScreenRound getScreenRoundness() {
+        return mScreenRound;
     }
 }

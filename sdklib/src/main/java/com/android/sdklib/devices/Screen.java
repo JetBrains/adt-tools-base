@@ -16,8 +16,10 @@
 
 package com.android.sdklib.devices;
 
+import com.android.annotations.Nullable;
 import com.android.resources.Density;
 import com.android.resources.ScreenRatio;
+import com.android.resources.ScreenRound;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
 
@@ -34,6 +36,8 @@ public class Screen {
     private Multitouch mMultitouch;
     private TouchScreen mMechanism;
     private ScreenType mScreenType;
+    @Nullable
+     private ScreenRound mScreenRound;
 
     public ScreenSize getSize() {
         return mScreenSize;
@@ -123,6 +127,15 @@ public class Screen {
         mScreenType = screenType;
     }
 
+    @Nullable
+    public ScreenRound getScreenRound() {
+        return mScreenRound;
+    }
+
+    public void setScreenRound(@Nullable ScreenRound screenRound) {
+        mScreenRound = screenRound;
+    }
+
     /**
      * Returns a copy of the object that shares no state with it,
      * but is initialized to equivalent values.
@@ -142,6 +155,7 @@ public class Screen {
         s.mMultitouch = mMultitouch;
         s.mMechanism = mMechanism;
         s.mScreenType = mScreenType;
+        s.mScreenRound = mScreenRound;
         return s;
     }
 
@@ -164,7 +178,8 @@ public class Screen {
                 && s.mYdpi == mYdpi
                 && s.mMultitouch == mMultitouch
                 && s.mMechanism == mMechanism
-                && s.mScreenType == mScreenType;
+                && s.mScreenType == mScreenType
+                && s.mScreenRound == mScreenRound;
     }
 
     @Override
@@ -184,6 +199,9 @@ public class Screen {
         hash = 31 * hash + mMultitouch.ordinal();
         hash = 31 * hash + mMechanism.ordinal();
         hash = 31 * hash + mScreenType.ordinal();
+        if (mScreenRound != null) {
+            hash = 31 * hash + mScreenRound.ordinal();
+        }
         return hash;
     }
 
@@ -212,6 +230,8 @@ public class Screen {
         sb.append(mMechanism);
         sb.append(", mScreenType=");
         sb.append(mScreenType);
+        sb.append(", mScreenRound=");
+        sb.append(mScreenRound);
         sb.append("]");
         return sb.toString();
     }
