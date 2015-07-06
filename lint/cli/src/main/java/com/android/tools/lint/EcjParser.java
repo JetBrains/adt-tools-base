@@ -563,7 +563,16 @@ public class EcjParser extends JavaParser {
             if (nativeNode instanceof LocalDeclaration) {
                 return resolve(((LocalDeclaration) nativeNode).binding);
             } else if (nativeNode instanceof FieldDeclaration) {
-                return resolve(((FieldDeclaration) nativeNode).binding);
+                FieldDeclaration fieldDeclaration = (FieldDeclaration) nativeNode;
+                if (fieldDeclaration.initialization instanceof AllocationExpression) {
+                    AllocationExpression allocation =
+                            (AllocationExpression)fieldDeclaration.initialization;
+                    if (allocation.binding != null) {
+                        // Field constructor call: this is an enum constant.
+                        return new EcjResolvedMethod(allocation.binding);
+                    }
+                }
+                return resolve(fieldDeclaration.binding);
             }
         }
 
