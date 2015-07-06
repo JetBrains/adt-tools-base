@@ -546,7 +546,7 @@ public class LintCliClient extends LintClient {
             if (!isSuppressed(IssueRegistry.LINT_ERROR)) {
                 report(new Context(mDriver, project, project, project.getDir()),
                         IssueRegistry.LINT_ERROR,
-                        project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
+                        project.getConfiguration(mDriver).getSeverity(IssueRegistry.LINT_ERROR),
                         location, message, TextFormat.RAW);
             }
         } else {
