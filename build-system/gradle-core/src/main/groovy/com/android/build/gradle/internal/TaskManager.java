@@ -1790,7 +1790,7 @@ public abstract class TaskManager {
         // post-compilation steps are inserted between the compilation and dx.
         PostCompilationData pcData = new PostCompilationData();
         pcData.setClassGeneratingTasks(Collections.singletonList(scope.getJavacTask().getName()));
-        pcData.setLibraryGeneratingTasks(Collections.singletonList(
+        pcData.setLibraryGeneratingTasks(ImmutableList.of(variantData.prepareDependenciesTask,
                 variantData.getVariantDependency().getPackageConfiguration()
                         .getBuildDependencies()));
         pcData.setInputFilesCallable(new Callable<List<File>>() {
