@@ -31,7 +31,7 @@ import com.google.common.truth.IterableSubject;
 import com.google.common.truth.SubjectFactory;
 import com.google.common.truth.Truth;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;

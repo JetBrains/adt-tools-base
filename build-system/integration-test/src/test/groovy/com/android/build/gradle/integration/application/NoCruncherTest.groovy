@@ -22,9 +22,9 @@ import org.junit.ClassRule
 import org.junit.Test
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
-import static junit.framework.Assert.assertEquals
-import static junit.framework.Assert.assertNotSame
-import static junit.framework.Assert.assertTrue
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNotSame
+import static org.junit.Assert.assertTrue
 
 /**
  * Integration test for the cruncherEnabled settings.
