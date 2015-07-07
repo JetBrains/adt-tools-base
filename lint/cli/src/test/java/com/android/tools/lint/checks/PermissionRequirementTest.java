@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.sdklib.AndroidVersion;
 import com.android.testutils.SdkTestCase;
 import com.android.tools.lint.checks.PermissionHolder.SetPermissionLookup;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
@@ -158,6 +159,57 @@ public class PermissionRequirementTest extends TestCase {
     public void testRevocable2() {
         assertTrue(new SetPermissionLookup(Collections.<String>emptySet(),
             Sets.newHashSet("my.permission1", "my.permission2")).isRevocable("my.permission2"));
+    }
+
+    public void testAppliesTo() {
+        ResolvedAnnotation annotation;
+        PermissionRequirement req;
+
+        // No date range applies to permission
+        annotation = createAnnotation(PERMISSION_ANNOTATION,
+                new ResolvedAnnotation.Value("value", "android.permission.AUTHENTICATE_ACCOUNTS"));
+        req = PermissionRequirement.create(null, annotation);
+        assertTrue(req.appliesTo(getHolder(15, 1)));
+        assertTrue(req.appliesTo(getHolder(15, 19)));
+        assertTrue(req.appliesTo(getHolder(15, 23)));
+        assertTrue(req.appliesTo(getHolder(22, 23)));
+        assertTrue(req.appliesTo(getHolder(23, 23)));
+
+        // Permission discontinued in API 23:
+        annotation = createAnnotation(PERMISSION_ANNOTATION,
+                new ResolvedAnnotation.Value("value", "android.permission.AUTHENTICATE_ACCOUNTS"),
+                new ResolvedAnnotation.Value("apis", "..22"));
+        req = PermissionRequirement.create(null, annotation);
+        assertTrue(req.appliesTo(getHolder(15, 1)));
+        assertTrue(req.appliesTo(getHolder(15, 19)));
+        assertTrue(req.appliesTo(getHolder(15, 23)));
+        assertTrue(req.appliesTo(getHolder(22, 23)));
+        assertFalse(req.appliesTo(getHolder(23, 23)));
+
+        // Permission requirement started in API 23
+        annotation = createAnnotation(PERMISSION_ANNOTATION,
+                new ResolvedAnnotation.Value("value", "android.permission.AUTHENTICATE_ACCOUNTS"),
+                new ResolvedAnnotation.Value("apis", "23.."));
+        req = PermissionRequirement.create(null, annotation);
+        assertFalse(req.appliesTo(getHolder(15, 1)));
+        assertFalse(req.appliesTo(getHolder(1, 19)));
+        assertFalse(req.appliesTo(getHolder(15, 22)));
+        assertTrue(req.appliesTo(getHolder(22, 23)));
+        assertTrue(req.appliesTo(getHolder(23, 30)));
+
+        // Permission requirement applied from API 14 through API 18
+        annotation = createAnnotation(PERMISSION_ANNOTATION,
+                new ResolvedAnnotation.Value("value", "android.permission.AUTHENTICATE_ACCOUNTS"),
+                new ResolvedAnnotation.Value("apis", "14..18"));
+        req = PermissionRequirement.create(null, annotation);
+        assertFalse(req.appliesTo(getHolder(1, 5)));
+        assertTrue(req.appliesTo(getHolder(15, 19)));
+    }
+
+    private static PermissionHolder getHolder(int min, int target) {
+        return new PermissionHolder.SetPermissionLookup(Collections.<String>emptySet(),
+                Collections.<String>emptySet(), new AndroidVersion(min, null),
+                new AndroidVersion(target, null));
     }
 
     public static void testDbUpToDate() throws Exception {
