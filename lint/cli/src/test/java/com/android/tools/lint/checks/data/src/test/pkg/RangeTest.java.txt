@@ -140,4 +140,21 @@ public class RangeTest {
         printBetweenFromExclusiveToExclusive(4.99f); // OK
         printBetweenFromExclusiveToExclusive(5.0f); // ERROR
     }
+
+    public void testNegative() {
+        printBetween(-7); // ERROR
+        printAtLeastExclusive(-10.0); // ERROR
+    }
+
+    public static final int MINIMUM = -1;
+    public static final int MAXIMUM = 42;
+    public void printIndirect(@IntRange(from = MINIMUM, to = MAXIMUM) int arg) { }
+    public static final int SIZE = 5;
+    public static void printIndirectSize(@Size(SIZE) String foo) { }
+
+    public void testIndirect() {
+        printIndirect(-2); // ERROR
+        printIndirect(43); // ERROR
+        printIndirectSize("1234567"); // ERROR
+    }
 }
