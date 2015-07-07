@@ -54,7 +54,7 @@ public class RemoteAndroidTestRunnerTest extends TestCase {
      * Test the basic case building of the instrumentation runner command with no arguments.
      */
     public void testRun() throws Exception {
-        String expectedCmd = EasyMock.eq(String.format("am instrument -w -r  %s/%s", TEST_PACKAGE,
+        String expectedCmd = EasyMock.eq(String.format("am instrument -w -r   %s/%s", TEST_PACKAGE,
                 TEST_RUNNER));
         runAndVerify(expectedCmd);
     }
@@ -99,6 +99,20 @@ public class RemoteAndroidTestRunnerTest extends TestCase {
         mRunner.addInstrumentationArg(extraArgName, extraArgValue);
         String expectedCmd = EasyMock.contains(String.format("-e %s %s", extraArgName,
                 extraArgValue));
+        runAndVerify(expectedCmd);
+    }
+
+    /**
+     * Test additional run options.
+     */
+    public void testRun_runOptions() throws Exception {
+        mRunner.setRunOptions("--no-window-animation");
+        String expectedCmd =
+                EasyMock.eq(
+                        String.format(
+                                "am instrument -w -r --no-window-animation  %s/%s",
+                                TEST_PACKAGE,
+                                TEST_RUNNER));
         runAndVerify(expectedCmd);
     }
 
