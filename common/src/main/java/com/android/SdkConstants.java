@@ -598,6 +598,7 @@ public final class SdkConstants {
     public static final String CLASS_TEXT_INPUT_LAYOUT = "android.support.design.widget.TextInputLayout"; //$NON-NLS-1$
     public static final String CLASS_NESTED_SCROLL_VIEW = "android.support.v4.widget.NestedScrollView";  //$NON-NLS-1$
 
+
     /** Returns the appropriate name for the 'android' command, which is 'android.exe' for
      * Windows and 'android' for all other platforms. */
     public static String androidCmdName() {
@@ -886,6 +887,7 @@ public final class SdkConstants {
     public static final String ATTR_VALUE = "value";                   //$NON-NLS-1$
     public static final String ATTR_QUANTITY = "quantity";             //$NON-NLS-1$
     public static final String ATTR_FORMAT = "format";                 //$NON-NLS-1$
+    public static final String ATTR_PREPROCESSING = "preprocessing";   //$NON-NLS-1$
 
     // Attributes: Data-Binding
     public static final String ATTR_ALIAS = "alias";                  //$NON-NLS-1$

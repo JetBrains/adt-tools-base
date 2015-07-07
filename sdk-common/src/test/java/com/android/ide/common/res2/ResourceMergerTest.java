@@ -59,6 +59,9 @@ public class ResourceMergerTest extends BaseTestCase {
     @Mock
     PngCruncher mPngCruncher;
 
+    @Mock
+    ResourcePreprocessor mPreprocessor;
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
@@ -327,7 +330,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         File folder = Files.createTempDir();
         merger.writeBlobTo(folder,
-                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false, null));
+                getConsumer());
 
         ResourceMerger loadedMerger = new ResourceMerger();
         assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
@@ -397,7 +400,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         File folder = Files.createTempDir();
         merger.writeBlobTo(folder,
-                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false, null));
+                getConsumer());
 
         ResourceMerger loadedMerger = new ResourceMerger();
         assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
@@ -530,8 +533,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher, false,
-                false, null);
+        MergedResourceWriter writer = getConsumer(resFolder);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -645,8 +647,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher, false,
-                false, null);
+        MergedResourceWriter writer = getConsumer(resFolder);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -723,8 +724,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher, false,
-                false, null);
+        MergedResourceWriter writer = getConsumer(resFolder);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -823,8 +823,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher, false,
-                false, null);
+        MergedResourceWriter writer = getConsumer(resFolder);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // deleted layout/file_replaced_by_alias.xml
@@ -860,7 +859,7 @@ public class ResourceMergerTest extends BaseTestCase {
         // write merger1 on disk to test writing empty ResourceSets.
         File folder = Files.createTempDir();
         merger1.writeBlobTo(folder,
-                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false, null));
+                getConsumer());
 
         // reload it
         ResourceMerger loadedMerger = new ResourceMerger();
@@ -999,8 +998,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File outFolder = getFolderCopy(new File(root, "out"));
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(outFolder, mPngCruncher, false,
-                false, null);
+        MergedResourceWriter writer = getConsumer(outFolder);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         File outDrawableFolder = new File(outFolder, ResourceFolderType.DRAWABLE.getName());
@@ -1049,7 +1047,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File folder = Files.createTempDir();
         folder.deleteOnExit();
 
-        MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false, false, null);
+        MergedResourceWriter writer = getConsumer(folder);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // load the result as a set.
@@ -1323,7 +1321,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File folder = Files.createTempDir();
         folder.deleteOnExit();
 
-        MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false, false, null);
+        MergedResourceWriter writer = getConsumer(folder);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // load the result as a set.
@@ -1401,7 +1399,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         File folder = Files.createTempDir();
 
-        MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false, false, null);
+        MergedResourceWriter writer = getConsumer(folder);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         return folder;
@@ -1529,7 +1527,7 @@ public class ResourceMergerTest extends BaseTestCase {
         }
         try {
         merger.writeBlobTo(folder,
-                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false, null));
+                getConsumer());
         } catch (MergingException e) {
             File file = new File(folder, "merger.xml");
             assertEquals(file.getPath() + ": Error: (Permission denied)",
@@ -1544,7 +1542,7 @@ public class ResourceMergerTest extends BaseTestCase {
 
         File folder = Files.createTempDir();
         merger.writeBlobTo(folder,
-                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false, null));
+                getConsumer());
 
         // new merger to read the blob
         ResourceMerger loadedMerger = new ResourceMerger();
@@ -1605,9 +1603,7 @@ public class ResourceMergerTest extends BaseTestCase {
             resourceMerger.addDataSet(resourceSet);
 
 
-            File folder = Files.createTempDir();
-            MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false,
-                    false, null);
+            MergedResourceWriter writer = getConsumer();
             resourceMerger.mergeData(writer, false /*doCleanUp*/);
         } catch (MergingException e) {
             File file = new File(root, "values" + File.separator + "dimens.xml");
@@ -1632,9 +1628,7 @@ public class ResourceMergerTest extends BaseTestCase {
             resourceMerger.addDataSet(resourceSet);
 
 
-            File folder = Files.createTempDir();
-            MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false,
-                    false, null);
+            MergedResourceWriter writer = getConsumer();
             resourceMerger.mergeData(writer, false /*doCleanUp*/);
         } catch (MergingException e) {
             File file = new File(root, "values" + File.separator + "dimens.xml");
@@ -1690,5 +1684,21 @@ public class ResourceMergerTest extends BaseTestCase {
         public boolean ignoreItemInMerge(ResourceItem item) {
             return item.getIgnoredFromDiskMerge();
         }
+    }
+
+    @NonNull
+    private MergedResourceWriter getConsumer() {
+        return getConsumer(Files.createTempDir());
+    }
+
+    @NonNull
+    private MergedResourceWriter getConsumer(File tempDir) {
+        return new MergedResourceWriter(
+                tempDir,
+                mPngCruncher,
+                false,
+                false,
+                null,
+                mPreprocessor);
     }
 }

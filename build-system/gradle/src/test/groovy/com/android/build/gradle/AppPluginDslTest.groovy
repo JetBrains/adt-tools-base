@@ -24,7 +24,6 @@ import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.test.BaseTest
-import com.android.resources.Density
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
@@ -565,30 +564,6 @@ public class AppPluginDslTest extends BaseTest {
         assertEquals(
                 "foo",
                 project.compileReleaseJavaWithJavac.options.encoding)
-    }
-
-    public void testPreprocessResourcesDsl() throws Exception {
-        Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
-
-        project.ext['com.android.build.gradle.experimentalPreprocessResources'] = 'true'
-
-        project.apply plugin: 'com.android.application'
-
-        project.android {
-            compileSdkVersion 15
-            buildToolsVersion '21.0.0'
-
-            preprocessingOptions {
-                preprocessResources = true
-                densities += "ldpi"
-            }
-        }
-
-        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
-        plugin.createAndroidTasks(false)
-
-        assert project.preprocessDebugResources.densitiesToGenerate.contains(Density.LOW)
     }
 
     public void testInstrumentationRunnerArguments_merging() throws Exception {

@@ -126,15 +126,6 @@ public class ApplicationTaskManager extends TaskManager {
                     }
                 });
 
-        ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_PREPROCESS_RESOURCES_TASK,
-                new Recorder.Block<Void>() {
-                    @Override
-                    public Void call() {
-                        createPreprocessResourcesTask(tasks, variantScope);
-                        return null;
-                    }
-                });
-
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_PROCESS_RES_TASK,
                 new Recorder.Block<Void>() {
                     @Override
