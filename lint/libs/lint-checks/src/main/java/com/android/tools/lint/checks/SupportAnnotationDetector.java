@@ -30,7 +30,6 @@ import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.resources.ResourceType.COLOR;
 import static com.android.resources.ResourceType.DRAWABLE;
 import static com.android.resources.ResourceType.MIPMAP;
-import static com.android.tools.lint.checks.CleanupDetector.CONTENT_RESOLVER_CLS;
 import static com.android.tools.lint.checks.PermissionFinder.Operation.ACTION;
 import static com.android.tools.lint.checks.PermissionFinder.Operation.READ;
 import static com.android.tools.lint.checks.PermissionFinder.Operation.WRITE;
@@ -300,9 +299,11 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
     }
 
-    private static void checkParameterAnnotation(
+    private void checkParameterAnnotation(
             @NonNull JavaContext context,
             @NonNull Node argument,
+            @NonNull Node call,
+            @NonNull ResolvedMethod method,
             @NonNull ResolvedAnnotation annotation) {
         String signature = annotation.getSignature();
 
@@ -314,6 +315,12 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             checkFloatRange(context, annotation, argument);
         } else if (signature.equals(SIZE_ANNOTATION)) {
             checkSize(context, annotation, argument);
+        } else if (signature.startsWith(PERMISSION_ANNOTATION)) {
+            // PERMISSION_ANNOTATION, PERMISSION_ANNOTATION_READ, PERMISSION_ANNOTATION_WRITE
+            // When specified on a parameter, that indicates that we're dealing with
+            // a permission requirement on this *method* which depends on the value
+            // supplied by this parameter
+            checkParameterPermission(context, signature, call, method, argument);
         } else {
             // We only run @IntDef, @StringDef and @<Type>Res checks if we're not
             // running inside Android Studio / IntelliJ where there are already inspections
@@ -335,6 +342,35 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     checkResourceType(context, argument, null);
                 }
             }
+        }
+    }
+
+    private void checkParameterPermission(
+            @NonNull JavaContext context,
+            @NonNull String signature,
+            @NonNull Node call,
+            @NonNull ResolvedMethod method,
+            @NonNull Node argument) {
+        Operation operation = null;
+        if (signature.equals(PERMISSION_ANNOTATION_READ)) {
+            operation = READ;
+        } else if (signature.equals(PERMISSION_ANNOTATION_WRITE)) {
+            operation = WRITE;
+        } else {
+            TypeDescriptor type = context.getType(argument);
+            if (type == null) {
+                return;
+            }
+            if (type.matchesSignature(CLASS_INTENT)) {
+                operation = ACTION;
+            }
+        }
+        if (operation == null) {
+            return;
+        }
+        Result result = PermissionFinder.findRequiredPermissions(operation, context, argument);
+        if (result != null) {
+            checkPermission(context, call, method, result, result.requirement);
         }
     }
 
@@ -1363,9 +1399,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     List<Class<? extends Node>> getApplicableNodeTypes() {
         //noinspection unchecked
         return Arrays.<Class<? extends Node>>asList(
-                MethodInvocation.class,
-                ConstructorInvocation.class,
-                EnumConstant.class);
+          MethodInvocation.class,
+          ConstructorInvocation.class,
+          EnumConstant.class);
     }
 
     @Nullable
@@ -1444,103 +1480,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 for (ResolvedAnnotation annotation : annotations) {
                     annotation = getRelevantAnnotation(annotation);
                     if (annotation != null) {
-                        checkParameterAnnotation(mContext, argument, annotation);
-                    }
-                }
-            }
-
-            checkIndirectPermissions(call, method, mContext);
-        }
-    }
-
-    private void checkIndirectPermissions(
-            @NonNull Node call,
-            @NonNull ResolvedMethod method,
-            @NonNull JavaContext context) {
-        if (method.getArgumentCount() == 0) {
-            return;
-        }
-
-        String name = JavaContext.getMethodName(call);
-        Operation operation = getPermissionOperation(name);
-        if (operation != null) {
-            if (operation == ACTION) {
-                int indentIndex = getIntentMethodParameterIndex(name);
-                if (indentIndex != -1) {
-                    if (!method.getArgumentType(indentIndex).matchesSignature(CLASS_INTENT)) {
-                        return;
-                    }
-
-                    Result result = PermissionFinder.findRequiredPermissions(
-                            ACTION, context, call, indentIndex);
-                    if (result != null) {
-                        checkPermission(context, call, method, result, result.requirement);
-                    }
-                }
-            } else if (operation == READ || operation == WRITE) {
-                if (method.getContainingClass().isSubclassOf(
-                        CONTENT_RESOLVER_CLS, false)) {
-                    Result result = PermissionFinder.findRequiredPermissions(
-                            operation, context, call, 0);
-                    if (result != null) {
-                        checkPermission(context, call, method, result, result.requirement);
+                        checkParameterAnnotation(mContext, argument, call, method, annotation);
                     }
                 }
             }
         }
-    }
-
-    @Nullable
-    public static Operation getPermissionOperation(@NonNull String name) {
-        int index = getIntentMethodParameterIndex(name);
-        if (index != -1) {
-            return ACTION;
-        }
-
-        if (name.equals("query")) {
-            return READ;
-        }
-
-        if (name.equals("insert") //$NON-NLS-1$
-                || name.equals("update") //$NON-NLS-1$
-                || name.equals("delete")) { //$NON-NLS-1$
-            return WRITE;
-        }
-
-        // TODO: Check for reflection calls -- look for java.lang.Class' getMethod,
-        // getDeclaredMethod, getConstructor and getDeclaredConstructor
-
-        return null;
-    }
-
-    public static int getIntentMethodParameterIndex(@NonNull String name) {
-        // Intents?
-        if (name.startsWith("start")) {
-            if (name.startsWith("startActivity") || name.equals("startNextMatchingActivity")) {
-                if (name.startsWith("startActivityFrom")) {
-                    // These are tricky because they place the intent as the SECOND argument
-                    //   startActivityFromChild(Activity, Intent, int);
-                    //   startActivityFromFragment(Fragment, Intent, int);
-                    return 1;
-                } else {
-                    return 0;
-                }
-
-                // TODO: There is also a startActivities() which takes an Intent[],
-                // Check that you have permission to start the given activity,
-                // though it does not appear to be commonly used in app code.
-            } else if (name.startsWith("startService")) {
-                return 0;
-            }
-        } else if (name.equals("bindService")) {
-            return 0;
-        } else if (name.startsWith("send") //$NON-NLS-1$
-                && (name.endsWith("Broadcast") || name.endsWith("BroadcastAsUser"))) {
-            // sendBroadcast, sendOrderedBroadcast, sendStickyBroadcast,
-            // sendStickyOrderedBroadcast, etc
-            return 0;
-        }
-
-        return -1;
     }
 }

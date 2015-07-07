@@ -21,6 +21,7 @@ import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
 import static com.android.SdkConstants.VALUE_FALSE;
 import static com.android.SdkConstants.VALUE_TRUE;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -29,6 +30,7 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.Variant;
+import com.android.tools.lint.checks.SupportAnnotationDetector;
 import com.android.tools.lint.client.api.JavaParser.DefaultTypeDescriptor;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation.Value;
@@ -920,7 +922,11 @@ public class ExternalAnnotationRepository {
             annotation = new ResolvedExternalAnnotation(name);
 
             List<Element> valueElements = getChildren(annotationElement);
-            if (valueElements.isEmpty()) {
+            if (valueElements.isEmpty()
+                    // Permission annotations are sometimes used as marker annotations (on
+                    // parameters) but that shouldn't let us conclude that any future
+                    // permission annotations are
+                    && !name.startsWith(PERMISSION_ANNOTATION)) {
                 mMarkerAnnotations.put(name, annotation);
                 return annotation;
             }
