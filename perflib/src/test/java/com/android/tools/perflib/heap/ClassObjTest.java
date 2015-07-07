@@ -43,4 +43,28 @@ public class ClassObjTest extends TestCase {
     assertNotNull(dialer);
     assertEquals(5, dialer.getAllFieldsCount());
   }
+
+  public void testComparison() {
+    ClassObj a = new ClassObj(1, null, "TestClassA", 0);
+    ClassObj b = new ClassObj(1, null, "TestClassB", 0);
+    ClassObj c = new ClassObj(2, null, "TestClassC", 0);
+    ClassObj aAlt = new ClassObj(3, null, "TestClassA", 0);
+
+    assertEquals(0, a.compareTo(a));
+    assertEquals(0, a.compareTo(b)); // This is a weird test case, since IDs are supposed to be unique.
+    assertTrue(c.compareTo(a) > 0);
+    assertTrue(aAlt.compareTo(a) > 0);
+  }
+
+  public void testSubClassNameClash() {
+    ClassObj superClass = new ClassObj(1, null, "TestClassA", 0);
+    ClassObj subClass1 = new ClassObj(2, null, "SubClass", 0);
+    ClassObj subClass2 = new ClassObj(3, null, "SubClass", 0);
+    superClass.addSubclass(subClass1);
+    superClass.addSubclass(subClass2);
+
+    assertEquals(2, superClass.getSubclasses().size());
+    assertTrue(superClass.getSubclasses().contains(subClass1));
+    assertTrue(superClass.getSubclasses().contains(subClass2));
+  }
 }
