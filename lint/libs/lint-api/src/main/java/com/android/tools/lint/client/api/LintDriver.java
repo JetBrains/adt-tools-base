@@ -100,11 +100,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lombok.ast.Annotation;
-import lombok.ast.AnnotationDeclaration;
 import lombok.ast.AnnotationElement;
 import lombok.ast.AnnotationValue;
 import lombok.ast.ArrayInitializer;
-import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
 import lombok.ast.Expression;
 import lombok.ast.MethodDeclaration;
@@ -411,7 +409,7 @@ public class LintDriver {
             return;
         }
 
-        registerCustomRules(projects);
+        registerCustomDetectors(projects);
 
         if (mScope == null) {
             mScope = Scope.infer(projects);
@@ -443,7 +441,21 @@ public class LintDriver {
         fireEvent(mCanceled ? EventType.CANCELED : EventType.COMPLETED, null);
     }
 
-    private void registerCustomRules(Collection<Project> projects) {
+    @Nullable
+    private Set<Issue> myCustomIssues;
+
+    /**
+     * Returns true if the given issue is an issue that was loaded as a custom rule
+     * (e.g. a 3rd-party library provided the detector, it's not built in)
+     *
+     * @param issue the issue to be looked up
+     * @return true if this is a custom (non-builtin) check
+     */
+    public boolean isCustomIssue(@NonNull Issue issue) {
+        return myCustomIssues != null && myCustomIssues.contains(issue);
+    }
+
+    private void registerCustomDetectors(Collection<Project> projects) {
         // Look at the various projects, and if any of them provide a custom
         // lint jar, "add" them (this will replace the issue registry with
         // a CompositeIssueRegistry containing the original issue registry
@@ -451,6 +463,9 @@ public class LintDriver {
         Set<File> jarFiles = Sets.newHashSet();
         for (Project project : projects) {
             jarFiles.addAll(mClient.findRuleJars(project));
+            for (Project library : project.getAllLibraries()) {
+                jarFiles.addAll(mClient.findRuleJars(library));
+            }
         }
 
         jarFiles.addAll(mClient.findGlobalRuleJars());
@@ -460,7 +475,12 @@ public class LintDriver {
             registries.add(mRegistry);
             for (File jarFile : jarFiles) {
                 try {
-                    registries.add(JarFileIssueRegistry.get(mClient, jarFile));
+                    IssueRegistry registry = JarFileIssueRegistry.get(mClient, jarFile);
+                    if (myCustomIssues == null) {
+                        myCustomIssues = Sets.newHashSet();
+                    }
+                    myCustomIssues.addAll(registry.getIssues());
+                    registries.add(registry);
                 } catch (Throwable e) {
                     mClient.log(e, "Could not load custom rule jar file %1$s", jarFile);
                 }
@@ -547,7 +567,7 @@ public class LintDriver {
         // and simultaneously build up the detectorToScope map which tracks
         // the scopes each detector is affected by (this is used to populate
         // the mScopeDetectors map which is used during iteration).
-        Configuration configuration = project.getConfiguration();
+        Configuration configuration = project.getConfiguration(this);
         for (Detector detector : detectors) {
             Class<? extends Detector> detectorClass = detector.getClass();
             Collection<Issue> detectorIssues = issueMap.get(detectorClass);
@@ -604,7 +624,7 @@ public class LintDriver {
         mCurrentFolderType = null;
         mCurrentVisitor = null;
 
-        Configuration configuration = project.getConfiguration();
+        Configuration configuration = project.getConfiguration(this);
         mScopeDetectors = new EnumMap<Scope, List<Detector>>(Scope.class);
         mApplicableDetectors = mRegistry.createDetectors(mClient, configuration,
                 mScope, mScopeDetectors);
@@ -1246,7 +1266,7 @@ public class LintDriver {
             Location location = Location.create(project.getDir());
             mClient.report(new Context(this, project, main, project.getDir()),
                     IssueRegistry.LINT_ERROR,
-                    project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
+                    project.getConfiguration(this).getSeverity(IssueRegistry.LINT_ERROR),
                     location, message, TextFormat.RAW);
             classEntries = Collections.emptyList();
         } else {
@@ -1850,10 +1870,10 @@ public class LintDriver {
 
         @Override
         @NonNull
-        public Configuration getConfiguration(@NonNull Project project) {
-            return mDelegate.getConfiguration(project);
+        public Configuration getConfiguration(@NonNull Project project,
+          @Nullable LintDriver driver) {
+            return mDelegate.getConfiguration(project, driver);
         }
-
 
         @Override
         public void log(@NonNull Severity severity, @Nullable Throwable exception,

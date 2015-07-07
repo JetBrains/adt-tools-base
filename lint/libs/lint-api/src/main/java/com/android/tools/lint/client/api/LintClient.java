@@ -28,6 +28,8 @@ import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.Variant;
 import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
@@ -87,15 +89,17 @@ public abstract class LintClient {
      * By default this method returns a {@link DefaultConfiguration}.
      *
      * @param project the project to obtain a configuration for
+     * @param driver the current driver, if any
      * @return a configuration, never null.
      */
-    public Configuration getConfiguration(@NonNull Project project) {
+    @NonNull
+    public Configuration getConfiguration(@NonNull Project project, @Nullable LintDriver driver) {
         return DefaultConfiguration.create(this, project, null);
     }
 
     /**
      * Report the given issue. This method will only be called if the configuration
-     * provided by {@link #getConfiguration(Project)} has reported the corresponding
+     * provided by {@link #getConfiguration(Project,LintDriver)} has reported the corresponding
      * issue as enabled and has not filtered out the issue with its
      * {@link Configuration#ignore(Context,Issue,Location,String)} method.
      * <p>
@@ -920,10 +924,41 @@ public abstract class LintClient {
     @SuppressWarnings("MethodMayBeStatic") // Intentionally instance method so it can be overridden
     @NonNull
     public List<File> findRuleJars(@NonNull Project project) {
-        if (project.getDir().getPath().endsWith(DOT_AAR)) {
-            File lintJar = new File(project.getDir(), "lint.jar"); //$NON-NLS-1$
-            if (lintJar.exists()) {
-                return Collections.singletonList(lintJar);
+        if (project.isGradleProject()) {
+            if (project.isLibrary()) {
+                AndroidLibrary model = project.getGradleLibraryModel();
+                if (model != null) {
+                    File lintJar = model.getLintJar();
+                    if (lintJar.exists()) {
+                        return Collections.singletonList(lintJar);
+                    }
+                }
+            } else if (project.getSubset() != null) {
+                // Probably just analyzing a single file: we still want to look for custom
+                // rules applicable to the file
+                List<File> rules = null;
+                final Variant variant = project.getCurrentVariant();
+                if (variant != null) {
+                    Collection<AndroidLibrary> libraries = variant.getMainArtifact()
+                      .getDependencies().getLibraries();
+                    for (AndroidLibrary library : libraries) {
+                        File lintJar = library.getLintJar();
+                        if (lintJar.exists()) {
+                            if (rules == null) {
+                                rules = Lists.newArrayListWithExpectedSize(4);
+                            }
+                            rules.add(lintJar);
+                        }
+                    }
+                    if (rules != null) {
+                        return rules;
+                    }
+                }
+            } else if (project.getDir().getPath().endsWith(DOT_AAR)) {
+                File lintJar = new File(project.getDir(), "lint.jar"); //$NON-NLS-1$
+                if (lintJar.exists()) {
+                    return Collections.singletonList(lintJar);
+                }
             }
         }
 
