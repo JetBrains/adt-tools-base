@@ -35,17 +35,21 @@ import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtilsTest;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.ast.ClassDeclaration;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.MethodDeclaration;
+import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 
 public class ExternalAnnotationRepositoryTest extends SdkTestCase {
@@ -442,6 +446,78 @@ public class ExternalAnnotationRepositoryTest extends SdkTestCase {
                     return super.visitMethodDeclaration(node);
                 }
             });
+        } finally {
+            ExternalAnnotationRepository.set(null);
+        }
+    }
+
+    public void testMergeParameters() throws Exception {
+        try {
+            ExternalAnnotationRepository manager = getExternalAnnotations("test.pkg", ""
+                    + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                    + "<root>\n"
+                    + "  <item name=\"test.pkg.Test.Parent void testMethod(int)\">\n"
+                    + "    <annotation name=\"android.support.annotation.Annotation1\" />\n"
+                    + "  </item>\n"
+                    + "  <item name=\"test.pkg.Test.Child void testMethod(int)\">\n"
+                    + "    <annotation name=\"android.support.annotation.Annotation2\" />\n"
+                    + "  </item>\n"
+                    + "</root>\n");
+            assertNotNull(manager);
+            ExternalAnnotationRepository.set(manager);
+
+            String source = ""
+                    + "package test.pkg;\n"
+                    + "\n"
+                    + "public class Test {\n"
+                    + "    public void test(Child child) {\n"
+                    + "        child.testMethod(5);\n"
+                    + "    }\n"
+                    + "\n"
+                    + "    public static class Parent {\n"
+                    + "        public void testMethod(int parameter) {\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "\n"
+                    + "    public static class Child extends Parent {\n"
+                    + "        @Override\n"
+                    + "        public void testMethod(int parameter) {\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "}\n";
+
+            final JavaContext context = LintUtilsTest.parse(source,
+                    new File("src/test/pkg/Test.java"));
+            assertNotNull(context);
+            Node unit = context.getCompilationUnit();
+            assertNotNull(unit);
+            final AtomicBoolean foundMethod = new AtomicBoolean();
+            unit.accept(new ForwardingAstVisitor() {
+                @Override
+                public boolean visitMethodInvocation(MethodInvocation node) {
+                    foundMethod.set(true);
+                    assertEquals("testMethod", node.astName().astValue());
+                    ResolvedNode resolved = context.resolve(node);
+                    assertTrue(resolved instanceof ResolvedMethod);
+                    ResolvedMethod method = (ResolvedMethod)resolved;
+                    List<ResolvedAnnotation> annotations =
+                            Lists.newArrayList(method.getAnnotations());
+                    assertEquals(3, annotations.size());
+                    Collections.sort(annotations,
+                            new Comparator<ResolvedAnnotation>() {
+                                @Override
+                                public int compare(ResolvedAnnotation a1,
+                                        ResolvedAnnotation a2) {
+                                    return a1.getName().compareTo(a2.getName());
+                                }
+                            });
+                    assertEquals("android.support.annotation.Annotation1", annotations.get(0).getName());
+                    assertEquals("android.support.annotation.Annotation2", annotations.get(1).getName());
+                    assertEquals("java.lang.Override", annotations.get(2).getName());
+                    return super.visitMethodInvocation(node);
+                }
+            });
+            assertTrue(foundMethod.get());
         } finally {
             ExternalAnnotationRepository.set(null);
         }
