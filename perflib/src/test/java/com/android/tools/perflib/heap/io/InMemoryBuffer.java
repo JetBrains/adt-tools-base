@@ -41,6 +41,11 @@ public class InMemoryBuffer implements HprofBuffer {
     }
 
     @Override
+    public void readSubSequence(byte[] b, int sourceStart, int sourceEnd) {
+        ((ByteBuffer)mBuffer.slice().position(sourceStart)).get(b);
+    }
+
+    @Override
     public char readChar() {
         return mBuffer.getChar();
     }
