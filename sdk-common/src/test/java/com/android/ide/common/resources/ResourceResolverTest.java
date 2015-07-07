@@ -8,8 +8,6 @@ import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.Density;
 import com.android.resources.ResourceType;
 import com.google.common.collect.Lists;
-
-import org.junit.AssertionFailedError;
 import junit.framework.TestCase;
 
 import java.io.IOException;
@@ -259,7 +257,7 @@ public class ResourceResolverTest extends TestCase {
         try {
             val = resolver.resolveValue(ResourceType.STRING, "bright_foreground_dark",
                     "@color/background_light", false);
-        } catch (AssertionFailedError expected) {
+        } catch (AssertionError expected) {
             failed = true;
         }
         assertTrue("incorrect resource returned: " + val, failed);
