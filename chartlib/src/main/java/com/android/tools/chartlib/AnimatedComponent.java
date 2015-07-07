@@ -30,7 +30,15 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.Timer;
 
-public class AnimatedComponent extends JComponent implements ActionListener, HierarchyListener {
+/**
+ * Base class for components that should change their look over time.
+ *
+ * At a minimum, child classes should override {@link #updateData()} and {@link #draw(Graphics2D)},
+ * as well as pay attention to the field {@link #mFrameLength} as it controls the behavior of timed
+ * animations.
+ */
+public abstract class AnimatedComponent extends JComponent
+        implements ActionListener, HierarchyListener {
 
     protected static final Font DEFAULT_FONT = new Font("Sans", Font.PLAIN, 10);
 
@@ -68,16 +76,16 @@ public class AnimatedComponent extends JComponent implements ActionListener, Hie
      * @param fraction the interpolation fraction.
      * @return the interpolated value.
      */
-    protected float lerp(float from, float to, float fraction) {
+    protected final float lerp(float from, float to, float fraction) {
         float q = (float) Math.pow(1.0f - fraction, mFrameLength);
         return from * q + to * (1.0f - q);
     }
 
-    public boolean isDrawDebugInfo() {
+    public final boolean isDrawDebugInfo() {
         return mDrawDebugInfo;
     }
 
-    public void setDrawDebugInfo(boolean drawDebugInfo) {
+    public final void setDrawDebugInfo(boolean drawDebugInfo) {
         mDrawDebugInfo = drawDebugInfo;
     }
 
@@ -104,7 +112,7 @@ public class AnimatedComponent extends JComponent implements ActionListener, Hie
         g2d.dispose();
     }
 
-    protected void addDebugInfo(String format, Object... values) {
+    protected final void addDebugInfo(String format, Object... values) {
         if (mDrawDebugInfo) {
             mDebugInfo.add(String.format(format, values));
         }
@@ -125,17 +133,15 @@ public class AnimatedComponent extends JComponent implements ActionListener, Hie
     }
 
     /**
-     * First step of the animation, this is where the data is read and the current animation
-     * values are fixed.
+     * First step of the animation, this is where the data is read and the current animation values
+     * are fixed.
      */
-    protected void updateData() {
-    }
+    protected abstract void updateData();
 
     /**
      * Renders the data constructed in the update phase to the given graphics context.
      */
-    protected void draw(Graphics2D g) {
-    }
+    protected abstract void draw(Graphics2D g);
 
     /**
      * Draws visual debug information.
@@ -145,12 +151,12 @@ public class AnimatedComponent extends JComponent implements ActionListener, Hie
 
 
     @Override
-    public void actionPerformed(ActionEvent actionEvent) {
+    public final void actionPerformed(ActionEvent actionEvent) {
         repaint();
     }
 
     @Override
-    public void hierarchyChanged(HierarchyEvent hierarchyEvent) {
+    public final void hierarchyChanged(HierarchyEvent hierarchyEvent) {
         if (mTimer.isRunning() && !isShowing()) {
             mTimer.stop();
         } else if (!mTimer.isRunning() && isShowing()) {
@@ -158,15 +164,23 @@ public class AnimatedComponent extends JComponent implements ActionListener, Hie
         }
     }
 
-    public void setUpdateData(boolean updateData) {
+    /**
+     * If true, this component will animate normally.
+     */
+    public final void setUpdateData(boolean updateData) {
         mUpdateData = updateData;
     }
 
-    public void step() {
+    /**
+     * Animate this component for a single frame and then pause. Note that this call will have no
+     * effect unless {@link #setUpdateData(boolean)} is set to {@code false} first.
+     */
+    public final void step() {
         mStep = true;
     }
 
-    protected void drawArrow(Graphics2D g, float x, float y, float dx, float dy, float len, Color color) {
+    protected static void drawArrow(Graphics2D g, float x, float y, float dx, float dy, float len,
+            Color color) {
         Path2D.Float path = new Path2D.Float();
         path.moveTo(x, y);
         path.lineTo(x + dx * len, y + dy * len);
@@ -176,7 +190,7 @@ public class AnimatedComponent extends JComponent implements ActionListener, Hie
         g.draw(path);
     }
 
-    protected void drawMarker(Graphics2D g, float x, float y, Color color) {
+    protected static void drawMarker(Graphics2D g, float x, float y, Color color) {
         Path2D.Float path = new Path2D.Float();
         path.moveTo(x - 10, y);
         path.lineTo(x + 10, y);
