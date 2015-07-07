@@ -176,7 +176,7 @@ public class XmlUtilsTest extends TestCase {
         Node text = doc.createTextNode("  This is my text  ");
         child3.appendChild(text);
 
-        String xml = XmlUtils.toXml(doc, true);
+        String xml = XmlUtils.toXml(doc);
         assertEquals(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                         "<myroot baz=\"baz\" foo=\"bar\"><mychild/><hasComment><!--This is my comment--></hasComment><hasText>  This is my text  </hasText></myroot>",
@@ -199,7 +199,7 @@ public class XmlUtilsTest extends TestCase {
 
         Document doc = parse(xml);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"
@@ -221,7 +221,7 @@ public class XmlUtilsTest extends TestCase {
                 + "</root>";
         Document doc = parse(xml);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(xml, formatted);
     }
 
@@ -236,7 +236,7 @@ public class XmlUtilsTest extends TestCase {
                 + "</resources>";
         Document doc = parse(xml);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"
@@ -258,7 +258,7 @@ public class XmlUtilsTest extends TestCase {
                 + "<root/>";
         Document doc = parse(xml);
 
-        xml = XmlUtils.toXml(doc, true);
+        xml = XmlUtils.toXml(doc);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<!-- ============== --><!-- Generic styles --><!-- ============== --><root/>",
@@ -273,7 +273,7 @@ public class XmlUtilsTest extends TestCase {
                 + "</root>";
         Document doc = parse(xml);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(xml, formatted);
     }
 
@@ -293,7 +293,7 @@ public class XmlUtilsTest extends TestCase {
 
         Document doc = parse(xml);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"

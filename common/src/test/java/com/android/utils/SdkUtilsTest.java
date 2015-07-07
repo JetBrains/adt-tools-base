@@ -319,7 +319,7 @@ public class SdkUtilsTest extends TestCase {
         Element root = document.getDocumentElement();
         assertNotNull(root);
         root.appendChild(document.createComment(comment));
-        String xml = XmlUtils.toXml(document, false);
+        String xml = XmlUtils.toXml(document);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<root>"

@@ -163,7 +163,7 @@ public class ResValueGenerator {
         try {
             content = XmlPrettyPrinter.prettyPrint(document, true);
         } catch (Throwable t) {
-            content = XmlUtils.toXml(document, false);
+            content = XmlUtils.toXml(document);
         }
 
         Files.write(content, resFile, Charsets.UTF_8);

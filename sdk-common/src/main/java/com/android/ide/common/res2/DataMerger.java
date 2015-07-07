@@ -334,7 +334,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             // write merged items
             writeAdditionalData(document, rootNode);
 
-            String content = XmlUtils.toXml(document, true /*preserveWhitespace*/);
+            String content = XmlUtils.toXml(document);
 
             try {
                 createDir(blobRootFolder);
