@@ -54,7 +54,11 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                 + "    @IntDef({STYLE_NORMAL, STYLE_NO_TITLE, STYLE_NO_FRAME, STYLE_NO_INPUT})\n"
                 + "                                                           ~~~~~~~~~~~~~~\n"
                 + "    src/test/pkg/IntDefTest.java:9: Previous same value\n"
-                + "1 errors, 0 warnings\n",
+                + "src/test/pkg/IntDefTest.java:28: Error: Constants FLAG3 and FLAG2 specify the same exact value (562949953421312); this is usually a cut & paste or merge error [UniqueConstants]\n"
+                + "    @IntDef({FLAG2, FLAG3, FLAG1})\n"
+                + "                    ~~~~~\n"
+                + "    src/test/pkg/IntDefTest.java:28: Previous same value\n"
+                + "2 errors, 0 warnings\n",
 
                 lintProject(
                         java("src/test/pkg/IntDefTest.java", ""
@@ -79,6 +83,15 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                                 + "    @SuppressWarnings(\"UniqueConstants\")\n"
                                 + "    @Retention(RetentionPolicy.SOURCE)\n"
                                 + "    private @interface SuppressedDialogStyle {}\n"
+                                + "\n"
+                                + "\n"
+                                + "    public static final long FLAG1 = 0x100000000000L;\n"
+                                + "    public static final long FLAG2 = 0x0002000000000000L;\n"
+                                + "    public static final long FLAG3 = 0x2000000000000L;\n"
+                                + "\n"
+                                + "    @IntDef({FLAG2, FLAG3, FLAG1})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    private @interface Flags {}\n"
                                 + "\n"
 
                                 + ""
