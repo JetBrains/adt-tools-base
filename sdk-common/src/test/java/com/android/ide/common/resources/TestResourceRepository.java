@@ -1,8 +1,8 @@
 package com.android.ide.common.resources;
 
 import static com.android.SdkConstants.FD_RES;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.android.annotations.NonNull;
 import com.android.ide.common.res2.MergingException;

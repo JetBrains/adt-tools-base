@@ -16,6 +16,8 @@
 
 package com.android.sdklib.repository;
 
+import static org.junit.Assert.fail;
+
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -49,7 +51,7 @@ class CaptureErrorHandler implements ErrorHandler {
 
         if (!mErrors.isEmpty()) {
             System.err.println(mErrors);
-            junit.framework.Assert.fail(mErrors);
+            fail(mErrors);
         }
     }
 

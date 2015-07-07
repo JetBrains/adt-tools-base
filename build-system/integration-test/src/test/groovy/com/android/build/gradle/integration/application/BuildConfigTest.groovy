@@ -29,7 +29,7 @@ import com.google.common.base.Charsets
 import com.google.common.collect.Maps
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
-import junit.framework.Assert
+import org.junit.Assert
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule

@@ -31,7 +31,7 @@ import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.LintUtilsTest;
 import com.android.tools.lint.detector.api.Project;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import java.io.File;
 

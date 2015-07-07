@@ -16,7 +16,7 @@
 
 package com.android.builder.png;
 
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 import com.android.SdkConstants;
@@ -33,7 +33,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import java.awt.image.BufferedImage;
 import java.io.File;

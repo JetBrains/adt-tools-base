@@ -9,7 +9,7 @@ import com.android.resources.Density;
 import com.android.resources.ResourceType;
 import com.google.common.collect.Lists;
 
-import junit.framework.AssertionFailedError;
+import org.junit.AssertionFailedError;
 import junit.framework.TestCase;
 
 import java.io.IOException;

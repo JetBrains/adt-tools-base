@@ -25,7 +25,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static junit.framework.Assert.fail
+import static org.junit.Assert.fail
 
 /**
  * Debug builds with a wearApp with applicationId that does not match that of the main application
