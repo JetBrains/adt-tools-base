@@ -20,7 +20,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
 
-public class VdIcon implements Icon {
+public class VdIcon implements Icon, Comparable<VdIcon> {
     private VdTree mVdTree;
     private final String mName;
     private final URL mUrl;
@@ -65,4 +65,8 @@ public class VdIcon implements Icon {
         return (int) (mVdTree != null ? mVdTree.mPortHeight : 0);
     }
 
+    @Override
+    public int compareTo(VdIcon other) {
+        return mName.compareTo(other.mName);
+    }
 }
