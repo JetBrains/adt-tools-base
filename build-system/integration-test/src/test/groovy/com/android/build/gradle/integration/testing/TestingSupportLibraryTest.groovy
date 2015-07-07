@@ -123,7 +123,7 @@ android {
 
     @Test
     public void "check compile"() {
-        project.execute("assembleDebugTest")
+        project.execute("assembleDebugAndroidTest")
     }
 
     @Test
