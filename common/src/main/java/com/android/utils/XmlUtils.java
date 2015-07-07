@@ -487,7 +487,7 @@ public class XmlUtils {
      * To perform pretty printing, use {@code XmlPrettyPrinter.prettyPrint(node)} in
      * {@code sdk-common}.
      */
-    public static String toXml(Node node, boolean preserveWhitespace) {
+    public static String toXml(Node node) {
         StringBuilder sb = new StringBuilder(1000);
         append(sb, node, 0);
         return sb.toString();
