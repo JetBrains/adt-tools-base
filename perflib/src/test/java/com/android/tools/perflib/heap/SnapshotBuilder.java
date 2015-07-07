@@ -21,6 +21,8 @@ import com.android.tools.perflib.heap.io.InMemoryBuffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Utility for creating Snapshot objects to be used in tests.
  *
@@ -31,6 +33,8 @@ import java.util.Arrays;
  */
 public class SnapshotBuilder {
     public static final int SOFT_REFERENCE_ID = 99;
+
+    public static final int SOFT_AND_HARD_REFERENCE_ID = 98;
 
     private final Snapshot mSnapshot;
 
@@ -44,12 +48,14 @@ public class SnapshotBuilder {
 
     private short mNextAvailableSoftReferenceNodeId;
 
+    private short mNextAvailableSoftAndHardReferenceNodeId;
+
     public SnapshotBuilder(int numNodes) {
-        this(numNodes, 0);
+        this(numNodes, 0, 0);
     }
 
-    public SnapshotBuilder(int numNodes, int numSoftNodes) {
-        mMaxTotalNodes = numNodes + numSoftNodes;
+    public SnapshotBuilder(int numNodes, int numSoftNodes, int numSoftAndHardNodes) {
+        mMaxTotalNodes = numNodes + numSoftNodes + numSoftAndHardNodes;
         InMemoryBuffer buffer = new InMemoryBuffer(2 * mMaxTotalNodes * mMaxTotalNodes);
         mDirectBuffer = buffer.getDirectBuffer();
         mOffsets = new int[mMaxTotalNodes + 1];
@@ -63,6 +69,13 @@ public class SnapshotBuilder {
         softClazz.setFields(new Field[]{new Field(Type.OBJECT, "referent")});
         softClazz.setIsSoftReference();
         mSnapshot.addClass(SOFT_REFERENCE_ID, softClazz);
+
+        ClassObj softAndHardClazz = new ClassObj(SOFT_AND_HARD_REFERENCE_ID, null, "SoftAndHardReference", 0);
+        softAndHardClazz.setSuperClassId(SOFT_REFERENCE_ID);
+        softAndHardClazz.setClassLoaderId(0);
+        softAndHardClazz.setFields(new Field[]{new Field(Type.OBJECT, "referent"), new Field(Type.OBJECT, "hardReference")});
+        softAndHardClazz.setIsSoftReference();
+        mSnapshot.addClass(SOFT_AND_HARD_REFERENCE_ID, softAndHardClazz);
 
         mNodes = new ClassInstance[mMaxTotalNodes + 1];
         for (int i = 1; i <= numNodes; i++) {
@@ -87,14 +100,23 @@ public class SnapshotBuilder {
             mNodes[i].setSize(i);
             mSnapshot.addInstance(i, mNodes[i]);
         }
+
+        mNextAvailableSoftAndHardReferenceNodeId = (short)(numNodes + numSoftNodes + 1);
+        for (int i = mNextAvailableSoftAndHardReferenceNodeId; i <= mMaxTotalNodes; ++i) {
+            mOffsets[i] = 2 * (i - 1) * mMaxTotalNodes;
+            mNodes[i] = new ClassInstance(i, null, mOffsets[i]);
+            mNodes[i].setClassId(SOFT_AND_HARD_REFERENCE_ID);
+            mNodes[i].setSize(i);
+            mSnapshot.addInstance(i, mNodes[i]);
+        }
     }
 
     public SnapshotBuilder addReferences(int nodeFrom, int... nodesTo) {
-        assert mNodes[nodeFrom].getClassObj().getFields().length == 0;
+        assertEquals(mNodes[nodeFrom].getClassObj().getFields().length, 0);
 
         Field[] fields = new Field[nodesTo.length];
         for (int i = 0; i < nodesTo.length; i++) {
-            mDirectBuffer.putShort(mOffsets[nodeFrom] + i * 2, (short) nodesTo[i]);
+            insertHardReferenceIntoBuffer(nodeFrom, nodesTo[i], i);
             // Fields should support duplicated field names due to inheritance of private fields
             fields[i] = new Field(Type.OBJECT, "duplicated_name");
         }
@@ -110,16 +132,30 @@ public class SnapshotBuilder {
      * @param nodeTo the child node
      * @return this
      */
-    public SnapshotBuilder insertSoftRefences(int nodeFrom, int... nodesTo) {
+    public SnapshotBuilder insertSoftReference(int nodeFrom, int nodeToSoftReference) {
         Field[] nodeFromFields = mNodes[nodeFrom].getClassObj().getFields();
-        Field[] newFields = Arrays.copyOf(nodeFromFields, nodeFromFields.length + nodesTo.length);
-        for (int i = 0; i < nodesTo.length; ++i) {
-            short softReferenceId = mNextAvailableSoftReferenceNodeId++;
-            assert softReferenceId <= mMaxTotalNodes;
-            mDirectBuffer.putShort(mOffsets[nodeFrom] + (nodeFromFields.length + i) * 2, softReferenceId);
-            newFields[nodeFromFields.length + i] = new Field(Type.OBJECT, "fSoftReference" + nodesTo[i]);
-        }
+        Field[] newFields = Arrays.copyOf(nodeFromFields, nodeFromFields.length + 1);
 
+        short softReferenceId = mNextAvailableSoftReferenceNodeId++;
+        assert softReferenceId <= mMaxTotalNodes;
+        insertSoftReferenceIntoBuffer(nodeFrom, softReferenceId, nodeFromFields.length);
+
+        setupSoftReference(softReferenceId, nodeToSoftReference);
+        newFields[nodeFromFields.length] = new Field(Type.OBJECT, "soft" + nodeToSoftReference);
+        mNodes[nodeFrom].getClassObj().setFields(newFields);
+        return this;
+    }
+
+    public SnapshotBuilder insertSoftAndHardReference(int nodeFrom, int nodeToSoftReference, int nodeToHardReference) {
+        Field[] nodeFromFields = mNodes[nodeFrom].getClassObj().getFields();
+        Field[] newFields = Arrays.copyOf(nodeFromFields, nodeFromFields.length + 1);
+
+        short softReferenceId = mNextAvailableSoftAndHardReferenceNodeId++;
+        assert softReferenceId <= mMaxTotalNodes;
+        insertSoftReferenceIntoBuffer(nodeFrom, softReferenceId, nodeFromFields.length);
+
+        setupSoftAndHardReference(softReferenceId, nodeToSoftReference, nodeToHardReference);
+        newFields[nodeFromFields.length] = new Field(Type.OBJECT, "soft" + nodeToSoftReference + "hard" + nodeToHardReference);
         mNodes[nodeFrom].getClassObj().setFields(newFields);
         return this;
     }
@@ -133,5 +169,22 @@ public class SnapshotBuilder {
 
     public Snapshot build() {
         return mSnapshot;
+    }
+
+    private void insertHardReferenceIntoBuffer(int nodeFrom, int nodeTo, int fieldIndex) {
+        mDirectBuffer.putShort(mOffsets[nodeFrom] + fieldIndex * 2, (short)nodeTo);
+    }
+
+    private void insertSoftReferenceIntoBuffer(int nodeFrom, int softReferenceId, int fieldIndex) {
+        mDirectBuffer.putShort(mOffsets[nodeFrom] + fieldIndex * 2, (short)softReferenceId);
+    }
+
+    private void setupSoftReference(int softReferenceId, int referent) {
+        mDirectBuffer.putShort(mOffsets[softReferenceId], (short)referent);
+    }
+
+    private void setupSoftAndHardReference(int softReferenceId, int referent, int hardReference) {
+        mDirectBuffer.putShort(mOffsets[softReferenceId], (short)referent);
+        mDirectBuffer.putShort(mOffsets[softReferenceId] + 2, (short)hardReference);
     }
 }

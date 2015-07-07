@@ -191,10 +191,11 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     @Override
     public final void accept(@NonNull Visitor visitor) {
         visitor.visitClassObj(this);
-        for (Object value : getStaticFieldValues().values()) {
+        for (Map.Entry<Field, Object> entry : getStaticFieldValues().entrySet()) {
+            Object value = entry.getValue();
             if (value instanceof Instance) {
                 if (!mReferencesAdded) {
-                    ((Instance)value).addReference(this);
+                    ((Instance)value).addReference(entry.getKey(), this);
                 }
                 visitor.visitLater(this, (Instance)value);
             }

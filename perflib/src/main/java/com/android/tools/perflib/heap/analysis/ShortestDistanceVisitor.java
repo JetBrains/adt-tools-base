@@ -35,7 +35,10 @@ public class ShortestDistanceVisitor extends NonRecursiveVisitor {
     @Override
     public void visitLater(Instance parent, @NonNull Instance child) {
         if (mVisitDistance < child.getDistanceToGcRoot() &&
-                (parent == null || !parent.getIsSoftReference() || child.getIsSoftReference())) {
+                (parent == null ||
+                     child.getSoftReferences() == null ||
+                     !child.getSoftReferences().contains(parent) ||
+                     child.getIsSoftReference())) {
             child.setDistanceToGcRoot(mVisitDistance);
             child.setNextInstanceToGcRoot(mPreviousInstance);
             mPriorityQueue.add(child);

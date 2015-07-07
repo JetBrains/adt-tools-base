@@ -82,7 +82,7 @@ public class ArrayInstance extends Instance {
             for (Object value : getValues()) {
                 if (value instanceof Instance) {
                     if (!mReferencesAdded) {
-                        ((Instance)value).addReference(this);
+                        ((Instance)value).addReference(null, this);
                     }
                     visitor.visitLater(this, (Instance)value);
                 }
