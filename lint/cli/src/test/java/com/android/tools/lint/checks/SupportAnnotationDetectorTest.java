@@ -16,7 +16,12 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION;
+
 import com.android.tools.lint.ExternalAnnotationRepository;
+import com.android.tools.lint.ExternalAnnotationRepositoryTest;
+import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.detector.api.Detector;
 
 @SuppressWarnings("ClassNameDiffersFromFileName") // For embedded unit tests
@@ -981,6 +986,22 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
     }
 
     public void testIntentPermission() throws Exception {
+        if (SDK_ANNOTATIONS_AVAILABLE) {
+            TestLintClient client = createClient();
+            ExternalAnnotationRepository repository = ExternalAnnotationRepository.get(client);
+            ResolvedMethod method = ExternalAnnotationRepositoryTest.createMethod(
+                    "android.content.Context", "void", "startActivity",
+                    "android.content.Intent");
+            ResolvedAnnotation a = repository.getAnnotation(method, 0, PERMISSION_ANNOTATION);
+            if (a == null) {
+                // Running tests from outside the IDE (where it can't find the
+                // bundled up to date annotations in tools/adt/idea/android/annotations)
+                // and we have the annotations.zip file available in platform-tools,
+                // but its contents are old (it's from Android M Preview 1, not including
+                // the new intent-annotation data); skip this test for now.
+                return;
+            }
+        }
 
         assertEquals(!SDK_ANNOTATIONS_AVAILABLE ? "" // Most of the intent/content provider checks are based on framework annotations
                 + "src/test/pkg/ActionTest.java:86: Error: Missing permissions required by intent ActionTest.ACTION_CALL: android.permission.CALL_PHONE [MissingPermission]\n"

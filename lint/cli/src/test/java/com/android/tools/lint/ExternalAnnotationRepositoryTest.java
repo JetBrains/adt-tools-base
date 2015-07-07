@@ -546,18 +546,18 @@ public class ExternalAnnotationRepositoryTest extends SdkTestCase {
         return createMethod(containingClass, null, name, parameters, true);
     }
 
-    private static ResolvedMethod createMethod(String containingClass, String returnType,
+    public static ResolvedMethod createMethod(String containingClass, String returnType,
             String name, String parameters) {
         return createMethod(containingClass, returnType, name, parameters, false);
     }
 
-    private static ResolvedMethod createMethod(String containingClass, String returnType,
+    public static ResolvedMethod createMethod(String containingClass, String returnType,
             String name, String parameters, boolean isConstructor) {
         return createMethod(containingClass, returnType, name,
                 Splitter.on(',').trimResults().split(parameters), isConstructor);
     }
 
-    private static ResolvedMethod createMethod(String containingClass, String returnType,
+    public static ResolvedMethod createMethod(String containingClass, String returnType,
             String name, Iterable<String> parameters, boolean isConstructor) {
         ResolvedMethod mock = mock(ResolvedMethod.class);
         when(mock.isConstructor()).thenReturn(isConstructor);
@@ -578,7 +578,7 @@ public class ExternalAnnotationRepositoryTest extends SdkTestCase {
         return mock;
     }
 
-    private static ResolvedField createField(String containingClass, String name) {
+    public static ResolvedField createField(String containingClass, String name) {
         ResolvedField mock = mock(ResolvedField.class);
         when(mock.getName()).thenReturn(name);
         ResolvedClass cls = createClass(containingClass);
