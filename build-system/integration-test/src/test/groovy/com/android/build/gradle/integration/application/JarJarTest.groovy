@@ -46,7 +46,7 @@ public class JarJarTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromTestProject("jarjarIntegration")
+            .fromTestProject(GradleTestProject.USE_JACK ? "jarjarWithJack" : "jarjarIntegration")
             .create()
 
     @BeforeClass
@@ -68,11 +68,11 @@ public class JarJarTest {
         // get the main artifact of the debug artifact
         Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
         assertNotNull("debug Variant null-check", debugVariant)
-        AndroidArtifact debugMainArficat = debugVariant.getMainArtifact()
-        assertNotNull("Debug main info null-check", debugMainArficat)
+        AndroidArtifact debugMainArtifact = debugVariant.getMainArtifact()
+        assertNotNull("Debug main info null-check", debugMainArtifact)
 
         // get the outputs.
-        Collection<AndroidArtifactOutput> debugOutputs = debugMainArficat.getOutputs()
+        Collection<AndroidArtifactOutput> debugOutputs = debugMainArtifact.getOutputs()
         assertNotNull(debugOutputs)
         assertEquals(1, debugOutputs.size())
 
