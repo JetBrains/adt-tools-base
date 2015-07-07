@@ -301,7 +301,7 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
      * See com/android/commands/am/Am.java for full list of options.
      */
     public void setRunOptions(@NonNull String options) {
-        mRunOptions = options + " ";
+        mRunOptions = options;
     }
 
     @Override
