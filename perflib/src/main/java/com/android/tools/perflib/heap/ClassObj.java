@@ -205,7 +205,17 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     @Override
     public final int compareTo(@NonNull ClassObj o) {
-        return mClassName.compareTo(o.mClassName);
+        if (getId() == o.getId()) {
+            return 0;
+        }
+
+        int nameCompareResult = mClassName.compareTo(o.mClassName);
+        if (nameCompareResult != 0) {
+            return nameCompareResult;
+        }
+        else {
+            return getId() - o.getId() > 0 ? 1 : -1;
+        }
     }
 
     public final boolean equals(Object o) {
