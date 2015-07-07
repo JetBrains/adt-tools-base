@@ -19,6 +19,7 @@ def testEnvironment = [
     PROJECT_BUILD_DIR: project.buildDir,
     CUSTOM_REPO: rootProject.file("../out/repo"),
     CUSTOM_GRADLE: System.env.CUSTOM_GRADLE ?: rootProject.ext.buildVersion,
+    CUSTOM_EXPERIMENTAL_GRADLE: System.env.CUSTOM_EXPERIMENTAL_GRADLE ?:rootProject.ext.experimentalVersion,
     ANDROID_HOME: System.env.ANDROID_HOME,
     ANDROID_NDK_HOME: System.env.ANDROID_NDK_HOME,
     CUSTOM_BUILDTOOLS: System.env.CUSTOM_BUILDTOOLS,

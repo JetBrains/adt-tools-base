@@ -1,7 +1,11 @@
 apply plugin: 'java'
 apply plugin: 'idea'
 
-def env = new Object() { String gradleVersion };
+def env = new Object() {
+    String gradleVersion
+    String experimentalGradleVersion
+};
+
 apply from: "../../commonGradlePluginVersion.gradle", to: env
 apply from: "../../commonLocalRepo.gradle"
 
