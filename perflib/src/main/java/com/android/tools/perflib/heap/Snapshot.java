@@ -288,20 +288,21 @@ public class Snapshot {
     }
 
     public void resolveReferences() {
-        Stack<ClassObj> referenceSubclasses = new Stack<ClassObj>();
-        Collection<ClassObj> references = findClasses(ClassObj.getReferenceClassName());
-        for (ClassObj classObj : references) {
-            referenceSubclasses.push(classObj);
-        }
-
-        while (!referenceSubclasses.isEmpty()) {
-            ClassObj classObj = referenceSubclasses.pop();
+        List<ClassObj> referenceDescendants = findAllDescendantClasses(ClassObj.getReferenceClassName());
+        for (ClassObj classObj : referenceDescendants) {
             classObj.setIsSoftReference();
             mReferenceClasses.add(classObj);
-            for (ClassObj subClass : classObj.getSubclasses()) {
-                referenceSubclasses.push(subClass);
-            }
         }
+    }
+
+    @NonNull
+    public List<ClassObj> findAllDescendantClasses(@NonNull String className) {
+        Collection<ClassObj> ancestorClasses = findClasses(className);
+        List<ClassObj> descendants = new ArrayList<ClassObj>();
+        for (ClassObj ancestor : ancestorClasses) {
+            descendants.addAll(ancestor.getDescendantClasses());
+        }
+        return descendants;
     }
 
     // TODO: Break dominator computation into fixed chunks, because it can be unbounded/expensive.
