@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.scope;
 
+import static com.android.build.gradle.internal.TaskManager.DIR_BUNDLES;
 import static com.android.builder.model.AndroidProject.FD_GENERATED;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
@@ -280,7 +281,7 @@ public class VariantScope {
     public File getProguardOutputFile() {
         return (variantData instanceof LibraryVariantData) ?
                 new File(globalScope.getIntermediatesDir(),
-                        TaskManager.DIR_BUNDLES + "/" + getVariantConfiguration().getDirName()
+                        DIR_BUNDLES + "/" + getVariantConfiguration().getDirName()
                                 + "/classes.jar") :
                 new File(globalScope.getIntermediatesDir(),
                         "/classes-proguard/" + getVariantConfiguration().getDirName()
@@ -351,7 +352,7 @@ public class VariantScope {
     public File getMergeAssetsOutputDir() {
         return getVariantConfiguration().getType() == VariantType.LIBRARY ?
                 new File(globalScope.getIntermediatesDir(),
-                        TaskManager.DIR_BUNDLES + "/" + getVariantConfiguration().getDirName() +
+                        DIR_BUNDLES + "/" + getVariantConfiguration().getDirName() +
                                 "/assets") :
                 new File(globalScope.getIntermediatesDir(),
                         "/assets/" + getVariantConfiguration().getDirName());
@@ -403,6 +404,18 @@ public class VariantScope {
     public File getAidlSourceOutputDir() {
         return new File(globalScope.getGeneratedDir(),
                 "source/aidl/" + getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public File getAidlIncrementalDir() {
+        return new File(globalScope.getIntermediatesDir(),
+                "incremental/aidl/" + getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public File getAidlParcelableDir() {
+        return new File(globalScope.getIntermediatesDir(),
+                DIR_BUNDLES + "/" + getVariantConfiguration().getDirName() + "/aidl");
     }
 
     /**
