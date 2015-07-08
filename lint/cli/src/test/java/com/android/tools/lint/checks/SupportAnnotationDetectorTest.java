@@ -145,7 +145,22 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/RangeTest.java:141: Error: Value must be < 5.0 (was 5.0) [Range]\n"
                 + "        printBetweenFromExclusiveToExclusive(5.0f); // ERROR\n"
                 + "                                             ~~~~\n"
-                + "36 errors, 0 warnings\n",
+                + "src/test/pkg/RangeTest.java:145: Error: Value must be ≥ 4 (was -7) [Range]\n"
+                + "        printBetween(-7); // ERROR\n"
+                + "                     ~~\n"
+                + "src/test/pkg/RangeTest.java:146: Error: Value must be > 2.5 (was -10.0) [Range]\n"
+                + "        printAtLeastExclusive(-10.0); // ERROR\n"
+                + "                              ~~~~~\n"
+                + "src/test/pkg/RangeTest.java:156: Error: Value must be ≥ -1 (was -2) [Range]\n"
+                + "        printIndirect(-2); // ERROR\n"
+                + "                      ~~\n"
+                + "src/test/pkg/RangeTest.java:157: Error: Value must be ≤ 42 (was 43) [Range]\n"
+                + "        printIndirect(43); // ERROR\n"
+                + "                      ~~\n"
+                + "src/test/pkg/RangeTest.java:158: Error: Expected length 5 (was 7) [Range]\n"
+                + "        printIndirectSize(\"1234567\"); // ERROR\n"
+                + "                          ~~~~~~~~~\n"
+                + "41 errors, 0 warnings\n",
 
                 lintProject("src/test/pkg/RangeTest.java.txt=>src/test/pkg/RangeTest.java",
                         "src/android/support/annotation/Size.java.txt=>src/android/support/annotation/Size.java",
