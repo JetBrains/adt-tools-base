@@ -30,15 +30,17 @@ public class NativeToolSpecificationFactory {
     /**
      * Returns a NativeToolSpecification.
      *
-     * @param buildType Build type of the native binary.
      * @param platform  Target platform of the native binary.
+     * @param isDebugBuild Is the build debuggable.
      * @return A NativeToolSpecification for the targeted native binary.
      */
-    public static NativeToolSpecification create(NdkHandler ndkHandler, BuildType buildType,
-            NativePlatform platform) {
+    public static NativeToolSpecification create(
+            NdkHandler ndkHandler,
+            NativePlatform platform,
+            boolean isDebugBuild) {
         return (ndkHandler.getToolchain().equals(Toolchain.GCC)
-                ? new GccNativeToolSpecification(buildType, platform)
-                : new ClangNativeToolSpecification(ndkHandler, buildType, platform));
+                ? new GccNativeToolSpecification(platform, isDebugBuild)
+                : new ClangNativeToolSpecification(ndkHandler, platform, isDebugBuild));
     }
 
 }

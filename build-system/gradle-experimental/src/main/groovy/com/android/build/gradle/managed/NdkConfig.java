@@ -12,7 +12,7 @@ import java.util.Set;
  * Root configuration model for android-ndk plugin.
  */
 @Managed
-public interface NdkConfig extends NdkOptions {
+public interface NdkConfig extends NdkBuildType {
 
     /**
      * The toolchain version.

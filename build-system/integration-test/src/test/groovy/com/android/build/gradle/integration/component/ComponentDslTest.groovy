@@ -59,11 +59,6 @@ model {
     android.ndk {
         moduleName = "hello-jni"
     }
-    android.buildTypes {
-        debug {
-            isJniDebuggable = true
-        }
-    }
     android.productFlavors {
         create("f1") {
             proguardFiles += file("proguard.txt")
