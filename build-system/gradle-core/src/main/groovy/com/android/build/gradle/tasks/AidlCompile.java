@@ -14,96 +14,87 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.tasks
+package com.android.build.gradle.tasks;
 
-import com.android.SdkConstants
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.annotations.concurrency.GuardedBy
-import com.android.build.gradle.api.ApkVariant
-import com.android.build.gradle.internal.TaskManager
-import com.android.build.gradle.internal.scope.ConventionMappingHelper
-import com.android.build.gradle.internal.scope.TaskConfigAction
-import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.tasks.IncrementalTask
-import com.android.build.gradle.internal.variant.ApkVariantData
-import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.builder.compiling.DependencyFileProcessor
-import com.android.builder.core.VariantConfiguration
-import com.android.builder.core.VariantType
-import com.android.builder.internal.incremental.DependencyData
-import com.android.builder.internal.incremental.DependencyDataStore
-import com.android.builder.model.AndroidProject
-import com.android.ide.common.internal.WaitableExecutor
-import com.android.ide.common.res2.FileStatus
-import com.google.common.collect.Lists
-import com.google.common.collect.Multimap
-import org.gradle.api.file.FileTree
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.util.PatternSet
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.GuardedBy;
 
-import java.util.concurrent.Callable
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.IncrementalTask;
+import com.android.builder.compiling.DependencyFileProcessor;
+import com.android.builder.core.VariantConfiguration;
+import com.android.builder.core.VariantType;
+import com.android.builder.internal.incremental.DependencyData;
+import com.android.builder.internal.incremental.DependencyDataStore;
+import com.android.ide.common.internal.LoggedErrorException;
+import com.android.ide.common.internal.WaitableExecutor;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.res2.FileStatus;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import org.gradle.api.file.FileTree;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.util.PatternSet;
 
-import static com.android.builder.model.AndroidProject.FD_GENERATED
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * Task to compile aidl files. Supports incremental update.
  */
 public class AidlCompile extends IncrementalTask {
 
-    private static final String DEPENDENCY_STORE = "dependency.store"
+    private static final String DEPENDENCY_STORE = "dependency.store";
+    private static final PatternSet PATTERN_SET = new PatternSet().include("**/*.aidl");
 
     // ----- PUBLIC TASK API -----
-
-    @OutputDirectory
-    File sourceOutputDir
-
-    @OutputDirectory @Optional
-    File aidlParcelableDir
+    private File sourceOutputDir;
+    private File aidlParcelableDir;
 
     // ----- PRIVATE TASK API -----
     @Input
     String getBuildToolsVersion() {
-        getBuildTools().getRevision()
+        return getBuildTools().getRevision().toString();
     }
-
-    List<File> sourceDirs
-
-    @InputFiles
-    List<File> importDirs
-
-    final PatternSet patternSet = new PatternSet().include("**/*.aidl")
+    private List<File> sourceDirs;
+    private List<File> importDirs;
 
     @InputFiles
     FileTree getSourceFiles() {
-        FileTree src = null
-        Set<File> sources = getSourceDirs()
+        FileTree src = null;
+        List<File> sources = getSourceDirs();
         if (!sources.isEmpty()) {
-            src = getProject().files(new ArrayList<Object>(sources)).getAsFileTree().matching(patternSet)
+            src = getProject().files(sources).getAsFileTree().matching(PATTERN_SET);
         }
-        return src == null ? getProject().files().getAsFileTree() : src
+        return src == null ? getProject().files().getAsFileTree() : src;
     }
 
     private static class DepFileProcessor implements DependencyFileProcessor {
 
         @GuardedBy("this")
-        List<DependencyData> dependencyDataList = Lists.newArrayList()
+        List<DependencyData> dependencyDataList = Lists.newArrayList();
 
         List<DependencyData> getDependencyDataList() {
-            return dependencyDataList
+            return dependencyDataList;
         }
 
         @Override
-        DependencyData processFile(@NonNull File dependencyFile) {
-            DependencyData data = DependencyData.parseDependencyFile(dependencyFile)
+        public DependencyData processFile(@NonNull File dependencyFile) throws IOException {
+            DependencyData data = DependencyData.parseDependencyFile(dependencyFile);
             if (data != null) {
                 synchronized (this) {
-                    dependencyDataList.add(data)
+                    dependencyDataList.add(data);
                 }
             }
 
@@ -111,9 +102,10 @@ public class AidlCompile extends IncrementalTask {
         }
     }
 
+    @Override
     protected boolean isIncremental() {
         // TODO fix once dep file parsing is resolved.
-        return false
+        return false;
     }
 
     /**
@@ -125,13 +117,14 @@ public class AidlCompile extends IncrementalTask {
      *
      * @param dependencyFileProcessor a DependencyFileProcessor
      */
-    private void compileAllFiles(DependencyFileProcessor dependencyFileProcessor) {
+    private void compileAllFiles(DependencyFileProcessor dependencyFileProcessor)
+            throws InterruptedException, ProcessException, LoggedErrorException, IOException {
         getBuilder().compileAllAidlFiles(
                 getSourceDirs(),
                 getSourceOutputDir(),
                 getAidlParcelableDir(),
                 getImportDirs(),
-                dependencyFileProcessor)
+                dependencyFileProcessor);
     }
 
     /**
@@ -139,11 +132,11 @@ public class AidlCompile extends IncrementalTask {
      */
     @NonNull
     private List<File> getImportFolders() {
-        List<File> fullImportDir = Lists.newArrayList()
-        fullImportDir.addAll(getImportDirs())
-        fullImportDir.addAll(getSourceDirs())
+        List<File> fullImportDir = Lists.newArrayList();
+        fullImportDir.addAll(getImportDirs());
+        fullImportDir.addAll(getSourceDirs());
 
-        return fullImportDir
+        return fullImportDir;
     }
 
     /**
@@ -157,123 +150,137 @@ public class AidlCompile extends IncrementalTask {
             @NonNull File sourceFolder,
             @NonNull File file,
             @Nullable List<File> importFolders,
-            @NonNull DependencyFileProcessor dependencyFileProcessor) {
+            @NonNull DependencyFileProcessor dependencyFileProcessor)
+            throws InterruptedException, ProcessException, LoggedErrorException, IOException {
         getBuilder().compileAidlFile(
                 sourceFolder,
                 file,
                 getSourceOutputDir(),
                 getAidlParcelableDir(),
                 importFolders,
-                dependencyFileProcessor)
+                dependencyFileProcessor);
     }
 
     @Override
     protected void doFullTaskAction() {
         // this is full run, clean the previous output
-        File destinationDir = getSourceOutputDir()
-        emptyFolder(destinationDir)
+        File destinationDir = getSourceOutputDir();
+        emptyFolder(destinationDir);
 
-        File parcelableDir = getAidlParcelableDir()
+        File parcelableDir = getAidlParcelableDir();
         if (parcelableDir != null) {
-            emptyFolder(parcelableDir)
+            emptyFolder(parcelableDir);
         }
 
-        DepFileProcessor processor = new DepFileProcessor()
+        DepFileProcessor processor = new DepFileProcessor();
 
-        compileAllFiles(processor)
+        try {
+            compileAllFiles(processor);
+        } catch (Exception e) {
+            throw  new RuntimeException(e);
+        }
 
-        List<DependencyData> dataList = processor.getDependencyDataList()
+        List<DependencyData> dataList = processor.getDependencyDataList();
 
-        DependencyDataStore store = new DependencyDataStore()
-        store.addData(dataList)
+        DependencyDataStore store = new DependencyDataStore();
+        store.addData(dataList);
 
-        store.saveTo(new File(getIncrementalFolder(), DEPENDENCY_STORE))
+        try {
+            store.saveTo(new File(getIncrementalFolder(), DEPENDENCY_STORE));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) {
-        File incrementalData = new File(getIncrementalFolder(), DEPENDENCY_STORE)
-        DependencyDataStore store = new DependencyDataStore()
-        Multimap<String, DependencyData> inputMap
+        File incrementalData = new File(getIncrementalFolder(), DEPENDENCY_STORE);
+        DependencyDataStore store = new DependencyDataStore();
+        Multimap<String, DependencyData> inputMap;
         try {
-            inputMap = store.loadFrom(incrementalData)
+            inputMap = store.loadFrom(incrementalData);
         } catch (Exception ignored) {
-            incrementalData.delete()
-            project.logger.info(
-                    "Failed to read dependency store: full task run!")
-            doFullTaskAction()
-            return
+            incrementalData.delete();
+            getProject().getLogger().info(
+                    "Failed to read dependency store: full task run!");
+            doFullTaskAction();
+            return;
         }
 
-        final List<File> importFolders = getImportFolders()
-        final DepFileProcessor processor = new DepFileProcessor()
+        final List<File> importFolders = getImportFolders();
+        final DepFileProcessor processor = new DepFileProcessor();
 
         // use an executor to parallelize the compilation of multiple files.
-        WaitableExecutor<Void> executor = new WaitableExecutor<Void>()
+        WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
 
-        Map<String,DependencyData> mainFileMap = store.getMainFileMap()
+        Map<String,DependencyData> mainFileMap = store.getMainFileMap();
 
-        for (Map.Entry<File, FileStatus> entry : changedInputs.entrySet()) {
-            FileStatus status = entry.getValue()
+        for (final Map.Entry<File, FileStatus> entry : changedInputs.entrySet()) {
+            FileStatus status = entry.getValue();
 
             switch (status) {
-                case FileStatus.NEW:
+                case NEW:
                     executor.execute(new Callable<Void>() {
                         @Override
-                        Void call() throws Exception {
-                            File file = entry.getKey()
-                            compileSingleFile(getSourceFolder(file), file, importFolders, processor)
+                        public Void call() throws Exception {
+                            File file = entry.getKey();
+                            compileSingleFile(getSourceFolder(file), file, importFolders, processor);
+                            return null;
                         }
-                    })
-                    break
-                case FileStatus.CHANGED:
-                    List<DependencyData> impactedData = inputMap.get(entry.getKey().absolutePath)
+                    });
+                    break;
+                case CHANGED:
+                    Collection<DependencyData> impactedData =
+                            inputMap.get(entry.getKey().getAbsolutePath());
                     if (impactedData != null) {
-                        final int count = impactedData.size();
-                        for (int i = 0; i < count; i++) {
-                            final DependencyData data = impactedData.get(i);
-
+                        for (final DependencyData data: impactedData) {
                             executor.execute(new Callable<Void>() {
                                 @Override
-                                Void call() throws Exception {
+                                public Void call() throws Exception {
                                     File file = new File(data.getMainFile());
                                     compileSingleFile(getSourceFolder(file), file,
-                                            importFolders, processor)
+                                            importFolders, processor);
+                                    return null;
                                 }
-                            })
+                            });
                         }
                     }
-                    break
-                case FileStatus.REMOVED:
-                    final DependencyData data2 = mainFileMap.get(entry.getKey().absolutePath)
+                    break;
+                case REMOVED:
+                    final DependencyData data2 = mainFileMap.get(entry.getKey().getAbsolutePath());
                     if (data2 != null) {
                         executor.execute(new Callable<Void>() {
                             @Override
-                            Void call() throws Exception {
-                                cleanUpOutputFrom(data2)
+                            public Void call() throws Exception {
+                                cleanUpOutputFrom(data2);
+                                return null;
                             }
-                        })
-                        store.remove(data2)
+                        });
+                        store.remove(data2);
                     }
-                    break
+                    break;
             }
         }
 
         try {
-            executor.waitForTasksWithQuickFail(true /*cancelRemaining*/)
+            executor.waitForTasksWithQuickFail(true /*cancelRemaining*/);
         } catch (Throwable t) {
-            incrementalData.delete()
-            throw t
+            incrementalData.delete();
+            throw new RuntimeException(t);
         }
 
         // get all the update data for the recompiled objects
-        store.updateAll(processor.getDependencyDataList())
+        store.updateAll(processor.getDependencyDataList());
 
-        store.saveTo(incrementalData)
+        try {
+            store.saveTo(incrementalData);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private File getSourceFolder(@NonNull File file) {
-        File parentDir = file
+        File parentDir = file;
         while ((parentDir = parentDir.getParentFile()) != null) {
             for (File folder : getSourceDirs()) {
                 if (parentDir.equals(folder)) {
@@ -282,64 +289,106 @@ public class AidlCompile extends IncrementalTask {
             }
         }
 
-        assert false
+        throw new IllegalArgumentException(String.format("File '%s' is not in a source dir", file));
     }
 
     private static void cleanUpOutputFrom(@NonNull DependencyData dependencyData) {
         for (String output : dependencyData.getOutputFiles()) {
-            new File(output).delete()
+            new File(output).delete();
         }
         for (String output : dependencyData.getSecondaryOutputFiles()) {
-            new File(output).delete()
+            new File(output).delete();
         }
     }
 
+    @OutputDirectory
+    public File getSourceOutputDir() {
+        return sourceOutputDir;
+    }
+
+    public void setSourceOutputDir(File sourceOutputDir) {
+        this.sourceOutputDir = sourceOutputDir;
+    }
+
+    @OutputDirectory @Optional
+    public File getAidlParcelableDir() {
+        return aidlParcelableDir;
+    }
+
+    public void setAidlParcelableDir(File aidlParcelableDir) {
+        this.aidlParcelableDir = aidlParcelableDir;
+    }
+
+    public List<File> getSourceDirs() {
+        return sourceDirs;
+    }
+
+    public void setSourceDirs(List<File> sourceDirs) {
+        this.sourceDirs = sourceDirs;
+    }
+
+    @InputFiles
+    public List<File> getImportDirs() {
+        return importDirs;
+    }
+
+    public void setImportDirs(List<File> importDirs) {
+        this.importDirs = importDirs;
+    }
 
     public static class ConfigAction implements TaskConfigAction<AidlCompile> {
 
         @NonNull
-        VariantScope scope
+        VariantScope scope;
 
-        ConfigAction(@NonNull VariantScope scope) {
-            this.scope = scope
+        public ConfigAction(@NonNull VariantScope scope) {
+            this.scope = scope;
         }
 
         @Override
         @NonNull
-        String getName() {
-            return scope.getTaskName("compile", "Aidl")
+        public String getName() {
+            return scope.getTaskName("compile", "Aidl");
         }
 
         @Override
         @NonNull
-        Class<AidlCompile> getType() {
-            return AidlCompile
+        public Class<AidlCompile> getType() {
+            return AidlCompile.class;
         }
 
         @Override
-        void execute(AidlCompile compileTask) {
-            VariantConfiguration variantConfiguration = scope.variantConfiguration
+        public void execute(AidlCompile compileTask) {
+            final VariantConfiguration<?,?,?> variantConfiguration = scope.getVariantConfiguration();
 
-            scope.variantData.aidlCompileTask = compileTask
+            scope.getVariantData().aidlCompileTask = compileTask;
 
-            compileTask.androidBuilder = scope.globalScope.androidBuilder
-            compileTask.incrementalFolder =
-                    new File(
-                            "$scope.globalScope.buildDir/${FD_INTERMEDIATES}/incremental/aidl/${variantConfiguration.dirName}")
+            compileTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            compileTask.setIncrementalFolder(scope.getAidlIncrementalDir());
 
-            ConventionMappingHelper.map(compileTask, "sourceDirs") { variantConfiguration.aidlSourceList }
-            ConventionMappingHelper.map(compileTask, "importDirs") { variantConfiguration.aidlImports }
+            ConventionMappingHelper.map(compileTask, "sourceDirs", new Callable<List<File>>() {
+                @Override
+                public List<File> call() throws Exception {
+                    return variantConfiguration.getAidlSourceList();
+                }
+            });
+            ConventionMappingHelper.map(compileTask, "importDirs", new Callable<List<File>>() {
+                @Override
+                public List<File> call() throws Exception {
+                    return variantConfiguration.getAidlImports();
+                }
+            });
 
-            ConventionMappingHelper.map(compileTask, "sourceOutputDir") {
-                //new File(scope.globalScope.generatedDir, "source/aidl/${variantConfiguration.dirName}")
-                scope.getAidlSourceOutputDir()
+            ConventionMappingHelper.map(compileTask, "sourceOutputDir", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return scope.getAidlSourceOutputDir();
+                }
+            });
+
+            if (variantConfiguration.getType() == VariantType.LIBRARY) {
+                compileTask.setAidlParcelableDir(scope.getAidlParcelableDir());
             }
-
-            if (variantConfiguration.type == VariantType.LIBRARY) {
-                compileTask.aidlParcelableDir = new File(
-                        "$scope.globalScope.buildDir/${FD_INTERMEDIATES}/$TaskManager.DIR_BUNDLES/${variantConfiguration.dirName}/$SdkConstants.FD_AIDL")
-            }
-
         }
     }
 
