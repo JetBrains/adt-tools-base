@@ -100,6 +100,70 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                                 "src/android/support/annotation/IntDef.java")));
     }
 
+    @SuppressWarnings("ClassNameDiffersFromFileName")
+    public void testFlagStyle() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/IntDefTest.java:13: Warning: Consider declaring this constant using 1 << 44 instead [ShiftFlags]\n"
+                + "    public static final long FLAG5 = 0x100000000000L;\n"
+                + "                                     ~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/IntDefTest.java:14: Warning: Consider declaring this constant using 1 << 49 instead [ShiftFlags]\n"
+                + "    public static final long FLAG6 = 0x0002000000000000L;\n"
+                + "                                     ~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/IntDefTest.java:15: Warning: Consider declaring this constant using 1 << 3 instead [ShiftFlags]\n"
+                + "    public static final long FLAG7 = 8L;\n"
+                + "                                     ~~\n"
+                + "0 errors, 3 warnings\n",
+                lintProject(
+                        java("src/test/pkg/IntDefTest.java", ""
+                                + "package test.pkg;\n"
+                                + "import android.support.annotation.IntDef;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public class IntDefTest {\n"
+                                + "    public static final long FLAG1 = 1;\n"
+                                + "    public static final long FLAG2 = 2;\n"
+                                + "    public static final long FLAG3 = 1 << 2;\n"
+                                + "    public static final long FLAG4 = 1 << 3;\n"
+                                + "    public static final long FLAG5 = 0x100000000000L;\n"
+                                + "    public static final long FLAG6 = 0x0002000000000000L;\n"
+                                + "    public static final long FLAG7 = 8L;\n"
+                                + "    public static final long FLAG8 = 9L;\n"
+                                + "    public static final long FLAG9 = 0;\n"
+                                + "    public static final long FLAG10 = 1;\n"
+                                + "    public static final long FLAG11 = -1;\n"
+                                + "\n"
+                                // Not a flag (missing flag=true)
+                                + "    @IntDef({FLAG1, FLAG2, FLAG3})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    private @interface Flags1 {}\n"
+                                + "\n"
+                                // OK: Too few values
+                                + "    @IntDef(flag = true, value={FLAG1, FLAG2})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    private @interface Flags2 {}\n"
+                                + "\n"
+                                // OK: Allow 0, 1, -1
+                                + "    @IntDef(flag = true, value={FLAG9, FLAG10, FLAG11})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    private @interface Flags3 {}\n"
+                                + "\n"
+                                // OK: Already using shifts
+                                + "    @IntDef(flag = true, value={FLAG1, FLAG3, FLAG4})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    private @interface Flags4 {}\n"
+                                + "\n"
+                                // Wrong: should be flagged
+                                + "    @IntDef(flag = true, value={FLAG5, FLAG6, FLAG7, FLAG8})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    private @interface Flags5 {}\n"
+                                + "}"),
+                        copy("src/android/support/annotation/IntDef.java.txt",
+                                "src/android/support/annotation/IntDef.java")));
+    }
+
     @Override
     protected Detector getDetector() {
         return new AnnotationDetector();
