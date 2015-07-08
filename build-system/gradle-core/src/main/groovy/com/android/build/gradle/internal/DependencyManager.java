@@ -41,12 +41,14 @@ import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
 import com.android.utils.ILogger;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import org.gradle.api.CircularReferenceException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.UnknownProjectException;
@@ -70,6 +72,7 @@ import org.gradle.util.GUtil;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -279,6 +282,7 @@ public class DependencyManager {
                         reverseMap,
                         currentUnresolvedDependencies,
                         testedProjectPath,
+                        Collections.<String>emptyList(),
                         0);
             } else if (dependencyResult instanceof UnresolvedDependencyResult) {
                 ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult).getAttempted();
@@ -308,6 +312,7 @@ public class DependencyManager {
                         reverseMap,
                         currentUnresolvedDependencies,
                         testedProjectPath,
+                        Collections.<String>emptyList(),
                         0);
             } else if (dependencyResult instanceof UnresolvedDependencyResult) {
                 ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult)
@@ -719,6 +724,7 @@ public class DependencyManager {
             @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap,
             @NonNull Set<String> currentUnresolvedDependencies,
             @Nullable String testedProjectPath,
+            @NonNull List<String> projectChain,
             int indent) {
 
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
@@ -763,8 +769,34 @@ public class DependencyManager {
             Set<? extends DependencyResult> dependencies = resolvedComponentResult.getDependencies();
             for (DependencyResult dependencyResult : dependencies) {
                 if (dependencyResult instanceof ResolvedDependencyResult) {
+                    ResolvedComponentResult selected =
+                            ((ResolvedDependencyResult) dependencyResult).getSelected();
+
+                    List<String> newProjectChain = projectChain;
+
+                    ComponentIdentifier identifier = selected.getId();
+                    if (identifier instanceof ProjectComponentIdentifier) {
+                        String projectPath =
+                                ((ProjectComponentIdentifier) identifier).getProjectPath();
+
+                        int index = projectChain.indexOf(projectPath);
+                        if (index != -1) {
+                            projectChain.add(projectPath);
+                            String path = Joiner
+                                    .on(" -> ")
+                                    .join(projectChain.subList(index, projectChain.size()));
+
+                            throw new CircularReferenceException(
+                                    "Circular reference between projects: " + path);
+                        }
+
+                        newProjectChain = Lists.newArrayList();
+                        newProjectChain.addAll(projectChain);
+                        newProjectChain.add(projectPath);
+                    }
+
                     addDependency(
-                            ((ResolvedDependencyResult) dependencyResult).getSelected(),
+                            selected,
                             configDependencies,
                             nestedLibraries,
                             nestedJars,
@@ -774,7 +806,8 @@ public class DependencyManager {
                             reverseMap,
                             currentUnresolvedDependencies,
                             testedProjectPath,
-                            indent+1);
+                            newProjectChain,
+                            indent + 1);
                 } else if (dependencyResult instanceof UnresolvedDependencyResult) {
                     ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult).getAttempted();
                     if (attempted != null) {
