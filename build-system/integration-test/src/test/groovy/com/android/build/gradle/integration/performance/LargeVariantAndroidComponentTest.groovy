@@ -22,6 +22,9 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION
+
 /**
  * Performance test on gradle experimantal plugin with a large number of variants
  */
@@ -31,6 +34,7 @@ class LargeVariantAndroidComponentTest {
             .fromTestApp(new HelloWorldApp())
             .forExpermimentalPlugin(true)
             .create()
+
 
     @BeforeClass
     static void setUp() {
@@ -71,6 +75,6 @@ class LargeVariantAndroidComponentTest {
 
     @Test
     void performanceTest() {
-        project.execute("help")
+        project.executeWithBenchmark("LargeVariantAndroid", EVALUATION, "help")
     }
 }

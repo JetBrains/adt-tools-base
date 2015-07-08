@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.logging.Level;
@@ -43,6 +44,13 @@ public class ThreadRecorder implements Recorder {
         @Override
         public <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
                 Property... properties) {
+            return record(executionType, block, Collections.<Property>emptyList());
+        }
+
+        @Nullable
+        @Override
+        public <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
+                @NonNull List<Property> properties) {
             try {
                 return block.call();
             } catch (Exception e) {
@@ -117,26 +125,33 @@ public class ThreadRecorder implements Recorder {
         ProcessRecorder.get().writeRecord(executionRecord);
     }
 
-
     @Nullable
     @Override
     public <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
             Property... properties) {
+
+        List<Recorder.Property> propertyList = properties == null
+                ? ImmutableList.<Recorder.Property>of()
+                : ImmutableList.copyOf(properties);
+
+        return record(executionType, block, propertyList);
+    }
+
+    @Nullable
+    @Override
+    public <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
+            @NonNull List<Property> properties) {
 
         long thisRecordId = ProcessRecorder.allocateRecordId();
 
         // am I a child ?
         Long parentId = recordStacks.get().peek();
 
-        List<Recorder.Property> propertyList = properties == null
-                ? ImmutableList.<Recorder.Property>of()
-                : ImmutableList.copyOf(properties);
-
         long startTimeInMs = System.currentTimeMillis();
 
         final PartialRecord currentRecord = new PartialRecord(executionType,
                 thisRecordId, parentId == null ? 0 : parentId,
-                startTimeInMs, propertyList);
+                startTimeInMs, properties);
 
         recordStacks.get().push(thisRecordId);
         try {

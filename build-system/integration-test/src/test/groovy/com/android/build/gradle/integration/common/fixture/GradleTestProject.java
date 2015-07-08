@@ -73,6 +73,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -106,6 +107,13 @@ public class GradleTestProject implements TestRule {
     public static final String CUSTOM_JACK;
 
     public static final boolean USE_JACK;
+
+    private static final String RECORD_BENCHMARK_NAME = "com.android.benchmark.name";
+    private static final String RECORD_BENCHMARK_MODE = "com.android.benchmark.mode";
+
+    public enum BenchmarkMode {
+        EVALUATION, SYNC, FULL, INC_JAVA
+    }
 
     static {
         String envBuildToolVersion = System.getenv("CUSTOM_BUILDTOOLS");
@@ -591,6 +599,17 @@ public class GradleTestProject implements TestRule {
     }
 
     public void execute(@NonNull List<String> arguments, String ... tasks) {
+        execute(arguments, false, false, ExpectedBuildResult.SUCCESS, tasks);
+    }
+
+    public void executeWithBenchmark(
+            @NonNull String benchmarkName,
+            @NonNull BenchmarkMode benchmarkMode,
+            String ... tasks) {
+        List<String> arguments = ImmutableList.of(
+                "-P" + RECORD_BENCHMARK_NAME + "=" + benchmarkName,
+                "-P" + RECORD_BENCHMARK_MODE + "=" + benchmarkMode.name().toLowerCase(Locale.US)
+        );
         execute(arguments, false, false, ExpectedBuildResult.SUCCESS, tasks);
     }
 
