@@ -1,3 +1,7 @@
+// ATTENTION -- hash value of this file is checked in the corresponding
+// integration test. Please make sure any changes you make here are
+// backwards compatible.
+
 apply plugin: 'com.android.application'
 
 android {

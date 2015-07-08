@@ -1,3 +1,7 @@
+// ATTENTION -- hash value of this file is checked in the corresponding
+// integration test. Please make sure any changes you make here are
+// backwards compatible.
+
 apply from: "../commonHeader.gradle"
 buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 
