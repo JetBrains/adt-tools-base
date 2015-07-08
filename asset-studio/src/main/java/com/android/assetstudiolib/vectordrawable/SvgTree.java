@@ -57,10 +57,9 @@ class SvgTree {
 
     public Document parse(File f) throws Exception {
         mFileName = f.getName();
-        Document doc = PositionXmlParser.parse(new FileInputStream(f));
+        Document doc = PositionXmlParser.parse(new FileInputStream(f), false);
         return doc;
     }
-
 
     public void normalize() {
         transform(matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5]);
