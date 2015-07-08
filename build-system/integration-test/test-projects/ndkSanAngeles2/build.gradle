@@ -15,12 +15,6 @@ model {
         }
     }
 
-    android.buildTypes {
-        debug {
-            isJniDebuggable = true
-        }
-    }
-
     android.ndk {
         moduleName = "sanangeles"
         CFlags += "-DDISABLE_IMPORTGL"

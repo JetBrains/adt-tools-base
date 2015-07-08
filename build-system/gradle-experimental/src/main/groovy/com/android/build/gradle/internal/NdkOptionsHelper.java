@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.managed.NdkBuildType;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.NdkOptions;
 import com.google.common.collect.Lists;
@@ -48,7 +49,7 @@ public class NdkOptionsHelper {
     /**
      * Merge one NdkOptions to another.
      * @param base NdkOptions to merge to.  base is mutated to contain the merged result.
-     * @param other NdkOptions to merge.  Options in other priority over base if both are set.
+     * @param other NdkOptions to merge.  Options in other has priority over base if both are set.
      */
     public static void merge(NdkOptions base, NdkOptions other) {
         if (other.getModuleName() != null) {
@@ -66,6 +67,18 @@ public class NdkOptionsHelper {
         }
         if (other.getRenderscriptNdkMode() != null) {
             base.setRenderscriptNdkMode(other.getRenderscriptNdkMode());
+        }
+    }
+
+    /**
+     * Merge one NdkBuildType to another
+     * @param base NdkBuildType to merge to.  base is mutated to contain the merged result.
+     * @param other NdkBuildType to merge.  Options in other has priority over base if both are set.
+     */
+    public static void merge(NdkBuildType base, NdkBuildType other) {
+        merge(base, (NdkOptions) other);
+        if (other.getIsDebuggable() != null) {
+            base.setIsDebuggable(other.getIsDebuggable());
         }
     }
 }
