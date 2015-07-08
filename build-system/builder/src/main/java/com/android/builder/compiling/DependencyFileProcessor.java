@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.builder.internal.incremental.DependencyData;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * A Class that processes a dependency file after a compilation.
@@ -41,5 +42,5 @@ public interface DependencyFileProcessor {
      * @param dependencyFile the dependency file.
      * @return the dependency data that was created.
      */
-    DependencyData processFile(@NonNull File dependencyFile);
+    DependencyData processFile(@NonNull File dependencyFile) throws IOException;
 }
