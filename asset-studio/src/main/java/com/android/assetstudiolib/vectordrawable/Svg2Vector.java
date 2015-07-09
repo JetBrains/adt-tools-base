@@ -16,6 +16,7 @@
 
 package com.android.assetstudiolib.vectordrawable;
 
+import com.android.annotations.NonNull;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import org.w3c.dom.Document;
@@ -102,6 +103,7 @@ public class Svg2Vector {
         // Uncategorized elements
         "clipPath", "color-profile", "cursor", "filter", "foreignObject", "script", "view");
 
+    @NonNull
     private static SvgTree parse(File f) throws Exception {
         SvgTree svgTree = new SvgTree();
         Document doc = svgTree.parse(f);
@@ -118,6 +120,11 @@ public class Svg2Vector {
             if (nNode.getNodeType() == Node.ELEMENT_NODE) {
                 parseDimension(svgTree, nNode);
             }
+        }
+
+        if (svgTree.viewBox == null) {
+            svgTree.logErrorLine("Missing \"viewBox\" in <svg> element", rootNode, SvgTree.SvgLogLevel.ERROR);
+            return svgTree;
         }
 
         if ((svgTree.w == 0 || svgTree.h == 0) && svgTree.viewBox[2] > 0 && svgTree.viewBox[3] > 0) {
@@ -237,7 +244,11 @@ public class Svg2Vector {
                     avg.viewBox[j] = Float.parseFloat(strbox[j]);
                 }
             }
-
+        }
+        if (avg.viewBox == null && avg.w != 0 && avg.h != 0) {
+            avg.viewBox = new float[4];
+            avg.viewBox[2] = avg.w;
+            avg.viewBox[3] = avg.h;
         }
     }
 
@@ -614,6 +625,15 @@ public class Svg2Vector {
         svgTree.getRoot().writeXML(fw);
     }
 
+    /**
+     * Convert a SVG file into VectorDrawable's XML content, if no error is found.
+     *
+     * @param inputSVG the input SVG file
+     * @param outStream the converted VectorDrawable's content. This can be
+     *                  empty if there is any error found during parsing
+     * @return the error messages, which contain things like all the tags
+     *         VectorDrawble don't support or exception message.
+     */
     public static String parseSvgToXml(File inputSVG, OutputStream outStream) {
         // Write all the error message during parsing into SvgTree. and return here as getErrorLog().
         // We will also log the exceptions here.
@@ -621,7 +641,12 @@ public class Svg2Vector {
         try {
             SvgTree svgTree = parse(inputSVG);
             errorLog = svgTree.getErrorLog();
-            writeFile(outStream, svgTree);
+            // When there was anything in the input SVG file that we can't
+            // convert to VectorDrawable, we logged them as errors.
+            // After we logged all the errors, we skipped the XML file generation.
+            if (svgTree.canConvertToVectorDrawable()) {
+                writeFile(outStream, svgTree);
+            }
         } catch (Exception e) {
             errorLog = "EXCEPTION in parsing " + inputSVG.getName() + ":\n" + e.getMessage();
         }
