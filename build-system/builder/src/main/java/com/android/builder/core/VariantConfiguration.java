@@ -35,6 +35,7 @@ import com.android.builder.model.SourceProvider;
 import com.android.ide.common.res2.AssetSet;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.utils.StringHelper;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -833,16 +834,12 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         String versionName = mMergedFlavor.getVersionName();
         String versionSuffix = mBuildType.getVersionNameSuffix();
 
-        if (versionSuffix != null && !versionSuffix.isEmpty()) {
-            if (versionName == null) {
-                if (!mType.isForTesting()) {
-                    versionName = getVersionNameFromManifest();
-                } else {
-                    versionName = "";
-                }
-            }
+        if (versionName == null && !mType.isForTesting()) {
+            versionName = getVersionNameFromManifest();
+        }
 
-            versionName = versionName + versionSuffix;
+        if (versionSuffix != null && !versionSuffix.isEmpty()) {
+            versionName = Strings.nullToEmpty(versionName) + versionSuffix;
         }
 
         return versionName;
