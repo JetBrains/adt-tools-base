@@ -29,28 +29,35 @@ import java.io.File;
 import java.io.IOException;
 
 public class FileUtils {
-    public static boolean deleteFolder(final File folder) {
+    public static void deleteFolder(final File folder) throws IOException {
         if (!folder.exists()) {
-            return true;
+            return;
         }
         File[] files = folder.listFiles();
-        if (files != null) {
+        if (files != null) { // i.e. is a directory.
             for (final File file : files) {
-                if (file.isDirectory()) {
-                    deleteFolder(file);
-                } else {
-                    file.delete();
-                }
+                deleteFolder(file);
             }
         }
-        return folder.delete();
+        if (!folder.delete()) {
+            throw new IOException(String.format("Could not delete folder %s", folder));
+        }
+    }
+
+    public static void emptyFolder(final File folder) throws IOException {
+        deleteFolder(folder);
+        if (!folder.mkdirs()) {
+            throw new IOException(String.format("Could not create empty folder %s", folder));
+        }
     }
 
     public static void copyFile(File from, File to) throws IOException {
         to = new File(to, from.getName());
         if (from.isDirectory()) {
             if (!to.exists()) {
-                to.mkdirs();
+                if (!to.mkdirs()) {
+                    throw new IOException(String.format("Could not create directory %s", to));
+                }
             }
 
             File[] children = from.listFiles();

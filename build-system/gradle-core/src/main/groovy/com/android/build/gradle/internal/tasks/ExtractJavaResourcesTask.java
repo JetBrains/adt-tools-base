@@ -73,7 +73,11 @@ public class ExtractJavaResourcesTask extends DefaultAndroidTask {
 
                 File outputFolder = new File(outputDir, folderName);
                 if (outputFolder.exists()) {
-                    FileUtils.deleteFolder(outputFolder);
+                    try {
+                        FileUtils.deleteFolder(outputFolder);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
                 if (!outputFolder.mkdirs()) {
                     throw new RuntimeException(
@@ -115,7 +119,11 @@ public class ExtractJavaResourcesTask extends DefaultAndroidTask {
                         deletedJar.getPath().hashCode();
                 File outputFolder = new File(outputDir, folderName);
                 if (outputFolder.exists()) {
-                    FileUtils.deleteFolder(outputFolder);
+                    try {
+                        FileUtils.deleteFolder(outputFolder);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         });

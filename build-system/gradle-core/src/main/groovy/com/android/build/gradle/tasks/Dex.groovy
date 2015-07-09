@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
+import com.android.utils.FileUtils
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import com.android.build.gradle.internal.PostCompilationData
 import org.gradle.api.tasks.Input
@@ -136,7 +137,7 @@ public class Dex extends BaseTask {
             boolean incremental) {
         File outFolder = getOutputFolder()
         if (!incremental) {
-            emptyFolder(outFolder)
+            FileUtils.emptyFolder(outFolder)
         }
 
         File tmpFolder = getTmpFolder()

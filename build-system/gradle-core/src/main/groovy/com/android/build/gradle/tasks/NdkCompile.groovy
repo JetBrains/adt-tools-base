@@ -21,6 +21,7 @@ import com.android.build.gradle.internal.dsl.CoreNdkOptions
 import com.android.build.gradle.internal.tasks.NdkTask
 import com.android.ide.common.process.ProcessInfoBuilder
 import com.android.sdklib.IAndroidTarget
+import com.android.utils.FileUtils
 import com.google.common.base.Charsets
 import com.google.common.base.Joiner
 import com.google.common.collect.Lists
@@ -119,8 +120,8 @@ class NdkCompile extends NdkTask {
 
         if (sourceFiles.isEmpty()) {
             makefile.delete()
-            emptyFolder(getSoFolder())
-            emptyFolder(getObjFolder())
+            FileUtils.emptyFolder(getSoFolder())
+            FileUtils.emptyFolder(getObjFolder())
             return
         }
 
@@ -137,8 +138,8 @@ class NdkCompile extends NdkTask {
         if (!inputs.isIncremental()) {
             project.logger.info("Unable do incremental execution: full task run")
             generateMakefile = true
-            emptyFolder(getSoFolder())
-            emptyFolder(getObjFolder())
+            FileUtils.emptyFolder(getSoFolder())
+            FileUtils.emptyFolder(getObjFolder())
         } else {
             // look for added or removed files *only*
 

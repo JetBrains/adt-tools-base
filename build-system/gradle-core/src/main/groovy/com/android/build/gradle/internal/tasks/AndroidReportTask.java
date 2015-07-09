@@ -21,6 +21,7 @@ import static com.android.utils.FileUtils.copyFile;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.test.report.TestReport;
+import com.android.utils.FileUtils;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.GradleException;
@@ -126,8 +127,8 @@ public class AndroidReportTask extends BaseTask implements AndroidTestTask {
         File reportOutDir = getReportsDir();
 
         // empty the folders
-        emptyFolder(resultsOutDir);
-        emptyFolder(reportOutDir);
+        FileUtils.emptyFolder(resultsOutDir);
+        FileUtils.emptyFolder(reportOutDir);
 
         // do the copy.
         copyResults(resultsOutDir);

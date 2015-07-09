@@ -30,6 +30,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ProductFlavor
 import com.android.sdklib.SdkVersionInfo
+import com.android.utils.FileUtils
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
@@ -86,19 +87,19 @@ public class RenderscriptCompile extends NdkTask {
     boolean ndkMode
 
     @TaskAction
-    void taskAction() {
+    void taskAction() throws IOException {
         // this is full run (always), clean the previous outputs
         File sourceDestDir = getSourceOutputDir()
-        emptyFolder(sourceDestDir)
+        FileUtils.emptyFolder(sourceDestDir)
 
         File resDestDir = getResOutputDir()
-        emptyFolder(resDestDir)
+        FileUtils.emptyFolder(resDestDir)
 
         File objDestDir = getObjOutputDir()
-        emptyFolder(objDestDir)
+        FileUtils.emptyFolder(objDestDir)
 
         File libDestDir = getLibOutputDir()
-        emptyFolder(libDestDir)
+        FileUtils.emptyFolder(libDestDir)
 
         // get the import folders. If the .rsh files are not directly under the import folders,
         // we need to get the leaf folders, as this is what llvm-rs-cc expects.

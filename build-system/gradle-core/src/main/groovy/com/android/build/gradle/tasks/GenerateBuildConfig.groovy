@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.compiling.BuildConfigGenerator
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.model.ClassField
+import com.android.utils.FileUtils
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
@@ -89,11 +90,11 @@ public class GenerateBuildConfig extends BaseTask {
     }
 
     @TaskAction
-    void generate() {
+    void generate() throws IOException {
         // must clear the folder in case the packagename changed, otherwise,
         // there'll be two classes.
         File destinationDir = getSourceOutputDir()
-        emptyFolder(destinationDir)
+        FileUtils.emptyFolder(destinationDir)
 
         BuildConfigGenerator generator = new BuildConfigGenerator(
                 getSourceOutputDir(),

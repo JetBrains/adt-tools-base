@@ -28,6 +28,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.sdklib.repository.FullRevision;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -64,7 +65,7 @@ public class JillTask extends BaseTask {
 
     @TaskAction
     public void taskAction(IncrementalTaskInputs taskInputs)
-            throws LoggedErrorException, InterruptedException {
+            throws LoggedErrorException, InterruptedException, IOException {
         FullRevision revision = getBuilder().getTargetInfo().getBuildTools().getRevision();
         if (revision.compareTo(JackTask.JACK_MIN_REV) < 0) {
             throw new RuntimeException(
@@ -77,7 +78,7 @@ public class JillTask extends BaseTask {
         // if we are not in incremental mode, then outOfDate will contain
         // all th files, but first we need to delete the previous output
         if (!taskInputs.isIncremental()) {
-            emptyFolder(outFolder);
+            FileUtils.emptyFolder(outFolder);
         }
 
         final Set<String> hashs = Sets.newHashSet();
