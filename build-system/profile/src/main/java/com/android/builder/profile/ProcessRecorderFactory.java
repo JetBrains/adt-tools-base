@@ -22,6 +22,8 @@ import com.android.annotations.VisibleForTesting;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 
 import java.io.BufferedInputStream;
@@ -72,7 +74,10 @@ public class ProcessRecorderFactory {
         }
     }
 
-    public static void initialize(ILogger logger, File out) throws IOException {
+    public static void initialize(
+            @NonNull ILogger logger,
+            @NonNull File out,
+            @NonNull List<Recorder.Property> properties) throws IOException {
 
         synchronized (LOCK) {
             if (sINSTANCE.isInitialized() || !isEnabled()) {
@@ -81,19 +86,39 @@ public class ProcessRecorderFactory {
             sINSTANCE.setLogger(logger);
             sINSTANCE.setOutputFile(out);
             sINSTANCE.setRecordWriter(new ProcessRecorder.JsonRecordWriter(new FileWriter(out)));
-            publishInitialRecords();
+            publishInitialRecords(properties);
         }
     }
 
-    public static void publishInitialRecords() {
-        ThreadRecorder.get().record(ExecutionType.INITIAL_METADATA, Recorder.EmptyBlock,
-                new Recorder.Property("build_id", UUID.randomUUID().toString()),
-                new Recorder.Property("os_name", System.getProperty("os.name")),
-                new Recorder.Property("os_version", System.getProperty("os.version")),
-                new Recorder.Property("java_version", System.getProperty("java.version")),
-                new Recorder.Property("java_vm_version", System.getProperty("java.vm.version")),
-                new Recorder.Property("max_memory",
-                        Long.toString(Runtime.getRuntime().maxMemory())));
+    public static void publishInitialRecords(@NonNull List<Recorder.Property> properties) {
+
+        List<Recorder.Property> propertyList = Lists.newArrayListWithExpectedSize(
+                6 + properties.size());
+
+        propertyList.add(new Recorder.Property(
+                "build_id",
+                UUID.randomUUID().toString()));
+        propertyList.add(new Recorder.Property(
+                "os_name",
+                System.getProperty("os.name")));
+        propertyList.add(new Recorder.Property(
+                "os_version",
+                System.getProperty("os.version")));
+        propertyList.add(new Recorder.Property(
+                "java_version",
+                System.getProperty("java.version")));
+        propertyList.add(new Recorder.Property(
+                "java_vm_version",
+                System.getProperty("java.vm.version")));
+        propertyList.add(new Recorder.Property(
+                "max_memory",
+                Long.toString(Runtime.getRuntime().maxMemory())));
+        propertyList.addAll(properties);
+
+        ThreadRecorder.get().record(
+                ExecutionType.INITIAL_METADATA,
+                Recorder.EmptyBlock,
+                propertyList);
     }
 
     private static boolean sENABLED = !Strings.isNullOrEmpty(System.getenv("RECORD_SPANS"));
@@ -115,7 +140,7 @@ public class ProcessRecorderFactory {
         ProcessRecorder.resetForTests();
         setEnabled(true);
         sINSTANCE.setRecordWriter(recordWriter);
-        publishInitialRecords();
+        publishInitialRecords(ImmutableList.<Recorder.Property>of());
     }
 
     static boolean isEnabled() {

@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Objects;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -112,6 +113,23 @@ public interface Recorder {
     @Nullable
     <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
             Property... properties);
+
+
+    /**
+     * Records the time elapsed while executing a {@link Block} and saves the resulting {@link
+     * ExecutionRecord} to {@link ProcessRecorder}.
+     *
+     * @param executionType the task type, so aggregation can be performed.
+     * @param block         the block of code to execution and measure.
+     * @param properties    optional list of free formed properties to save in the {@link
+     *                      ExecutionRecord}
+     * @param <T>           the type of the returned value from the block.
+     * @return the value returned from the block (including null) or null if the block execution
+     * raised an exception which was subsequently swallowed by {@link Block#handleException(Exception)}
+     */
+    @Nullable
+    <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
+            @NonNull List<Property> properties);
 
     /**
      * Allocate a new recordId that can be used to create a {@link ExecutionRecord} and record
