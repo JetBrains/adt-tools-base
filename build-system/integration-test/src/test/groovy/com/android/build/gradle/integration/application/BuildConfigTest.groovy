@@ -123,7 +123,7 @@ public final class BuildConfig {
   public static final String BUILD_TYPE = "debug";
   public static final String FLAVOR = "flavor1";
   public static final int VERSION_CODE = 1;
-  public static final String VERSION_NAME = "";
+  public static final String VERSION_NAME = "1.0";
   // Fields from the variant
   public static final int VALUE_VARIANT = 1000;
   // Fields from build type: debug
@@ -161,7 +161,7 @@ public final class BuildConfig {
   public static final String BUILD_TYPE = "debug";
   public static final String FLAVOR = "flavor2";
   public static final int VERSION_CODE = 1;
-  public static final String VERSION_NAME = "";
+  public static final String VERSION_NAME = "1.0";
   // Fields from the variant
   public static final int VALUE_VARIANT = 1000;
   // Fields from build type: debug
@@ -199,7 +199,7 @@ public final class BuildConfig {
   public static final String BUILD_TYPE = "release";
   public static final String FLAVOR = "flavor1";
   public static final int VERSION_CODE = 1;
-  public static final String VERSION_NAME = "";
+  public static final String VERSION_NAME = "1.0";
   // Fields from product flavor: flavor1
   public static final int VALUE_DEBUG = 10;
   public static final int VALUE_FLAVOR = 10;
@@ -235,7 +235,7 @@ public final class BuildConfig {
   public static final String BUILD_TYPE = "release";
   public static final String FLAVOR = "flavor2";
   public static final int VERSION_CODE = 1;
-  public static final String VERSION_NAME = "";
+  public static final String VERSION_NAME = "1.0";
   // Fields from product flavor: flavor2
   public static final int VALUE_DEBUG = 20;
   public static final int VALUE_FLAVOR = 20;
