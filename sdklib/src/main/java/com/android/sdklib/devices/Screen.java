@@ -36,8 +36,9 @@ public class Screen {
     private Multitouch mMultitouch;
     private TouchScreen mMechanism;
     private ScreenType mScreenType;
+    private int mChin;
     @Nullable
-     private ScreenRound mScreenRound;
+    private ScreenRound mScreenRound;
 
     public ScreenSize getSize() {
         return mScreenSize;
@@ -137,6 +138,24 @@ public class Screen {
     }
 
     /**
+     * Get the "chin" height in pixels. This is for round screens with a flat section at the
+     * bottom. The "chin" height is the largest perpendicular distance from the flat section to
+     * the original circle.
+     * @return The offset in pixels.
+     */
+    public int getChin() {
+        return mChin;
+    }
+
+    /**
+     * Sets the "chin" height in pixels.
+     * @see #getChin()
+     */
+    public void setChin(int chin) {
+        mChin = chin;
+    }
+
+    /**
      * Returns a copy of the object that shares no state with it,
      * but is initialized to equivalent values.
      *
@@ -156,6 +175,7 @@ public class Screen {
         s.mMechanism = mMechanism;
         s.mScreenType = mScreenType;
         s.mScreenRound = mScreenRound;
+        s.mChin = mChin;
         return s;
     }
 
@@ -179,7 +199,8 @@ public class Screen {
                 && s.mMultitouch == mMultitouch
                 && s.mMechanism == mMechanism
                 && s.mScreenType == mScreenType
-                && s.mScreenRound == mScreenRound;
+                && s.mScreenRound == mScreenRound
+                && s.mChin == mChin;
     }
 
     @Override
@@ -199,6 +220,7 @@ public class Screen {
         hash = 31 * hash + mMultitouch.ordinal();
         hash = 31 * hash + mMechanism.ordinal();
         hash = 31 * hash + mScreenType.ordinal();
+        hash = 31 * hash + mChin;
         if (mScreenRound != null) {
             hash = 31 * hash + mScreenRound.ordinal();
         }
@@ -232,6 +254,8 @@ public class Screen {
         sb.append(mScreenType);
         sb.append(", mScreenRound=");
         sb.append(mScreenRound);
+        sb.append(", mChin=");
+        sb.append(mChin);
         sb.append("]");
         return sb.toString();
     }
