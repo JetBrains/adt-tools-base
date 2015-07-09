@@ -16,6 +16,8 @@
 
 package com.android.assetstudiolib.vectordrawable;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourcePosition;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Strings;
@@ -46,10 +48,6 @@ class SvgTree {
 
     private ArrayList<String> mErrorLines = new ArrayList<String>();
 
-    // Although we keep all of the error logs, we only display a limited number of them to keep the
-    // UI better looking.
-    private static final int MAX_DISPLAY_ERROR_LOG_SIZE = 20;
-
     public enum SvgLogLevel {
         ERROR,
         WARNING
@@ -63,7 +61,9 @@ class SvgTree {
 
 
     public void normalize() {
-        transform(matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5]);
+        if (matrix != null) {
+            transform(matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5]);
+        }
 
         if (viewBox != null && (viewBox[0] != 0 || viewBox[1] != 0)) {
             transform(1, 0, 0, 1, -viewBox[0], -viewBox[1]);
@@ -75,10 +75,6 @@ class SvgTree {
         mRoot.transform(a, b, c, d, e, f);
     }
 
-    public void setScaleFactor(float scaleFactor) {
-        mScaleFactor = scaleFactor;
-    }
-
     public void dump(SvgGroupNode root) {
         logger.log(Level.FINE, "current file is :" + mFileName);
         root.dumpNode("");
@@ -88,6 +84,7 @@ class SvgTree {
         mRoot = root;
     }
 
+    @Nullable
     public SvgGroupNode getRoot() {
         return mRoot;
     }
@@ -107,6 +104,7 @@ class SvgTree {
     /**
      * @return Error log. Empty string if there are no errors.
      */
+    @NonNull
     public String getErrorLog() {
         StringBuilder errorBuilder = new StringBuilder();
         if (!mErrorLines.isEmpty()) {
@@ -116,6 +114,13 @@ class SvgTree {
             errorBuilder.append(log);
         }
         return errorBuilder.toString();
+    }
+
+    /**
+     * @return true when there is no error found when parsing the SVG file.
+     */
+    public boolean canConvertToVectorDrawable() {
+        return mErrorLines.isEmpty();
     }
 
     private SourcePosition getPosition(Node node) {
