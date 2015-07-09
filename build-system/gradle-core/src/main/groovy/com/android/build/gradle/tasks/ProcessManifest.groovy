@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.tasks
-
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
@@ -23,7 +22,6 @@ import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.VariantConfiguration
-import com.android.builder.model.AndroidProject
 import com.android.builder.model.ProductFlavor
 import com.android.manifmerger.ManifestMerger2
 import org.gradle.api.tasks.Input
@@ -31,7 +29,6 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.ParallelizableTask
-
 /**
  * a Task that only merge a single manifest with its overlays.
  */
@@ -136,6 +133,7 @@ class ProcessManifest extends ManifestProcessorTask {
 
             variantOutputData.manifestProcessorTask = processManifest
             processManifest.androidBuilder = androidBuilder
+            processManifest.setVariantName(config.getFullName())
 
             processManifest.variantConfiguration = config
 

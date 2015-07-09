@@ -256,7 +256,14 @@ public class VariantManager implements VariantModel {
 
         final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
         if (variantDataList.isEmpty()) {
-            populateVariantDataList();
+            ThreadRecorder.get().record(ExecutionType.VARIANT_MANAGER_CREATE_VARIANTS,
+                    new Recorder.Block<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            populateVariantDataList();
+                            return null;
+                        }
+                    });
         }
 
         // Create top level test tasks.
@@ -732,6 +739,30 @@ public class VariantManager implements VariantModel {
                         productFlavorList);
                 variantDataList.add(variantData);
 
+                GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
+                ThreadRecorder.get().record(
+                        ExecutionType.VARIANT_CONFIG,
+                        Recorder.EmptyBlock,
+                        new Recorder.Property(
+                                "project",
+                                project.getName()),
+                        new Recorder.Property(
+                                "variant",
+                                variantData.getName()),
+                        new Recorder.Property(
+                                "use_jack",
+                                Boolean.toString(variantConfig.getUseJack())),
+                        new Recorder.Property(
+                                "use_minify",
+                                Boolean.toString(variantConfig.isMinifyEnabled())),
+                        new Recorder.Property(
+                                "use_multi_dex",
+                                Boolean.toString(variantConfig.isMultiDexEnabled())),
+                        new Recorder.Property(
+                                "multi_dex_legacy",
+                                Boolean.toString(variantConfig.isLegacyMultiDexMode())));
+
+
                 if (variantFactory.hasTestScope()) {
                     TestVariantData unitTestVariantData = createTestVariantData(
                             variantData,
@@ -739,8 +770,6 @@ public class VariantManager implements VariantModel {
                     variantDataList.add(unitTestVariantData);
 
                     if (buildTypeData == testBuildTypeData) {
-                        GradleVariantConfiguration variantConfig = variantData
-                                .getVariantConfiguration();
                         if (variantConfig.isMinifyEnabled() && variantConfig.getUseJack()) {
                             throw new RuntimeException(
                                     "Cannot test obfuscated variants when compiling with jack.");

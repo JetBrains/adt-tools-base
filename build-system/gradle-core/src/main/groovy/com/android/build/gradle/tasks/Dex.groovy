@@ -202,7 +202,8 @@ public class Dex extends BaseTask {
             boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode();
 
             variantData.dexTask = dexTask;
-            dexTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            dexTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder())
+            dexTask.setVariantName(config.getFullName())
             ConventionMappingHelper.map(dexTask, "outputFolder", new Callable<File>() {
                 @Override
                 public File call() throws Exception {

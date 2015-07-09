@@ -17,7 +17,6 @@ package com.android.build.gradle.tasks;
 
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.ndk.internal.StlConfiguration;
 import com.google.common.base.Charsets;
@@ -26,6 +25,7 @@ import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import org.gradle.api.Action;
+import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.language.c.CSourceSet;
@@ -39,7 +39,7 @@ import java.util.Set;
 /**
  * Task to create gdb.setup for native code debugging.
  */
-public class GdbSetupTask extends DefaultAndroidTask {
+public class GdbSetupTask extends DefaultTask {
 
     private NdkHandler ndkHandler;
 

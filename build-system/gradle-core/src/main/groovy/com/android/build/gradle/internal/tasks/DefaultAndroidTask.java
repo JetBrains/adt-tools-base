@@ -16,12 +16,26 @@
 
 package com.android.build.gradle.internal.tasks;
 
+import com.android.annotations.Nullable;
 import com.android.builder.Version;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 
 public class DefaultAndroidTask extends DefaultTask {
+
+    @Nullable
+    private String variantName;
+
+    @Nullable
+    public String getVariantName() {
+        return variantName;
+    }
+
+    public void setVariantName(@Nullable String variantName) {
+        this.variantName = variantName;
+    }
+
     /**
      * Force tasks to be re-run if the Android plugin version changes.
      * @return the plugin version, of the form "x.y.z"

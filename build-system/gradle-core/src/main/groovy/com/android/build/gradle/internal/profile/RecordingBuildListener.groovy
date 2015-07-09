@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.profile
 
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.android.builder.profile.ExecutionRecord
 import com.android.builder.profile.ExecutionType
 import com.android.builder.profile.Recorder
@@ -76,9 +77,19 @@ class RecordingBuildListener implements TaskExecutionListener {
             executionType = ExecutionType.GENERIC_TASK_EXECUTION
         }
 
-        List< Recorder.Property> properties = new ArrayList<>();
-        properties.add(new Recorder.Property("project", task.getProject().getName()));
-        properties.add(new Recorder.Property("task", task.getName()));
+        List< Recorder.Property> properties = new ArrayList<>()
+        properties.add(new Recorder.Property("project", task.getProject().getName()))
+        properties.add(new Recorder.Property("task", task.getName()))
+
+        if (task instanceof DefaultAndroidTask) {
+            String variantName = ((DefaultAndroidTask) task).getVariantName()
+            if (variantName != null) {
+                properties.add(new Recorder.Property("variant", variantName))
+            } else {
+                throw new IllegalStateException("Task with type " + task.getClass().getName() + " does not include a variantName");
+            }
+        }
+
         TaskRecord taskRecord = taskRecords.get(task.getName());
         mRecorder.closeRecord(new ExecutionRecord(
                 taskRecord.recordId,

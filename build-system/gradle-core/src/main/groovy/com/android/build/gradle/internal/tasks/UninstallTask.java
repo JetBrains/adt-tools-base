@@ -141,6 +141,7 @@ public class UninstallTask extends BaseTask {
             uninstallTask.setGroup(TaskManager.INSTALL_GROUP);
             uninstallTask.setVariant(scope.getVariantData());
             uninstallTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            uninstallTask.setVariantName(scope.getVariantConfiguration().getFullName());
             uninstallTask.setTimeOutInMs(
                     scope.getGlobalScope().getExtension().getAdbOptions().getTimeOutInMs());
 

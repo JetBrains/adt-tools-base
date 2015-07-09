@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
-
 import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
-import com.android.build.gradle.internal.scope.VariantOutputScope
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.VariantConfiguration
-import com.android.builder.model.AndroidProject
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.ParallelizableTask
-
 /**
  * A task that processes the manifest
  */
@@ -145,6 +141,7 @@ public class ProcessTestManifest extends ManifestProcessorTask {
             variantOutputData.manifestProcessorTask = processTestManifestTask
 
             processTestManifestTask.androidBuilder = scope.globalScope.androidBuilder
+            processTestManifestTask.setVariantName(config.getFullName())
 
             ConventionMappingHelper.map(processTestManifestTask, "testApplicationId") {
                 config.applicationId

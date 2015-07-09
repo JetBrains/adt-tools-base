@@ -380,6 +380,7 @@ public abstract class TaskManager {
             @Override
             public void execute(Lint lintTask) {
                 lintTask.setDescription("Runs lint on all variants.");
+                lintTask.setVariantName("");
                 lintTask.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
                 lintTask.setLintOptions(getExtension().getLintOptions());
                 lintTask.setSdkHome(sdkHandler.getSdkFolder());
@@ -717,12 +718,14 @@ public abstract class TaskManager {
         variantOutputData.packageSplitResourcesTask.setOutputDirectory(new File(
                 scope.getGlobalScope().getIntermediatesDir(), "splits/" + config.getDirName()));
         variantOutputData.packageSplitResourcesTask.setAndroidBuilder(androidBuilder);
+        variantOutputData.packageSplitResourcesTask.setVariantName(config.getFullName());
         variantOutputData.packageSplitResourcesTask.dependsOn(
                 variantOutputScope.getProcessResourcesTask().getName());
 
         SplitZipAlign zipAlign = project.getTasks().create(
                 scope.getTaskName("zipAlign", "SplitPackages"),
                 SplitZipAlign.class);
+        zipAlign.setVariantName(config.getFullName());
         ConventionMappingHelper.map(zipAlign, "zipAlignExe", new Callable<File>() {
             @Override
             public File call() throws Exception {
@@ -784,6 +787,7 @@ public abstract class TaskManager {
                 scope.getTaskName("generate", "SplitAbiRes"),
                 GenerateSplitAbiRes.class);
         generateSplitAbiRes.setAndroidBuilder(androidBuilder);
+        generateSplitAbiRes.setVariantName(config.getFullName());
 
         generateSplitAbiRes.setOutputDirectory(new File(
                 scope.getGlobalScope().getIntermediatesDir(), "abi/" + config.getDirName()));
@@ -821,6 +825,7 @@ public abstract class TaskManager {
                 new File(scope.getGlobalScope().getIntermediatesDir(),
                         "package-merge/" + variantOutputData.getDirName()));
         variantOutputData.packageSplitAbiTask.setAndroidBuilder(androidBuilder);
+        variantOutputData.packageSplitAbiTask.setVariantName(config.getFullName());
         variantOutputData.packageSplitAbiTask.dependsOn(generateSplitAbiRes);
         variantOutputData.packageSplitAbiTask.dependsOn(scope.getNdkBuildable());
 
@@ -1050,6 +1055,7 @@ public abstract class TaskManager {
         ndkCompile.dependsOn(variantData.preBuildTask);
 
         ndkCompile.setAndroidBuilder(androidBuilder);
+        ndkCompile.setVariantName(variantData.getName());
         ndkCompile.setNdkDirectory(sdkHandler.getNdkFolder());
         ndkCompile.setIsForTesting(variantData.getType().isForTesting());
         variantData.ndkCompileTask = ndkCompile;
@@ -2403,6 +2409,7 @@ public abstract class TaskManager {
         prepareDependenciesTask.dependsOn(variantData.preBuildTask);
 
         prepareDependenciesTask.setAndroidBuilder(androidBuilder);
+        prepareDependenciesTask.setVariantName(scope.getVariantConfiguration().getFullName());
         prepareDependenciesTask.setVariant(variantData);
 
         // for all libraries required by the configurations of this variant, make this task

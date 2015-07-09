@@ -29,8 +29,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
-import org.apache.commons.io.FileUtils;
-import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
@@ -511,6 +509,7 @@ public class MergeJavaResourcesTask extends DefaultAndroidTask implements JavaRe
 
         @Override
         public void execute(MergeJavaResourcesTask mergeJavaResourcesTask) {
+            mergeJavaResourcesTask.setVariantName(scope.getVariantConfiguration().getFullName());
 
             ConventionMappingHelper.map(mergeJavaResourcesTask, "sourceJavaResourcesFolder",
                     new Callable<File>() {

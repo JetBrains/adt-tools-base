@@ -296,6 +296,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
             }
             task.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            task.setVariantName(variantName);
             task.setTestData(testData);
             task.setFlavorName(testData.getFlavorName());
             task.setDeviceProvider(deviceProvider);

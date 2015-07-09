@@ -19,7 +19,6 @@ package com.android.build.gradle.tasks;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
-
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -36,6 +35,7 @@ import com.android.ide.common.res2.FileStatus;
 import com.android.utils.FileUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+
 import org.gradle.api.file.FileTree;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
@@ -45,7 +45,6 @@ import org.gradle.api.tasks.util.PatternSet;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -365,6 +364,7 @@ public class AidlCompile extends IncrementalTask {
             scope.getVariantData().aidlCompileTask = compileTask;
 
             compileTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            compileTask.setVariantName(scope.getVariantConfiguration().getFullName());
             compileTask.setIncrementalFolder(scope.getAidlIncrementalDir());
 
             ConventionMappingHelper.map(compileTask, "sourceDirs", new Callable<List<File>>() {

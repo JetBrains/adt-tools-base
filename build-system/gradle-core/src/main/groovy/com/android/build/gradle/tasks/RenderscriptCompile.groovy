@@ -15,18 +15,14 @@
  */
 
 package com.android.build.gradle.tasks
-
 import com.android.annotations.NonNull
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
-import com.android.build.gradle.internal.scope.VariantOutputScope
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.NdkTask
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.builder.core.VariantConfiguration
-import com.android.builder.model.AndroidProject
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ProductFlavor
 import com.android.sdklib.SdkVersionInfo
@@ -38,7 +34,6 @@ import org.gradle.api.tasks.TaskAction
 
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
-
 /**
  * Task to compile Renderscript files. Supports incremental update.
  */
@@ -151,6 +146,7 @@ public class RenderscriptCompile extends NdkTask {
             ProductFlavor mergedFlavor = config.mergedFlavor
             boolean ndkMode = config.renderscriptNdkModeEnabled
             renderscriptTask.androidBuilder = scope.globalScope.androidBuilder
+            renderscriptTask.setVariantName(config.getFullName())
 
             ConventionMappingHelper.map(renderscriptTask, "targetApi") {
                 int targetApi = mergedFlavor.renderscriptTargetApi != null ?
