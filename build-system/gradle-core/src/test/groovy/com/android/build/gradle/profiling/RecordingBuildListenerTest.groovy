@@ -74,6 +74,12 @@ class RecordingBuildListenerTest {
         }
 
         @Override
+        def <T> T record(@NonNull ExecutionType executionType, @NonNull Recorder.Block<T> block,
+                @NonNull List<Recorder.Property> properties) {
+            throw new UnsupportedOperationException("record method was not supposed to be called.")
+        }
+
+        @Override
         long allocationRecordId() {
             return recordId.incrementAndGet()
         }

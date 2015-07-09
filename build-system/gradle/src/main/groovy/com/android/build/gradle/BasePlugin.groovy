@@ -53,12 +53,14 @@ import com.android.builder.internal.compiler.JackConversionCache
 import com.android.builder.internal.compiler.PreDexCache
 import com.android.builder.profile.ExecutionType
 import com.android.builder.profile.ProcessRecorderFactory
+import com.android.builder.profile.Recorder
 import com.android.builder.profile.ThreadRecorder
 import com.android.builder.sdk.TargetInfo
 import com.android.ide.common.blame.output.BlameAwareLoggedProcessOutputHandler
 import com.android.ide.common.internal.ExecutorSingleton
 import com.android.utils.ILogger
 import com.google.common.base.CharMatcher
+import com.google.common.collect.Lists
 import groovy.transform.CompileStatic
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -242,8 +244,23 @@ public abstract class BasePlugin {
         checkPathForErrors()
         checkModulesForErrors()
 
-        ProcessRecorderFactory.initialize(logger, project.rootProject.
-                file("profiler" + System.currentTimeMillis() + ".json"))
+        List<Recorder.Property> propertyList = Lists.newArrayList(
+                new Recorder.Property("plugin_version", Version.ANDROID_GRADLE_PLUGIN_VERSION),
+                new Recorder.Property("next_gen_plugin", "false"),
+        )
+        String benchmarkName = project.getProperties().get("com.android.benchmark.name")
+        if (benchmarkName != null) {
+            propertyList.add(new Recorder.Property("benchmark_name", benchmarkName))
+        }
+        String benchmarkMode = project.getProperties().get("com.android.benchmark.mode")
+        if (benchmarkMode != null) {
+            propertyList.add(new Recorder.Property("benchmark_mode", benchmarkMode))
+        }
+
+        ProcessRecorderFactory.initialize(
+                logger,
+                project.rootProject.file("profiler" + System.currentTimeMillis() + ".json"),
+                propertyList)
         project.gradle.addListener(new RecordingBuildListener(ThreadRecorder.get()));
 
         SpanRecorders.record(project, ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE) {
