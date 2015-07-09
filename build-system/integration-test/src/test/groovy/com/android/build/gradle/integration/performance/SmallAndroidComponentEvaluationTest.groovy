@@ -23,6 +23,7 @@ import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION
 import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.SMALL_BREADTH
 import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.SMALL_DEPTH
 
@@ -49,6 +50,6 @@ class SmallAndroidComponentEvaluationTest {
 
     @Test
     void "'projects' task run on 30 projects"() {
-        project.execute("projects")
+        project.executeWithBenchmark("SmallAndroid", EVALUATION, "projects")
     }
 }

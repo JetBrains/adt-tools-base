@@ -112,7 +112,7 @@ public class GradleTestProject implements TestRule {
     private static final String RECORD_BENCHMARK_MODE = "com.android.benchmark.mode";
 
     public enum BenchmarkMode {
-        EVALUATION, SYNC, FULL, INC_JAVA
+        EVALUATION, SYNC, BUILD_FULL, BUILD_INC_JAVA
     }
 
     static {
@@ -690,7 +690,7 @@ public class GradleTestProject implements TestRule {
             executeBuild(Collections.<String>emptyList(), connection, tasks,
                     ExpectedBuildResult.SUCCESS);
 
-            return buildModel(connection, new GetAndroidModelAction(), emulateStudio_1_0);
+            return buildModel(connection, new GetAndroidModelAction(), emulateStudio_1_0, null, null);
 
         } finally {
             connection.close();
@@ -755,7 +755,9 @@ public class GradleTestProject implements TestRule {
             Map<String, AndroidProject> modelMap = buildModel(
                     connection,
                     new GetAndroidModelAction(),
-                    emulateStudio_1_0);
+                    emulateStudio_1_0,
+                    null,
+                    null);
 
             // ensure there was only one project
             assertEquals("Quering GradleTestProject.getModel() with multi-project settings",
@@ -777,12 +779,27 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> getAllModels() {
-        Map<String, AndroidProject> allModels = getAllModels(new GetAndroidModelAction(), false);
+        return getAllModelsWithBenchmark(null, null);
+    }
+
+    /**
+     * Returns a project model for each sub-project without building generating a
+     * @param benchmarkName optional benchmark name to pass to Gradle
+     * @param benchmarkMode optional benchmark mode to pass to gradle.
+
+     * {@link AssertionError} if any sync issue is raised during the model loading.
+     */
+    @NonNull
+    public Map<String, AndroidProject> getAllModelsWithBenchmark(
+            @Nullable String benchmarkName,
+            @Nullable BenchmarkMode benchmarkMode) {
+        Map<String, AndroidProject> allModels = getAllModels(new GetAndroidModelAction(), false, benchmarkName, benchmarkMode);
         for (AndroidProject project : allModels.values()) {
             assertNoSyncIssues(project);
         }
         return allModels;
     }
+
 
     private static void assertNoSyncIssues(AndroidProject project) {
         if (!project.getSyncIssues().isEmpty()) {
@@ -805,7 +822,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> getAllModelsIgnoringSyncIssues() {
-        return getAllModels(new GetAndroidModelAction(), false);
+        return getAllModels(new GetAndroidModelAction(), false, null, null);
     }
 
     /**
@@ -815,7 +832,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public <K, V> Map<K, V> getAllModels(@NonNull BuildAction<Map<K, V>> action) {
-        return getAllModels(action, false);
+        return getAllModels(action, false, null, null);
     }
 
     /**
@@ -823,22 +840,22 @@ public class GradleTestProject implements TestRule {
      *
      * @param action the build action to gather the model
      * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param benchmarkName optional benchmark name to pass to Gradle
+     * @param benchmarkMode optional benchmark mode to pass to gradle.
      */
     @NonNull
     public <K, V> Map<K, V> getAllModels(
             @NonNull BuildAction<Map<K, V>> action,
-            boolean emulateStudio_1_0) {
+            boolean emulateStudio_1_0,
+            @Nullable String benchmarkName,
+            @Nullable BenchmarkMode benchmarkMode) {
         ProjectConnection connection = getProjectConnection();
         try {
-            return buildModel(connection, action, emulateStudio_1_0);
+            return buildModel(connection, action, emulateStudio_1_0, benchmarkName, benchmarkMode);
 
         } finally {
             connection.close();
         }
-    }
-
-    public void evaluate() {
-        getAllModels(new GetEmptyModelAction(), false);
     }
 
     /**
@@ -868,7 +885,9 @@ public class GradleTestProject implements TestRule {
                 Map<String, AndroidProject> modelMap = buildModel(
                         connection,
                         new GetAndroidModelAction(),
-                        emulateStudio_1_0);
+                        emulateStudio_1_0,
+                        null,
+                        null);
 
                 // ensure there was only one project
                 assertEquals("Quering GradleTestProject.getModel() with multi-project settings",
@@ -957,24 +976,33 @@ public class GradleTestProject implements TestRule {
 
     /**
      * Returns a project model for each sub-project without building.
-     *
      * @param connection the opened ProjectConnection
      * @param action the build action to gather the model
      * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param benchmarkName optional benchmark name to pass to Gradle
+     * @param benchmarkMode optional benchmark mode to pass to gradle.
      */
     @NonNull
     private <K,V> Map<K, V> buildModel(
             @NonNull ProjectConnection connection,
             @NonNull BuildAction<Map<K, V>> action,
-            boolean emulateStudio_1_0) {
+            boolean emulateStudio_1_0,
+            @Nullable String benchmarkName,
+            @Nullable BenchmarkMode benchmarkMode) {
 
         BuildActionExecuter<Map<K, V>> executor = connection.action(action);
 
-        List<String> arguments = Lists.newArrayListWithCapacity(emulateStudio_1_0 ? 2 : 3);
+        List<String> arguments = Lists.newArrayListWithCapacity(5);
         arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY + "=true");
         arguments.add("-P" + AndroidProject.PROPERTY_INVOKED_FROM_IDE + "=true");
         if (!emulateStudio_1_0) {
             arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED + "=true");
+        }
+        if (benchmarkName != null) {
+            arguments.add("-P" + RECORD_BENCHMARK_NAME + "=" + benchmarkName);
+            if (benchmarkMode != null) {
+                arguments.add("-P" + RECORD_BENCHMARK_MODE + "=" + benchmarkMode.name().toLowerCase(Locale.US));
+            }
         }
 
         setJvmArguments(executor);

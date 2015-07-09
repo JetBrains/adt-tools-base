@@ -22,6 +22,9 @@ import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
+
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION
+
 /**
  * test with ~30 projects that evaluates the projects
  */
@@ -44,6 +47,6 @@ class SmallJavaEvaluationTest {
 
     @Test
     void "'projects' task run on 30 projects"() {
-        project.execute("projects")
+        project.executeWithBenchmark("MediumJava", EVALUATION, "projects")
     }
 }

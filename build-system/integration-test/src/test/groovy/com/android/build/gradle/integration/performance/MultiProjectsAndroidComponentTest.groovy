@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.performance
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
@@ -23,14 +22,16 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.fixture.app.VariantBuildScriptGenerator
-import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_FULL
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION
+
 /**
- * Performance test on gradle experimantal plugin with multiple subprojects and multiple variants.
+ * Performance test on gradle experimental plugin with multiple sub-projects and multiple variants.
  */
 class MultiProjectsAndroidComponentTest {
     public static AndroidTestApp app = new HelloWorldApp()
@@ -84,12 +85,12 @@ class MultiProjectsAndroidComponentTest {
     }
 
     @Test
-    void "performance test - help"() {
-        project.execute("help")
+    void "performance test - projects"() {
+        project.executeWithBenchmark("MultiProjectsAndroid", EVALUATION, "projects")
     }
 
     @Test
     void "performance test - single variant"() {
-        project.execute(":app0:assembleProductFlavor0BuildType0")
+        project.executeWithBenchmark("MultiProjectsAndroid", BUILD_FULL, ":app0:assembleProductFlavor0BuildType0")
     }
 }
