@@ -24,6 +24,9 @@ import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Ignore
 import org.junit.Test
+
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.SYNC
+
 /**
  * test with ~30 projects that queries the IDE model
  */
@@ -48,6 +51,6 @@ class SmallAndroidComponentModelTest {
     @Test
     @Ignore
     void "model query for 30 projects"() {
-        Map<String, AndroidProject> models = project.getAllModels()
+        Map<String, AndroidProject> models = project.getAllModelsWithBenchmark("SmallAndroid", SYNC)
     }
 }

@@ -24,6 +24,7 @@ import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION
 import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_BREADTH
 import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_DEPTH
 
@@ -50,6 +51,6 @@ class MediumAndroidEvaluationTest {
 
     @Test
     void "'projects' task run on 120 projects"() {
-        project.execute("projects")
+        project.executeWithBenchmark("MediumAndroid", EVALUATION, "projects")
     }
 }

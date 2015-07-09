@@ -26,6 +26,7 @@ import org.junit.ClassRule
 import org.junit.Ignore
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.SYNC
 import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_BREADTH
 import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_DEPTH
 
@@ -53,6 +54,6 @@ class MediumAndroidComponentModelTest {
     @Test
     @Ignore
     void "model query for 120 projects"() {
-        Map<String, AndroidProject> models = project.getAllModels()
+        Map<String, AndroidProject> models = project.getAllModelsWithBenchmark("MediumAndroid", SYNC)
     }
 }
