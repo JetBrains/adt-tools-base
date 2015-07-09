@@ -68,12 +68,15 @@ public class PositionXmlParser {
             "http://xml.org/sax/features/xmlns-uris";            //$NON-NLS-1$
     /** See http://www.w3.org/TR/REC-xml/#NT-EncodingDecl */
     private static final Pattern ENCODING_PATTERN =
-            Pattern.compile("encoding=['\"](\\S*)['\"]");//$NON-NLS-1$
+            Pattern.compile("encoding=['\"](\\S*)['\"]");        //$NON-NLS-1$
+    private static final String LOAD_EXTERNAL_DTD =
+            "http://apache.org/xml/features/nonvalidating/load-external-dtd";; //$NON-NLS-1$
 
     /**
      * Parses the XML content from the given input stream.
      *
      * @param input the input stream containing the XML to be parsed
+     * @param checkDtd whether or not download the DTD and validate it
      * @return the corresponding document
      * @throws ParserConfigurationException if a SAX parser is not available
      * @throws SAXException if the document contains a parsing error
@@ -82,7 +85,7 @@ public class PositionXmlParser {
      *             a string.
      */
     @NonNull
-    public static Document parse(@NonNull InputStream input)
+    public static Document parse(@NonNull InputStream input, boolean checkDtd)
             throws ParserConfigurationException, SAXException, IOException {
         // Read in all the data
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -95,13 +98,32 @@ public class PositionXmlParser {
           out.write(buf, 0, r);
         }
         input.close();
-        return parse(out.toByteArray());
+        return parse(out.toByteArray(), checkDtd);
+    }
+
+    /**
+     * @see PositionXmlParser#parse(InputStream, boolean)
+     */
+    @NonNull
+    public static Document parse(@NonNull InputStream input)
+            throws IOException, SAXException, ParserConfigurationException {
+        return parse(input, true);
+    }
+
+    /**
+     * @see PositionXmlParser#parse(byte[], boolean)
+     */
+    @NonNull
+    public static Document parse(@NonNull byte[] data)
+            throws ParserConfigurationException, SAXException, IOException {
+        return parse(data, true);
     }
 
     /**
      * Parses the XML content from the given byte array
      *
      * @param data the raw XML data (with unknown encoding)
+     * @param checkDtd whether or not download the DTD and validate it
      * @return the corresponding document
      * @throws ParserConfigurationException if a SAX parser is not available
      * @throws SAXException if the document contains a parsing error
@@ -110,11 +132,11 @@ public class PositionXmlParser {
      *             a string.
      */
     @NonNull
-    public static Document parse(@NonNull byte[] data)
-            throws ParserConfigurationException, SAXException, IOException {
+    public static Document parse(@NonNull byte[] data, boolean checkDtd)
+      throws ParserConfigurationException, SAXException, IOException {
         String xml = getXmlString(data);
         xml = XmlUtils.stripBom(xml);
-        return parse(xml, new InputSource(new StringReader(xml)), true);
+        return parse(xml, new InputSource(new StringReader(xml)), true, checkDtd);
     }
 
     /**
@@ -133,17 +155,22 @@ public class PositionXmlParser {
     public static Document parse(@NonNull String xml)
             throws ParserConfigurationException, SAXException, IOException {
         xml = XmlUtils.stripBom(xml);
-        return parse(xml, new InputSource(new StringReader(xml)), true);
+        return parse(xml, new InputSource(new StringReader(xml)), true, true);
     }
 
     @NonNull
-    private static Document parse(@NonNull String xml, @NonNull InputSource input, boolean checkBom)
+    private static Document parse(@NonNull String xml, @NonNull InputSource input, boolean checkBom,
+                                  boolean checkDtd)
             throws ParserConfigurationException, SAXException, IOException {
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
-            factory.setFeature(NAMESPACE_FEATURE, true);
-            factory.setFeature(NAMESPACE_PREFIX_FEATURE, true);
-            factory.setFeature(PROVIDE_XMLNS_URIS, true);
+            if (checkDtd) {
+                factory.setFeature(NAMESPACE_FEATURE, true);
+                factory.setFeature(NAMESPACE_PREFIX_FEATURE, true);
+                factory.setFeature(PROVIDE_XMLNS_URIS, true);
+            } else {
+                factory.setFeature(LOAD_EXTERNAL_DTD, false);
+            }
             SAXParser parser = factory.newSAXParser();
             DomBuilder handler = new DomBuilder(xml);
             XMLReader xmlReader = parser.getXMLReader();
@@ -159,7 +186,7 @@ public class PositionXmlParser {
                 // (see http://en.wikipedia.org/wiki/Byte_order_mark) so here we'll
                 // just skip those up to the XML prolog beginning character, <
                 xml = xml.replaceFirst("^([\\W]+)<","<");  //$NON-NLS-1$ //$NON-NLS-2$
-                return parse(xml, new InputSource(new StringReader(xml)), false);
+                return parse(xml, new InputSource(new StringReader(xml)), false, checkDtd);
             }
             throw e;
         }
