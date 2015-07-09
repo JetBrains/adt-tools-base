@@ -124,6 +124,7 @@ public class CreateMainDexList extends BaseTask {
         @Override
         void execute(CreateMainDexList createMainDexList) {
             createMainDexList.androidBuilder = scope.globalScope.androidBuilder
+            createMainDexList.setVariantName(scope.getVariantConfiguration().getFullName())
 
             def files = inputFiles
             createMainDexList.allClassesJarFile = files.call().first()

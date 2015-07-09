@@ -348,6 +348,7 @@ public class MergeResources extends IncrementalTask {
                     .getVariantData();
 
             mergeResourcesTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            mergeResourcesTask.setVariantName(scope.getVariantConfiguration().getFullName());
             mergeResourcesTask.setIncrementalFolder(new File(
                     scope.getGlobalScope().getBuildDir() + "/" + AndroidProject.FD_INTERMEDIATES +
                             "/incremental/" + taskNamePrefix + "Resources/" +

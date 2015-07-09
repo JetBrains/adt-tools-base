@@ -162,6 +162,7 @@ public class GenerateBuildConfig extends BaseTask {
             VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
             generateBuildConfigTask.androidBuilder = scope.globalScope.androidBuilder
+            generateBuildConfigTask.setVariantName(scope.getVariantConfiguration().getFullName())
 
             ConventionMappingHelper.map(generateBuildConfigTask, "buildConfigPackageName") {
                 variantConfiguration.originalApplicationId

@@ -486,6 +486,12 @@ public abstract class BasePlugin {
 
         extension.disableWrite()
 
+        ThreadRecorder.get().record(
+                ExecutionType.GENERAL_CONFIG,
+                Recorder.EmptyBlock,
+                new Recorder.Property("build_tools_version",
+                        extension.buildToolsRevision.toString()));
+
         // setup SDK repositories.
         for (File file : sdkHandler.sdkLoader.repositories) {
             project.repositories.maven { MavenArtifactRepository repo ->

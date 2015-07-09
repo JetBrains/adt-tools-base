@@ -22,6 +22,7 @@ import com.android.ide.common.signing.CertificateInfo
 import com.android.ide.common.signing.KeystoreHelper
 import com.android.ide.common.signing.KeytoolException
 import com.google.common.collect.Maps
+import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.logging.StyledTextOutput
 import org.gradle.logging.StyledTextOutputFactory
@@ -40,7 +41,7 @@ import static org.gradle.logging.StyledTextOutput.Style.Normal
 /**
  * Report tasks displaying the signing information for all variants.
  */
-class SigningReportTask extends BaseTask {
+class SigningReportTask extends DefaultTask {
 
     private Set<BaseVariantData> variants = [];
 

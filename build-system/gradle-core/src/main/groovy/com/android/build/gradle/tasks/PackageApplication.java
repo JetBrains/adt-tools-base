@@ -283,6 +283,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
             variantOutputData.packageApplicationTask = packageApp;
             packageApp.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            packageApp.setVariantName(
+                    scope.getVariantScope().getVariantConfiguration().getFullName());
 
             if (config.isMinifyEnabled() && config.getBuildType().isShrinkResources() && !config
                     .getUseJack()) {
@@ -404,6 +406,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                                     "validate" + StringHelper.capitalize(sc.getName()) + "Signing",
                                     ValidateSigningTask.class);
                     validateSigningTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+                    validateSigningTask.setVariantName(
+                            scope.getVariantScope().getVariantConfiguration().getFullName());
                     validateSigningTask.setSigningConfig(sc);
                 }
 
@@ -441,6 +445,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                             .capitalize(variantOutputData.getFullName())
                             + "Resources", ShrinkResources.class);
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            task.setVariantName(scope.getVariantScope().getVariantConfiguration().getFullName());
             task.variantOutputData = variantOutputData;
 
             final String outputBaseName = variantOutputData.getBaseName();

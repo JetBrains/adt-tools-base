@@ -182,6 +182,7 @@ public class MergeAssets extends IncrementalTask {
             variantData.mergeAssetsTask = mergeAssetsTask
 
             mergeAssetsTask.androidBuilder = scope.globalScope.androidBuilder
+            mergeAssetsTask.setVariantName(variantConfig.getFullName())
             mergeAssetsTask.incrementalFolder =
                     new File(
                             "$scope.globalScope.buildDir/${AndroidProject.FD_INTERMEDIATES}/incremental/mergeAssets/${variantConfig.dirName}")

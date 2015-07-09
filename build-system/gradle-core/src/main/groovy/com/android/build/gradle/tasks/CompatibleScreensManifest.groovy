@@ -106,6 +106,7 @@ class CompatibleScreensManifest extends DefaultAndroidTask {
 
         @Override
         void execute(CompatibleScreensManifest csmTask) {
+            csmTask.setVariantName(scope.getVariantScope().getVariantConfiguration().getFullName())
 
             csmTask.screenDensity = scope.variantOutputData.getMainOutputFile().getFilter(
                     com.android.build.OutputFile.DENSITY)

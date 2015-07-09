@@ -255,6 +255,7 @@ public class ExtractJavaResourcesTask extends DefaultAndroidTask {
                     }
                 });
             extractJavaResourcesTask.outputDir = scope.getPackagedJarsJavaResDestinationDir();
+            extractJavaResourcesTask.setVariantName(scope.getVariantConfiguration().getFullName());
         }
     }
 }

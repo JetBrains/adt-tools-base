@@ -235,6 +235,7 @@ public class PreDex extends BaseTask {
 
             variantData.preDexTask = preDexTask
             preDexTask.androidBuilder = scope.globalScope.androidBuilder
+            preDexTask.setVariantName(config.getFullName())
             preDexTask.dexOptions = scope.globalScope.getExtension().dexOptions
             preDexTask.multiDex = isMultiDexEnabled
 
