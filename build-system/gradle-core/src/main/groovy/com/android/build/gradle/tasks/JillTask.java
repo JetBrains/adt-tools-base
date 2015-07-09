@@ -255,6 +255,7 @@ public class JillTask extends BaseTask {
             final AndroidBuilder androidBuilder = globalScope.getAndroidBuilder();
 
             jillTask.setAndroidBuilder(androidBuilder);
+            jillTask.setVariantName(variantScope.getVariantConfiguration().getFullName());
             jillTask.setDexOptions(globalScope.getExtension().getDexOptions());
 
             ConventionMappingHelper.map(jillTask, "inputLibs", new Callable<List<File>>() {
@@ -292,6 +293,7 @@ public class JillTask extends BaseTask {
             final AndroidBuilder androidBuilder = globalScope.getAndroidBuilder();
 
             jillTask.setAndroidBuilder(androidBuilder);
+            jillTask.setVariantName(variantScope.getVariantConfiguration().getFullName());
             jillTask.setDexOptions(globalScope.getExtension().getDexOptions());
 
             ConventionMappingHelper.map(jillTask, "inputLibs", new Callable<Set<File>>() {

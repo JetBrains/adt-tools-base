@@ -188,6 +188,7 @@ public class ProcessAndroidResources extends IncrementalTask {
             final GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
             processResources.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            processResources.setVariantName(config.getFullName());
 
             if (variantData.getSplitHandlingPolicy() ==
                     BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {

@@ -17,16 +17,17 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
-import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 
 import org.gradle.api.Action;
+import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Optional;
@@ -39,7 +40,7 @@ import java.io.File;
 /**
  * Task to remove debug symbols from a native library.
  */
-public class StripDebugSymbolTask extends BaseTask {
+public class StripDebugSymbolTask extends DefaultTask {
 
     private File stripCommand;
 
@@ -98,7 +99,7 @@ public class StripDebugSymbolTask extends BaseTask {
         builder.addArgs(inputFile.toString());
         new GradleProcessExecutor(getProject()).execute(
                 builder.createProcess(),
-                new LoggedProcessOutputHandler(getILogger()));
+                new LoggedProcessOutputHandler(new LoggerWrapper(getLogger())));
     }
 
     // ----- ConfigAction -----

@@ -140,6 +140,8 @@ class CreateManifestKeepList extends DefaultAndroidTask {
 
         @Override
         void execute(CreateManifestKeepList manifestKeepListTask) {
+            manifestKeepListTask.setVariantName(scope.getVariantConfiguration().getFullName())
+
             // since all the output have the same manifest, besides the versionCode,
             // we can take any of the output and use that.
             final BaseVariantOutputData output = scope.variantData.outputs.get(0)

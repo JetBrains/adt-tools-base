@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-
-
 package com.android.build.gradle.internal.tasks.multidex
 
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask
@@ -184,6 +182,7 @@ class JarMergingTask extends DefaultAndroidTask {
 
         @Override
         void execute(JarMergingTask jarMergingTask) {
+            jarMergingTask.setVariantName(scope.getVariantConfiguration().getFullName())
             ConventionMappingHelper.map(jarMergingTask, "inputJars", inputLibraries)
             ConventionMappingHelper.map(jarMergingTask, "inputDir", inputDir)
 

@@ -303,6 +303,7 @@ public class LibraryTaskManager extends TaskManager {
                         MergeFileTask mergeProGuardFileTask = project.getTasks().create(
                                 variantScope.getTaskName("merge", "ProguardFiles"),
                                 MergeFileTask.class);
+                        mergeProGuardFileTask.setVariantName(variantConfig.getFullName());
                         mergeProGuardFileTask.setInputFiles(
                                 project.files(variantConfig.getConsumerProguardFiles())
                                         .getFiles());

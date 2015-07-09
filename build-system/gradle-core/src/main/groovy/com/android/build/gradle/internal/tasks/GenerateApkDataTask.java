@@ -174,6 +174,7 @@ public class GenerateApkDataTask extends BaseTask {
             variantData.generateApkDataTask = task;
 
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            task.setVariantName(scope.getVariantConfiguration().getFullName());
             ConventionMappingHelper.map(task, "resOutputDir", new Callable<File>() {
                 @Override
                 public File call() throws Exception {

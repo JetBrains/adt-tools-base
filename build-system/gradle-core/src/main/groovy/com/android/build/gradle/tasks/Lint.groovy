@@ -15,13 +15,10 @@
  */
 
 package com.android.build.gradle.tasks
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.internal.LintGradleClient
 import com.android.build.gradle.internal.dsl.LintOptions
-import com.android.build.gradle.internal.model.ModelBuilder
-import com.android.build.gradle.internal.scope.AndroidTask
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask
@@ -47,7 +44,6 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 @ParallelizableTask
 public class Lint extends DefaultAndroidTask {
     @NonNull private LintOptions mLintOptions
-    @Nullable private String mVariantName
     @Nullable private File mSdkHome
     private boolean mFatalOnly
     private ToolingModelBuilderRegistry mToolingRegistry
@@ -58,10 +54,6 @@ public class Lint extends DefaultAndroidTask {
 
     public void setSdkHome(@NonNull File sdkHome) {
         mSdkHome = sdkHome
-    }
-
-    public void setVariantName(@NonNull String variantName) {
-        mVariantName = variantName
     }
 
     void setToolingRegistry(ToolingModelBuilderRegistry toolingRegistry) {
@@ -76,8 +68,8 @@ public class Lint extends DefaultAndroidTask {
     @TaskAction
     public void lint() {
         def modelProject = createAndroidProject(project)
-        if (mVariantName != null) {
-            lintSingleVariant(modelProject, mVariantName)
+        if (getVariantName() != null) {
+            lintSingleVariant(modelProject, getVariantName())
         } else {
             lintAllVariants(modelProject)
         }

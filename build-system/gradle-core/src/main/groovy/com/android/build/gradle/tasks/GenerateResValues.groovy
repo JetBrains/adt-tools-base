@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
-
 import com.android.annotations.NonNull
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
@@ -22,15 +21,12 @@ import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.compiling.ResValueGenerator
 import com.android.builder.core.VariantConfiguration
-import com.android.builder.model.AndroidProject
 import com.android.builder.model.ClassField
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
-
-import static com.android.builder.model.AndroidProject.FD_GENERATED
 
 @ParallelizableTask
 public class GenerateResValues extends BaseTask {
@@ -105,6 +101,7 @@ public class GenerateResValues extends BaseTask {
             VariantConfiguration variantConfiguration = scope.variantData.variantConfiguration
 
             generateResValuesTask.androidBuilder = scope.globalScope.androidBuilder
+            generateResValuesTask.setVariantName(variantConfiguration.getFullName())
 
             ConventionMappingHelper.map(generateResValuesTask, "items") {
                 variantConfiguration.resValues

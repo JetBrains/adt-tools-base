@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.tasks;
 
 import com.android.builder.testing.MockableJarGenerator;
 
+import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;
@@ -29,7 +30,7 @@ import java.io.IOException;
 /**
  * Task for generating a mockable android.jar
  */
-public class MockableAndroidJarTask extends DefaultAndroidTask {
+public class MockableAndroidJarTask extends DefaultTask {
 
    private File mAndroidJar;
 

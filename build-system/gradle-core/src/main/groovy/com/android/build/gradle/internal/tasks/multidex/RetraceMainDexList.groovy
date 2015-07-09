@@ -147,6 +147,7 @@ class RetraceMainDexList extends DefaultAndroidTask {
 
         @Override
         void execute(RetraceMainDexList retraceTask) {
+            retraceTask.setVariantName(scope.getVariantConfiguration().getFullName())
             ConventionMappingHelper.map(retraceTask, "mainDexListFile") { scope.getMainDexListFile() }
             ConventionMappingHelper.map(retraceTask, "mappingFile") {
                 scope.variantData.getMappingFile()
