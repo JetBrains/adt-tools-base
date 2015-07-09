@@ -17,17 +17,20 @@
 package com.android.ide.common.res2;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 
 import org.junit.Test;
 import org.xml.sax.SAXParseException;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 @SuppressWarnings({"ThrowableInstanceNeverThrown", "ThrowableResultOfMethodCallIgnored"})
@@ -114,5 +117,22 @@ public class MergingExceptionTest {
         } catch (MergingException e) {
             // ok
         }
+    }
+
+
+    @Test
+    public void testMergingExceptionWithNullMessage() {
+        MergingException exception = MergingException.wrapException(new IOException()).build();
+        Message message = Iterables.getOnlyElement(exception.getMessages());
+        assertNotNull(message.getText());
+        assertNotNull(message.getRawMessage());
+    }
+
+    @Test
+    public void testConsumerExceptionWithNullMessage() {
+        MergingException exception = new MergeConsumer.ConsumerException(new IOException());
+        Message message = Iterables.getOnlyElement(exception.getMessages());
+        assertNotNull(message.getText());
+        assertNotNull(message.getRawMessage());
     }
 }
