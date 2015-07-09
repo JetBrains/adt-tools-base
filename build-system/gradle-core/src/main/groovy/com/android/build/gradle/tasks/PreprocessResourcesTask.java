@@ -24,6 +24,7 @@ import com.android.ide.common.res2.PreprocessDataSet;
 import com.android.ide.common.res2.PreprocessResourcesMerger;
 import com.android.ide.common.res2.PreprocessResourcesWriter;
 import com.android.resources.Density;
+import com.android.utils.FileUtils;
 import com.google.common.base.Joiner;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
@@ -118,13 +119,13 @@ public class PreprocessResourcesTask extends IncrementalTask {
     }
 
     @Override
-    protected void doFullTaskAction() {
+    protected void doFullTaskAction() throws IOException {
         // Maps input files to all files generated from them. This is used by the generated data set
         // when it needs to create all data items that come from a given data file.
         SetMultimap<File, File> generatedFiles = HashMultimap.create();
-        emptyFolder(getOutputResDirectory());
-        emptyFolder(getGeneratedResDirectory());
-        emptyFolder(getIncrementalFolder());
+        FileUtils.emptyFolder(getOutputResDirectory());
+        FileUtils.emptyFolder(getGeneratedResDirectory());
+        FileUtils.emptyFolder(getIncrementalFolder());
 
         PreprocessDataSet mergedSet = new PreprocessDataSet(
                 getVariantName(),

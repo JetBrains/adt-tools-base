@@ -18,9 +18,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.sdk.TargetInfo;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
+import com.google.common.base.Preconditions;
 
 import java.io.File;
 
@@ -32,8 +34,14 @@ public abstract class BaseTask extends DefaultAndroidTask {
     @Nullable
     private ILogger iLogger;
 
-    @Nullable
+    /**
+     * Returns the androidBuilder.
+     * @throws IllegalStateException if androidBuilder has not been set,
+     */
+    @NonNull
     protected AndroidBuilder getBuilder() {
+        Preconditions.checkState(androidBuilder != null,
+                "androidBuilder required for task '%s'.", getName());
         return androidBuilder;
     }
 
@@ -45,13 +53,16 @@ public abstract class BaseTask extends DefaultAndroidTask {
         return iLogger;
     }
 
-    protected void emptyFolder(File folder) {
-        getLogger().info("deleteDir(" + folder + ") returned: " + FileUtils.deleteFolder(folder));
-        folder.mkdirs();
-    }
-
+    /**
+     * Returns the BuildToolInfo.
+     * @throws IllegalStateException if androidBuilder.targetInfo has not been set,
+     */
+    @NonNull
     protected BuildToolInfo getBuildTools() {
-        return androidBuilder.getTargetInfo().getBuildTools();
+        TargetInfo targetInfo = getBuilder().getTargetInfo();
+        Preconditions.checkState(targetInfo != null,
+                "androidBuilder.targetInfo required for task '%s'.", getName());
+        return targetInfo.getBuildTools();
     }
 
     public void setAndroidBuilder(@NonNull AndroidBuilder androidBuilder) {

@@ -33,6 +33,7 @@ import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.res2.FileStatus;
+import com.android.utils.FileUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import org.gradle.api.file.FileTree;
@@ -162,15 +163,15 @@ public class AidlCompile extends IncrementalTask {
     }
 
     @Override
-    protected void doFullTaskAction() {
+    protected void doFullTaskAction() throws IOException {
         // this is full run, clean the previous output
         File destinationDir = getSourceOutputDir();
-        emptyFolder(destinationDir);
-
         File parcelableDir = getAidlParcelableDir();
+        FileUtils.emptyFolder(destinationDir);
         if (parcelableDir != null) {
-            emptyFolder(parcelableDir);
+            FileUtils.emptyFolder(parcelableDir);
         }
+
 
         DepFileProcessor processor = new DepFileProcessor();
 
@@ -193,7 +194,7 @@ public class AidlCompile extends IncrementalTask {
     }
 
     @Override
-    protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) {
+    protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
         File incrementalData = new File(getIncrementalFolder(), DEPENDENCY_STORE);
         DependencyDataStore store = new DependencyDataStore();
         Multimap<String, DependencyData> inputMap;
