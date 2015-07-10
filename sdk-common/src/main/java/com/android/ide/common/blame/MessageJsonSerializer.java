@@ -21,19 +21,82 @@ import com.google.common.collect.EnumHashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 
 import java.io.File;
-import java.lang.reflect.Type;
+import java.io.IOException;
 
-public class MessageJsonSerializer
-        implements JsonSerializer<Message>,
-        JsonDeserializer<Message> {
+/**
+ * Class to handle json serialization and deserialization of messages.
+ *
+ * Reads json objects of the form:
+ *
+ * <pre>
+ * {
+ *     "kind":"ERROR",
+ *     "text":"errorText",
+ *     "original":"unparsed error text: Error in some intermediate file",
+ *     "sources": [{
+ *         "file":"/path/to/source.java",
+ *         "position":{
+ *             "startLine":1,
+ *             "startColumn":2,
+ *             "startOffset":3,
+ *             "endLine":4,
+ *             "endColumn":5,
+ *             "endOffset":6
+ *         }
+ *     }]
+ * }</pre>
+ *
+ * All fields, other than text, may be omitted. They have the following defaults:
+ *
+ * <table>
+ *     <tr><th>Property</th>        <th>Default</th>             <th>Notes</th></tr>
+ *     <tr><td>kind (ERROR, WARNING,
+ *             INFO, UNKNOWN)</td>  <td>UNKNOWN</td>             <td></td></tr>
+ *     <tr><td>text</td>            <td><i>Empty String</i></td> <td>Should not be omitted.</td></tr>
+ *     <tr><td>file (Absolute)</td> <td>{} <i>[unknown]</i></td> <td>See {@link SourceFileJsonTypeAdapter}</td></tr>
+ *     <tr><td>position</td>        <td>UNKNOWN</td>             <td></td></tr>
+ *     <tr><td>startLine,
+ *             startColumn,
+ *             startOffset</td>     <td>-1 <i>[unknown]</i></td> <td rowspan="2">0-based</td></tr>
+ *     <tr><td>endLine,
+ *             endColumn,
+ *             endOffset</td>       <td>startLine, startColumn,
+ *                                      startOffset</td></tr>
+ * </table>
+ *
+ * <h4>Notes</h4>
+ * <ul>
+ *     <li>Offset need not be included, if needed by the consumer of the message it can
+ *         be derived from the file, line and column.</li>
+ *     <li>If line is included and column is not the message will be considered to apply
+ *         to the whole line.</li>
+ *     <li>A message can have multiple sources.</li>
+ * </ul>
+ * It also can read legacy serialized objects of the form:
+ *
+ * <pre>{
+ *     "kind":"ERROR",
+ *     "text":"errorText",
+ *     "sourcePath": "/path/to/source.java",
+ *     "position":{
+ *         "startLine":1,
+ *         "startColumn":2,
+ *         "startOffset":3,
+ *         "endLine":4,
+ *         "endColumn":5,
+ *         "endOffset":6
+ *     }
+ * }</pre>
+ *
+ * These serializers are implemented using the lower-level TypeAdapter gson API which gives much
+ * more control and allow changes to be made without breaking backward compatibility.
+ */
+public class MessageJsonSerializer extends TypeAdapter<Message> {
 
     private static final String KIND = "kind";
 
@@ -60,68 +123,89 @@ public class MessageJsonSerializer
         KIND_STRING_ENUM_MAP = Maps.unmodifiableBiMap(map);
     }
 
-    @Override
-    public JsonElement serialize(Message message, Type type,
-            JsonSerializationContext jsonSerializationContext) {
-        JsonObject result = new JsonObject();
-        result.addProperty(KIND, KIND_STRING_ENUM_MAP.get(message.getKind()));
-        result.addProperty(TEXT, message.getText());
-        result.add(SOURCE_FILE_POSITIONS,
-                jsonSerializationContext.serialize(message.getSourceFilePositions()));
-        if (!message.getRawMessage().equals(message.getText())) {
-            result.addProperty(RAW_MESSAGE, message.getRawMessage());
-        }
-        return result;
+    private final SourceFilePositionJsonSerializer mSourceFilePositionTypeAdapter;
+    private final SourcePositionJsonTypeAdapter mSourcePositionTypeAdapter;
+
+    public MessageJsonSerializer() {
+        mSourceFilePositionTypeAdapter = new SourceFilePositionJsonSerializer();
+        mSourcePositionTypeAdapter = mSourceFilePositionTypeAdapter.getSourcePositionTypeAdapter();
     }
 
     @Override
-    public Message deserialize(JsonElement jsonElement, Type type,
-            JsonDeserializationContext context) {
-        final JsonObject object = jsonElement.getAsJsonObject();
-        final Message.Kind kind;
-        if (object.has(KIND)) {
-            //noinspection StringToUpperCaseOrToLowerCaseWithoutLocale
-            Message.Kind theKind = KIND_STRING_ENUM_MAP.inverse()
-                    .get(object.get(KIND).getAsString().toLowerCase());
-            kind = (theKind != null) ? theKind : Message.Kind.UNKNOWN;
-        } else {
-            kind = Message.Kind.UNKNOWN;
+    public void write(JsonWriter out, Message message) throws IOException {
+        out.beginObject()
+                .name(KIND).value(KIND_STRING_ENUM_MAP.get(message.getKind()))
+                .name(TEXT).value(message.getText())
+                .name(SOURCE_FILE_POSITIONS).beginArray();
+        for (SourceFilePosition position : message.getSourceFilePositions()) {
+            mSourceFilePositionTypeAdapter.write(out, position);
         }
+        out.endArray();
+        if (!message.getRawMessage().equals(message.getText())) {
+            out.name(RAW_MESSAGE).value(message.getRawMessage());
+        }
+        out.endObject();
+    }
 
-        final String text = object.has(TEXT) ? object.get(TEXT).getAsString() : "";
-
-        final String rawMessage = object.has(RAW_MESSAGE) ?
-                object.get(RAW_MESSAGE).getAsString() : text;
-
-        final ImmutableList<SourceFilePosition> sourceFilePositions;
-        if (object.has(SOURCE_FILE_POSITIONS)) {
-            JsonElement e = object.get(SOURCE_FILE_POSITIONS);
-            if (e.isJsonArray()) {
-                SourceFilePosition[] positions = context.deserialize(e, SourceFilePosition[].class);
-                sourceFilePositions = ImmutableList.copyOf(positions);
-            } else if (e.isJsonObject()) {
-                sourceFilePositions = ImmutableList.of(
-                        context.<SourceFilePosition>deserialize(e, SourceFilePosition.class));
+    @Override
+    public Message read(JsonReader in) throws IOException {
+        in.beginObject();
+        Message.Kind kind = Message.Kind.UNKNOWN;
+        String text = "";
+        String rawMessage = null;
+        ImmutableList.Builder<SourceFilePosition> positions =
+                new ImmutableList.Builder<SourceFilePosition>();
+        SourceFile legacyFile = SourceFile.UNKNOWN;
+        SourcePosition legacyPosition = SourcePosition.UNKNOWN;
+        while (in.hasNext()) {
+            String name = in.nextName();
+            if (name.equals(KIND)) {
+                //noinspection StringToUpperCaseOrToLowerCaseWithoutLocale
+                Message.Kind theKind = KIND_STRING_ENUM_MAP.inverse()
+                        .get(in.nextString().toLowerCase());
+                kind = (theKind != null) ? theKind : Message.Kind.UNKNOWN;
+            } else if (name.equals(TEXT)) {
+                text = in.nextString();
+            } else if (name.equals(RAW_MESSAGE)) {
+                rawMessage = in.nextString();
+            } else if (name.equals(SOURCE_FILE_POSITIONS)) {
+                switch (in.peek()) {
+                    case BEGIN_ARRAY:
+                        in.beginArray();
+                        while(in.hasNext()) {
+                            positions.add(mSourceFilePositionTypeAdapter.read(in));
+                        }
+                        in.endArray();
+                        break;
+                    case BEGIN_OBJECT:
+                        positions.add(mSourceFilePositionTypeAdapter.read(in));
+                        break;
+                    default:
+                        in.skipValue();
+                        break;
+                }
+            } else if (name.equals(LEGACY_SOURCE_PATH)) {
+                legacyFile = new SourceFile(new File(in.nextString()));
+            } else if (name.equals(LEGACY_POSITION)) {
+                legacyPosition = mSourcePositionTypeAdapter.read(in);
             } else {
-                sourceFilePositions = ImmutableList.of(SourceFilePosition.UNKNOWN);
+                in.skipValue();
             }
-        } else if (object.has(LEGACY_SOURCE_PATH) || object.has(LEGACY_POSITION)) {
-            SourceFile sourceFile = SourceFile.UNKNOWN;
-            if (object.has(LEGACY_SOURCE_PATH)) {
-                sourceFile = new SourceFile(new File(object.get(LEGACY_SOURCE_PATH).getAsString()));
-            }
-            SourcePosition sourcePosition = SourcePosition.UNKNOWN;
-            if (object.has(LEGACY_POSITION)) {
-                sourcePosition = context.<SourcePosition>deserialize(
-                        object.get(LEGACY_POSITION), SourcePosition.class);
-            }
-            sourceFilePositions = ImmutableList.of(
-                    new SourceFilePosition(sourceFile, sourcePosition));
-        } else {
-            sourceFilePositions = ImmutableList.of(SourceFilePosition.UNKNOWN);
         }
+        in.endObject();
 
-        return new Message(kind, text, rawMessage, sourceFilePositions);
+        if (legacyFile != SourceFile.UNKNOWN || legacyPosition != SourcePosition.UNKNOWN) {
+            positions.add(new SourceFilePosition(legacyFile, legacyPosition));
+        }
+        if (rawMessage == null) {
+            rawMessage = text;
+        }
+        ImmutableList<SourceFilePosition> sourceFilePositions = positions.build();
+        if (!sourceFilePositions.isEmpty()) {
+            return new Message(kind, text, rawMessage, sourceFilePositions);
+        } else {
+            return new Message(kind, text, rawMessage, ImmutableList.of(SourceFilePosition.UNKNOWN));
+        }
     }
 
     public static void registerTypeAdapters(GsonBuilder builder) {
