@@ -27,6 +27,7 @@ import com.android.build.gradle.tasks.GdbSetupTask;
 import com.android.build.gradle.tasks.StripDebugSymbolTask;
 import com.android.builder.core.BuilderConstants;
 import com.android.utils.StringHelper;
+import com.google.common.base.Objects;
 
 import org.gradle.api.Action;
 import org.gradle.api.PolymorphicDomainObjectContainer;
@@ -55,7 +56,6 @@ public class NdkConfiguration {
             NativeLibrarySpec library,
             final AndroidComponentModelSourceSet sources,
             final File buildDir,
-            final NdkConfig ndkConfig,
             final NdkHandler ndkHandler) {
         for (Abi abi : ndkHandler.getSupportedAbis()) {
             library.targetPlatform(abi.getName());
@@ -146,8 +146,9 @@ public class NdkConfiguration {
 
         NativeToolSpecificationFactory.create(
                 ndkHandler,
-                binary.getBuildType(),
-                binary.getTargetPlatform()).apply(binary);
+                binary.getTargetPlatform(),
+                Objects.firstNonNull(ndkConfig.getIsDebuggable(), false)).apply(
+                binary);
 
         // Add flags defined in NdkConfig
         for (String flag : ndkConfig.getCFlags()) {
@@ -177,7 +178,7 @@ public class NdkConfiguration {
             File buildDir, NdkConfig ndkConfig, NdkHandler ndkHandler) {
         StlConfiguration.createStlCopyTask(ndkHandler, ndkConfig.getStl(), tasks, buildDir, binary);
 
-        if (binary.getBuildType().getName().equals(BuilderConstants.DEBUG)) {
+        if (Boolean.TRUE.equals(ndkConfig.getIsDebuggable())) {
             // TODO: Use AndroidTaskRegistry and scopes to create tasks in experimental plugin.
             setupNdkGdbDebug(tasks, binary, buildDir, ndkConfig, ndkHandler);
         }
