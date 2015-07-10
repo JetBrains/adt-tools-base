@@ -44,7 +44,8 @@ public class VectorDrawbleGeneratorTest extends GeneratorTest {
         }
 
         final VdPreview.Size imageSize = VdPreview.Size.createSizeFromWidth(24);
-        BufferedImage image = VdPreview.getPreviewFromVectorXml(imageSize, outStream.toString(), null);
+        StringBuilder builder = new StringBuilder();
+        BufferedImage image = VdPreview.getPreviewFromVectorXml(imageSize, outStream.toString(), builder);
 
         String path = grandParentDir + imageName;
         InputStream is = GeneratorTest.class.getResourceAsStream(path);
@@ -95,5 +96,13 @@ public class VectorDrawbleGeneratorTest extends GeneratorTest {
 
     public void testShapes() throws Exception {
         checkVectorConversion("ic_shapes");
+    }
+
+    public void testIconTempHigh() throws Exception {
+        checkVectorConversion("ic_temp_high");
+    }
+
+    public void testIconPlusSign() throws Exception {
+        checkVectorConversion("ic_plus_sign");
     }
 }
