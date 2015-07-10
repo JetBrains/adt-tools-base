@@ -91,7 +91,7 @@ public class VectorDrawableRenderer {
                 scaleFactor = 1.0f;
             }
 
-            final VdPreview.Size imageSize = VdPreview.Size.createSizeFromScale(scaleFactor);
+            final VdPreview.TargetSize imageSize = VdPreview.TargetSize.createSizeFromScale(scaleFactor);
             BufferedImage image = VdPreview.getPreviewFromVectorXml(imageSize, xmlContent, null);
             ImageIO.write(image, "png", pngFile);
             createdFiles.add(pngFile);

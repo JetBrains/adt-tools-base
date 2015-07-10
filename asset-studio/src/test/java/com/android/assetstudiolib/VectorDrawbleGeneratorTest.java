@@ -43,9 +43,9 @@ public class VectorDrawbleGeneratorTest extends GeneratorTest {
             assertTrue("Failure: Exception in Svg2Vector.parseSvgToXml!", false);
         }
 
-        final VdPreview.Size imageSize = VdPreview.Size.createSizeFromWidth(24);
+        final VdPreview.TargetSize imageTargetSize = VdPreview.TargetSize.createSizeFromWidth(24);
         StringBuilder builder = new StringBuilder();
-        BufferedImage image = VdPreview.getPreviewFromVectorXml(imageSize, outStream.toString(), builder);
+        BufferedImage image = VdPreview.getPreviewFromVectorXml(imageTargetSize, outStream.toString(), builder);
 
         String path = grandParentDir + imageName;
         InputStream is = GeneratorTest.class.getResourceAsStream(path);
