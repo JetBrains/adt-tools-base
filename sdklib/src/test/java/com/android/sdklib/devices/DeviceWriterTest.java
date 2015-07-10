@@ -55,7 +55,7 @@ public class DeviceWriterTest extends TestCase {
             DeviceSchemaTest.class.getResourceAsStream("devices.xml");
         List<Device> devices = DeviceParser.parse(devicesFile);
         assertEquals("Parsed devices contained an unexpected number of devices",
-                3, devices.size());
+                4, devices.size());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DeviceWriter.writeToXml(baos, devices);
         String written = baos.toString();
@@ -78,7 +78,7 @@ public class DeviceWriterTest extends TestCase {
                 DeviceSchemaTest.class.getResourceAsStream("devices.xml");
             List<Device> devices = DeviceParser.parse(devicesFile);
             assertEquals("Parsed devices contained an unexpected number of devices",
-                    3, devices.size());
+                    4, devices.size());
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DeviceWriter.writeToXml(baos, devices);
             String xml = baos.toString();

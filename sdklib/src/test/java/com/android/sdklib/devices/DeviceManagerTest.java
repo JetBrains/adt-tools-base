@@ -95,7 +95,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         assertEquals(
                 "[Nexus One, Nexus S, Galaxy Nexus, Nexus 7 (2012), " +
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5, Nexus 6, Nexus 9, Android Wear Square, " +
-                 "Android Wear Round, Android TV (1080p), Android TV (720p)]",
+                 "Android Wear Round, Android Wear Round Chin, Android TV (1080p), Android TV (720p)]",
                  listDisplayNames(dm.getDevices(DeviceFilter.VENDOR)).toString());
         assertEquals("", log.toString());
 
@@ -109,7 +109,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                  "5.4\" FWVGA, 7\" WSVGA (Tablet), 10.1\" WXGA (Tablet), " +
                  "Nexus One, Nexus S, Galaxy Nexus, Nexus 7 (2012), " +
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5, Nexus 6, Nexus 9, Android Wear Square, Android Wear Round, " +
-                 "Android TV (1080p), Android TV (720p)]",
+                 "Android Wear Round Chin, Android TV (1080p), Android TV (720p)]",
                  listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)).toString());
         assertEquals("", log.toString());
     }
@@ -175,7 +175,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         assertEquals(
                 "[Nexus One, Nexus S, Galaxy Nexus, Nexus 7 (2012), " +
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5, Nexus 6, Nexus 9, Android Wear Square, " +
-                 "Android Wear Round, Android TV (1080p), Android TV (720p)]",
+                 "Android Wear Round, Android Wear Round Chin, Android TV (1080p), Android TV (720p)]",
                  listDisplayNames(dm2.getDevices(DeviceFilter.VENDOR)).toString());
         assertEquals("", log.toString());
 
@@ -187,7 +187,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                  "5.4\" FWVGA, 7\" WSVGA (Tablet), 10.1\" WXGA (Tablet), " +
                  "Nexus One, Nexus S, Galaxy Nexus, Nexus 7 (2012), " +
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5, Nexus 6, Nexus 9, Android Wear Square, Android Wear Round, " +
-                 "Android TV (1080p), Android TV (720p)]",
+                 "Android Wear Round Chin, Android TV (1080p), Android TV (720p)]",
                  listDisplayNames(dm2.getDevices(DeviceManager.ALL_DEVICES)).toString());
         assertEquals("", log.toString());
     }
@@ -224,7 +224,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         assertEquals(
                 "[Nexus One, Nexus S, Galaxy Nexus, Nexus 7 (2012), " +
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5, Nexus 6, Nexus 9, Android Wear Square, " +
-                 "Android Wear Round, Android TV (1080p), Android TV (720p)]",
+                 "Android Wear Round, Android Wear Round Chin, Android TV (1080p), Android TV (720p)]",
                  listDisplayNames(dm.getDevices(DeviceFilter.VENDOR)).toString());
         assertEquals("", log.toString());
 
@@ -235,7 +235,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
                  "5.4\" FWVGA, 7\" WSVGA (Tablet), 10.1\" WXGA (Tablet), " +
                  "Nexus One, Nexus S, Galaxy Nexus, Nexus 7 (2012), " +
                  "Nexus 4, Nexus 10, Nexus 7, Nexus 5, Nexus 6, Nexus 9, Android Wear Square, Android Wear Round, " +
-                 "Android TV (1080p), Android TV (720p), " +
+                 "Android Wear Round Chin, Android TV (1080p), Android TV (720p), " +
                  "Mock Tag 1 Device Name]",
                  listDisplayNames(dm.getDevices(DeviceManager.ALL_DEVICES)).toString());
         assertEquals("", log.toString());
