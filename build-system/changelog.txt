@@ -29,8 +29,10 @@
 
   or from the command line:
 
-    INSTRUMENTATION_TEST_RUNNER_ARGS="size=medium,foo=bar" ./gradlew cC
-    ./gradlew cC -Pcom.android.tools.instrumentationTestRunnerArgs=size=medium,foo=bar
+    ./gradlew cC \
+       -Pandroid.testInstrumentationRunnerArguments.size=medium \
+       -Pandroid.testInstrumentationRunnerArguments.class=TestA,TestB
+
 - Arbitrary additional AAPT parameters can be set in build.gradle:
     android {
       aaptOptions {
