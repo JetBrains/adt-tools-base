@@ -122,6 +122,8 @@ public class MergingReportTest extends TestCase {
         Mockito.verify(mLoggerMock).error(null /* throwable */,
                 "location:1:1 Error:\n\tsomething bad happened");
         Mockito.verify(mLoggerMock).verbose(Actions.HEADER);
+        Mockito.verify(mLoggerMock).warning("\nSee http://g.co/androidstudio/manifest-merger "
+                + "for more information about the manifest merger.\n");
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
 
