@@ -123,4 +123,4 @@
 @errors
 
 ERROR:Attribute meta-data#name.for.backup.api.key@value value=\(the_apps_backup_api_key\) from ManifestMerger2Test0_main.xml:33:13-52
-    is also present at ManifestMerger2Test1_lib1.xml:16:13-56 value=\(the_library1_backup_api_key\)
+    is also present at ManifestMerger2Test1_lib1.xml:16:13-56 value=\(the_library1_backup_api_key\).
