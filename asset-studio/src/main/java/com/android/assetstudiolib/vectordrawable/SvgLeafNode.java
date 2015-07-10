@@ -16,6 +16,7 @@
 
 package com.android.assetstudiolib.vectordrawable;
 
+import com.android.annotations.Nullable;
 import com.google.common.collect.ImmutableMap;
 import org.w3c.dom.Node;
 
@@ -44,16 +45,73 @@ class SvgLeafNode extends SvgNode {
         StringBuilder sb = new StringBuilder("/>\n");
         for (String key : mVdAttributesMap.keySet()) {
             String vectorDrawableAttr = presentationMap.get(key);
-            if (!"none".equals(mVdAttributesMap.get(key))) {
-                String attr = "\n        " + vectorDrawableAttr + "=\"" +
-                              mVdAttributesMap.get(key) + "\"";
-                sb.insert(0, attr);
-            } else {
-                String attr = "\n        " + vectorDrawableAttr + "=\"#00000000\"";
-                sb.insert(0, attr);
+            String svgValue = mVdAttributesMap.get(key);
+            String vdValue = svgValue.trim();
+            // There are several cases we need to convert from SVG format to
+            // VectorDrawable format. Like "none", "3px" or "rgb(255, 0, 0)"
+            if ("none".equals(vdValue)) {
+                vdValue = "#00000000";
+            } else if (vdValue.endsWith("px")){
+                vdValue = vdValue.substring(0, vdValue.length() - 2);
+            } else if (vdValue.startsWith("rgb")) {
+                vdValue = vdValue.substring(3, vdValue.length());
+                vdValue = convertRGBToHex(vdValue);
+                if (vdValue == null) {
+                    getTree().logErrorLine("Unsupported Color format " + vdValue, getDocumentNode(),
+                                           SvgTree.SvgLogLevel.ERROR);
+                }
             }
+            String attr = "\n        " + vectorDrawableAttr + "=\"" +
+                          vdValue + "\"";
+            sb.insert(0, attr);
+
         }
         return sb.toString();
+    }
+
+    public static int clamp(int val, int min, int max) {
+        return Math.max(min, Math.min(max, val));
+    }
+
+    /**
+     * SVG allows using rgb(int, int, int) or rgb(float%, float%, float%) to
+     * represent a color, but Android doesn't. Therefore, we need to convert
+     * them into #RRGGBB format.
+     * @param svgValue in either "(int, int, int)" or "(float%, float%, float%)"
+     * @return #RRGGBB in hex format, or null, if an error is found.
+     */
+    @Nullable
+    private String convertRGBToHex(String svgValue) {
+        // We don't support color keyword yet.
+        // http://www.w3.org/TR/SVG11/types.html#ColorKeywords
+        String result = null;
+        String functionValue = svgValue.trim();
+        functionValue = svgValue.substring(1, functionValue.length() - 1);
+        // After we cut the "(", ")", we can deal with the numbers.
+        String[] numbers = functionValue.split(",");
+        if (numbers.length != 3) {
+            return null;
+        }
+        int[] color = new int[3];
+        for (int i = 0; i < 3; i ++) {
+            String number = numbers[i];
+            number = number.trim();
+            if (number.endsWith("%")) {
+                float value = Float.parseFloat(number.substring(0, number.length() - 1));
+                color[i] = clamp((int)(value * 255.0f / 100.0f), 0, 255);
+            } else {
+                int value = Integer.parseInt(number);
+                color[i] = clamp(value, 0, 255);
+            }
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append("#");
+        for (int i = 0; i < 3; i ++) {
+            builder.append(String.format("%02X", color[i]));
+        }
+        result = builder.toString();
+        assert result.length() == 7;
+        return result;
     }
 
     @Override
