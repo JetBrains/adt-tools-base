@@ -58,7 +58,7 @@ model {
     }
     android.buildTypes {
         create("jniDebug") {
-            ndk.isDebuggable = true;
+            ndk.debuggable = true;
         }
     }
     android.productFlavors {
