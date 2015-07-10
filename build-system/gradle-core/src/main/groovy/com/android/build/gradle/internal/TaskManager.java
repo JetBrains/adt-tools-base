@@ -126,13 +126,12 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.utils.StringHelper;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
@@ -193,10 +192,7 @@ public abstract class TaskManager {
 
     /** Property used to define extra instrumentation test runner arguments. */
     public static final String TEST_RUNNER_ARGS_PROP =
-            "com.android.tools.instrumentationTestRunnerArgs";
-
-    /** Env variable used to define extra instrumentation test runner arguments. */
-    public static final String TEST_RUNNER_ENV = "INSTRUMENTATION_TEST_RUNNER_ARGS";
+            "android.testInstrumentationRunnerArguments.";
 
     protected Project project;
 
@@ -1518,12 +1514,7 @@ public abstract class TaskManager {
         String connectedRootName = CONNECTED + ANDROID_TEST.getSuffix();
 
         TestDataImpl testData = new TestDataImpl(testVariantData);
-        Optional<String> extraRunnerArgs = getExtraRunnerArgs();
-        if (extraRunnerArgs.isPresent()) {
-            Map<String, String> argsMap =
-                    Splitter.on(',').withKeyValueSeparator('=').split(extraRunnerArgs.get());
-            testData.setExtraInstrumentationTestRunnerArgs(argsMap);
-        }
+        testData.setExtraInstrumentationTestRunnerArgs(getExtraInstrumentationTestRunnerArgsMap());
 
         // create the check tasks for this test
         // first the connected one.
@@ -1676,21 +1667,19 @@ public abstract class TaskManager {
         }
     }
 
-    private Optional<String> getExtraRunnerArgs() {
-        Object fromProperties =
-                project.getProperties().get(TEST_RUNNER_ARGS_PROP);
-        if (fromProperties != null) {
-            return Optional.of(fromProperties.toString());
+    private Map<String, String> getExtraInstrumentationTestRunnerArgsMap() {
+        Map<String, String> argsMap = Maps.newHashMap();
+        for (Map.Entry<String, ?> entry : project.getProperties().entrySet()) {
+            if (entry.getKey().startsWith(TEST_RUNNER_ARGS_PROP)) {
+                String argName = entry.getKey().substring(TEST_RUNNER_ARGS_PROP.length());
+                String argValue = entry.getValue().toString();
+
+                argsMap.put(argName, argValue);
+            }
         }
 
-        String fromEnv = System.getenv(TEST_RUNNER_ENV);
-        if (fromEnv != null) {
-            return Optional.of(fromEnv);
-        }
-
-        return Optional.absent();
+        return argsMap;
     }
-
 
     public static void createJarTask(@NonNull TaskFactory tasks, @NonNull final VariantScope scope) {
         final BaseVariantData variantData = scope.getVariantData();
