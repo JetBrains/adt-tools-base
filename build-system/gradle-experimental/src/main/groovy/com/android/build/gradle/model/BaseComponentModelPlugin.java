@@ -325,7 +325,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         private static void initBuildType(@NonNull BuildType buildType) {
             buildType.setIsDebuggable(false);
             buildType.setIsTestCoverageEnabled(false);
-            buildType.setIsJniDebuggable(false);
             buildType.setIsPseudoLocalesEnabled(false);
             buildType.setIsRenderscriptDebuggable(false);
             buildType.setRenderscriptOptimLevel(3);

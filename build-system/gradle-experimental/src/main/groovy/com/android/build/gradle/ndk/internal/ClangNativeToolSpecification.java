@@ -185,10 +185,10 @@ public class ClangNativeToolSpecification extends AbstractNativeToolSpecificatio
 
     public ClangNativeToolSpecification(
             NdkHandler ndkHandler,
-            BuildType buildType,
-            NativePlatform platform) {
+            NativePlatform platform,
+            boolean isDebugBuild) {
         this.ndkHandler = ndkHandler;
-        this.isDebugBuild = (buildType.getName().equals(BuilderConstants.DEBUG));
+        this.isDebugBuild = isDebugBuild;
         this.platform = platform;
     }
 

@@ -31,6 +31,7 @@ import com.android.build.gradle.ndk.internal.NdkConfiguration;
 import com.android.build.gradle.ndk.internal.NdkExtensionConvention;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
+import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantConfiguration;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
@@ -57,6 +58,7 @@ import org.gradle.model.RuleSource;
 import org.gradle.model.Validate;
 import org.gradle.nativeplatform.BuildTypeContainer;
 import org.gradle.nativeplatform.FlavorContainer;
+import org.gradle.nativeplatform.NativeBinarySpec;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.nativeplatform.NativeLibrarySpec;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
@@ -160,6 +162,17 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                     NdkOptionsHelper.init(buildType.getNdk());
                 }
             });
+
+            buildTypes.named(
+                    BuilderConstants.DEBUG,
+                    new Action<BuildType>() {
+                        @Override
+                        public void execute(BuildType buildType) {
+                            if (buildType.getNdk().getIsDebuggable() == null) {
+                                buildType.getNdk().setIsDebuggable(true);
+                            }
+                        }
+                    });
         }
 
         @Defaults
@@ -241,7 +254,6 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                         nativeLib,
                                         sources,
                                         buildDir,
-                                        ndkConfig,
                                         ndkHandler);
                             }
                         });
@@ -266,18 +278,20 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             final DefaultAndroidComponentSpec androidSpec =
                     (DefaultAndroidComponentSpec) specs.get(COMPONENT_NAME);
             if (androidSpec.getNativeLibrary() != null) {
-                binaries.withType(SharedLibraryBinarySpec.class,
-                        new Action<SharedLibraryBinarySpec>() {
-                            @Override
-                            public void execute(SharedLibraryBinarySpec binary) {
-                                if (binary.getComponent().equals(androidSpec.getNativeLibrary())) {
-                                    NdkConfiguration.createTasks(
-                                            tasks, binary, buildDir, ndkConfig, ndkHandler);
-                                }
-                            }
-                        });
+                binaries.withType(DefaultAndroidBinary.class, new Action<DefaultAndroidBinary>() {
+                    @Override
+                    public void execute(DefaultAndroidBinary binary) {
+                        for (NativeBinarySpec nativeBinary : binary.getNativeBinaries()) {
+                            NdkConfiguration.createTasks(
+                                    tasks,
+                                    (SharedLibraryBinarySpec)nativeBinary,
+                                    buildDir,
+                                    binary.getMergedNdkConfig(),
+                                    ndkHandler);
+                        }
+                    }
+                });
             }
-
         }
 
         @Mutate
