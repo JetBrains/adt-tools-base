@@ -115,4 +115,4 @@
 
 @errors
 ERROR:Attribute application@name value=\(com.example.app1.TheApp\) from ManifestMerger2Test0_main.xml:8:13-34
-    is also present at ManifestMerger2Test1_lib1_widget.xml:6:18-39 value=\(com.example.lib1.TheApp\)
+    is also present at ManifestMerger2Test1_lib1_widget.xml:6:18-39 value=\(com.example.lib1.TheApp\).
