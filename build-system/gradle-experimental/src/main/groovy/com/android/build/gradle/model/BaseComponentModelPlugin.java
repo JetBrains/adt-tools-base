@@ -323,14 +323,14 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         private static void initBuildType(@NonNull BuildType buildType) {
-            buildType.setIsDebuggable(false);
-            buildType.setIsTestCoverageEnabled(false);
-            buildType.setIsPseudoLocalesEnabled(false);
-            buildType.setIsRenderscriptDebuggable(false);
+            buildType.setDebuggable(false);
+            buildType.setTestCoverageEnabled(false);
+            buildType.setPseudoLocalesEnabled(false);
+            buildType.setRenderscriptDebuggable(false);
             buildType.setRenderscriptOptimLevel(3);
-            buildType.setIsMinifyEnabled(false);
-            buildType.setIsZipAlignEnabled(true);
-            buildType.setIsEmbedMicroApp(true);
+            buildType.setMinifyEnabled(false);
+            buildType.setZipAlignEnabled(true);
+            buildType.setEmbedMicroApp(true);
             buildType.setUseJack(false);
             buildType.setShrinkResources(false);
             buildType.setProguardFiles(Sets.<File>newHashSet());

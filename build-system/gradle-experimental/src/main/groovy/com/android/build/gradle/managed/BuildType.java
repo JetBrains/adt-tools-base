@@ -121,24 +121,24 @@ public interface BuildType extends Named {
      *
      * @return true if the apk is debuggable
      */
-    Boolean getIsDebuggable();
-    void setIsDebuggable(Boolean isDebuggable);
+    Boolean getDebuggable();
+    void setDebuggable(Boolean isDebuggable);
 
     /**
      * Returns whether the build type is configured to be build with support for code coverage.
      *
      * @return true if code coverage is enabled.
      */
-    Boolean getIsTestCoverageEnabled();
-    void setIsTestCoverageEnabled(Boolean isTestCoverageEnabled);
+    Boolean getTestCoverageEnabled();
+    void setTestCoverageEnabled(Boolean isTestCoverageEnabled);
 
     /**
      * Returns whether the build type is configured to be build with support for pseudolocales.
      *
      * @return true if code coverage is enabled.
      */
-    Boolean getIsPseudoLocalesEnabled();
-    void setIsPseudoLocalesEnabled(Boolean isPseudoLocalesEnabled);
+    Boolean getPseudoLocalesEnabled();
+    void setPseudoLocalesEnabled(Boolean isPseudoLocalesEnabled);
 
     /**
      * Returns whether the build type is configured to generate an apk with debuggable
@@ -146,8 +146,8 @@ public interface BuildType extends Named {
      *
      * @return true if the apk is debuggable
      */
-    Boolean getIsRenderscriptDebuggable();
-    void setIsRenderscriptDebuggable(Boolean isRenderscriptDebuggable);
+    Boolean getRenderscriptDebuggable();
+    void setRenderscriptDebuggable(Boolean isRenderscriptDebuggable);
 
     /**
      * Returns the optimization level of the renderscript compilation.
@@ -179,22 +179,22 @@ public interface BuildType extends Named {
      *
      * @return true if minification is enabled.
      */
-    Boolean getIsMinifyEnabled();
-    void setIsMinifyEnabled(Boolean isMinifyEnabled);
+    Boolean getMinifyEnabled();
+    void setMinifyEnabled(Boolean isMinifyEnabled);
 
     /**
      * Return whether zipalign is enabled for this build type.
      *
      * @return true if zipalign is enabled.
      */
-    Boolean getIsZipAlignEnabled();
-    void setIsZipAlignEnabled(Boolean isZipAlignEnabled);
+    Boolean getZipAlignEnabled();
+    void setZipAlignEnabled(Boolean isZipAlignEnabled);
 
     /**
      * Returns whether the variant embeds the micro app.
      */
-    Boolean getIsEmbedMicroApp();
-    void setIsEmbedMicroApp(Boolean isEmbedMicroApp);
+    Boolean getEmbedMicroApp();
+    void setEmbedMicroApp(Boolean isEmbedMicroApp);
 
     /**
      * Returns the associated signing config or null if none are set on the build type.
