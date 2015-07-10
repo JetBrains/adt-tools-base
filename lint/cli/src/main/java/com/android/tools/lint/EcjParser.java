@@ -23,6 +23,7 @@ import static com.android.SdkConstants.UTF_8;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintClient;
@@ -93,6 +94,7 @@ import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.NestedTypeBinding;
+import org.eclipse.jdt.internal.compiler.lookup.PackageBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemFieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemMethodBinding;
@@ -1095,6 +1097,17 @@ public class EcjParser extends JavaParser {
             return mBinding.toString();
         }
 
+        @Override
+        public boolean isInPackage(@NonNull String pkgName, boolean includeSubPackages) {
+            PackageBinding pkg = mBinding.declaringClass.getPackage();
+            if (pkg != null) {
+                return includeSubPackages ?
+                        startsWithCompound(pkgName, pkg.compoundName) :
+                        equalsCompound(pkgName, pkg.compoundName);
+            }
+            return false;
+        }
+
         @SuppressWarnings("RedundantIfStatement")
         @Override
         public boolean equals(Object o) {
@@ -1351,6 +1364,12 @@ public class EcjParser extends JavaParser {
             return null;
         }
 
+        @Nullable
+        @Override
+        public ResolvedPackage getPackage() {
+            return new EcjResolvedPackage(mBinding.getPackage());
+        }
+
         @Override
         public int getModifiers() {
             if (mBinding instanceof ReferenceBinding) {
@@ -1365,6 +1384,17 @@ public class EcjParser extends JavaParser {
         @Override
         public String getSignature() {
             return getName();
+        }
+
+        @Override
+        public boolean isInPackage(@NonNull String pkgName, boolean includeSubPackages) {
+            PackageBinding pkg = mBinding.getPackage();
+            if (pkg != null) {
+                return includeSubPackages ?
+                        startsWithCompound(pkgName, pkg.compoundName) :
+                        equalsCompound(pkgName, pkg.compoundName);
+            }
+            return false;
         }
 
         @SuppressWarnings("RedundantIfStatement")
@@ -1389,6 +1419,67 @@ public class EcjParser extends JavaParser {
         @Override
         public int hashCode() {
             return mBinding != null ? mBinding.hashCode() : 0;
+        }
+    }
+
+    // "package-info" as a char
+    private static final char[] PACKAGE_INFO_CHARS = new char[] {
+            'p', 'a', 'c', 'k', 'a', 'g', 'e', '-', 'i', 'n', 'f', 'o'
+    };
+
+    private class EcjResolvedPackage extends ResolvedPackage {
+        private final PackageBinding mBinding;
+
+        public EcjResolvedPackage(PackageBinding binding) {
+            mBinding = binding;
+        }
+
+        @NonNull
+        @Override
+        public String getName() {
+            return new String(mBinding.readableName());
+        }
+
+        @Override
+        public String getSignature() {
+            return getName();
+        }
+
+        @NonNull
+        @Override
+        public Iterable<ResolvedAnnotation> getAnnotations() {
+            List<ResolvedAnnotation> all = Lists.newArrayListWithExpectedSize(2);
+
+            AnnotationBinding[] annotations = mBinding.getAnnotations();
+            int count = annotations.length;
+            if (count == 0) {
+                Binding pkgInfo = mBinding.getTypeOrPackage(PACKAGE_INFO_CHARS);
+                if (pkgInfo != null) {
+                    annotations = pkgInfo.getAnnotations();
+                }
+                count = annotations.length;
+            }
+            if (count > 0) {
+                for (AnnotationBinding annotation : annotations) {
+                    if (annotation != null) {
+                        all.add(new EcjResolvedAnnotation(annotation));
+                    }
+                }
+            }
+
+            // Merge external annotations
+            ExternalAnnotationRepository manager = ExternalAnnotationRepository.get(mClient);
+            Collection<ResolvedAnnotation> external = manager.getAnnotations(this);
+            if (external != null) {
+                all.addAll(external);
+            }
+
+            return all;
+        }
+
+        @Override
+        public int getModifiers() {
+            return 0;
         }
     }
 
@@ -1888,5 +1979,80 @@ public class EcjParser extends JavaParser {
         }
 
         return true;
+    }
+
+    /**
+     * Does the given compound name match the given string?
+     * <p>
+     * TODO: Check if ECJ already has this as a utility somewhere
+     */
+    @VisibleForTesting
+    static boolean startsWithCompound(@NonNull String name, @NonNull char[][] compoundName) {
+        int length = name.length();
+        if (length == 0) {
+            return false;
+        }
+        int index = 0;
+        for (int i = 0, n = compoundName.length; i < n; i++) {
+            char[] o = compoundName[i];
+            for (int j = 0, m = o.length; j < m; j++) {
+                if (index == length) {
+                    return false; // Don't allow prefix in a compound name
+                }
+                if (name.charAt(index) != o[j]) {
+                    return false;
+                }
+                index++;
+            }
+            if (i < n - 1) {
+                if (index == length) {
+                    return true;
+                }
+                if (name.charAt(index) != '.') {
+                    return false;
+                }
+                index++;
+                if (index == length) {
+                    return true;
+                }
+            }
+        }
+
+        return index == length;
+    }
+
+    @VisibleForTesting
+    static boolean equalsCompound(@NonNull String name, @NonNull char[][] compoundName) {
+        int length = name.length();
+        if (length == 0) {
+            return false;
+        }
+        int index = 0;
+        for (int i = 0, n = compoundName.length; i < n; i++) {
+            char[] o = compoundName[i];
+            for (int j = 0, m = o.length; j < m; j++) {
+                if (index == length) {
+                    return false; // Don't allow prefix in a compound name
+                }
+                if (name.charAt(index) != o[j]) {
+                    return false;
+                }
+                index++;
+            }
+            if (i < n - 1) {
+                if (index == length) {
+                    return false;
+                }
+                if (name.charAt(index) != '.') {
+                    return false;
+                }
+                index++;
+                if (index == length) {
+                    return false;
+                }
+            }
+        }
+
+        return index == length;
     }
 }

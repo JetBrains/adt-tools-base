@@ -16,6 +16,8 @@
 
 package com.android.tools.lint;
 
+import static com.android.tools.lint.EcjParser.equalsCompound;
+import static com.android.tools.lint.EcjParser.startsWithCompound;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
@@ -589,6 +591,90 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                          selected: [Identifier myInts], type: int[], resolved variable: inner test.pkg.TypeResolutionTest.Inner\n" +
                 "                            PROPERTY: name = myInts\n",
                 actual);
+    }
+
+    public void testStartsWithCompound() throws Exception {
+        assertTrue(startsWithCompound("test.pkg",
+                new char[][]{
+                        "test".toCharArray(),
+                        "pkg".toCharArray()
+                }));
+
+        assertTrue(startsWithCompound("test.pkg",
+                new char[][]{
+                        "test".toCharArray(),
+                        "pkg".toCharArray(),
+                        "other".toCharArray(),
+                }));
+
+        assertFalse(startsWithCompound("test.pkg",
+                new char[][]{
+                        "test".toCharArray(),
+                        "other".toCharArray()
+                }));
+
+        // Corner cases
+        assertFalse(startsWithCompound("test.pk",
+                new char[][]{
+                        "test".toCharArray(),
+                        "pkg".toCharArray(),
+                }));
+        assertFalse(startsWithCompound("test.pkg",
+                new char[][]{
+                        "test".toCharArray()
+                }));
+        assertTrue(startsWithCompound("test.",
+                new char[][]{
+                        "test".toCharArray(),
+                        "pkg".toCharArray()
+                }));
+        assertFalse(startsWithCompound("test.pkg",
+                new char[][]{
+                        "test".toCharArray(),
+                        "pk".toCharArray()
+                }));
+    }
+
+    public void testEqualsWithCompound() throws Exception {
+        assertTrue(equalsCompound("test.pkg",
+                new char[][]{
+                        "test".toCharArray(),
+                        "pkg".toCharArray()
+                }));
+
+        assertFalse(equalsCompound("test.pkg",
+                new char[][]{
+                        "test".toCharArray(),
+                        "pkg".toCharArray(),
+                        "other".toCharArray(),
+                }));
+
+        assertFalse(equalsCompound("test.pkg",
+                new char[][]{
+                        "test".toCharArray(),
+                        "other".toCharArray()
+                }));
+
+        // Corner cases
+        assertFalse(equalsCompound("test.pk",
+                new char[][]{
+                        "test".toCharArray(),
+                        "pkg".toCharArray(),
+                }));
+        assertFalse(equalsCompound("test.pkg",
+                new char[][]{
+                        "test".toCharArray()
+                }));
+        assertFalse(equalsCompound("test.",
+                new char[][]{
+                        "test".toCharArray(),
+                        "pkg".toCharArray()
+                }));
+        assertFalse(equalsCompound("test.pkg",
+                new char[][]{
+                        "test".toCharArray(),
+                        "pk".toCharArray()
+                }));
     }
 
     @Override

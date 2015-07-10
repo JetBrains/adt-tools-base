@@ -31,6 +31,7 @@ import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaParser.ResolvedPackage;
 import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtilsTest;
@@ -369,6 +370,22 @@ public class ExternalAnnotationRepositoryTest extends SdkTestCase {
         assertNotNull(manager.getAnnotation(method, 2, "android.support.annotation.Annotation5"));
     }
 
+    public void testPackage() throws Exception {
+        ExternalAnnotationRepository manager = getExternalAnnotations("foo.bar.baz", ""
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<root>\n"
+                + "  <item name=\"foo.bar.baz.package-info\">\n"
+                + "    <annotation name=\"my.pkg.MyAnnotation\"/>\n"
+                + "  </item>\n"
+                + "</root>\n");
+        assertNotNull(manager);
+        ResolvedClass cls = createClass("foo.bar.baz.AdView");
+        ResolvedPackage pkg = cls.getPackage();
+        assertNotNull(pkg);
+        assertNull(manager.getAnnotation(pkg, "foo.bar.Baz"));
+        assertNotNull(manager.getAnnotation(pkg, "my.pkg.MyAnnotation"));
+    }
+
     public void testMatchWithEcj() throws Exception {
         try {
             ExternalAnnotationRepository manager = getExternalAnnotations("test.pkg", ""
@@ -401,7 +418,7 @@ public class ExternalAnnotationRepositoryTest extends SdkTestCase {
                     "package test.pkg;\n" +
                     "\n" +
                     "public class Test {\n" +
-                    "    public void foo(int a, int[] b, int c...) {\n" +
+                    "    public void foo(int a, int[] b, int... c) {\n" +
                     "    }\n" +
                     "    public static class Inner {\n" +
                     "    }\n" +
@@ -538,6 +555,9 @@ public class ExternalAnnotationRepositoryTest extends SdkTestCase {
         ResolvedClass mock = mock(ResolvedClass.class);
         when(mock.getName()).thenReturn(name);
         when(mock.getSignature()).thenReturn(name);
+        assertTrue(name, name.indexOf('.') != -1);
+        ResolvedPackage pkg = createPackage(name.substring(0, name.lastIndexOf('.')));
+        when(mock.getPackage()).thenReturn(pkg);
         return mock;
     }
 
@@ -583,6 +603,12 @@ public class ExternalAnnotationRepositoryTest extends SdkTestCase {
         when(mock.getName()).thenReturn(name);
         ResolvedClass cls = createClass(containingClass);
         when(mock.getContainingClass()).thenReturn(cls);
+        return mock;
+    }
+
+    public static ResolvedPackage createPackage(String pkgName) {
+        ResolvedPackage mock = mock(ResolvedPackage.class);
+        when(mock.getName()).thenReturn(pkgName);
         return mock;
     }
 }
