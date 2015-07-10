@@ -143,12 +143,12 @@ public class NdkConfigImpl implements NdkConfig {
     }
 
     @Override
-    public Boolean getIsDebuggable() {
+    public Boolean getDebuggable() {
         return isDebuggable;
     }
 
     @Override
-    public void setIsDebuggable(Boolean isDebuggable) {
+    public void setDebuggable(Boolean isDebuggable) {
         this.isDebuggable = isDebuggable;
     }
 
