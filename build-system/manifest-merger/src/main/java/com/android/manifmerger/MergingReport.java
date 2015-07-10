@@ -74,6 +74,11 @@ public class MergingReport {
             }
         }
         mActions.log(logger);
+
+        if (!mResult.isSuccess()) {
+            logger.warning("\nSee http://g.co/androidstudio/manifest-merger for more information"
+                    + " about the manifest merger.\n");
+        }
     }
 
     /**

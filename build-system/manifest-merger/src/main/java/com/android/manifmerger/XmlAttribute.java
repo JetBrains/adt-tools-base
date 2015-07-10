@@ -337,22 +337,37 @@ public class XmlAttribute extends XmlNode {
         Actions.AttributeRecord attributeRecord = report.getActionRecorder()
                 .getAttributeCreationRecord(higherPriority);
 
-        String error = String.format(
-                "Attribute %1$s value=(%2$s) from %3$s\n"
-                        + "\tis also present at %4$s value=(%5$s)\n"
-                        + "\tSuggestion: add 'tools:replace=\"%6$s\"' to <%7$s> element "
-                        + "at %8$s to override",
-                higherPriority.getId(),
-                higherPriority.getValue(),
-                attributeRecord != null
-                        ? attributeRecord.getActionLocation().print(true /*shortFormat*/)
-                        : "(unknown)",
-                printPosition(),
-                getValue(),
-                mXml.getName(),
-                getOwnerElement().getType().toXmlName(),
-                higherPriority.getOwnerElement().printPosition()
-        );
+        String error;
+        if (getOwnerElement().getType().getMergeType() == MergeType.MERGE_CHILDREN_ONLY) {
+            error = String.format(
+                    "Attribute %1$s value=(%2$s) from %3$s\n"
+                            + "\tis also present at %4$s value=(%5$s).\n"
+                            + "\tAttributes of <%6$s> elements are not merged.",
+                    higherPriority.getId(),
+                    higherPriority.getValue(),
+                    attributeRecord != null
+                            ? attributeRecord.getActionLocation().print(true /*shortFormat*/)
+                            : "(unknown)",
+                    printPosition(),
+                    getValue(),
+                    getOwnerElement().getType().toXmlName());
+        } else {
+            error = String.format(
+                    "Attribute %1$s value=(%2$s) from %3$s\n"
+                            + "\tis also present at %4$s value=(%5$s).\n"
+                            + "\tSuggestion: add 'tools:replace=\"%6$s\"' to <%7$s> element "
+                            + "at %8$s to override.",
+                    higherPriority.getId(),
+                    higherPriority.getValue(),
+                    attributeRecord != null
+                            ? attributeRecord.getActionLocation().print(true /*shortFormat*/)
+                            : "(unknown)",
+                    printPosition(),
+                    getValue(),
+                    mXml.getName(),
+                    getOwnerElement().getType().toXmlName(),
+                    higherPriority.getOwnerElement().printPosition());
+        }
         higherPriority.addMessage(report,
                 attributeRecord != null
                         ? attributeRecord.getActionLocation().getPosition()
