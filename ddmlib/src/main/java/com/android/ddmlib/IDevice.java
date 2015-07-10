@@ -35,6 +35,8 @@ public interface IDevice extends IShellEnabledDevice {
     String PROP_BUILD_VERSION = "ro.build.version.release";
     String PROP_BUILD_API_LEVEL = "ro.build.version.sdk";
     String PROP_BUILD_CODENAME = "ro.build.version.codename";
+    String PROP_BUILD_TAGS = "ro.build.tags";
+    String PROP_BUILD_TYPE = "ro.build.type";
     String PROP_DEVICE_MODEL = "ro.product.model";
     String PROP_DEVICE_MANUFACTURER = "ro.product.manufacturer";
     String PROP_DEVICE_CPU_ABI_LIST = "ro.product.cpu.abilist";
