@@ -17,13 +17,11 @@
 package com.android.build.gradle.ndk.internal;
 
 import com.android.SdkConstants;
-import com.android.builder.core.BuilderConstants;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 
-import org.gradle.nativeplatform.BuildType;
 import org.gradle.nativeplatform.platform.NativePlatform;
 
 /**
@@ -185,8 +183,8 @@ public class GccNativeToolSpecification extends AbstractNativeToolSpecification 
     private boolean isDebugBuild;
 
 
-    public GccNativeToolSpecification(BuildType buildType, NativePlatform platform) {
-        this.isDebugBuild = (buildType.getName().equals(BuilderConstants.DEBUG));
+    public GccNativeToolSpecification(NativePlatform platform, boolean isDebugBuild) {
+        this.isDebugBuild = isDebugBuild;
         this.platform = platform;
     }
 
