@@ -25,7 +25,6 @@ import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.model.AndroidComponentModelSourceSet;
 import com.android.build.gradle.tasks.GdbSetupTask;
 import com.android.build.gradle.tasks.StripDebugSymbolTask;
-import com.android.builder.core.BuilderConstants;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
 
@@ -147,7 +146,7 @@ public class NdkConfiguration {
         NativeToolSpecificationFactory.create(
                 ndkHandler,
                 binary.getTargetPlatform(),
-                Objects.firstNonNull(ndkConfig.getIsDebuggable(), false)).apply(
+                Objects.firstNonNull(ndkConfig.getDebuggable(), false)).apply(
                 binary);
 
         // Add flags defined in NdkConfig
@@ -178,7 +177,7 @@ public class NdkConfiguration {
             File buildDir, NdkConfig ndkConfig, NdkHandler ndkHandler) {
         StlConfiguration.createStlCopyTask(ndkHandler, ndkConfig.getStl(), tasks, buildDir, binary);
 
-        if (Boolean.TRUE.equals(ndkConfig.getIsDebuggable())) {
+        if (Boolean.TRUE.equals(ndkConfig.getDebuggable())) {
             // TODO: Use AndroidTaskRegistry and scopes to create tasks in experimental plugin.
             setupNdkGdbDebug(tasks, binary, buildDir, ndkConfig, ndkHandler);
         }

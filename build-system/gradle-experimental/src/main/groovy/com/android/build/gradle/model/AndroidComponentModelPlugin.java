@@ -19,11 +19,9 @@ package com.android.build.gradle.model;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.builder.core.VariantType.UNIT_TEST;
 
-import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
-import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.builder.core.BuilderConstants;
 import com.android.sdklib.repository.FullRevision;
@@ -60,7 +58,6 @@ import org.gradle.tooling.BuildException;
 import java.io.File;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * Plugin to set up infrastructure for other android plugins.
@@ -150,8 +147,8 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             buildTypes.create(BuilderConstants.DEBUG, new Action<BuildType>() {
                 @Override
                 public void execute(BuildType buildType) {
-                    buildType.setIsDebuggable(true);
-                    buildType.setIsEmbedMicroApp(false);
+                    buildType.setDebuggable(true);
+                    buildType.setEmbedMicroApp(false);
                 }
             });
             buildTypes.create(BuilderConstants.RELEASE);
