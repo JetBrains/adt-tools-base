@@ -1602,8 +1602,9 @@ public class Extractor {
                     if (reference.binding instanceof FieldBinding) {
                         FieldBinding fb = (FieldBinding)reference.binding;
                         Constant constant = fb.constant();
-                        if (constant != null && !(name.equals(INT_DEF_ANNOTATION)) &&
-                            !(name.equals(STRING_DEF_ANNOTATION))) {
+                        if (constant != null && constant != Constant.NotAConstant &&
+                                !(name.equals(INT_DEF_ANNOTATION)) &&
+                                !(name.equals(STRING_DEF_ANNOTATION))) {
                             if (constant instanceof StringConstant) {
                                 sb.append('"').append(constant.stringValue()).append('"');
                                 return true;
