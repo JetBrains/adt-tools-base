@@ -156,8 +156,8 @@
 @errors
 
 ERROR:Attribute uses-configuration@reqFiveWayNav value=\(true\) from ManifestMerger2Test0_main.xml:18:9-37
-    is also present at ManifestMerger2Test2_lib2.xml:7:9-38 value=\(false\)
+    is also present at ManifestMerger2Test2_lib2.xml:7:9-38 value=\(false\).
 ERROR:Attribute uses-configuration@reqNavigation value=\(nonav\) from ManifestMerger2Test0_main.xml:21:9-38
-    is also present at ManifestMerger2Test2_lib2.xml:8:9-42 value=\(trackball\)
+    is also present at ManifestMerger2Test2_lib2.xml:8:9-42 value=\(trackball\).
 ERROR:Attribute uses-configuration@reqTouchScreen value=\(stylus\) from ManifestMerger2Test0_main.xml:22:9-40
-    is also present at ManifestMerger2Test2_lib2.xml:9:9-40 value=\(finger\)
+    is also present at ManifestMerger2Test2_lib2.xml:9:9-40 value=\(finger\).
