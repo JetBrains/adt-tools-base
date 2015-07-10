@@ -24,6 +24,7 @@ import com.android.resources.Navigation;
 import com.android.resources.NavigationState;
 import com.android.resources.ScreenOrientation;
 import com.android.resources.ScreenRatio;
+import com.android.resources.ScreenRound;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
 import com.android.sdklib.devices.Storage.Unit;
@@ -156,7 +157,7 @@ public class DeviceParserTest extends TestCase {
         try {
             List<Device> devices = DeviceParser.parse(stream);
             assertEquals("Parsing devices.xml produces the wrong number of devices",
-                    3, devices.size());
+                    4, devices.size());
 
             Device device0 = devices.get(0);
             assertEquals(null, device0.getTagId());
@@ -178,6 +179,15 @@ public class DeviceParserTest extends TestCase {
                          device2.getBootProps().toString());
             assertEquals("Snapdragon 800 (MSM8974)", device2.getDefaultHardware().getCpu());
             assertEquals("[armeabi, armeabi-v7a]", device2.getDefaultHardware().getSupportedAbis().toString());
+            assertEquals(device2.getChinSize(), 0);
+            assertFalse(device2.isScreenRound());
+
+            Device device3 = devices.get(3);
+            assertEquals("android-wear", device3.getTagId());
+            assertEquals(device3.getDefaultHardware().getScreen().getChin(), 30);
+            assertEquals(device3.getChinSize(), 30);
+            assertTrue(device3.isScreenRound());
+            assertEquals(device3.getDefaultHardware().getScreen().getScreenRound(), ScreenRound.ROUND);
         } finally {
             stream.close();
         }
@@ -188,7 +198,7 @@ public class DeviceParserTest extends TestCase {
         try {
             List<Device> devices = DeviceParser.parse(stream);
             assertEquals("Parsing devices.xml produces the wrong number of devices",
-                    3, devices.size());
+                    4, devices.size());
 
             Device device0 = devices.get(0);
             assertEquals(null, device0.getTagId());
@@ -213,6 +223,16 @@ public class DeviceParserTest extends TestCase {
                          device2.getBootProps().toString());
             assertEquals("MIPS32+64", device2.getDefaultHardware().getCpu());
             assertEquals("[mips, mips64]", device2.getDefaultHardware().getSupportedAbis().toString());
+
+            assertEquals(device2.getChinSize(), 0);
+            assertFalse(device2.isScreenRound());
+
+            Device device3 = devices.get(3);
+            assertEquals("android-wear", device3.getTagId());
+            assertEquals(device3.getDefaultHardware().getScreen().getChin(), 30);
+            assertEquals(device3.getChinSize(), 30);
+            assertTrue(device3.isScreenRound());
+            assertEquals(device3.getDefaultHardware().getScreen().getScreenRound(), ScreenRound.ROUND);
         } finally {
             stream.close();
         }

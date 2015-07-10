@@ -59,6 +59,7 @@ public class DeviceParser {
     private static class DeviceHandler extends DefaultHandler {
         private static final Splitter sSpaceSplitter = Splitter.on(' ').omitEmptyStrings();
         private static final String ROUND_BOOT_PROP = "ro.emulator.circular";
+        private static final String CHIN_BOOT_PROP = "ro.emu.win_outset_bottom_px";
 
         private final List<Device> mDevices = new ArrayList<Device>();
         private final StringBuilder mStringAccumulator = new StringBuilder();
@@ -368,9 +369,15 @@ public class DeviceParser {
                 } else if (VALUE_FALSE.equals(bootPropValue)) {
                     roundness = ScreenRound.NOTROUND;
                 }
+                for (State state : mBuilder.getAllStates()) {
+                    state.getHardware().getScreen().setScreenRound(roundness);
+                }
             }
-            for (State state : mBuilder.getAllStates()) {
-                state.getHardware().getScreen().setScreenRound(roundness);
+            if (CHIN_BOOT_PROP.equals(bootPropKey)) {
+                int chin = Integer.parseInt(bootPropValue);
+                for (State state : mBuilder.getAllStates()) {
+                    state.getHardware().getScreen().setChin(chin);
+                }
             }
         }
 
