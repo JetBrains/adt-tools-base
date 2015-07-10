@@ -168,8 +168,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                     new Action<BuildType>() {
                         @Override
                         public void execute(BuildType buildType) {
-                            if (buildType.getNdk().getIsDebuggable() == null) {
-                                buildType.getNdk().setIsDebuggable(true);
+                            if (buildType.getNdk().getDebuggable() == null) {
+                                buildType.getNdk().setDebuggable(true);
                             }
                         }
                     });

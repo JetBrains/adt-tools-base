@@ -16,17 +16,10 @@
 
 package com.android.build.gradle.internal;
 
-import com.android.annotations.NonNull;
 import com.android.build.gradle.managed.NdkBuildType;
-import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.NdkOptions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-
-import org.gradle.model.Unmanaged;
-
-import java.util.List;
-import java.util.Set;
 
 /**
  * Helper functions for configuring an NdkOptions.
@@ -77,8 +70,8 @@ public class NdkOptionsHelper {
      */
     public static void merge(NdkBuildType base, NdkBuildType other) {
         merge(base, (NdkOptions) other);
-        if (other.getIsDebuggable() != null) {
-            base.setIsDebuggable(other.getIsDebuggable());
+        if (other.getDebuggable() != null) {
+            base.setDebuggable(other.getDebuggable());
         }
     }
 }
