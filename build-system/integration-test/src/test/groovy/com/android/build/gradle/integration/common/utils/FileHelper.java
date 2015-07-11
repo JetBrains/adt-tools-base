@@ -47,7 +47,8 @@ public class FileHelper {
                 new Predicate<File>() {
                     @Override
                     public boolean apply(@Nullable File file) {
-                        return file != null && !file.isDirectory();
+                        // we want to skip directories and symlinks, so isFile is the best check.
+                        return file != null && file.isFile();
                     }
                 })) {
             assertThat(file.toString()).startsWith(base.toString());
