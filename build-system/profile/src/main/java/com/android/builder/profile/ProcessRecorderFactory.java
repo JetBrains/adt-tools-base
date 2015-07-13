@@ -86,6 +86,7 @@ public class ProcessRecorderFactory {
             sINSTANCE.setLogger(logger);
             sINSTANCE.setOutputFile(out);
             sINSTANCE.setRecordWriter(new ProcessRecorder.JsonRecordWriter(new FileWriter(out)));
+            sINSTANCE.get(); // Initialize the ProcessRecorder instance
             publishInitialRecords(properties);
         }
     }
@@ -171,7 +172,7 @@ public class ProcessRecorderFactory {
         return sINSTANCE;
     }
 
-    private boolean isInitialized() {
+    boolean isInitialized() {
         return processRecorder != null;
     }
 
