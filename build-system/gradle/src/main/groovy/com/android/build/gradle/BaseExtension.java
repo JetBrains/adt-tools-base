@@ -13,54 +13,61 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle
+package com.android.build.gradle;
 
-import com.android.SdkConstants
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.build.gradle.api.AndroidSourceSet
-import com.android.build.gradle.api.BaseVariant
-import com.android.build.gradle.api.VariantFilter
-import com.android.build.gradle.internal.CompileOptions
-import com.android.build.gradle.internal.ExtraModelInfo
-import com.android.build.gradle.internal.LoggingUtil
-import com.android.build.gradle.internal.SdkHandler
-import com.android.build.gradle.internal.SourceSetSourceProviderWrapper
-import com.android.build.gradle.internal.coverage.JacocoExtension
-import com.android.build.gradle.internal.dsl.AaptOptions
-import com.android.build.gradle.internal.dsl.AdbOptions
-import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory
-import com.android.build.gradle.internal.dsl.BuildType
-import com.android.build.gradle.internal.dsl.CoreProductFlavor
-import com.android.build.gradle.internal.dsl.DexOptions
-import com.android.build.gradle.internal.dsl.LintOptions
-import com.android.build.gradle.internal.dsl.PackagingOptions
-import com.android.build.gradle.internal.dsl.PreprocessingOptions
-import com.android.build.gradle.internal.dsl.ProductFlavor
-import com.android.build.gradle.internal.dsl.SigningConfig
-import com.android.build.gradle.internal.dsl.Splits
-import com.android.build.gradle.internal.dsl.TestOptions
-import com.android.builder.core.AndroidBuilder
-import com.android.builder.core.BuilderConstants
-import com.android.builder.core.LibraryRequest
-import com.android.builder.model.SourceProvider
-import com.android.builder.sdk.TargetInfo
-import com.android.builder.testing.api.DeviceProvider
-import com.android.builder.testing.api.TestServer
-import com.android.sdklib.repository.FullRevision
-import com.google.common.collect.Lists
-import groovy.transform.CompileStatic
-import org.gradle.api.Action
-import org.gradle.api.GradleException
-import org.gradle.api.NamedDomainObjectContainer
-import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.ConfigurationContainer
-import org.gradle.api.internal.project.ProjectInternal
-import org.gradle.api.logging.Logger
-import org.gradle.api.logging.Logging
-import org.gradle.api.tasks.SourceSet
-import org.gradle.internal.reflect.Instantiator
+import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.gradle.api.AndroidSourceSet;
+import com.android.build.gradle.api.BaseVariant;
+import com.android.build.gradle.api.VariantFilter;
+import com.android.build.gradle.internal.CompileOptions;
+import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.LoggingUtil;
+import com.android.build.gradle.internal.SdkHandler;
+import com.android.build.gradle.internal.SourceSetSourceProviderWrapper;
+import com.android.build.gradle.internal.coverage.JacocoExtension;
+import com.android.build.gradle.internal.dsl.AaptOptions;
+import com.android.build.gradle.internal.dsl.AdbOptions;
+import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.CoreBuildType;
+import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.build.gradle.internal.dsl.DexOptions;
+import com.android.build.gradle.internal.dsl.LintOptions;
+import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.dsl.PreprocessingOptions;
+import com.android.build.gradle.internal.dsl.ProductFlavor;
+import com.android.build.gradle.internal.dsl.SigningConfig;
+import com.android.build.gradle.internal.dsl.Splits;
+import com.android.build.gradle.internal.dsl.TestOptions;
+import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.BuilderConstants;
+import com.android.builder.core.LibraryRequest;
+import com.android.builder.model.SourceProvider;
+import com.android.builder.sdk.TargetInfo;
+import com.android.builder.testing.api.DeviceProvider;
+import com.android.builder.testing.api.TestServer;
+import com.android.sdklib.repository.FullRevision;
+import com.google.common.collect.Lists;
+
+import groovy.lang.Closure;
+import org.gradle.api.Action;
+import org.gradle.api.GradleException;
+import org.gradle.api.NamedDomainObjectContainer;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.internal.project.ProjectInternal;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
+import org.gradle.api.tasks.SourceSet;
+import org.gradle.internal.reflect.Instantiator;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Base 'android' extension for all android plugins.
@@ -74,88 +81,88 @@ import org.gradle.internal.reflect.Instantiator
  */
 public abstract class BaseExtension implements AndroidConfig {
 
-    private String target
-    private FullRevision buildToolsRevision
-    private List<LibraryRequest> libraryRequests = []
+    private String target;
+    private FullRevision buildToolsRevision;
+    private List<LibraryRequest> libraryRequests = Lists.newArrayList();
 
     /** Default config, shared by all flavors. */
-    final ProductFlavor defaultConfig
+    final ProductFlavor defaultConfig;
 
     /** Options for aapt, tool for packaging resources. */
-    final AaptOptions aaptOptions
+    final AaptOptions aaptOptions;
 
     /** Lint options. */
-    final LintOptions lintOptions
+    final LintOptions lintOptions;
 
     /** Dex options. */
-    final DexOptions dexOptions
+    final DexOptions dexOptions;
 
     /** Options for running tests. */
-    final TestOptions testOptions
+    final TestOptions testOptions;
 
     /** Compile options */
-    final CompileOptions compileOptions
+    final CompileOptions compileOptions;
 
     /** Packaging options. */
-    final PackagingOptions packagingOptions
+    final PackagingOptions packagingOptions;
 
     /** Options to control resources preprocessing. Not finalized yet.*/
-    final PreprocessingOptions preprocessingOptions
+    final PreprocessingOptions preprocessingOptions;
 
     /** JaCoCo options. */
-    final JacocoExtension jacoco
+    final JacocoExtension jacoco;
 
     /**
      * APK splits options.
      *
      * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/apk-splits">APK Splits</a>.
      */
-    final Splits splits
+    final Splits splits;
 
     /** All product flavors used by this project. */
-    final NamedDomainObjectContainer<CoreProductFlavor> productFlavors
+    final NamedDomainObjectContainer<CoreProductFlavor> productFlavors;
 
     /** Build types used by this project. */
-    final NamedDomainObjectContainer<BuildType> buildTypes
+    final NamedDomainObjectContainer<BuildType> buildTypes;
 
     /** Signing configs used by this project. */
-    final NamedDomainObjectContainer<SigningConfig> signingConfigs
+    final NamedDomainObjectContainer<SigningConfig> signingConfigs;
 
-    private ExtraModelInfo extraModelInfo
+    private ExtraModelInfo extraModelInfo;
 
-    protected Project project
+    protected Project project;
 
     /** Adb options */
     final AdbOptions adbOptions;
 
     /** A prefix to be used when creating new resources. Used by Studio */
-    String resourcePrefix
+    String resourcePrefix;
 
-    List<String> flavorDimensionList
+    List<String> flavorDimensionList;
 
-    private String defaultPublishConfig = "release"
-    private boolean publishNonDefault = false
+    private String defaultPublishConfig = "release";
+    private boolean publishNonDefault = false;
 
-    private Closure<Void> variantFilter
+    private Closure<Void> variantFilter;
 
     private final List<DeviceProvider> deviceProviderList = Lists.newArrayList();
     private final List<TestServer> testServerList = Lists.newArrayList();
 
-    private final AndroidBuilder androidBuilder
+    private final AndroidBuilder androidBuilder;
 
-    private final SdkHandler sdkHandler
+    private final SdkHandler sdkHandler;
 
-    protected Logger logger
+    protected Logger logger;
 
     private boolean isWritable = true;
 
     /**
      * The source sets container.
      */
-    final NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer
+    final NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer;
 
     BaseExtension(
-            @NonNull ProjectInternal project,
+            @NonNull final ProjectInternal project,
             @NonNull Instantiator instantiator,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull SdkHandler sdkHandler,
@@ -163,84 +170,90 @@ public abstract class BaseExtension implements AndroidConfig {
             @NonNull NamedDomainObjectContainer<ProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
             @NonNull ExtraModelInfo extraModelInfo,
-            boolean isLibrary) {
-        this.androidBuilder = androidBuilder
-        this.sdkHandler = sdkHandler
-        this.buildTypes = buildTypes
-        this.productFlavors = productFlavors
-        this.signingConfigs = signingConfigs
-        this.extraModelInfo = extraModelInfo
-        this.project = project
+            final boolean isLibrary) {
+        this.androidBuilder = androidBuilder;
+        this.sdkHandler = sdkHandler;
+        this.buildTypes = buildTypes;
+        //noinspection unchecked
+        this.productFlavors = (NamedDomainObjectContainer) productFlavors;
+        this.signingConfigs = signingConfigs;
+        this.extraModelInfo = extraModelInfo;
+        this.project = project;
 
-        logger = Logging.getLogger(this.class)
+        logger = Logging.getLogger(this.getClass());
 
-        defaultConfig = instantiator.newInstance(ProductFlavor, BuilderConstants.MAIN,
-                project, instantiator, project.getLogger())
+        defaultConfig = instantiator.newInstance(ProductFlavor.class, BuilderConstants.MAIN,
+                project, instantiator, project.getLogger());
 
-        aaptOptions = instantiator.newInstance(AaptOptions)
-        dexOptions = instantiator.newInstance(DexOptions)
-        lintOptions = instantiator.newInstance(LintOptions)
-        testOptions = instantiator.newInstance(TestOptions)
-        compileOptions = instantiator.newInstance(CompileOptions)
-        packagingOptions = instantiator.newInstance(PackagingOptions)
-        preprocessingOptions = instantiator.newInstance(PreprocessingOptions)
-        jacoco = instantiator.newInstance(JacocoExtension)
-        adbOptions = instantiator.newInstance(AdbOptions)
-        splits = instantiator.newInstance(Splits, instantiator)
+        aaptOptions = instantiator.newInstance(AaptOptions.class);
+        dexOptions = instantiator.newInstance(DexOptions.class);
+        lintOptions = instantiator.newInstance(LintOptions.class);
+        testOptions = instantiator.newInstance(TestOptions.class);
+        compileOptions = instantiator.newInstance(CompileOptions.class);
+        packagingOptions = instantiator.newInstance(PackagingOptions.class);
+        preprocessingOptions = instantiator.newInstance(PreprocessingOptions.class);
+        jacoco = instantiator.newInstance(JacocoExtension.class);
+        adbOptions = instantiator.newInstance(AdbOptions.class);
+        splits = instantiator.newInstance(Splits.class, instantiator);
 
-        sourceSetsContainer = project.container(AndroidSourceSet,
-                new AndroidSourceSetFactory(instantiator, project, isLibrary))
+        sourceSetsContainer = project.container(AndroidSourceSet.class,
+                new AndroidSourceSetFactory(instantiator, project, isLibrary));
 
-        sourceSetsContainer.whenObjectAdded { AndroidSourceSet sourceSet ->
-            ConfigurationContainer configurations = project.getConfigurations()
+        sourceSetsContainer.whenObjectAdded(new Action<AndroidSourceSet>() {
+            @Override
+            public void execute(AndroidSourceSet sourceSet) {
+                ConfigurationContainer configurations = project.getConfigurations();
 
-            createConfiguration(
-                    configurations,
-                    sourceSet.getCompileConfigurationName(),
-                    "Classpath for compiling the ${sourceSet.name} sources.")
+                createConfiguration(
+                        configurations,
+                        sourceSet.getCompileConfigurationName(),
+                        "Classpath for compiling the " + sourceSet.getName() + " sources.");
 
-            String packageConfigDescription
-            if (isLibrary) {
-                packageConfigDescription = "Classpath only used when publishing '${sourceSet.name}'."
-            } else {
-                packageConfigDescription = "Classpath packaged with the compiled '${sourceSet.name}' classes."
+                String packageConfigDescription;
+                if (isLibrary) {
+                    packageConfigDescription
+                            = "Classpath only used when publishing '" + sourceSet.getName() + "}'.";
+                } else {
+                    packageConfigDescription
+                            = "Classpath packaged with the compiled '\" + sourceSet.getName() + \"' classes.";
+                }
+                createConfiguration(
+                        configurations,
+                        sourceSet.getPackageConfigurationName(),
+                        packageConfigDescription);
+
+                createConfiguration(
+                        configurations,
+                        sourceSet.getProvidedConfigurationName(),
+                        "Classpath for only compiling the " + sourceSet.getName() + " sources.");
+
+                createConfiguration(
+                        configurations,
+                        sourceSet.getWearAppConfigurationName(),
+                        "Link to a wear app to embed for object '" + sourceSet.getName() + "'.");
+
+                sourceSet.setRoot(String.format("src/%s", sourceSet.getName()));
             }
-            createConfiguration(
-                    configurations,
-                    sourceSet.getPackageConfigurationName(),
-                    packageConfigDescription)
+        });
 
-            createConfiguration(
-                    configurations,
-                    sourceSet.getProvidedConfigurationName(),
-                    "Classpath for only compiling the ${sourceSet.name} sources.")
-
-            createConfiguration(
-                    configurations,
-                    sourceSet.getWearAppConfigurationName(),
-                    "Link to a wear app to embed for object '${sourceSet.name}'.")
-
-            sourceSet.setRoot(String.format("src/%s", sourceSet.getName()))
-        }
-
-        sourceSetsContainer.create(defaultConfig.name)
+        sourceSetsContainer.create(defaultConfig.getName());
     }
 
     /**
      * Disallow further modification on the extension.
      */
     public void disableWrite() {
-        isWritable = false
+        isWritable = false;
     }
 
-    protected checkWritability() {
+    protected void checkWritability() {
         if (!isWritable) {
             throw new GradleException(
                     "Android tasks have already been created.\n" +
                             "This happens when calling android.applicationVariants,\n" +
                             "android.libraryVariants or android.testVariants.\n" +
                             "Once these methods are called, it is not possible to\n" +
-                            "continue configuring the model.")
+                            "continue configuring the model.");
         }
     }
 
@@ -248,46 +261,46 @@ public abstract class BaseExtension implements AndroidConfig {
             @NonNull ConfigurationContainer configurations,
             @NonNull String configurationName,
             @NonNull String configurationDescription) {
-        logger.info("Creating configuration ${configurationName}.")
+        logger.info("Creating configuration {}", configurationName);
 
-        Configuration configuration = configurations.findByName(configurationName)
+        Configuration configuration = configurations.findByName(configurationName);
         if (configuration == null) {
-            configuration = configurations.create(configurationName)
+            configuration = configurations.create(configurationName);
         }
         configuration.setVisible(false);
-        configuration.setDescription(configurationDescription)
+        configuration.setDescription(configurationDescription);
     }
 
     /**
      * Sets the compile SDK version, based on full SDK version string, e.g.
      * <code>android-21</code> for Lollipop.
      */
-    void compileSdkVersion(String version) {
-        checkWritability()
-        this.target = version
+    public void compileSdkVersion(String version) {
+        checkWritability();
+        this.target = version;
     }
 
     /**
      * Sets the compile SDK version, based on API level, e.g. 21 for Lollipop.
      */
-    void compileSdkVersion(int apiLevel) {
-        compileSdkVersion("android-" + apiLevel)
+    public void compileSdkVersion(int apiLevel) {
+        compileSdkVersion("android-" + apiLevel);
     }
 
-    void setCompileSdkVersion(int apiLevel) {
-        compileSdkVersion(apiLevel)
+    public void setCompileSdkVersion(int apiLevel) {
+        compileSdkVersion(apiLevel);
     }
 
-    void setCompileSdkVersion(String target) {
-        compileSdkVersion(target)
+    public void setCompileSdkVersion(String target) {
+        compileSdkVersion(target);
     }
 
     /**
      * Request the use a of Library. The library is then added to the classpath.
      * @param name the name of the library.
      */
-    void useLibrary(String name) {
-        useLibrary(name, true)
+    public void useLibrary(String name) {
+        useLibrary(name, true);
     }
 
     /**
@@ -296,13 +309,13 @@ public abstract class BaseExtension implements AndroidConfig {
      * @param required if using the library requires a manifest entry, the  entry will
      * indicate that the library is not required.
      */
-    void useLibrary(String name, boolean required) {
-        libraryRequests.add(new LibraryRequest(name, required))
+    public void useLibrary(String name, boolean required) {
+        libraryRequests.add(new LibraryRequest(name, required));
     }
 
-    void buildToolsVersion(String version) {
-        checkWritability()
-        buildToolsRevision = FullRevision.parseRevision(version)
+    public void buildToolsVersion(String version) {
+        checkWritability();
+        buildToolsRevision = FullRevision.parseRevision(version);
     }
 
     /**
@@ -311,173 +324,191 @@ public abstract class BaseExtension implements AndroidConfig {
      * <p>Value assigned to this property is parsed and stored in a normalized form, so reading it
      * back may give a slightly different string.
      */
-    String getBuildToolsVersion() {
-        return buildToolsRevision.toString()
+    @Override
+    public String getBuildToolsVersion() {
+        return buildToolsRevision.toString();
     }
 
-    void setBuildToolsVersion(String version) {
-        buildToolsVersion(version)
+    public void setBuildToolsVersion(String version) {
+        buildToolsVersion(version);
     }
 
     /**
      * Configures the build types.
      */
-    void buildTypes(Action<? super NamedDomainObjectContainer<BuildType>> action) {
-        checkWritability()
-        action.execute(buildTypes)
+    public void buildTypes(Action<? super NamedDomainObjectContainer<BuildType>> action) {
+        checkWritability();
+        action.execute(buildTypes);
     }
 
     /**
      * Configures the product flavors.
      */
-    void productFlavors(Action<? super NamedDomainObjectContainer<CoreProductFlavor>> action) {
-        checkWritability()
-        action.execute(productFlavors)
+    public void productFlavors(Action<? super NamedDomainObjectContainer<CoreProductFlavor>> action) {
+        checkWritability();
+        action.execute(productFlavors);
     }
 
     /**
      * Configures the signing configs.
      */
-    void signingConfigs(Action<? super NamedDomainObjectContainer<SigningConfig>> action) {
-        checkWritability()
-        action.execute(signingConfigs)
+    public void signingConfigs(Action<? super NamedDomainObjectContainer<SigningConfig>> action) {
+        checkWritability();
+        action.execute(signingConfigs);
     }
 
     public void flavorDimensions(String... dimensions) {
-        checkWritability()
-        flavorDimensionList = Arrays.asList(dimensions)
+        checkWritability();
+        flavorDimensionList = Arrays.asList(dimensions);
     }
 
     /**
      * Configures the source sets. Note that the Android plugin uses its own implementation of
      * source sets, {@link AndroidSourceSet}.
      */
-    void sourceSets(Action<NamedDomainObjectContainer<AndroidSourceSet>> action) {
-        checkWritability()
-        action.execute(sourceSetsContainer)
+    public void sourceSets(Action<NamedDomainObjectContainer<AndroidSourceSet>> action) {
+        checkWritability();
+        action.execute(sourceSetsContainer);
     }
 
     /**
      * All source sets. Note that the Android plugin uses its own implementation of
      * source sets, {@link AndroidSourceSet}.
      */
-    NamedDomainObjectContainer<AndroidSourceSet> getSourceSets() {
-        sourceSetsContainer
+    @Override
+    public NamedDomainObjectContainer<AndroidSourceSet> getSourceSets() {
+        return sourceSetsContainer;
     }
 
     /**
      * The default configuration, inherited by all build flavors (if any are defined).
      */
-    void defaultConfig(Action<ProductFlavor> action) {
-        checkWritability()
-        action.execute(defaultConfig)
+    public void defaultConfig(Action<ProductFlavor> action) {
+        checkWritability();
+        action.execute(defaultConfig);
     }
 
     /**
      * Configures aapt options.
      */
-    void aaptOptions(Action<AaptOptions> action) {
-        checkWritability()
-        action.execute(aaptOptions)
+    public void aaptOptions(Action<AaptOptions> action) {
+        checkWritability();
+        action.execute(aaptOptions);
     }
 
     /**
      * Configures dex options.
-     * @param action
      */
-    void dexOptions(Action<DexOptions> action) {
-        checkWritability()
-        action.execute(dexOptions)
+    public void dexOptions(Action<DexOptions> action) {
+        checkWritability();
+        action.execute(dexOptions);
     }
 
     /**
      * Configure lint options.
      */
-    void lintOptions(Action<LintOptions> action) {
-        checkWritability()
-        action.execute(lintOptions)
+    public void lintOptions(Action<LintOptions> action) {
+        checkWritability();
+        action.execute(lintOptions);
     }
 
     /** Configures the test options. */
-    void testOptions(Action<TestOptions> action) {
-        checkWritability()
-        action.execute(testOptions)
+    public void testOptions(Action<TestOptions> action) {
+        checkWritability();
+        action.execute(testOptions);
     }
 
     /**
      * Configures compile options.
      */
-    void compileOptions(Action<CompileOptions> action) {
-        checkWritability()
-        action.execute(compileOptions)
+    public void compileOptions(Action<CompileOptions> action) {
+        checkWritability();
+        action.execute(compileOptions);
     }
 
     /**
      * Configures packaging options.
      */
-    void packagingOptions(Action<PackagingOptions> action) {
-        checkWritability()
-        action.execute(packagingOptions)
+    public void packagingOptions(Action<PackagingOptions> action) {
+        checkWritability();
+        action.execute(packagingOptions);
     }
 
     /**
      * Configures preprocessing options.
      */
-    void preprocessingOptions(Action<PreprocessingOptions> action) {
-        checkWritability()
-        action.execute(preprocessingOptions)
+    public void preprocessingOptions(Action<PreprocessingOptions> action) {
+        checkWritability();
+        action.execute(preprocessingOptions);
     }
 
     /**
      * Configures JaCoCo options.
      */
-    void jacoco(Action<JacocoExtension> action) {
-        checkWritability()
-        action.execute(jacoco)
+    public void jacoco(Action<JacocoExtension> action) {
+        checkWritability();
+        action.execute(jacoco);
     }
 
     /**
      * Configures adb options.
      */
-    void adbOptions(Action<AdbOptions> action) {
-        checkWritability()
-        action.execute(adbOptions)
+    public void adbOptions(Action<AdbOptions> action) {
+        checkWritability();
+        action.execute(adbOptions);
     }
 
     /**
      * Configures APK splits.
      */
-    void splits(Action<Splits> action) {
-        checkWritability()
-        action.execute(splits)
+    public void splits(Action<Splits> action) {
+        checkWritability();
+        action.execute(splits);
     }
 
-    void deviceProvider(DeviceProvider deviceProvider) {
-        checkWritability()
-        deviceProviderList.add(deviceProvider)
+    public void deviceProvider(DeviceProvider deviceProvider) {
+        checkWritability();
+        deviceProviderList.add(deviceProvider);
     }
 
+    @Override
     @NonNull
-    List<DeviceProvider> getDeviceProviders() {
-        return deviceProviderList
+    public List<DeviceProvider> getDeviceProviders() {
+        return deviceProviderList;
     }
 
-    void testServer(TestServer testServer) {
-        checkWritability()
-        testServerList.add(testServer)
+    public void testServer(TestServer testServer) {
+        checkWritability();
+        testServerList.add(testServer);
     }
 
+    @Override
     @NonNull
-    List<TestServer> getTestServers() {
-        return testServerList
+    public List<TestServer> getTestServers() {
+        return testServerList;
+    }
+
+    @Override
+    public Collection<? extends CoreProductFlavor> getProductFlavors() {
+        return productFlavors;
+    }
+
+    @Override
+    public Collection<? extends CoreBuildType> getBuildTypes() {
+        return buildTypes;
+    }
+
+    @Override
+    public Collection<? extends com.android.builder.model.SigningConfig> getSigningConfigs() {
+        return signingConfigs;
     }
 
     public void defaultPublishConfig(String value) {
-        setDefaultPublishConfig(value)
+        setDefaultPublishConfig(value);
     }
 
     public void publishNonDefault(boolean value) {
-        publishNonDefault = value
+        publishNonDefault = value;
     }
 
     /**
@@ -486,12 +517,13 @@ public abstract class BaseExtension implements AndroidConfig {
      * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide#TOC-Referencing-a-Library">
      * Referencing a Library</a>
      */
+    @Override
     public String getDefaultPublishConfig() {
-        return defaultPublishConfig
+        return defaultPublishConfig;
     }
 
     public void setDefaultPublishConfig(String value) {
-        defaultPublishConfig = value
+        defaultPublishConfig = value;
     }
 
     /**
@@ -500,16 +532,17 @@ public abstract class BaseExtension implements AndroidConfig {
      * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide#TOC-Referencing-a-Library">
      * Referencing a Library</a>
      */
+    @Override
     public boolean getPublishNonDefault() {
-        return publishNonDefault
+        return publishNonDefault;
     }
 
-    void variantFilter(Closure<Void> filter) {
-        setVariantFilter(filter)
+    public void variantFilter(Closure<Void> filter) {
+        setVariantFilter(filter);
     }
 
-    void setVariantFilter(Closure<Void> filter) {
-        variantFilter = filter
+    public void setVariantFilter(Closure<Void> filter) {
+        variantFilter = filter;
     }
 
     /**
@@ -518,37 +551,62 @@ public abstract class BaseExtension implements AndroidConfig {
      * {@link com.android.build.gradle.internal.api.VariantFilter}. It should set the
      * {@link VariantFilter#setIgnore(boolean)} flag to filter out the given variant.
      */
+    @Override
     public Closure<Void> getVariantFilter() {
         return variantFilter;
     }
 
-    void resourcePrefix(String prefix) {
-        resourcePrefix = prefix
+    @Override
+    public AdbOptions getAdbOptions() {
+        return adbOptions;
     }
 
-    abstract void addVariant(BaseVariant variant)
+    @Override
+    public String getResourcePrefix() {
+        return resourcePrefix;
+    }
+
+    @Override
+    public List<String> getFlavorDimensionList() {
+        return flavorDimensionList;
+    }
+
+    @Override
+    public boolean getGeneratePureSplits() {
+        return generatePureSplits;
+    }
+
+    @Override
+    public PreprocessingOptions getPreprocessingOptions() {
+        return preprocessingOptions;
+    }
+
+    public void resourcePrefix(String prefix) {
+        resourcePrefix = prefix;
+    }
+
+    public abstract void addVariant(BaseVariant variant);
 
     public void registerArtifactType(@NonNull String name,
                                      boolean isTest,
                                      int artifactType) {
-        extraModelInfo.registerArtifactType(name, isTest, artifactType)
+        extraModelInfo.registerArtifactType(name, isTest, artifactType);
     }
 
     public void registerBuildTypeSourceProvider(
             @NonNull String name,
             @NonNull BuildType buildType,
             @NonNull SourceProvider sourceProvider) {
-        extraModelInfo.registerBuildTypeSourceProvider(name, buildType, sourceProvider)
+        extraModelInfo.registerBuildTypeSourceProvider(name, buildType, sourceProvider);
     }
 
     public void registerProductFlavorSourceProvider(
             @NonNull String name,
             @NonNull CoreProductFlavor productFlavor,
             @NonNull SourceProvider sourceProvider) {
-        extraModelInfo.registerProductFlavorSourceProvider(name, productFlavor, sourceProvider)
+        extraModelInfo.registerProductFlavorSourceProvider(name, productFlavor, sourceProvider);
     }
 
-    @CompileStatic
     public void registerJavaArtifact(
             @NonNull String name,
             @NonNull BaseVariant variant,
@@ -562,19 +620,19 @@ public abstract class BaseExtension implements AndroidConfig {
             @Nullable SourceProvider sourceProvider) {
         extraModelInfo.registerJavaArtifact(name, variant, assembleTaskName,
                 javaCompileTaskName, generatedSourceFolders, ideSetupTaskNames,
-                configuration, classesFolder, javaResourceFolder, sourceProvider)
+                configuration, classesFolder, javaResourceFolder, sourceProvider);
     }
 
     public void registerMultiFlavorSourceProvider(
             @NonNull String name,
             @NonNull String flavorName,
             @NonNull SourceProvider sourceProvider) {
-        extraModelInfo.registerMultiFlavorSourceProvider(name, flavorName, sourceProvider)
+        extraModelInfo.registerMultiFlavorSourceProvider(name, flavorName, sourceProvider);
     }
 
     @NonNull
     public SourceProvider wrapJavaSourceSet(@NonNull SourceSet sourceSet) {
-        return new SourceSetSourceProviderWrapper(sourceSet)
+        return new SourceSetSourceProviderWrapper(sourceSet);
     }
 
     /**
@@ -589,37 +647,40 @@ public abstract class BaseExtension implements AndroidConfig {
      * <p>Value assigned to this property is parsed and stored in a normalized form, so reading it
      * back may give a slightly different string.
      */
+    @Override
     public String getCompileSdkVersion() {
-        return target
+        return target;
     }
 
+    @Override
     public FullRevision getBuildToolsRevision() {
-        return buildToolsRevision
+        return buildToolsRevision;
     }
 
+    @Override
     public Collection<LibraryRequest> getLibraryRequests() {
-        return libraryRequests
+        return libraryRequests;
     }
 
     public File getSdkDirectory() {
-        return sdkHandler.getSdkFolder()
+        return sdkHandler.getSdkFolder();
     }
 
     public File getNdkDirectory() {
-        return sdkHandler.getNdkFolder()
+        return sdkHandler.getNdkFolder();
     }
 
     public List<File> getBootClasspath() {
-        ensureTargetSetup()
-        return androidBuilder.getBootClasspath()
+        ensureTargetSetup();
+        return androidBuilder.getBootClasspath();
     }
 
     public File getAdbExe() {
-        return sdkHandler.getSdkInfo().adb
+        return sdkHandler.getSdkInfo().getAdb();
     }
 
     public File getDefaultProguardFile(String name) {
-        File sdkDir = sdkHandler.getAndCheckSdkFolder()
+        File sdkDir = sdkHandler.getAndCheckSdkFolder();
         return new File(sdkDir,
                 SdkConstants.FD_TOOLS + File.separatorChar
                         + SdkConstants.FD_PROGUARD + File.separatorChar
@@ -632,45 +693,91 @@ public abstract class BaseExtension implements AndroidConfig {
     // by default, we do not generate pure splits
     boolean generatePureSplits = false;
 
-    void generatePureSplits(boolean flag) {
+    public void generatePureSplits(boolean flag) {
         if (flag) {
-            logger.warn("Pure splits are not supported by PlayStore yet.")
+            logger.warn("Pure splits are not supported by PlayStore yet.");
         }
         this.generatePureSplits = flag;
     }
 
-    private boolean enforceUniquePackageName = true
+    private boolean enforceUniquePackageName = true;
 
     public void enforceUniquePackageName(boolean value) {
         if (!value) {
-            LoggingUtil.displayDeprecationWarning(logger, project, "Support for libraries with same package name is deprecated and will be removed in a future release.")
+            LoggingUtil.displayDeprecationWarning(logger, project, "Support for libraries with same package name is deprecated and will be removed in a future release.");
         }
-        enforceUniquePackageName = value
+        enforceUniquePackageName = value;
     }
 
     public void setEnforceUniquePackageName(boolean value) {
-        enforceUniquePackageName(value)
+        enforceUniquePackageName(value);
     }
 
+    @Override
     public boolean getEnforceUniquePackageName() {
-        return enforceUniquePackageName
+        return enforceUniquePackageName;
+    }
+
+    @Override
+    public CoreProductFlavor getDefaultConfig() {
+        return defaultConfig;
+    }
+
+    @Override
+    public AaptOptions getAaptOptions() {
+        return aaptOptions;
+    }
+
+    @Override
+    public CompileOptions getCompileOptions() {
+        return compileOptions;
+    }
+
+    @Override
+    public DexOptions getDexOptions() {
+        return dexOptions;
+    }
+
+    @Override
+    public JacocoExtension getJacoco() {
+        return jacoco;
+    }
+
+    @Override
+    public LintOptions getLintOptions() {
+        return lintOptions;
+    }
+
+    @Override
+    public PackagingOptions getPackagingOptions() {
+        return packagingOptions;
+    }
+
+    @Override
+    public Splits getSplits() {
+        return splits;
+    }
+
+    @Override
+    public TestOptions getTestOptions() {
+        return testOptions;
     }
 
     private void ensureTargetSetup() {
         // check if the target has been set.
-        TargetInfo targetInfo = androidBuilder.getTargetInfo()
+        TargetInfo targetInfo = androidBuilder.getTargetInfo();
         if (targetInfo == null) {
             sdkHandler.initTarget(
                     getCompileSdkVersion(),
                     buildToolsRevision,
                     libraryRequests,
-                    androidBuilder)
+                    androidBuilder);
         }
     }
 
     // For compatibility with LibraryExtension.
     @Override
-    Boolean getPackageBuildConfig() {
+    public Boolean getPackageBuildConfig() {
         throw new GradleException("packageBuildConfig is not supported.");
     }
 }
