@@ -24,6 +24,7 @@ import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -42,6 +43,7 @@ public class MergingException extends Exception {
 
     public static final String MULTIPLE_ERRORS = "Multiple errors:";
 
+    @NonNull
     private final List<Message> mMessages;
 
     /**
@@ -57,41 +59,46 @@ public class MergingException extends Exception {
 
     public static class Builder {
 
+        @Nullable
         private Throwable mCause = null;
 
+        @Nullable
         private String mMessageText = null;
 
+        @Nullable
         private String mOriginalMessageText = null;
 
+        @NonNull
         private SourceFile mFile = SourceFile.UNKNOWN;
 
+        @NonNull
         private SourcePosition mPosition = SourcePosition.UNKNOWN;
 
         private Builder() {
         }
 
-        public Builder wrapException(Throwable cause) {
+        public Builder wrapException(@NonNull Throwable cause) {
             mCause = cause;
             mOriginalMessageText = Throwables.getStackTraceAsString(cause);
             return this;
         }
 
-        public Builder withFile(File file) {
+        public Builder withFile(@NonNull File file) {
             mFile = new SourceFile(file);
             return this;
         }
 
-        public Builder withFile(SourceFile file) {
+        public Builder withFile(@NonNull SourceFile file) {
             mFile = file;
             return this;
         }
 
-        public Builder withPosition(SourcePosition position) {
+        public Builder withPosition(@NonNull SourcePosition position) {
             mPosition = position;
             return this;
         }
 
-        public Builder withMessage(String messageText, Object... args) {
+        public Builder withMessage(@NonNull String messageText, Object... args) {
             mMessageText = args.length == 0 ? messageText : String.format(messageText, args);
             return this;
         }
@@ -99,7 +106,8 @@ public class MergingException extends Exception {
         public MergingException build() {
             if (mCause != null) {
                 if (mMessageText == null) {
-                    mMessageText = mCause.getLocalizedMessage();
+                    mMessageText = Objects.firstNonNull(
+                            mCause.getLocalizedMessage(), mCause.getClass().getCanonicalName());
                 }
                 if (mPosition == SourcePosition.UNKNOWN && mCause instanceof SAXParseException) {
                     SAXParseException exception = (SAXParseException) mCause;
@@ -111,15 +119,17 @@ public class MergingException extends Exception {
                     }
                 }
             }
-            if (mOriginalMessageText == null) {
-                mOriginalMessageText = mMessageText;
+
+            if (mMessageText == null) {
+                mMessageText = "Unknown error.";
             }
+
             return new MergingException(
                     mCause,
                     new Message(
                             Kind.ERROR,
                             mMessageText,
-                            mOriginalMessageText,
+                            Objects.firstNonNull(mOriginalMessageText, mMessageText),
                             new SourceFilePosition(mFile, mPosition)));
         }
 
@@ -129,7 +139,7 @@ public class MergingException extends Exception {
         return new Builder().wrapException(cause);
     }
 
-    public static Builder withMessage(@Nullable String message, Object... args) {
+    public static Builder withMessage(@NonNull String message, Object... args) {
         return new Builder().withMessage(message, args);
     }
 
@@ -140,6 +150,7 @@ public class MergingException extends Exception {
         }
     }
 
+    @NonNull
     public List<Message> getMessages() {
         return mMessages;
     }
@@ -147,6 +158,7 @@ public class MergingException extends Exception {
     /**
      * Computes the error message to display for this error
      */
+    @NonNull
     @Override
     public String getMessage() {
         List<String> messages = Lists.newArrayListWithCapacity(mMessages.size());
