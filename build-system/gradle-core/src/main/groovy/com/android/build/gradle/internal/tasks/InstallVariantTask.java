@@ -233,6 +233,7 @@ public class InstallVariantTask extends BaseTask {
         public void execute(InstallVariantTask installTask) {
             installTask.setDescription(
                     "Installs the " + scope.getVariantData().getDescription() + ".");
+            installTask.setVariantName(scope.getVariantConfiguration().getFullName());
             installTask.setGroup(TaskManager.INSTALL_GROUP);
             installTask.setProjectName(scope.getGlobalScope().getProject().getName());
             installTask.setVariantData(scope.getVariantData());
