@@ -723,13 +723,14 @@ public class VariantManager implements VariantModel {
 
         CoreProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
 
-        Closure<Void> variantFilterClosure = extension.getVariantFilter();
+        Action<com.android.build.gradle.api.VariantFilter> variantFilterAction =
+                extension.getVariantFilter();
 
         for (BuildTypeData buildTypeData : buildTypes.values()) {
             boolean ignore = false;
-            if (variantFilterClosure != null) {
+            if (variantFilterAction != null) {
                 variantFilter.reset(defaultConfig, buildTypeData.getBuildType(), productFlavorList);
-                variantFilterClosure.call(variantFilter);
+                variantFilterAction.execute(variantFilter);
                 ignore = variantFilter.isIgnore();
             }
 

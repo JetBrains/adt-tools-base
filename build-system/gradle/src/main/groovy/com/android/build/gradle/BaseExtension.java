@@ -51,7 +51,6 @@ import com.android.builder.testing.api.TestServer;
 import com.android.sdklib.repository.FullRevision;
 import com.google.common.collect.Lists;
 
-import groovy.lang.Closure;
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.NamedDomainObjectContainer;
@@ -143,7 +142,7 @@ public abstract class BaseExtension implements AndroidConfig {
     private String defaultPublishConfig = "release";
     private boolean publishNonDefault = false;
 
-    private Closure<Void> variantFilter;
+    private Action<VariantFilter> variantFilter;
 
     private final List<DeviceProvider> deviceProviderList = Lists.newArrayList();
     private final List<TestServer> testServerList = Lists.newArrayList();
@@ -537,22 +536,22 @@ public abstract class BaseExtension implements AndroidConfig {
         return publishNonDefault;
     }
 
-    public void variantFilter(Closure<Void> filter) {
+    public void variantFilter(Action<VariantFilter> filter) {
         setVariantFilter(filter);
     }
 
-    public void setVariantFilter(Closure<Void> filter) {
+    public void setVariantFilter(Action<VariantFilter> filter) {
         variantFilter = filter;
     }
 
     /**
      * A variant filter to control which variants are excluded.
-     * <p>The filter is a closure which is passed a single object of type
+     * <p>The filter is an {@link Action} which is passed a single object of type
      * {@link com.android.build.gradle.internal.api.VariantFilter}. It should set the
      * {@link VariantFilter#setIgnore(boolean)} flag to filter out the given variant.
      */
     @Override
-    public Closure<Void> getVariantFilter() {
+    public Action<VariantFilter> getVariantFilter() {
         return variantFilter;
     }
 

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.managed;
 
+import com.android.build.gradle.api.VariantFilter;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.coverage.JacocoExtension;
 import com.android.build.gradle.internal.dsl.AaptOptions;
@@ -32,6 +33,7 @@ import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.sdklib.repository.FullRevision;
 
+import org.gradle.api.Action;
 import org.gradle.model.Managed;
 import org.gradle.model.ModelMap;
 import org.gradle.model.Unmanaged;
@@ -83,8 +85,8 @@ public interface AndroidConfig {
 
     /** Filter to determine which variants to build */
     @Unmanaged
-    Closure<Void> getVariantFilter();
-    void setVariantFilter(Closure<Void> filter);
+    Action<VariantFilter> getVariantFilter();
+    void setVariantFilter(Action<VariantFilter> filter);
 
     /** A prefix to be used when creating new resources. Used by Studio */
     String getResourcePrefix();

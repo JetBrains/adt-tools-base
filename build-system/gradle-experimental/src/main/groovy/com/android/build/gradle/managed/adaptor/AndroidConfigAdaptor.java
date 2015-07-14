@@ -23,6 +23,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.api.AndroidSourceDirectorySet;
 import com.android.build.gradle.api.AndroidSourceFile;
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.android.build.gradle.api.VariantFilter;
 import com.android.build.gradle.internal.BuildTypeData;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.ProductFlavorData;
@@ -48,12 +49,14 @@ import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
+import com.android.ide.common.rendering.api.ActionBarCallback;
 import com.android.sdklib.repository.FullRevision;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
+import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.language.base.FunctionalSourceSet;
@@ -132,7 +135,7 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
     }
 
     @Override
-    public Closure<Void> getVariantFilter() {
+    public Action<VariantFilter> getVariantFilter() {
         return model.getVariantFilter();
     }
 
