@@ -73,7 +73,7 @@ public class ThreadRecorder implements Recorder {
 
 
     public static Recorder get() {
-        return ProcessRecorderFactory.isEnabled() ? recorder : dummyRecorder;
+        return ProcessRecorderFactory.getFactory().isInitialized() ? recorder : dummyRecorder;
     }
 
     private static  class PartialRecord {
