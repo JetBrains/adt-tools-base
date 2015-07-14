@@ -136,6 +136,8 @@ public class VariantScope {
     // TODO : why is Jack not registered as the obfuscationTask ???
     private AndroidTask<? extends Task> obfuscationTask;
 
+    private File resourceOutputDir;
+
 
     public VariantScope(
             @NonNull GlobalScope globalScope,
@@ -322,6 +324,25 @@ public class VariantScope {
     public File getSymbolLocation() {
         return new File(globalScope.getIntermediatesDir() + "/symbols/" +
                 variantData.getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public File getFinalResourcesDir() {
+        if (preprocessResourcesTask != null) {
+            return getPreprocessResourceOutputDir();
+        } else {
+            return resourceOutputDir;
+        }
+    }
+
+    public void setResourceOutputDir(@NonNull File resourceOutputDir) {
+        this.resourceOutputDir = resourceOutputDir;
+    }
+
+    @NonNull
+    public File getPreprocessResourceOutputDir() {
+        return new File(getGlobalScope().getIntermediatesDir(),
+                "res/preprocessed/" + getVariantConfiguration().getDirName());
     }
 
     @NonNull

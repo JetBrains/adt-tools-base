@@ -651,13 +651,6 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     }
 
     @NonNull
-    public File getFinalResourcesDir() {
-        return preprocessResourcesTask != null
-                ? preprocessResourcesTask.getOutputResDirectory()
-                : mergeResourcesTask.getOutputDir();
-    }
-
-    @NonNull
     public VariantScope getScope() {
         return scope;
     }
