@@ -65,14 +65,14 @@ public class HtmlBuilder {
     }
 
     public HtmlBuilder newline() {
-        mStringBuilder.append("<BR/>\n");
+        mStringBuilder.append("<BR/>");
 
         return this;
     }
 
     public HtmlBuilder newlineIfNecessary() {
-        if (!SdkUtils.endsWith(mStringBuilder, "<BR/>\n")) {
-            mStringBuilder.append("<BR/>\n");
+        if (!SdkUtils.endsWith(mStringBuilder, "<BR/>")) {
+            mStringBuilder.append("<BR/>");
         }
 
         return this;
@@ -223,9 +223,9 @@ public class HtmlBuilder {
 
     public HtmlBuilder endList() {
         if (USE_DD_LISTS) {
-            mStringBuilder.append("\n</DL>");
+            mStringBuilder.append("</DL>");
         } else {
-            mStringBuilder.append("\n</UL>");
+            mStringBuilder.append("</UL>");
         }
 
         return this;
@@ -233,10 +233,10 @@ public class HtmlBuilder {
 
     public HtmlBuilder listItem() {
         if (USE_DD_LISTS) {
-            mStringBuilder.append("\n<DD>");
+            mStringBuilder.append("<DD>");
             mStringBuilder.append("-&NBSP;");
         } else {
-            mStringBuilder.append("\n<LI>");
+            mStringBuilder.append("<LI>");
         }
 
         return this;
