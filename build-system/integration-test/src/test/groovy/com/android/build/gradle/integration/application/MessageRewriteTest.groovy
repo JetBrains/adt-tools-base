@@ -16,16 +16,15 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.builder.model.AndroidProject
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import static com.google.common.truth.Truth.assert_;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -54,32 +53,14 @@ class MessageRewriteTest {
 
     @Test
     public void "invalid layout file"() {
-        String layoutMainXmlPath = "src/main/res/layout/main.xml"
-        File layoutMainXml = project.file(layoutMainXmlPath)
-        String originalLayoutMainXml = Files.asCharSource(layoutMainXml, Charsets.UTF_8).read()
+        TemporaryProjectModification.doTest(project) {
+            it.replaceInFile("src/main/res/layout/main.xml", "</LinearLayout>", "");
+            project.getStderr().reset()
+            project.executeExpectingFailure(INVOKED_FROM_IDE_ARGS, 'assembleF1Debug')
+            String err = project.getStderr().toString()
+            assertThat(err).contains("src/main/res/layout/main.xml")
+        }
 
-        Files.asCharSink(layoutMainXml, Charsets.UTF_8).write(
-                """<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    >
-<TextView
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:text="Test App - Basic"
-    android:id="@+id/text"
-    />
-</LinearLayout""") // missing closing >
-
-        project.getStdout().reset()
-
-        project.executeExpectingFailure(INVOKED_FROM_IDE_ARGS, 'assembleF1Debug')
-        String err = project.getStderr().toString()
-
-        assertThat(err).contains("src/main/res/layout/main.xml")
-
-        Files.asCharSink(layoutMainXml, Charsets.UTF_8).write(originalLayoutMainXml)
+        project.execute('assembleDebug')
     }
 }
