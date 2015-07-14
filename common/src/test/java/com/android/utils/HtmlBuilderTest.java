@@ -59,10 +59,10 @@ public class HtmlBuilderTest extends TestCase {
         builder.add("Plain").newline();
         builder.beginList().listItem().add("item 1").listItem().add("item 2").endList();
 
-        assertEquals("Plain<BR/>\n" +
-                     "<DL>\n" +
-                     "<DD>-&NBSP;item 1\n" +
-                     "<DD>-&NBSP;item 2\n" +
+        assertEquals("Plain<BR/>" +
+                     "<DL>" +
+                     "<DD>-&NBSP;item 1" +
+                     "<DD>-&NBSP;item 2" +
                      "</DL>", builder.getHtml());
     }
 
@@ -124,16 +124,16 @@ public class HtmlBuilderTest extends TestCase {
     public void testNewlineIfNecessary() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.newlineIfNecessary();
-        assertEquals("<BR/>\n", builder.getHtml());
+        assertEquals("<BR/>", builder.getHtml());
         builder.newlineIfNecessary();
-        assertEquals("<BR/>\n", builder.getHtml());
+        assertEquals("<BR/>", builder.getHtml());
         builder.add("a");
         builder.newlineIfNecessary();
-        assertEquals("<BR/>\na<BR/>\n", builder.getHtml());
+        assertEquals("<BR/>a<BR/>", builder.getHtml());
         builder.newline();
         builder.newlineIfNecessary();
         builder.newlineIfNecessary();
         builder.newlineIfNecessary();
-        assertEquals("<BR/>\na<BR/>\n<BR/>\n", builder.getHtml());
+        assertEquals("<BR/>a<BR/><BR/>", builder.getHtml());
     }
 }
