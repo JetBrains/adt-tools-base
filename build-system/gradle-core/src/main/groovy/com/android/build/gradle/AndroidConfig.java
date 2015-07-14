@@ -18,6 +18,7 @@ package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.android.build.gradle.api.VariantFilter;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.coverage.JacocoExtension;
 import com.android.build.gradle.internal.dsl.AaptOptions;
@@ -36,12 +37,11 @@ import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.sdklib.repository.FullRevision;
 
+import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 
 import java.util.Collection;
 import java.util.List;
-
-import groovy.lang.Closure;
 
 /**
  * User configuration settings for all android plugins.
@@ -64,7 +64,7 @@ public interface AndroidConfig {
     boolean getPublishNonDefault();
 
     /** Filter to determine which variants to build */
-    Closure<Void> getVariantFilter();
+    Action<VariantFilter> getVariantFilter();
 
     /** Adb options */
     AdbOptions getAdbOptions();
