@@ -71,6 +71,7 @@ import com.android.ide.common.process.ProcessResult;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
+import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.jack.api.ConfigNotSupportedException;
 import com.android.jack.api.JackProvider;
 import com.android.jack.api.v01.Api01CompilationTask;
@@ -105,6 +106,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+
+import org.w3c.dom.Document;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -494,6 +497,11 @@ public class AndroidBuilder {
     @NonNull
     public static ClassField createClassField(@NonNull String type, @NonNull String name, @NonNull String value) {
         return new ClassFieldImpl(type, name, value);
+    }
+
+    // Temporary trampoline
+    public static String formatXml(@NonNull org.w3c.dom.Node node, boolean endWithNewline) {
+        return XmlPrettyPrinter.prettyPrint(node, endWithNewline);
     }
 
     /**

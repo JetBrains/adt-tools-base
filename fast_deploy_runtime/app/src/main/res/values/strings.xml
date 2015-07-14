@@ -1,0 +1,8 @@
+<resources>
+    <string name="hello_world">Hello World 24!</string>
+    <color name="my_color">#000000</color>
+
+    <string name="str">String</string>
+    <string name="app_name">Fast Deploy Test App</string>
+    <string name="action_settings">Settings</string>
+</resources>

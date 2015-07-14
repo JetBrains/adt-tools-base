@@ -118,6 +118,7 @@ import com.android.build.gradle.tasks.ZipAlign;
 import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
 import com.android.build.gradle.tasks.factory.ProGuardTaskConfigAction;
 import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
+import com.android.build.gradle.tasks.fd.InjectBootstrapApplicationTask;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
@@ -2256,6 +2257,20 @@ public abstract class TaskManager {
                 AndroidTask<InstallVariantTask> installTask = androidTasks.create(
                         tasks, new InstallVariantTask.ConfigAction(variantScope, buildType));
                 installTask.dependsOn(tasks, assembleTask);
+            }
+
+            if (config.getBuildType().isDebuggable() && !config.getType().isForTesting()
+                    && buildType != IncrementalBuildType.INCREMENTAL) {
+                AndroidTask<InjectBootstrapApplicationTask> rewriteTask = androidTasks.create(
+                        tasks, new InjectBootstrapApplicationTask.ConfigAction(variantOutputScope));
+                rewriteTask.dependsOn(tasks, variantScope.getJavaCompilerTask(),
+                        variantOutputScope.getManifestProcessorTask());
+                if (variantData.classesJarTask != null) {
+                    variantData.classesJarTask.dependsOn(rewriteTask.getName());
+                }
+                if (variantData.preDexTask != null) {
+                    variantData.preDexTask.dependsOn(rewriteTask.getName());
+                }
             }
         }
 

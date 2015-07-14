@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.scope.VariantOutputScope
 import com.android.build.gradle.internal.variant.ApkVariantOutputData
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
+import com.android.build.gradle.tasks.fd.InjectBootstrapApplicationTask
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.dependency.LibraryDependency
 import com.android.manifmerger.ManifestMerger2
@@ -138,6 +139,13 @@ public class MergeManifests extends ManifestProcessorTask {
                 ManifestMerger2.MergeType.APPLICATION,
                 variantConfiguration.getManifestPlaceholders(),
                 getReportFile())
+
+        // Temporary hack for fast deployment; longer term this should be
+        // part of the manifest merger and/or tied to the active target
+        if (variantConfiguration.buildType.isDebuggable()) {
+            // Fast Deploy applies
+            InjectBootstrapApplicationTask.injectApplication(getManifestOutputFile())
+        }
     }
 
     // ----- ConfigAction -----
