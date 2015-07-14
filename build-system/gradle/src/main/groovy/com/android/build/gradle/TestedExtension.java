@@ -41,8 +41,8 @@ public abstract class TestedExtension extends BaseExtension implements TestedAnd
         super(project, instantiator, androidBuilder, sdkHandler, buildTypes, productFlavors,
                 signingConfigs, extraModelInfo, isLibrary);
 
-        getSourceSetsContainer().create(ANDROID_TEST.getPrefix());
-        getSourceSetsContainer().create(UNIT_TEST.getPrefix());
+        getSourceSets().create(ANDROID_TEST.getPrefix());
+        getSourceSets().create(UNIT_TEST.getPrefix());
     }
 
     /**
