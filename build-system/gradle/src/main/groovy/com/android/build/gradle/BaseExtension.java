@@ -49,6 +49,7 @@ import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.sdklib.repository.FullRevision;
+import com.google.common.annotations.Beta;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Action;
@@ -78,6 +79,7 @@ import java.util.List;
  * <li>Plugin <code>com.android.test</code> uses {@link TestedExtension}</li>
  * </ul>
  */
+@SuppressWarnings("UnnecessaryInheritDoc")
 public abstract class BaseExtension implements AndroidConfig {
 
     private String target;
@@ -487,16 +489,19 @@ public abstract class BaseExtension implements AndroidConfig {
         return testServerList;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Collection<? extends CoreProductFlavor> getProductFlavors() {
         return productFlavors;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Collection<? extends CoreBuildType> getBuildTypes() {
         return buildTypes;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Collection<? extends com.android.builder.model.SigningConfig> getSigningConfigs() {
         return signingConfigs;
@@ -560,6 +565,7 @@ public abstract class BaseExtension implements AndroidConfig {
         return adbOptions;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getResourcePrefix() {
         return resourcePrefix;
@@ -575,7 +581,9 @@ public abstract class BaseExtension implements AndroidConfig {
         return generatePureSplits;
     }
 
+    /** {@inheritDoc} */
     @Override
+    @Beta
     public PreprocessingOptions getPreprocessingOptions() {
         return preprocessingOptions;
     }
@@ -717,46 +725,55 @@ public abstract class BaseExtension implements AndroidConfig {
         return enforceUniquePackageName;
     }
 
+    /** {@inheritDoc} */
     @Override
     public CoreProductFlavor getDefaultConfig() {
         return defaultConfig;
     }
 
+    /** {@inheritDoc} */
     @Override
     public AaptOptions getAaptOptions() {
         return aaptOptions;
     }
 
+    /** {@inheritDoc} */
     @Override
     public CompileOptions getCompileOptions() {
         return compileOptions;
     }
 
+    /** {@inheritDoc} */
     @Override
     public DexOptions getDexOptions() {
         return dexOptions;
     }
 
+    /** {@inheritDoc} */
     @Override
     public JacocoExtension getJacoco() {
         return jacoco;
     }
 
+    /** {@inheritDoc} */
     @Override
     public LintOptions getLintOptions() {
         return lintOptions;
     }
 
+    /** {@inheritDoc} */
     @Override
     public PackagingOptions getPackagingOptions() {
         return packagingOptions;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Splits getSplits() {
         return splits;
     }
 
+    /** {@inheritDoc} */
     @Override
     public TestOptions getTestOptions() {
         return testOptions;
