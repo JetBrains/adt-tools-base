@@ -16,6 +16,10 @@
 
 package com.android.build.gradle;
 
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+import static com.google.common.base.Preconditions.checkState;
+import static java.io.File.separator;
+
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.internal.ApiObjectFactory;
@@ -24,6 +28,8 @@ import com.android.build.gradle.internal.DependencyManager;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.NativeLibraryFactoryImpl;
+import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.TaskManager;
@@ -35,14 +41,12 @@ import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.ProductFlavorFactory;
 import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.dsl.SigningConfigFactory;
-import com.android.build.gradle.internal.NativeLibraryFactoryImpl;
 import com.android.build.gradle.internal.model.ModelBuilder;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
-import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.tasks.JillTask;
 import com.android.build.gradle.tasks.PreDex;
 import com.android.builder.Version;
@@ -99,10 +103,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 import java.util.regex.Pattern;
-
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
-import static com.google.common.base.Preconditions.checkState;
-import static java.io.File.separator;
 
 /**
  * Base class for all Android plugins
@@ -274,7 +274,8 @@ public abstract class BasePlugin {
 
         List<Recorder.Property> propertyList = Lists.newArrayList(
                 new Recorder.Property("plugin_version", Version.ANDROID_GRADLE_PLUGIN_VERSION),
-                new Recorder.Property("next_gen_plugin", "false")
+                new Recorder.Property("next_gen_plugin", "false"),
+                new Recorder.Property("gradle_version", project.getGradle().getGradleVersion())
         );
         String benchmarkName = (String) project.getProperties().get("com.android.benchmark.name");
         if (benchmarkName != null) {
