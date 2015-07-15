@@ -15,22 +15,25 @@
  */
 
 package com.android.build.gradle.integration.component
+
+import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+import org.junit.experimental.categories.Category
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 
 /**
  * Basic integration test for LibraryComponentModelPlugin.
  */
+@Category(SmokeTests.class)
 @CompileStatic
 class LibraryComponentPluginTest {
     private static HelloWorldLibraryApp testApp = new HelloWorldLibraryApp()
