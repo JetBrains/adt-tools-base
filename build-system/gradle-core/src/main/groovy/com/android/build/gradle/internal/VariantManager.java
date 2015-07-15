@@ -20,15 +20,11 @@ import static com.android.builder.core.BuilderConstants.LINT;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.builder.core.VariantType.LIBRARY;
 import static com.android.builder.core.VariantType.UNIT_TEST;
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS;
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD;
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE;
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD;
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TYPE;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.TestAndroidConfig;
 import com.android.build.gradle.TestedAndroidConfig;
 import com.android.build.gradle.api.AndroidSourceSet;
@@ -68,8 +64,6 @@ import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import groovy.lang.Closure;
 
 /**
  * Class to create, manage variants.
@@ -811,22 +805,19 @@ public class VariantManager implements VariantModel {
     }
 
     private SigningConfig createSigningOverride() {
-        if (project.hasProperty(PROPERTY_SIGNING_STORE_FILE) &&
-                project.hasProperty(PROPERTY_SIGNING_STORE_PASSWORD) &&
-                project.hasProperty(PROPERTY_SIGNING_KEY_ALIAS) &&
-                project.hasProperty(PROPERTY_SIGNING_KEY_PASSWORD)) {
-
+        AndroidGradleOptions.SigningOptions signingOptions =
+                AndroidGradleOptions.getSigningOptions(project);
+        if (signingOptions != null) {
             com.android.build.gradle.internal.dsl.SigningConfig signingConfigDsl =
                     new com.android.build.gradle.internal.dsl.SigningConfig("externalOverride");
-            Map<String, ?> props = project.getProperties();
 
-            signingConfigDsl.setStoreFile(new File((String) props.get(PROPERTY_SIGNING_STORE_FILE)));
-            signingConfigDsl.setStorePassword((String) props.get(PROPERTY_SIGNING_STORE_PASSWORD));
-            signingConfigDsl.setKeyAlias((String) props.get(PROPERTY_SIGNING_KEY_ALIAS));
-            signingConfigDsl.setKeyPassword((String) props.get(PROPERTY_SIGNING_KEY_PASSWORD));
+            signingConfigDsl.setStoreFile(new File(signingOptions.storeFile));
+            signingConfigDsl.setStorePassword(signingOptions.keyPassword);
+            signingConfigDsl.setKeyAlias(signingOptions.keyAlias);
+            signingConfigDsl.setKeyPassword(signingOptions.keyPassword);
 
-            if (project.hasProperty(PROPERTY_SIGNING_STORE_TYPE)) {
-                signingConfigDsl.setStoreType((String) props.get(PROPERTY_SIGNING_STORE_TYPE));
+            if (signingOptions.storeType != null) {
+                signingConfigDsl.setStoreType(signingOptions.storeType);
             }
 
             return signingConfigDsl;

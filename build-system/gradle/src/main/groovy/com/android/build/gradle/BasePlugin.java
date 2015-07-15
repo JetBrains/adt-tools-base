@@ -279,11 +279,11 @@ public abstract class BasePlugin {
                 new Recorder.Property("next_gen_plugin", "false"),
                 new Recorder.Property("gradle_version", project.getGradle().getGradleVersion())
         );
-        String benchmarkName = (String) project.getProperties().get("com.android.benchmark.name");
+        String benchmarkName = AndroidGradleOptions.getBenchmarkName(project);
         if (benchmarkName != null) {
             propertyList.add(new Recorder.Property("benchmark_name", benchmarkName));
         }
-        String benchmarkMode = (String) project.getProperties().get("com.android.benchmark.mode");
+        String benchmarkMode = AndroidGradleOptions.getBenchmarkMode(project);
         if (benchmarkMode != null) {
             propertyList.add(new Recorder.Property("benchmark_mode", benchmarkMode));
         }
