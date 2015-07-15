@@ -35,6 +35,8 @@ import com.android.resources.TouchScreen;
 import com.android.resources.UiMode;
 import com.google.common.base.Splitter;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -61,7 +63,7 @@ public class DeviceParser {
         private static final String ROUND_BOOT_PROP = "ro.emulator.circular";
         private static final String CHIN_BOOT_PROP = "ro.emu.win_outset_bottom_px";
 
-        private final List<Device> mDevices = new ArrayList<Device>();
+        private final Table<String, String, Device> mDevices = HashBasedTable.create();
         private final StringBuilder mStringAccumulator = new StringBuilder();
         private final File mParentFolder;
         private Meta mMeta;
@@ -78,7 +80,7 @@ public class DeviceParser {
         }
 
         @NonNull
-        public List<Device> getDevices() {
+        public Table<String, String, Device> getDevices() {
             return mDevices;
         }
 
@@ -134,7 +136,8 @@ public class DeviceParser {
         @Override
         public void endElement(String uri, String localName, String name) throws SAXException {
             if (DeviceSchema.NODE_DEVICE.equals(localName)) {
-                mDevices.add(mBuilder.build());
+                Device device = mBuilder.build();
+                mDevices.put(device.getId(), device.getManufacturer(), device);
             } else if (DeviceSchema.NODE_NAME.equals(localName)) {
                 mBuilder.setName(getString(mStringAccumulator));
             } else if (DeviceSchema.NODE_ID.equals(localName)) {
@@ -444,7 +447,7 @@ public class DeviceParser {
     }
 
     @NonNull
-    public static List<Device> parse(@NonNull File devicesFile)
+    public static Table<String, String, Device> parse(@NonNull File devicesFile)
             throws SAXException, ParserConfigurationException, IOException {
         // stream closed by parseImpl.
         @SuppressWarnings("IOResourceOpenedButNotSafelyClosed")
@@ -456,7 +459,7 @@ public class DeviceParser {
      * This method closes the stream.
      */
     @NonNull
-    public static List<Device> parse(@NonNull InputStream devices)
+    public static Table<String, String, Device> parse(@NonNull InputStream devices)
             throws SAXException, IOException, ParserConfigurationException {
         return parseImpl(devices, null);
     }
@@ -465,7 +468,7 @@ public class DeviceParser {
      * After parsing, this method closes the stream.
      */
     @NonNull
-    private static List<Device> parseImpl(@NonNull InputStream devices, @Nullable File parentDir)
+    private static Table<String, String, Device> parseImpl(@NonNull InputStream devices, @Nullable File parentDir)
             throws SAXException, IOException, ParserConfigurationException {
         try {
             if (!devices.markSupported()) {

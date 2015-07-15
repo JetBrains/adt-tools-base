@@ -30,6 +30,8 @@ import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.PkgProps;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
@@ -70,10 +72,10 @@ public class DeviceManager {
     private static final Pattern PATH_PROPERTY_PATTERN =
         Pattern.compile('^' + PkgProps.EXTRA_PATH + '=' + DEVICE_PROFILES_PROP + '$');
     private ILogger mLog;
-    private Collection<Device> mVendorDevices;
-    private Collection<Device> mSysImgDevices;
-    private Collection<Device> mUserDevices;
-    private Collection<Device> mDefaultDevices;
+    private Table<String, String, Device> mVendorDevices;
+    private Table<String, String, Device> mSysImgDevices;
+    private Table<String, String, Device> mUserDevices;
+    private Table<String, String, Device> mDefaultDevices;
     private final Object mLock = new Object();
     private final List<DevicesChangedListener> sListeners = new ArrayList<DevicesChangedListener>();
     private final String mOsSdkPath;
@@ -181,19 +183,19 @@ public class DeviceManager {
     @Nullable
     public Device getDevice(@NonNull String id, @NonNull String manufacturer) {
         initDevicesLists();
-        Device d = getDeviceImpl(mUserDevices, id, manufacturer);
+        Device d = mUserDevices.get(id, manufacturer);
         if (d != null) {
             return d;
         }
-        d = getDeviceImpl(mSysImgDevices, id, manufacturer);
+        d = mSysImgDevices.get(id, manufacturer);
         if (d != null) {
             return d;
         }
-        d = getDeviceImpl(mDefaultDevices, id, manufacturer);
+        d = mDefaultDevices.get(id, manufacturer);
         if (d != null) {
             return d;
         }
-        d = getDeviceImpl(mVendorDevices, id, manufacturer);
+        d = mVendorDevices.get(id, manufacturer);
         return d;
     }
 
@@ -230,20 +232,20 @@ public class DeviceManager {
     @NonNull
     public Collection<Device> getDevices(@NonNull EnumSet<DeviceFilter> deviceFilter) {
         initDevicesLists();
-        LinkedHashSet<Device> devices = new LinkedHashSet<Device>();
+        Table<String, String, Device> devices = HashBasedTable.create();
         if (mUserDevices != null && (deviceFilter.contains(DeviceFilter.USER))) {
-            devices.addAll(mUserDevices);
+            devices.putAll(mUserDevices);
         }
         if (mDefaultDevices != null && (deviceFilter.contains(DeviceFilter.DEFAULT))) {
-            devices.addAll(mDefaultDevices);
+            devices.putAll(mDefaultDevices);
         }
         if (mVendorDevices != null && (deviceFilter.contains(DeviceFilter.VENDOR))) {
-            devices.addAll(mVendorDevices);
+            devices.putAll(mVendorDevices);
         }
         if (mSysImgDevices != null && (deviceFilter.contains(DeviceFilter.SYSTEM_IMAGES))) {
-            devices.addAll(mSysImgDevices);
+            devices.putAll(mSysImgDevices);
         }
-        return Collections.unmodifiableSet(devices);
+        return Collections.unmodifiableCollection(devices.values());
     }
 
     private void initDevicesLists() {
@@ -275,10 +277,10 @@ public class DeviceManager {
                 // The device builders can throw IllegalStateExceptions if
                 // build gets called before everything is properly setup
                 mLog.error(e, null);
-                mDefaultDevices = new LinkedHashSet<Device>();
+                mDefaultDevices = HashBasedTable.create();
             } catch (Exception e) {
                 mLog.error(e, "Error reading default devices");
-                mDefaultDevices = new LinkedHashSet<Device>();
+                mDefaultDevices = HashBasedTable.create();
             } finally {
                 Closeables.closeQuietly(stream);
             }
@@ -297,12 +299,12 @@ public class DeviceManager {
                 return false;
             }
 
-            mVendorDevices = new LinkedHashSet<Device>();
+            mVendorDevices = HashBasedTable.create();
 
             // Load builtin devices
             InputStream stream = DeviceManager.class.getResourceAsStream("nexus.xml");
             try {
-                mVendorDevices.addAll(DeviceParser.parse(stream));
+                mVendorDevices.putAll(DeviceParser.parse(stream));
             } catch (Exception e) {
                 mLog.error(e, "Could not load nexus devices");
             } finally {
@@ -311,7 +313,7 @@ public class DeviceManager {
 
             stream = DeviceManager.class.getResourceAsStream("wear.xml");
             try {
-                mVendorDevices.addAll(DeviceParser.parse(stream));
+                mVendorDevices.putAll(DeviceParser.parse(stream));
             } catch (Exception e) {
                 mLog.error(e, "Could not load wear devices");
             } finally {
@@ -320,7 +322,7 @@ public class DeviceManager {
 
             stream = DeviceManager.class.getResourceAsStream("tv.xml");
             try {
-                mVendorDevices.addAll(DeviceParser.parse(stream));
+                mVendorDevices.putAll(DeviceParser.parse(stream));
             } catch (Exception e) {
                 mLog.error(e, "Could not load tv devices");
             } finally {
@@ -334,7 +336,7 @@ public class DeviceManager {
                 for (File deviceDir : deviceDirs) {
                     File deviceXml = new File(deviceDir, SdkConstants.FN_DEVICES_XML);
                     if (deviceXml.isFile()) {
-                        mVendorDevices.addAll(loadDevices(deviceXml));
+                        mVendorDevices.putAll(loadDevices(deviceXml));
                     }
                 }
                 return true;
@@ -352,7 +354,7 @@ public class DeviceManager {
             if (mSysImgDevices != null) {
                 return false;
             }
-            mSysImgDevices = new LinkedHashSet<Device>();
+            mSysImgDevices = HashBasedTable.create();
 
             if (mOsSdkPath == null) {
                 return false;
@@ -381,7 +383,7 @@ public class DeviceManager {
 
                         File deviceXml = new File(abiFolder, SdkConstants.FN_DEVICES_XML);
                         if (fop.isFile(deviceXml)) {
-                            mSysImgDevices.addAll(loadDevices(deviceXml));
+                            mSysImgDevices.putAll(loadDevices(deviceXml));
                         }
                     }
                 }
@@ -401,14 +403,14 @@ public class DeviceManager {
             }
             // User devices should be saved out to
             // $HOME/.android/devices.xml
-            mUserDevices = new LinkedHashSet<Device>();
+            mUserDevices = HashBasedTable.create();
             File userDevicesFile = null;
             try {
                 userDevicesFile = new File(
                         AndroidLocation.getFolder(),
                         SdkConstants.FN_DEVICES_XML);
                 if (userDevicesFile.exists()) {
-                    mUserDevices.addAll(DeviceParser.parse(userDevicesFile));
+                    mUserDevices.putAll(DeviceParser.parse(userDevicesFile));
                     return true;
                 }
             } catch (AndroidLocationException e) {
@@ -446,7 +448,7 @@ public class DeviceManager {
                 assert mUserDevices != null;
             }
             if (mUserDevices != null) {
-                mUserDevices.add(d);
+                mUserDevices.put(d.getId(), d.getManufacturer(), d);
             }
             changed = true;
         }
@@ -462,16 +464,9 @@ public class DeviceManager {
                 assert mUserDevices != null;
             }
             if (mUserDevices != null) {
-                Iterator<Device> it = mUserDevices.iterator();
-                while (it.hasNext()) {
-                    Device userDevice = it.next();
-                    if (userDevice.getId().equals(d.getId())
-                            && userDevice.getManufacturer().equals(d.getManufacturer())) {
-                        it.remove();
-                        notifyListeners();
-                        return;
-                    }
-
+                if (mUserDevices.contains(d.getId(), d.getManufacturer())) {
+                    mUserDevices.remove(d.getId(), d.getManufacturer());
+                    notifyListeners();
                 }
             }
         }
@@ -513,7 +508,7 @@ public class DeviceManager {
         synchronized (mLock) {
             if (!mUserDevices.isEmpty()) {
                 try {
-                    DeviceWriter.writeToXml(new FileOutputStream(userDevicesFile), mUserDevices);
+                    DeviceWriter.writeToXml(new FileOutputStream(userDevicesFile), mUserDevices.values());
                 } catch (FileNotFoundException e) {
                     mLog.warning("Couldn't open file: %1$s", e.getMessage());
                 } catch (ParserConfigurationException e) {
@@ -650,7 +645,7 @@ public class DeviceManager {
     }
 
     @NonNull
-    private Collection<Device> loadDevices(@NonNull File deviceXml) {
+    private Table<String, String, Device> loadDevices(@NonNull File deviceXml) {
         try {
             return DeviceParser.parse(deviceXml);
         } catch (SAXException e) {
@@ -666,7 +661,7 @@ public class DeviceManager {
             // build gets called before everything is properly setup
             mLog.error(e, null);
         }
-        return new LinkedHashSet<Device>();
+        return HashBasedTable.create();
     }
 
     private void notifyListeners() {

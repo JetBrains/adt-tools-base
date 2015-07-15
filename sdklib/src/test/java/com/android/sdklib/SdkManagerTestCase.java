@@ -63,38 +63,48 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base Test case that allocates a temporary SDK, a temporary AVD base
- * folder with an SdkManager and an AvdManager that points to them.
- * <p/>
- * Also overrides the {@link AndroidLocation} to point to temp one.
+ * Base Test case that allocates a temporary SDK, a temporary AVD base folder with an SdkManager and
+ * an AvdManager that points to them. <p/> Also overrides the {@link AndroidLocation} to point to
+ * temp one.
  */
 public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
 
     protected static final String TARGET_DIR_NAME_0 = "v0_0";
+
     private File mFakeSdk;
+
     private MockLog mLog;
+
     private SdkManager mSdkManager;
+
     private AvdManager mAvdManager;
+
     private int mRepoXsdLevel;
 
-    /** Returns the {@link MockLog} for this test case. */
+    /**
+     * Returns the {@link MockLog} for this test case.
+     */
     public MockLog getLog() {
         return mLog;
     }
 
-    /** Returns the {@link SdkManager} for this test case. */
+    /**
+     * Returns the {@link SdkManager} for this test case.
+     */
     public SdkManager getSdkManager() {
         return mSdkManager;
     }
 
-    /** Returns the {@link AvdManager} for this test case. */
+    /**
+     * Returns the {@link AvdManager} for this test case.
+     */
     public AvdManager getAvdManager() {
         return mAvdManager;
     }
 
     /**
-     * Sets up a {@link MockLog}, a fake SDK in a temporary directory
-     * and an AVD Manager pointing to an initially-empty AVD directory.
+     * Sets up a {@link MockLog}, a fake SDK in a temporary directory and an AVD Manager pointing to
+     * an initially-empty AVD directory.
      */
     public void setUp(int repoXsdLevel) throws Exception {
         super.setUp();
@@ -105,9 +115,9 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
     }
 
     /**
-     * Recreate the SDK and AVD Managers from scratch even if they already existed.
-     * Useful for tests that want to reset their state without recreating the
-     * android-home or the fake SDK. The SDK will be reparsed.
+     * Recreate the SDK and AVD Managers from scratch even if they already existed. Useful for tests
+     * that want to reset their state without recreating the android-home or the fake SDK. The SDK
+     * will be reparsed.
      */
     protected void createSdkAvdManagers() throws AndroidLocationException {
         mSdkManager = SdkManager.createManager(mFakeSdk.getAbsolutePath(), mLog);
@@ -136,8 +146,8 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
     }
 
     /**
-     * Sets up a {@link MockLog}, a fake SDK in a temporary directory
-     * and an AVD Manager pointing to an initially-empty AVD directory.
+     * Sets up a {@link MockLog}, a fake SDK in a temporary directory and an AVD Manager pointing to
+     * an initially-empty AVD directory.
      */
     @Override
     public void setUp() throws Exception {
@@ -154,10 +164,9 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
     }
 
     /**
-     * Build enough of a skeleton SDK to make the tests pass.
-     * <p/>
-     * Ideally this wouldn't touch the file system but the current
-     * structure of the SdkManager and AvdManager makes this impossible.
+     * Build enough of a skeleton SDK to make the tests pass. <p/> Ideally this wouldn't touch the
+     * file system but the current structure of the SdkManager and AvdManager makes this
+     * impossible.
      */
     private void makeFakeSdk() throws IOException {
         // First we create a temp file to "reserve" the temp directory name we want to use.
@@ -204,42 +213,47 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
      * Creates the system image folder and places a fake userdata.img in it.
      *
      * @param systemImage A system image with a valid location.
-     * @throws IOException if the file fails to be created.
      */
-    protected void makeSystemImageFolder(ISystemImage systemImage) throws Exception {
+    protected void makeSystemImageFolder(ISystemImage systemImage, String deviceId)
+            throws Exception {
         File sysImgDir = systemImage.getLocation();
-
+        String vendor = systemImage.getAddonVendor() == null ? null
+                : systemImage.getAddonVendor().getId();
         if (systemImage.getLocationType() == LocationType.IN_LEGACY_FOLDER) {
             // legacy mode. Path should look like SDK/platforms/platform-N/userdata.img
             makeFakeLegacySysImg(sysImgDir.getParentFile(), systemImage.getAbiType());
 
-        } else  if (systemImage.getLocationType() == LocationType.IN_IMAGES_SUBFOLDER) {
+        } else if (systemImage.getLocationType() == LocationType.IN_IMAGES_SUBFOLDER) {
             // not-so-legacy mode.
             // Path should look like SDK/platforms/platform-N/images/userdata.img
             makeFakeSysImgInternal(
                     sysImgDir,
                     systemImage.getTag().getId(),
-                    systemImage.getAbiType());
+                    systemImage.getAbiType(),
+                    deviceId,
+                    vendor);
 
-        } else  if (systemImage.getLocationType() == LocationType.IN_SYSTEM_IMAGE) {
+        } else if (systemImage.getLocationType() == LocationType.IN_SYSTEM_IMAGE) {
             // system-image folder mode.
             // Path should like SDK/system-images/platform-N/tag/abi/userdata.img+source.properties
             makeFakeSysImgInternal(
                     sysImgDir,
                     systemImage.getTag().getId(),
-                    systemImage.getAbiType());
+                    systemImage.getAbiType(),
+                    deviceId,
+                    vendor);
         }
     }
 
     /**
-     * Creates the system image folder and places a fake userdata.img in it.
-     * This must be called after {@link #setUp()} so that it can use the temp fake SDK folder,
-     * and consequently you do not need to specify the SDK root.
+     * Creates the system image folder and places a fake userdata.img in it. This must be called
+     * after {@link #setUp()} so that it can use the temp fake SDK folder, and consequently you do
+     * not need to specify the SDK root.
      *
-     * @param targetDir The targetDir segment of the sys-image folder.
-     *          Use {@link #TARGET_DIR_NAME_0} to match the default single platform.
-     * @param tagId An optional tag id. Use null for legacy no-tag system images.
-     * @param abiType The abi for the system image.
+     * @param targetDir The targetDir segment of the sys-image folder. Use {@link
+     *                  #TARGET_DIR_NAME_0} to match the default single platform.
+     * @param tagId     An optional tag id. Use null for legacy no-tag system images.
+     * @param abiType   The abi for the system image.
      * @return The directory of the system-image/tag/abi created.
      * @throws IOException if the file fails to be created.
      */
@@ -255,13 +269,13 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
         }
         sysImgDir = new File(sysImgDir, abiType);
 
-        makeFakeSysImgInternal(sysImgDir, tagId, abiType);
+        makeFakeSysImgInternal(sysImgDir, tagId, abiType, null, null);
         return sysImgDir;
     }
 
     //----
 
-    private void createTextFile(File dir, String filepath, String...lines) throws IOException {
+    private void createTextFile(File dir, String filepath, String... lines) throws IOException {
         File file = new File(dir, filepath);
 
         File parent = file.getParentFile();
@@ -281,7 +295,9 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
         }
     }
 
-    /** Utility used by {@link #makeFakeSdk()} to create a fake target with API 0, rev 0. */
+    /**
+     * Utility used by {@link #makeFakeSdk()} to create a fake target with API 0, rev 0.
+     */
     private File makeFakeTargetInternal(File platformsDir) throws IOException {
         File targetDir = new File(platformsDir, TARGET_DIR_NAME_0);
         targetDir.mkdirs();
@@ -296,17 +312,16 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
                 PkgProps.LAYOUTLIB_REV, "2");
 
         createFileProps(SdkConstants.FN_BUILD_PROP, targetDir,
-                LocalPlatformPkgInfo.PROP_VERSION_RELEASE,  "0.0",
-                LocalPlatformPkgInfo.PROP_VERSION_SDK,      "0",
+                LocalPlatformPkgInfo.PROP_VERSION_RELEASE, "0.0",
+                LocalPlatformPkgInfo.PROP_VERSION_SDK, "0",
                 LocalPlatformPkgInfo.PROP_VERSION_CODENAME, "REL");
 
         return targetDir;
     }
 
     /**
-     * Utility to create a fake *legacy* sys image in a platform folder.
-     * Legacy system images follow that path pattern:
-     *   $SDK/platforms/platform-N/images/userdata.img
+     * Utility to create a fake *legacy* sys image in a platform folder. Legacy system images follow
+     * that path pattern: $SDK/platforms/platform-N/images/userdata.img
      *
      * They have no source.properties file in that directory.
      */
@@ -322,20 +337,18 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
      * Utility to create a fake sys image in the system-images folder.
      *
      * "modern" (as in "not legacy") system-images follow that path pattern:
-     *   $SDK/system-images/platform-N/abi/source.properties
-     *   $SDK/system-images/platform-N/abi/userdata.img
-     * or
-     *   $SDK/system-images/platform-N/tag/abi/source.properties
-     *   $SDK/system-images/platform-N/tag/abi/userdata.img
+     * $SDK/system-images/platform-N/abi/source.properties $SDK/system-images/platform-N/abi/userdata.img
+     * or $SDK/system-images/platform-N/tag/abi/source.properties $SDK/system-images/platform-N/tag/abi/userdata.img
      *
-     * The tag id is optional and was only introduced in API 20 / Tools 22.6.
-     * The platform-N and the tag folder names are irrelevant as the info from
-     * source.properties matters most.
+     * The tag id is optional and was only introduced in API 20 / Tools 22.6. The platform-N and the
+     * tag folder names are irrelevant as the info from source.properties matters most.
      */
     private void makeFakeSysImgInternal(
             @NonNull File sysImgDir,
             @Nullable String tagId,
-            @NonNull String abiType) throws Exception {
+            @NonNull String abiType,
+            @Nullable String deviceId,
+            @Nullable String deviceMfg) throws Exception {
         sysImgDir.mkdirs();
         new File(sysImgDir, "userdata.img").createNewFile();
 
@@ -344,7 +357,7 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
                     PkgProps.PKG_REVISION, "0",
                     PkgProps.VERSION_API_LEVEL, "0",
                     PkgProps.SYS_IMG_ABI, abiType);
-       } else {
+        } else {
             String tagDisplay = LocalSysImgPkgInfo.tagIdToDisplay(tagId);
             createSourceProps(sysImgDir,
                     PkgProps.PKG_REVISION, "0",
@@ -352,14 +365,15 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
                     PkgProps.SYS_IMG_TAG_ID, tagId,
                     PkgProps.SYS_IMG_TAG_DISPLAY, tagDisplay,
                     PkgProps.SYS_IMG_ABI, abiType,
-                    PkgProps.PKG_LIST_DISPLAY, "Sys-Img v0 for (" + tagDisplay + ", " + abiType + ")");
+                    PkgProps.PKG_LIST_DISPLAY,
+                    "Sys-Img v0 for (" + tagDisplay + ", " + abiType + ")");
 
             // create a devices.xml file
             List<Device> devices = new ArrayList<Device>();
             Builder b = new Device.Builder();
             b.setName("Mock " + tagDisplay + " Device Name");
-            b.setId("MockDevice-" + tagId);
-            b.setManufacturer("Mock " + tagDisplay + " OEM");
+            b.setId(deviceId == null ? "MockDevice-" + tagId : deviceId);
+            b.setManufacturer(deviceMfg == null ? "Mock " + tagDisplay + " OEM" : deviceMfg);
 
             Software sw = new Software();
             sw.setGlVersion("4.2");
@@ -410,10 +424,12 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
             FileOutputStream fos = new FileOutputStream(f);
             DeviceWriter.writeToXml(fos, devices);
             fos.close();
-         }
+        }
     }
 
-    /** Utility to make a fake skin for the given target */
+    /**
+     * Utility to make a fake skin for the given target
+     */
     protected void makeFakeSkin(File targetDir, String skinName) throws IOException {
         File skinFolder = FileOp.append(targetDir, "skins", skinName);
         skinFolder.mkdirs();
@@ -425,7 +441,9 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
         out.close();
     }
 
-    /** Utility to create a fake source with a few files in the given sdk folder. */
+    /**
+     * Utility to create a fake source with a few files in the given sdk folder.
+     */
     private void makeFakeSourceInternal(File sdkDir) throws IOException {
         File sourcesDir = FileOp.append(sdkDir, SdkConstants.FD_PKG_SOURCES, "android-0");
         sourcesDir.mkdirs();
@@ -450,7 +468,7 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
     }
 
     private void makeBuildTools(File sdkDir) throws IOException {
-        for (String revision : new String[] { "3.0.0", "3.0.1", "18.3.4 rc5" }) {
+        for (String revision : new String[]{"3.0.0", "3.0.1", "18.3.4 rc5"}) {
             createFakeBuildTools(sdkDir, "ANY", revision);
         }
     }
@@ -458,10 +476,9 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
     /**
      * Adds a new fake build tools to the SDK In the given SDK/build-tools folder.
      *
-     * @param sdkDir The SDK top folder. Must already exist.
-     * @param os The OS. One of HostOs#toString() or "ANY".
+     * @param sdkDir   The SDK top folder. Must already exist.
+     * @param os       The OS. One of HostOs#toString() or "ANY".
      * @param revision The "x.y.z rc r" revision number from {@link FullRevision#toShortString()}.
-     * @throws IOException
      */
     protected void createFakeBuildTools(File sdkDir, String os, String revision)
             throws IOException {
@@ -476,46 +493,47 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
 
         createFakeBuildToolsFile(
                 buildToolsDir, fullRevision,
-                BuildToolInfo.PathId.AAPT,             SdkConstants.FN_AAPT);
+                BuildToolInfo.PathId.AAPT, SdkConstants.FN_AAPT);
         createFakeBuildToolsFile(
                 buildToolsDir, fullRevision,
-                BuildToolInfo.PathId.AIDL,             SdkConstants.FN_AIDL);
+                BuildToolInfo.PathId.AIDL, SdkConstants.FN_AIDL);
         createFakeBuildToolsFile(
                 buildToolsDir, fullRevision,
-                BuildToolInfo.PathId.DX,               SdkConstants.FN_DX);
+                BuildToolInfo.PathId.DX, SdkConstants.FN_DX);
         createFakeBuildToolsFile(
                 buildToolsDir, fullRevision,
-                BuildToolInfo.PathId.DX_JAR,           SdkConstants.FD_LIB + File.separator +
-                SdkConstants.FN_DX_JAR);
+                BuildToolInfo.PathId.DX_JAR, SdkConstants.FD_LIB + File.separator +
+                        SdkConstants.FN_DX_JAR);
         createFakeBuildToolsFile(
                 buildToolsDir, fullRevision,
-                BuildToolInfo.PathId.LLVM_RS_CC,       SdkConstants.FN_RENDERSCRIPT);
+                BuildToolInfo.PathId.LLVM_RS_CC, SdkConstants.FN_RENDERSCRIPT);
         createFakeBuildToolsFile(
                 buildToolsDir, fullRevision,
-                BuildToolInfo.PathId.ANDROID_RS,       SdkConstants.OS_FRAMEWORK_RS + File.separator +
-                     "placeholder.txt");
+                BuildToolInfo.PathId.ANDROID_RS, SdkConstants.OS_FRAMEWORK_RS + File.separator +
+                        "placeholder.txt");
         createFakeBuildToolsFile(
                 buildToolsDir, fullRevision,
-                BuildToolInfo.PathId.ANDROID_RS_CLANG, SdkConstants.OS_FRAMEWORK_RS_CLANG + File.separator +
-                    "placeholder.txt");
+                BuildToolInfo.PathId.ANDROID_RS_CLANG,
+                SdkConstants.OS_FRAMEWORK_RS_CLANG + File.separator +
+                        "placeholder.txt");
         createFakeBuildToolsFile(
                 buildToolsDir, fullRevision,
-                BuildToolInfo.PathId.BCC_COMPAT,       SdkConstants.FN_BCC_COMPAT);
+                BuildToolInfo.PathId.BCC_COMPAT, SdkConstants.FN_BCC_COMPAT);
         createFakeBuildToolsFile(
                 buildToolsDir, fullRevision,
-                BuildToolInfo.PathId.LD_ARM,       SdkConstants.FN_LD_ARM);
+                BuildToolInfo.PathId.LD_ARM, SdkConstants.FN_LD_ARM);
         createFakeBuildToolsFile(
                 buildToolsDir, fullRevision,
-                BuildToolInfo.PathId.LD_MIPS,       SdkConstants.FN_LD_MIPS);
+                BuildToolInfo.PathId.LD_MIPS, SdkConstants.FN_LD_MIPS);
         createFakeBuildToolsFile(
                 buildToolsDir, fullRevision,
-                BuildToolInfo.PathId.LD_X86,       SdkConstants.FN_LD_X86);
+                BuildToolInfo.PathId.LD_X86, SdkConstants.FN_LD_X86);
     }
 
     private void createFakeBuildToolsFile(@NonNull File dir,
-                                          @NonNull FullRevision buildToolsRevision,
-                                          @NonNull BuildToolInfo.PathId pathId,
-                                          @NonNull String filepath)
+            @NonNull FullRevision buildToolsRevision,
+            @NonNull BuildToolInfo.PathId pathId,
+            @NonNull String filepath)
             throws IOException {
 
         if (pathId.isPresentIn(buildToolsRevision)) {
@@ -524,11 +542,12 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
     }
 
 
-    protected void createSourceProps(File parentDir, String...paramValuePairs) throws IOException {
+    protected void createSourceProps(File parentDir, String... paramValuePairs) throws IOException {
         createFileProps(SdkConstants.FN_SOURCE_PROP, parentDir, paramValuePairs);
     }
 
-    protected void createFileProps(String fileName, File parentDir, String...paramValuePairs) throws IOException {
+    protected void createFileProps(String fileName, File parentDir, String... paramValuePairs)
+            throws IOException {
         File sourceProp = new File(parentDir, fileName);
         parentDir = sourceProp.getParentFile();
         if (!parentDir.isDirectory()) {
@@ -539,9 +558,9 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
         }
         FileWriter out = new FileWriter(sourceProp);
         int n = paramValuePairs.length;
-        assertTrue("paramValuePairs must have an even length, format [param=value]+", n %2 == 0);
+        assertTrue("paramValuePairs must have an even length, format [param=value]+", n % 2 == 0);
         for (int i = 0; i < n; i += 2) {
-            out.write(paramValuePairs[i] + '=' + paramValuePairs[i+1] + '\n');
+            out.write(paramValuePairs[i] + '=' + paramValuePairs[i + 1] + '\n');
         }
         out.close();
 

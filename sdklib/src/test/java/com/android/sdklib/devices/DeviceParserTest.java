@@ -29,6 +29,7 @@ import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
 import com.android.sdklib.devices.Storage.Unit;
 
+import com.google.common.collect.Table;
 import junit.framework.TestCase;
 
 import org.xml.sax.SAXParseException;
@@ -45,11 +46,11 @@ public class DeviceParserTest extends TestCase {
     public void testValidDevicesMinimal() throws Exception {
         InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_minimal.xml");
         try {
-            List<Device> devices = DeviceParser.parse(stream);
+            Table<String, String, Device> devices = DeviceParser.parse(stream);
             assertEquals("Parsing devices_minimal.xml produces the wrong number of devices",
                     1, devices.size());
 
-            Device device = devices.get(0);
+            Device device = devices.get("Galaxy Nexus", "Samsung");
             assertEquals("Galaxy Nexus", device.getDisplayName());
             assertEquals("Samsung", device.getManufacturer());
 
@@ -155,23 +156,23 @@ public class DeviceParserTest extends TestCase {
     public void testValidDevicesFull_v1() throws Exception {
         InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices.xml");
         try {
-            List<Device> devices = DeviceParser.parse(stream);
+            Table<String, String, Device> devices = DeviceParser.parse(stream);
             assertEquals("Parsing devices.xml produces the wrong number of devices",
                     4, devices.size());
 
-            Device device0 = devices.get(0);
+            Device device0 = devices.get("galaxy_nexus", "Samsung");
             assertEquals(null, device0.getTagId());
             assertEquals("{}", device0.getBootProps().toString());
             assertEquals("OMAP 4460", device0.getDefaultHardware().getCpu());
             assertEquals("[armeabi, armeabi-v7a]", device0.getDefaultHardware().getSupportedAbis().toString());
 
-            Device device1 = devices.get(1);
+            Device device1 = devices.get("Droid", "Motorola");
             assertEquals(null, device1.getTagId());
             assertEquals("{}", device1.getBootProps().toString());
             assertEquals("OMAP 3430", device1.getDefaultHardware().getCpu());
             assertEquals("[armeabi, armeabi-v7a]", device1.getDefaultHardware().getSupportedAbis().toString());
 
-            Device device2 = devices.get(2);
+            Device device2 = devices.get("Nexus 5", "Google");
             assertEquals("tag-1", device2.getTagId());
             assertEquals("{ro-myservice-port=1234, " +
                           "ro.RAM.Size=1024 MiB, " +
@@ -182,7 +183,7 @@ public class DeviceParserTest extends TestCase {
             assertEquals(device2.getChinSize(), 0);
             assertFalse(device2.isScreenRound());
 
-            Device device3 = devices.get(3);
+            Device device3 = devices.get("wear_round_chin", "Google");
             assertEquals("android-wear", device3.getTagId());
             assertEquals(device3.getDefaultHardware().getScreen().getChin(), 30);
             assertEquals(device3.getChinSize(), 30);
@@ -196,17 +197,17 @@ public class DeviceParserTest extends TestCase {
     public void testValidDevicesFull_v2() throws Exception {
         InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_v2.xml");
         try {
-            List<Device> devices = DeviceParser.parse(stream);
+            Table<String, String, Device> devices = DeviceParser.parse(stream);
             assertEquals("Parsing devices.xml produces the wrong number of devices",
                     4, devices.size());
 
-            Device device0 = devices.get(0);
+            Device device0 = devices.get("galaxy_64", "Gnusmas");
             assertEquals(null, device0.getTagId());
             assertEquals("{}", device0.getBootProps().toString());
             assertEquals("arm64", device0.getDefaultHardware().getCpu());
             assertEquals("[arm64-v8a]", device0.getDefaultHardware().getSupportedAbis().toString());
 
-            Device device1 = devices.get(1);
+            Device device1 = devices.get("Droid X86", "Letni");
             assertEquals("tag-1", device1.getTagId());
             assertEquals("{ro-myservice-port=1234, " +
                           "ro.RAM.Size=1024 MiB, " +
@@ -215,7 +216,7 @@ public class DeviceParserTest extends TestCase {
             assertEquals("Intel Atom 64", device1.getDefaultHardware().getCpu());
             assertEquals("[x86_64]", device1.getDefaultHardware().getSupportedAbis().toString());
 
-            Device device2 = devices.get(2);
+            Device device2 = devices.get("Mips 64", "Mips");
             assertEquals("tag-2", device2.getTagId());
             assertEquals("{ro-myservice-port=1234, " +
                           "ro.RAM.Size=1024 MiB, " +
@@ -227,7 +228,7 @@ public class DeviceParserTest extends TestCase {
             assertEquals(device2.getChinSize(), 0);
             assertFalse(device2.isScreenRound());
 
-            Device device3 = devices.get(3);
+            Device device3 = devices.get("wear_round_chin", "Google");
             assertEquals("android-wear", device3.getTagId());
             assertEquals(device3.getDefaultHardware().getScreen().getChin(), 30);
             assertEquals(device3.getChinSize(), 30);
@@ -243,27 +244,27 @@ public class DeviceParserTest extends TestCase {
         replacements.put("api-level", "1-");
         InputStream stream = DeviceSchemaTest.getReplacedStream(replacements);
         try {
-            List<Device> devices = DeviceParser.parse(stream);
+            Table<String, String, Device> devices = DeviceParser.parse(stream);
             assertEquals(1, devices.size());
-            Device device = devices.get(0);
+            Device device = devices.get("Galaxy Nexus", "Samsung");
             assertTrue(device.getSoftware(1) != null);
             assertTrue(device.getSoftware(2) != null);
             assertTrue(device.getSoftware(0) == null);
             replacements.put("api-level", "-2");
             stream = DeviceSchemaTest.getReplacedStream(replacements);
-            device = DeviceParser.parse(stream).get(0);
+            device = DeviceParser.parse(stream).get("Galaxy Nexus", "Samsung");
             assertTrue(device.getSoftware(2) != null);
             assertTrue(device.getSoftware(3) == null);
             replacements.put("api-level", "1-2");
             stream = DeviceSchemaTest.getReplacedStream(replacements);
-            device = DeviceParser.parse(stream).get(0);
+            device = DeviceParser.parse(stream).get("Galaxy Nexus", "Samsung");
             assertTrue(device.getSoftware(0) == null);
             assertTrue(device.getSoftware(1) != null);
             assertTrue(device.getSoftware(2) != null);
             assertTrue(device.getSoftware(3) == null);
             replacements.put("api-level", "-");
             stream = DeviceSchemaTest.getReplacedStream(replacements);
-            device = DeviceParser.parse(stream).get(0);
+            device = DeviceParser.parse(stream).get("Galaxy Nexus", "Samsung");
             assertTrue(device.getSoftware(0) != null);
             assertTrue(device.getSoftware(15) != null);
         } finally {
@@ -276,9 +277,9 @@ public class DeviceParserTest extends TestCase {
         replacements.put("networking", "NFD");
         InputStream stream = DeviceSchemaTest.getReplacedStream(replacements);
         try {
-            List<Device> devices = DeviceParser.parse(stream);
+            Table<String, String, Device> devices = DeviceParser.parse(stream);
             assertEquals(1, devices.size());
-            assertEquals(0, devices.get(0).getDefaultHardware().getNetworking().size());
+            assertEquals(0, devices.get("Galaxy Nexus", "Samsung").getDefaultHardware().getNetworking().size());
             fail();
         } catch (SAXParseException e) {
             assertTrue(e.getMessage().startsWith("cvc-enumeration-valid: Value 'NFD'"));
@@ -291,11 +292,11 @@ public class DeviceParserTest extends TestCase {
         InputStream stream = DeviceSchemaTest.class.getResourceAsStream(
                 "devices_minimal.xml");
         try {
-            List<Device> devices = DeviceParser.parse(stream);
+            Table<String, String, Device> devices = DeviceParser.parse(stream);
             assertEquals("Parsing devices_minimal.xml produces the wrong number of devices", 1,
                     devices.size());
 
-            Device device = devices.get(0);
+            Device device = devices.get("Galaxy Nexus", "Samsung");
             assertEquals("Galaxy Nexus", device.getDisplayName());
 
             assertEquals(new Dimension(1280, 720), device.getScreenSize(ScreenOrientation.LANDSCAPE));
@@ -304,5 +305,4 @@ public class DeviceParserTest extends TestCase {
             stream.close();
         }
     }
-
 }
