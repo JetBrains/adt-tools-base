@@ -125,6 +125,29 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
             lintProject("res/layout/wrong_namespace5.xml"));
     }
 
+    public void testMisleadingPrefix() throws Exception {
+        assertEquals(""
+                + "res/layout/layout.xml:3: Error: Suspicious namespace and prefix combination [NamespaceTypo]\n"
+                + "    xmlns:app=\"http://schemas.android.com/tools\"\n"
+                + "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/layout.xml:4: Error: Suspicious namespace and prefix combination [NamespaceTypo]\n"
+                + "    xmlns:tools=\"http://schemas.android.com/apk/res/android\"\n"
+                + "                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "2 errors, 0 warnings\n",
+
+                lintProject(
+                        xml("res/layout/layout.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    xmlns:app=\"http://schemas.android.com/tools\"\n"
+                                + "    xmlns:tools=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    android:layout_width=\"match_parent\"\n"
+                                + "    android:layout_height=\"match_parent\"\n"
+                                + "    android:orientation=\"vertical\"\n"
+                                + "    app:foo=\"true\"\n"
+                                + "    tools:bar=\"true\" />\n")));
+    }
+
     public void testTypoOk() throws Exception {
         assertEquals(
                 "No warnings.",
