@@ -825,7 +825,7 @@ public class AvdManager {
             // Config file.
             HashMap<String, String> values = new HashMap<String, String>();
 
-           if (setImagePathProperties(target, tag, abiType, values, log) == false) {
+            if (setImagePathProperties(target, tag, abiType, values, log) == false) {
                log.error(null, "Failed to set image path properties in the AVD folder.");
                needCleanup = true;
                return null;
