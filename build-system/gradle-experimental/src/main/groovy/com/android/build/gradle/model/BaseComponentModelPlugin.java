@@ -126,7 +126,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         try {
             List<Recorder.Property> propertyList = Lists.newArrayList(
                     new Recorder.Property("plugin_version", Version.ANDROID_GRADLE_PLUGIN_VERSION),
-                    new Recorder.Property("next_gen_plugin", "true")
+                    new Recorder.Property("next_gen_plugin", "true"),
+                    new Recorder.Property("gradle_version", project.getGradle().getGradleVersion())
             );
             String benchmarkName = (String) project.getProperties().get("com.android.benchmark.name");
             if (benchmarkName != null) {
