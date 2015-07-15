@@ -63,18 +63,7 @@ public class AbstractCompilesUtil {
 
         compileOptions.setDefaultJavaVersion(javaVersionToUse);
 
-        ConventionMappingHelper.map(compileTask, "sourceCompatibility", new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                return compileOptions.getSourceCompatibility().toString();
-            }
-        });
-
-        ConventionMappingHelper.map(compileTask, "targetCompatibility", new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                return compileOptions.getTargetCompatibility().toString();
-            }
-        });
+        compileTask.setSourceCompatibility(compileOptions.getSourceCompatibility().toString());
+        compileTask.setTargetCompatibility(compileOptions.getTargetCompatibility().toString());
     }
 }
