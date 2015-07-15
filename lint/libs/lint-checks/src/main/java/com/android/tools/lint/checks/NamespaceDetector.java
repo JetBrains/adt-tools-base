@@ -17,10 +17,14 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.APP_PREFIX;
 import static com.android.SdkConstants.AUTO_URI;
+import static com.android.SdkConstants.TOOLS_PREFIX;
+import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.URI_PREFIX;
 import static com.android.SdkConstants.XMLNS_PREFIX;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
@@ -136,7 +140,8 @@ public class NamespaceDetector extends LayoutDetector {
         NamedNodeMap attributes = root.getAttributes();
         for (int i = 0, n = attributes.getLength(); i < n; i++) {
             Node item = attributes.item(i);
-            if (item.getNodeName().startsWith(XMLNS_PREFIX)) {
+            String prefix = item.getNodeName();
+            if (prefix.startsWith(XMLNS_PREFIX)) {
                 String value = item.getNodeValue();
 
                 if (!value.equals(ANDROID_URI)) {
@@ -147,7 +152,7 @@ public class NamespaceDetector extends LayoutDetector {
                         if (mUnusedNamespaces == null) {
                             mUnusedNamespaces = new HashMap<String, Attr>();
                         }
-                        mUnusedNamespaces.put(item.getNodeName().substring(XMLNS_PREFIX.length()),
+                        mUnusedNamespaces.put(prefix.substring(XMLNS_PREFIX.length()),
                                 attribute);
                     } else if (value.startsWith("urn:")) { //$NON-NLS-1$
                         continue;
@@ -162,6 +167,11 @@ public class NamespaceDetector extends LayoutDetector {
                             value.startsWith("http://schemas.android.com/")) { //$NON-NLS-1$
                         context.report(RES_AUTO, attribute, context.getValueLocation(attribute),
                                 "Suspicious namespace: Did you mean `" + AUTO_URI + "`?");
+                    } else if (value.equals(TOOLS_URI) && (prefix.equals(XMLNS_ANDROID) ||
+                            prefix.endsWith(APP_PREFIX) && prefix.equals(
+                                    XMLNS_PREFIX + APP_PREFIX))) {
+                        context.report(TYPO, attribute, context.getValueLocation(attribute),
+                                "Suspicious namespace and prefix combination");
                     }
 
                     if (!context.isEnabled(TYPO)) {
@@ -209,6 +219,12 @@ public class NamespaceDetector extends LayoutDetector {
                                     "Unexpected namespace URI bound to the `\"android\"` " +
                                     "prefix, was `%1$s`, expected `%2$s`", value, ANDROID_URI));
                     }
+                } else if (!prefix.equals(XMLNS_ANDROID) &&
+                        ((prefix.endsWith(TOOLS_PREFIX) && prefix.equals(XMLNS_PREFIX + TOOLS_PREFIX)) ||
+                        (prefix.endsWith(APP_PREFIX) && prefix.equals(XMLNS_PREFIX + APP_PREFIX)))) {
+                    Attr attribute = (Attr) item;
+                    context.report(TYPO, attribute, context.getValueLocation(attribute),
+                            "Suspicious namespace and prefix combination");
                 }
             }
         }
