@@ -15,3 +15,10 @@ sourceSets {
     main.resources.srcDir 'src/main/java'
     test.resources.srcDir 'src/test/java'
 }
+
+project.ext.pomName = 'Android Tools Test Utilities'
+project.ext.pomDesc = 'API used by lint testing infrastructure'
+
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
