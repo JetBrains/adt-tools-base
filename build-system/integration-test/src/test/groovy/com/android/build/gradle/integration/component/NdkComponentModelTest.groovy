@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.component
 
 import com.android.SdkConstants
+import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.utils.ModelHelper
@@ -27,12 +28,14 @@ import com.android.builder.model.Variant
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.experimental.categories.Category
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 
 /**
  * Test the return model of the NDK.
  */
+@Category(SmokeTests.class)
 class NdkComponentModelTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
