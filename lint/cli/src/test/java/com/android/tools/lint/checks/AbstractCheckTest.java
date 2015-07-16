@@ -17,14 +17,34 @@
 package com.android.tools.lint.checks;
 
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest;
+import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class AbstractCheckTest extends LintDetectorTest {
+    @Override
+    protected List<Issue> getIssues() {
+        List<Issue> issues = new ArrayList<Issue>();
+        Class<? extends Detector> detectorClass = getDetectorInstance().getClass();
+        // Get the list of issues from the registry and filter out others, to make sure
+        // issues are properly registered
+        List<Issue> candidates = new BuiltinIssueRegistry().getIssues();
+        for (Issue issue : candidates) {
+            if (issue.getImplementation().getDetectorClass() == detectorClass) {
+                issues.add(issue);
+            }
+        }
+
+        return issues;
+    }
+
     @Override
     protected InputStream getTestResource(String relativePath, boolean expectExists) {
         String path = "data" + File.separator + relativePath; //$NON-NLS-1$
