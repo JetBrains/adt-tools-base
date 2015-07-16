@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.ndk
 
+import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import groovy.transform.CompileStatic
@@ -23,12 +24,14 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+import org.junit.experimental.categories.Category
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 
 /**
  * Test split DSL with API level < 21.
  */
+@Category(SmokeTests.class)
 @CompileStatic
 class Pre21SplitTest {
     @ClassRule

@@ -49,6 +49,12 @@ configure([test, testPrebuilts]) {
     maxParallelForks = Runtime.runtime.availableProcessors() / 2
 
     useJUnit {
+        if (System.properties['test.includeCategories'] != null) {
+            def categories = System.properties['test.includeCategories'].split(',')
+            String defaultPackage = "com.android.build.gradle.integration.common.category."
+            categories = categories.collect { it.charAt(0).isUpperCase() ? defaultPackage + it : it }
+            includeCategories categories as String[]
+        }
         excludeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
     }
     exclude "com/android/build/gradle/integration/performance/**"
