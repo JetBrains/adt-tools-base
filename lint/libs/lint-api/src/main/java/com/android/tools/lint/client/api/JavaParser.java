@@ -294,6 +294,18 @@ public abstract class JavaParser {
 
             return null;
         }
+
+        /**
+         * Returns true if this element is in the given package (or optionally, in one of its sub
+         * packages)
+         *
+         * @param pkg                the package name
+         * @param includeSubPackages whether to include subpackages
+         * @return true if the element is in the given package
+         */
+        public boolean isInPackage(@NonNull String pkg, boolean includeSubPackages) {
+            return getSignature().startsWith(pkg);
+        }
     }
 
     /** A resolved class declaration (class, interface, enumeration or annotation) */
@@ -355,6 +367,24 @@ public abstract class JavaParser {
         /** Returns the named field defined in this class, or optionally inherited from a superclass */
         @Nullable
         public abstract ResolvedField getField(@NonNull String name, boolean includeInherited);
+
+        /** Returns the package containing this class */
+        @Nullable
+        public abstract ResolvedPackage getPackage();
+
+        @Override
+        public boolean isInPackage(@NonNull String pkg, boolean includeSubPackages) {
+            String packageName = getPackageName();
+
+            //noinspection SimplifiableIfStatement
+            if (pkg.equals(packageName)) {
+                return true;
+            }
+
+            return includeSubPackages && packageName.length() > pkg.length() &&
+                    packageName.charAt(pkg.length()) == '.' &&
+                    packageName.startsWith(pkg);
+        }
     }
 
     /** A method or constructor declaration */
@@ -435,6 +465,20 @@ public abstract class JavaParser {
 
             return null;
         }
+
+        @Override
+        public boolean isInPackage(@NonNull String pkg, boolean includeSubPackages) {
+            String packageName = getContainingClass().getPackageName();
+
+            //noinspection SimplifiableIfStatement
+            if (pkg.equals(packageName)) {
+                return true;
+            }
+
+            return includeSubPackages && packageName.length() > pkg.length() &&
+                    packageName.charAt(pkg.length()) == '.' &&
+                    packageName.startsWith(pkg);
+        }
     }
 
     /** A field declaration */
@@ -508,6 +552,15 @@ public abstract class JavaParser {
             return getValue(ATTR_VALUE);
         }
 
+        @NonNull
+        @Override
+        public Iterable<ResolvedAnnotation> getAnnotations() {
+            return Collections.emptyList();
+        }
+    }
+
+    /** A package declaration */
+    public abstract static class ResolvedPackage extends ResolvedNode {
         @NonNull
         @Override
         public Iterable<ResolvedAnnotation> getAnnotations() {
