@@ -131,6 +131,7 @@ model {
     android.ndk {
         moduleName = "hello-jni"
         CFlags += ['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"']
+        CFlags += ' -DFLAG_WITH_LEADING_SPACE'
     }
 }
 """

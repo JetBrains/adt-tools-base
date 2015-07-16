@@ -159,19 +159,19 @@ public class NdkConfiguration {
 
         // Add flags defined in NdkConfig
         for (String flag : ndkConfig.getCFlags()) {
-            getCCompiler(binary).args(flag);
+            getCCompiler(binary).args(flag.trim());
         }
 
         for (String flag : ndkConfig.getCppFlags()) {
-            getCppCompiler(binary).args(flag);
+            getCppCompiler(binary).args(flag.trim());
         }
 
         for (String flag : ndkConfig.getLdFlags()) {
-            binary.getLinker().args(flag);
+            binary.getLinker().args(flag.trim());
         }
 
         for (String ldLib : ndkConfig.getLdLibs()) {
-            binary.getLinker().args("-l" + ldLib);
+            binary.getLinker().args("-l" + ldLib.trim());
         }
     }
 
