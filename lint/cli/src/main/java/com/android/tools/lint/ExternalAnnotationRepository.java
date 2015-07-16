@@ -30,13 +30,13 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.Variant;
-import com.android.tools.lint.checks.SupportAnnotationDetector;
 import com.android.tools.lint.client.api.JavaParser.DefaultTypeDescriptor;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation.Value;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedPackage;
 import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -339,6 +339,29 @@ public class ExternalAnnotationRepository {
         return null;
     }
 
+    @Nullable
+    public ResolvedAnnotation getAnnotation(@NonNull ResolvedPackage pkg, @NonNull String type) {
+        for (AnnotationsDatabase database : mDatabases) {
+            ResolvedAnnotation annotation = database.getAnnotation(pkg, type);
+            if (annotation != null) {
+                return annotation;
+            }
+        }
+
+        return null;
+    }
+    @Nullable
+    public Collection<ResolvedAnnotation> getAnnotations(@NonNull ResolvedPackage pkg) {
+        for (AnnotationsDatabase database : mDatabases) {
+            Collection<ResolvedAnnotation> annotations = database.getAnnotations(pkg);
+            if (annotations != null) {
+                return annotations;
+            }
+        }
+
+        return null;
+    }
+
     // ---- Reading from storage ----
 
     private static final Pattern XML_SIGNATURE = Pattern.compile(
@@ -489,6 +512,35 @@ public class ExternalAnnotationRepository {
         }
 
         @Nullable
+        public ResolvedAnnotation getAnnotation(@NonNull ResolvedPackage pkg, @NonNull String type) {
+            ClassInfo c = findPackage(pkg);
+
+            if (c == null) {
+                return null;
+            }
+
+            if (c.annotations != null) {
+                for (ResolvedAnnotation annotation : c.annotations) {
+                    if (type.equals(annotation.getSignature())) {
+                        return annotation;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        @Nullable
+        public List<ResolvedAnnotation> getAnnotations(@NonNull ResolvedPackage pkg) {
+            ClassInfo c = findPackage(pkg);
+            if (c == null) {
+                return null;
+            }
+
+            return c.annotations;
+        }
+
+        @Nullable
         public ResolvedAnnotation getAnnotation(@NonNull ResolvedField field, @NonNull String type) {
             FieldInfo f = findField(field);
 
@@ -617,6 +669,10 @@ public class ExternalAnnotationRepository {
         @Nullable
         private ClassInfo findClass(@NonNull ResolvedAnnotation cls) {
             return mClassMap.get(cls.getName());
+        }
+
+        private ClassInfo findPackage(@NonNull ResolvedPackage pkg) {
+            return mClassMap.get(pkg.getName() +".package-info");
         }
 
         @Nullable
