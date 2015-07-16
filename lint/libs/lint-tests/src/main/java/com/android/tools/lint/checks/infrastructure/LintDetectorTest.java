@@ -115,7 +115,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
 
     private Detector mDetector;
 
-    private Detector getDetectorInstance() {
+    protected final Detector getDetectorInstance() {
         if (mDetector == null) {
             mDetector = getDetector();
         }
@@ -123,20 +123,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
         return mDetector;
     }
 
-    protected List<Issue> getIssues() {
-        List<Issue> issues = new ArrayList<Issue>();
-        Class<? extends Detector> detectorClass = getDetectorInstance().getClass();
-        // Get the list of issues from the registry and filter out others, to make sure
-        // issues are properly registered
-        List<Issue> candidates = new BuiltinIssueRegistry().getIssues();
-        for (Issue issue : candidates) {
-            if (issue.getImplementation().getDetectorClass() == detectorClass) {
-                issues.add(issue);
-            }
-        }
-
-        return issues;
-    }
+    protected abstract List<Issue> getIssues();
 
     public class CustomIssueRegistry extends IssueRegistry {
         @NonNull
