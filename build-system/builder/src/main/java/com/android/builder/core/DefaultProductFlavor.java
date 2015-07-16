@@ -195,7 +195,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
     /** Sets the targetSdkVersion to the given value. */
     @NonNull
-    public ProductFlavor setTargetSdkVersion(ApiVersion targetSdkVersion) {
+    public ProductFlavor setTargetSdkVersion(@Nullable ApiVersion targetSdkVersion) {
         mTargetSdkVersion = targetSdkVersion;
         return this;
     }
