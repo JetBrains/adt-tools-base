@@ -123,7 +123,7 @@ android {
 
     <plurals name="resPlurals">s</plurals>
 
-    <string name="resString">00</string>
+    <string name="resString" translatable="false">00</string>
 
     <style name="resStyle">foo</style>
 

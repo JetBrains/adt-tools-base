@@ -119,13 +119,13 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from the variant -->
-    <string name="VALUE_VARIANT">1000</string>
+    <string name="VALUE_VARIANT" translatable="false">1000</string>
     <!-- Values from build type: debug -->
-    <string name="VALUE_DEBUG">100</string>
+    <string name="VALUE_DEBUG" translatable="false">100</string>
     <!-- Values from product flavor: flavor1 -->
-    <string name="VALUE_FLAVOR">10</string>
+    <string name="VALUE_FLAVOR" translatable="false">10</string>
     <!-- Values from default config. -->
-    <string name="VALUE_DEFAULT">1</string>
+    <string name="VALUE_DEFAULT" translatable="false">1</string>
 
 </resources>
 """
@@ -151,13 +151,13 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from the variant -->
-    <string name="VALUE_VARIANT">1000</string>
+    <string name="VALUE_VARIANT" translatable="false">1000</string>
     <!-- Values from build type: debug -->
-    <string name="VALUE_DEBUG">100</string>
+    <string name="VALUE_DEBUG" translatable="false">100</string>
     <!-- Values from product flavor: flavor2 -->
-    <string name="VALUE_FLAVOR">20</string>
+    <string name="VALUE_FLAVOR" translatable="false">20</string>
     <!-- Values from default config. -->
-    <string name="VALUE_DEFAULT">1</string>
+    <string name="VALUE_DEFAULT" translatable="false">1</string>
 
 </resources>
 """
@@ -183,11 +183,11 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from product flavor: flavor1 -->
-    <string name="VALUE_DEBUG">10</string>
-    <string name="VALUE_FLAVOR">10</string>
-    <string name="VALUE_VARIANT">10</string>
+    <string name="VALUE_DEBUG" translatable="false">10</string>
+    <string name="VALUE_FLAVOR" translatable="false">10</string>
+    <string name="VALUE_VARIANT" translatable="false">10</string>
     <!-- Values from default config. -->
-    <string name="VALUE_DEFAULT">1</string>
+    <string name="VALUE_DEFAULT" translatable="false">1</string>
 
 </resources>
 """
@@ -213,11 +213,11 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from product flavor: flavor2 -->
-    <string name="VALUE_DEBUG">20</string>
-    <string name="VALUE_FLAVOR">20</string>
-    <string name="VALUE_VARIANT">20</string>
+    <string name="VALUE_DEBUG" translatable="false">20</string>
+    <string name="VALUE_FLAVOR" translatable="false">20</string>
+    <string name="VALUE_VARIANT" translatable="false">20</string>
     <!-- Values from default config. -->
-    <string name="VALUE_DEFAULT">1</string>
+    <string name="VALUE_DEFAULT" translatable="false">1</string>
 
 </resources>
 """
