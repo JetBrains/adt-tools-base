@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.api
-import com.android.annotations.NonNull
+package com.android.build.gradle.api;
+import com.android.annotations.NonNull;
+
+import groovy.lang.Closure;
+
 /**
  * An AndroidSourceSet represents a logical group of Java, aidl and RenderScript sources
  * as well as Android and non-Android (Java-style) resources.
