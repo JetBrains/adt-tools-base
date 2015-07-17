@@ -31,11 +31,9 @@ import groovy.lang.Closure;
  * Options for running tests.
  */
 public class TestOptions {
-    /** Name of the results directory. */
     @Nullable
     private String resultsDir;
 
-    /** Name of the reports directory. */
     @Nullable
     private String reportDir;
 
@@ -56,11 +54,17 @@ public class TestOptions {
         ConfigureUtil.configure(closure, unitTests);
     }
 
+    /**
+     * Configures unit test options.
+     *
+     * @since 1.2
+     */
     @NonNull
     public UnitTestOptions getUnitTests() {
         return unitTests;
     }
 
+    /** Name of the results directory. */
     @Nullable
     public String getResultsDir() {
         return resultsDir;
@@ -70,6 +74,7 @@ public class TestOptions {
         this.resultsDir = resultsDir;
     }
 
+    /** Name of the reports directory. */
     @Nullable
     public String getReportDir() {
         return reportDir;
