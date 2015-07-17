@@ -45,7 +45,6 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "            android:theme=\"@style/FullscreenTheme\" >\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "                <action android:name=\"android.intent.action.VIEW\" />\n"
-                        + "                <!-- Accepts URIs that begin with \"http://example.com/gizmos” -->\n"
                         + "                <data android:scheme=\"http\"\n"
                         + "                    android:host=\"example.com\"\n"
                         + "                    android:pathPrefix=\"/gizmos\" />\n"
@@ -92,7 +91,7 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
 
     public void testNoUrl() throws Exception {
         assertEquals(""
-                        + "AndroidManifest.xml:18: Error: Missing URL for the intent filter? [AppIndexingError]\n"
+                        + "AndroidManifest.xml:17: Error: Missing URL for the intent filter? [AppIndexingError]\n"
                         + "                <data />\n"
                         + "                ~~~~~~~~\n"
                         + "1 errors, 0 warnings\n",
@@ -113,7 +112,6 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "            android:theme=\"@style/FullscreenTheme\" >\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "                <action android:name=\"android.intent.action.VIEW\" />\n"
-                        + "                <!-- Accepts URIs that begin with \"http://example.com/gizmos” -->\n"
                         + "                <data />\n"
                         + "                <category android:name=\"android.intent.category.DEFAULT\" />\n"
                         + "                <category android:name=\"android.intent.category.BROWSABLE\" />\n"
@@ -143,7 +141,6 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "            android:theme=\"@style/FullscreenTheme\" >\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "                <action android:name=\"android.intent.action.VIEW\" />\n"
-                        + "                <!-- Accepts URIs that begin with \"http://example.com/gizmos” -->\n"
                         + "                <data android:mimeType=\"mimetype\" /> "
                         + "                <category android:name=\"android.intent.category.DEFAULT\" />\n"
                         + "                <category android:name=\"android.intent.category.BROWSABLE\" />\n"
@@ -206,7 +203,6 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "            android:theme=\"@style/FullscreenTheme\" >\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "                <action android:name=\"android.intent.action.VIEW\" />\n"
-                        + "                <!-- Accepts URIs that begin with \"http://example.com/gizmos” -->\n"
                         + "                <data android:scheme=\"http\"\n"
                         + "                    android:host=\"example.com\"\n"
                         + "                    android:pathPrefix=\"/gizmos\" />\n"
@@ -220,7 +216,7 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
 
     public void testWrongPathPrefix() throws Exception {
         assertEquals(""
-                        + "AndroidManifest.xml:20: Error: android:pathPrefix attribute should start with / [AppIndexingError]\n"
+                        + "AndroidManifest.xml:19: Error: android:pathPrefix attribute should start with '/', but it is : gizmos [AppIndexingError]\n"
                         + "                    android:pathPrefix=\"gizmos\" />\n"
                         + "                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "1 errors, 0 warnings\n",
@@ -241,7 +237,6 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "            android:theme=\"@style/FullscreenTheme\" >\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "                <action android:name=\"android.intent.action.VIEW\" />\n"
-                        + "                <!-- Accepts URIs that begin with \"http://example.com/gizmos” -->\n"
                         + "                <data android:scheme=\"http\"\n"
                         + "                    android:host=\"example.com\"\n"
                         + "                    android:pathPrefix=\"gizmos\" />\n"
@@ -256,7 +251,7 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
 
     public void testWrongPort() throws Exception {
         assertEquals(""
-                        + "AndroidManifest.xml:20: Error: android:port is not a legal number [AppIndexingError]\n"
+                        + "AndroidManifest.xml:19: Error: android:port is not a legal number [AppIndexingError]\n"
                         + "                    android:port=\"ABCD\"\n"
                         + "                    ~~~~~~~~~~~~~~~~~~~\n"
                         + "1 errors, 0 warnings\n",
@@ -277,7 +272,6 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "            android:theme=\"@style/FullscreenTheme\" >\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "                <action android:name=\"android.intent.action.VIEW\" />\n"
-                        + "                <!-- Accepts URIs that begin with \"http://example.com/gizmos” -->\n"
                         + "                <data android:scheme=\"http\"\n"
                         + "                    android:host=\"example.com\"\n"
                         + "                    android:port=\"ABCD\"\n"
@@ -293,13 +287,13 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
 
     public void testSchemeAndHostMissing() throws Exception {
         assertEquals(""
-                        + "AndroidManifest.xml:18: Error: Missing URL for the intent filter? [AppIndexingError]\n"
+                        + "AndroidManifest.xml:17: Error: Missing URL for the intent filter? [AppIndexingError]\n"
                         + "                <data android:pathPrefix=\"/gizmos\" />\n"
                         + "                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "AndroidManifest.xml:18: Error: android:host missing [AppIndexingError]\n"
+                        + "AndroidManifest.xml:17: Error: android:host missing [AppIndexingError]\n"
                         + "                <data android:pathPrefix=\"/gizmos\" />\n"
                         + "                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "AndroidManifest.xml:18: Error: android:scheme missing [AppIndexingError]\n"
+                        + "AndroidManifest.xml:17: Error: android:scheme missing [AppIndexingError]\n"
                         + "                <data android:pathPrefix=\"/gizmos\" />\n"
                         + "                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "3 errors, 0 warnings\n",
@@ -320,7 +314,6 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "            android:theme=\"@style/FullscreenTheme\" >\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "                <action android:name=\"android.intent.action.VIEW\" />\n"
-                        + "                <!-- Accepts URIs that begin with \"http://example.com/gizmos” -->\n"
                         + "                <data android:pathPrefix=\"/gizmos\" />\n"
                         + "                <category android:name=\"android.intent.category.DEFAULT\" />\n"
                         + "                <category android:name=\"android.intent.category.BROWSABLE\" />\n"
@@ -350,7 +343,6 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "            android:theme=\"@style/FullscreenTheme\" >\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "                <action android:name=\"android.intent.action.VIEW\" />\n"
-                        + "                <!-- Accepts URIs that begin with \"http://example.com/gizmos” -->\n"
                         + "                <data android:scheme=\"http\" />\n"
                         + "                <data android:host=\"example.com\" />\n"
                         + "                <data android:pathPrefix=\"/gizmos\" />\n"
@@ -386,7 +378,6 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "            </intent-filter>"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "                <action android:name=\"android.intent.action.VIEW\" />\n"
-                        + "                <!-- Accepts URIs that begin with \"http://example.com/gizmos” -->\n"
                         + "                <data android:scheme=\"http\"\n"
                         + "                    android:host=\"example.com\"\n"
                         + "                    android:pathPrefix=\"/gizmos\" />\n"
@@ -401,7 +392,7 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
 
     public void testMultiIntentWithError() throws Exception {
         assertEquals(""
-                        + "AndroidManifest.xml:21: Error: android:host missing [AppIndexingError]\n"
+                        + "AndroidManifest.xml:20: Error: android:host missing [AppIndexingError]\n"
                         + "                <data android:scheme=\"http\"\n"
                         + "                ^\n"
                         + "1 errors, 0 warnings\n",
@@ -426,7 +417,6 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "            </intent-filter>"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "                <action android:name=\"android.intent.action.VIEW\" />\n"
-                        + "                <!-- Accepts URIs that begin with \"http://example.com/gizmos” -->\n"
                         + "                <data android:scheme=\"http\"\n"
                         + "                    android:pathPrefix=\"/gizmos\" />\n"
                         + "                <category android:name=\"android.intent.category.DEFAULT\" />\n"
@@ -438,4 +428,25 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "</manifest>\n")));
     }
 
+    public void testOkWithResource() throws Exception {
+        assertEquals("No warnings.",
+                lintProjectIncrementally(
+                        "AndroidManifest.xml",
+                        "appindexing_manifest.xml=>AndroidManifest.xml",
+                        "res/values/appindexing_strings.xml"));
+    }
+
+    public void testWrongWithResource() throws Exception {
+        assertEquals("" + "AndroidManifest.xml:18: Error: android:pathPrefix attribute should start with '/', but it is : pathprefix [AppIndexingError]\n"
+                        + "                      android:pathPrefix=\"@string/path_prefix\"\n"
+                        + "                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "AndroidManifest.xml:19: Error: android:port is not a legal number [AppIndexingError]\n"
+                        + "                      android:port=\"@string/port\"/>\n"
+                        + "                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "2 errors, 0 warnings\n",
+                lintProjectIncrementally(
+                        "AndroidManifest.xml",
+                        "appindexing_manifest.xml=>AndroidManifest.xml",
+                        "res/values/appindexing_wrong_strings.xml"));
+    }
 }
