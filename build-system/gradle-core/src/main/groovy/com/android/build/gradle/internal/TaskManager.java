@@ -1408,6 +1408,7 @@ public abstract class TaskManager {
                             mainConnectedTask.setDescription("Installs and runs instrumentation "
                                     + "tests for all flavors on connected devices.");
                             mainConnectedTask.setReportType(ReportType.MULTI_FLAVOR);
+                            mainConnectedTask.setVariantName("");
                             ConventionMappingHelper.map(mainConnectedTask, "resultsDir",
                                     new Callable<File>() {
                                         @Override

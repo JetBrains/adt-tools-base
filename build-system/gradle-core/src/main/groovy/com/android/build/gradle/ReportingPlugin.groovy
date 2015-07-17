@@ -49,6 +49,7 @@ class ReportingPlugin implements org.gradle.api.Plugin<Project> {
         mergeReportsTask.group = JavaBasePlugin.VERIFICATION_GROUP
         mergeReportsTask.description = "Merges all the Android test reports from the sub projects."
         mergeReportsTask.reportType = ReportType.MULTI_PROJECT
+        mergeReportsTask.setVariantName("")
 
         mergeReportsTask.conventionMapping.resultsDir = {
             String location = extension.resultsDir != null ?
