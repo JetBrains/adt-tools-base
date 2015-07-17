@@ -83,10 +83,12 @@ class RecordingBuildListener implements TaskExecutionListener {
 
         if (task instanceof DefaultAndroidTask) {
             String variantName = ((DefaultAndroidTask) task).getVariantName()
-            if (variantName != null) {
+            if (variantName == null) {
+                throw new IllegalStateException("Task with type " + task.getClass().getName() +
+                        " does not include a variantName");
+            }
+            if (!variantName.isEmpty()) {
                 properties.add(new Recorder.Property("variant", variantName))
-            } else {
-                throw new IllegalStateException("Task with type " + task.getClass().getName() + " does not include a variantName");
             }
         }
 
