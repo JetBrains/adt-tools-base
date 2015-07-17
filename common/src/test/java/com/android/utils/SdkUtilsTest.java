@@ -38,6 +38,15 @@ import java.util.Locale;
 
 @SuppressWarnings("javadoc")
 public class SdkUtilsTest extends TestCase {
+
+    @Override
+    public void setUp() throws Exception {
+        // TODO: Use Files.createTempDir() to avoid this.
+        if (new File("/tmp/foo").isDirectory()) {
+            fail("This test will fail if /tmp/foo exists and is a directory. Please remove it.");
+        }
+    }
+
     public void testEndsWithIgnoreCase() {
         assertTrue(SdkUtils.endsWithIgnoreCase("foo", "foo"));
         assertTrue(SdkUtils.endsWithIgnoreCase("foo", "Foo"));
