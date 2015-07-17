@@ -242,7 +242,7 @@ public class ProcessAndroidResources extends IncrementalTask {
             }
 
             ConventionMappingHelper.map(processResources, "resDir") {
-                variantData.finalResourcesDir
+                variantData.getScope().getFinalResourcesDir()
             }
 
             ConventionMappingHelper.map(processResources, "assetsDir") {
