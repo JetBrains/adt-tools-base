@@ -1,5 +1,5 @@
 apply plugin: 'java'
-apply plugin: 'sdk-java-lib'
+apply plugin: 'jacoco'
 
 group = 'com.android.tools.lint'
 archivesBaseName = 'lint-tests'
@@ -10,6 +10,10 @@ dependencies {
 
     compile 'junit:junit:4.12'
     compile project(':base:testutils')
+
+
+    testCompile 'org.mockito:mockito-all:1.9.5'
+    testCompile 'org.codehaus.groovy:groovy-all:2.2.1'
 }
 
 sourceSets {
