@@ -14,56 +14,66 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl
+package com.android.build.gradle.internal.dsl;
 
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.annotations.VisibleForTesting
-import com.android.builder.core.AndroidBuilder
-import com.android.builder.core.BuilderConstants
-import com.android.builder.core.DefaultBuildType
-import com.android.builder.model.BaseConfig
-import com.android.builder.model.ClassField
-import org.gradle.api.Action
-import org.gradle.api.Project
-import org.gradle.api.logging.Logger
-import org.gradle.internal.reflect.Instantiator
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
+import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.BuilderConstants;
+import com.android.builder.core.DefaultBuildType;
+import com.android.builder.model.BaseConfig;
+import com.android.builder.model.ClassField;
+
+import org.gradle.api.Action;
+import org.gradle.api.Project;
+import org.gradle.api.logging.Logger;
+import org.gradle.internal.reflect.Instantiator;
+
+import java.io.Serializable;
 
 /**
  * DSL object to configure build types.
  */
 public class BuildType extends DefaultBuildType implements CoreBuildType, Serializable {
-    private static final long serialVersionUID = 1L
+
+    private static final long serialVersionUID = 1L;
 
     @NonNull
-    private final Project project
+    private final Project project;
+
     @NonNull
-    private final Logger logger
+    private final Logger logger;
 
-    private final NdkOptions ndkConfig
+    @Nullable
+    private final NdkOptions ndkConfig;
 
-    private Boolean useJack
+    @Nullable
+    private Boolean useJack;
+
+    private boolean shrinkResources = false; // opt-in for now until we've validated it in the field
 
     public BuildType(@NonNull String name,
                      @NonNull Project project,
                      @NonNull Instantiator instantiator,
                      @NonNull Logger logger) {
-        super(name)
-        this.project = project
-        this.logger = logger
-        ndkConfig = instantiator.newInstance(NdkOptions.class)
+        super(name);
+        this.project = project;
+        this.logger = logger;
+        ndkConfig = instantiator.newInstance(NdkOptions.class);
     }
 
     @VisibleForTesting
     BuildType(@NonNull String name,
               @NonNull Project project,
               @NonNull Logger logger) {
-        super(name)
-        this.project = project
-        this.logger = logger
-        ndkConfig = null
+        super(name);
+        this.project = project;
+        this.logger = logger;
+        ndkConfig = null;
     }
 
+    @Override
     @Nullable
     public CoreNdkOptions getNdkConfig() {
         return ndkConfig;
@@ -74,11 +84,11 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      */
     public void init(SigningConfig debugSigningConfig) {
         if (BuilderConstants.DEBUG.equals(getName())) {
-            setDebuggable(true)
-            setEmbedMicroApp(false)
+            setDebuggable(true);
+            setEmbedMicroApp(false);
 
-            assert debugSigningConfig != null
-            setSigningConfig(debugSigningConfig)
+            assert debugSigningConfig != null;
+            setSigningConfig(debugSigningConfig);
         } else if (BuilderConstants.RELEASE.equals(getName())) {
             // no config needed for now.
         }
@@ -86,33 +96,36 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
 
     /** The signing configuration. */
     @Override
-    SigningConfig getSigningConfig() {
-        return (SigningConfig) super.signingConfig
+    @Nullable
+    public SigningConfig getSigningConfig() {
+        return (SigningConfig) super.getSigningConfig();
     }
 
     @Override
     protected void _initWith(@NonNull BaseConfig that) {
-        super._initWith(that)
-        shrinkResources = that.isShrinkResources()
-        useJack = that.useJack
+        super._initWith(that);
+        BuildType thatBuildType = (BuildType) that;
+        shrinkResources = thatBuildType.isShrinkResources();
+        useJack = thatBuildType.getUseJack();
     }
 
-    int hashCode() {
-        int result = super.hashCode()
-        result = 31 * result + (useJack != null ? useJack.hashCode() : 0)
-        result = 31 * result + (shrinkResources ? 1 : 0)
-        return result
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (useJack != null ? useJack.hashCode() : 0);
+        result = 31 * result + (shrinkResources ? 1 : 0);
+        return result;
     }
 
     @Override
-    boolean equals(o) {
-        if (this.is(o)) return true
-        if (getClass() != o.class) return false
-        if (!super.equals(o)) return false
-        if (useJack != o.useJack) return false
-        if (shrinkResources != o.isShrinkResources()) return false
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BuildType)) return false;
+        if (!super.equals(o)) return false;
+        BuildType other = (BuildType) o;
+        if (useJack != other.getUseJack()) return false;
+        if (shrinkResources != other.isShrinkResources()) return false;
 
-        return true
+        return true;
     }
 
     // -- DSL Methods. TODO remove once the instantiator does what I expect it to do.
@@ -135,8 +148,8 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
             @NonNull String value) {
         ClassField alreadyPresent = getBuildConfigFields().get(name);
         if (alreadyPresent != null) {
-            logger.info(
-                    "BuildType(${getName()}): buildConfigField '$name' value is being replaced: ${alreadyPresent.value} -> $value");
+            logger.info("BuildType({}): buildConfigField '{}' value is being replaced: {} -> {}",
+                    getName(), name, alreadyPresent.getValue(), value);
         }
         addBuildConfigField(AndroidBuilder.createClassField(type, name, value));
     }
@@ -154,8 +167,8 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
             @NonNull String value) {
         ClassField alreadyPresent = getResValues().get(name);
         if (alreadyPresent != null) {
-            logger.info(
-                    "BuildType(${getName()}): resValue '$name' value is being replaced: ${alreadyPresent.value} -> $value");
+            logger.info("BuildType({}): resValue '{}' value is being replaced: {} -> {}",
+                    getName(), name, alreadyPresent.getValue(), value);
         }
         addResValue(AndroidBuilder.createClassField(type, name, value));
     }
@@ -170,12 +183,12 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      *     <li>proguard-android.txt
      *     <li>proguard-android-optimize.txt
      * </ul>
-     * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
-     * full path to the files. They are identical except for enabling optimizations.
+     * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code>
+     * will return the full path to the files. They are identical except for enabling optimizations.
      */
     @NonNull
-    public BuildType proguardFile(Object proguardFile) {
-        proguardFiles.add(project.file(proguardFile));
+    public BuildType proguardFile(@NonNull Object proguardFile) {
+        getProguardFiles().add(project.file(proguardFile));
         return this;
     }
 
@@ -183,8 +196,8 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      * Adds new ProGuard configuration files.
      */
     @NonNull
-    public BuildType proguardFiles(Object... proguardFileArray) {
-        proguardFiles.addAll(project.files(proguardFileArray).files);
+    public BuildType proguardFiles(@NonNull Object... proguardFileArray) {
+        getProguardFiles().addAll(project.files(proguardFileArray).getFiles());
         return this;
     }
 
@@ -192,10 +205,10 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      * Sets the ProGuard configuration files.
      */
     @NonNull
-    public BuildType setProguardFiles(Iterable<?> proguardFileIterable) {
-        proguardFiles.clear();
+    public BuildType setProguardFiles(@NonNull Iterable<?> proguardFileIterable) {
+        getProguardFiles().clear();
         for (Object proguardFile : proguardFileIterable) {
-            proguardFiles.add(project.file(proguardFile));
+            getProguardFiles().add(project.file(proguardFile));
         }
         return this;
     }
@@ -211,8 +224,8 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      * This is only valid for Library project. This is ignored in Application project.
      */
     @NonNull
-    public BuildType testProguardFile(Object proguardFile) {
-        testProguardFiles.add(project.file(proguardFile));
+    public BuildType testProguardFile(@NonNull Object proguardFile) {
+        getTestProguardFiles().add(project.file(proguardFile));
         return this;
     }
 
@@ -220,14 +233,14 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      * Adds new ProGuard configuration files.
      */
     @NonNull
-    public BuildType testProguardFiles(Object... proguardFileArray) {
-        testProguardFiles.addAll(project.files(proguardFileArray).files);
+    public BuildType testProguardFiles(@NonNull Object... proguardFileArray) {
+        getTestProguardFiles().addAll(project.files(proguardFileArray).getFiles());
         return this;
     }
 
     @NonNull
-    public BuildType consumerProguardFiles(Object... proguardFileArray) {
-        consumerProguardFiles.addAll(project.files(proguardFileArray).files);
+    public BuildType consumerProguardFiles(@NonNull Object... proguardFileArray) {
+        getConsumerProguardFiles().addAll(project.files(proguardFileArray).getFiles());
         return this;
     }
 
@@ -242,37 +255,39 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      * This is only valid for Library project. This is ignored in Application project.
      */
     @NonNull
-    public BuildType setConsumerProguardFiles(Iterable<?> proguardFileIterable) {
-        consumerProguardFiles.clear();
+    public BuildType setConsumerProguardFiles(@NonNull Iterable<?> proguardFileIterable) {
+        getConsumerProguardFiles().clear();
         for (Object proguardFile : proguardFileIterable) {
-            consumerProguardFiles.add(project.file(proguardFile));
+            getConsumerProguardFiles().add(project.file(proguardFile));
         }
         return this;
     }
 
-    void ndk(Action<NdkOptions> action) {
-        action.execute(ndkConfig)
+    public void ndk(@NonNull Action<NdkOptions> action) {
+        action.execute(ndkConfig);
     }
 
     /**
      * Whether the experimental Jack toolchain should be used.
      */
-    Boolean getUseJack() {
-        return useJack
+    @Override
+    @Nullable
+    public Boolean getUseJack() {
+        return useJack;
     }
 
     /**
      * Whether the experimental Jack toolchain should be used.
      */
-    void setUseJack(Boolean useJack) {
-        this.useJack = useJack
+    public void setUseJack(@Nullable Boolean useJack) {
+        this.useJack = useJack;
     }
 
     /**
      * Whether the experimental Jack toolchain should be used.
      */
-    void useJack(Boolean useJack) {
-        setUseJack(useJack)
+    public void useJack(@Nullable Boolean useJack) {
+        setUseJack(useJack);
     }
 
     /**
@@ -280,25 +295,32 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
      *
      * Default is false;
      */
-    boolean shrinkResources = false // opt-in for now until we've validated it in the field
+    @Override
+    public boolean isShrinkResources() {
+        return shrinkResources;
+    }
+
+    public void setShrinkResources(boolean shrinkResources) {
+        this.shrinkResources = shrinkResources;
+    }
 
     /**
      * Whether shrinking of unused resources is enabled.
      *
      * Default is false;
      */
-    void shrinkResources(boolean flag) {
-        this.shrinkResources = flag
+    public void shrinkResources(boolean flag) {
+        this.shrinkResources = flag;
     }
 
-    void jarJarRuleFile(Object file) {
-        jarJarRuleFiles.add(project.file(file))
+    public void jarJarRuleFile(@NonNull Object file) {
+        getJarJarRuleFiles().add(project.file(file));
     }
 
-    void jarJarRuleFiles(Object ...files) {
-        jarJarRuleFiles.clear()
-        for (String file : files) {
-            jarJarRuleFiles.add(project.file(file))
+    public void jarJarRuleFiles(@NonNull Object... files) {
+        getJarJarRuleFiles().clear();
+        for (Object file : files) {
+            getJarJarRuleFiles().add(project.file(file));
         }
     }
 }
