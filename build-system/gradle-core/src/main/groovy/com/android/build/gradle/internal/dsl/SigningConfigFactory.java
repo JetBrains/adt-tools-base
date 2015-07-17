@@ -14,23 +14,26 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl
+package com.android.build.gradle.internal.dsl;
 
-import org.gradle.api.NamedDomainObjectFactory
-import org.gradle.internal.reflect.Instantiator
+import com.android.annotations.NonNull;
+
+import org.gradle.api.NamedDomainObjectFactory;
+import org.gradle.internal.reflect.Instantiator;
 /**
- * Factory to create SigningConfig object using an {@ling Instantiator} to add the DSL methods.
+ * Factory to create SigningConfig object using an {@link Instantiator} to add the DSL methods.
  */
-class SigningConfigFactory implements NamedDomainObjectFactory<SigningConfig> {
+public class SigningConfigFactory implements NamedDomainObjectFactory<SigningConfig> {
 
-    final Instantiator instantiator
+    private final Instantiator instantiator;
 
     public SigningConfigFactory(Instantiator instantiator) {
-        this.instantiator = instantiator
+        this.instantiator = instantiator;
     }
 
     @Override
-    SigningConfig create(String name) {
-        return instantiator.newInstance(SigningConfig.class, name)
+    @NonNull
+    public SigningConfig create(@NonNull String name) {
+        return instantiator.newInstance(SigningConfig.class, name);
     }
 }

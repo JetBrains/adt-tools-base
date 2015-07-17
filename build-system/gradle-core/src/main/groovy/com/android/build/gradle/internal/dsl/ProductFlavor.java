@@ -14,56 +14,61 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl
+package com.android.build.gradle.internal.dsl;
 
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.build.gradle.internal.LoggingUtil
-import com.android.builder.core.AndroidBuilder
-import com.android.builder.core.BuilderConstants
-import com.android.builder.core.DefaultApiVersion
-import com.android.builder.core.DefaultProductFlavor
-import com.android.builder.model.ApiVersion
-import com.android.builder.model.ClassField
-import com.google.common.base.Strings
-import org.gradle.api.Action
-import org.gradle.api.Project
-import org.gradle.api.logging.Logger
-import org.gradle.internal.reflect.Instantiator
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.LoggingUtil;
+import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.BuilderConstants;
+import com.android.builder.core.DefaultApiVersion;
+import com.android.builder.core.DefaultProductFlavor;
+import com.android.builder.model.ApiVersion;
+import com.android.builder.model.ClassField;
+import com.google.common.base.Strings;
+import org.gradle.api.Action;
+import org.gradle.api.Project;
+import org.gradle.api.logging.Logger;
+import org.gradle.internal.reflect.Instantiator;
 
-import static com.android.build.gradle.tasks.NdkCompile.USE_DEPRECATED_NDK
+import static com.android.build.gradle.tasks.NdkCompile.USE_DEPRECATED_NDK;
+
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * DSL object used to configure product flavors.
  */
-class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
+public class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
 
     @NonNull
-    protected final Project project
+    protected final Project project;
 
     @NonNull
-    protected final Logger logger
+    protected final Logger logger;
 
-    private final NdkOptions ndkConfig
+    @NonNull
+    private final NdkOptions ndkConfig;
 
-    private Boolean useJack
+    @Nullable
+    private Boolean useJack;
 
-    ProductFlavor(@NonNull String name,
+    public ProductFlavor(@NonNull String name,
             @NonNull Project project,
             @NonNull Instantiator instantiator,
             @NonNull Logger logger) {
-        super(name)
-        this.project = project
-        this.logger = logger
-        ndkConfig = instantiator.newInstance(NdkOptions.class)
+        super(name);
+        this.project = project;
+        this.logger = logger;
+        ndkConfig = instantiator.newInstance(NdkOptions.class);
     }
 
+    @Override
     @Nullable
     public CoreNdkOptions getNdkConfig() {
         return ndkConfig;
     }
 
-    @NonNull
     public void setMinSdkVersion(int minSdkVersion) {
         setMinSdkVersion(new DefaultApiVersion(minSdkVersion));
     }
@@ -74,14 +79,12 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      * <p>See <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html">
      * uses-sdk element documentation</a>.
      */
-    @NonNull
     public void minSdkVersion(int minSdkVersion) {
         setMinSdkVersion(minSdkVersion);
     }
 
-    @NonNull
-    public void setMinSdkVersion(String minSdkVersion) {
-        setMinSdkVersion(getApiVersion(minSdkVersion))
+    public void setMinSdkVersion(@Nullable String minSdkVersion) {
+        setMinSdkVersion(getApiVersion(minSdkVersion));
     }
 
     /**
@@ -90,8 +93,7 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      * <p>See <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html">
      * uses-sdk element documentation</a>.
      */
-    @NonNull
-    public void minSdkVersion(String minSdkVersion) {
+    public void minSdkVersion(@Nullable String minSdkVersion) {
         setMinSdkVersion(minSdkVersion);
     }
 
@@ -107,14 +109,12 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      * <p>See <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html">
      * uses-sdk element documentation</a>.
      */
-    @NonNull
     public void targetSdkVersion(int targetSdkVersion) {
         setTargetSdkVersion(targetSdkVersion);
     }
 
-    @NonNull
-    public void setTargetSdkVersion(String targetSdkVersion) {
-        setTargetSdkVersion(getApiVersion(targetSdkVersion))
+    public void setTargetSdkVersion(@Nullable String targetSdkVersion) {
+        setTargetSdkVersion(getApiVersion(targetSdkVersion));
     }
 
     /**
@@ -123,8 +123,7 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      * <p>See <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html">
      * uses-sdk element documentation</a>.
      */
-    @NonNull
-    public void targetSdkVersion(String targetSdkVersion) {
+    public void targetSdkVersion(@Nullable String targetSdkVersion) {
         setTargetSdkVersion(targetSdkVersion);
     }
 
@@ -134,7 +133,6 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      * <p>See <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html">
      * uses-sdk element documentation</a>.
      */
-    @NonNull
     public void maxSdkVersion(int targetSdkVersion) {
         setMaxSdkVersion(targetSdkVersion);
     }
@@ -144,17 +142,17 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
         if (!Strings.isNullOrEmpty(value)) {
             if (Character.isDigit(value.charAt(0))) {
                 try {
-                    int apiLevel = Integer.valueOf(value)
-                    return new DefaultApiVersion(apiLevel)
+                    int apiLevel = Integer.valueOf(value);
+                    return new DefaultApiVersion(apiLevel);
                 } catch (NumberFormatException e) {
-                    throw new RuntimeException("'${value}' is not a valid API level. ", e)
+                    throw new RuntimeException("'" + value + "' is not a valid API level. ", e);
                 }
             }
 
-            return new DefaultApiVersion(value)
+            return new DefaultApiVersion(value);
         }
 
-        return null
+        return null;
     }
 
     /**
@@ -169,9 +167,8 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      * ./gradlew connectedAndroidTest -Pcom.android.tools.instrumentationTestRunnerArgs=size=medium,foo=bar
      * </pre>
      */
-    @NonNull
     public void testInstrumentationRunnerArgument(@NonNull String key, @NonNull String value) {
-        testInstrumentationRunnerArguments[key] = value
+        getTestInstrumentationRunnerArguments().put(key, value);
     }
 
     /**
@@ -186,17 +183,17 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      * ./gradlew connectedAndroidTest -Pcom.android.tools.instrumentationTestRunnerArgs=size=medium,foo=bar
      * </pre>
      */
-    @NonNull
     public void testInstrumentationRunnerArguments(@NonNull Map<String, String> args) {
-        getTestInstrumentationRunnerArguments().putAll(args)
+        getTestInstrumentationRunnerArguments().putAll(args);
     }
 
     /**
      * Signing config used by this product flavor.
      */
     @Override
-    SigningConfig getSigningConfig() {
-        return (SigningConfig) super.signingConfig
+    @Nullable
+    public SigningConfig getSigningConfig() {
+        return (SigningConfig) super.getSigningConfig();
     }
 
 // -- DSL Methods. TODO remove once the instantiator does what I expect it to do.
@@ -224,10 +221,13 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
             String flavorName = getName();
             if (BuilderConstants.MAIN.equals(flavorName)) {
                 logger.info(
-                        "DefaultConfig: buildConfigField '$name' value is being replaced: ${alreadyPresent.value} -> $value");
+                        "DefaultConfig: buildConfigField '{}' value is being replaced: {} -> {}",
+                        name, alreadyPresent.getValue(), value);
             } else {
                 logger.info(
-                        "ProductFlavor($flavorName): buildConfigField '$name' value is being replaced: ${alreadyPresent.value} -> $value");
+                        "ProductFlavor({}): buildConfigField '{}' "
+                                + "value is being replaced: {} -> {}",
+                        flavorName, name, alreadyPresent.getValue(), value);
             }
         }
         addBuildConfigField(AndroidBuilder.createClassField(type, name, value));
@@ -253,10 +253,12 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
             String flavorName = getName();
             if (BuilderConstants.MAIN.equals(flavorName)) {
                 logger.info(
-                        "DefaultConfig: resValue '$name' value is being replaced: ${alreadyPresent.value} -> $value");
+                        "DefaultConfig: resValue '{}' value is being replaced: {} -> {}",
+                        name, alreadyPresent.getValue(), value);
             } else {
                 logger.info(
-                        "ProductFlavor($flavorName): resValue '$name' value is being replaced: ${alreadyPresent.value} -> $value");
+                        "ProductFlavor({}): resValue '{}' value is being replaced: {} -> {}",
+                        flavorName, name, alreadyPresent.getValue(), value);
             }
         }
         addResValue(AndroidBuilder.createClassField(type, name, value));
@@ -275,9 +277,8 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
      * full path to the files. They are identical except for enabling optimizations.
      */
-    @NonNull
-    public void proguardFile(Object proguardFile) {
-        proguardFiles.add(project.file(proguardFile))
+    public void proguardFile(@NonNull Object proguardFile) {
+        getProguardFiles().add(project.file(proguardFile));
     }
 
     /**
@@ -291,9 +292,8 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
      * full path to the files. They are identical except for enabling optimizations.
      */
-    @NonNull
-    public void proguardFiles(Object... proguardFileArray) {
-        proguardFiles.addAll(project.files(proguardFileArray).files)
+    public void proguardFiles(@NonNull Object... proguardFileArray) {
+        getProguardFiles().addAll(project.files(proguardFileArray).getFiles());
     }
 
     /**
@@ -307,11 +307,10 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
      * full path to the files. They are identical except for enabling optimizations.
      */
-    @NonNull
-    public void setProguardFiles(Iterable<?> proguardFileIterable) {
-        proguardFiles.clear()
+    public void setProguardFiles(@NonNull Iterable<?> proguardFileIterable) {
+        getProguardFiles().clear();
         for (Object proguardFile : proguardFileIterable) {
-            proguardFiles.add(project.file(proguardFile))
+            getProguardFiles().add(project.file(proguardFile));
         }
     }
 
@@ -325,22 +324,19 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      *
      * <p>This is only valid for Library project. This is ignored in Application project.
      */
-    @NonNull
-    public void testProguardFile(Object proguardFile) {
-        testProguardFiles.add(project.file(proguardFile));
+    public void testProguardFile(@NonNull Object proguardFile) {
+        getTestProguardFiles().add(project.file(proguardFile));
     }
 
     /**
      * Adds new ProGuard configuration files.
      */
-    @NonNull
     public void testProguardFiles(Object... proguardFileArray) {
-        testProguardFiles.addAll(project.files(proguardFileArray).files);
+        getTestProguardFiles().addAll(project.files(proguardFileArray).getFiles());
     }
 
-    @NonNull
     public void consumerProguardFiles(Object... proguardFileArray) {
-        consumerProguardFiles.addAll(project.files(proguardFileArray).files)
+        getConsumerProguardFiles().addAll(project.files(proguardFileArray).getFiles());
     }
 
     /**
@@ -353,22 +349,21 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      *
      * <p>This is only valid for Library project. This is ignored in Application project.
      */
-    @NonNull
-    public void setConsumerProguardFiles(Iterable<?> proguardFileIterable) {
-        consumerProguardFiles.clear()
+    public void setConsumerProguardFiles(@NonNull Iterable<?> proguardFileIterable) {
+        getConsumerProguardFiles().clear();
         for (Object proguardFile : proguardFileIterable) {
-            consumerProguardFiles.add(project.file(proguardFile))
+            getConsumerProguardFiles().add(project.file(proguardFile));
         }
     }
 
-    void ndk(Action<NdkOptions> action) {
-        action.execute(ndkConfig)
+    public void ndk(Action<NdkOptions> action) {
+        action.execute(ndkConfig);
         if (!project.hasProperty(USE_DEPRECATED_NDK)) {
             throw new RuntimeException(
                     "Error: NDK integration is deprecated in the current plugin.  Consider trying " +
                             "the new experimental plugin.  For details, see " +
                             "http://tools.android.com/tech-docs/new-build-system/gradle-experimental.  " +
-                            "Set \"$USE_DEPRECATED_NDK=true\" in gradle.properties to " +
+                            "Set \"" + USE_DEPRECATED_NDK + "=true\" in gradle.properties to " +
                             "continue using the current NDK integration.");
         }
     }
@@ -381,7 +376,7 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      *
      * <p>For instance, specifying 'hdpi', will ignore all resources using mdpi, xhdpi, etc...
      */
-    void resConfig(@NonNull String config) {
+    public void resConfig(@NonNull String config) {
         addResourceConfiguration(config);
     }
 
@@ -393,7 +388,7 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      *
      * <p>For instance, specifying 'hdpi', will ignore all resources using mdpi, xhdpi, etc...
      */
-    void resConfigs(@NonNull String... config) {
+    public void resConfigs(@NonNull String... config) {
         addResourceConfigurations(config);
     }
 
@@ -405,7 +400,7 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      *
      * <p>For instance, specifying 'hdpi', will ignore all resources using mdpi, xhdpi, etc...
      */
-    void resConfigs(@NonNull Collection<String> config) {
+    public void resConfigs(@NonNull Collection<String> config) {
         addResourceConfigurations(config);
     }
 
@@ -414,8 +409,10 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      *
      * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
      */
-    Boolean getUseJack() {
-        return useJack
+    @Override
+    @Nullable
+    public Boolean getUseJack() {
+        return useJack;
     }
 
     /**
@@ -423,8 +420,8 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      *
      * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
      */
-    void setUseJack(Boolean useJack) {
-        this.useJack = useJack
+    public void setUseJack(Boolean useJack) {
+        this.useJack = useJack;
     }
 
     /**
@@ -432,15 +429,15 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
      *
      * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
      */
-    void useJack(Boolean useJack) {
-        setUseJack(useJack)
+    public void useJack(Boolean useJack) {
+        setUseJack(useJack);
     }
 
     @Deprecated
     public void setFlavorDimension(String dimension) {
         LoggingUtil.displayDeprecationWarning(logger, project,
                 "'flavorDimension' will be removed by Android Gradle Plugin 2.0, " +
-                        "it has been replaced by 'dimension'.")
+                        "it has been replaced by 'dimension'.");
         setDimension(dimension);
     }
 
@@ -452,18 +449,18 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
     public String getFlavorDimension() {
         LoggingUtil.displayDeprecationWarning(logger, project,
                 "'flavorDimension' will be removed by Android Gradle Plugin 2.0, " +
-                        "it has been replaced by 'dimension'.")
+                        "it has been replaced by 'dimension'.");
         return getDimension();
     }
 
-    void jarJarRuleFile(Object file) {
-        jarJarRuleFiles.add(project.file(file))
+    public void jarJarRuleFile(Object file) {
+        getJarJarRuleFiles().add(project.file(file));
     }
 
-    void jarJarRuleFiles(Object ...files) {
-        jarJarRuleFiles.clear()
-        for (String file : files) {
-            jarJarRuleFiles.add(project.file(file))
+    public void jarJarRuleFiles(Object ...files) {
+        getJarJarRuleFiles().clear();
+        for (Object file : files) {
+            getJarJarRuleFiles().add(project.file(file));
         }
     }
 }
