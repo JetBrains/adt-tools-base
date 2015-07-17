@@ -141,6 +141,7 @@ public class ProcessRecorderFactory {
         ProcessRecorder.resetForTests();
         setEnabled(true);
         sINSTANCE.setRecordWriter(recordWriter);
+        sINSTANCE.get(); // Initialize the ProcessRecorder instance
         publishInitialRecords(ImmutableList.<Recorder.Property>of());
     }
 
