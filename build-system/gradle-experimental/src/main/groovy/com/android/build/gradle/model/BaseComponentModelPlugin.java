@@ -25,6 +25,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.AndroidConfigHelper;
+import com.android.build.gradle.internal.ExecutionConfigurationUtil;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
@@ -121,6 +122,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
      */
     @Override
     public void apply(Project project) {
+        ExecutionConfigurationUtil.setThreadPoolSize(project);
         try {
             ProcessRecorderFactory.initialize(
                     new LoggerWrapper(project.getLogger()),
