@@ -21,6 +21,7 @@ import com.android.annotations.VisibleForTesting
 import com.android.build.gradle.internal.ApiObjectFactory
 import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.DependencyManager
+import com.android.build.gradle.internal.ExecutionConfigurationUtil
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.LibraryCache
 import com.android.build.gradle.internal.LoggerWrapper
@@ -239,6 +240,7 @@ public abstract class BasePlugin {
     protected void apply(Project project) {
         this.project = project
 
+        ExecutionConfigurationUtil.setThreadPoolSize(project)
         checkPathForErrors()
         checkModulesForErrors()
 
