@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2015 The Android Open Source Project
  *
@@ -14,53 +15,56 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.profile
+package com.android.build.gradle.internal.profile;
 
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask
-import com.android.builder.profile.ExecutionRecord
-import com.android.builder.profile.ExecutionType
-import com.android.builder.profile.Recorder
-import com.google.common.base.CaseFormat
-import org.gradle.api.Task
-import org.gradle.api.execution.TaskExecutionListener
-import org.gradle.api.tasks.TaskState
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
+import com.android.builder.profile.ExecutionRecord;
+import com.android.builder.profile.ExecutionType;
+import com.android.builder.profile.Recorder;
+import com.google.common.base.CaseFormat;
+import org.gradle.api.Task;
+import org.gradle.api.execution.TaskExecutionListener;
+import org.gradle.api.tasks.TaskState;
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implementation of the {@link TaskExecutionListener} that records the execution span of
  * tasks execution and records such spans using the {@link Recorder} facilities.
  */
-class RecordingBuildListener implements TaskExecutionListener {
+public class RecordingBuildListener implements TaskExecutionListener {
 
-    private final class TaskRecord {
+    private static final class TaskRecord {
 
         private final long recordId;
         private final long startTime;
 
         TaskRecord(long recordId, long startTime) {
-            this.startTime = startTime
-            this.recordId = recordId
+            this.startTime = startTime;
+            this.recordId = recordId;
         }
     }
 
     private final Recorder mRecorder;
 
-    RecordingBuildListener(Recorder recorder) {
-        mRecorder = recorder
+    public RecordingBuildListener(Recorder recorder) {
+        mRecorder = recorder;
     }
 
     // map of outstanding tasks executing, keyed by their name.
-    final Map<String, TaskRecord> taskRecords = new ConcurrentHashMap<>();
+    final Map<String, TaskRecord> taskRecords = new ConcurrentHashMap<String, TaskRecord>();
 
     @Override
-    void beforeExecute(Task task) {
+    public void beforeExecute(Task task) {
         taskRecords.put(task.getName(), new TaskRecord(
-                mRecorder.allocationRecordId(), System.currentTimeMillis()))
+                mRecorder.allocationRecordId(), System.currentTimeMillis()));
     }
 
     @Override
-    void afterExecute(Task task, TaskState taskState) {
+    public void afterExecute(Task task, TaskState taskState) {
 
         // find the right ExecutionType.
         String taskImpl = task.getClass().getSimpleName();
@@ -72,23 +76,23 @@ class RecordingBuildListener implements TaskExecutionListener {
                         convert(taskImpl);
         ExecutionType executionType;
         try {
-            executionType = ExecutionType.valueOf(potentialExecutionTypeName)
+            executionType = ExecutionType.valueOf(potentialExecutionTypeName);
         } catch (IllegalArgumentException ignored) {
-            executionType = ExecutionType.GENERIC_TASK_EXECUTION
+            executionType = ExecutionType.GENERIC_TASK_EXECUTION;
         }
 
-        List< Recorder.Property> properties = new ArrayList<>()
-        properties.add(new Recorder.Property("project", task.getProject().getName()))
-        properties.add(new Recorder.Property("task", task.getName()))
+        List<Recorder.Property> properties = new ArrayList<Recorder.Property>();
+        properties.add(new Recorder.Property("project", task.getProject().getName()));
+        properties.add(new Recorder.Property("task", task.getName()));
 
         if (task instanceof DefaultAndroidTask) {
-            String variantName = ((DefaultAndroidTask) task).getVariantName()
+            String variantName = ((DefaultAndroidTask) task).getVariantName();
             if (variantName == null) {
                 throw new IllegalStateException("Task with type " + task.getClass().getName() +
                         " does not include a variantName");
             }
             if (!variantName.isEmpty()) {
-                properties.add(new Recorder.Property("variant", variantName))
+                properties.add(new Recorder.Property("variant", variantName));
             }
         }
 
@@ -99,6 +103,6 @@ class RecordingBuildListener implements TaskExecutionListener {
                 taskRecord.startTime,
                 System.currentTimeMillis() - taskRecord.startTime,
                 executionType,
-                properties))
+                properties));
     }
 }
