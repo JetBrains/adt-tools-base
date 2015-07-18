@@ -26,10 +26,11 @@ public class ExecutorSingleton {
 
     private static ExecutorService sExecutorService;
 
+    private static int sThreadPoolSize = Runtime.getRuntime().availableProcessors();
+
     public static synchronized ExecutorService getExecutor() {
         if (sExecutorService == null) {
-            sExecutorService = Executors.newFixedThreadPool(
-                    Runtime.getRuntime().availableProcessors());
+            sExecutorService = Executors.newFixedThreadPool(sThreadPoolSize);
         }
 
         return sExecutorService;
@@ -40,5 +41,17 @@ public class ExecutorSingleton {
             sExecutorService.shutdown();
             sExecutorService = null;
         }
+    }
+
+    /**
+     * Changes the thread pool size for the singleton ExecutorService.
+     *
+     * <b>Caution</b>: This will have no effect if getExecutor() has already been called until the
+     * executor is shutdown and reinitialized.
+     *
+     * @param threadPoolSize the number of threads to use.
+     */
+    public static void setThreadPoolSize(int threadPoolSize) {
+        sThreadPoolSize = threadPoolSize;
     }
 }
