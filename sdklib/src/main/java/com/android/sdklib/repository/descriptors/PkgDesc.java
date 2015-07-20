@@ -948,7 +948,7 @@ public class PkgDesc implements IPkgDesc {
         @NonNull
         public static Builder newExtra(@NonNull  IdDisplay vendor,
                                        @NonNull  String path,
-                                       @NonNull  String displayName,
+                                       @Nullable  String displayName,
                                        @Nullable String[] oldPaths,
                                        @NonNull  NoPreviewRevision revision) {
             Builder p = new Builder(PkgType.PKG_EXTRA);
