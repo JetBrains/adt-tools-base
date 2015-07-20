@@ -20,9 +20,12 @@ import com.android.tools.perflib.heap.HprofParser;
 import com.android.tools.perflib.heap.Snapshot;
 
 import junit.framework.TestCase;
+import sun.misc.IOUtils;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.RandomAccessFile;
+import java.util.Arrays;
 
 public class HprofBufferTest extends TestCase {
 
@@ -71,6 +74,52 @@ public class HprofBufferTest extends TestCase {
 
         File g = new File(tmpFile.getCanonicalPath());
         assertFalse(g.exists());
+    }
+
+    public void testSubsequenceReads() throws Exception {
+        byte[] fileContents = null;
+        FileInputStream fileInputStream = new FileInputStream(file);
+        try {
+            fileContents = IOUtils.readFully(fileInputStream, -1, true);
+        }
+        finally {
+            fileInputStream.close();
+        }
+
+        MemoryMappedFileBuffer mappedBuffer = new MemoryMappedFileBuffer(file, 8259, 8);
+
+        byte[] buffer = new byte[8190];
+        mappedBuffer.readSubSequence(buffer, 0, 8190);
+        assertTrue(Arrays.equals(buffer, Arrays.copyOfRange(fileContents, 0, 8190)));
+        assertEquals(mappedBuffer.position(), 8190);
+
+        buffer = new byte[8190];
+        mappedBuffer.setPosition(0);
+        mappedBuffer.readSubSequence(buffer, 2000, 8190);
+        assertTrue(Arrays.equals(buffer, Arrays.copyOfRange(fileContents, 2000, 2000 + 8190)));
+        assertEquals(mappedBuffer.position(), 2000 + 8190);
+
+        buffer = new byte[100000];
+        mappedBuffer.setPosition(0);
+        mappedBuffer.readSubSequence(buffer, 19242, 100000);
+        assertTrue(Arrays.equals(buffer, Arrays.copyOfRange(fileContents, 19242, 19242 + 100000)));
+        assertEquals(mappedBuffer.position(), 19242 + 100000);
+
+        buffer = new byte[8259];
+        mappedBuffer.setPosition(0);
+        mappedBuffer.readSubSequence(buffer, 0, 8259);
+        assertTrue(Arrays.equals(buffer, Arrays.copyOfRange(fileContents, 0, 8259)));
+        assertEquals(mappedBuffer.position(), 8259);
+
+        buffer = new byte[8259];
+        mappedBuffer.setPosition(0);
+        mappedBuffer.readSubSequence(buffer, 8259, 8259);
+        assertTrue(Arrays.equals(buffer, Arrays.copyOfRange(fileContents, 8259, 8259 + 8259)));
+        assertEquals(mappedBuffer.position(), 8259 + 8259);
+
+        mappedBuffer.readSubSequence(buffer, 8259, 8259);
+        assertTrue(Arrays.equals(buffer, Arrays.copyOfRange(fileContents, 8259 * 3, 8259 * 4)));
+        assertEquals(mappedBuffer.position(), 8259 * 4);
     }
 
     private void assertSnapshotCorrect(Snapshot snapshot) {
