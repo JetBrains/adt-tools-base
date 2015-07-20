@@ -4,6 +4,7 @@
       <w>&amp;amp</w>
       <w>aapt</w>
       <w>aarrggbb</w>
+      <w>abis</w>
       <w>accessors</w>
       <w>actionbar</w>
       <w>adb's</w>
@@ -288,6 +289,7 @@
       <w>versioncode</w>
       <w>vert</w>
       <w>vmsig</w>
+      <w>waitable</w>
       <w>wakelock</w>
       <w>wakelocks</w>
       <w>wakeup</w>
