@@ -364,6 +364,10 @@ public abstract class JavaParser {
         @NonNull
         public abstract Iterable<ResolvedMethod> getMethods(@NonNull String name, boolean includeInherited);
 
+        /** Returns the fields defined in this class, and optionally any fields declared in any superclasses as well */
+        @NonNull
+        public abstract Iterable<ResolvedField> getFields(boolean includeInherited);
+
         /** Returns the named field defined in this class, or optionally inherited from a superclass */
         @Nullable
         public abstract ResolvedField getField(@NonNull String name, boolean includeInherited);

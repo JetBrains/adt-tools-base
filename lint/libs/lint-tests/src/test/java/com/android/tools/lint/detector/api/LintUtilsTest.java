@@ -42,6 +42,8 @@ import com.google.common.collect.Iterables;
 
 import junit.framework.TestCase;
 
+import org.intellij.lang.annotations.Language;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -357,17 +359,18 @@ public class LintUtilsTest extends TestCase {
         assertEquals("prefixName", computeResourceName("prefix", "name"));
     }
 
-    public static Node getCompilationUnit(String javaSource) {
+    public static Node getCompilationUnit(@Language("JAVA") String javaSource) {
         return getCompilationUnit(javaSource, new File("test"));
     }
 
 
-    public static Node getCompilationUnit(final String javaSource, final File relativePath) {
+    public static Node getCompilationUnit(@Language("JAVA") String javaSource, File relativePath) {
         JavaContext context = parse(javaSource, relativePath);
         return context.getCompilationUnit();
     }
 
-    public static JavaContext parse(final String javaSource, final File relativePath) {
+    public static JavaContext parse(@Language("JAVA") final String javaSource,
+            final File relativePath) {
         File dir = new File("projectDir");
         final File fullPath = new File(dir, relativePath.getPath());
         LintCliClient client = new LintCliClient() {
