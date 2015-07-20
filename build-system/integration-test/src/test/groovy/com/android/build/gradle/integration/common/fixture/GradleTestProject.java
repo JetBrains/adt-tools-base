@@ -105,14 +105,13 @@ public class GradleTestProject implements TestRule {
     public static final String ANDROID_GRADLE_PLUGIN_VERSION;
 
     public static final String CUSTOM_JACK;
-
     public static final boolean USE_JACK;
 
     private static final String RECORD_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String RECORD_BENCHMARK_MODE = "com.android.benchmark.mode";
 
     public enum BenchmarkMode {
-        EVALUATION, SYNC, BUILD_FULL, BUILD_INC_JAVA
+        EVALUATION, SYNC, BUILD_FULL, BUILD_INC_JAVA, BUILD_INC_RES_EDIT, BUILD_INC_RES_ADD
     }
 
     static {
@@ -152,6 +151,8 @@ public class GradleTestProject implements TestRule {
         boolean captureStdErr = false;
         boolean experimentalMode = false;
         boolean useExperimentalGradleVersion = false;
+        boolean useJack = false;
+        boolean useMinify = false;
         @NonNull
         private List<String> gradleProperties = Lists.newArrayList();
         @Nullable
@@ -165,6 +166,8 @@ public class GradleTestProject implements TestRule {
                     name,
                     testProject,
                     experimentalMode,
+                    useMinify,
+                    useJack,
                     useExperimentalGradleVersion ? GRADLE_EXP_TEST_VERSION : GRADLE_TEST_VERSION,
                     captureStdOut,
                     captureStdErr,
@@ -240,6 +243,21 @@ public class GradleTestProject implements TestRule {
         }
 
         /**
+         * Create GradleTestProject from an existing test project.
+         */
+        public Builder fromExternalProject(@NonNull String project) throws IOException {
+            AndroidTestApp app = new EmptyTestApp();
+            name = project;
+            // compute the root folder of the checkout, based on test-projects.
+            File parentDir = TEST_PROJECT_DIR.getCanonicalFile().getParentFile().getParentFile()
+                    .getParentFile().getParentFile().getParentFile();
+            parentDir = new File(parentDir, "external");
+            File projectDir = new File(parentDir, project);
+            addAllFiles(app, projectDir);
+            return fromTestApp(app);
+        }
+
+        /**
          * Add gradle properties.
          */
         public Builder addGradleProperties(@NonNull String property) {
@@ -258,6 +276,16 @@ public class GradleTestProject implements TestRule {
             return this;
         }
 
+        public Builder withJack(boolean useJack) {
+            this.useJack = useJack;
+            return this;
+        }
+
+        public Builder withMinify(boolean useMinify) {
+            this.useMinify = useMinify;
+            return this;
+        }
+
         private static class EmptyTestApp extends AbstractAndroidTestApp {
             @Override
             public boolean containsFullBuildScript() {
@@ -266,19 +294,13 @@ public class GradleTestProject implements TestRule {
         }
     }
 
-    private String name;
-
-    private File outDir;
-
+    private final String name;
+    private final File outDir;
     private File testDir;
-
     private File sourceDir;
-
     private File buildFile;
-
-    private File ndkDir;
-
-    private File sdkDir;
+    private final File ndkDir;
+    private final File sdkDir;
 
     private final ByteArrayOutputStream stdout;
     private final ByteArrayOutputStream stderr;
@@ -286,10 +308,13 @@ public class GradleTestProject implements TestRule {
     private final Collection<String> gradleProperties;
 
     @Nullable
-    private TestProject testProject;
+    private final TestProject testProject;
 
-    private boolean experimentalMode;
-    private String targetGradleVersion;
+    private final boolean experimentalMode;
+    private final String targetGradleVersion;
+
+    private final boolean useJack;
+    private final boolean useMinify;
 
     @Nullable
     private String heapSize;
@@ -298,6 +323,8 @@ public class GradleTestProject implements TestRule {
             @Nullable String name,
             @Nullable TestProject testProject,
             boolean experimentalMode,
+            boolean useMinify,
+            boolean useJack,
             String targetGradleVersion,
             boolean captureStdOut,
             boolean captureStdErr,
@@ -307,8 +334,12 @@ public class GradleTestProject implements TestRule {
             @Nullable String heapSize) {
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
         outDir = (buildDir == null) ? new File("build/tests") : new File(buildDir, "tests");
+        testDir = null;
+        buildFile = sourceDir = null;
         this.name = (name == null) ? DEFAULT_TEST_PROJECT_NAME : name;
         this.experimentalMode = experimentalMode;
+        this.useMinify = useMinify;
+        this.useJack = useJack;
         this.targetGradleVersion = targetGradleVersion;
         this.testProject = testProject;
         stdout = captureStdOut ? new ByteArrayOutputStream() : null;
@@ -341,6 +372,18 @@ public class GradleTestProject implements TestRule {
         stderr = rootProject.stdout;
         gradleProperties = ImmutableList.of();
         testProject = null;
+        experimentalMode = rootProject.isExperimentalMode();
+        targetGradleVersion = rootProject.getTargetGradleVersion();
+        useMinify = false;
+        useJack = false;
+    }
+
+    String getTargetGradleVersion() {
+        return targetGradleVersion;
+    }
+
+    boolean isExperimentalMode() {
+        return experimentalMode;
     }
 
     public static Builder builder() {
@@ -1110,9 +1153,34 @@ public class GradleTestProject implements TestRule {
         assumeBuildToolsAtLeast(
                 major, FullRevision.IMPLICIT_MINOR_REV, FullRevision.IMPLICIT_MICRO_REV);
     }
+
     public static void assumeBuildToolsAtLeast(int major, int minor, int micro) {
         FullRevision currentVersion = FullRevision.parseRevision(DEFAULT_BUILD_TOOL_VERSION);
         Assume.assumeTrue("Test is only applicable to build tools > " + major,
                 new FullRevision(major, minor, micro).compareTo(currentVersion) < 0);
+    }
+
+    /**
+     * Replace a line from a file with another line.
+     * @param relativePath the relative path of the file from the root of the project
+     * @param lineNumber the line number, starting at 1
+     * @param line the line to replace with.
+     * @throws IOException
+     */
+    public void replaceLine(
+            String relativePath,
+            int lineNumber,
+            String line) throws IOException {
+        File file = new File(testDir, relativePath.replace("/", File.separator));
+
+        List<String> lines = Files.readLines(file, Charsets.UTF_8);
+
+        lines.add(lineNumber, line);
+        lines.remove(lineNumber - 1);
+
+        Files.write(
+                Joiner.on(System.getProperty("line.separator")).join(lines),
+                file,
+                Charsets.UTF_8);
     }
 }

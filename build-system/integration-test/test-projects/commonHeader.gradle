@@ -19,6 +19,7 @@ ext {
     latestCompileSdk = 21
 
     useJack = System.env.CUSTOM_JACK || project.properties["CUSTOM_JACK"]
+    useMinify = System.env.CUSTOM_MINIFY || project.properties["CUSTOM_MINIFY"]
 
     def remoteTestProvider = System.env.REMOTE_TEST_PROVIDER
     if (remoteTestProvider != null) {
