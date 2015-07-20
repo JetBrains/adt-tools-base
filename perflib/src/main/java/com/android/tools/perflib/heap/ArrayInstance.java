@@ -50,19 +50,21 @@ public class ArrayInstance extends Instance {
     }
 
     @NonNull
-    private byte[] asRawByteArray(int elementCount) {
+    private byte[] asRawByteArray(int start, int elementCount) {
         getBuffer().setPosition(mValuesOffset);
         assert mType != Type.OBJECT;
-        byte[] bytes = new byte[Math.min(elementCount, mLength) * mType.getSize()];
-        getBuffer().read(bytes);
+        assert start + elementCount <= mLength;
+        byte[] bytes = new byte[elementCount * mType.getSize()];
+        getBuffer().readSubSequence(bytes, start * mType.getSize(), elementCount * mType.getSize());
         return bytes;
     }
 
     @NonNull
-    public char[] asCharArray(int length) {
+    public char[] asCharArray(int offset, int length) {
         assert mType == Type.CHAR;
-        CharBuffer charBuffer = ByteBuffer.wrap(asRawByteArray(length)).order(HprofBuffer.HPROF_BYTE_ORDER).asCharBuffer();
-        char[] result = new char[charBuffer.length()];
+        // TODO: Make this copy less by supporting offset in asRawByteArray.
+        CharBuffer charBuffer = ByteBuffer.wrap(asRawByteArray(offset, length)).order(HprofBuffer.HPROF_BYTE_ORDER).asCharBuffer();
+        char[] result = new char[length];
         charBuffer.get(result);
         return result;
     }
