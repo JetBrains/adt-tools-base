@@ -55,6 +55,10 @@ public class MockableAndroidJarTask extends DefaultTask {
       return mReturnDefaultValues;
    }
 
+   public void setReturnDefaultValues(boolean returnDefaultValues) {
+      mReturnDefaultValues = returnDefaultValues;
+   }
+
    @OutputFile
    public File getOutputFile() {
       return mOutputFile;
