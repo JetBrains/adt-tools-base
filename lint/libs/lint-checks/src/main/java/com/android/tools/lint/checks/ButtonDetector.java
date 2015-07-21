@@ -281,7 +281,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                                     if (!label.equals(CANCEL_LABEL)
                                             && LintUtils.isEnglishResource(context, true)
                                             && context.isEnabled(CASE)) {
-                                        assert label.equalsIgnoreCase(CANCEL_LABEL);
+                                        assert label.trim().equalsIgnoreCase(CANCEL_LABEL) : label;
                                         context.report(CASE, child, context.getLocation(child),
                                             String.format(
                                             "The standard Android way to capitalize %1$s " +
@@ -298,7 +298,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                                     if (!label.equals(OK_LABEL)
                                             && LintUtils.isEnglishResource(context, true)
                                             && context.isEnabled(CASE)) {
-                                        assert text.trim().equalsIgnoreCase(OK_LABEL) : text;
+                                        assert label.trim().equalsIgnoreCase(OK_LABEL) : label;
                                         context.report(CASE, child, context.getLocation(child),
                                             String.format(
                                             "The standard Android way to capitalize %1$s " +
