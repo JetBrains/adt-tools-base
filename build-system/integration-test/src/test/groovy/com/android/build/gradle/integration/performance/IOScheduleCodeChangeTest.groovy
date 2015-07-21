@@ -33,15 +33,15 @@ import static com.android.build.gradle.integration.common.fixture.GradleTestProj
 @CompileStatic
 class IOScheduleCodeChangeTest {
 
-    @Parameterized.Parameters
+    @Parameterized.Parameters(name="minify={0} jack={1}")
     public static Collection<Object[]> data() {
         // returns an array of boolean for all combinations of (proguard, jack).
-        // Right now, only return the (false, false) case.
+        // Right now, only return the (false, false) and (false, true) cases.
         return [
 //                [true, false].toArray(),
 //                [true, true].toArray(),
                 [false, false].toArray(),
-//                [false, true].toArray(),
+                [false, true].toArray(),
         ];
     }
 
