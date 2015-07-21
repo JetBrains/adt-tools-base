@@ -22,7 +22,6 @@ import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.core.Abi;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.NdkConfig;
@@ -39,6 +38,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 
 import org.gradle.api.Action;
+import org.gradle.api.BuildableModelElement;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -304,7 +304,9 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             if (!ndkConfig.getModuleName().isEmpty()) {
                 final NativeLibrarySpec library = specs.withType(NativeLibrarySpec.class)
                         .get(ndkConfig.getModuleName());
-                binaries.withType(DefaultAndroidBinary.class, new Action<DefaultAndroidBinary>() {
+                binaries.withType(
+                        DefaultAndroidBinary.class,
+                        new Action<DefaultAndroidBinary>() {
                             @Override
                             public void execute(DefaultAndroidBinary binary) {
                                 binary.computeMergedNdk(
@@ -317,13 +319,17 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                                 library,
                                                 binary.getBuildType(),
                                                 binary.getProductFlavors());
-                                binary.getNativeBinaries().addAll(nativeBinaries);
                                 for (SharedLibraryBinarySpec nativeBin : nativeBinaries) {
-                                    NdkConfiguration.configureBinary(
-                                            nativeBin,
-                                            buildDir,
-                                            binary.getMergedNdkConfig(),
-                                            ndkHandler);
+                                    if (binary.getMergedNdkConfig().getAbiFilters().isEmpty() ||
+                                            binary.getMergedNdkConfig().getAbiFilters().contains(
+                                                    nativeBin.getTargetPlatform().getName())) {
+                                        NdkConfiguration.configureBinary(
+                                                nativeBin,
+                                                buildDir,
+                                                binary.getMergedNdkConfig(),
+                                                ndkHandler);
+                                        binary.getNativeBinaries().add(nativeBin);
+                                    }
                                 }
                             }
                         });
@@ -336,14 +342,10 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 @Override
                 public void execute(AndroidBinary androidBinary) {
                     DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;
-                    if (binary.getTargetAbi().isEmpty()) {
-                        binary.builtBy(binary.getNativeBinaries());
-                    } else {
-                        for (NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
-                            if (binary.getTargetAbi()
-                                    .contains(nativeBinary.getTargetPlatform().getName())) {
-                                binary.builtBy(nativeBinary);
-                            }
+                    for (NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
+                        if (binary.getTargetAbi().isEmpty() || binary.getTargetAbi().contains(
+                                nativeBinary.getTargetPlatform().getName())) {
+                            binary.getBuildTask().dependsOn(NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
                         }
                     }
                 }
@@ -429,30 +431,20 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
     /**
      * Return library binaries for a VariantConfiguration.
      */
-    public Collection<SharedLibraryBinarySpec> getBinaries(final VariantConfiguration variantConfig) {
+    public Collection<? extends BuildableModelElement> getBinaries(final VariantConfiguration variantConfig) {
         if (variantConfig.getType().isForTesting()) {
             // Do not return binaries for test variants as test source set is not supported at the
             // moment.
             return Collections.emptyList();
         }
-        final GradleVariantConfiguration config = (GradleVariantConfiguration) variantConfig;
-
         BinaryContainer binaries = (BinaryContainer) project.getExtensions().getByName("binaries");
-
-        return binaries.withType(SharedLibraryBinarySpec.class).matching(
-                new Spec<SharedLibraryBinarySpec>() {
+        return binaries.withType(AndroidBinary.class).matching(
+                new Spec<AndroidBinary>() {
                     @Override
-                    public boolean isSatisfiedBy(SharedLibraryBinarySpec binary) {
-                        return (binary.getBuildType().getName()
-                                .equals(config.getBuildType().getName())
-                                && (binary.getFlavor().getName().equals(config.getFlavorName())
-                                || (binary.getFlavor().getName().equals("default")
-                                && config.getFlavorName().isEmpty()))
-                                && (config.getNdkConfig().getAbiFilters() == null
-                                || config.getNdkConfig().getAbiFilters().isEmpty()
-                                || config.getNdkConfig().getAbiFilters().contains(
-                                binary.getTargetPlatform().getName())));
+                    public boolean isSatisfiedBy(AndroidBinary binary) {
+                        return (binary.getName().equals(variantConfig.getFullName()));
                     }
-                });
+                }
+        );
     }
 }
