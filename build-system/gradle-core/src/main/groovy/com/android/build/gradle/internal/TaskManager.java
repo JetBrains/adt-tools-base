@@ -35,6 +35,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.OutputFile;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
@@ -134,7 +135,6 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
@@ -169,7 +169,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -192,10 +191,6 @@ public abstract class TaskManager {
     public static final String BUILD_GROUP = BasePlugin.BUILD_GROUP;
 
     public static final String ANDROID_GROUP = "Android";
-
-    /** Property used to define extra instrumentation test runner arguments. */
-    public static final String TEST_RUNNER_ARGS_PROP =
-            "android.testInstrumentationRunnerArguments.";
 
     protected Project project;
 
@@ -258,7 +253,7 @@ public abstract class TaskManager {
         globalScope = new GlobalScope(
                 project,
                 androidBuilder,
-                (String) project.getProperties().get("archivesBaseName"),
+                checkNotNull((String) project.getProperties().get("archivesBaseName")),
                 extension,
                 sdkHandler,
                 toolingRegistry);
@@ -1576,7 +1571,8 @@ public abstract class TaskManager {
         String connectedRootName = CONNECTED + ANDROID_TEST.getSuffix();
 
         TestDataImpl testData = new TestDataImpl(testVariantData);
-        testData.setExtraInstrumentationTestRunnerArgs(getExtraInstrumentationTestRunnerArgsMap());
+        testData.setExtraInstrumentationTestRunnerArgs(
+                AndroidGradleOptions.getExtraInstrumentationTestRunnerArgs(project));
 
         // create the check tasks for this test
         // first the connected one.
@@ -1727,20 +1723,6 @@ public abstract class TaskManager {
                 serverTask.setEnabled(false);
             }
         }
-    }
-
-    private Map<String, String> getExtraInstrumentationTestRunnerArgsMap() {
-        Map<String, String> argsMap = Maps.newHashMap();
-        for (Map.Entry<String, ?> entry : project.getProperties().entrySet()) {
-            if (entry.getKey().startsWith(TEST_RUNNER_ARGS_PROP)) {
-                String argName = entry.getKey().substring(TEST_RUNNER_ARGS_PROP.length());
-                String argValue = entry.getValue().toString();
-
-                argsMap.put(argName, argValue);
-            }
-        }
-
-        return argsMap;
     }
 
     public static void createJarTask(@NonNull TaskFactory tasks, @NonNull final VariantScope scope) {

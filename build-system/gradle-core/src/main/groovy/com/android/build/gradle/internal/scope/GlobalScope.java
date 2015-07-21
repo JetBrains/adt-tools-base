@@ -16,16 +16,17 @@
 
 package com.android.build.gradle.internal.scope;
 
+import static com.android.builder.core.BuilderConstants.FD_REPORTS;
 import static com.android.builder.model.AndroidProject.FD_GENERATED;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
-import static com.android.builder.model.AndroidProject.PROPERTY_APK_LOCATION;
-import static com.android.builder.core.BuilderConstants.FD_REPORTS;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.builder.core.AndroidBuilder;
+import com.google.common.base.Objects;
 
 import org.gradle.api.Project;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
@@ -139,10 +140,8 @@ public class GlobalScope {
 
     @NonNull
     public String getApkLocation() {
-        String apkLocation = getDefaultApkLocation();
-        if (project.hasProperty(PROPERTY_APK_LOCATION)) {
-            apkLocation = (String) project.getProperties().get(PROPERTY_APK_LOCATION);
-        }
-        return apkLocation;
+        return Objects.firstNonNull(
+                AndroidGradleOptions.getApkLocation(project),
+                getDefaultApkLocation());
     }
 }
