@@ -30,16 +30,22 @@ import com.android.tools.lint.checks.SdCardDetector;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtilsTest;
 import com.android.tools.lint.detector.api.Project;
+import com.google.common.collect.Lists;
 
+import org.intellij.lang.annotations.Language;
 import org.junit.Assert;
 
 import java.io.File;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.ast.AnnotationElement;
 import lombok.ast.BinaryExpression;
 import lombok.ast.Block;
+import lombok.ast.ClassDeclaration;
 import lombok.ast.DescribedNode;
 import lombok.ast.ExpressionStatement;
 import lombok.ast.ForwardingAstVisitor;
@@ -186,6 +192,55 @@ public class EcjParserTest extends AbstractCheckTest {
                 + "    }\n"
                 + "}",
                 actual);
+    }
+
+    @SuppressWarnings("ClassNameDiffersFromFileName")
+    public void testGetFields() throws Exception {
+        @Language("JAVA")
+        String source = ""
+                + "public class FieldTest {\n"
+                + "    public int field1 = 1;\n"
+                + "    public int field2 = 3;\n"
+                + "    public int field3 = 5;\n"
+                + "    \n"
+                + "    public static class Inner extends FieldTest {\n"
+                + "        public int field2 = 5;\n"
+                + "    }\n"
+                + "}\n";
+
+        final JavaContext context = LintUtilsTest.parse(source,
+                new File("src/test/pkg/FieldTest.java"));
+        assertNotNull(context);
+
+        Node compilationUnit = context.getCompilationUnit();
+        assertNotNull(compilationUnit);
+        final AtomicBoolean found = new AtomicBoolean();
+        compilationUnit.accept(new ForwardingAstVisitor() {
+            @Override
+            public boolean visitClassDeclaration(ClassDeclaration node) {
+                if (node.astName().astValue().equals("Inner")) {
+                    found.set(true);
+                    ResolvedNode resolved = context.resolve(node);
+                    assertNotNull(resolved);
+                    ResolvedClass cls = (ResolvedClass) resolved;
+                    List<ResolvedField> declaredFields = Lists.newArrayList(cls.getFields(false));
+                    assertEquals(1, declaredFields.size());
+                    assertEquals("field2", declaredFields.get(0).getName());
+
+                    declaredFields = Lists.newArrayList(cls.getFields(true));
+                    assertEquals(3, declaredFields.size());
+                    assertEquals("field2", declaredFields.get(0).getName());
+                    assertEquals("FieldTest.Inner", declaredFields.get(0).getContainingClassName());
+                    assertEquals("field1", declaredFields.get(1).getName());
+                    assertEquals("FieldTest", declaredFields.get(1).getContainingClassName());
+                    assertEquals("field3", declaredFields.get(2).getName());
+                    assertEquals("FieldTest", declaredFields.get(2).getContainingClassName());
+                }
+
+                return super.visitClassDeclaration(node);
+            }
+        });
+        assertTrue(found.get());
     }
 
     public void testResolution() throws Exception {

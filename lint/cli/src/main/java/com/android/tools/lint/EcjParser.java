@@ -108,6 +108,7 @@ import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
 import org.eclipse.jdt.internal.compiler.problem.ProblemReporter;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -1337,6 +1338,60 @@ public class EcjParser extends JavaParser {
             }
 
             return all;
+        }
+
+        @NonNull
+        @Override
+        public Iterable<ResolvedField> getFields(boolean includeInherited) {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding cls = (ReferenceBinding) mBinding;
+                if (includeInherited) {
+                    List<ResolvedField> result = null;
+                    while (cls != null) {
+                        FieldBinding[] fields = cls.fields();
+                        if (fields != null) {
+                            int count = fields.length;
+                            if (count > 0) {
+                                if (result == null) {
+                                    result = Lists.newArrayListWithExpectedSize(count);
+                                }
+                                for (FieldBinding field : fields) {
+                                    // See if this field looks like it's masked
+                                    boolean masked = false;
+                                    for (ResolvedField f : result) {
+                                        FieldBinding mb = ((EcjResolvedField) f).mBinding;
+                                        if (Arrays.equals(mb.readableName(),
+                                                field.readableName())) {
+                                            masked = true;
+                                            break;
+                                        }
+                                    }
+                                    if (masked) {
+                                        continue;
+                                    }
+
+                                    result.add(new EcjResolvedField(field));
+                                }
+                            }
+                        }
+                        cls = cls.superclass();
+                    }
+
+                    return result != null ? result : Collections.<ResolvedField>emptyList();
+                } else {
+                    FieldBinding[] fields = cls.fields();
+                    if (fields != null) {
+                        int count = fields.length;
+                        List<ResolvedField> result = Lists.newArrayListWithExpectedSize(count);
+                        for (FieldBinding field : fields) {
+                            result.add(new EcjResolvedField(field));
+                        }
+                        return result;
+                    }
+                }
+            }
+
+            return Collections.emptyList();
         }
 
         @Override
