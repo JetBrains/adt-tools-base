@@ -45,17 +45,14 @@ import java.util.Map;
  */
 public class SimpleTestRunner implements TestRunner {
 
-    @NonNull
-    private final File mAdbExec;
     @Nullable
     private final File mSplitSelectExec;
     @NonNull
     private final ProcessExecutor mProcessExecutor;
 
-    public SimpleTestRunner(@NonNull File adbExec,
+    public SimpleTestRunner(
             @Nullable File splitSelectExec,
             @NonNull ProcessExecutor processExecutor) {
-        mAdbExec = adbExec;
         mSplitSelectExec = splitSelectExec;
         mProcessExecutor = processExecutor;
     }
@@ -113,9 +110,10 @@ public class SimpleTestRunner implements TestRunner {
                     }
 
                     compatibleDevices++;
-                    executor.execute(new SimpleTestCallable(device, projectName, variantName,
-                            testApk, testedApks, mAdbExec, testData,
-                            resultsDir, coverageDir, timeoutInMs, installOptions, logger));
+                    executor.execute(
+                            new SimpleTestCallable(
+                                    device, projectName, variantName, testApk, testedApks, testData,
+                                    resultsDir, coverageDir, timeoutInMs, logger));
                 }
             } else {
                 unauthorizedDevices++;

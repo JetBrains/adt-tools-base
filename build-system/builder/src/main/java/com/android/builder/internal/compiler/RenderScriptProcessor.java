@@ -101,9 +101,7 @@ public class RenderScriptProcessor {
 
     private final int mTargetApi;
 
-    private final boolean mDebugBuild;
-
-    private final int mOptimLevel;
+    private final int mOptimizationLevel;
 
     private final boolean mNdkMode;
 
@@ -123,7 +121,7 @@ public class RenderScriptProcessor {
             @NonNull BuildToolInfo buildToolInfo,
             int targetApi,
             boolean debugBuild,
-            int optimLevel,
+            int optimizationLevel,
             boolean ndkMode,
             boolean supportMode,
             @Nullable Set<String> abiFilters) {
@@ -135,8 +133,7 @@ public class RenderScriptProcessor {
         mLibOutputDir = libOutputDir;
         mBuildToolInfo = buildToolInfo;
         mTargetApi = targetApi;
-        mDebugBuild = debugBuild;
-        mOptimLevel = optimLevel;
+        mOptimizationLevel = optimizationLevel;
         mNdkMode = ndkMode;
         mSupportMode = supportMode;
         mAbiFilters = abiFilters;
@@ -226,7 +223,7 @@ public class RenderScriptProcessor {
 //        }
 
         builder.addArgs("-O");
-        builder.addArgs(Integer.toString(mOptimLevel));
+        builder.addArgs(Integer.toString(mOptimizationLevel));
 
         // add all import paths
         builder.addArgs("-I");
@@ -349,7 +346,7 @@ public class RenderScriptProcessor {
         builder.setExecutable(mBuildToolInfo.getPath(BuildToolInfo.PathId.BCC_COMPAT));
         builder.addEnvironments(env);
 
-        builder.addArgs("-O" + Integer.toString(mOptimLevel));
+        builder.addArgs("-O" + Integer.toString(mOptimizationLevel));
 
         File outFile = new File(objAbiFolder, objName);
         builder.addArgs("-o", outFile.getAbsolutePath());

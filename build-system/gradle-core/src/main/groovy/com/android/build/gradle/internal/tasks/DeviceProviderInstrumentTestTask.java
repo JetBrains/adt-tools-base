@@ -103,7 +103,8 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         } else {
             File testApk = testData.getTestApk();
             String flavor = getFlavorName();
-            TestRunner testRunner = new SimpleTestRunner(getAdbExec(), getSplitSelectExec(),
+            TestRunner testRunner = new SimpleTestRunner(
+                    getSplitSelectExec(),
                     getProcessExecutor());
             deviceProvider.init();
 

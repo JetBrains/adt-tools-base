@@ -33,7 +33,6 @@ import com.google.common.collect.ImmutableList;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintWriter;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -67,27 +66,21 @@ public class SimpleTestCallable implements Callable<Boolean> {
     @NonNull
     private final List<File> testedApks;
     @NonNull
-    private final File adbExec;
-    @NonNull
-    private final Collection<String> installOptions;
-
-    private final int timeoutInMs;
-    @NonNull
     private final ILogger logger;
 
+    private final int timeoutInMs;
+
     public SimpleTestCallable(
-            @NonNull  DeviceConnector device,
-            @NonNull  String projectName,
-            @NonNull  String flavorName,
-            @NonNull  File testApk,
+            @NonNull DeviceConnector device,
+            @NonNull String projectName,
+            @NonNull String flavorName,
+            @NonNull File testApk,
             @NonNull List<File> testedApks,
-            @NonNull  File adbExec,
-            @NonNull  TestData testData,
-            @NonNull  File resultsDir,
-            @NonNull  File coverageDir,
-                      int timeoutInMs,
-            @NonNull Collection<String> installOptions,
-            @NonNull  ILogger logger) {
+            @NonNull TestData testData,
+            @NonNull File resultsDir,
+            @NonNull File coverageDir,
+            int timeoutInMs,
+            @NonNull ILogger logger) {
         this.projectName = projectName;
         this.device = device;
         this.flavorName = flavorName;
@@ -96,9 +89,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
         this.testApk = testApk;
         this.testedApks = testedApks;
         this.testData = testData;
-        this.adbExec = adbExec;
         this.timeoutInMs = timeoutInMs;
-        this.installOptions = installOptions;
         this.logger = logger;
     }
 
