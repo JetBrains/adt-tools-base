@@ -16,46 +16,67 @@
 
 package com.android.build.gradle.integration.component
 
-import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
+import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestApp
+import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
-import org.junit.Ignore
 import org.junit.Test
-import org.junit.experimental.categories.Category
+
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 
 /**
- * Assemble tests for ndkStandaloneSo.
+ * Basic tests for NdkStandalone plugin.
  */
-@Ignore("Test is disabled until new dependency model is ready.")
 @CompileStatic
 class NdkStandaloneSoTest {
+    static AndroidTestApp nativeLib = new EmptyAndroidTestApp();
+    static {
+        nativeLib.addFile(new TestSourceFile("src/main/jni/", "hello.c", """
+char* hello() {
+    return "hello world!";
+}
+"""))
+
+    }
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromTestProject("ndkStandaloneSo")
+            .fromTestApp(nativeLib)
+            .forExpermimentalPlugin(true)
             .create()
+
 
     @BeforeClass
     static void setUp() {
+        project.buildFile << """
+apply plugin: "com.android.model.native"
+
+model {
+    android {
+        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+    }
+    android.ndk {
+        moduleName = "hello-world"
+    }
+}
+"""
         project.execute("clean", "assembleDebug");
     }
 
     @AfterClass
     static void cleanUp() {
         project = null
+        nativeLib = null
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
-    @Category(DeviceTests.class)
-    void connectedCheck() {
-        project.executeConnectedCheck();
+    void "check file is compiled"() {
+        assertThat(project.file("build/outputs/native/debug/lib/x86/libhello-world.so")).exists();
+        assertThat(project.file("build/outputs/native/debug/lib/x86/gdbserver")).exists();
+        assertThat(project.file("build/outputs/native/debug/lib/x86/gdb.setup")).exists();
     }
 }
