@@ -150,7 +150,9 @@ public class GradleTestProject implements TestRule {
         boolean captureStdOut = false;
         boolean captureStdErr = false;
         boolean experimentalMode = false;
-        boolean useExperimentalGradleVersion = false;
+        @Nullable
+        private String targetGradleVersion;
+
         boolean useJack = false;
         boolean useMinify = false;
         @NonNull
@@ -161,14 +163,18 @@ public class GradleTestProject implements TestRule {
         /**
          * Create a GradleTestProject.
          */
-        public GradleTestProject create()  {
+        public GradleTestProject create() {
+            if (targetGradleVersion == null) {
+                targetGradleVersion =
+                        experimentalMode ? GRADLE_EXP_TEST_VERSION : GRADLE_TEST_VERSION;
+            }
             return new GradleTestProject(
                     name,
                     testProject,
                     experimentalMode,
                     useMinify,
                     useJack,
-                    useExperimentalGradleVersion ? GRADLE_EXP_TEST_VERSION : GRADLE_TEST_VERSION,
+                    targetGradleVersion,
                     captureStdOut,
                     captureStdErr,
                     sdkDir,
@@ -201,7 +207,6 @@ public class GradleTestProject implements TestRule {
          * Use experimental plugin for the test project.
          */
         public Builder forExpermimentalPlugin(boolean mode) {
-            this.useExperimentalGradleVersion = mode;
             this.experimentalMode = mode;
             return this;
         }
@@ -211,7 +216,17 @@ public class GradleTestProject implements TestRule {
          * have to use experimental plugin.
          */
         public Builder useExperimentalGradleVersion(boolean mode) {
-            this.useExperimentalGradleVersion = mode;
+            if (mode) {
+                targetGradleVersion = GRADLE_EXP_TEST_VERSION;
+            }
+            return this;
+        }
+
+        /**
+         * Use the gradle version specified, e.g. "2.4".
+         */
+        public Builder useGradleVersion(String targetGradleVersion) {
+            this.targetGradleVersion = targetGradleVersion;
             return this;
         }
 
@@ -314,7 +329,7 @@ public class GradleTestProject implements TestRule {
     private final String targetGradleVersion;
 
     private final boolean useJack;
-    private final boolean useMinify;
+    private final boolean minifyEnabled;
 
     @Nullable
     private String heapSize;
@@ -323,7 +338,7 @@ public class GradleTestProject implements TestRule {
             @Nullable String name,
             @Nullable TestProject testProject,
             boolean experimentalMode,
-            boolean useMinify,
+            boolean minifyEnabled,
             boolean useJack,
             String targetGradleVersion,
             boolean captureStdOut,
@@ -338,7 +353,7 @@ public class GradleTestProject implements TestRule {
         buildFile = sourceDir = null;
         this.name = (name == null) ? DEFAULT_TEST_PROJECT_NAME : name;
         this.experimentalMode = experimentalMode;
-        this.useMinify = useMinify;
+        this.minifyEnabled = minifyEnabled;
         this.useJack = useJack;
         this.targetGradleVersion = targetGradleVersion;
         this.testProject = testProject;
@@ -374,7 +389,7 @@ public class GradleTestProject implements TestRule {
         testProject = null;
         experimentalMode = rootProject.isExperimentalMode();
         targetGradleVersion = rootProject.getTargetGradleVersion();
-        useMinify = false;
+        minifyEnabled = false;
         useJack = false;
     }
 
@@ -952,9 +967,14 @@ public class GradleTestProject implements TestRule {
 
     private void executeBuild(final List<String> arguments, ProjectConnection connection,
             final String[] tasks, ExpectedBuildResult expectedBuildResult) {
-        List<String> args = Lists.newArrayListWithCapacity(3 + arguments.size());
+        List<String> args = Lists.newArrayListWithCapacity(5 + arguments.size());
         args.add("-i");
         args.add("-u");
+        args.add("-Pcom.android.build.gradle.integratonTest.useJack=" + Boolean.toString(useJack));
+        args.add("-Pcom.android.build.gradle.integratonTest.minifyEnabled=" +
+                Boolean.toString(minifyEnabled));
+        args.add("-Pcom.android.build.gradle.integratonTest.useComponentModel=" +
+                Boolean.toString(experimentalMode));
         args.addAll(arguments);
 
         BuildLauncher launcher = connection.newBuild()
