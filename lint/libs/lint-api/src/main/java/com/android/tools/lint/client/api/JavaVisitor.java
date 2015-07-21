@@ -389,13 +389,10 @@ public class JavaVisitor {
             ResolvedClass resolvedClass = (ResolvedClass) resolved;
             ResolvedClass cls = resolvedClass;
             while (cls != null) {
-                String fqcn = cls.getSignature();
-                if (fqcn != null) {
-                    List<VisitingDetector> list = mSuperClassDetectors.get(fqcn);
-                    if (list != null) {
-                        for (VisitingDetector v : list) {
-                            v.getJavaScanner().checkClass(mContext, node, node, resolvedClass);
-                        }
+                List<VisitingDetector> list = mSuperClassDetectors.get(cls.getName());
+                if (list != null) {
+                    for (VisitingDetector v : list) {
+                        v.getJavaScanner().checkClass(mContext, node, node, resolvedClass);
                     }
                 }
 
@@ -420,14 +417,11 @@ public class JavaVisitor {
                 ResolvedClass resolvedClass = (ResolvedClass) resolved;
                 ResolvedClass cls = resolvedClass;
                 while (cls != null) {
-                    String fqcn = cls.getSignature();
-                    if (fqcn != null) {
-                        List<VisitingDetector> list = mSuperClassDetectors.get(fqcn);
-                        if (list != null) {
-                            for (VisitingDetector v : list) {
-                                v.getJavaScanner().checkClass(mContext, null, anonymous,
-                                        resolvedClass);
-                            }
+                    List<VisitingDetector> list = mSuperClassDetectors.get(cls.getName());
+                    if (list != null) {
+                        for (VisitingDetector v : list) {
+                            v.getJavaScanner().checkClass(mContext, null, anonymous,
+                                    resolvedClass);
                         }
                     }
 
@@ -1377,7 +1371,7 @@ public class JavaVisitor {
                             ResolvedNode resolved = mContext.resolve(node);
                             if (resolved instanceof ResolvedMethod) {
                                 ResolvedMethod method = (ResolvedMethod) resolved;
-                                String type = method.getContainingClass().getSignature();
+                                String type = method.getContainingClass().getName();
                                 List<VisitingDetector> list = mConstructorDetectors.get(type);
                                 if (list != null) {
                                     for (VisitingDetector v : list) {
