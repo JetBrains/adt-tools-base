@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.builder.model.DimensionAware;
 import com.android.builder.model.ProductFlavor;
 import com.android.utils.StringHelper;
+import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -74,6 +75,22 @@ public class ProductFlavorCombo<T extends DimensionAware & Named> {
     @NonNull
     public List<T> getFlavorList() {
         return flavorList;
+    }
+
+    /**
+     * Return the name of the combined list of flavors.
+     */
+    @NonNull
+    public static String getFlavorComboName(List<? extends Named> flavorList) {
+        Iterable<String> flavorNames = Iterables.transform(
+                flavorList,
+                new Function<Named, String>() {
+                    @Override
+                    public String apply(Named namedObject) {
+                        return namedObject.getName();
+                    }
+                });
+        return StringHelper.combineAsCamelCase(flavorNames);
     }
 
     /**

@@ -31,4 +31,19 @@ public class StringHelper {
 
         return sb.toString();
     }
+
+    @NonNull
+    public static String combineAsCamelCase(@NonNull Iterable<String> stringList) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (String str : stringList) {
+            if (first) {
+                sb.append(str);
+                first = false;
+            } else {
+                sb.append(StringHelper.capitalize(str));
+            }
+        }
+        return sb.toString();
+    }
 }
