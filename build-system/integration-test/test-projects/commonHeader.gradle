@@ -18,8 +18,16 @@ ext {
     buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '22.0.1'].find()
     latestCompileSdk = 21
 
-    useJack = System.env.CUSTOM_JACK || project.properties["CUSTOM_JACK"]
-    useMinify = System.env.CUSTOM_MINIFY || project.properties["CUSTOM_MINIFY"]
+    useJack = System.env.CUSTOM_JACK ||
+            Boolean.valueOf((String) project.properties[
+                    "com.android.build.gradle.integratonTest.useJack"])
+
+    minifyEnabled = System.env.CUSTOM_MINIFY ||
+            Boolean.valueOf((String) project.properties[
+                    "com.android.build.gradle.integratonTest.minifyEnabled"])
+
+    useComponentModel = Boolean.valueOf((String) project.properties[
+                    "com.android.build.gradle.integratonTest.useComponentModel"])
 
     def remoteTestProvider = System.env.REMOTE_TEST_PROVIDER
     if (remoteTestProvider != null) {
