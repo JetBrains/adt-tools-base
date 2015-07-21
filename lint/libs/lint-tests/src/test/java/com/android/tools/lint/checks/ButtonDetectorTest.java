@@ -427,6 +427,47 @@ public class ButtonDetectorTest extends AbstractCheckTest {
                         "res/layout/yesno.xml"));
     }
 
+    public void testIssue180417() throws Exception {
+        // Regression test for
+        //   https://code.google.com/p/android/issues/detail?id=180417
+        sTestIssue = ButtonDetector.CASE;
+        assertEquals(""
+                        + "res/values/buttonbar-values.xml:4: Warning: The standard Android way to capitalize Ok is \"OK\" (tip: use @android:string/ok instead) [ButtonCase]\n"
+                        + "    <string name=\"ok\">\"Ok\"</string>\n"
+                        + "                      ^\n"
+                        + "0 errors, 1 warnings\n",
+                lintProject(
+                        xml("res/values/buttonbar-values.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<resources>\n"
+                                + "\n"
+                                + "    <string name=\"ok\">\"Ok\"</string>\n"
+                                + "\n"
+                                + "</resources>\n"),
+                        xml("res/layout/buttonbar", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    android:layout_width=\"match_parent\"\n"
+                                + "    android:layout_height=\"match_parent\"\n"
+                                + "    android:orientation=\"vertical\" >\n"
+                                + "    <LinearLayout\n"
+                                + "        android:layout_width=\"match_parent\"\n"
+                                + "        android:layout_height=\"wrap_content\" >\n"
+                                + "\n"
+                                + "        <Button\n"
+                                + "            android:layout_width=\"wrap_content\"\n"
+                                + "            android:layout_height=\"wrap_content\"\n"
+                                + "            android:text=\"@string/cancel\" />\n"
+                                + "\n"
+                                + "        <Button\n"
+                                + "            android:layout_width=\"wrap_content\"\n"
+                                + "            android:layout_height=\"wrap_content\"\n"
+                                + "            android:text=\"@string/ok\" />\n"
+                                + "    </LinearLayout>\n"
+                                + "</LinearLayout>\n"))
+                );
+    }
+
     public void testIssue101279() throws Exception {
         // Regression test for https://code.google.com/p/android/issues/detail?id=101279
         sTestIssue = ButtonDetector.STYLE;
