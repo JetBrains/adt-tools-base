@@ -16,13 +16,11 @@
 
 package com.android.build.gradle.internal;
 
-import static com.android.builder.model.AndroidProject.PROPERTY_BUILD_MODEL_ONLY;
-import static com.android.builder.model.AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED;
-import static com.android.builder.model.AndroidProject.PROPERTY_INVOKED_FROM_IDE;
 import static com.android.ide.common.blame.output.GradleMessageRewriter.ErrorFormatMode;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
@@ -252,11 +250,11 @@ public class ExtraModelInfo extends EvaluationErrorReporter {
      * failing the import in the IDE.
      */
     private static EvaluationMode computeModelQueryMode(@NonNull Project project) {
-        if (isPropertyTrue(project, PROPERTY_BUILD_MODEL_ONLY_ADVANCED)) {
+        if (AndroidGradleOptions.buildModelOnlyAdvanced(project)) {
             return EvaluationMode.IDE;
         }
 
-        if (isPropertyTrue(project, PROPERTY_BUILD_MODEL_ONLY)) {
+        if (AndroidGradleOptions.buildModelOnly(project)) {
             return EvaluationMode.IDE_LEGACY;
         }
 
@@ -264,23 +262,11 @@ public class ExtraModelInfo extends EvaluationErrorReporter {
     }
 
     private static ErrorFormatMode computeErrorFormatMode(@NonNull Project project) {
-        if (isPropertyTrue(project, PROPERTY_INVOKED_FROM_IDE)) {
+        if (AndroidGradleOptions.invokedFromIde(project)) {
             return ErrorFormatMode.MACHINE_PARSABLE;
         } else {
             return ErrorFormatMode.HUMAN_READABLE;
         }
     }
 
-    private static boolean isPropertyTrue(
-            @NonNull Project project,
-            @NonNull String propertyName) {
-        if (project.hasProperty(propertyName)) {
-            Object value = project.getProperties().get(propertyName);
-            if (value instanceof String) {
-                return Boolean.parseBoolean((String) value);
-            }
-        }
-
-        return false;
-    }
 }
