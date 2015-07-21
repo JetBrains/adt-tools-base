@@ -1553,6 +1553,17 @@ public class EcjParser extends JavaParser {
             return mBinding.toString();
         }
 
+        @Override
+        public boolean isInPackage(@NonNull String pkgName, boolean includeSubPackages) {
+            PackageBinding pkg = mBinding.declaringClass.getPackage();
+            if (pkg != null) {
+                return includeSubPackages ?
+                        startsWithCompound(pkgName, pkg.compoundName) :
+                        equalsCompound(pkgName, pkg.compoundName);
+            }
+            return false;
+        }
+
         @SuppressWarnings("RedundantIfStatement")
         @Override
         public boolean equals(Object o) {

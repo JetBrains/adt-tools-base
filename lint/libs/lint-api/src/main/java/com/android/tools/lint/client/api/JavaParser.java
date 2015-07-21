@@ -502,6 +502,20 @@ public abstract class JavaParser {
         public String getContainingClassName() {
             return getContainingClass().getName();
         }
+
+        @Override
+        public boolean isInPackage(@NonNull String pkg, boolean includeSubPackages) {
+            String packageName = getContainingClass().getPackageName();
+
+            //noinspection SimplifiableIfStatement
+            if (pkg.equals(packageName)) {
+                return true;
+            }
+
+            return includeSubPackages && packageName.length() > pkg.length() &&
+                   packageName.charAt(pkg.length()) == '.' &&
+                   packageName.startsWith(pkg);
+        }
     }
 
     /**
