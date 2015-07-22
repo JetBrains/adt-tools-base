@@ -62,11 +62,12 @@ import org.gradle.nativeplatform.NativeBinarySpec;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.nativeplatform.NativeLibrarySpec;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
-import org.gradle.nativeplatform.internal.StaticLibraryBinarySpecInternal;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
 import org.gradle.platform.base.BinaryContainer;
+import org.gradle.platform.base.BinarySpec;
 import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.platform.base.PlatformContainer;
+import org.gradle.platform.base.binary.BaseBinarySpec;
 
 import java.io.File;
 import java.util.Collection;
@@ -86,16 +87,6 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         project.getPluginManager().apply(AndroidComponentModelPlugin.class);
         project.getPluginManager().apply(CPlugin.class);
         project.getPluginManager().apply(CppPlugin.class);
-
-        // Remove static library tasks from assemble
-        ((BinaryContainer) project.getExtensions().getByName("binaries")).withType(
-                StaticLibraryBinarySpecInternal.class,
-                new Action<StaticLibraryBinarySpecInternal>() {
-                    @Override
-                    public void execute(StaticLibraryBinarySpecInternal binary) {
-                        binary.setBuildable(false);
-                    }
-                });
     }
 
     @SuppressWarnings({"MethodMayBeStatic", "unused"})
@@ -284,7 +275,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                         for (NativeBinarySpec nativeBinary : binary.getNativeBinaries()) {
                             NdkConfiguration.createTasks(
                                     tasks,
-                                    (SharedLibraryBinarySpec)nativeBinary,
+                                    (SharedLibraryBinarySpec) nativeBinary,
                                     buildDir,
                                     binary.getMergedNdkConfig(),
                                     ndkHandler);
@@ -347,6 +338,28 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                 nativeBinary.getTargetPlatform().getName())) {
                             binary.getBuildTask().dependsOn(NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
                         }
+                    }
+                }
+            });
+        }
+
+        @Mutate
+        public void removeNativeBinaryFromAssembleTask(ModelMap<AndroidComponentSpec> components) {
+            // Setting each native binary to not buildable to prevent the native tasks to be
+            // automatically added to the "assemble" task.
+            components.afterEach(new Action<AndroidComponentSpec>() {
+                @Override
+                public void execute(AndroidComponentSpec spec) {
+                    NativeLibrarySpec nativeLibrary =
+                            ((DefaultAndroidComponentSpec)spec).getNativeLibrary();
+                    if (nativeLibrary != null) {
+                        nativeLibrary.getBinaries().afterEach(
+                                new Action<BinarySpec>() {
+                                    @Override
+                                    public void execute(BinarySpec binary) {
+                                        ((BaseBinarySpec) binary).setBuildable(false);
+                                    }
+                                });
                     }
                 }
             });
