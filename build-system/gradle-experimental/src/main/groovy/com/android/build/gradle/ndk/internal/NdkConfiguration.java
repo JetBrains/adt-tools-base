@@ -210,6 +210,7 @@ public class NdkConfiguration {
                                 public void execute(LanguageSourceSet source) {
                                     source.getSource().setSrcDirs(jni.getSource().getSrcDirs());
                                     source.getSource().include("**/*.c");
+                                    source.getSource().exclude(jni.getSource().getExcludes());
                                 }
                             });
                     languageSourceSets.create(
@@ -226,6 +227,7 @@ public class NdkConfiguration {
                                     source.getSource().include("**/*.cp");
                                     source.getSource().include("**/*.cpp");
                                     source.getSource().include("**/*.cxx");
+                                    source.getSource().exclude(jni.getSource().getExcludes());
                                 }
                             });
                 }
