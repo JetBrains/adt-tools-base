@@ -54,11 +54,6 @@ model {
     android.ndk {
         moduleName = "hello-jni"
     }
-    android.buildTypes {
-        debug {
-            isJniDebuggable = true
-        }
-    }
 }
 """
     }

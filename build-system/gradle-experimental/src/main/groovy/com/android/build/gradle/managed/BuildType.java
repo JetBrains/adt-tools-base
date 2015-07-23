@@ -141,14 +141,6 @@ public interface BuildType extends Named {
     void setIsPseudoLocalesEnabled(Boolean isPseudoLocalesEnabled);
 
     /**
-     * Returns whether the build type is configured to generate an apk with debuggable native code.
-     *
-     * @return true if the apk is debuggable
-     */
-    Boolean getIsJniDebuggable();
-    void setIsJniDebuggable(Boolean isJniDebuggable);
-
-    /**
      * Returns whether the build type is configured to generate an apk with debuggable
      * renderscript code.
      *
@@ -216,5 +208,5 @@ public interface BuildType extends Named {
     Boolean getShrinkResources();
     void setShrinkResources(Boolean shrinkResources);
 
-    NdkOptions getNdk();
+    NdkBuildType getNdk();
 }
