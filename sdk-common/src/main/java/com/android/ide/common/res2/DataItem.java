@@ -18,8 +18,11 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import java.io.File;
 
 /**
  * Base item.
@@ -77,6 +80,10 @@ abstract class DataItem<F extends DataFile> {
      */
     public void setSource(F sourceFile) {
         mSource = sourceFile;
+    }
+
+    public File getFile() {
+        return getSource().getFile();
     }
 
     /**
@@ -187,7 +194,12 @@ abstract class DataItem<F extends DataFile> {
         // nothing
     }
 
-    Node getAdoptedNode(Document document) {
+    /**
+     * Returns a node that describes additional properties of this {@link DataItem}. If not null, it
+     * will be persisted in the merger XML blob and can be used used to restore the exact state of
+     * this item.
+     */
+    Node getDetailsXml(Document document) {
         return null;
     }
 

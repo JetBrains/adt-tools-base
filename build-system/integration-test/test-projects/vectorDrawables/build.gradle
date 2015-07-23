@@ -14,7 +14,8 @@ android {
     }
 
     preprocessingOptions {
-      preprocessResources = true
+      densities = ["hdpi"]
+      densities += "xhdpi"
     }
 
     // Don't modify files when merging.

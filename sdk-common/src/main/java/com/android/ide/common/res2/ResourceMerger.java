@@ -87,7 +87,7 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
         @Override
         @NonNull
         public FileType getSourceType() {
-            return FileType.MULTI;
+            return FileType.XML_VALUES;
         }
     }
 
@@ -99,10 +99,36 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
     protected final Map<String, Map<String, ResourceItem>> mMergedItems = Maps.newHashMap();
 
 
+    /**
+     * Reads the {@link ResourceSet} from the blob XML. {@link ResourceMerger} deals with two kinds
+     * of sets - {@link GeneratedResourceSet} and "plain" {@link ResourceSet} . Instances of the
+     * former are marked with {@code generated="true"} attribute. Instances of the latter have a
+     * {@code generated-set} attribute that references the corresponding generated set by name.
+     * For any variant, the generated set has a lower priority, so it comes in the XML first. This
+     * means we will find it by name at this stage.
+     */
     @Override
     protected ResourceSet createFromXml(Node node) throws MergingException {
-        ResourceSet set = new ResourceSet("");
-        return (ResourceSet) set.createFromXml(node);
+        String generated = NodeUtils.getAttribute(node, "generated");
+        ResourceSet set;
+        if ("true".equals(generated)) {
+            set = new GeneratedResourceSet("");
+        } else {
+            set = new ResourceSet("");
+        }
+        ResourceSet newResourceSet = (ResourceSet) set.createFromXml(node);
+
+        String generatedSetName = NodeUtils.getAttribute(node, "generated-set");
+        if (generatedSetName != null) {
+            for (ResourceSet resourceSet : getDataSets()) {
+                if (resourceSet.getConfigName().equals(generatedSetName)) {
+                    newResourceSet.setGeneratedSet(resourceSet);
+                    break;
+                }
+            }
+        }
+
+        return newResourceSet;
     }
 
     @Override
@@ -297,7 +323,7 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
             mergedItemsNode.appendChild(qualifierNode);
 
             for (ResourceItem item : itemMap.values()) {
-                Node adoptedNode = item.getAdoptedNode(document);
+                Node adoptedNode = item.getDetailsXml(document);
                 if (adoptedNode != null) {
                     qualifierNode.appendChild(adoptedNode);
                 }
@@ -330,5 +356,11 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
         }
 
         return null;
+    }
+
+    @Override
+    public void addDataSet(ResourceSet resourceSet) {
+
+        super.addDataSet(resourceSet);
     }
 }

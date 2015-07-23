@@ -34,7 +34,7 @@ class AssetFile extends DataFile<AssetItem> {
      * @param item the resource item
      */
     AssetFile(@NonNull File file, @NonNull AssetItem item) {
-        super(file, FileType.SINGLE);
+        super(file, FileType.SINGLE_FILE);
         init(item);
     }
 }

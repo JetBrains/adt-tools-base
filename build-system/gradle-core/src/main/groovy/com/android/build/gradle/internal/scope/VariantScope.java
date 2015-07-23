@@ -22,13 +22,12 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
-import com.android.build.gradle.internal.tasks.MergeJavaResourcesTask;
 import com.android.build.gradle.internal.tasks.FileSupplier;
+import com.android.build.gradle.internal.tasks.MergeJavaResourcesTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -45,12 +44,12 @@ import com.android.build.gradle.tasks.JavaResourcesProvider;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
-import com.android.build.gradle.tasks.PreprocessResourcesTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.signing.SignedJarBuilder;
+import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -111,13 +110,6 @@ public class VariantScope {
     private AndroidTask<Dex> dexTask;
     @Nullable
     private AndroidTask jacocoIntrumentTask;
-
-    /**
-     * Anchor task for post-processing the merged resources to backport some features to earlier
-     * API versions, e.g. generate PNGs from vector drawables (vector drawables were added in 21).
-     */
-    @Nullable
-    private AndroidTask<PreprocessResourcesTask> preprocessResourcesTask;
 
     private AndroidTask<Sync> processJavaResourcesTask;
     private AndroidTask<MergeJavaResourcesTask> mergeJavaResourcesTask;
@@ -365,15 +357,27 @@ public class VariantScope {
     }
 
     @NonNull
+    public File getGeneratedResourcesDir(String name) {
+        return FileUtils.join(
+                globalScope.getGeneratedDir(),
+                "res",
+                name,
+                getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
     public File getGeneratedResOutputDir() {
-        return new File(globalScope.getGeneratedDir(),
-                "res/resValues/" + getVariantConfiguration().getDirName());
+        return getGeneratedResourcesDir("resValues");
+    }
+
+    @NonNull
+    public File getGeneratedPngsOutputDir() {
+        return getGeneratedResourcesDir("pngs");
     }
 
     @NonNull
     public File getRenderscriptResOutputDir() {
-        return new File(globalScope.getGeneratedDir(),
-                "res/rs/" + getVariantConfiguration().getDirName());
+        return getGeneratedResourcesDir("rs");
     }
 
     @NonNull
@@ -604,16 +608,6 @@ public class VariantScope {
 
     public void setDexTask(@Nullable AndroidTask<Dex> dexTask) {
         this.dexTask = dexTask;
-    }
-
-    @Nullable
-    public AndroidTask<PreprocessResourcesTask> getPreprocessResourcesTask() {
-        return preprocessResourcesTask;
-    }
-
-    public void setPreprocessResourcesTask(
-            @Nullable AndroidTask<PreprocessResourcesTask> preprocessResourcesTask) {
-        this.preprocessResourcesTask = preprocessResourcesTask;
     }
 
     public AndroidTask<Sync> getProcessJavaResourcesTask() {

@@ -17,10 +17,8 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.utils.FileUtils
-import com.google.common.base.Charsets
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
-import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
@@ -28,7 +26,7 @@ import org.junit.Test
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertWithMessage
-
+import static com.google.common.base.Charsets.UTF_8
 /**
  * Tests for the PNG generation feature.
  */
@@ -55,23 +53,22 @@ class VectorDrawableTest {
         assertThatApk(apk).containsResource("drawable-hdpi-v4/heart.png")
         assertThatApk(apk).containsResource("drawable-xhdpi-v4/heart.png")
         assertThatApk(apk).containsResource("drawable-xhdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v22/no_need.png")
+        assertThatApk(apk).containsResource("drawable-v22/no_need.xml")
 
         // Check HDPI. Test project contains the hdpi png, it should be used instead of the
         // generated one.
         File originalPng = new File(
                 project.testDir,
-                "build/intermediates/res/merged/debug/drawable-hdpi/special_heart.png")
+                "src/main/res/drawable-hdpi/special_heart.png")
         File generatedPng = new File(
                 project.testDir,
                 "build/generated/res/pngs/debug/drawable-hdpi/special_heart.png")
         File pngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/preprocessed/debug/drawable-hdpi/special_heart.png")
+                "build/intermediates/res/merged/debug/drawable-hdpi/special_heart.png")
 
-
-        assertWithMessage("Generated file is just a copy.")
-                .that(FileUtils.sha1(originalPng))
-                .isNotEqualTo(FileUtils.sha1(generatedPng))
+        assertThat(generatedPng).doesNotExist()
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
                 .isEqualTo(FileUtils.sha1(originalPng))
@@ -82,7 +79,7 @@ class VectorDrawableTest {
                 "build/generated/res/pngs/debug/drawable-xhdpi/special_heart.png")
         pngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/preprocessed/debug/drawable-xhdpi/special_heart.png")
+                "build/intermediates/res/merged/debug/drawable-xhdpi/special_heart.png")
 
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
@@ -141,6 +138,8 @@ class VectorDrawableTest {
         assertThatApk(apk).containsResource("drawable/icon.png")
         assertThatApk(apk).doesNotContainResource("drawable/heart.xml")
         assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi/heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi/heart.png")
         assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/heart.png")
         assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart.png")
     }
@@ -152,16 +151,19 @@ class VectorDrawableTest {
         File generatedPng = new File(
                 project.testDir,
                 "build/generated/res/pngs/debug/drawable-hdpi/special_heart.png")
+        File originalPng = new File(
+                project.testDir,
+                "src/main/res/drawable-hdpi/special_heart.png")
         File pngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/preprocessed/debug/drawable-hdpi/special_heart.png")
+                "build/intermediates/res/merged/debug/drawable-hdpi/special_heart.png")
 
+        assertThat(generatedPng).doesNotExist()
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
-                .isNotEqualTo(FileUtils.sha1(generatedPng))
+                .isEqualTo(FileUtils.sha1(originalPng))
 
-        File pngFile = new File(project.testDir, "src/main/res/drawable-hdpi/special_heart.png")
-        pngFile.delete()
+        originalPng.delete()
 
         project.execute("assembleDebug")
         checkIncrementalBuild()
@@ -180,7 +182,7 @@ class VectorDrawableTest {
                 "build/generated/res/pngs/debug/drawable-xhdpi/special_heart.png")
         File pngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/preprocessed/debug/drawable-xhdpi/special_heart.png")
+                "build/intermediates/res/merged/debug/drawable-xhdpi/special_heart.png")
 
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
@@ -198,42 +200,117 @@ class VectorDrawableTest {
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
                 .isNotEqualTo(FileUtils.sha1(generatedPng))
+
+        assertWithMessage("Wrong file used.")
+                .that(FileUtils.sha1(pngToUse))
+                .isEqualTo(FileUtils.sha1(xhdpiPng))
     }
 
     @Test
     public void "incremental build: modify xml"() throws Exception {
         project.execute("assembleDebug")
 
-        File preprocessedHeartXml = new File(
+        File heartPngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/preprocessed/debug/drawable-hdpi/heart.png")
-        File preprocessedIconPng = new File(
+                "build/intermediates/res/merged/debug/drawable-hdpi/heart.png")
+        File iconPngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/preprocessed/debug/drawable/icon.png")
+                "build/intermediates/res/merged/debug/drawable/icon.png")
 
-        String oldHashCode = FileUtils.sha1(preprocessedHeartXml)
-        long heartXmlModified = preprocessedHeartXml.lastModified()
-        long iconModified = preprocessedIconPng.lastModified()
+        String oldHashCode = FileUtils.sha1(heartPngToUse)
+        long heartPngModified = heartPngToUse.lastModified()
+        long iconPngModified = iconPngToUse.lastModified()
 
         File heartXml = new File(project.testDir, "src/main/res/drawable/heart.xml")
-        String content = Files.toString(heartXml, Charsets.UTF_8)
+        String content = Files.toString(heartXml, UTF_8)
         // Change the heart to blue.
-        Files.write(content.replace("ff0000", "0000ff"), heartXml, Charsets.UTF_8)
+        Files.write(content.replace("ff0000", "0000ff"), heartXml, UTF_8)
 
         project.execute("assembleDebug")
         checkIncrementalBuild()
 
-        assertThat(preprocessedIconPng.lastModified()).isEqualTo(iconModified)
-        assertThat(preprocessedHeartXml.lastModified()).isNotEqualTo(heartXmlModified)
+        assertThat(iconPngToUse.lastModified()).isEqualTo(iconPngModified)
+        assertThat(heartPngToUse.lastModified()).isNotEqualTo(heartPngModified)
         assertWithMessage("XML file change not reflected in PNG.")
-                .that(FileUtils.sha1(preprocessedHeartXml))
+                .that(FileUtils.sha1(heartPngToUse))
                 .isNotEqualTo(oldHashCode)
     }
 
-    private void checkIncrementalBuild() {
-        File incrementalFolder = new File(
+    @Test
+    public void "incremental build: replace vector drawable with bitmap alias"() throws Exception {
+        project.execute("assembleDebug")
+
+        File heartXml = new File(project.testDir, "src/main/res/drawable/heart.xml")
+        Files.write(
+                "<bitmap xmlns:android=\"http://schemas.android.com/apk/res/android\" " +
+                        "android:src=\"@drawable/icon\" />",
+                heartXml,
+                UTF_8)
+
+        project.execute("assembleDebug")
+        checkIncrementalBuild()
+
+        File apk = project.getApk("debug")
+        assertThatApk(apk).containsResource("drawable/icon.png")
+        assertThatApk(apk).containsResource("drawable/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi/heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi/heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart.png")
+
+        File heartXmlToUse = new File(
                 project.testDir,
-                "build/intermediates/incremental/preprocessResourcesTask/debug")
-        assertThat(new File(incrementalFolder, "build_was_incremental").exists()).isTrue()
+                "build/intermediates/res/merged/debug/drawable/heart.xml")
+
+        // They won't be equal, because of the source marker added in the XML.
+        assertThat(Files.toString(heartXmlToUse, UTF_8)).contains(Files.toString(heartXml, UTF_8))
+    }
+
+    @Test
+    public void "incremental build: replace bitmap alias with vector drawable"() throws Exception {
+        File heartXml = new File(project.testDir, "src/main/res/drawable/heart.xml")
+
+        String vectorDrawable = Files.toString(heartXml, UTF_8)
+
+        Files.write(
+                "<bitmap xmlns:android=\"http://schemas.android.com/apk/res/android\" " +
+                "android:src=\"@drawable/icon\" />",
+                heartXml,
+                UTF_8)
+
+        project.execute("clean", "assembleDebug")
+
+        File apk = project.getApk("debug")
+        assertThatApk(apk).containsResource("drawable/icon.png")
+        assertThatApk(apk).containsResource("drawable/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi/heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi/heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart.png")
+
+        File heartXmlToUse = new File(
+                project.testDir,
+                "build/intermediates/res/merged/debug/drawable/heart.xml")
+
+        // They won't be equal, because of the source marker added in the XML.
+        assertThat(Files.toString(heartXmlToUse, UTF_8)).contains(Files.toString(heartXml, UTF_8))
+
+        Files.write(vectorDrawable, heartXml, UTF_8)
+        project.execute("assembleDebug")
+        checkIncrementalBuild()
+
+        assertThatApk(apk).doesNotContainResource("drawable/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-v21/heart.xml")
+        assertThatApk(apk).containsResource("drawable-hdpi-v21/heart.xml")
+        assertThatApk(apk).containsResource("drawable-hdpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable-xhdpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable-xhdpi-v21/heart.xml")
+    }
+
+    private void checkIncrementalBuild() {
+        // Do nothing for now, the incremental marker was removed.
+        // TODO: remove the method or re-enable incremental markers.
     }
 }

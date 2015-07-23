@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.blame.Message;
 import com.android.utils.ILogger;
+import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -110,7 +111,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @param fileNode the XML node.
      * @return a DataFile
      */
-    protected abstract F createFileAndItems(@NonNull File file, @NonNull Node fileNode)
+    protected abstract F createFileAndItemsFromXml(@NonNull File file, @NonNull Node fileNode)
             throws MergingException;
 
     /**
@@ -286,22 +287,30 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                         dataFile.getFile().getAbsolutePath());
                 dataFile.addExtraAttributes(document, fileNode, null);
 
-                if (dataFile.getType() == DataFile.FileType.MULTI) {
-                    for (I item : dataFile.getItems()) {
-                        if (item.isRemoved()|| consumer.ignoreItemInMerge(item)) {
-                            continue;
+                switch (dataFile.getType()) {
+                    case GENERATED_FILES:
+                        // Fall through. getDetailsXml() will return the XML which describes the
+                        // generated files.
+                    case XML_VALUES:
+                        for (I item : dataFile.getItems()) {
+                            if (item.isRemoved()|| consumer.ignoreItemInMerge(item)) {
+                                continue;
+                            }
+                            Node adoptedNode = item.getDetailsXml(document);
+                            if (adoptedNode != null) {
+                                fileNode.appendChild(adoptedNode);
+                            }
                         }
-                        Node adoptedNode = item.getAdoptedNode(document);
-                        if (adoptedNode != null) {
-                            fileNode.appendChild(adoptedNode);
-                        }
-                    }
-                } else {
-                    // no need to check for isRemoved here since it's checked
-                    // at the file level and there's only one item.
-                    I dataItem = dataFile.getItem();
-                    NodeUtils.addAttribute(document, fileNode, null, ATTR_NAME, dataItem.getName());
-                    dataItem.addExtraAttributes(document, fileNode, null);
+                        break;
+                    case SINGLE_FILE:
+                        // no need to check for isRemoved here since it's checked
+                        // at the file level and there's only one item.
+                        I dataItem = dataFile.getItem();
+                        NodeUtils.addAttribute(document, fileNode, null, ATTR_NAME, dataItem.getName());
+                        dataItem.addExtraAttributes(document, fileNode, null);
+                        break;
+                    default:
+                        throw new IllegalStateException();
                 }
             }
         }
@@ -360,7 +369,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                     continue;
                 }
                 
-                F dataFile = createFileAndItems(new File(pathAttr.getValue()), fileNode);
+                F dataFile = createFileAndItemsFromXml(new File(pathAttr.getValue()), fileNode);
 
                 if (dataFile != null) {
                     dataSet.processNewDataFile(sourceFolder, dataFile, false /*setTouched*/);
@@ -420,22 +429,26 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
             case NEW:
                 return handleNewFile(sourceFolder, changedFile, logger);
             case CHANGED:
-                return handleChangedFile(sourceFolder, changedFile);
+                return handleChangedFile(sourceFolder, changedFile, logger);
             case REMOVED:
-                F dataFile = mDataFileMap.get(changedFile);
-
-                if (dataFile == null) {
-                    return false;
-                }
-
-                // flag all resource items are removed
-                for (I dataItem : dataFile.getItems()) {
-                    dataItem.setRemoved();
-                }
-                return true;
+                return handleRemovedFile(changedFile);
         }
 
         return false;
+    }
+
+    protected boolean handleRemovedFile(File removedFile) {
+        F dataFile = getDataFile(removedFile);
+
+        if (dataFile == null) {
+            return false;
+        }
+
+        // flag all resource items are removed
+        for (I dataItem : dataFile.getItems()) {
+            dataItem.setRemoved();
+        }
+        return true;
     }
 
     protected boolean isValidSourceFile(@NonNull File sourceFolder, @NonNull File file) {
@@ -466,8 +479,10 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         }
     }
 
-    protected boolean handleChangedFile(@NonNull File sourceFolder,
-                                        @NonNull File changedFile) throws MergingException {
+    protected boolean handleChangedFile(
+            @NonNull File sourceFolder,
+            @NonNull File changedFile,
+            @NonNull ILogger logger) throws MergingException {
         F dataFile = mDataFileMap.get(changedFile);
         for (I item : dataFile.getItems()) {
             item.setTouched();
@@ -500,7 +515,10 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
     @Override
     public String toString() {
-        return Arrays.toString(mSourceFiles.toArray());
+        return Objects.toStringHelper(getClass())
+                .addValue(mConfigName)
+                .add("sources", Arrays.toString(mSourceFiles.toArray()))
+                .toString();
     }
 
     /**

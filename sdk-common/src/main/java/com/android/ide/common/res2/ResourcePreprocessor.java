@@ -16,21 +16,20 @@
 
 package com.android.ide.common.res2;
 
-import com.android.annotations.NonNull;
-
 import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
 
 /**
- * {@link DataFile} for preprocessing resources.
- *
- * <p>Source is the "input" resource from the merged resources directory. Data items can be one of:
- * <ul>
- *     <li>The same file as source, if there's no need to preprocess it.
- *     <li>One or more generated "replacement" files, from the generated resources directory.
-*  </ul>
+ * Provides functionality the resource merger needs for preprocessing resources during merge.
  */
-public class PreprocessDataFile extends DataFile<PreprocessDataItem> {
-    PreprocessDataFile(@NonNull File file, FileType fileType) {
-        super(file, fileType);
-    }
+public interface ResourcePreprocessor {
+    /** Checks if the given file should be replaced by N generated files. */
+    boolean needsPreprocessing(File file);
+
+    /** Returns the paths that should be generated for the given file. */
+    Collection<File> getFilesToBeGenerated(File original);
+
+    /** Actually generate the file based on the original file. */
+    void generateFile(File toBeGenerated, File original) throws IOException;
 }
