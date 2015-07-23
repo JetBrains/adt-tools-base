@@ -123,6 +123,6 @@ dependencies {
     @Category(DeviceTests)
     void "connected check"() {
         GradleTestProject.assumeLocalDevice()
-        project.execute(":test:connectedAndroidTest");
+        project.execute("clean",":test:connectedCheck");
     }
 }
