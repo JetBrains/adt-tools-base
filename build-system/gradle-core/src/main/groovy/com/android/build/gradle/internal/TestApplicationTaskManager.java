@@ -111,12 +111,11 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
         // make the test application connectedCheck depends on the configuration added above so
         // we can retrieve its artifacts
 
-        testConnectedCheck.configure(tasks, new Action<Task>() {
-            @Override
-            public void execute(Task task) {
-                task.dependsOn(testTarget, testTargetMetadata);
-            }
-        });
+        testConnectedCheck.dependsOn(tasks,
+                testTarget,
+                testTargetMetadata,
+                variantData.assembleVariantTask);
+
         // make the main ConnectedCheck task depends on this test connectedCheck
         Task connectedCheck = tasks.named(CONNECTED_CHECK);
         if (connectedCheck != null) {
