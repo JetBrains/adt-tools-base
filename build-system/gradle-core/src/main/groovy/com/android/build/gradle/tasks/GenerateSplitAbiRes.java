@@ -14,100 +14,177 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.tasks
+package com.android.build.gradle.tasks;
 
-import com.android.build.gradle.internal.dsl.AaptOptions
-import com.android.build.gradle.internal.tasks.BaseTask
-import com.android.builder.core.AaptPackageProcessBuilder
-import com.android.ide.common.process.LoggedProcessOutputHandler
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Nested
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputFiles
-import org.gradle.api.tasks.ParallelizableTask
-import org.gradle.api.tasks.TaskAction
+import com.android.build.gradle.internal.dsl.AaptOptions;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.builder.core.AaptPackageProcessBuilder;
+import com.android.ide.common.process.LoggedProcessOutputHandler;
+import com.android.ide.common.process.ProcessException;
+
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Nested;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputFiles;
+import org.gradle.api.tasks.ParallelizableTask;
+import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Generates all metadata (like AndroidManifest.xml) necessary for a ABI dimension split APK.
  */
 @ParallelizableTask
-class GenerateSplitAbiRes extends BaseTask {
+public class GenerateSplitAbiRes extends BaseTask {
 
-    @Input
-    String applicationId
+    private String applicationId;
 
-    @Input
-    int versionCode
+    private int versionCode;
 
-    @Input
-    @Optional
-    String versionName
+    private String versionName;
 
-    @Input
-    String outputBaseName
+    private String outputBaseName;
 
-    @Input
-    Set<String> splits
+    private Set<String> splits;
 
-    File outputDirectory
+    private File outputDirectory;
+
+    private boolean debuggable;
+
+    private AaptOptions aaptOptions;
 
     @OutputFiles
-    List<File> getOutputFiles() {
-        List<File> outputFiles = new ArrayList<>();
+    public List<File> getOutputFiles() {
+        List<File> outputFiles = new ArrayList<File>();
         for (String split : getSplits()) {
-            outputFiles.add(getOutputFileForSplit(split))
+            outputFiles.add(getOutputFileForSplit(split));
         }
+
         return outputFiles;
     }
 
-    @Input
-    boolean debuggable
-
-    @Nested
-    AaptOptions aaptOptions
-
     @TaskAction
-    protected void doFullTaskAction() {
+    protected void doFullTaskAction() throws IOException, InterruptedException, ProcessException {
 
         for (String split : getSplits()) {
-            String resPackageFileName = getOutputFileForSplit(split).getAbsolutePath()
+            String resPackageFileName = getOutputFileForSplit(split).getAbsolutePath();
 
-            File tmpDirectory = new File(getOutputDirectory(), "${getOutputBaseName()}")
-            tmpDirectory.mkdirs()
+            File tmpDirectory = new File(getOutputDirectory(), getOutputBaseName());
+            tmpDirectory.mkdirs();
 
-            File tmpFile = new File(tmpDirectory, "AndroidManifest.xml")
+            File tmpFile = new File(tmpDirectory, "AndroidManifest.xml");
 
-            OutputStreamWriter fileWriter = new OutputStreamWriter(new FileOutputStream(tmpFile), "UTF-8");
             String versionNameToUse = getVersionName();
             if (versionNameToUse == null) {
-                versionNameToUse = String.valueOf(getVersionCode())
+                versionNameToUse = String.valueOf(getVersionCode());
             }
+
+            OutputStreamWriter fileWriter = new OutputStreamWriter(new FileOutputStream(tmpFile), "UTF-8");
             try {
-                fileWriter.append(
-                        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-                                "      package=\"" + getApplicationId() + "\"\n" +
-                                "      android:versionCode=\"" + getVersionCode() + "\"\n" +
-                                "      android:versionName=\"" + versionNameToUse + "\"\n" +
-                                "      split=\"lib_${getOutputBaseName()}\">\n" +
-                                "       <uses-sdk android:minSdkVersion=\"21\"/>\n" +
-                                "</manifest> ")
-                fileWriter.flush()
+                fileWriter.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "      package=\"" + getApplicationId() + "\"\n"
+                        + "      android:versionCode=\"" + getVersionCode() + "\"\n"
+                        + "      android:versionName=\"" + versionNameToUse + "\"\n"
+                        + "      split=\"lib_" + getOutputBaseName() + "\">\n"
+                        + "       <uses-sdk android:minSdkVersion=\"21\"/>\n" + "</manifest> ");
+                fileWriter.flush();
             } finally {
-                fileWriter.close()
+                fileWriter.close();
             }
 
             AaptPackageProcessBuilder aaptPackageCommandBuilder =
                     new AaptPackageProcessBuilder(tmpFile, getAaptOptions())
-                        .setDebuggable(getDebuggable())
+                        .setDebuggable(isDebuggable())
                         .setResPackageOutput(resPackageFileName);
 
-            getBuilder().processResources(aaptPackageCommandBuilder, false /* enforceUniquePackageName */,
-                    new LoggedProcessOutputHandler(getILogger()))
+            getBuilder().processResources(
+                    aaptPackageCommandBuilder,
+                    false /* enforceUniquePackageName */,
+                    new LoggedProcessOutputHandler(getILogger()));
         }
     }
 
-    private File getOutputFileForSplit(String split) {
-        return new File(getOutputDirectory(), "resources-${getOutputBaseName()}-${split}.ap_")
+    private File getOutputFileForSplit(final String split) {
+        return new File(getOutputDirectory(),
+                "resources-" + getOutputBaseName() + "-" + split + ".ap_");
+    }
+
+    @Input
+    public String getApplicationId() {
+        return applicationId;
+    }
+
+    public void setApplicationId(String applicationId) {
+        this.applicationId = applicationId;
+    }
+
+    @Input
+    public int getVersionCode() {
+        return versionCode;
+    }
+
+    public void setVersionCode(int versionCode) {
+        this.versionCode = versionCode;
+    }
+
+    @Input
+    @Optional
+    public String getVersionName() {
+        return versionName;
+    }
+
+    public void setVersionName(String versionName) {
+        this.versionName = versionName;
+    }
+
+    @Input
+    public String getOutputBaseName() {
+        return outputBaseName;
+    }
+
+    public void setOutputBaseName(String outputBaseName) {
+        this.outputBaseName = outputBaseName;
+    }
+
+    @Input
+    public Set<String> getSplits() {
+        return splits;
+    }
+
+    public void setSplits(Set<String> splits) {
+        this.splits = splits;
+    }
+
+    public File getOutputDirectory() {
+        return outputDirectory;
+    }
+
+    public void setOutputDirectory(File outputDirectory) {
+        this.outputDirectory = outputDirectory;
+    }
+
+    @Input
+    public boolean isDebuggable() {
+        return debuggable;
+    }
+
+    public void setDebuggable(boolean debuggable) {
+        this.debuggable = debuggable;
+    }
+
+    @Nested
+    public AaptOptions getAaptOptions() {
+        return aaptOptions;
+    }
+
+    public void setAaptOptions(AaptOptions aaptOptions) {
+        this.aaptOptions = aaptOptions;
     }
 }
