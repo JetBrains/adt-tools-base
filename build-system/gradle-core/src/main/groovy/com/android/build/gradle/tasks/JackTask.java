@@ -32,6 +32,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.tasks.Job;
 import com.android.builder.tasks.JobContext;
 import com.android.builder.tasks.Task;
+import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
@@ -150,7 +151,8 @@ public class JackTask extends AbstractAndroidCompile
                     isMultiDexEnabled(),
                     getMinSdkVersion(),
                     isDebugLog,
-                    getJavaMaxHeapSize());
+                    getJavaMaxHeapSize(),
+                    new LoggedProcessOutputHandler(androidBuilder.getLogger()));
         }
 
     }

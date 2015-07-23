@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.ide.common.blame.output;
+package com.android.ide.common.blame;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.process.LoggedProcessOutputHandler;
-import com.android.utils.ILogger;
 
-public class BlameAwareLoggedProcessOutputHandler extends LoggedProcessOutputHandler {
-    public BlameAwareLoggedProcessOutputHandler(@NonNull ILogger logger, @NonNull GradleMessageRewriter.ErrorFormatMode errorFormatMode) {
-        super(new BlameRewritingLogger(logger, errorFormatMode));
-    }
+public interface MessageReceiver {
+    void receiveMessage(@NonNull Message m);
 }

@@ -19,7 +19,9 @@ package com.android.build.gradle.tasks
 import com.android.annotations.NonNull
 import com.android.build.gradle.internal.dsl.CoreNdkOptions
 import com.android.build.gradle.internal.tasks.NdkTask
+import com.android.ide.common.process.LoggedProcessOutputHandler
 import com.android.ide.common.process.ProcessInfoBuilder
+import com.android.ide.common.process.ProcessOutputHandler
 import com.android.sdklib.IAndroidTarget
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
@@ -284,7 +286,9 @@ class NdkCompile extends NdkTask {
             builder.addArgs("-j" + ndk.getJobs());
         }
 
-        getBuilder().executeProcess(builder.createProcess()).rethrowFailure().assertNormalExitValue()
+        ProcessOutputHandler handler = new LoggedProcessOutputHandler(getBuilder().getLogger());
+        getBuilder().executeProcess(builder.createProcess(), handler)
+                .rethrowFailure().assertNormalExitValue()
     }
 
     private boolean isNdkOptionUnset() {

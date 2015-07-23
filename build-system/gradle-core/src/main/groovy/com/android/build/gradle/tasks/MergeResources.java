@@ -27,6 +27,7 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.png.QueuedCruncher;
 import com.android.builder.png.VectorDrawableRenderer;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.res2.FileValidity;
 import com.android.ide.common.res2.GeneratedResourceSet;
@@ -121,7 +122,7 @@ public class MergeResources extends IncrementalTask {
             }
             getLogger().info("New PNG cruncher will be enabled with build tools 22 and above.");
         }
-        return getBuilder().getAaptCruncher();
+        return getBuilder().getAaptCruncher(new LoggedProcessOutputHandler(getBuilder().getLogger()));
     }
 
     @Override

@@ -302,7 +302,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
             return new AndroidBuilder(project.equals(project.getRootProject()) ? project.getName()
                     : project.getPath(), creator, new GradleProcessExecutor(project),
-                    new GradleJavaProcessExecutor(project), new LoggedProcessOutputHandler(logger),
+                    new GradleJavaProcessExecutor(project),
                     extraModelInfo, logger, project.getLogger().isEnabled(LogLevel.INFO));
 
         }
