@@ -26,6 +26,6 @@ public interface NdkBuildType extends NdkOptions {
     /**
      * Returns whether the resulting shared object is debuggable.
      */
-    Boolean getIsDebuggable();
-    void setIsDebuggable(Boolean isDebuggable);
+    Boolean getDebuggable();
+    void setDebuggable(Boolean isDebuggable);
 }

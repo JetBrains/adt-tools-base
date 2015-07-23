@@ -130,27 +130,27 @@ public class BuildTypeAdaptor implements CoreBuildType {
 
     @Override
     public boolean isDebuggable() {
-        return buildType.getIsDebuggable();
+        return buildType.getDebuggable();
     }
 
     @Override
     public boolean isTestCoverageEnabled() {
-        return buildType.getIsTestCoverageEnabled();
+        return buildType.getTestCoverageEnabled();
     }
 
     @Override
     public boolean isJniDebuggable() {
-        return Objects.firstNonNull(buildType.getNdk().getIsDebuggable(), false);
+        return Objects.firstNonNull(buildType.getNdk().getDebuggable(), false);
     }
 
     @Override
     public boolean isPseudoLocalesEnabled() {
-        return buildType.getIsPseudoLocalesEnabled();
+        return buildType.getPseudoLocalesEnabled();
     }
 
     @Override
     public boolean isRenderscriptDebuggable() {
-        return buildType.getIsRenderscriptDebuggable();
+        return buildType.getRenderscriptDebuggable();
     }
 
     @Override
@@ -172,17 +172,17 @@ public class BuildTypeAdaptor implements CoreBuildType {
 
     @Override
     public boolean isMinifyEnabled() {
-        return buildType.getIsMinifyEnabled();
+        return buildType.getMinifyEnabled();
     }
 
     @Override
     public boolean isZipAlignEnabled() {
-        return buildType.getIsZipAlignEnabled();
+        return buildType.getZipAlignEnabled();
     }
 
     @Override
     public boolean isEmbedMicroApp() {
-        return buildType.getIsEmbedMicroApp();
+        return buildType.getEmbedMicroApp();
     }
 
     @Nullable
