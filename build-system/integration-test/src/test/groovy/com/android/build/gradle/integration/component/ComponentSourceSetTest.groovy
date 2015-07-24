@@ -85,6 +85,11 @@ model {
                     srcDir 'src'
                 }
             }
+            jni {
+                source {
+                    exclude "**/fail.c"
+                }
+            }
         }
         flavor3 {
             jni {
@@ -95,6 +100,10 @@ model {
         }
     }
 }
+"""
+        project.file("src/main/jni").mkdirs()
+        project.file("src/main/jni/fail.c") << """
+Un-compilable file to test exclude source works.
 """
     }
 
