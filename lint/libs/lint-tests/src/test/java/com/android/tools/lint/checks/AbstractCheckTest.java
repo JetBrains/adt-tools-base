@@ -55,7 +55,7 @@ public abstract class AbstractCheckTest extends LintDetectorTest {
             String pkg = AbstractCheckTest.class.getName();
             pkg = pkg.substring(0, pkg.lastIndexOf('.'));
             File f = new File(root,
-                    "tools/base/lint/cli/src/test/java/".replace('/', File.separatorChar)
+                "tools/base/lint/libs/lint-tests/src/test/java/".replace('/', File.separatorChar)
                             + pkg.replace('.', File.separatorChar)
                             + File.separatorChar + path);
             if (f.exists()) {
