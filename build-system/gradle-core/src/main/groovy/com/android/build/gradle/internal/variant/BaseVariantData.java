@@ -35,9 +35,8 @@ import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
-import com.android.build.gradle.tasks.JackTask;
-import com.android.build.gradle.tasks.PreprocessResourcesTask;
 import com.android.build.gradle.tasks.GenerateResValues;
+import com.android.build.gradle.tasks.JackTask;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
@@ -116,8 +115,6 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public GenerateResValues generateResValuesTask;
     public Copy copyApkTask;
     public GenerateApkDataTask generateApkDataTask;
-
-    public PreprocessResourcesTask preprocessResourcesTask;
 
     public Sync processJavaResourcesTask;
     public NdkCompile ndkCompileTask;
@@ -652,9 +649,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
     @NonNull
     public File getFinalResourcesDir() {
-        return preprocessResourcesTask != null
-                ? preprocessResourcesTask.getOutputResDirectory()
-                : mergeResourcesTask.getOutputDir();
+        return mergeResourcesTask.getOutputDir();
     }
 
     @NonNull

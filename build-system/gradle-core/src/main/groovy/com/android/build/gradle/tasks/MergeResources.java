@@ -16,6 +16,7 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -24,12 +25,15 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.png.QueuedCruncher;
+import com.android.builder.png.VectorDrawableRenderer;
 import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.res2.FileValidity;
+import com.android.ide.common.res2.GeneratedResourceSet;
 import com.android.ide.common.res2.MergedResourceWriter;
 import com.android.ide.common.res2.MergingException;
 import com.android.ide.common.res2.ResourceMerger;
+import com.android.ide.common.res2.ResourcePreprocessor;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
@@ -40,8 +44,9 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
-import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.ParallelizableTask;
+import org.gradle.api.tasks.StopExecutionException;
 
 import java.io.File;
 import java.io.IOException;
@@ -84,6 +89,8 @@ public class MergeResources extends IncrementalTask {
 
     private boolean normalizeResources;
 
+    private ResourcePreprocessor preprocessor;
+
     // actual inputs
     private List<ResourceSet> inputResourceSets;
 
@@ -123,15 +130,13 @@ public class MergeResources extends IncrementalTask {
         File destinationDir = getOutputDir();
         FileUtils.emptyFolder(destinationDir);
 
-        List<ResourceSet> resourceSets = getInputResourceSets();
+        List<ResourceSet> resourceSets = getConfiguredResourceSets();
 
         // create a new merger and populate it with the sets.
         ResourceMerger merger = new ResourceMerger();
 
         try {
             for (ResourceSet resourceSet : resourceSets) {
-                resourceSet.setNormalizeResources(normalizeResources);
-                // set needs to be loaded.
                 resourceSet.loadFromFiles(getILogger());
                 merger.addDataSet(resourceSet);
             }
@@ -139,13 +144,14 @@ public class MergeResources extends IncrementalTask {
             // get the merged set and write it down.
             MergedResourceWriter writer = new MergedResourceWriter(
                     destinationDir, getCruncher(),
-                    getCrunchPng(), getProcess9Patch(), getPublicFile());
+                    getCrunchPng(), getProcess9Patch(), getPublicFile(), preprocessor);
             writer.setInsertSourceMarkers(getInsertSourceMarkers());
 
             merger.mergeData(writer, false /*doCleanUp*/);
 
             // No exception? Write the known state.
             merger.writeBlobTo(getIncrementalFolder(), writer);
+            throw new StopExecutionException("Stop for now.");
         } catch (MergingException e) {
             System.out.println(e.getMessage());
             merger.cleanBlob(getIncrementalFolder());
@@ -163,14 +169,16 @@ public class MergeResources extends IncrementalTask {
                 return;
             }
 
+            for (ResourceSet resourceSet : merger.getDataSets()) {
+                resourceSet.setNormalizeResources(normalizeResources);
+                resourceSet.setPreprocessor(preprocessor);
+            }
+
+            List<ResourceSet> resourceSets = getConfiguredResourceSets();
+
             // compare the known state to the current sets to detect incompatibility.
             // This is in case there's a change that's too hard to do incrementally. In this case
             // we'll simply revert to full build.
-            List<ResourceSet> resourceSets = getInputResourceSets();
-            for (ResourceSet resourceSet : resourceSets) {
-                resourceSet.setNormalizeResources(normalizeResources);
-            }
-
             if (!merger.checkValidUpdate(resourceSets)) {
                 getLogger().info("Changed Resource sets: full task run!");
                 doFullTaskAction();
@@ -202,7 +210,7 @@ public class MergeResources extends IncrementalTask {
 
             MergedResourceWriter writer = new MergedResourceWriter(
                     getOutputDir(), getCruncher(),
-                    getCrunchPng(), getProcess9Patch(), getPublicFile());
+                    getCrunchPng(), getProcess9Patch(), getPublicFile(), preprocessor);
             writer.setInsertSourceMarkers(getInsertSourceMarkers());
             merger.mergeData(writer, false /*doCleanUp*/);
             // No exception? Write the known state.
@@ -214,6 +222,24 @@ public class MergeResources extends IncrementalTask {
             // some clean up after the task to help multi variant/module builds.
             fileValidity.clear();
         }
+    }
+
+    @NonNull
+    private List<ResourceSet> getConfiguredResourceSets() {
+        List<ResourceSet> resourceSets = Lists.newArrayList(getInputResourceSets());
+        List<ResourceSet> generatedSets = Lists.newArrayListWithCapacity(resourceSets.size());
+
+        for (ResourceSet resourceSet : resourceSets) {
+            resourceSet.setNormalizeResources(normalizeResources);
+            resourceSet.setPreprocessor(preprocessor);
+            ResourceSet generatedSet = new GeneratedResourceSet(resourceSet);
+            resourceSet.setGeneratedSet(generatedSet);
+            generatedSets.add(generatedSet);
+        }
+
+        // Put all generated sets at the start of the list.
+        resourceSets.addAll(0, generatedSets);
+        return resourceSets;
     }
 
     @Input
@@ -344,8 +370,9 @@ public class MergeResources extends IncrementalTask {
 
         @Override
         public void execute(MergeResources mergeResourcesTask) {
-            final BaseVariantData<? extends BaseVariantOutputData> variantData = scope
-                    .getVariantData();
+            final BaseVariantData<? extends BaseVariantOutputData> variantData =
+                    scope.getVariantData();
+            final AndroidConfig extension = scope.getGlobalScope().getExtension();
 
             mergeResourcesTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             mergeResourcesTask.setVariantName(scope.getVariantConfiguration().getFullName());
@@ -355,17 +382,23 @@ public class MergeResources extends IncrementalTask {
                             variantData.getVariantConfiguration().getDirName()));
 
             mergeResourcesTask.process9Patch = process9Patch;
-            mergeResourcesTask.crunchPng = scope.getGlobalScope().getExtension().getAaptOptions()
+            mergeResourcesTask.crunchPng = extension.getAaptOptions()
                     .getCruncherEnabled();
             mergeResourcesTask.normalizeResources =
-                    scope.getGlobalScope().getExtension().getBuildToolsRevision()
+                    extension.getBuildToolsRevision()
                             .compareTo(NORMALIZE_RESOURCES_BUILD_TOOLS) < 0;
+
+            // Only one pre-processor for now. The code will need slight changes when we add more.
+            mergeResourcesTask.preprocessor = new VectorDrawableRenderer(
+                    scope.getGeneratedPngsOutputDir(),
+                    extension.getPreprocessingOptions().getTypedDensities(),
+                    mergeResourcesTask.getILogger());
 
             ConventionMappingHelper.map(mergeResourcesTask, "useNewCruncher",
                     new Callable<Boolean>() {
                         @Override
                         public Boolean call() throws Exception {
-                            return scope.getGlobalScope().getExtension().getAaptOptions()
+                            return extension.getAaptOptions()
                                     .getUseNewCruncher();
                         }
                     });
@@ -398,6 +431,7 @@ public class MergeResources extends IncrementalTask {
                             : scope.getDefaultMergeResourcesOutputDir();
                 }
             });
+
             variantData.mergeResourcesTask = mergeResourcesTask;
         }
     }

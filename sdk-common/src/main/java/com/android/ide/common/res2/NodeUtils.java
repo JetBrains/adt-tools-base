@@ -18,6 +18,7 @@ package com.android.ide.common.res2;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 
@@ -343,5 +344,14 @@ class NodeUtils {
         }
 
         return true;
+    }
+
+    @Nullable
+    static String getAttribute(@NonNull Node node, @NonNull String attrName) {
+        Attr attr = (Attr) node.getAttributes().getNamedItem(attrName);
+        if (attr != null) {
+            return attr.getValue();
+        }
+        return null;
     }
 }

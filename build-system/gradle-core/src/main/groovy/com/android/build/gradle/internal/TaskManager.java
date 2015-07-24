@@ -26,7 +26,6 @@ import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.builder.core.VariantType.DEFAULT;
 import static com.android.builder.core.VariantType.UNIT_TEST;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -106,7 +105,6 @@ import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.PackageSplitAbi;
 import com.android.build.gradle.tasks.PackageSplitRes;
 import com.android.build.gradle.tasks.PreDex;
-import com.android.build.gradle.tasks.PreprocessResourcesTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ProcessManifest;
 import com.android.build.gradle.tasks.ProcessTestManifest;
@@ -588,62 +586,6 @@ public abstract class TaskManager {
         scope.getResourceGenTask().dependsOn(tasks, generateResValuesTask);
     }
 
-    public void createPreprocessResourcesTask(
-            @NonNull TaskFactory tasks,
-            @NonNull final VariantScope scope) {
-        if (!"true".equals(
-                project.getProperties().get(
-                        "com.android.build.gradle.experimentalPreprocessResources"))) {
-            return;
-        }
-
-        final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
-        int minSdk = variantData.getVariantConfiguration().getMinSdkVersion().getApiLevel();
-
-        if (extension.getPreprocessingOptions().getPreprocessResources()
-                && minSdk < PreprocessResourcesTask.MIN_SDK) {
-            // Otherwise mergeResources will rename files when merging and it's hard to keep track
-            // of PNGs that the user wanted to use instead of the generated ones.
-            checkArgument(extension.getBuildToolsRevision().compareTo(
-                            MergeResources.NORMALIZE_RESOURCES_BUILD_TOOLS) >= 0,
-                    "To preprocess resources, you have to use build tools >= %1$s",
-                    MergeResources.NORMALIZE_RESOURCES_BUILD_TOOLS);
-
-            scope.setPreprocessResourcesTask(androidTasks.create(
-                    tasks,
-                    scope.getTaskName("preprocess", "Resources"),
-                    PreprocessResourcesTask.class,
-                    new Action<PreprocessResourcesTask>() {
-                        @Override
-                        public void execute(PreprocessResourcesTask preprocessResourcesTask) {
-                            variantData.preprocessResourcesTask = preprocessResourcesTask;
-
-                            preprocessResourcesTask.dependsOn(variantData.mergeResourcesTask);
-
-                            preprocessResourcesTask.setVariantName(variantData.getName());
-
-                            String variantDirName =
-                                    variantData.getVariantConfiguration().getDirName();
-                            preprocessResourcesTask.setMergedResDirectory(
-                                    scope.getMergeResourcesOutputDir());
-                            preprocessResourcesTask.setGeneratedResDirectory(new File(
-                                    scope.getGlobalScope().getGeneratedDir(),
-                                    "res/pngs/" + variantDirName));
-                            preprocessResourcesTask.setOutputResDirectory(new File(
-                                    scope.getGlobalScope().getIntermediatesDir(),
-                                    "res/preprocessed/" + variantDirName));
-                            preprocessResourcesTask.setIncrementalFolder(new File(
-                                    scope.getGlobalScope().getIntermediatesDir(),
-                                    "incremental/preprocessResourcesTask/" + variantDirName));
-
-                            preprocessResourcesTask.setDensitiesToGenerate(
-                                    extension.getPreprocessingOptions().getTypedDensities());
-                        }
-                    }));
-        }
-
-    }
-
     public void createProcessResTask(
             @NonNull TaskFactory tasks,
             @NonNull VariantScope scope,
@@ -677,10 +619,6 @@ public abstract class TaskManager {
                     variantOutputScope.getManifestProcessorTask(),
                     scope.getMergeResourcesTask(),
                     scope.getMergeAssetsTask());
-
-            // TODO: Make it non-optional once this is not behind a flag.
-            variantOutputScope.getProcessResourcesTask().optionalDependsOn(tasks,
-                    scope.getPreprocessResourcesTask());
 
             if (vod.getMainOutputFile().getFilter(DENSITY) == null) {
                 scope.setGenerateRClassTask(variantOutputScope.getProcessResourcesTask());
@@ -1182,13 +1120,10 @@ public abstract class TaskManager {
                 variantScope.getMergeResourcesTask().dependsOn(
                         tasks, testedVariantOutputData.assembleTask);
             }
-
         }
 
         // Add a task to create the BuildConfig class
         createBuildConfigTask(tasks, variantScope);
-
-        createPreprocessResourcesTask(tasks, variantScope);
 
         // Add a task to generate resource source files
         createProcessResTask(tasks, variantScope, true /*generateResourcePackage*/);

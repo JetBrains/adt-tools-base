@@ -196,15 +196,6 @@ public class LibraryTaskManager extends TaskManager {
                     }
                 });
 
-        ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_BACKPORT_RESOURCES_TASK,
-                new Recorder.Block<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        createPreprocessResourcesTask(tasks, variantScope);
-                        return null;
-                    }
-                });
-
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_PROCESS_RES_TASK,
                 new Recorder.Block<Void>() {
                     @Override

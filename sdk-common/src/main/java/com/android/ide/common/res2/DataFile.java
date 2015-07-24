@@ -35,7 +35,9 @@ import java.util.Map;
 public abstract class DataFile<I extends DataItem> {
 
     enum FileType {
-        SINGLE, MULTI
+        SINGLE_FILE,
+        GENERATED_FILES,
+        XML_VALUES
     }
 
     private final FileType mType;
