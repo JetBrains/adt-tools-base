@@ -1764,7 +1764,7 @@ public class ApiDetector extends ResourceXmlDetector
                                 + "API level %1$d (current min is %2$d)", api, minSdk);
                         LintDriver driver = mContext.getDriver();
                         if (!driver.isSuppressed(mContext, UNSUPPORTED, node)) {
-                            mContext.report(UNSUPPORTED, location, message);
+                            mContext.report(UNSUPPORTED, node, location, message);
                         }
                     }
                 } else {
@@ -1792,7 +1792,7 @@ public class ApiDetector extends ResourceXmlDetector
                                     api, minSdk, fqcn);
                                 LintDriver driver = mContext.getDriver();
                                 if (!driver.isSuppressed(mContext, UNSUPPORTED, typeReference)) {
-                                    mContext.report(UNSUPPORTED, location, message);
+                                    mContext.report(UNSUPPORTED, typeReference, location, message);
                                 }
                             }
                         }
