@@ -131,7 +131,7 @@ public class StripDebugSymbolTask extends DefaultTask {
                             + debugLib.getName()));
             task.setStripCommand(handler.getStripCommand(
                     Abi.getByName(binary.getTargetPlatform().getName())));
-
+            task.dependsOn(binary);
         }
     }
 }
