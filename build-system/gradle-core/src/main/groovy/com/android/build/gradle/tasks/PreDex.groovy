@@ -28,6 +28,8 @@ import com.android.builder.core.DexOptions
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.core.VariantType
 import com.android.ide.common.internal.WaitableExecutor
+import com.android.ide.common.process.LoggedProcessOutputHandler
+import com.android.ide.common.process.ProcessOutputHandler
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
 import com.google.common.collect.Lists
@@ -94,15 +96,15 @@ public class PreDex extends BaseTask {
             inputFileDetails.add(change.file)
         }
 
+        ProcessOutputHandler outputHandler = new LoggedProcessOutputHandler(getILogger());
         for (final File file : inputFileDetails) {
             Callable<Void> action = new PreDexTask(outFolder, file, hashs,
-                    multiDexEnabled);
+                    multiDexEnabled, outputHandler);
             executor.execute(action);
         }
 
         if (incremental) {
             taskInputs.removed { change ->
-                //noinspection GroovyAssignabilityCheck
                 File preDexedFile = getDexFileName(outFolder, change.file)
                 if (preDexedFile.isDirectory()) {
                     logger.info("deleteDir(" + preDexedFile + ") returned: " + preDexedFile.deleteDir())
@@ -122,13 +124,16 @@ public class PreDex extends BaseTask {
         private final boolean multiDexEnabled
         private final DexOptions options = getDexOptions()
         private final AndroidBuilder builder = getBuilder()
+        private final ProcessOutputHandler mOutputHandler
 
 
         private PreDexTask(
                 File outFolder,
                 File file,
                 Set<String> hashs,
-                boolean multiDexEnabled) {
+                boolean multiDexEnabled,
+                ProcessOutputHandler outputHandler) {
+            this.mOutputHandler = outputHandler
             this.outFolder = outFolder
             this.fileToProcess = file
             this.hashs = hashs
@@ -148,15 +153,14 @@ public class PreDex extends BaseTask {
                 hashs.add(hash)
             }
 
-            //noinspection GroovyAssignabilityCheck
             File preDexedFile = getDexFileName(outFolder, fileToProcess)
 
             if (multiDexEnabled) {
                 preDexedFile.mkdirs()
             }
 
-            //noinspection GroovyAssignabilityCheck
-            builder.preDexLibrary(fileToProcess, preDexedFile, multiDexEnabled, options)
+            builder.preDexLibrary(
+                    fileToProcess, preDexedFile, multiDexEnabled, options, mOutputHandler)
 
             return null
         }

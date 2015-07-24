@@ -74,7 +74,7 @@ public abstract class BaseVariantOutputData implements VariantOutput {
         scope = new VariantOutputScope(variantData.getScope(), this);
     }
 
-    @Nullable
+    @NonNull
     @Override
     public ApkOutputFile getMainOutputFile() {
         return mainApkOutputFile;

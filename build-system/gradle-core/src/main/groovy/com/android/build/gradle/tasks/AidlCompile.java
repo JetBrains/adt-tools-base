@@ -30,7 +30,9 @@ import com.android.builder.internal.incremental.DependencyData;
 import com.android.builder.internal.incremental.DependencyDataStore;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
+import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.res2.FileStatus;
 import com.android.utils.FileUtils;
 import com.google.common.collect.Lists;
@@ -124,7 +126,8 @@ public class AidlCompile extends IncrementalTask {
                 getSourceOutputDir(),
                 getAidlParcelableDir(),
                 getImportDirs(),
-                dependencyFileProcessor);
+                dependencyFileProcessor,
+                new LoggedProcessOutputHandler(getILogger()));
     }
 
     /**
@@ -150,7 +153,8 @@ public class AidlCompile extends IncrementalTask {
             @NonNull File sourceFolder,
             @NonNull File file,
             @Nullable List<File> importFolders,
-            @NonNull DependencyFileProcessor dependencyFileProcessor)
+            @NonNull DependencyFileProcessor dependencyFileProcessor,
+            @NonNull ProcessOutputHandler processOutputHandler)
             throws InterruptedException, ProcessException, LoggedErrorException, IOException {
         getBuilder().compileAidlFile(
                 sourceFolder,
@@ -158,7 +162,8 @@ public class AidlCompile extends IncrementalTask {
                 getSourceOutputDir(),
                 getAidlParcelableDir(),
                 importFolders,
-                dependencyFileProcessor);
+                dependencyFileProcessor,
+                processOutputHandler);
     }
 
     @Override
@@ -209,6 +214,8 @@ public class AidlCompile extends IncrementalTask {
 
         final List<File> importFolders = getImportFolders();
         final DepFileProcessor processor = new DepFileProcessor();
+        final ProcessOutputHandler processOutputHandler =
+                new LoggedProcessOutputHandler(getILogger());
 
         // use an executor to parallelize the compilation of multiple files.
         WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
@@ -224,7 +231,8 @@ public class AidlCompile extends IncrementalTask {
                         @Override
                         public Void call() throws Exception {
                             File file = entry.getKey();
-                            compileSingleFile(getSourceFolder(file), file, importFolders, processor);
+                            compileSingleFile(getSourceFolder(file), file, importFolders,
+                                    processor, processOutputHandler);
                             return null;
                         }
                     });
@@ -239,7 +247,7 @@ public class AidlCompile extends IncrementalTask {
                                 public Void call() throws Exception {
                                     File file = new File(data.getMainFile());
                                     compileSingleFile(getSourceFolder(file), file,
-                                            importFolders, processor);
+                                            importFolders, processor, processOutputHandler);
                                     return null;
                                 }
                             });

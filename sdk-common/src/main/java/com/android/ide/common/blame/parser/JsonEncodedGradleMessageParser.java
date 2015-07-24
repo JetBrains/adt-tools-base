@@ -18,7 +18,6 @@ package com.android.ide.common.blame.parser;
 import com.android.annotations.NonNull;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.MessageJsonSerializer;
-import com.android.ide.common.blame.output.GradleMessageRewriter;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
 import com.android.utils.ILogger;
 import com.google.gson.Gson;
@@ -34,12 +33,16 @@ import java.util.regex.Pattern;
  */
 public class JsonEncodedGradleMessageParser implements PatternAwareOutputParser {
 
+    // Android gradle parsed build issue. A prefix that is very unlikely to occur elsewhere to
+    // signify the rest of the line should be parsed as a json encoded {@link Message},
+    public static final String STDOUT_ERROR_TAG = "AGPBI: ";
+
     /**
      * The errors are of the form:
      * <pre>AGPBI: {"kind":"ERROR","text":"Nothing"...}</pre>
      */
     private static final Pattern MSG_PATTERN = Pattern.compile("^" + Pattern.quote(
-            GradleMessageRewriter.STDOUT_ERROR_TAG) + "(.*)$");
+            STDOUT_ERROR_TAG) + "(.*)$");
 
     @Override
     public boolean parse(@NonNull String line,

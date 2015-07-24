@@ -19,6 +19,7 @@ package com.android.build.gradle.tasks
 import com.android.build.gradle.internal.dsl.AaptOptions
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.core.AaptPackageProcessBuilder
+import com.android.ide.common.process.LoggedProcessOutputHandler
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
@@ -101,7 +102,8 @@ class GenerateSplitAbiRes extends BaseTask {
                         .setDebuggable(getDebuggable())
                         .setResPackageOutput(resPackageFileName);
 
-            getBuilder().processResources(aaptPackageCommandBuilder, false /* enforceUniquePackageName */)
+            getBuilder().processResources(aaptPackageCommandBuilder, false /* enforceUniquePackageName */,
+                    new LoggedProcessOutputHandler(getILogger()))
         }
     }
 

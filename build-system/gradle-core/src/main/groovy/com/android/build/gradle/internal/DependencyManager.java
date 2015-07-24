@@ -20,7 +20,7 @@ import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.EXT_ANDROID_PACKAGE;
 import static com.android.SdkConstants.EXT_JAR;
 import static com.android.builder.core.BuilderConstants.EXT_LIB_ARCHIVE;
-import static com.android.builder.core.EvaluationErrorReporter.EvaluationMode.STANDARD;
+import static com.android.builder.core.ErrorReporter.EvaluationMode.STANDARD;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.android.annotations.NonNull;
