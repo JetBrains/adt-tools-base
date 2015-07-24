@@ -51,6 +51,7 @@ import com.android.builder.core.VariantType;
 import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
+import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -133,6 +134,8 @@ public class VariantScope {
 
     // TODO : why is Jack not registered as the obfuscationTask ???
     private AndroidTask<? extends Task> obfuscationTask;
+
+    private File resourceOutputDir;
 
 
     public VariantScope(
@@ -320,6 +323,15 @@ public class VariantScope {
     public File getSymbolLocation() {
         return new File(globalScope.getIntermediatesDir() + "/symbols/" +
                 variantData.getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public File getFinalResourcesDir() {
+        return Objects.firstNonNull(resourceOutputDir, getDefaultMergeResourcesOutputDir());
+    }
+
+    public void setResourceOutputDir(@NonNull File resourceOutputDir) {
+        this.resourceOutputDir = resourceOutputDir;
     }
 
     @NonNull
