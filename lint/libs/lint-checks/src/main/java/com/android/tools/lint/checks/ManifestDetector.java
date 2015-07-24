@@ -827,19 +827,19 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                         && resources != null
                         && !resources.hasResourceItem(url.type, url.name)) {
                     Location location = context.getValueLocation(fullBackupNode);
-                    context.report(ALLOW_BACKUP, location,
+                    context.report(ALLOW_BACKUP, fullBackupNode, location,
                             "Missing `<full-backup-content>` resource");
                 }
             } else if (fullBackupNode == null && context.getMainProject().getTargetSdk() >= 23) {
                 Location location = context.getLocation(element);
-                context.report(ALLOW_BACKUP, location,
+                context.report(ALLOW_BACKUP, element, location,
                         "Should explicitly set `android:fullBackupContent` to `true` or `false` "
                                 + "to opt-in to or out of full app data back-up and restore, or "
                                 + "alternatively to an `@xml` resource which specifies which "
                                 + "files to backup");
             } else if (fullBackupNode == null && hasGcmReceiver(element)) {
                 Location location = context.getLocation(element);
-                context.report(ALLOW_BACKUP, location,
+                context.report(ALLOW_BACKUP, element, location,
                         "Should explicitly set `android:fullBackupContent` to avoid backing up "
                                 + "the GCM device specific regId.");
             }

@@ -17,6 +17,7 @@
 package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -131,7 +132,7 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
                         if (end == -1) {
                             end = n;
                         }
-                        checkComment(context, source, 0, start, end);
+                        checkComment(context, null, source, 0, start, end);
                     } else if (next == '*') {
                         // Block comment
                         int start = i + 2;
@@ -139,7 +140,7 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
                         if (end == -1) {
                             end = n;
                         }
-                        checkComment(context, source, 0, start, end);
+                        checkComment(context, null, source, 0, start, end);
                     }
                 }
             }
@@ -157,13 +158,14 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
         @Override
         public boolean visitComment(Comment node) {
             String contents = node.astContent();
-            checkComment(mContext, contents, node.getPosition().getStart(), 0, contents.length());
+            checkComment(mContext, node, contents, node.getPosition().getStart(), 0, contents.length());
             return super.visitComment(node);
         }
     }
 
     private static void checkComment(
-            @NonNull Context context,
+            @NonNull JavaContext context,
+            @Nullable Comment node,
             @NonNull String source,
             int offset,
             int start,
@@ -178,7 +180,7 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
                             0, ESCAPE_STRING.length())) {
                         Location location = Location.create(context.file, source,
                                 offset + i - 1, offset + i - 1 + ESCAPE_STRING.length());
-                        context.report(EASTER_EGG, location,
+                        context.report(EASTER_EGG, node, location,
                                 "Code might be hidden here; found unicode escape sequence " +
                                 "which is interpreted as comment end, compiled code follows");
                     }
@@ -190,7 +192,7 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
                 // TODO: Only flag this issue in release mode??
                 Location location = Location.create(context.file, source,
                         offset + i - 1, offset + i - 1 + STOPSHIP_COMMENT.length());
-                context.report(STOP_SHIP, location,
+                context.report(STOP_SHIP, node, location,
                         "`STOPSHIP` comment found; points to code which must be fixed prior " +
                         "to release");
             }
