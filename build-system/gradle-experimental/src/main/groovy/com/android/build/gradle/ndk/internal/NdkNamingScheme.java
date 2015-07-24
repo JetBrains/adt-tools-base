@@ -17,7 +17,9 @@
 package com.android.build.gradle.ndk.internal;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
@@ -67,6 +69,10 @@ public class NdkNamingScheme {
                 sb.append(StringHelper.capitalize(word));
             }
         }
+    }
+
+    public static String getNdkBuildTaskName(@NonNull NativeBinarySpec binary) {
+        return getTaskName(binary, "ndkBuild");
     }
 
     /**
