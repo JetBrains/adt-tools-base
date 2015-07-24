@@ -13,6 +13,18 @@ dependencies {
     testCompile project(':base:sdk-common')
     testCompile 'com.google.truth:truth:0.26'
     testCompile 'org.jacoco:org.jacoco.agent:0.7.4.201502262128'
+
+    // Add dependency on plugin code.  Exclude transitive dependencies to avoid conflict due to
+    // Groovy versions.
+    testCompile(project(':base:gradle-core')) {
+        transitive = false
+    }
+    testCompile(project(':base:gradle')) {
+        transitive = false
+    }
+    testCompile(project(':base:gradle-experimental')) {
+        transitive = false
+    }
 }
 
 def testEnvironment = [
