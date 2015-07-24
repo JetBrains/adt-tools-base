@@ -23,6 +23,7 @@ import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
+import com.android.build.gradle.internal.tasks.MockableAndroidJarTask
 import com.android.build.gradle.internal.test.BaseTest
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
@@ -539,7 +540,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(false)
 
-        def mockableJarFile = plugin.taskManager.createMockableJar.outputFile
+        def mockableJarFile = ((MockableAndroidJarTask)project.tasks.mockableAndroidJar).outputFile
         assertFalse(mockableJarFile.absolutePath.contains(":"))
         assertEquals("mockable-Google-Inc.-Google-APIs-21.jar", mockableJarFile.name)
     }

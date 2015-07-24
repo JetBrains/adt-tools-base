@@ -311,7 +311,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         return new JavaArtifactImpl(
                 variantType.getArtifactName(),
                 variantData.assembleVariantTask.getName(),
-                variantData.compileTask.getName(),
+                variantData.getScope().getCompileTask().getName(),
                 Sets.newHashSet(variantData.prepareDependenciesTask.getName(),
                         taskManager.createMockableJar.getName()),
                 extraGeneratedSourceFolders != null ? extraGeneratedSourceFolders : Collections.<File>emptyList(),
@@ -319,7 +319,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                         variantData.javacTask.getDestinationDir() :
                         variantData.getScope().getJavaOutputDir(),
                 variantData.getScope().getJavaResourcesDestinationDir(),
-                taskManager.createMockableJar.getOutputFile(),
+                taskManager.getGlobalScope().getMockableAndroidJarFile(),
                 dependencies,
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider);

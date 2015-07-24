@@ -617,7 +617,6 @@ public abstract class BasePlugin {
             });
         }
 
-        taskManager.createMockableJarTask();
         ThreadRecorder.get().record(ExecutionType.VARIANT_MANAGER_CREATE_ANDROID_TASKS,
                 new Recorder.Block<Void>() {
                     @Override
