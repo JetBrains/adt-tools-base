@@ -123,7 +123,7 @@ public class JackTask extends AbstractAndroidCompile
 
     private void doMinification() throws ProcessException, IOException {
 
-        if (System.getenv("USE_JACK_API") == null) {
+        if (System.getenv("USE_JACK_API") != null) {
             androidBuilder.convertByteCodeUsingJackApis(
                     getDestinationDir(),
                     getJackFile(),
