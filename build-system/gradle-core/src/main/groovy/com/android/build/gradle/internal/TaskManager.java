@@ -130,6 +130,8 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.utils.StringHelper;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -547,6 +549,8 @@ public abstract class TaskManager {
                 scope.getVariantData().prepareDependenciesTask,
                 scope.getResourceGenTask());
         scope.setMergeResourcesTask(mergeResourcesTask);
+        scope.setResourceOutputDir(
+                Objects.firstNonNull(outputLocation, scope.getDefaultMergeResourcesOutputDir()));
         return scope.getMergeResourcesTask();
     }
 

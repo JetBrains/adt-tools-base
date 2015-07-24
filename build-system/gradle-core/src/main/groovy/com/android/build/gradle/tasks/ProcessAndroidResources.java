@@ -270,7 +270,7 @@ public class ProcessAndroidResources extends IncrementalTask {
             ConventionMappingHelper.map(processResources, "resDir", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return variantData.getFinalResourcesDir();
+                    return scope.getVariantScope().getFinalResourcesDir();
                 }
             });
 

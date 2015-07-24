@@ -78,7 +78,7 @@ public class ShrinkResources extends BaseTask {
         try {
             def processResourcesTask = variantData.generateRClassTask
             File sourceDir = processResourcesTask.sourceOutputDir
-            File resourceDir = variantData.finalResourcesDir
+            File resourceDir = variantData.getScope().getFinalResourcesDir()
             File mergedManifest = variantOutputData.manifestProcessorTask.manifestOutputFile
 
             // Analyze resources and usages and strip out unused
