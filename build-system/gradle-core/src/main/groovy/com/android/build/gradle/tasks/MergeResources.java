@@ -16,6 +16,7 @@
 package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
@@ -340,16 +341,19 @@ public class MergeResources extends IncrementalTask {
         @NonNull
         private String taskNamePrefix;
 
-        @NonNull
+        @Nullable
         private File outputLocation;
 
         private boolean includeDependencies;
 
         private boolean process9Patch;
 
-        public ConfigAction(@NonNull VariantScope scope, @NonNull String taskNamePrefix,
-                @NonNull File outputLocation,
-                boolean includeDependencies, boolean process9Patch) {
+        public ConfigAction(
+                @NonNull VariantScope scope,
+                @NonNull String taskNamePrefix,
+                @Nullable File outputLocation,
+                boolean includeDependencies,
+                boolean process9Patch) {
             this.scope = scope;
             this.taskNamePrefix = taskNamePrefix;
             this.outputLocation = outputLocation;
