@@ -101,4 +101,12 @@ public class HardwareConfig {
   public ScreenRound getScreenRoundness() {
         return mScreenRound;
     }
+
+    /**
+     * @since 15
+     */
+    @SuppressWarnings({"MethodMayBeStatic", "unused"})
+    public int getDensityDpi() {
+        throw new UnsupportedOperationException();
+    }
 }
