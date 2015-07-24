@@ -18,7 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.tools.lint.detector.api.Detector;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName"})
 public class HandlerDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
@@ -43,5 +43,30 @@ public class HandlerDetectorTest extends AbstractCheckTest {
                 "bytecode/HandlerTest$WithArbitraryLooper.class.data=>bin/classes/test/pkg/HandlerTest$WithArbitraryLooper.class",
                 "bytecode/HandlerTest$1.class.data=>bin/classes/test/pkg/HandlerTest$1.class",
                 "bytecode/HandlerTest$2.class.data=>bin/classes/test/pkg/HandlerTest$2.class"));
+    }
+
+    public void testSuppress() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        java("src/test/pkg/CheckActivity.java", ""
+                                + "package test.pkg;\n"
+                                + "import android.annotation.SuppressLint;\n"
+                                + "import android.app.Activity;\n"
+                                + "import android.os.Handler;\n"
+                                + "import android.os.Message;\n"
+                                + "\n"
+                                + "public class CheckActivity extends Activity {\n"
+                                + "\n"
+                                + "    @SuppressWarnings(\"unused\")\n"
+                                + "    @SuppressLint(\"HandlerLeak\")\n"
+                                + "    Handler handler = new Handler() {\n"
+                                + "\n"
+                                + "        public void handleMessage(Message msg) {\n"
+                                + "\n"
+                                + "        }\n"
+                                + "    };\n"
+                                + "\n"
+                                + "}")
+                ));
     }
 }
