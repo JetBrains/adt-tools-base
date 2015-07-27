@@ -14,140 +14,185 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.tasks
+package com.android.build.gradle.tasks;
 
-import com.android.annotations.NonNull
-import com.android.build.FilterData
-import com.android.build.OutputFile
-import com.android.build.gradle.api.ApkOutputFile
-import com.android.build.gradle.internal.model.FilterDataImpl
-import com.android.builder.model.SigningConfig
-import com.google.common.collect.ImmutableList
-import com.google.common.util.concurrent.Callables
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Nested
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputFiles
-import org.gradle.api.tasks.ParallelizableTask
-import org.gradle.api.tasks.TaskAction
+import com.android.annotations.NonNull;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
+import com.android.build.gradle.api.ApkOutputFile;
+import com.android.build.gradle.internal.model.FilterDataImpl;
+import com.android.builder.model.SigningConfig;
+import com.android.builder.packaging.SigningException;
+import com.android.builder.signing.SignedJarBuilder;
+import com.android.ide.common.signing.KeytoolException;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Callables;
 
-import java.util.regex.Matcher
-import java.util.regex.Pattern
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Nested;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputFiles;
+import org.gradle.api.tasks.ParallelizableTask;
+import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Package each split resources into a specific signed apk file.
  */
 @ParallelizableTask
-class PackageSplitRes extends SplitRelatedTask {
+public class PackageSplitRes extends SplitRelatedTask {
 
-    @Input
-    Set<String> densitySplits
+    private Set<String> densitySplits;
 
-    @Input
-    Set<String> languageSplits
+    private Set<String> languageSplits;
 
-    @Input
-    String outputBaseName
+    private String outputBaseName;
 
-    @Nested @Optional
-    SigningConfig signingConfig
+    private SigningConfig signingConfig;
+
+    /**
+     * This directories are not officially input/output to the task as they are shared among tasks.
+     * To be parallelizable, we must only define our I/O in terms of files...
+     */
+    private File inputDirectory;
+
+    private File outputDirectory;
 
     @InputFiles
-    List<File> getInputFiles() {
-        ImmutableList.Builder<File> builder = ImmutableList.builder();
-        forEachInputFile { split, file ->
-            builder.add(file)
-        }
-        return builder.build()
+    public List<File> getInputFiles() {
+        final ImmutableList.Builder<File> builder = ImmutableList.builder();
+        forEachInputFile(new SplitFileHandler() {
+            @Override
+            public void execute(String split, File file) {
+                builder.add(file);
+            }
+        });
+        return builder.build();
     }
 
     @OutputFiles
     public List<File> getOutputFiles() {
-        getOutputSplitFiles()*.getOutputFile()
-    }
-
-    File getApkMetadataFile() {
-        return null
-    }
-
-    /**
-     * This directories are not officially input/output to the task as
-     * they are shared among tasks. To be parallelizable, we must only
-     * define our I/O in terms of files...
-     */
-    File inputDirectory
-    File outputDirectory
-
-    /**
-     * Calculates the list of output files, coming from the list of input files, mangling the
-     * output file name.
-     */
-    public List<ApkOutputFile> getOutputSplitFiles() {
-        ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
-        forEachInputFile { String split, File file ->
-            // find the split identification, if null, the split is not requested any longer.
-            FilterData filterData = null;
-            for (String density : densitySplits) {
-                if (split.startsWith(density)) {
-                    filterData = FilterDataImpl.build(
-                            OutputFile.FilterType.DENSITY.toString(), density)
-                }
-            }
-            if (languageSplits.contains(unMangleSplitName(split))) {
-                filterData = FilterDataImpl.build(
-                        OutputFile.FilterType.LANGUAGE.toString(), unMangleSplitName(split));
-            }
-            if (filterData != null) {
-                builder.add(new ApkOutputFile(OutputFile.OutputType.SPLIT,
-                        ImmutableList.of(filterData),
-                        Callables.<File>returning(
-                                new File(outputDirectory, this.getOutputFileNameForSplit(split)))))
-            }
+        ImmutableList.Builder<File> builder = ImmutableList.builder();
+        for (ApkOutputFile apk : getOutputSplitFiles()) {
+            builder.add(apk.getOutputFile());
         }
+        return builder.build();
+    }
+
+    @Override
+    public File getApkMetadataFile() {
+        return null;
+    }
+
+    /**
+     * Calculates the list of output files, coming from the list of input files, mangling the output
+     * file name.
+     */
+    @Override
+    public List<ApkOutputFile> getOutputSplitFiles() {
+        final ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
+        forEachInputFile(new SplitFileHandler() {
+            @Override
+            public void execute(String split, File file) {
+                // find the split identification, if null, the split is not requested any longer.
+                FilterData filterData = null;
+                for (String density : densitySplits) {
+                    if (split.startsWith(density)) {
+                        filterData = FilterDataImpl.build(
+                                OutputFile.FilterType.DENSITY.toString(), density);
+                    }
+
+                }
+
+                if (languageSplits.contains(unMangleSplitName(split))) {
+                    filterData = FilterDataImpl.build(
+                            OutputFile.FilterType.LANGUAGE.toString(), unMangleSplitName(split));
+                }
+                if (filterData != null) {
+                    builder.add(new ApkOutputFile(
+                            OutputFile.OutputType.SPLIT,
+                            ImmutableList.of(filterData),
+                            Callables.returning(
+                                    new File(outputDirectory, getOutputFileNameForSplit(split)))));
+                }
+
+            }
+        });
         return builder.build();
     }
 
     @TaskAction
     protected void doFullTaskAction() {
+        forEachInputFile(
+                new SplitFileHandler() {
+                    @Override
+                    public void execute(String split, File file) {
+                            File outFile = new File(outputDirectory,
+                                    getOutputFileNameForSplit(split));
+                        try {
+                            getBuilder().signApk(file, signingConfig, outFile);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        } catch (KeytoolException e) {
+                            throw new RuntimeException(e);
+                        } catch (SigningException e) {
+                            throw new RuntimeException(e);
+                        } catch (NoSuchAlgorithmException e) {
+                            throw new RuntimeException(e);
+                        } catch (SignedJarBuilder.IZipEntryFilter.ZipAbortException e) {
+                            throw new RuntimeException(e);
+                        } catch (com.android.builder.signing.SigningException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
+    }
 
-        forEachInputFile { String split, File file ->
-            File outFile = new File(outputDirectory, this.getOutputFileNameForSplit(split));
-            getBuilder().signApk(file, signingConfig, outFile)
-        }
+    private interface SplitFileHandler {
+        void execute(String split, File file);
     }
 
     /**
-     * Runs the closure for each task input file, providing the split identifier (possibly with
-     * a suffix generated by aapt) and the input file handle.
-     * @param closure groovy closure to run on each input file.
+     * Runs the handler for each task input file, providing the split identifier (possibly with a
+     * suffix generated by aapt) and the input file handle.
      */
-    public void forEachInputFile(Closure closure) {
-        Pattern resourcePattern = Pattern.compile(
-                "resources-${outputBaseName}.ap__(.*)")
+    private void forEachInputFile(SplitFileHandler handler) {
+        Pattern resourcePattern = Pattern.compile("resources-" + outputBaseName + ".ap__(.*)");
 
         // make a copy of the expected densities and languages filters.
-        List<String> densitiesCopy = new ArrayList<>(densitySplits)
-        List<String> languagesCopy = new ArrayList<>(languageSplits)
+        List<String> densitiesCopy = Lists.newArrayList(densitySplits);
+        List<String> languagesCopy = Lists.newArrayList(languageSplits);
 
         // resources- and .ap_ should be shared in a setting somewhere. see BasePlugin:1206
-        for (File file : inputDirectory.listFiles()) {
-            Matcher match = resourcePattern.matcher(file.getName())
-            // each time we match, we remove the associated filter from our copies.
-            if (match.matches() && !match.group(1).isEmpty()
-                    && isValidSplit(densitiesCopy, languagesCopy, match.group(1))) {
-                closure(match.group(1), file)
+        File[] fileLists = inputDirectory.listFiles();
+        if (fileLists != null) {
+            for (File file : fileLists) {
+                Matcher match = resourcePattern.matcher(file.getName());
+                // each time we match, we remove the associated filter from our copies.
+                if (match.matches() && !match.group(1).isEmpty()
+                        && isValidSplit(densitiesCopy, languagesCopy, match.group(1))) {
+                    handler.execute(match.group(1), file);
+                }
             }
         }
-        // manually invoke the closure for filters we did not find associated files, apply best
+        // manually invoke the handler for filters we did not find associated files, apply best
         // guess on the actual file names.
         for (String density : densitiesCopy) {
-            closure(density,
-                    new File(inputDirectory, "resources-${outputBaseName}.ap__${density}"));
+            handler.execute(density,
+                    new File(inputDirectory, "resources-" + outputBaseName + ".ap__" + density));
         }
         for (String language : languagesCopy) {
-            closure(language,
-                    new File(inputDirectory, "resources-${outputBaseName}.ap__${language}"));
+            handler.execute(language,
+                    new File(inputDirectory, "resources-" + outputBaseName + ".ap__" + language));
 
         }
     }
@@ -175,13 +220,14 @@ class PackageSplitRes extends SplitRelatedTask {
         return false;
     }
 
-    String getOutputFileNameForSplit(String split) {
-        String apkName = "${project.archivesBaseName}-${outputBaseName}_${split}"
-        return apkName + (signingConfig == null ? "-unsigned.apk" : "-unaligned.apk")
+    public String getOutputFileNameForSplit(final String split) {
+        String archivesBaseName = (String)getProject().getProperties().get("archivesBaseName");
+        String apkName = archivesBaseName + "-" + outputBaseName + "_" + split;
+        return apkName + (signingConfig == null ? "-unsigned.apk" : "-unaligned.apk");
     }
 
     @Override
-    List<FilterData> getSplitsData() {
+    public List<FilterData> getSplitsData() {
         ImmutableList.Builder<FilterData> filterDataBuilder = ImmutableList.builder();
         addAllFilterData(filterDataBuilder, densitySplits, OutputFile.FilterType.DENSITY);
         addAllFilterData(filterDataBuilder, languageSplits, OutputFile.FilterType.LANGUAGE);
@@ -189,8 +235,8 @@ class PackageSplitRes extends SplitRelatedTask {
     }
 
     /**
-     * Un-mangle a split name as created by the aapt tool to retrieve a split name as configured
-     * in the project's build.gradle.
+     * Un-mangle a split name as created by the aapt tool to retrieve a split name as configured in
+     * the project's build.gradle.
      *
      * when dealing with several split language in a single split, each language (+ optional region)
      * will be seperated by an underscore.
@@ -199,10 +245,62 @@ class PackageSplitRes extends SplitRelatedTask {
      * fr-rCA becomes fr-CA, temporarily put it back until it is fixed.
      *
      * @param splitWithOptionalSuffix the mangled split name.
-     * @return
      */
-    static String unMangleSplitName(String splitWithOptionalSuffix) {
-        String mangledName = splitWithOptionalSuffix.replaceAll('_', ',');
+    public static String unMangleSplitName(String splitWithOptionalSuffix) {
+        String mangledName = splitWithOptionalSuffix.replaceAll("_", ",");
         return mangledName.contains("-r") ? mangledName : mangledName.replace("-", "-r");
+    }
+
+    @Input
+    public Set<String> getDensitySplits() {
+        return densitySplits;
+    }
+
+    public void setDensitySplits(Set<String> densitySplits) {
+        this.densitySplits = densitySplits;
+    }
+
+    @Input
+    public Set<String> getLanguageSplits() {
+        return languageSplits;
+    }
+
+    public void setLanguageSplits(Set<String> languageSplits) {
+        this.languageSplits = languageSplits;
+    }
+
+    @Input
+    public String getOutputBaseName() {
+        return outputBaseName;
+    }
+
+    public void setOutputBaseName(String outputBaseName) {
+        this.outputBaseName = outputBaseName;
+    }
+
+    @Nested
+    @Optional
+    public SigningConfig getSigningConfig() {
+        return signingConfig;
+    }
+
+    public void setSigningConfig(SigningConfig signingConfig) {
+        this.signingConfig = signingConfig;
+    }
+
+    public File getInputDirectory() {
+        return inputDirectory;
+    }
+
+    public void setInputDirectory(File inputDirectory) {
+        this.inputDirectory = inputDirectory;
+    }
+
+    public File getOutputDirectory() {
+        return outputDirectory;
+    }
+
+    public void setOutputDirectory(File outputDirectory) {
+        this.outputDirectory = outputDirectory;
     }
 }
