@@ -14,32 +14,66 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.tasks
+package com.android.build.gradle.internal.tasks;
 
-import com.android.builder.testing.api.TestServer
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.TaskAction
+import com.android.annotations.NonNull;
+import com.android.builder.testing.api.TestServer;
+import com.google.common.base.Preconditions;
+
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
 
 /**
  * Task sending APKs out to a {@link TestServer}
  */
 public class TestServerTask extends DefaultAndroidTask {
 
-    @InputFile
-    File testApk
+    private File testApk;
 
-    @InputFile @Optional
-    File testedApk
+    File testedApk;
 
-    @Input
-    String variantName
-
-    TestServer testServer
+    TestServer testServer;
 
     @TaskAction
-    void sendToServer() {
-        testServer.uploadApks(getVariantName(), getTestApk(), getTestedApk())
+    public void sendToServer() {
+        testServer.uploadApks(getVariantName(), getTestApk(), getTestedApk());
+    }
+
+    @InputFile
+    public File getTestApk() {
+        return testApk;
+    }
+
+    public void setTestApk(File testApk) {
+        this.testApk = testApk;
+    }
+
+    @InputFile @Optional
+    public File getTestedApk() {
+        return testedApk;
+    }
+
+    public void setTestedApk(File testedApk) {
+        this.testedApk = testedApk;
+    }
+
+    @NonNull
+    @Override
+    @Input
+    public String getVariantName() {
+        return Preconditions.checkNotNull(super.getVariantName(),
+                "Test server task must have a variant name.");
+    }
+
+    public TestServer getTestServer() {
+        return testServer;
+    }
+
+    public void setTestServer(TestServer testServer) {
+        this.testServer = testServer;
     }
 }
