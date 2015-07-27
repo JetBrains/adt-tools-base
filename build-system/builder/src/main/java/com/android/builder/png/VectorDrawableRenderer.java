@@ -129,7 +129,7 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
                 scaleFactor = 1.0f;
             }
 
-            final VdPreview.Size imageSize = VdPreview.Size.createSizeFromScale(scaleFactor);
+            final VdPreview.TargetSize imageSize = VdPreview.TargetSize.createSizeFromScale(scaleFactor);
             BufferedImage image = VdPreview.getPreviewFromVectorXml(imageSize, xmlContent, null);
             checkState(image != null, "Generating the image failed.");
             ImageIO.write(image, "png", toBeGenerated);

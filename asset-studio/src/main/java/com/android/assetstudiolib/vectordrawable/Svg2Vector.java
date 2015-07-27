@@ -599,8 +599,8 @@ public class Svg2Vector {
     private static final String head = "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\"\n";
 
     private static String getSizeString(float w, float h, float scaleFactor) {
-        String size = "        android:width=\"" + (w * scaleFactor) + "dp\"\n" +
-                      "        android:height=\"" + (h * scaleFactor) + "dp\"\n";
+        String size = "        android:width=\"" + (int) (w * scaleFactor) + "dp\"\n" +
+                      "        android:height=\"" + (int) (h * scaleFactor) + "dp\"\n";
         return size;
     }
 
@@ -608,7 +608,10 @@ public class Svg2Vector {
 
         OutputStreamWriter fw = new OutputStreamWriter(outStream);
         fw.write(head);
-        fw.write(getSizeString(svgTree.w, svgTree.h, svgTree.mScaleFactor));
+        float finalWidth = svgTree.w;
+        float finalHeight = svgTree.h;
+
+        fw.write(getSizeString(finalWidth, finalHeight, svgTree.mScaleFactor));
 
         fw.write("        android:viewportWidth=\"" + svgTree.w + "\"\n");
         fw.write("        android:viewportHeight=\"" + svgTree.h + "\">\n");

@@ -16,13 +16,11 @@
 
 package com.android.assetstudiolib.vectordrawable;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.RenderingHints;
+import com.android.assetstudiolib.Util;
+
+import java.awt.*;
 import java.awt.geom.Path2D;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,6 +38,7 @@ class VdTree {
     float mBaseHeight = 1;
     float mPortWidth = 1;
     float mPortHeight = 1;
+    float mRootAlpha = 1;
 
     /**
      * Ensure there is at least one animation for every path in group (linking
@@ -53,23 +52,24 @@ class VdTree {
         mCurrentGroup.add(pathOrGroup);
     }
 
-    public float getBaseWidth(){
+    float getBaseWidth(){
         return mBaseWidth;
     }
 
-    public float getBaseHeight(){
+    float getBaseHeight(){
         return mBaseHeight;
     }
 
-    public void draw(Graphics g, int w, int h) {
-        float scale = w / mPortWidth;
-        scale = Math.min(h / mPortHeight, scale);
+    private void drawInternal(Graphics g, int w, int h) {
+        float scaleX = w / mPortWidth;
+        float scaleY = h / mPortHeight;
+        float minScale = Math.min(scaleX, scaleY);
 
         if (mChildren == null) {
             logger.log(Level.FINE, "no pathes");
             return;
         }
-        ((Graphics2D) g).scale(scale, scale);
+        ((Graphics2D) g).scale(scaleX, scaleY);
 
         Rectangle bounds = null;
         for (int i = 0; i < mChildren.size(); i++) {
@@ -78,7 +78,7 @@ class VdTree {
             logger.log(Level.FINE, "mCurrentPaths[" + i + "]=" + path.getName() +
                                    Integer.toHexString(path.mFillColor));
             if (mChildren.get(i) != null) {
-                Rectangle r = drawPath(path, g, w, h, scale);
+                Rectangle r = drawPath(path, g, w, h, minScale);
                 if (bounds == null) {
                     bounds = r;
                 } else {
@@ -126,4 +126,29 @@ class VdTree {
         return path2d.getBounds();
     }
 
+    /**
+     * Draw the VdTree into an image.
+     * If the root alpha is less than 1.0, then draw into a temporary image,
+     * then draw into the result image applying alpha blending.
+     */
+    public void drawIntoImage(BufferedImage image) {
+        Graphics2D gFinal = (Graphics2D) image.getGraphics();
+        int width = image.getWidth();
+        int height = image.getHeight();
+        gFinal.setColor(new Color(255, 255, 255, 0));
+        gFinal.fillRect(0, 0, width, height);
+
+        float rootAlpha = mRootAlpha;
+        if (rootAlpha < 1.0) {
+            BufferedImage alphaImage = Util.newArgbBufferedImage(width, height);
+            Graphics2D gTemp = (Graphics2D)alphaImage.getGraphics();
+            drawInternal(gTemp, width, height);
+            gFinal.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, rootAlpha));
+            gFinal.drawImage(alphaImage, 0, 0, null);
+            gTemp.dispose();
+        } else {
+            drawInternal(gFinal, width, height);
+        }
+        gFinal.dispose();
+    }
 }
