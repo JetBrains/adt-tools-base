@@ -50,10 +50,7 @@ public class ActionBarIconGenerator extends GraphicGenerator {
         Graphics2D g2 = (Graphics2D)tempImage.getGraphics();
         Util.drawCenterInside(g2, options.sourceImage, targetRect);
 
-        // When the input image is vector base, then skip the theme drawing.
-        if (actionBarOptions.density == Density.ANYDPI) {
-            Util.drawEffects(g, tempImage, 0, 0, new Effect[]{});
-        } else if (actionBarOptions.theme == Theme.CUSTOM) {
+        if (actionBarOptions.theme == Theme.CUSTOM) {
             Util.drawEffects(g, tempImage, 0, 0, new Effect[] {
                     new FillEffect(new Color(actionBarOptions.customThemeColor), 0.8),
             });
