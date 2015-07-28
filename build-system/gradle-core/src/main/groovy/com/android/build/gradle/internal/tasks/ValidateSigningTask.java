@@ -14,15 +14,20 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.tasks
+package com.android.build.gradle.internal.tasks;
 
-import com.android.build.gradle.internal.LoggerWrapper
-import com.android.builder.model.SigningConfig
-import com.android.ide.common.signing.KeystoreHelper
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.TaskAction
-import org.gradle.tooling.BuildException
+import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.builder.model.SigningConfig;
+import com.android.ide.common.signing.KeystoreHelper;
+import com.android.ide.common.signing.KeytoolException;
+import com.android.prefs.AndroidLocation;
+
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.TaskAction;
+import org.gradle.tooling.BuildException;
+
+import java.io.File;
 
 /**
  * A validate task that creates the debug keystore if it's missing.
@@ -31,9 +36,17 @@ import org.gradle.tooling.BuildException
  * It's linked to a given SigningConfig
  *
  */
-class ValidateSigningTask extends BaseTask {
+public class ValidateSigningTask extends BaseTask {
 
-    SigningConfig signingConfig
+    private SigningConfig signingConfig;
+
+    public void setSigningConfig(SigningConfig signingConfig) {
+        this.signingConfig = signingConfig;
+    }
+
+    public SigningConfig getSigningConfig() {
+        return signingConfig;
+    }
 
     /**
      * Annotated getter for task input.
@@ -44,21 +57,22 @@ class ValidateSigningTask extends BaseTask {
      * @return the path of the keystore.
      */
     @Input @Optional
-    String getStoreLocation() {
-        File f = signingConfig.getStoreFile()
+    public String getStoreLocation() {
+        File f = signingConfig.getStoreFile();
         if (f != null) {
-            return f.absolutePath
+            return f.getAbsolutePath();
         }
         return null;
     }
 
     @TaskAction
-    void validate() {
+    public void validate() throws AndroidLocation.AndroidLocationException, KeytoolException {
 
-        File storeFile = signingConfig.getStoreFile()
+        File storeFile = signingConfig.getStoreFile();
         if (storeFile != null && !storeFile.exists()) {
-            if (KeystoreHelper.defaultDebugKeystoreLocation().equals(storeFile.absolutePath)) {
-                getLogger().info("Creating default debug keystore at %s" + storeFile.absolutePath)
+            if (KeystoreHelper.defaultDebugKeystoreLocation().equals(storeFile.getAbsolutePath())) {
+                getLogger().info("Creating default debug keystore at {}",
+                        storeFile.getAbsolutePath());
                 if (!KeystoreHelper.createDebugStore(
                         signingConfig.getStoreType(), signingConfig.getStoreFile(),
                         signingConfig.getStorePassword(), signingConfig.getKeyPassword(),
