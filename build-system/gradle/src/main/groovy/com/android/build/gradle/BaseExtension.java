@@ -213,10 +213,10 @@ public abstract class BaseExtension implements AndroidConfig {
                 String packageConfigDescription;
                 if (isLibrary) {
                     packageConfigDescription
-                            = "Classpath only used when publishing '" + sourceSet.getName() + "}'.";
+                            = "Classpath only used when publishing '" + sourceSet.getName() + "'.";
                 } else {
                     packageConfigDescription
-                            = "Classpath packaged with the compiled '\" + sourceSet.getName() + \"' classes.";
+                            = "Classpath packaged with the compiled '" + sourceSet.getName() + "' classes.";
                 }
                 createConfiguration(
                         configurations,
