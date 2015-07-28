@@ -26,6 +26,13 @@ public class InMemoryBuffer implements HprofBuffer {
         mBuffer = ByteBuffer.allocateDirect(capacity);
     }
 
+    /**
+     * Create an in memory buffer from a raw array of bytes.
+     */
+    public InMemoryBuffer(byte[] data) {
+        mBuffer = ByteBuffer.wrap(data);
+    }
+
     public ByteBuffer getDirectBuffer() {
         return mBuffer;
     }
