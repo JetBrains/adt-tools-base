@@ -396,8 +396,10 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             }
 
             if (!mFlavors.isEmpty()) {
+                boolean first = true;
                 for (F flavor : mFlavors) {
-                    sb.append(flavor.getName());
+                    sb.append(first ? flavor.getName() : StringHelper.capitalize(flavor.getName()));
+                    first = false;
                 }
 
                 sb.append('/').append(mBuildType.getName());
