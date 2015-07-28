@@ -395,17 +395,23 @@ final class Device implements IDevice {
         return mHardwareCharacteristics.contains(feature.getCharacteristic());
     }
 
-    private int getApiLevel() {
+    @Override
+    public int getApiLevel() {
         if (mApiLevel > 0) {
             return mApiLevel;
         }
 
+        String buildApi = getProperty(PROP_BUILD_API_LEVEL);
+        if (buildApi == null) {
+            throw new IllegalStateException("Unexpected error: Device does not have a build API level.");
+        }
+
         try {
-            String buildApi = getProperty(PROP_BUILD_API_LEVEL);
-            mApiLevel = buildApi == null ? -1 : Integer.parseInt(buildApi);
+            mApiLevel = Integer.parseInt(buildApi);
             return mApiLevel;
-        } catch (Exception e) {
-            return -1;
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalStateException("Unexpected error: Build API level '" + buildApi + "' is not an integer: ");
         }
     }
 

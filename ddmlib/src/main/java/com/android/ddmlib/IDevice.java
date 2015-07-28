@@ -636,4 +636,9 @@ public interface IDevice extends IShellEnabledDevice {
      * @return the user's region, or null if it's unknown
      */
     String getRegion();
+
+    /**
+     * Returns the API level of the device.
+     */
+    int getApiLevel();
 }
