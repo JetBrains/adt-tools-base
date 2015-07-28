@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.assetstudiolib.vectordrawable;
+package com.android.ide.common.vectordrawable;
 
-import com.android.assetstudiolib.Util;
+import com.android.ide.common.util.AssetUtil;
 
 import java.awt.*;
 import java.awt.geom.Path2D;
@@ -140,7 +140,7 @@ class VdTree {
 
         float rootAlpha = mRootAlpha;
         if (rootAlpha < 1.0) {
-            BufferedImage alphaImage = Util.newArgbBufferedImage(width, height);
+            BufferedImage alphaImage = AssetUtil.newArgbBufferedImage(width, height);
             Graphics2D gTemp = (Graphics2D)alphaImage.getGraphics();
             drawInternal(gTemp, width, height);
             gFinal.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, rootAlpha));

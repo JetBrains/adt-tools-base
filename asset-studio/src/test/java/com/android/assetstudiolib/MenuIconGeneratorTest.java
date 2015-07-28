@@ -19,7 +19,7 @@ package com.android.assetstudiolib;
 import java.io.IOException;
 
 @SuppressWarnings("javadoc")
-public class MenuIconGeneratorTest extends GeneratorTest {
+public class MenuIconGeneratorTest extends BitmapGeneratorTest {
     private void checkGraphic(String baseName) throws IOException {
         MenuIconGenerator generator = new MenuIconGenerator();
         checkGraphic(4, "menus", baseName, generator, new GraphicGenerator.Options());

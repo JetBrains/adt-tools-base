@@ -21,7 +21,7 @@ import com.android.assetstudiolib.NotificationIconGenerator.NotificationOptions;
 import java.io.IOException;
 
 @SuppressWarnings("javadoc")
-public class NotificationIconGeneratorTest extends GeneratorTest {
+public class NotificationIconGeneratorTest extends BitmapGeneratorTest {
     private void checkGraphic(String baseName, int minSdk, String folderName,
             int expectedCount) throws IOException {
         NotificationOptions options = new NotificationOptions();
