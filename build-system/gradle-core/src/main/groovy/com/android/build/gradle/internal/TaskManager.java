@@ -1645,6 +1645,8 @@ public abstract class TaskManager {
                             .getFullName() + "\' to Test Server \'" +
                             StringHelper.capitalize(testServer.getName()) + "\'.");
             serverTask.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
+            serverTask.setVariantName(
+                    baseVariantData.getScope().getVariantConfiguration().getFullName());
             serverTask.dependsOn(testVariantOutputData.assembleTask,
                     variantOutputData.assembleTask);
 
