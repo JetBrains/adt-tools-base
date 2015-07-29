@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
  * information as one object.
  */
 public final class NativeStackCallInfo {
-    private static final Pattern SOURCE_NAME_PATTERN = Pattern.compile("^(.+):(\\d+)$");
+    private static final Pattern SOURCE_NAME_PATTERN = Pattern.compile("^(.+):(\\d+)(\\s+\\(discriminator\\s+\\d+\\))?$");
 
     /** address of this stack frame */
     private long mAddress;
@@ -64,6 +64,10 @@ public final class NativeStackCallInfo {
                 mLineNumber = Integer.parseInt(m.group(2));
             } catch (NumberFormatException e) {
                 // do nothing, the line number will stay at -1
+            }
+            if (m.groupCount() == 3) {
+                // A discriminator was found, add that in the source file name.
+                mSourceFile += m.group(3);
             }
         } else {
             mSourceFile = sourceFile;
