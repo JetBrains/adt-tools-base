@@ -16,13 +16,14 @@ dependencies {
     compile project(':base:ddmlib')
     compile project(':base:asset-studio')
 
+    compile project(':base:jack:jack-api')
+    compile project(':base:jack:jill-api')
+
     compile 'com.squareup:javawriter:2.5.0'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.48'
     compile 'org.bouncycastle:bcprov-jdk15on:1.48'
     compile 'org.ow2.asm:asm:5.0.3'
     compile 'org.ow2.asm:asm-tree:5.0.3'
-    compile 'com.android.tools.jack:jack-api:0.9.0'
-    compile 'com.android.tools.jill:jill-api:0.9.0'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.9.5'
