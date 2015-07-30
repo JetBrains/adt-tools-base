@@ -29,13 +29,10 @@ public class SimpleJni extends Activity {
          * the text is retrieved by calling a native
          * function.
          */
-        StringBuilder sb = new StringBuilder(
-                productFlavorFromJni().equals("free") ?
-                        "Free as in beer!\n" :
-                        "Show me the money!\n");
-        sb.append("(");
-        sb.append(buildTypeFromJni());
-        sb.append(")");
+        StringBuilder sb = new StringBuilder();
+        sb.append("productFlavor: " + productFlavorFromJni() + "\n");
+        sb.append("buildType: " + buildTypeFromJni() + "\n");
+        sb.append("variant: " + variantFromJni() + "\n");
 
         TextView  tv = new TextView(this);
         tv.setText(sb.toString());
@@ -48,6 +45,9 @@ public class SimpleJni extends Activity {
     public native String buildTypeFromJni();
 
     public native String productFlavorFromJni();
+
+    /* Native method that expected the VARIANT macro to be defined. */
+    public native String variantFromJni();
 
     /* Load the 'simple-jni' library on application startup. */
     static {
