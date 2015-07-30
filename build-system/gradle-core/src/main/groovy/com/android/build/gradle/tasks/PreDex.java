@@ -13,88 +13,92 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.tasks
-import com.android.SdkConstants
-import com.android.annotations.NonNull
-import com.android.build.gradle.internal.scope.ConventionMappingHelper
-import com.android.build.gradle.internal.scope.TaskConfigAction
-import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.tasks.BaseTask
-import com.android.build.gradle.internal.variant.ApkVariantData
-import com.android.build.gradle.internal.variant.TestVariantData
-import com.android.build.gradle.internal.PostCompilationData
-import com.android.builder.core.AndroidBuilder
-import com.android.builder.core.DexOptions
-import com.android.builder.core.VariantConfiguration
-import com.android.builder.core.VariantType
-import com.android.ide.common.internal.WaitableExecutor
-import com.android.ide.common.process.LoggedProcessOutputHandler
-import com.android.ide.common.process.ProcessOutputHandler
-import com.android.utils.FileUtils
-import com.google.common.base.Charsets
-import com.google.common.collect.Lists
-import com.google.common.collect.Sets
-import com.google.common.hash.HashCode
-import com.google.common.hash.HashFunction
-import com.google.common.hash.Hashing
-import com.google.common.io.Files
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Nested
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.ParallelizableTask
-import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.incremental.IncrementalTaskInputs
+package com.android.build.gradle.tasks;
+import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.variant.ApkVariantData;
+import com.android.build.gradle.internal.variant.TestVariantData;
+import com.android.build.gradle.internal.PostCompilationData;
+import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.DexOptions;
+import com.android.builder.core.VariantConfiguration;
+import com.android.builder.core.VariantType;
+import com.android.ide.common.internal.LoggedErrorException;
+import com.android.ide.common.internal.WaitableExecutor;
+import com.android.ide.common.process.LoggedProcessOutputHandler;
+import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.utils.FileUtils;
+import com.google.common.base.Charsets;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+import com.google.common.io.Files;
 
-import java.util.concurrent.Callable
+import org.gradle.api.Action;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Nested;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.ParallelizableTask;
+import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
+import org.gradle.api.tasks.incremental.InputFileDetails;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class PreDex extends BaseTask {
 
-    // ----- PUBLIC TASK API -----
-
-    // ----- PRIVATE TASK API -----
     @Input
-    String getBuildToolsVersion() {
-        getBuildTools().getRevision()
+    public String getBuildToolsVersion() {
+        return getBuildTools().getRevision().toString();
     }
 
-    // this is used automatically by Gradle, even though nothing
-    // in the class uses it.
-    @SuppressWarnings("GroovyUnusedDeclaration")
-    @InputFiles
-    Collection<File> inputFiles
+    private Collection<File> inputFiles;
 
-    @OutputDirectory
-    File outputFolder
+    private File outputFolder;
 
-    @Nested
-    com.android.build.gradle.internal.dsl.DexOptions dexOptions
+    private com.android.build.gradle.internal.dsl.DexOptions dexOptions;
 
-    @Input
-    boolean multiDex
+    private boolean multiDex;
 
     @TaskAction
-    void taskAction(IncrementalTaskInputs taskInputs) throws IOException {
+    void taskAction(IncrementalTaskInputs taskInputs)
+            throws IOException, LoggedErrorException, InterruptedException {
 
-        final boolean multiDexEnabled = getMultiDex()
+        final boolean multiDexEnabled = isMultiDex();
 
-        final File outFolder = getOutputFolder()
+        final File outFolder = getOutputFolder();
 
-        boolean incremental = taskInputs.isIncremental()
+        boolean incremental = taskInputs.isIncremental();
         // if we are not in incremental mode, then outOfDate will contain
         // all the files, but first we need to delete the previous output
         if (!incremental) {
-            FileUtils.emptyFolder(outFolder)
+            FileUtils.emptyFolder(outFolder);
         }
 
-        final Set<String> hashs = Sets.newHashSet()
-        final WaitableExecutor<Void> executor = new WaitableExecutor<Void>()
-        final List<File> inputFileDetails = Lists.newArrayList()
+        final Set<String> hashs = Sets.newHashSet();
+        final WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
+        final List<File> inputFileDetails = Lists.newArrayList();
 
-        taskInputs.outOfDate { final change ->
-            inputFileDetails.add(change.file)
-        }
+        taskInputs.outOfDate(new Action<InputFileDetails>() {
+            @Override
+            public void execute(InputFileDetails change) {
+                inputFileDetails.add(change.getFile());
+            }
+        });
 
         ProcessOutputHandler outputHandler = new LoggedProcessOutputHandler(getILogger());
         for (final File file : inputFileDetails) {
@@ -104,27 +108,32 @@ public class PreDex extends BaseTask {
         }
 
         if (incremental) {
-            taskInputs.removed { change ->
-                File preDexedFile = getDexFileName(outFolder, change.file)
-                if (preDexedFile.isDirectory()) {
-                    logger.info("deleteDir(" + preDexedFile + ") returned: " + preDexedFile.deleteDir())
-                } else {
-                    logger.info("delete(" + preDexedFile + ") returned: " + preDexedFile.delete())
+            taskInputs.removed(new Action<InputFileDetails>() {
+                @Override
+                public void execute(InputFileDetails change) {
+                    File preDexedFile = getDexFileName(outFolder, change.getFile());
+
+                    try {
+                        FileUtils.deleteFolder(preDexedFile);
+                    } catch (IOException e) {
+                        getLogger().info("Could not delete {}\n{}",
+                                preDexedFile, Throwables.getStackTraceAsString(e));
+                    }
                 }
-            }
+            });
         }
 
-        executor.waitForTasksWithQuickFail(false)
+        executor.waitForTasksWithQuickFail(false);
     }
 
     private final class PreDexTask implements Callable<Void> {
-        private final File outFolder
-        private final File fileToProcess
-        private final Set<String> hashs
-        private final boolean multiDexEnabled
-        private final DexOptions options = getDexOptions()
-        private final AndroidBuilder builder = getBuilder()
-        private final ProcessOutputHandler mOutputHandler
+        private final File outFolder;
+        private final File fileToProcess;
+        private final Set<String> hashs;
+        private final boolean multiDexEnabled;
+        private final DexOptions options = getDexOptions();
+        private final AndroidBuilder builder = getBuilder();
+        private final ProcessOutputHandler mOutputHandler;
 
 
         private PreDexTask(
@@ -133,47 +142,85 @@ public class PreDex extends BaseTask {
                 Set<String> hashs,
                 boolean multiDexEnabled,
                 ProcessOutputHandler outputHandler) {
-            this.mOutputHandler = outputHandler
-            this.outFolder = outFolder
-            this.fileToProcess = file
-            this.hashs = hashs
-            this.multiDexEnabled = multiDexEnabled
+            this.mOutputHandler = outputHandler;
+            this.outFolder = outFolder;
+            this.fileToProcess = file;
+            this.hashs = hashs;
+            this.multiDexEnabled = multiDexEnabled;
         }
 
         @Override
-        Void call() throws Exception {
+        public Void call() throws Exception {
             // TODO remove once we can properly add a library as a dependency of its test.
-            String hash = getFileHash(fileToProcess)
+            String hash = getFileHash(fileToProcess);
 
             synchronized (hashs) {
                 if (hashs.contains(hash)) {
-                    return null
+                    return null;
                 }
 
-                hashs.add(hash)
+                hashs.add(hash);
             }
 
-            File preDexedFile = getDexFileName(outFolder, fileToProcess)
+            File preDexedFile = getDexFileName(outFolder, fileToProcess);
 
             if (multiDexEnabled) {
-                preDexedFile.mkdirs()
+                preDexedFile.mkdirs();
             }
 
             builder.preDexLibrary(
-                    fileToProcess, preDexedFile, multiDexEnabled, options, mOutputHandler)
+                    fileToProcess, preDexedFile, multiDexEnabled, options, mOutputHandler);
 
-            return null
+            return null;
         }
+    }
+
+    // this is used automatically by Gradle, even though nothing
+    // in the class uses it.
+    @SuppressWarnings("unused")
+    @InputFiles
+    public Collection<File> getInputFiles() {
+        return inputFiles;
+    }
+
+    public void setInputFiles(Collection<File> inputFiles) {
+        this.inputFiles = inputFiles;
+    }
+
+    @OutputDirectory
+    public File getOutputFolder() {
+        return outputFolder;
+    }
+
+    public void setOutputFolder(File outputFolder) {
+        this.outputFolder = outputFolder;
+    }
+
+    @Nested
+    public com.android.build.gradle.internal.dsl.DexOptions getDexOptions() {
+        return dexOptions;
+    }
+
+    public void setDexOptions(com.android.build.gradle.internal.dsl.DexOptions dexOptions) {
+        this.dexOptions = dexOptions;
+    }
+
+    @Input
+    public boolean isMultiDex() {
+        return multiDex;
+    }
+
+    public void setMultiDex(boolean multiDex) {
+        this.multiDex = multiDex;
     }
 
     /**
      * Returns the hash of a file.
      * @param file the file to hash
-     * @return
      */
-    private static String getFileHash(@NonNull File file) {
-        HashCode hashCode = Files.hash(file, Hashing.sha1())
-        return hashCode.toString()
+    private static String getFileHash(@NonNull File file) throws IOException {
+        HashCode hashCode = Files.hash(file, Hashing.sha1());
+        return hashCode.toString();
     }
 
     /**
@@ -184,69 +231,70 @@ public class PreDex extends BaseTask {
      * If multidex is enabled the return File is actually a folder.
      *
      * @param outFolder the output folder.
-     * @param inputFile the library
-     * @param multidex whether multidex is enabled.
-     * @return
+     * @param inputFile the library.
      */
     @NonNull
     static File getDexFileName(@NonNull File outFolder, @NonNull File inputFile) {
         // get the filename
-        String name = inputFile.getName()
+        String name = inputFile.getName();
         // remove the extension
-        int pos = name.lastIndexOf('.')
+        int pos = name.lastIndexOf('.');
         if (pos != -1) {
-            name = name.substring(0, pos)
+            name = name.substring(0, pos);
         }
 
         // add a hash of the original file path.
         String input = inputFile.getAbsolutePath();
-        HashFunction hashFunction = Hashing.sha1()
-        HashCode hashCode = hashFunction.hashString(input, Charsets.UTF_16LE)
+        HashFunction hashFunction = Hashing.sha1();
+        HashCode hashCode = hashFunction.hashString(input, Charsets.UTF_16LE);
 
-        return new File(outFolder, name + "-" + hashCode.toString() + SdkConstants.DOT_JAR)
+        return new File(outFolder, name + "-" + hashCode.toString() + SdkConstants.DOT_JAR);
     }
 
     public static class ConfigAction implements TaskConfigAction<PreDex> {
 
-        VariantScope scope;
+        private VariantScope scope;
 
-        private Callable<Collection<File>> inputLibraries;
+        private Callable<List<File>> inputLibraries;
 
-        ConfigAction(VariantScope scope, PostCompilationData pcData) {
-            this.scope = scope
+        public ConfigAction(VariantScope scope, PostCompilationData pcData) {
+            this.scope = scope;
             this.inputLibraries = pcData.getInputLibrariesCallable();
         }
 
         @Override
-        String getName() {
-            return scope.getTaskName("preDex")
+        public String getName() {
+            return scope.getTaskName("preDex");
         }
 
         @Override
-        Class<PreDex> getType() {
-            return PreDex.class
+        public Class<PreDex> getType() {
+            return PreDex.class;
         }
 
         @Override
-        void execute(PreDex preDexTask) {
-            ApkVariantData variantData = (ApkVariantData) scope.variantData;
-            VariantConfiguration config = variantData.variantConfiguration
+        public void execute(PreDex preDexTask) {
+            ApkVariantData variantData = (ApkVariantData) scope.getVariantData();
+            VariantConfiguration config = variantData.getVariantConfiguration();
 
-            boolean isTestForApp = config.type.isForTesting() &&
-                    (variantData as TestVariantData).testedVariantData.variantConfiguration.type ==
-                    VariantType.DEFAULT
-            boolean isMultiDexEnabled = config.isMultiDexEnabled() && !isTestForApp
+            boolean isTestForApp = config.getType().isForTesting() &&
+                    ((TestVariantData) variantData).getTestedVariantData()
+                            .getVariantConfiguration().getType() == VariantType.DEFAULT;
+            boolean isMultiDexEnabled = config.isMultiDexEnabled() && !isTestForApp;
 
-            variantData.preDexTask = preDexTask
-            preDexTask.androidBuilder = scope.globalScope.androidBuilder
-            preDexTask.setVariantName(config.getFullName())
-            preDexTask.dexOptions = scope.globalScope.getExtension().dexOptions
-            preDexTask.multiDex = isMultiDexEnabled
+            variantData.preDexTask = preDexTask;
+            preDexTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            preDexTask.setVariantName(config.getFullName());
+            preDexTask.dexOptions = scope.getGlobalScope().getExtension().getDexOptions();
+            preDexTask.multiDex = isMultiDexEnabled;
 
-            ConventionMappingHelper.map(preDexTask, "inputFiles", inputLibraries)
-            ConventionMappingHelper.map(preDexTask, "outputFolder") {
-                scope.getPreDexOutputDir();
-            }
+            ConventionMappingHelper.map(preDexTask, "inputFiles", inputLibraries);
+            ConventionMappingHelper.map(preDexTask, "outputFolder", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return scope.getPreDexOutputDir();
+                }
+            });
         }
     }
 }
