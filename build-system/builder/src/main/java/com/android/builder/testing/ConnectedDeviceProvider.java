@@ -23,10 +23,16 @@ import com.android.builder.testing.api.DeviceProvider;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
 import com.android.utils.ILogger;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * DeviceProvider for locally connected devices. Basically returns the list of devices that
@@ -87,18 +93,29 @@ public class ConnectedDeviceProvider extends DeviceProvider {
             throw new DeviceException("No connected devices!");
         }
 
-        final String androidSerial = System.getenv("ANDROID_SERIAL");
-        final Boolean isValidSerial = androidSerial != null && !androidSerial.isEmpty();
+        final String androidSerialsEnv = System.getenv("ANDROID_SERIAL");
+        final boolean isValidSerial = androidSerialsEnv != null && !androidSerialsEnv.isEmpty();
+
+        final Set<String> serials;
+        if (isValidSerial) {
+            serials = Sets.newHashSet(Splitter.on(',').split(androidSerialsEnv));
+        } else {
+            serials = Collections.emptySet();
+        }
+
         final List<IDevice> filteredDevices = Lists.newArrayListWithCapacity(devices.length);
         for (IDevice iDevice : devices) {
-            if (!isValidSerial || iDevice.getSerialNumber().equals(androidSerial)) {
+            if (!isValidSerial || serials.contains(iDevice.getSerialNumber())) {
+                serials.remove(iDevice.getSerialNumber());
                 filteredDevices.add(iDevice);
             }
         }
 
-        if (filteredDevices.isEmpty()) {
+        if (!serials.isEmpty()) {
             throw new DeviceException(String.format(
-                    "Connected device with serial %s not found!", androidSerial));
+                    "Connected device with serial%s '%s' not found!",
+                    serials.size() == 1 ? "" : "s",
+                    Joiner.on("', '").join(serials)));
         }
 
         for (IDevice device : filteredDevices) {
@@ -117,7 +134,7 @@ public class ConnectedDeviceProvider extends DeviceProvider {
             if (isValidSerial) {
                 throw new DeviceException(String.format(
                         "Connected device with serial $1%s is not online.",
-                        androidSerial));
+                        androidSerialsEnv));
             } else {
                 throw new DeviceException("No online devices found.");
             }
