@@ -100,7 +100,7 @@ public class GradleTestProject implements TestRule {
             REMOTE_TEST_PROVIDER : BuilderConstants.CONNECTED;
 
     public static final String GRADLE_TEST_VERSION = "2.2.1";
-    public static final String GRADLE_EXP_TEST_VERSION = "2.5-rc-1";
+    public static final String GRADLE_EXP_TEST_VERSION = "2.5";
 
     public static final String ANDROID_GRADLE_PLUGIN_VERSION;
 
