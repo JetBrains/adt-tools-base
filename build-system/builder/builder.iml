@@ -25,8 +25,8 @@
     <orderEntry type="module" module-name="manifest-merger-base" />
     <orderEntry type="library" exported="" name="asm-tools" level="project" />
     <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
-    <orderEntry type="library" name="jack-api" level="project" />
-    <orderEntry type="library" name="jill-api" level="project" />
     <orderEntry type="module" module-name="assetstudio-base" />
+    <orderEntry type="module" module-name="jack-api" exported="" />
+    <orderEntry type="module" module-name="jill-api" exported="" />
   </component>
 </module>
