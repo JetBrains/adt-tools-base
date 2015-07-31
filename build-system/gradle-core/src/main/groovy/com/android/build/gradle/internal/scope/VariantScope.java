@@ -36,6 +36,7 @@ import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
+import com.android.build.gradle.tasks.IncrementalBuildType;
 import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
@@ -46,6 +47,7 @@ import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
+import com.android.build.gradle.tasks.SourceCodeIncrementalSupport;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.signing.SignedJarBuilder;
@@ -110,6 +112,9 @@ public class VariantScope {
     @Nullable
     private AndroidTask<Dex> dexTask;
     @Nullable
+    private AndroidTask<Dex> incrementalDexTask;
+
+    @Nullable
     private AndroidTask jacocoIntrumentTask;
 
     private AndroidTask<Sync> processJavaResourcesTask;
@@ -124,6 +129,9 @@ public class VariantScope {
     private AndroidTask<JavaCompile> javacTask;
     @Nullable
     private AndroidTask<JackTask> jackTask;
+    @Nullable
+    private AndroidTask<SourceCodeIncrementalSupport> initialIncrementalSupportTask;
+
 
     // empty anchor compile task to set all compilations tasks as dependents.
     private AndroidTask<Task> compileTask;
@@ -239,12 +247,33 @@ public class VariantScope {
                 null;
     }
 
+    @NonNull
+    public File getDexOutputFolder(IncrementalBuildType processType) {
+        return processType == IncrementalBuildType.FULL
+                ? getDexOutputFolder()
+                : getInitialIncrementalDexOutputFolder();
+    }
 
     // Precomputed file paths.
 
     @NonNull
-    public File getDexOutputFolder() {
+    private File getDexOutputFolder() {
         return new File(globalScope.getIntermediatesDir(), "/dex/" + getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public File getInitialIncrementalDexOutputFolder() {
+        return new File(globalScope.getIntermediatesDir(), "/initial-incremental-dex/" + getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public File getReloadDexOutputFolder() {
+        return new File(globalScope.getIntermediatesDir(), "/reload-dex/" + getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public File getRestartDexOutputFolder() {
+        return new File(globalScope.getIntermediatesDir(), "/restart-dex/" + getVariantConfiguration().getDirName());
     }
 
     @NonNull
@@ -257,6 +286,18 @@ public class VariantScope {
     @NonNull
     public File getJavaOutputDir() {
         return new File(globalScope.getIntermediatesDir(), "/classes/" +
+                variantData.getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public File getInitialIncrementalSupportJavaOutputDir() {
+        return new File(globalScope.getIntermediatesDir(), "/initial-incremental-classes/" +
+            variantData.getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public File getIncrementalSupportJavaOutputDir() {
+        return new File(globalScope.getIntermediatesDir(), "/incremental-classes/" +
                 variantData.getVariantConfiguration().getDirName());
     }
 
@@ -614,6 +655,15 @@ public class VariantScope {
     }
 
     @Nullable
+    public AndroidTask<Dex> getIncrementalDexTask() {
+        return incrementalDexTask;
+    }
+
+    public void setIncrementalDexTask(@Nullable AndroidTask<Dex> dexTask) {
+        this.incrementalDexTask = dexTask;
+    }
+
+    @Nullable
     public AndroidTask<Dex> getDexTask() {
         return dexTask;
     }
@@ -691,6 +741,16 @@ public class VariantScope {
     @Nullable
     public AndroidTask<JavaCompile> getJavacTask() {
         return javacTask;
+    }
+
+    public void setInitialIncrementalSupportTask(
+            AndroidTask<SourceCodeIncrementalSupport> initialIncrementalSupportTask) {
+        this.initialIncrementalSupportTask = initialIncrementalSupportTask;
+    }
+
+    @Nullable
+    public AndroidTask<SourceCodeIncrementalSupport> getInitialIncrementalSupportTask() {
+        return initialIncrementalSupportTask;
     }
 
     public void setJavacTask(

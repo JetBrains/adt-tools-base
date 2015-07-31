@@ -10,6 +10,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/fromGradle/resources" type="java-resource" />
       <excludeFolder url="file://$MODULE_DIR$/.gradle" />
     </content>
+    <orderEntry type="library" name="asm-tools" level="project" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" scope="TEST" name="JUnit4" level="project" />

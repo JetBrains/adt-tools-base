@@ -258,15 +258,18 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     public static class ConfigAction implements TaskConfigAction<PackageApplication> {
 
-        private VariantOutputScope scope;
+        private final VariantOutputScope scope;
+        private final IncrementalBuildType buildType;
 
-        public ConfigAction(VariantOutputScope scope) {
+        public ConfigAction(VariantOutputScope scope, IncrementalBuildType buildType) {
             this.scope = scope;
+            this.buildType = buildType;
         }
 
         @Override
         public String getName() {
-            return scope.getTaskName("package");
+            return buildType == IncrementalBuildType.FULL
+                ? scope.getTaskName("package") : scope.getTaskName("incrementalPackage");
         }
 
         @Override
@@ -306,7 +309,11 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             ConventionMappingHelper.map(packageApp, "dexFolder", new Callable<File>() {
                 @Override
                 public File call() {
-                    return scope.getVariantScope().getDexOutputFolder();
+                    // temporary hack to have "debug" build type 10x enabled by default.
+                    if (scope.getVariantScope().getVariantConfiguration().getBuildType().getName().equalsIgnoreCase("Debug")) {
+                        return scope.getVariantScope().getInitialIncrementalDexOutputFolder();
+                    }
+                    return scope.getVariantScope().getDexOutputFolder(buildType);
                 }
             });
             ConventionMappingHelper.map(packageApp, "dexedLibraries",

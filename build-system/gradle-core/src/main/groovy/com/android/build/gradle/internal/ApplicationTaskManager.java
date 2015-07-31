@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.tasks.IncrementalBuildType;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
@@ -159,8 +160,10 @@ public class ApplicationTaskManager extends TaskManager {
                             createJackTask(tasks, variantScope);
                         } else {
                             setJavaCompilerTask(javacTask, tasks, variantScope);
-                            createJarTask(tasks, variantScope);
+                            createIncrementalSupportTasks(tasks, variantScope);
+                            createJarTasks(tasks, variantScope);
                             createPostCompilationTasks(tasks, variantScope);
+                            createIncrementalPostCompilationTasks(tasks, variantScope);
                         }
                         return null;
                     }
@@ -206,7 +209,10 @@ public class ApplicationTaskManager extends TaskManager {
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
-                        createPackagingTask(tasks, variantScope, true /*publishApk*/);
+                        createPackagingTask(tasks, variantScope, true /*publishApk*/,
+                                IncrementalBuildType.FULL);
+                        createPackagingTask(tasks, variantScope, true /*publishApk*/,
+                                IncrementalBuildType.INCREMENTAL);
                         return null;
                     }
                 });

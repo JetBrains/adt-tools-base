@@ -168,21 +168,26 @@ public class Dex extends BaseTask {
                 new LoggedProcessOutputHandler(getILogger()))
     }
 
-
     public static class ConfigAction implements TaskConfigAction<Dex> {
 
         private final VariantScope scope;
 
         private final PostCompilationData pcData;
 
-        public ConfigAction(VariantScope scope, PostCompilationData pcData) {
+        private final String taskName;
+        private final IncrementalBuildType processType;
+
+        public ConfigAction(VariantScope scope, PostCompilationData pcData, String name,
+                IncrementalBuildType processType) {
             this.scope = scope;
             this.pcData = pcData;
+            this.taskName = name;
+            this.processType = processType;
         }
 
         @Override
         public String getName() {
-            return scope.getTaskName("dex")
+            return scope.getTaskName(taskName)
         }
 
         @Override
@@ -208,7 +213,7 @@ public class Dex extends BaseTask {
             ConventionMappingHelper.map(dexTask, "outputFolder", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return scope.getDexOutputFolder();
+                    return scope.getDexOutputFolder(processType);
                 }
             });
             dexTask.setTmpFolder(new File(
