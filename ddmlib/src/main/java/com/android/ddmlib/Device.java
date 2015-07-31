@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.ddmlib.log.LogReceiver;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -1039,6 +1040,9 @@ final class Device implements IDevice {
         return receiver.getSessionId();
     }
 
+    private static final CharMatcher UNSAFE_PM_INSTALL_SESSION_SPLIT_NAME_CHARS =
+            CharMatcher.inRange('a','z').or(CharMatcher.inRange('A','Z'))
+                    .or(CharMatcher.anyOf("_-")).negate();
 
     private boolean uploadAPK(final String sessionId, String apkFilePath, int uniqueId) {
         Log.d(sessionId, String.format("Uploading APK %1$s ", apkFilePath));
@@ -1054,6 +1058,8 @@ final class Device implements IDevice {
         String baseName = fileToUpload.getName().lastIndexOf('.') != -1
                 ? fileToUpload.getName().substring(0, fileToUpload.getName().lastIndexOf('.'))
                 : fileToUpload.getName();
+
+        baseName = UNSAFE_PM_INSTALL_SESSION_SPLIT_NAME_CHARS.replaceFrom(baseName, '_');
 
         String command = String.format("pm install-write -S %d %s %d_%s -",
                 fileToUpload.length(), sessionId, uniqueId, baseName);
