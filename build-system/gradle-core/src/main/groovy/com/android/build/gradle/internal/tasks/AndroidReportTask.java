@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.test.report.TestReport;
 import com.android.utils.FileUtils;
 import com.google.common.collect.Lists;
 
+import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
@@ -38,7 +39,7 @@ import java.util.List;
  * Task doing test report aggregation.
  */
 
-public class AndroidReportTask extends BaseTask implements AndroidTestTask {
+public class AndroidReportTask extends DefaultTask implements AndroidTestTask {
 
     private final List<AndroidTestTask> subTasks = Lists.newArrayList();
 
