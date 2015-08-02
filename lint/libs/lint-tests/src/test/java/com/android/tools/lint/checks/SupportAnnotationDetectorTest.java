@@ -149,8 +149,8 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "        printBetween(-7); // ERROR\n"
                 + "                     ~~\n"
                 + "src/test/pkg/RangeTest.java:146: Error: Value must be > 2.5 (was -10.0) [Range]\n"
-                + "        printAtLeastExclusive(-10.0); // ERROR\n"
-                + "                              ~~~~~\n"
+                + "        printAtLeastExclusive(-10.0f); // ERROR\n"
+                + "                              ~~~~~~\n"
                 + "src/test/pkg/RangeTest.java:156: Error: Value must be ≥ -1 (was -2) [Range]\n"
                 + "        printIndirect(-2); // ERROR\n"
                 + "                      ~~\n"
@@ -268,8 +268,9 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + (SDK_ANNOTATIONS_AVAILABLE ? "7 errors, 0 warnings\n" : "2 errors, 0 warnings\n"),
 
                 lintProject(
-                        "src/test/pkg/WrongColor.java.txt=>src/test/pkg/WrongColor.java",
-                        "src/android/support/annotation/ColorInt.java.txt=>src/android/support/annotation/ColorInt.java"
+                        copy("src/test/pkg/WrongColor.java.txt", "src/test/pkg/WrongColor.java"),
+                        copy("src/android/support/annotation/ColorInt.java.txt", "src/android/support/annotation/ColorInt.java"),
+                        mColorResAnnotation
                 ));
     }
 
@@ -362,8 +363,11 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "        resources.getDrawable(R.string.my_string); // ERROR\n"
                 + "                              ~~~~~~~~~~~~~~~~~~\n" : "")
                 + "src/p1/p2/Flow.java:22: Error: Expected resource of type drawable [ResourceType]\n"
-                + "        myMethod(R.string.my_string); // ERROR\n"
+                + "        myMethod(R.string.my_string, null); // ERROR\n"
                 + "                 ~~~~~~~~~~~~~~~~~~\n"
+                + "src/p1/p2/Flow.java:26: Error: Expected resource of type drawable [ResourceType]\n"
+                + "        resources.getDrawable(R.string.my_string); // ERROR\n"
+                + "                              ~~~~~~~~~~~~~~~~~~\n"
                 + "src/p1/p2/Flow.java:32: Error: Expected resource identifier (R.type.name) [ResourceType]\n"
                 + "        myAnyResMethod(50); // ERROR\n"
                 + "                       ~~\n"
@@ -371,12 +375,17 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "        resources.getDrawable(MimeTypes.getAnnotatedString()); // Error\n"
                 + "                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" : "")
                 + "src/p1/p2/Flow.java:68: Error: Expected resource of type drawable [ResourceType]\n"
-                + "        myMethod(z); // ERROR\n"
+                + "        myMethod(z, null); // ERROR\n"
                 + "                 ~\n"
-                + (SDK_ANNOTATIONS_AVAILABLE ? "6 errors, 0 warnings\n" : "3 errors, 0 warnings\n"),
+                + (SDK_ANNOTATIONS_AVAILABLE ? "7 errors, 0 warnings\n" : "4 errors, 0 warnings\n"),
 
-                lintProject("src/p1/p2/Flow.java.txt=>src/p1/p2/Flow.java",
-                        "src/android/support/annotation/DrawableRes.java.txt=>src/android/support/annotation/DrawableRes.java"));
+                lintProject(
+                        copy("src/p1/p2/Flow.java.txt", "src/p1/p2/Flow.java"),
+                        copy("src/android/support/annotation/DrawableRes.java.txt", "src/android/support/annotation/DrawableRes.java"),
+                        mStringResAnnotation,
+                        mStyleResAnnotation,
+                        mAnyResAnnotation
+                ));
     }
 
     public void testTypes2() throws Exception {
@@ -515,12 +524,12 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "\n"
                 + "import static android.Manifest.permission.ACCESS_COARSE_LOCATION;\n"
                 + "import static android.Manifest.permission.ACCESS_FINE_LOCATION;\n"
-                + "import static android.Manifest.permission.ADD_VOICEMAIL;\n"
-                + "import static android.Manifest.permission.AUTHENTICATE_ACCOUNTS;\n"
+                + "import static android.Manifest.permission.BLUETOOTH;\n"
+                + "import static android.Manifest.permission.READ_SMS;\n"
                 + "\n"
                 + "@SuppressWarnings(\"UnusedDeclaration\")\n"
                 + "public abstract class LocationManager {\n"
-                + "    @RequiresPermission(\"(\" + ACCESS_FINE_LOCATION + \"|| \" + ACCESS_COARSE_LOCATION + \") && (\" + ADD_VOICEMAIL + \" ^ \" + AUTHENTICATE_ACCOUNTS + \")\")\n"
+                + "    @RequiresPermission(\"(\" + ACCESS_FINE_LOCATION + \"|| \" + ACCESS_COARSE_LOCATION + \") && (\" + BLUETOOTH + \" ^ \" + READ_SMS + \")\")\n"
                 + "    public abstract Location myMethod(String provider);\n"
                 + "    public static class Location {\n"
                 + "    }\n"
@@ -550,7 +559,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "import static java.lang.annotation.ElementType.*;\n"
                 + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
                 + "@Retention(CLASS)\n"
-                + "@Target({METHOD,CONSTRUCTOR,FIELD,PARAMETER})\n"
+                + "@Target({METHOD,CONSTRUCTOR,FIELD,PARAMETER,ANNOTATION_TYPE})\n"
                 + "public @interface RequiresPermission {\n"
                 + "    String value() default \"\";\n"
                 + "    String[] allOf() default {};\n"
@@ -615,19 +624,26 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "public @interface WorkerThread {\n"
             + "}\n");
 
-    private final TestFile mColorResAnnotation = java("src/android/support/annotation/ColorRes.java", ""
-            + "package android.support.annotation;\n"
-            + "\n"
-            + "import java.lang.annotation.Retention;\n"
-            + "import java.lang.annotation.Target;\n"
-            + "\n"
-            + "import static java.lang.annotation.ElementType.*;\n"
-            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
-            + "\n"
-            + "@Retention(CLASS)\n"
-            + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE})\n"
-            + "public @interface ColorRes {\n"
-            + "}\n");
+    private TestFile createResAnnotation(String prefix) {
+        return java("src/android/support/annotation/" + prefix + "Res.java", ""
+                + "package android.support.annotation;\n"
+                + "\n"
+                + "import java.lang.annotation.Retention;\n"
+                + "import java.lang.annotation.Target;\n"
+                + "\n"
+                + "import static java.lang.annotation.ElementType.*;\n"
+                + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+                + "\n"
+                + "@Retention(CLASS)\n"
+                + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE})\n"
+                + "public @interface " + prefix + "Res {\n"
+                + "}\n");
+    }
+
+    private final TestFile mColorResAnnotation = createResAnnotation("Color");
+    private final TestFile mStringResAnnotation = createResAnnotation("String");
+    private final TestFile mStyleResAnnotation = createResAnnotation("Style");
+    private final TestFile mAnyResAnnotation = createResAnnotation("Any");
 
     private final TestFile mColorIntAnnotation = java("src/android/support/annotation/ColorInt.java", ""
             + "package android.support.annotation;\n"
@@ -805,7 +821,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
         // Regression test for
         //   https://code.google.com/p/android/issues/detail?id=177381
         assertEquals(""
-                + "src/test/pkg/PermissionTest2.java:11: Error: Missing permissions required by X.method1: my.permission.PERM2 [MissingPermission]\n"
+                + "src/test/pkg/PermissionTest2.java:11: Error: Missing permissions required by PermissionTest2.method1: my.permission.PERM2 [MissingPermission]\n"
                 + "        method1(); // ERROR\n"
                 + "        ~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
@@ -815,7 +831,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "package test.pkg;\n"
                                 + "import android.support.annotation.RequiresPermission;\n"
                                 + "\n"
-                                + "public class X {\n"
+                                + "public class PermissionTest2 {\n"
                                 + "    @RequiresPermission(allOf = {\"my.permission.PERM1\",\"my.permission.PERM2\"})\n"
                                 + "    public void method1() {\n"
                                 + "    }\n"
@@ -849,7 +865,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
 
     public void testComplexPermission1() throws Exception {
         assertEquals(""
-                + "src/test/pkg/PermissionTest.java:7: Error: Missing permissions required by LocationManager.myMethod: com.android.voicemail.permission.ADD_VOICEMAIL xor android.permission.AUTHENTICATE_ACCOUNTS [MissingPermission]\n"
+                + "src/test/pkg/PermissionTest.java:7: Error: Missing permissions required by LocationManager.myMethod: android.permission.BLUETOOTH xor android.permission.READ_SMS [MissingPermission]\n"
                 + "        LocationManager.Location location = locationManager.myMethod(provider);\n"
                 + "                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
@@ -866,7 +882,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 lintProject(
                         getManifestWithPermissions(14,
                                 "android.permission.ACCESS_FINE_LOCATION",
-                                "com.android.voicemail.permission.ADD_VOICEMAIL"),
+                                "android.permission.BLUETOOTH"),
                         mPermissionTest,
                         mComplexLocationManagerStub,
                         mRequirePermissionAnnotation));
@@ -874,15 +890,15 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
 
     public void testComplexPermission3() throws Exception {
         assertEquals(""
-                + "src/test/pkg/PermissionTest.java:7: Error: Missing permissions required by LocationManager.myMethod: com.android.voicemail.permission.ADD_VOICEMAIL xor android.permission.AUTHENTICATE_ACCOUNTS [MissingPermission]\n"
+                + "src/test/pkg/PermissionTest.java:7: Error: Missing permissions required by LocationManager.myMethod: android.permission.BLUETOOTH xor android.permission.READ_SMS [MissingPermission]\n"
                 + "        LocationManager.Location location = locationManager.myMethod(provider);\n"
                 + "                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
                 lintProject(
                         getManifestWithPermissions(14,
                                 "android.permission.ACCESS_FINE_LOCATION",
-                                "com.android.voicemail.permission.ADD_VOICEMAIL",
-                                "android.permission.AUTHENTICATE_ACCOUNTS"),
+                                "android.permission.BLUETOOTH",
+                                "android.permission.READ_SMS"),
                         mPermissionTest,
                         mComplexLocationManagerStub,
                         mRequirePermissionAnnotation));
@@ -1078,9 +1094,6 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/ActionTest.java:67: Error: Missing permissions required to write ActionTest.BOOKMARKS_URI: com.android.browser.permission.WRITE_HISTORY_BOOKMARKS [MissingPermission]\n"
                 + "        resolver.update(BOOKMARKS_URI, null, null, null);\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/ActionTest.java:70: Error: Missing permissions required to read Browser.BOOKMARKS_URI: com.android.browser.permission.READ_HISTORY_BOOKMARKS [MissingPermission]\n"
-                + "        resolver.query(android.provider.Browser.BOOKMARKS_URI, null, null, null, null);\n"
-                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "src/test/pkg/ActionTest.java:86: Error: Missing permissions required by intent ActionTest.ACTION_CALL: android.permission.CALL_PHONE [MissingPermission]\n"
                 + "        myStartActivity(\"\", null, new Intent(ACTION_CALL));\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
@@ -1090,7 +1103,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/ActionTest.java:88: Error: Missing permissions required to read ActionTest.BOOKMARKS_URI: com.android.browser.permission.READ_HISTORY_BOOKMARKS [MissingPermission]\n"
                 + "        myWriteResolverMethod(BOOKMARKS_URI);\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "20 errors, 0 warnings\n",
+                + "19 errors, 0 warnings\n",
 
                 lintProject(
                         getManifestWithPermissions(14, 23),
@@ -1106,11 +1119,13 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "import android.net.Uri;\n"
                                 + "import android.support.annotation.RequiresPermission;\n"
                                 + "\n"
-                                + "import static android.Manifest.permission.READ_HISTORY_BOOKMARKS;\n"
-                                + "import static android.Manifest.permission.WRITE_HISTORY_BOOKMARKS;\n"
+                                //+ "import static android.Manifest.permission.READ_HISTORY_BOOKMARKS;\n"
+                                //+ "import static android.Manifest.permission.WRITE_HISTORY_BOOKMARKS;\n"
                                 + "\n"
                                 + "@SuppressWarnings({\"deprecation\", \"unused\"})\n"
                                 + "public class ActionTest {\n"
+                                + "     public static final String READ_HISTORY_BOOKMARKS=\"com.android.browser.permission.READ_HISTORY_BOOKMARKS\";\n"
+                                + "     public static final String WRITE_HISTORY_BOOKMARKS=\"com.android.browser.permission.WRITE_HISTORY_BOOKMARKS\";\n"
                                 + "    @RequiresPermission(Manifest.permission.CALL_PHONE)\n"
                                 + "    public static final String ACTION_CALL = \"android.intent.action.CALL\";\n"
                                 + "\n"
@@ -1164,7 +1179,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "        resolver.update(BOOKMARKS_URI, null, null, null);\n"
                                 + "\n"
                                 + "        // Framework (external) annotation\n"
-                                + "        resolver.query(android.provider.Browser.BOOKMARKS_URI, null, null, null, null);\n"
+                                + "//REMOVED        resolver.query(android.provider.Browser.BOOKMARKS_URI, null, null, null, null);\n"
                                 + "\n"
                                 + "        // TODO: Look for more complex URI manipulations\n"
                                 + "    }\n"
@@ -1173,10 +1188,10 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 + "                                       @RequiresPermission Intent intent) {\n"
                                 + "    }\n"
                                 + "\n"
-                                + "    public static void myReadResolverMethod(String s1, @RequiresPermission.Read Uri uri) {\n"
+                                + "    public static void myReadResolverMethod(String s1, @RequiresPermission.Read(@RequiresPermission) Uri uri) {\n"
                                 + "    }\n"
                                 + "\n"
-                                + "    public static void myWriteResolverMethod(@RequiresPermission.Read Uri uri) {\n"
+                                + "    public static void myWriteResolverMethod(@RequiresPermission.Read(@RequiresPermission) Uri uri) {\n"
                                 + "    }\n"
                                 + "    \n"
                                 + "    public static void testCustomMethods() {\n"
@@ -1188,4 +1203,61 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                         mRequirePermissionAnnotation
                 ));
     }
+
+    public void testCombinedIntDefAndIntRange() throws Exception {
+        assertEquals(""
+                        + "src/test/pkg/X.java:27: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG [WrongConstant]\n"
+                        + "        setDuration(UNRELATED); /// ERROR: Not right intdef, even if it's in the right number range\n"
+                        + "                    ~~~~~~~~~\n"
+                        + "src/test/pkg/X.java:28: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG or value must be ≥ 10 (was -5) [WrongConstant]\n"
+                        + "        setDuration(-5); // ERROR (not right int def or value\n"
+                        + "                    ~~\n"
+                        + "src/test/pkg/X.java:29: Error: Must be one of: X.LENGTH_INDEFINITE, X.LENGTH_SHORT, X.LENGTH_LONG or value must be ≥ 10 (was 8) [WrongConstant]\n"
+                        + "        setDuration(8); // ERROR (not matching number range)\n"
+                        + "                    ~\n"
+                        + "3 errors, 0 warnings\n",
+                lintProject(
+                        getManifestWithPermissions(14, 23),
+                        java("src/test/pkg/X.java", ""
+                                + "\n"
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.IntDef;\n"
+                                + "import android.support.annotation.IntRange;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "@SuppressWarnings({\"UnusedParameters\", \"unused\", \"SpellCheckingInspection\"})\n"
+                                + "public class X {\n"
+                                + "\n"
+                                + "    public static final int UNRELATED = 500;\n"
+                                + "\n"
+                                + "    @IntDef({LENGTH_INDEFINITE, LENGTH_SHORT, LENGTH_LONG})\n"
+                                + "    @IntRange(from = 10)\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    public @interface Duration {}\n"
+                                + "\n"
+                                + "    public static final int LENGTH_INDEFINITE = -2;\n"
+                                + "    public static final int LENGTH_SHORT = -1;\n"
+                                + "    public static final int LENGTH_LONG = 0;\n"
+                                + "    public void setDuration(@Duration int duration) {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void test() {\n"
+                                + "        setDuration(UNRELATED); /// ERROR: Not right intdef, even if it's in the right number range\n"
+                                + "        setDuration(-5); // ERROR (not right int def or value\n"
+                                + "        setDuration(8); // ERROR (not matching number range)\n"
+                                + "        setDuration(8000); // OK (@IntRange applies)\n"
+                                + "        setDuration(LENGTH_INDEFINITE); // OK (@IntDef)\n"
+                                + "        setDuration(LENGTH_LONG); // OK (@IntDef)\n"
+                                + "        setDuration(LENGTH_SHORT); // OK (@IntDef)\n"
+                                + "    }\n"
+                                + "}\n"),
+                        copy("src/android/support/annotation/IntDef.java.txt", "src/android/support/annotation/IntDef.java"),
+                        copy("src/android/support/annotation/IntRange.java.txt", "src/android/support/annotation/IntRange.java")
+                ));
+    }
+
+
 }

@@ -126,6 +126,7 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
                 mManifest,
                 mKeepAnnotation,
                 mIntDefAnnotation,
+                mIntRangeAnnotation,
                 mPermissionAnnotation);
 
         File output = File.createTempFile("annotations", ".zip");
@@ -161,8 +162,8 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
                 Files.toString(proguard, Charsets.UTF_8));
 
         // Check extracted annotations
-        checkPackageXml("test.pkg", output, "" +
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        checkPackageXml("test.pkg", output, ""
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 + "<root>\n"
                 + "  <item name=\"test.pkg.IntDefTest void setFlags(java.lang.Object, int) 1\">\n"
                 + "    <annotation name=\"android.support.annotation.IntDef\">\n"
@@ -173,6 +174,9 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
                 + "  <item name=\"test.pkg.IntDefTest void setStyle(int, int) 0\">\n"
                 + "    <annotation name=\"android.support.annotation.IntDef\">\n"
                 + "      <val name=\"value\" val=\"{test.pkg.IntDefTest.STYLE_NORMAL, test.pkg.IntDefTest.STYLE_NO_TITLE, test.pkg.IntDefTest.STYLE_NO_FRAME, test.pkg.IntDefTest.STYLE_NO_INPUT}\" />\n"
+                + "    </annotation>\n"
+                + "    <annotation name=\"android.support.annotation.IntRange\">\n"
+                + "      <val name=\"from\" val=\"20\" />\n"
                 + "    </annotation>\n"
                 + "  </item>\n"
                 + "  <item name=\"test.pkg.PermissionsTest CONTENT_URI\">\n"
@@ -212,6 +216,7 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
                 mManifest,
                 mKeepAnnotation,
                 mIntDefAnnotation,
+                mIntRangeAnnotation,
                 mPermissionAnnotation);
 
         File output = File.createTempFile("annotations", ".zip");
@@ -240,8 +245,8 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
         new ExtractAnnotationsDriver().run(args);
 
         // Check external annotations
-        checkPackageXml("test.pkg", output, "" +
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        checkPackageXml("test.pkg", output, ""
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 + "<root>\n"
                 + "  <item name=\"test.pkg.IntDefTest void setFlags(java.lang.Object, int) 1\">\n"
                 + "    <annotation name=\"android.support.annotation.IntDef\">\n"
@@ -252,6 +257,9 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
                 + "  <item name=\"test.pkg.IntDefTest void setStyle(int, int) 0\">\n"
                 + "    <annotation name=\"android.support.annotation.IntDef\">\n"
                 + "      <val name=\"value\" val=\"{test.pkg.IntDefTest.STYLE_NORMAL, test.pkg.IntDefTest.STYLE_NO_TITLE, test.pkg.IntDefTest.STYLE_NO_FRAME, test.pkg.IntDefTest.STYLE_NO_INPUT}\" />\n"
+                + "    </annotation>\n"
+                + "    <annotation name=\"android.support.annotation.IntRange\">\n"
+                + "      <val name=\"from\" val=\"20\" />\n"
                 + "    </annotation>\n"
                 + "  </item>\n"
                 + "</root>\n"
@@ -303,6 +311,22 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
             + "    boolean flag() default false;\n"
             + "}\n");
 
+    private final TestFile mIntRangeAnnotation = mksrc("src/android/support/annotation/IntRange.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.*;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({CONSTRUCTOR,METHOD,PARAMETER,FIELD,LOCAL_VARIABLE,ANNOTATION_TYPE})\n"
+            + "public @interface IntRange {\n"
+            + "    long from() default Long.MIN_VALUE;\n"
+            + "    long to() default Long.MAX_VALUE;\n"
+            + "}\n");
+
     private final TestFile mPermissionAnnotation = mksrc(
             "src/android/support/annotation/RequiresPermission.java", ""
             + "package android.support.annotation;\n"
@@ -333,6 +357,7 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
             + "\n"
             + "import android.content.Context;\n"
             + "import android.support.annotation.IntDef;\n"
+            + "import android.support.annotation.IntRange;\n"
             + "import android.support.annotation.Keep;\n"
             + "import android.view.View;\n"
             + "\n"
@@ -342,6 +367,7 @@ public class ExtractAnnotationsDriverTest extends SdkTestCase {
             + "@SuppressWarnings(\"UnusedDeclaration\")\n"
             + "public class IntDefTest {\n"
             + "    @IntDef({STYLE_NORMAL, STYLE_NO_TITLE, STYLE_NO_FRAME, STYLE_NO_INPUT})\n"
+            + "    @IntRange(from = 20)\n"
             + "    @Retention(RetentionPolicy.SOURCE)\n"
             + "    private @interface DialogStyle {}\n"
             + "\n"

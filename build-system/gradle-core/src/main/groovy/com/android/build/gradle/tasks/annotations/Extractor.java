@@ -32,6 +32,7 @@ import static com.android.SdkConstants.SUPPORT_ANNOTATIONS_PREFIX;
 import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.SdkConstants.TYPE_DEF_VALUE_ATTRIBUTE;
 import static com.android.SdkConstants.VALUE_TRUE;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.INT_RANGE_ANNOTATION;
 import static com.android.tools.lint.detector.api.LintUtils.assertionsEnabled;
 
 import com.android.annotations.NonNull;
@@ -179,6 +180,7 @@ public class Extractor {
     public static final String ANDROID_NOTNULL = "android.annotation.NonNull";
     public static final String SUPPORT_NOTNULL = "android.support.annotation.NonNull";
     public static final String ANDROID_INT_DEF = "android.annotation.IntDef";
+    public static final String ANDROID_INT_RANGE = "android.annotation.IntRange";
     public static final String ANDROID_STRING_DEF = "android.annotation.StringDef";
     public static final String REQUIRES_PERMISSION = "android.support.annotation.RequiresPermission";
     public static final String ANDROID_REQUIRES_PERMISSION = "android.annotation.RequiresPermission";
@@ -190,7 +192,7 @@ public class Extractor {
     public static final String ATTR_VAL = "val";
 
     @NonNull
-    private final Map<String, AnnotationData> types = Maps.newHashMap();
+    private final Map<String, List<AnnotationData>> types = Maps.newHashMap();
 
     @NonNull
     private final Set<String> irrelevantAnnotations = Sets.newHashSet();
@@ -211,7 +213,7 @@ public class Extractor {
     private final Set<CompilationUnitDeclaration> processedFiles = Sets.newHashSetWithExpectedSize(100);
     private final Set<String> ignoredAnnotations = Sets.newHashSet();
     private boolean listIgnored;
-    private Map<String,Annotation> typedefs;
+    private Map<String,List<Annotation>> typedefs;
     private List<String> typedefClasses;
     private Map<String,Boolean> sourceRetention;
     private final List<Item> keepItems = Lists.newArrayList();
@@ -511,43 +513,46 @@ public class Extractor {
         if (annotations != null) {
             for (Annotation annotation : annotations) {
                 if (isRelevantAnnotation(annotation)) {
-                    AnnotationData annotationData = createAnnotation(annotation);
-                    if (annotationData != null) {
-                        if (annotationData.name.equals(SUPPORT_KEEP)) {
-                            // Put keep rules in a different place; we don't want to write
-                            // these out into the external annotations database, they go
-                            // into a special proguard file
-                            keepItems.add(item);
-                        } else {
-                            item.annotations.add(annotationData);
-                        }
+                    String fqn = getFqn(annotation);
+                    if (SUPPORT_KEEP.equals(fqn)) {
+                        // Put keep rules in a different place; we don't want to write
+                        // these out into the external annotations database, they go
+                        // into a special proguard file
+                        keepItems.add(item);
+                    } else {
+                        addAnnotation(annotation, fqn, item.annotations);
                     }
                 }
             }
         }
     }
 
-    @Nullable
-    private AnnotationData createAnnotation(@NonNull Annotation annotation) {
-        String fqn = getFqn(annotation);
+    private void addAnnotation(@NonNull Annotation annotation, @Nullable String fqn,
+            @NonNull List<AnnotationData> list) {
         if (fqn == null) {
-            return null;
+            return;
         }
+
         if (fqn.equals(ANDROID_NULLABLE) || fqn.equals(SUPPORT_NULLABLE)) {
             recordStats(fqn);
-            return new AnnotationData(SUPPORT_NULLABLE);
+            list.add(new AnnotationData(SUPPORT_NULLABLE));
+            return;
         }
 
         if (fqn.equals(ANDROID_NOTNULL) || fqn.equals(SUPPORT_NOTNULL)) {
             recordStats(fqn);
-            return new AnnotationData(SUPPORT_NOTNULL);
+            list.add(new AnnotationData(SUPPORT_NOTNULL));
+            return;
         }
 
         if (fqn.startsWith(SUPPORT_ANNOTATIONS_PREFIX)
                 && fqn.endsWith(RESOURCE_TYPE_ANNOTATIONS_SUFFIX)) {
             recordStats(fqn);
-            return new AnnotationData(fqn);
-        } else if (fqn.startsWith(ANDROID_ANNOTATIONS_PREFIX)) {
+            list.add(new AnnotationData(fqn));
+            return;
+        }
+
+        if (fqn.startsWith(ANDROID_ANNOTATIONS_PREFIX)) {
             // System annotations: translate to support library annotations
             if (fqn.endsWith(RESOURCE_TYPE_ANNOTATIONS_SUFFIX)) {
                 // Translate e.g. android.annotation.DrawableRes to
@@ -556,10 +561,11 @@ public class Extractor {
                         fqn.substring(ANDROID_ANNOTATIONS_PREFIX.length());
                 if (!includeClassRetentionAnnotations
                         && !hasSourceRetention(resAnnotation, null)) {
-                    return null;
+                    return;
                 }
                 recordStats(resAnnotation);
-                return new AnnotationData(resAnnotation);
+                list.add(new AnnotationData(resAnnotation));
+                return;
             } else if (isRelevantFrameworkAnnotation(fqn)) {
                 // Translate other android.annotation annotations into corresponding
                 // support annotations
@@ -567,23 +573,25 @@ public class Extractor {
                         fqn.substring(ANDROID_ANNOTATIONS_PREFIX.length());
                 if (!includeClassRetentionAnnotations
                         && !hasSourceRetention(supportAnnotation, null)) {
-                    return null;
+                    return;
                 }
                 recordStats(supportAnnotation);
-                return createData(supportAnnotation, annotation);
+                list.add(createData(supportAnnotation, annotation));
             }
         }
 
         if (fqn.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
             recordStats(fqn);
-            return createData(fqn, annotation);
+            list.add(createData(fqn, annotation));
+            return;
         }
 
         if (isMagicConstant(fqn)) {
-            return types.get(fqn);
+            List<AnnotationData> indirect = types.get(fqn);
+            if (indirect != null) {
+                list.addAll(indirect);
+            }
         }
-
-        return null;
     }
 
     private void recordStats(String fqn) {
@@ -654,33 +662,48 @@ public class Extractor {
         if (types.containsKey(typeName) ||
                 typeName.equals(INT_DEF_ANNOTATION) ||
                 typeName.equals(STRING_DEF_ANNOTATION) ||
+                typeName.equals(INT_RANGE_ANNOTATION) ||
+                typeName.equals(ANDROID_INT_RANGE) ||
                 typeName.equals(ANDROID_INT_DEF) ||
                 typeName.equals(ANDROID_STRING_DEF)) {
             return true;
         }
 
-        Annotation typeDef = typedefs.get(typeName);
+        List<Annotation> typeDefs = typedefs.get(typeName);
         // We only support a single level of IntDef type annotations, not arbitrary nesting
-        if (typeDef != null) {
-            String fqn = getFqn(typeDef);
-            if (fqn != null &&
-                    (fqn.equals(INT_DEF_ANNOTATION) ||
-                            fqn.equals(STRING_DEF_ANNOTATION) ||
-                            fqn.equals(REQUIRES_PERMISSION) ||
-                            fqn.equals(ANDROID_REQUIRES_PERMISSION) ||
-                            fqn.equals(ANDROID_INT_DEF) ||
-                            fqn.equals(ANDROID_STRING_DEF))) {
-                AnnotationData a = createAnnotation(typeDef);
-                if (a != null) {
-                    types.put(typeName, a);
-                    return true;
+        if (typeDefs != null) {
+            boolean match = false;
+            for (Annotation typeDef : typeDefs) {
+                String fqn = getFqn(typeDef);
+                if (isNestedAnnotation(fqn)) {
+                    List<AnnotationData> list = types.get(typeName);
+                    if (list == null) {
+                        list = new ArrayList<AnnotationData>(2);
+                        types.put(typeName, list);
+                    }
+                    addAnnotation(typeDef, fqn, list);
+                    match = true;
                 }
             }
+
+            return match;
         }
 
         irrelevantAnnotations.add(typeName);
 
         return false;
+    }
+
+    static boolean isNestedAnnotation(@Nullable String fqn) {
+        return (fqn != null &&
+                (fqn.equals(INT_DEF_ANNOTATION) ||
+                        fqn.equals(STRING_DEF_ANNOTATION) ||
+                        fqn.equals(REQUIRES_PERMISSION) ||
+                        fqn.equals(ANDROID_REQUIRES_PERMISSION) ||
+                        fqn.equals(INT_RANGE_ANNOTATION) ||
+                        fqn.equals(ANDROID_INT_RANGE) ||
+                        fqn.equals(ANDROID_INT_DEF) ||
+                        fqn.equals(ANDROID_STRING_DEF)));
     }
 
     private boolean writeKeepRules(@NonNull File proguardCfg) {
