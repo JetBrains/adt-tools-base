@@ -70,6 +70,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -305,13 +306,14 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             @NonNull Node argument,
             @NonNull Node call,
             @NonNull ResolvedMethod method,
-            @NonNull ResolvedAnnotation annotation) {
+            @NonNull ResolvedAnnotation annotation,
+            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
         String signature = annotation.getSignature();
 
         if (COLOR_INT_ANNOTATION.equals(signature)) {
             checkColor(context, argument);
         } else if (signature.equals(INT_RANGE_ANNOTATION)) {
-            checkIntRange(context, annotation, argument);
+            checkIntRange(context, annotation, argument, allAnnotations);
         } else if (signature.equals(FLOAT_RANGE_ANNOTATION)) {
             checkFloatRange(context, annotation, argument);
         } else if (signature.equals(SIZE_ANNOTATION)) {
@@ -330,9 +332,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             // have to
             if (signature.equals(INT_DEF_ANNOTATION)) {
                 boolean flag = annotation.getValue(TYPE_DEF_FLAG_ATTRIBUTE) == Boolean.TRUE;
-                checkTypeDefConstant(context, annotation, argument, null, flag);
+                checkTypeDefConstant(context, annotation, argument, null, flag, allAnnotations);
             } else if (signature.equals(STRING_DEF_ANNOTATION)) {
-                checkTypeDefConstant(context, annotation, argument, null, false);
+                checkTypeDefConstant(context, annotation, argument, null, false, allAnnotations);
             } else if (signature.endsWith(RES_SUFFIX)) {
                 String typeString = signature.substring(SUPPORT_ANNOTATIONS_PREFIX.length(),
                         signature.length() - RES_SUFFIX.length()).toLowerCase(Locale.US);
@@ -945,19 +947,35 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     private static void checkIntRange(
             @NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation,
+            @NonNull Node argument,
+            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
+        String message = getIntRangeError(context, annotation, argument);
+        if (message != null) {
+            if (findIntDef(allAnnotations) != null) {
+                // Don't flag int range errors if there is an int def annotation there too;
+                // there could be a valid @IntDef constant. (The @IntDef check will
+                // perform range validation by calling getIntRange.)
+                return;
+            }
+
+            context.report(RANGE, argument, context.getLocation(argument), message);
+        }
+    }
+
+    @Nullable
+    private static String getIntRangeError(
+            @NonNull JavaContext context,
+            @NonNull ResolvedAnnotation annotation,
             @NonNull Node argument) {
         Object object = ConstantEvaluator.evaluate(context, argument);
         if (!(object instanceof Number)) {
-            return;
+            return null;
         }
         long value = ((Number)object).longValue();
         long from = getLongAttribute(annotation, ATTR_FROM, Long.MIN_VALUE);
         long to = getLongAttribute(annotation, ATTR_TO, Long.MAX_VALUE);
 
-        String message = getIntRangeError(value, from, to);
-        if (message != null) {
-            context.report(RANGE, argument, context.getLocation(argument), message);
-        }
+        return getIntRangeError(value, from, to);
     }
 
     /**
@@ -1148,12 +1166,37 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         return message;
     }
 
+    @Nullable
+    private static ResolvedAnnotation findIntRange(
+            @NonNull Iterable<ResolvedAnnotation> annotations) {
+        for (ResolvedAnnotation annotation : annotations) {
+            if (INT_RANGE_ANNOTATION.equals(annotation.getName())) {
+                return annotation;
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private static ResolvedAnnotation findIntDef(
+            @NonNull Iterable<ResolvedAnnotation> annotations) {
+        for (ResolvedAnnotation annotation : annotations) {
+            if (INT_DEF_ANNOTATION.equals(annotation.getName())) {
+                return annotation;
+            }
+        }
+
+        return null;
+    }
+
     private static void checkTypeDefConstant(
             @NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation,
             @NonNull Node argument,
             @Nullable Node errorNode,
-            boolean flag) {
+            boolean flag,
+            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
         if (argument instanceof NullLiteral) {
             // Accepted for @StringDef
             return;
@@ -1161,7 +1204,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
         if (argument instanceof StringLiteral) {
             StringLiteral string = (StringLiteral) argument;
-            checkTypeDefConstant(context, annotation, argument, errorNode, false, string.astValue());
+            checkTypeDefConstant(context, annotation, argument, errorNode, false, string.astValue(),
+                    allAnnotations);
         } else if (argument instanceof IntegralLiteral) {
             IntegralLiteral literal = (IntegralLiteral) argument;
             int value = literal.astIntValue();
@@ -1169,35 +1213,68 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 // Accepted for a flag @IntDef
                 return;
             }
-            checkTypeDefConstant(context, annotation, argument, errorNode, flag, value);
+
+            ResolvedAnnotation rangeAnnotation = findIntRange(allAnnotations);
+            if (rangeAnnotation != null) {
+                // Allow @IntRange on this number
+                if (getIntRangeError(context, rangeAnnotation, literal) == null) {
+                    return;
+                }
+            }
+
+            checkTypeDefConstant(context, annotation, argument, errorNode, flag, value,
+                    allAnnotations);
         } else if (isMinusOne(argument)) {
             // -1 is accepted unconditionally for flags
             if (!flag) {
-                reportTypeDef(context, annotation, argument, errorNode);
+                ResolvedAnnotation rangeAnnotation = findIntRange(allAnnotations);
+                if (rangeAnnotation != null) {
+                    // Allow @IntRange on this number
+                    if (getIntRangeError(context, rangeAnnotation, argument) == null) {
+                        return;
+                    }
+                }
+
+                reportTypeDef(context, annotation, argument, errorNode, allAnnotations);
             }
         } else if (argument instanceof InlineIfExpression) {
             InlineIfExpression expression = (InlineIfExpression) argument;
             if (expression.astIfTrue() != null) {
-                checkTypeDefConstant(context, annotation, expression.astIfTrue(), errorNode, flag);
+                checkTypeDefConstant(context, annotation, expression.astIfTrue(), errorNode, flag,
+                        allAnnotations);
             }
             if (expression.astIfFalse() != null) {
-                checkTypeDefConstant(context, annotation, expression.astIfFalse(), errorNode, flag);
+                checkTypeDefConstant(context, annotation, expression.astIfFalse(), errorNode, flag,
+                        allAnnotations);
             }
         } else if (argument instanceof UnaryExpression) {
             UnaryExpression expression = (UnaryExpression) argument;
             UnaryOperator operator = expression.astOperator();
             if (flag) {
-                checkTypeDefConstant(context, annotation, expression.astOperand(), errorNode, true);
+                checkTypeDefConstant(context, annotation, expression.astOperand(), errorNode, true,
+                        allAnnotations);
             } else if (operator == UnaryOperator.BINARY_NOT) {
                 context.report(TYPE_DEF, expression, context.getLocation(expression),
                         "Flag not allowed here");
+            } else if (operator == UnaryOperator.UNARY_MINUS) {
+                ResolvedAnnotation rangeAnnotation = findIntRange(allAnnotations);
+                if (rangeAnnotation != null) {
+                    // Allow @IntRange on this number
+                    if (getIntRangeError(context, rangeAnnotation, argument) == null) {
+                        return;
+                    }
+                }
+
+                reportTypeDef(context, annotation, argument, errorNode, allAnnotations);
             }
         } else if (argument instanceof BinaryExpression) {
             // If it's ?: then check both the if and else clauses
             BinaryExpression expression = (BinaryExpression) argument;
             if (flag) {
-                checkTypeDefConstant(context, annotation, expression.astLeft(), errorNode, true);
-                checkTypeDefConstant(context, annotation, expression.astRight(), errorNode, true);
+                checkTypeDefConstant(context, annotation, expression.astLeft(), errorNode, true,
+                        allAnnotations);
+                checkTypeDefConstant(context, annotation, expression.astRight(), errorNode, true,
+                        allAnnotations);
             } else {
                 BinaryOperator operator = expression.astOperator();
                 if (operator == BinaryOperator.BITWISE_AND
@@ -1210,7 +1287,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         } else {
             ResolvedNode resolved = context.resolve(argument);
             if (resolved instanceof ResolvedField) {
-                checkTypeDefConstant(context, annotation, argument, errorNode, flag, resolved);
+                checkTypeDefConstant(context, annotation, argument, errorNode, flag, resolved,
+                        allAnnotations);
             } else if (argument instanceof VariableReference) {
                 Statement statement = getParentOfType(argument, Statement.class, false);
                 if (statement != null) {
@@ -1236,7 +1314,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                                         && entry.astName().astValue().equals(targetName)) {
                                     checkTypeDefConstant(context, annotation,
                                             entry.astInitializer(),
-                                            errorNode != null ? errorNode : argument, flag);
+                                            errorNode != null ? errorNode : argument, flag,
+                                            allAnnotations);
                                     return;
                                 }
                             }
@@ -1250,7 +1329,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                                 if (targetName.equals(binaryExpression.astLeft().toString())) {
                                     checkTypeDefConstant(context, annotation,
                                             binaryExpression.astRight(),
-                                            errorNode != null ? errorNode : argument, flag);
+                                            errorNode != null ? errorNode : argument, flag,
+                                            allAnnotations);
                                     return;
                                 }
                             }
@@ -1263,7 +1343,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private static void checkTypeDefConstant(@NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation, @NonNull Node argument,
-            @Nullable Node errorNode, boolean flag, Object value) {
+            @Nullable Node errorNode, boolean flag, Object value,
+            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
         Object allowed = annotation.getValue();
         if (allowed instanceof Object[]) {
             Object[] allowedValues = (Object[]) allowed;
@@ -1272,22 +1353,23 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     return;
                 }
             }
-            reportTypeDef(context, argument, errorNode, flag, allowedValues);
+            reportTypeDef(context, argument, errorNode, flag, allowedValues, allAnnotations);
         }
     }
 
     private static void reportTypeDef(@NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation, @NonNull Node argument,
-            @Nullable Node errorNode) {
+            @Nullable Node errorNode, @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
         Object allowed = annotation.getValue();
         if (allowed instanceof Object[]) {
             Object[] allowedValues = (Object[]) allowed;
-            reportTypeDef(context, argument, errorNode, false, allowedValues);
+            reportTypeDef(context, argument, errorNode, false, allowedValues, allAnnotations);
         }
     }
 
     private static void reportTypeDef(@NonNull JavaContext context, @NonNull Node node,
-            @Nullable Node errorNode, boolean flag, @NonNull Object[] allowedValues) {
+            @Nullable Node errorNode, boolean flag, @NonNull Object[] allowedValues,
+            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
         String values = listAllowedValues(allowedValues);
         String message;
         if (flag) {
@@ -1295,6 +1377,17 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         } else {
             message = "Must be one of: " + values;
         }
+
+        ResolvedAnnotation rangeAnnotation = findIntRange(allAnnotations);
+        if (rangeAnnotation != null) {
+            // Allow @IntRange on this number
+            String rangeError = getIntRangeError(context, rangeAnnotation, node);
+            if (rangeError != null && !rangeError.isEmpty()) {
+                message += " or " + Character.toLowerCase(rangeError.charAt(0))
+                        + rangeError.substring(1);
+            }
+        }
+
         if (errorNode == null) {
             errorNode = node;
         }
@@ -1358,42 +1451,66 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         return defaultValue;
     }
 
-    @Nullable
-    static ResolvedAnnotation getRelevantAnnotation(@NonNull ResolvedAnnotation annotation) {
-        String signature = annotation.getSignature();
-        if (signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
-            // Bail on the nullness annotations early since they're the most commonly
-            // defined ones. They're not analyzed in lint yet.
-            if (signature.endsWith(".Nullable") || signature.endsWith(".NonNull")) {
-                return null;
+    @NonNull
+    static Iterable<ResolvedAnnotation> filterRelevantAnnotations(
+            @NonNull Iterable<ResolvedAnnotation> annotations) {
+        List<ResolvedAnnotation> result = null;
+        Iterator<ResolvedAnnotation> iterator = annotations.iterator();
+        int index = 0;
+        while (iterator.hasNext()) {
+            ResolvedAnnotation annotation = iterator.next();
+            index++;
+
+            String signature = annotation.getSignature();
+            if (signature.startsWith("java.")) {
+                // @Override, @SuppressWarnings etc. Ignore
+                continue;
             }
 
+            if (signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
+                // Bail on the nullness annotations early since they're the most commonly
+                // defined ones. They're not analyzed in lint yet.
+                if (signature.endsWith(".Nullable") || signature.endsWith(".NonNull")) {
+                    continue;
+                }
 
-            return annotation;
-        }
+                // Common case: there's just one annotation; no need to create a list copy
+                if (!iterator.hasNext() && index == 1) {
+                    return annotations;
+                }
+                if (result == null) {
+                    result = new ArrayList<ResolvedAnnotation>(2);
+                }
+                result.add(annotation);
+            }
 
-        if (signature.startsWith("java.")) {
-            // @Override, @SuppressWarnings etc. Ignore
-            return null;
-        }
-
-        // Special case @IntDef and @StringDef: These are used on annotations
-        // themselves. For example, you create a new annotation named @foo.bar.Baz,
-        // annotate it with @IntDef, and then use @foo.bar.Baz in your signatures.
-        // Here we want to map from @foo.bar.Baz to the corresponding int def.
-        // Don't need to compute this if performing @IntDef or @StringDef lookup
-        ResolvedClass type = annotation.getClassType();
-        if (type != null) {
-            for (ResolvedAnnotation inner : type.getAnnotations()) {
-                if (inner.matches(INT_DEF_ANNOTATION)
-                        || inner.matches(STRING_DEF_ANNOTATION)
-                        || inner.matches(PERMISSION_ANNOTATION)) {
-                    return inner;
+            // Special case @IntDef and @StringDef: These are used on annotations
+            // themselves. For example, you create a new annotation named @foo.bar.Baz,
+            // annotate it with @IntDef, and then use @foo.bar.Baz in your signatures.
+            // Here we want to map from @foo.bar.Baz to the corresponding int def.
+            // Don't need to compute this if performing @IntDef or @StringDef lookup
+            ResolvedClass type = annotation.getClassType();
+            if (type != null) {
+                Iterator<ResolvedAnnotation> iterator2 = type.getAnnotations().iterator();
+                while (iterator2.hasNext()) {
+                    ResolvedAnnotation inner = iterator2.next();
+                    if (inner.matches(INT_DEF_ANNOTATION)
+                            || inner.matches(PERMISSION_ANNOTATION)
+                            || inner.matches(INT_RANGE_ANNOTATION)
+                            || inner.matches(STRING_DEF_ANNOTATION)) {
+                        if (!iterator.hasNext() && !iterator2.hasNext() && index == 1) {
+                            return annotations;
+                        }
+                        if (result == null) {
+                            result = new ArrayList<ResolvedAnnotation>(2);
+                        }
+                        result.add(inner);
+                    }
                 }
             }
         }
 
-        return null;
+        return result != null ? result : Collections.<ResolvedAnnotation>emptyList();
     }
 
     // ---- Implements JavaScanner ----
@@ -1445,7 +1562,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
         @Override
         public boolean visitEnumConstant(EnumConstant node) {
-            final ResolvedNode resolved = mContext.resolve(node);
+            ResolvedNode resolved = mContext.resolve(node);
             if (resolved instanceof ResolvedMethod) {
                 ResolvedMethod method = (ResolvedMethod) resolved;
                 checkCall(node, method);
@@ -1456,22 +1573,18 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
         private void checkCall(@NonNull Node call, ResolvedMethod method) {
             Iterable<ResolvedAnnotation> annotations = method.getAnnotations();
+            annotations = filterRelevantAnnotations(annotations);
             for (ResolvedAnnotation annotation : annotations) {
-                annotation = getRelevantAnnotation(annotation);
-                if (annotation != null) {
-                    checkMethodAnnotation(mContext, method, call, annotation);
-                }
+                checkMethodAnnotation(mContext, method, call, annotation);
             }
 
             // Look for annotations on the class as well: these trickle
             // down to all the methods in the class
             ResolvedClass containingClass = method.getContainingClass();
             annotations = containingClass.getAnnotations();
+            annotations = filterRelevantAnnotations(annotations);
             for (ResolvedAnnotation annotation : annotations) {
-                annotation = getRelevantAnnotation(annotation);
-                if (annotation != null) {
-                    checkMethodAnnotation(mContext, method, call, annotation);
-                }
+                checkMethodAnnotation(mContext, method, call, annotation);
             }
 
             Iterator<Expression> arguments = JavaContext.getParameters(call);
@@ -1481,11 +1594,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 Expression argument = arguments.next();
 
                 annotations = method.getParameterAnnotations(i);
+                annotations = filterRelevantAnnotations(annotations);
                 for (ResolvedAnnotation annotation : annotations) {
-                    annotation = getRelevantAnnotation(annotation);
-                    if (annotation != null) {
-                        checkParameterAnnotation(mContext, argument, call, method, annotation);
-                    }
+                    checkParameterAnnotation(mContext, argument, call, method, annotation,
+                            annotations);
                 }
             }
         }

@@ -16,9 +16,6 @@
 
 package com.android.build.gradle.tasks.annotations;
 
-import static com.android.SdkConstants.INT_DEF_ANNOTATION;
-import static com.android.SdkConstants.STRING_DEF_ANNOTATION;
-
 import com.android.annotations.NonNull;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -34,13 +31,14 @@ import org.eclipse.jdt.internal.compiler.lookup.CompilationUnitScope;
 import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 /** Gathers information about typedefs (@IntDef and @StringDef */
 public class TypedefCollector extends ASTVisitor {
-    private Map<String,Annotation> mMap = Maps.newHashMap();
+    private Map<String,List<Annotation>> mMap = Maps.newHashMap();
 
     private final boolean mRequireHide;
     private final boolean mRequireSourceRetention;
@@ -65,7 +63,7 @@ public class TypedefCollector extends ASTVisitor {
         return mTypedefClasses;
     }
 
-    public Map<String,Annotation> getTypedefs() {
+    public Map<String,List<Annotation>> getTypedefs() {
         return mMap;
     }
 
@@ -94,14 +92,16 @@ public class TypedefCollector extends ASTVisitor {
                         continue;
                     }
 
-                    if (typeName.equals(INT_DEF_ANNOTATION) ||
-                            typeName.equals(STRING_DEF_ANNOTATION) ||
-                            typeName.equals(Extractor.REQUIRES_PERMISSION) ||
-                            typeName.equals(Extractor.ANDROID_REQUIRES_PERMISSION) ||
-                            typeName.equals(Extractor.ANDROID_INT_DEF) ||
-                            typeName.equals(Extractor.ANDROID_STRING_DEF)) {
+                    if (Extractor.isNestedAnnotation(typeName)) {
                         String fqn = new String(binding.readableName());
-                        mMap.put(fqn, annotation);
+
+                        List<Annotation> list = mMap.get(fqn);
+                        if (list == null) {
+                            list = new ArrayList<Annotation>(2);
+                            mMap.put(fqn, list);
+                        }
+                        list.add(annotation);
+
                         if (mRequireHide) {
                             Javadoc javadoc = declaration.javadoc;
                             if (javadoc != null) {

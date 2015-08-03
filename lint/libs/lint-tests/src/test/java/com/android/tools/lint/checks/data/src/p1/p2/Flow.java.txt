@@ -19,10 +19,10 @@ public class Flow {
     }
 
     public void testLocalAnnotation() {
-        myMethod(R.string.my_string); // ERROR
+        myMethod(R.string.my_string, null); // ERROR
     }
 
-    private void myMethod(@DrawableRes int arg) {
+    private void myMethod(@DrawableRes int arg, Resources resources) {
         resources.getDrawable(R.string.my_string); // ERROR
     }
 
@@ -65,10 +65,10 @@ public class Flow {
     public void testFlow() {
         int x = R.string.my_string;
         int z = x;
-        myMethod(z); // ERROR
+        myMethod(z, null); // ERROR
 
         int w = MY_RESOURCE;
-        myMethod(w); // ERROR
+        myMethod(w, null); // ERROR
     }
 
     private static final int MY_RESOURCE = R.string.my_string;
