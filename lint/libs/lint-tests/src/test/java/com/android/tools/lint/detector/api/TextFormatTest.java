@@ -29,78 +29,78 @@ public class TextFormatTest extends TestCase {
     }
 
     public void testConvertMarkup() throws Exception {
-            assertEquals("", convertMarkup("", HTML));
+        assertEquals("", convertMarkup("", HTML));
 
-            // Normal escapes
-            assertEquals("foo bar", convertMarkup("foo bar", HTML));
-            assertEquals("foo<br/>\nbar", convertMarkup("foo\nbar", HTML));
-            assertEquals("foo<br/>\nbar", convertMarkup("foo\nbar", HTML));
-            assertEquals("&lt;&amp;>'\"", convertMarkup("<&>'\"", HTML));
+        // Normal escapes
+        assertEquals("foo bar", convertMarkup("foo bar", HTML));
+        assertEquals("foo<br/>\nbar", convertMarkup("foo\nbar", HTML));
+        assertEquals("foo<br/>\nbar", convertMarkup("foo\nbar", HTML));
+        assertEquals("&lt;&amp;>'\"", convertMarkup("<&>'\"", HTML));
 
-            // HTML Formatting
-            assertEquals("<code>@TargetApi(11)</code>, ", convertMarkup("`@TargetApi(11)`, ",
-                    HTML));
-            assertEquals("with <code>getArguments()</code>.",
-                    convertMarkup("with `getArguments()`.", HTML));
-            assertEquals("(<code>dip</code>)", convertMarkup("(`dip`)", HTML));
-            assertEquals(" <code>0dp</code> ", convertMarkup(" `0dp` ", HTML));
-            assertEquals(
-                "resources under <code>$ANDROID_SK/platforms/android-$VERSION/data/res/.</code>",
-                    convertMarkup(
-                            "resources under `$ANDROID_SK/platforms/android-$VERSION/data/res/.`",
-                            HTML));
-            assertEquals("wrong format. Instead of <code>-keepclasseswithmembernames</code> use ",
-                    convertMarkup("wrong format. Instead of `-keepclasseswithmembernames` use ",
-                            HTML));
-            assertEquals("<code>exported=false</code>)", convertMarkup("`exported=false`)",
-                    HTML));
-            assertEquals("by setting <code>inputType=\"text\"</code>.",
-                    convertMarkup("by setting `inputType=\"text\"`.", HTML));
-            assertEquals("* <code>View(Context context)</code><br/>\n",
-                    convertMarkup("* `View(Context context)`\n", HTML));
-            assertEquals("The <code>@+id/</code> syntax", convertMarkup("The `@+id/` syntax",
-                    HTML));
-            assertEquals("", convertMarkup("", HTML));
-            assertEquals("", convertMarkup("", HTML));
-            assertEquals("This is <b>bold</b>", convertMarkup("This is *bold*", HTML));
-            assertEquals("Visit <a href=\"http://google.com\">http://google.com</a>.",
-                    convertMarkup("Visit http://google.com.", HTML));
-            assertEquals("This is <code>monospace</code>!", convertMarkup("This is `monospace`!",
-                    HTML));
-            assertEquals(
-                    "See <a href=\"http://developer.android.com/reference/android/view/" +
-                    "WindowManager.LayoutParams.html#FLAG_KEEP_SCREEN_ON\">http://developer." +
-                    "android.com/reference/android/view/WindowManager.LayoutParams.html#" +
-                    "FLAG_KEEP_SCREEN_ON</a>.",
+        // HTML Formatting
+        assertEquals("<code>@TargetApi(11)</code>, ", convertMarkup("`@TargetApi(11)`, ",
+                HTML));
+        assertEquals("with <code>getArguments()</code>.",
+                convertMarkup("with `getArguments()`.", HTML));
+        assertEquals("(<code>dip</code>)", convertMarkup("(`dip`)", HTML));
+        assertEquals(" <code>0dp</code> ", convertMarkup(" `0dp` ", HTML));
+        assertEquals(
+            "resources under <code>$ANDROID_SK/platforms/android-$VERSION/data/res/.</code>",
                 convertMarkup(
-                  "See http://developer.android.com/reference/android/view/WindowManager.Layout" +
-                  "Params.html#FLAG_KEEP_SCREEN_ON.", HTML));
+                        "resources under `$ANDROID_SK/platforms/android-$VERSION/data/res/.`",
+                        HTML));
+        assertEquals("wrong format. Instead of <code>-keepclasseswithmembernames</code> use ",
+                convertMarkup("wrong format. Instead of `-keepclasseswithmembernames` use ",
+                        HTML));
+        assertEquals("<code>exported=false</code>)", convertMarkup("`exported=false`)",
+                HTML));
+        assertEquals("by setting <code>inputType=\"text\"</code>.",
+                convertMarkup("by setting `inputType=\"text\"`.", HTML));
+        assertEquals("* <code>View(Context context)</code><br/>\n",
+                convertMarkup("* `View(Context context)`\n", HTML));
+        assertEquals("The <code>@+id/</code> syntax", convertMarkup("The `@+id/` syntax",
+                HTML));
+        assertEquals("", convertMarkup("", HTML));
+        assertEquals("", convertMarkup("", HTML));
+        assertEquals("This is <b>bold</b>", convertMarkup("This is *bold*", HTML));
+        assertEquals("Visit <a href=\"http://google.com\">http://google.com</a>.",
+                convertMarkup("Visit http://google.com.", HTML));
+        assertEquals("This is <code>monospace</code>!", convertMarkup("This is `monospace`!",
+                HTML));
+        assertEquals(
+                "See <a href=\"http://developer.android.com/reference/android/view/" +
+                "WindowManager.LayoutParams.html#FLAG_KEEP_SCREEN_ON\">http://developer." +
+                "android.com/reference/android/view/WindowManager.LayoutParams.html#" +
+                "FLAG_KEEP_SCREEN_ON</a>.",
+            convertMarkup(
+              "See http://developer.android.com/reference/android/view/WindowManager.Layout" +
+              "Params.html#FLAG_KEEP_SCREEN_ON.", HTML));
 
-            // Text formatting
-            assertEquals("@TargetApi(11), ", convertMarkup("`@TargetApi(11)`, ", TEXT));
-            assertEquals("with getArguments().", convertMarkup("with `getArguments()`.", TEXT));
-            assertEquals("bold", convertMarkup("*bold*", TEXT));
-            assertEquals("Visit http://google.com.", convertMarkup("Visit http://google.com.",
-                    TEXT));
+        // Text formatting
+        assertEquals("@TargetApi(11), ", convertMarkup("`@TargetApi(11)`, ", TEXT));
+        assertEquals("with getArguments().", convertMarkup("with `getArguments()`.", TEXT));
+        assertEquals("bold", convertMarkup("*bold*", TEXT));
+        assertEquals("Visit http://google.com.", convertMarkup("Visit http://google.com.",
+                TEXT));
 
-            // Corners (match at the beginning and end)
-            assertEquals("<b>bold</b>", convertMarkup("*bold*", HTML));
-            assertEquals("<code>monospace</code>!", convertMarkup("`monospace`!", HTML));
+        // Corners (match at the beginning and end)
+        assertEquals("<b>bold</b>", convertMarkup("*bold*", HTML));
+        assertEquals("<code>monospace</code>!", convertMarkup("`monospace`!", HTML));
 
-            // Not formatting
-            assertEquals("a*b", convertMarkup("a*b", HTML));
-            assertEquals("a* b*", convertMarkup("a* b*", HTML));
-            assertEquals("*a *b", convertMarkup("*a *b", HTML));
-            assertEquals("Prefix is http:// ", convertMarkup("Prefix is http:// ", HTML));
-            assertEquals("", convertMarkup("", HTML));
-            assertEquals("", convertMarkup("", HTML));
-            assertEquals("", convertMarkup("", HTML));
-            assertEquals("", convertMarkup("", HTML));
-            assertEquals("This is * not * bold", convertMarkup("This is * not * bold", HTML));
-            assertEquals("* List item 1<br/>\n* List Item 2",
-                    convertMarkup("* List item 1\n* List Item 2", HTML));
-            assertEquals("myhttp://foo.bar", convertMarkup("myhttp://foo.bar", HTML));
-        }
+        // Not formatting
+        assertEquals("a*b", convertMarkup("a*b", HTML));
+        assertEquals("a* b*", convertMarkup("a* b*", HTML));
+        assertEquals("*a *b", convertMarkup("*a *b", HTML));
+        assertEquals("Prefix is http:// ", convertMarkup("Prefix is http:// ", HTML));
+        assertEquals("", convertMarkup("", HTML));
+        assertEquals("", convertMarkup("", HTML));
+        assertEquals("", convertMarkup("", HTML));
+        assertEquals("", convertMarkup("", HTML));
+        assertEquals("This is * not * bold", convertMarkup("This is * not * bold", HTML));
+        assertEquals("* List item 1<br/>\n* List Item 2",
+                convertMarkup("* List item 1\n* List Item 2", HTML));
+        assertEquals("myhttp://foo.bar", convertMarkup("myhttp://foo.bar", HTML));
+    }
 
     public void testConvertMarkup2() throws Exception {
         // http at the end:
@@ -276,5 +276,11 @@ public class TextFormatTest extends TestCase {
 
     public void testNbsp() throws Exception {
         assertEquals("&nbsp;&nbsp;text", RAW.convertTo("\u00a0\u00A0text", HTML));
+    }
+
+    public void test181820() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=181820
+        // Make sure we handle formatting characters at the end
+        assertEquals("foo bar *", convertMarkup("foo bar *", HTML));
     }
 }
