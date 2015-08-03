@@ -203,7 +203,7 @@ public enum TextFormat {
         int n = text.length();
         for (int i = 0; i < n; i++) {
             char c = text.charAt(i);
-            if ((c == '*' || c == '`' && i < n - 1)) {
+            if ((c == '*' || c == '`') && i < n - 1) {
                 // Scout ahead for range end
                 if (!Character.isLetterOrDigit(prev)
                         && !Character.isWhitespace(text.charAt(i + 1))) {
