@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.assetstudiolib.vectordrawable;
+package com.android.ide.common.vectordrawable;
 
 import com.android.annotations.NonNull;
 import com.google.common.collect.ImmutableMap;

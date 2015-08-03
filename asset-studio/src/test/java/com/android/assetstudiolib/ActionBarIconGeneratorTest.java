@@ -22,7 +22,7 @@ import com.android.assetstudiolib.ActionBarIconGenerator.Theme;
 import java.io.IOException;
 
 @SuppressWarnings("javadoc")
-public class ActionBarIconGeneratorTest extends GeneratorTest {
+public class ActionBarIconGeneratorTest extends BitmapGeneratorTest {
     private void checkGraphic(String baseName, Theme theme) throws IOException {
         ActionBarOptions options = new ActionBarOptions();
         options.theme = theme;

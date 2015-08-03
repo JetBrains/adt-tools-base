@@ -20,11 +20,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
-import com.android.assetstudiolib.vectordrawable.VdPreview;
 import com.android.ide.common.res2.ResourcePreprocessor;
 import com.android.ide.common.resources.configuration.DensityQualifier;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.VersionQualifier;
+import com.android.ide.common.vectordrawable.VdPreview;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.utils.ILogger;

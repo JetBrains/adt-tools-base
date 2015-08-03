@@ -16,9 +16,10 @@
 
 package com.android.assetstudiolib;
 
-import com.android.assetstudiolib.Util.Effect;
-import com.android.assetstudiolib.Util.FillEffect;
-import com.android.assetstudiolib.Util.ShadowEffect;
+import com.android.ide.common.util.AssetUtil;
+import com.android.ide.common.util.AssetUtil.Effect;
+import com.android.ide.common.util.AssetUtil.FillEffect;
+import com.android.ide.common.util.AssetUtil.ShadowEffect;
 
 import java.awt.Color;
 import java.awt.GradientPaint;
@@ -39,46 +40,21 @@ public class MenuIconGenerator extends GraphicGenerator {
         Rectangle imageSizeHdpi = new Rectangle(0, 0, 48, 48);
         Rectangle targetRectHdpi = new Rectangle(8, 8, 32, 32);
         float scaleFactor = GraphicGenerator.getMdpiScaleFactor(options.density);
-        Rectangle imageRect = Util.scaleRectangle(imageSizeHdpi, scaleFactor);
-        Rectangle targetRect = Util.scaleRectangle(targetRectHdpi, scaleFactor);
+        Rectangle imageRect = AssetUtil.scaleRectangle(imageSizeHdpi, scaleFactor);
+        Rectangle targetRect = AssetUtil.scaleRectangle(targetRectHdpi, scaleFactor);
 
-        BufferedImage outImage = Util.newArgbBufferedImage(imageRect.width, imageRect.height);
+        BufferedImage outImage = AssetUtil.newArgbBufferedImage(imageRect.width, imageRect.height);
         Graphics2D g = (Graphics2D) outImage.getGraphics();
 
-        BufferedImage tempImage = Util.newArgbBufferedImage(
-                imageRect.width, imageRect.height);
+        BufferedImage tempImage = AssetUtil.newArgbBufferedImage(imageRect.width, imageRect.height);
         Graphics2D g2 = (Graphics2D) tempImage.getGraphics();
-        Util.drawCenterInside(g2, options.sourceImage, targetRect);
+        AssetUtil.drawCenterInside(g2, options.sourceImage, targetRect);
 
-        Util.drawEffects(g, tempImage, 0, 0, new Effect[] {
-                new FillEffect(
-                        new GradientPaint(
-                                0, 0,
-                                new Color(0xa3a3a3),
-                                0, imageRect.height,
-                                new Color(0x787878))),
-                new ShadowEffect(
-                        0,
-                        2 * scaleFactor,
-                        2 * scaleFactor,
-                        Color.BLACK,
-                        0.2,
-                        true),
-                new ShadowEffect(
-                        0,
-                        1,
-                        0,
-                        Color.BLACK,
-                        0.35,
-                        true),
-                new ShadowEffect(
-                        0,
-                        -1,
-                        0,
-                        Color.WHITE,
-                        0.35,
-                        true),
-        });
+        AssetUtil.drawEffects(g, tempImage, 0, 0, new Effect[]{new FillEffect(
+          new GradientPaint(0, 0, new Color(0xa3a3a3), 0, imageRect.height, new Color(0x787878))),
+          new ShadowEffect(0, 2 * scaleFactor, 2 * scaleFactor, Color.BLACK, 0.2, true),
+          new ShadowEffect(0, 1, 0, Color.BLACK, 0.35, true),
+          new ShadowEffect(0, -1, 0, Color.WHITE, 0.35, true),});
 
         g.dispose();
         g2.dispose();

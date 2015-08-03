@@ -14,47 +14,55 @@
  * limitations under the License.
  */
 
-package com.android.assetstudiolib;
+package com.android.ide.common.vectordrawable;
 
-import com.android.assetstudiolib.vectordrawable.Svg2Vector;
-import com.android.assetstudiolib.vectordrawable.VdPreview;
+import com.android.ide.common.util.GeneratorTest;
+import com.android.testutils.TestUtils;
+import junit.framework.TestCase;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.URL;
 
 @SuppressWarnings("javadoc")
 public class VectorDrawbleGeneratorTest extends GeneratorTest {
+    private static final String TEST_DATA_REL_PATH =
+      "tools/base/sdk-common/src/test/resources/testData/vectordrawable";
+
+    @Override
+    protected String getTestDataRelPath() {
+        return TEST_DATA_REL_PATH;
+    }
+
     private void checkVectorConversion(String testFileName) throws IOException {
         String imageName = testFileName + ".png";
         String svgName = testFileName + ".svg";
 
         String parentDir =  "vectordrawable" + File.separator;
-        String grandParentDir = "testdata" + File.separator + parentDir;
-        String svgPath = grandParentDir + svgName;
-        URL url = GeneratorTest.class.getResource(svgPath);
+        File parentDirFile = TestUtils.getRoot("vectordrawable");
 
+        File svgFile = new File(parentDirFile, svgName);
         OutputStream outStream = new ByteArrayOutputStream();
         try {
-            Svg2Vector.parseSvgToXml(new File(url.toURI()), outStream);
+            Svg2Vector.parseSvgToXml(svgFile, outStream);
         }
         catch (Exception e) {
-            assertTrue("Failure: Exception in Svg2Vector.parseSvgToXml!", false);
+            TestCase.assertTrue("Failure: Exception in Svg2Vector.parseSvgToXml!", false);
         }
 
         final VdPreview.TargetSize imageTargetSize = VdPreview.TargetSize.createSizeFromWidth(24);
         StringBuilder builder = new StringBuilder();
         BufferedImage image = VdPreview.getPreviewFromVectorXml(imageTargetSize, outStream.toString(), builder);
 
-        String path = grandParentDir + imageName;
-        InputStream is = GeneratorTest.class.getResourceAsStream(path);
+        String pngPath = parentDir + imageName;
+        File pngFile = new File(parentDirFile, imageName);
+        InputStream is = new FileInputStream(pngFile);
         if (is == null) {
             // Generate golden images here.
-            generateGoldenImage(getTargetDir(), image, path, parentDir + imageName);
+            generateGoldenImage(getTargetDir(), image, pngPath, parentDir + imageName);
         } else {
             BufferedImage goldenImage = ImageIO.read(is);
-            assertImageSimilar(path, goldenImage, image, 1.0f);
+            assertImageSimilar(pngPath, goldenImage, image, 1.0f);
         }
     }
 

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.assetstudiolib.vectordrawable;
+package com.android.ide.common.vectordrawable;
 
-import com.android.assetstudiolib.Util;
+import com.android.ide.common.util.AssetUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -60,12 +60,12 @@ public class VdIcon implements Icon, Comparable<VdIcon> {
     public void paintIcon(Component c, Graphics g, int x, int y) {
         // We knew all the icons from Material library are square shape.
         int minSize = Math.min(c.getWidth(), c.getHeight());
-        final BufferedImage image = Util.newArgbBufferedImage(minSize, minSize);
+        final BufferedImage image = AssetUtil.newArgbBufferedImage(minSize, minSize);
         mVdTree.drawIntoImage(image);
 
         // Draw in the center of the component.
         Rectangle rect = new Rectangle(0, 0, c.getWidth(), c.getHeight());
-        Util.drawCenterInside((Graphics2D)g, image, rect);
+        AssetUtil.drawCenterInside((Graphics2D)g, image, rect);
     }
 
     @Override

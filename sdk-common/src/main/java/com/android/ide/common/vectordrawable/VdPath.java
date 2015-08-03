@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.assetstudiolib.vectordrawable;
+package com.android.ide.common.vectordrawable;
 
 import java.awt.geom.Path2D;
 import java.util.Arrays;
