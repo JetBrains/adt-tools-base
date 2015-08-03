@@ -15,9 +15,9 @@
  */
 package com.android.assetstudiolib;
 
-import com.android.assetstudiolib.Util.Effect;
-import com.android.assetstudiolib.Util.FillEffect;
-import com.android.resources.Density;
+import com.android.ide.common.util.AssetUtil;
+import com.android.ide.common.util.AssetUtil.Effect;
+import com.android.ide.common.util.AssetUtil.FillEffect;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -41,28 +41,25 @@ public class ActionBarIconGenerator extends GraphicGenerator {
                 ? new Rectangle(0, 0, 32, 32)
                 : new Rectangle(4, 4, 24, 24);
         final float scaleFactor = GraphicGenerator.getMdpiScaleFactor(options.density);
-        Rectangle imageRect = Util.scaleRectangle(iconSizeMdpi, scaleFactor);
-        Rectangle targetRect = Util.scaleRectangle(targetRectMdpi, scaleFactor);
-        BufferedImage outImage = Util.newArgbBufferedImage(imageRect.width, imageRect.height);
+        Rectangle imageRect = AssetUtil.scaleRectangle(iconSizeMdpi, scaleFactor);
+        Rectangle targetRect = AssetUtil.scaleRectangle(targetRectMdpi, scaleFactor);
+        BufferedImage outImage = AssetUtil.newArgbBufferedImage(imageRect.width, imageRect.height);
         Graphics2D g = (Graphics2D) outImage.getGraphics();
 
-        BufferedImage tempImage = Util.newArgbBufferedImage(imageRect.width, imageRect.height);
+        BufferedImage tempImage = AssetUtil.newArgbBufferedImage(imageRect.width, imageRect.height);
         Graphics2D g2 = (Graphics2D)tempImage.getGraphics();
-        Util.drawCenterInside(g2, options.sourceImage, targetRect);
+        AssetUtil.drawCenterInside(g2, options.sourceImage, targetRect);
 
         if (actionBarOptions.theme == Theme.CUSTOM) {
-            Util.drawEffects(g, tempImage, 0, 0, new Effect[] {
-                    new FillEffect(new Color(actionBarOptions.customThemeColor), 0.8),
-            });
+            AssetUtil.drawEffects(g, tempImage, 0, 0, new Effect[]{
+              new FillEffect(new Color(actionBarOptions.customThemeColor), 0.8),});
         } else if (actionBarOptions.theme == Theme.HOLO_LIGHT) {
-            Util.drawEffects(g, tempImage, 0, 0, new Effect[] {
-                    new FillEffect(new Color(0x333333), 0.6),
-            });
+            AssetUtil.drawEffects(g, tempImage, 0, 0,
+                                  new Effect[]{new FillEffect(new Color(0x333333), 0.6),});
         } else {
             assert actionBarOptions.theme == Theme.HOLO_DARK;
-            Util.drawEffects(g, tempImage, 0, 0, new Effect[] {
-                    new FillEffect(new Color(0xFFFFFF), 0.8)
-            });
+            AssetUtil.drawEffects(g, tempImage, 0, 0,
+                                  new Effect[]{new FillEffect(new Color(0xFFFFFF), 0.8)});
         }
 
         g.dispose();

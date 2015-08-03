@@ -17,6 +17,7 @@
 package com.android.assetstudiolib;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.util.AssetUtil;
 import com.android.resources.Density;
 import com.android.utils.Pair;
 
@@ -144,26 +145,26 @@ public class LauncherIconGenerator extends GraphicGenerator {
 
         Rectangle imageRect = IMAGE_SIZE_WEB;
         if (!launcherOptions.isWebGraphic) {
-            imageRect = Util.scaleRectangle(IMAGE_SIZE_MDPI,
-                    GraphicGenerator.getMdpiScaleFactor(launcherOptions.density));
+            imageRect = AssetUtil.scaleRectangle(IMAGE_SIZE_MDPI, GraphicGenerator
+              .getMdpiScaleFactor(launcherOptions.density));
         }
 
         Rectangle targetRect = TARGET_RECTS.get(
                 Pair.of(launcherOptions.shape, launcherOptions.density));
         if (targetRect == null) {
             // Scale up from MDPI if no density-specific target rectangle is defined.
-            targetRect = Util.scaleRectangle(
-                    TARGET_RECTS.get(Pair.of(launcherOptions.shape, Density.MEDIUM)),
-                    GraphicGenerator.getMdpiScaleFactor(launcherOptions.density));
+            targetRect = AssetUtil
+              .scaleRectangle(TARGET_RECTS.get(Pair.of(launcherOptions.shape, Density.MEDIUM)),
+                              GraphicGenerator.getMdpiScaleFactor(launcherOptions.density));
         }
 
-        BufferedImage outImage = Util.newArgbBufferedImage(imageRect.width, imageRect.height);
+        BufferedImage outImage = AssetUtil.newArgbBufferedImage(imageRect.width, imageRect.height);
         Graphics2D g = (Graphics2D) outImage.getGraphics();
         if (backImage != null) {
             g.drawImage(backImage, 0, 0, null);
         }
 
-        BufferedImage tempImage = Util.newArgbBufferedImage(imageRect.width, imageRect.height);
+        BufferedImage tempImage = AssetUtil.newArgbBufferedImage(imageRect.width, imageRect.height);
         Graphics2D g2 = (Graphics2D) tempImage.getGraphics();
         if (maskImage != null) {
             g2.drawImage(maskImage, 0, 0, null);
@@ -173,9 +174,9 @@ public class LauncherIconGenerator extends GraphicGenerator {
         }
 
         if (launcherOptions.crop) {
-            Util.drawCenterCrop(g2, launcherOptions.sourceImage, targetRect);
+            AssetUtil.drawCenterCrop(g2, launcherOptions.sourceImage, targetRect);
         } else {
-            Util.drawCenterInside(g2, launcherOptions.sourceImage, targetRect);
+            AssetUtil.drawCenterInside(g2, launcherOptions.sourceImage, targetRect);
         }
 
         g.drawImage(tempImage, 0, 0, null);

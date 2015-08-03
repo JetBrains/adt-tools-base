@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.assetstudiolib;
+package com.android.ide.common.util;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
@@ -37,7 +37,7 @@ import java.util.List;
  * A set of utility classes for manipulating {@link BufferedImage} objects and drawing them to
  * {@link Graphics2D} canvases.
  */
-public class Util {
+public class AssetUtil {
     /**
      * Scales the given rectangle by the given scale factor.
      *
@@ -404,7 +404,7 @@ public class Util {
 
     /**
      * An effect to apply in
-     * {@link Util#drawEffects(java.awt.Graphics2D, java.awt.image.BufferedImage, int, int, Util.Effect[])}
+     * {@link AssetUtil#drawEffects(java.awt.Graphics2D, java.awt.image.BufferedImage, int, int, AssetUtil.Effect[])}
      */
     public abstract static class Effect {
     }

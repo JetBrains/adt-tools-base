@@ -14,7 +14,6 @@ dependencies {
     compile project(':base:common')
     compile project(':base:manifest-merger')
     compile project(':base:ddmlib')
-    compile project(':base:asset-studio')
 
     compile project(':base:jack:jack-api')
     compile project(':base:jack:jill-api')

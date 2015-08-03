@@ -156,7 +156,7 @@ public class RenderSecurityManagerTest extends TestCase {
         try {
             manager.setActive(true, myCredential);
 
-            System.loadLibrary("fontmanager");
+            System.loadLibrary("jsound");
         } catch (UnsatisfiedLinkError e) {
             // pass - library may not be present on all JDKs
         } finally {
