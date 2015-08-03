@@ -636,7 +636,11 @@ public class ManifestDetectorTest extends AbstractCheckTest {
     public void testMissingBackupInTarget23() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
         assertEquals(""
-                + "AndroidManifest.xml:5: Warning: Should explicitly set android:fullBackupContent to true or false to opt-in to or out of full app data back-up and restore, or alternatively to an @xml resource which specifies which files to backup [AllowBackup]\n"
+                + "AndroidManifest.xml:5: Warning: On SDK version 23 and up, your app data will "
+                + "be automatically backed up and restored on app install. Consider "
+                + "adding the attribute android:fullBackupContent to specify an @xml "
+                + "resource which configures which files to backup. More info: "
+                + "https://developer.android.com/preview/backup/index.html [AllowBackup]\n"
                 + "    <application\n"
                 + "    ^\n"
                 + "0 errors, 1 warnings\n",
@@ -647,6 +651,25 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                                 + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
                                 + "    package=\"com.example.helloworld\" >\n"
                                 + "    <uses-sdk android:targetSdkVersion=\"23\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    public void testMissingBackupInPreTarget23() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"21\" />"
                                 + "\n"
                                 + "    <application\n"
                                 + "        android:label=\"@string/app_name\"\n"
@@ -675,13 +698,36 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                                 + "</manifest>\n")));
     }
 
-    public void testMissingBackupWithGcmPreTarget23() throws Exception {
+    public void testMissingBackupWithoutGcmPostTarget23() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
         assertEquals(""
-                + "AndroidManifest.xml:5: Warning: Should explicitly set android:fullBackupContent to avoid backing up the GCM device specific regId. [AllowBackup]\n"
+                + "AndroidManifest.xml:5: Warning: On SDK version 23 and up, your app "
+                + "data will be automatically backed up and restored on app install. "
+                + "Consider adding the attribute android:fullBackupContent to specify "
+                + "an @xml resource which configures which files to backup. "
+                + "More info: https://developer.android.com/preview/backup/index.html [AllowBackup]\n"
                 + "    <application\n"
                 + "    ^\n"
                 + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"23\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    public void testMissingBackupWithGcmPreTarget23() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals("No warnings.",
 
                 lintProject(
                         xml("AndroidManifest.xml", ""
@@ -692,6 +738,72 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                                 + "\n"
                                 + "    <application\n"
                                 + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >"
+                                + "        <receiver\n"
+                                + "            android:name=\".GcmBroadcastReceiver\"\n"
+                                + "            android:permission=\"com.google.android.c2dm.permission.SEND\" >\n"
+                                + "            <intent-filter>\n"
+                                + "                <action android:name=\"com.google.android.c2dm.intent.RECEIVE\" />\n"
+                                + "                <category android:name=\"com.example.gcm\" />\n"
+                                + "            </intent-filter>\n"
+                                + "        </receiver>\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    public void testMissingBackupWithGcmPostTarget23() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals(""
+                + "AndroidManifest.xml:5: Warning: On SDK version 23 and up, your app "
+                + "data will be automatically backed up, and restored on app install. "
+                + "Your GCM regid will not work across restores, so you must ensure that "
+                + "it is excluded from the back-up set. Use the attribute "
+                + "android:fullBackupContent to specify an @xml resource which "
+                + "configures which files to backup. More info: "
+                + "https://developer.android.com/preview/backup/index.html [AllowBackup]\n"
+                + "    <application\n"
+                + "    ^\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"23\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >"
+                                + "        <receiver\n"
+                                + "            android:name=\".GcmBroadcastReceiver\"\n"
+                                + "            android:permission=\"com.google.android.c2dm.permission.SEND\" >\n"
+                                + "            <intent-filter>\n"
+                                + "                <action android:name=\"com.google.android.c2dm.intent.RECEIVE\" />\n"
+                                + "                <category android:name=\"com.example.gcm\" />\n"
+                                + "            </intent-filter>\n"
+                                + "        </receiver>\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    public void testNoMissingFullBackupWithDoNotAllowBackup() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=181805
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"21\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:allowBackup=\"false\"\n"
                                 + "        android:theme=\"@style/AppTheme\" >"
                                 + "        <receiver\n"
                                 + "            android:name=\".GcmBroadcastReceiver\"\n"
