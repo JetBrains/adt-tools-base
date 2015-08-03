@@ -18,10 +18,11 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.CLASS_VIEW;
 import static com.android.SdkConstants.SUPPORT_ANNOTATIONS_PREFIX;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.filterRelevantAnnotations;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
@@ -160,17 +161,15 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
         ResolvedMethod directSuper = method.getSuperMethod();
         ResolvedMethod superMethod = directSuper;
         while (superMethod != null) {
-            Iterable<JavaParser.ResolvedAnnotation> annotations = superMethod.getAnnotations();
-            for (JavaParser.ResolvedAnnotation annotation : annotations) {
-                annotation = SupportAnnotationDetector.getRelevantAnnotation(annotation);
-                if (annotation != null) {
-                    String signature = annotation.getSignature();
-                    if (CALL_SUPER_ANNOTATION.equals(signature)) {
-                        return directSuper;
-                    } else if (signature.endsWith(".OverrideMustInvoke")) {
-                        // Handle findbugs annotation on the fly too
-                        return directSuper;
-                    }
+            Iterable<ResolvedAnnotation> annotations = superMethod.getAnnotations();
+            annotations = filterRelevantAnnotations(annotations);
+            for (ResolvedAnnotation annotation : annotations) {
+                String signature = annotation.getSignature();
+                if (CALL_SUPER_ANNOTATION.equals(signature)) {
+                    return directSuper;
+                } else if (signature.endsWith(".OverrideMustInvoke")) {
+                    // Handle findbugs annotation on the fly too
+                    return directSuper;
                 }
             }
             superMethod = superMethod.getSuperMethod();

@@ -143,7 +143,7 @@ public class RangeTest {
 
     public void testNegative() {
         printBetween(-7); // ERROR
-        printAtLeastExclusive(-10.0); // ERROR
+        printAtLeastExclusive(-10.0f); // ERROR
     }
 
     public static final int MINIMUM = -1;
