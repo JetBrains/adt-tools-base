@@ -27,8 +27,6 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
-import com.android.ide.common.util.GeneratorTest;
-
 /**
  * Shared test infrastructure for bitmap generator
  */
