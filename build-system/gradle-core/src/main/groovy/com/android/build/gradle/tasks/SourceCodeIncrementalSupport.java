@@ -117,17 +117,23 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
             classFileReader = new FileInputStream(inputFile);
             ClassReader classReader = new ClassReader(classFileReader);
             ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
-            IncrementalChangeVisitor visitor = new IncrementalChangeVisitor(classWriter);
-            classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
-
+            String name = inputFile.getName()
+                    .substring(0, inputFile.getName().length() - ".class".length())
+                    + "ISSupport.class";
+            if (isRuntimeLibraryClass(inputFile)) {
+                name = inputFile.getName();
+                System.out.println("Skipping runtime library class " + inputFile);
+                classReader.accept(classWriter, ClassReader.EXPAND_FRAMES);
+            } else {
+                IncrementalChangeVisitor visitor = new IncrementalChangeVisitor(classWriter);
+                classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
+            }
             // write the modified class.
             String relativeFilePath = inputFile.getAbsolutePath().substring(
                     getBinaryFolder().getAbsolutePath().length());
             File outputDirectory = new File(getPatchedFolder(), relativeFilePath).getParentFile();
             outputDirectory.mkdirs();
-            File outFile = new File(outputDirectory,
-                    inputFile.getName().substring(0, inputFile.getName().length() - ".class".length())
-                        + "ISSupport.class");
+            File outFile = new File(outputDirectory, name);
             FileOutputStream stream = new FileOutputStream(outFile.getAbsolutePath());
             try {
                 stream.write(classWriter.toByteArray());
@@ -165,8 +171,13 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
             classFileReader = new FileInputStream(inputFile);
             ClassReader classReader = new ClassReader(classFileReader);
             ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
-            IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(classWriter);
-            classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
+            if (isRuntimeLibraryClass(inputFile)) {
+                System.out.println("Skipping runtime library class " + inputFile);
+                classReader.accept(classWriter, ClassReader.EXPAND_FRAMES);
+            } else {
+                IncrementalChangeVisitor visitor = new IncrementalChangeVisitor(classWriter);
+                classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
+            }
 
             // write the modified class.
             String relativeFilePath = inputFile.getAbsolutePath().substring(
@@ -192,6 +203,29 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
                 }
             }
         }
+    }
+
+    // HACKY implementation used to blacklist runtime library classes from BCI.
+    // Longer term we should have just a single runtime package, and we should be performing
+    // this check inside the bytecode visitor such that we can accurately check the
+    // class owner to filter by package rather than doing file path checks like this.
+    private static boolean isRuntimeLibraryClass(File inputFile) {
+        File parentFile = inputFile.getParentFile();
+        if (parentFile != null && parentFile.getName().equals("runtime")) {
+            parentFile = parentFile.getParentFile();
+            if (parentFile != null && parentFile.getName().equals("fd")) {
+                // com.android.tools.fd.runtime
+                return true;
+            }
+        } else if (parentFile != null && parentFile.getName().equals("incremental")) {
+            parentFile = parentFile.getParentFile();
+            if (parentFile != null && parentFile.getName().equals("internal")) {
+                // com.android.build.gradle.internal.incremental
+                return true;
+            }
+
+        }
+        return false;
     }
 
     public static class ConfigAction implements TaskConfigAction<SourceCodeIncrementalSupport> {

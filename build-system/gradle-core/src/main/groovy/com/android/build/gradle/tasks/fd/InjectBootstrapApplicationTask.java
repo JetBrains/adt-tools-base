@@ -98,7 +98,9 @@ public class InjectBootstrapApplicationTask extends BaseTask {
     public void rewrite() throws IOException {
         File outputDir = getOutputDir();
         extractLibrary(outputDir);
-        postProcessManifest(getManifestFile(), outputDir);
+        if (getManifestFile() != null) {
+            postProcessManifest(getManifestFile(), outputDir);
+        }
     }
 
     public static class ConfigAction implements TaskConfigAction<InjectBootstrapApplicationTask> {
@@ -128,8 +130,10 @@ public class InjectBootstrapApplicationTask extends BaseTask {
             File dest = variantData.getScope().getJavaOutputDir();
             task.setDestDir(dest);
             BaseVariantOutputData outputData = scope.getVariantOutputData();
-            File manifest = outputData.manifestProcessorTask.getManifestOutputFile();
-            task.setManifestFile(manifest);
+            if (outputData.manifestProcessorTask != null) {
+                File manifest = outputData.manifestProcessorTask.getManifestOutputFile();
+                task.setManifestFile(manifest);
+            }
         }
     }
 
