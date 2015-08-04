@@ -59,7 +59,7 @@
   * DSL: new code block for configuring the test tasks:
     android {
       testOptions {
-        unitTest.all {
+        unitTests.all {
           jvmArgs '-XX:MaxPermSize=256m' // Or any other gradle option.
         }
       }
