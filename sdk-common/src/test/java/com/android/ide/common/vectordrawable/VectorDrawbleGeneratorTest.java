@@ -54,15 +54,15 @@ public class VectorDrawbleGeneratorTest extends GeneratorTest {
         StringBuilder builder = new StringBuilder();
         BufferedImage image = VdPreview.getPreviewFromVectorXml(imageTargetSize, outStream.toString(), builder);
 
-        String pngPath = parentDir + imageName;
+        String imageNameWithParent = parentDir + imageName;
         File pngFile = new File(parentDirFile, imageName);
-        InputStream is = new FileInputStream(pngFile);
-        if (is == null) {
+        if (!pngFile.exists()) {
             // Generate golden images here.
-            generateGoldenImage(getTargetDir(), image, pngPath, parentDir + imageName);
+            generateGoldenImage(getTargetDir(), image, imageNameWithParent, imageName);
         } else {
+            InputStream is = new FileInputStream(pngFile);
             BufferedImage goldenImage = ImageIO.read(is);
-            assertImageSimilar(pngPath, goldenImage, image, 1.0f);
+            assertImageSimilar(imageNameWithParent, goldenImage, image, 1.0f);
         }
     }
 
