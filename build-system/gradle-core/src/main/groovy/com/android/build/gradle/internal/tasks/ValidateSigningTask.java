@@ -16,7 +16,8 @@
 
 package com.android.build.gradle.internal.tasks;
 
-import com.android.build.gradle.internal.LoggerWrapper;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.builder.model.SigningConfig;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
@@ -67,18 +68,32 @@ public class ValidateSigningTask extends BaseTask {
 
     @TaskAction
     public void validate() throws AndroidLocation.AndroidLocationException, KeytoolException {
-
         File storeFile = signingConfig.getStoreFile();
-        if (storeFile != null && !storeFile.exists()) {
+        if (storeFile == null) {
+            throw new IllegalArgumentException(
+                    "Keystore file not set for signing config " + signingConfig.getName());
+        }
+        if (!storeFile.exists()) {
             if (KeystoreHelper.defaultDebugKeystoreLocation().equals(storeFile.getAbsolutePath())) {
-                getLogger().info("Creating default debug keystore at {}",
+                checkState(signingConfig.isSigningReady(), "Debug signing config not ready.");
+
+                getLogger().info(
+                        "Creating default debug keystore at {}",
                         storeFile.getAbsolutePath());
+
+                //noinspection ConstantConditions - isSigningReady() called above
                 if (!KeystoreHelper.createDebugStore(
                         signingConfig.getStoreType(), signingConfig.getStoreFile(),
                         signingConfig.getStorePassword(), signingConfig.getKeyPassword(),
                         signingConfig.getKeyAlias(), getILogger())) {
                     throw new BuildException("Unable to recreate missing debug keystore.", null);
                 }
+            } else {
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Keystore file %s not found for signing config '%s'.",
+                                storeFile.getAbsolutePath(),
+                                signingConfig.getName()));
             }
         }
     }

@@ -29,7 +29,6 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
 import com.android.builder.compiling.DependencyFileProcessor;
 import com.android.builder.core.BuildToolsServiceLoader.BuildToolServiceLoader;
 import com.android.builder.dependency.ManifestDependency;
@@ -58,7 +57,6 @@ import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.signing.SignedJarBuilder;
 import com.android.ide.common.internal.AaptCruncher;
-import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.process.CachedProcessOutputHandler;
@@ -1752,11 +1750,11 @@ public class AndroidBuilder {
             throws DuplicateFileException, FileNotFoundException,
             KeytoolException, PackagerException, SigningException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
-        checkNotNull(   outApkLocation, "outApkLocation cannot be null.");
+        checkNotNull(outApkLocation, "outApkLocation cannot be null.");
 
         CertificateInfo certificateInfo = null;
         if (signingConfig != null && signingConfig.isSigningReady()) {
-            //noinspection ConstantConditions
+            //noinspection ConstantConditions - isSigningReady() called above.
             certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
                     signingConfig.getStoreFile(), signingConfig.getStorePassword(),
                     signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
@@ -1823,6 +1821,7 @@ public class AndroidBuilder {
 
         CertificateInfo certificateInfo = null;
         if (signingConfig != null && signingConfig.isSigningReady()) {
+            //noinspection ConstantConditions - isSigningReady() called above.
             certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
                     signingConfig.getStoreFile(), signingConfig.getStorePassword(),
                     signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
