@@ -33,6 +33,9 @@ public class AndroidGradleOptions {
     private static final String PROPERTY_TEST_RUNNER_ARGS =
             "android.testInstrumentationRunnerArguments.";
 
+    private static final String PROPERTY_THREAD_POOL_SIZE = "android.threadPoolSize";
+    private static final String PROPERTY_THREAD_POOL_SIZE_OLD = "com.android.build.threadPoolSize";
+
     // TODO: Drop the "com." prefix, for consistency.
     private static final String PROPERTY_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String PROPERTY_BENCHMARK_MODE = "com.android.benchmark.mode";
@@ -80,6 +83,16 @@ public class AndroidGradleOptions {
     }
 
     @Nullable
+    public static Integer getThreadPoolSize(@NonNull Project project) {
+        Integer size = getInteger(project, PROPERTY_THREAD_POOL_SIZE);
+        if (size == null) {
+            size = getInteger(project, PROPERTY_THREAD_POOL_SIZE_OLD);
+        }
+
+        return size;
+    }
+
+    @Nullable
     public static SigningOptions getSigningOptions(@NonNull Project project) {
         String signingStoreFile =
                 getString(project, AndroidProject.PROPERTY_SIGNING_STORE_FILE);
@@ -111,6 +124,19 @@ public class AndroidGradleOptions {
     @Nullable
     private static String getString(@NonNull Project project, String propertyName) {
         return (String) project.getProperties().get(propertyName);
+    }
+
+    @Nullable
+    private static Integer getInteger(@NonNull Project project, String propertyName) {
+        if (project.hasProperty(propertyName)) {
+            try {
+                return Integer.parseInt(project.getProperties().get(propertyName).toString());
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("Property " + propertyName + " needs to be an integer.");
+            }
+        }
+
+        return null;
     }
 
     private static boolean getBoolean(
