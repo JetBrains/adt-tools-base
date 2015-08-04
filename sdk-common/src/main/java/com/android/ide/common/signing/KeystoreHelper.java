@@ -192,14 +192,11 @@ public final class KeystoreHelper {
     /**
      * Returns the CertificateInfo for the given signing configuration.
      *
-     * Returns null if the key could not be found. If the passwords are wrong,
-     * it throws an exception
-     *
-     * @param signingConfig the signing configuration
      * @return the certificate info if it could be loaded.
-     * @throws KeytoolException
-     * @throws FileNotFoundException
+     * @throws KeytoolException If the password is wrong.
+     * @throws FileNotFoundException If the store file cannot be found.
      */
+    @NonNull
     public static CertificateInfo getCertificateInfo(@Nullable String storeType, @NonNull File storeFile,
                                                      @NonNull String storePassword, @NonNull String keyPassword,
                                                      @NonNull String keyAlias)
@@ -210,19 +207,24 @@ public final class KeystoreHelper {
                             storeType : KeyStore.getDefaultType());
 
             FileInputStream fis = new FileInputStream(storeFile);
-            //noinspection ConstantConditions
             keyStore.load(fis, storePassword.toCharArray());
             fis.close();
 
-            //noinspection ConstantConditions
             char[] keyPasswordArray = keyPassword.toCharArray();
             PrivateKeyEntry entry = (KeyStore.PrivateKeyEntry)keyStore.getEntry(
                     keyAlias, new KeyStore.PasswordProtection(keyPasswordArray));
 
-            if (entry != null) {
-                return new CertificateInfo(entry.getPrivateKey(),
-                        (X509Certificate) entry.getCertificate());
+            if (entry == null) {
+                throw new KeytoolException(
+                        String.format(
+                                "No key with alias '%1$s' found in keystore %2$s",
+                                keyAlias,
+                                storeFile.getAbsolutePath()));
             }
+
+            return new CertificateInfo(
+                    entry.getPrivateKey(),
+                    (X509Certificate) entry.getCertificate());
         } catch (FileNotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -231,7 +233,5 @@ public final class KeystoreHelper {
                             keyAlias, storeFile, e.getMessage()),
                     e);
         }
-
-        return null;
     }
 }
