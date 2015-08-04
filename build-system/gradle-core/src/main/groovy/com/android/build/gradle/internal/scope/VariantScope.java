@@ -326,4 +326,8 @@ public interface VariantScope {
 
     void setObfuscationTask(
             AndroidTask<? extends Task> obfuscationTask);
+
+    AndroidTask<?> getCoverageReportTask();
+
+    void setCoverageReportTask(AndroidTask<?> coverageReportTask);
 }
