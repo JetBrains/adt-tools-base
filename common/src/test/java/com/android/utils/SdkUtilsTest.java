@@ -248,10 +248,10 @@ public class SdkUtilsTest extends TestCase {
         String uDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "/C:" : "";
 
         assertEquals(
-                "file:" + uDrive + "/tmp/foo/bar",
+                "file://" + uDrive + "/tmp/foo/bar",
                 fileToUrlString(new File(pDrive + "/tmp/foo/bar")));
         assertEquals(
-                "file:" + uDrive + "/tmp/$&+,:;=%3F@/foo%20bar%25",
+                "file://" + uDrive + "/tmp/$&+,:;=%3F@/foo%20bar%25",
                 fileToUrlString(new File(pDrive + "/tmp/$&+,:;=?@/foo bar%")));
     }
 
@@ -283,13 +283,13 @@ public class SdkUtilsTest extends TestCase {
         String uDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "/C:" : "";
 
         assertEquals(
-                "From: file:" + uDrive + "/tmp/foo",
+                "From: file://" + uDrive + "/tmp/foo",
                 createPathComment(new File(pDrive + "/tmp/foo"), false));
         assertEquals(
-                " From: file:" + uDrive + "/tmp/foo ",
+                " From: file://" + uDrive + "/tmp/foo ",
                 createPathComment(new File(pDrive + "/tmp/foo"), true));
         assertEquals(
-                "From: file:" + uDrive + "/tmp-/%2D%2D/a%2D%2Da/foo",
+                "From: file://" + uDrive + "/tmp-/%2D%2D/a%2D%2Da/foo",
                 createPathComment(new File(pDrive + "/tmp-/--/a--a/foo"), false));
 
         String path = "/tmp/foo";
@@ -332,7 +332,7 @@ public class SdkUtilsTest extends TestCase {
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<root>"
-                + "<!-- From: file:" + uDrive + "/My%20Program%20Files/%2D%2D/Q&A/X%3CY/foo -->"
+                + "<!-- From: file://" + uDrive + "/My%20Program%20Files/%2D%2D/Q&A/X%3CY/foo -->"
                 + "</root>",
                 xml);
         int index = xml.indexOf(FILENAME_PREFIX);

@@ -22,6 +22,7 @@ import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Position;
+import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -166,8 +167,8 @@ public class XmlReporter extends Reporter {
 
         if (!mClient.getFlags().isQuiet()
                 && (mDisplayEmpty || errorCount > 0 || warningCount > 0)) {
-            String path = mOutput.getAbsolutePath();
-            System.out.println(String.format("Wrote XML report to %1$s", path));
+            String url = SdkUtils.fileToUrlString(mOutput.getAbsoluteFile());
+            System.out.println(String.format("Wrote XML report to %1$s", url));
         }
     }
 

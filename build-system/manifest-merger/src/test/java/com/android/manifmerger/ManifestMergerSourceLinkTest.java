@@ -172,7 +172,7 @@ public class ManifestMergerSourceLinkTest extends TestCase {
         String actual = MergerXmlUtils.printXmlString(mainDoc, mergerLog);
         assertEquals("Encountered unexpected errors/warnings", "", log.toString());
         String expected = ""
-            + "<!-- From: file:/path/to/main/doc -->\n"
+            + "<!-- From: file:///path/to/main/doc -->\n"
             + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\" android:versionCode=\"100\" android:versionName=\"1.0.0\" package=\"com.example.app1\">\n"
             + "\n"
             + "    <uses-sdk android:minSdkVersion=\"3\" android:targetSdkVersion=\"11\"/>\n"
@@ -186,7 +186,7 @@ public class ManifestMergerSourceLinkTest extends TestCase {
             + "        <meta-data android:name=\"name.for.yet.another.api.key\" android:value=\"your_yet_another_api_key\"/>\n"
             + "\n"
             + "        <!-- Merged elements will be appended here at the end. -->\n"
-            + "        <!-- From: file:/path/to/library1 -->\n"
+            + "        <!-- From: file:///path/to/library1 -->\n"
             + "        <activity android:name=\"com.example.app1.Library1\"/>\n"
             + "\n"
             + "        <!-- The library maps API key gets merged in the main application. -->\n"
@@ -195,7 +195,7 @@ public class ManifestMergerSourceLinkTest extends TestCase {
             + "        <!-- The library backup key gets merged in the main application. -->\n"
             + "        <meta-data android:name=\"name.for.backup.api.key\" android:value=\"your_backup_api_key\"/>\n"
             + "\n"
-            + "        <!-- From: file:/path/to/library2 -->\n"
+            + "        <!-- From: file:///path/to/library2 -->\n"
             + "        <!-- This is a dup of the 2nd activity in lib2 -->\n"
             + "        <activity android:icon=\"@drawable/lib_activity_icon\" android:label=\"@string/lib_activity_name\" android:name=\"com.example.LibActivity2\" android:theme=\"@style/Lib.Theme\">\n"
             + "            <intent-filter>\n"
@@ -216,14 +216,14 @@ public class ManifestMergerSourceLinkTest extends TestCase {
             + "                <category android:name=\"android.intent.category.LAUNCHER\"/>\n"
             + "            </intent-filter>\n"
             + "        </activity-alias>\n"
-            + "        <!-- From: file:/path/to/library3 -->\n"
+            + "        <!-- From: file:///path/to/library3 -->\n"
             + "        <activity android:icon=\"@drawable/lib_activity_icon3\" android:label=\"@string/lib_activity_name3\" android:name=\"com.example.LibActivity3\" android:theme=\"@style/Lib.Theme\">\n"
             + "            <intent-filter>\n"
             + "                <action android:name=\"android.intent.action.MAIN\"/>\n"
             + "                <category android:name=\"android.intent.category.LAUNCHER\"/>\n"
             + "            </intent-filter>\n"
             + "        </activity>\n"
-            + "        <!-- From: file:/path/to/main/doc -->\n"
+            + "        <!-- From: file:///path/to/main/doc -->\n"
             + "        \n"
             + "    </application>\n"
             + "\n"
@@ -232,7 +232,7 @@ public class ManifestMergerSourceLinkTest extends TestCase {
         if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS) {
             // Adjust mock paths & EOLs for windows
             actual = actual.replace("\r\n", "\n");
-            expected = expected.replace("file:/path/to/", "file:/C:/path/to/");
+            expected = expected.replace("file:///path/to/", "file:///C:/path/to/");
         }
 
         try {
