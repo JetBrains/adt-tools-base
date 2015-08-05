@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.utils.FileUtils
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
@@ -310,7 +311,10 @@ class VectorDrawableTest {
     }
 
     private void checkIncrementalBuild() {
-        // Do nothing for now, the incremental marker was removed.
-        // TODO: remove the method or re-enable incremental markers.
+        def marker = FileUtils.join(
+                project.testDir, "build", "intermediates", "incremental", "mergeResources",
+                "debug", IncrementalTask.MARKER_NAME)
+
+        assertThat(marker).exists()
     }
 }

@@ -38,6 +38,7 @@ def testEnvironment = [
     CUSTOM_JACK: System.env.CUSTOM_JACK,
     DEBUG_INNER_TEST: System.env.DEBUG_INNER_TEST,
     RECORD_SPANS: System.env.RECORD_SPANS,
+    INTEGRATION_TEST: "true",
 ].findAll { it.value != null }
 
 // These tasks will not depend on publishLocal, so they will run integration

@@ -18,6 +18,7 @@ package com.android.build.gradle.tasks;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -128,6 +129,10 @@ public class MergeResources extends IncrementalTask {
 
     @Override
     protected void doFullTaskAction() throws IOException {
+        if (AndroidGradleOptions.isIntegrationTest()) {
+            clearIncrementalMarker();
+        }
+
         // this is full run, clean the previous output
         File destinationDir = getOutputDir();
         FileUtils.emptyFolder(destinationDir);
@@ -163,6 +168,10 @@ public class MergeResources extends IncrementalTask {
 
     @Override
     protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
+        if (AndroidGradleOptions.isIntegrationTest()) {
+            setIncrementalMarker();
+        }
+
         // create a merger and load the known state.
         ResourceMerger merger = new ResourceMerger();
         try {
