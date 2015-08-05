@@ -205,8 +205,7 @@ public class InjectBootstrapApplicationTask extends BaseTask {
     }
 
     static void extractLibrary(@NonNull File destDir) throws IOException {
-        //InputStream stream = InjectBootstrapApplicationTask.class.getResourceAsStream("/fd-runtime.jar");
-        InputStream stream = new FileInputStream(new File("/Users/jedo/src/int.1.4.dev/tools/base/build-system/gradle-core/src/main/resources/fd-runtime.jar"));
+        InputStream stream = InjectBootstrapApplicationTask.class.getResourceAsStream("/fd-runtime.jar");
         if (stream == null) {
             System.err.println("Couldn't find embedded Fast Deployment runtime library");
             return;
