@@ -53,9 +53,11 @@ import static com.android.utils.SdkUtils.getResourceFieldName;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkVersionInfo;
+import com.android.sdklib.repository.FullRevision;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintDriver;
@@ -549,8 +551,10 @@ public class ApiDetector extends ResourceXmlDetector
         ResourceFolderType folderType = context.getResourceFolderType();
         if (folderType != ResourceFolderType.LAYOUT) {
             if (folderType == ResourceFolderType.DRAWABLE) {
+                if (!projectSupportsVectorDrawables(context)) {
+                    checkElement(context, element, TAG_VECTOR, 21, UNSUPPORTED);
+                }
                 checkElement(context, element, TAG_RIPPLE, 21, UNSUPPORTED);
-                checkElement(context, element, TAG_VECTOR, 21, UNSUPPORTED);
                 checkElement(context, element, TAG_ANIMATED_SELECTOR, 21, UNSUPPORTED);
                 checkElement(context, element, TAG_ANIMATED_VECTOR, 21, UNSUPPORTED);
             }
@@ -1339,6 +1343,22 @@ public class ApiDetector extends ResourceXmlDetector
         }
 
         return -1;
+    }
+
+    /**
+     * Checks if vector drawables are supported by the build system, in which case there is no min API requirement.
+     *
+     * <p>This is the case with Android gradle plugin 1.4+.
+     */
+    private static boolean projectSupportsVectorDrawables(XmlContext context) {
+        AndroidProject gradleModel = context.getProject().getGradleProjectModel();
+        if (gradleModel != null) {
+            FullRevision gradleModelVersion = FullRevision.parseRevision(gradleModel.getModelVersion());
+            if (gradleModelVersion.compareTo(FullRevision.parseRevision("1.4"), FullRevision.PreviewComparison.IGNORE) >= 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void report(final ClassContext context, String message, AbstractInsnNode node,

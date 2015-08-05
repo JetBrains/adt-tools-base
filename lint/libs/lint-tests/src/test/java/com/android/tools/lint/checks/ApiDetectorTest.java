@@ -19,9 +19,13 @@ package com.android.tools.lint.checks;
 import static com.android.tools.lint.checks.ApiDetector.INLINED;
 import static com.android.tools.lint.checks.ApiDetector.UNSUPPORTED;
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -1137,11 +1141,19 @@ public class ApiDetectorTest extends AbstractCheckTest {
 
     public void testVector() throws Exception {
         assertEquals(""
-                + "res/drawable/vector.xml:1: Error: <vector> requires API level 21 (current min is 4) [NewApi]\n"
-                + "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\" >\n"
-                + "^\n"
-                + "1 errors, 0 warnings\n",
+                        + "res/drawable/vector.xml:1: Error: <vector> requires API level 21 (current min is 4) [NewApi]\n"
+                        + "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\" >\n"
+                        + "^\n"
+                        + "1 errors, 0 warnings\n",
 
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "apicheck/vector.xml=>res/drawable/vector.xml"
+                ));
+    }
+
+    public void testVector_withGradleSupport() throws Exception {
+        assertEquals("No warnings.",
                 lintProject(
                         "apicheck/minsdk4.xml=>AndroidManifest.xml",
                         "apicheck/vector.xml=>res/drawable/vector.xml"
@@ -1748,6 +1760,21 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 @Override
                 public File findResource(@NonNull String relativePath) {
                     return null;
+                }
+            };
+        }
+        if (getName().equals("testVector_withGradleSupport")) {
+            return new TestLintClient() {
+                @NonNull
+                @Override
+                protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                    AndroidProject model = mock(AndroidProject.class);
+                    when(model.getModelVersion()).thenReturn("1.4.0-alpha1");
+
+                    Project fromSuper = super.createProject(dir, referenceDir);
+                    Project spy = spy(fromSuper);
+                    when(spy.getGradleProjectModel()).thenReturn(model);
+                    return spy;
                 }
             };
         }
