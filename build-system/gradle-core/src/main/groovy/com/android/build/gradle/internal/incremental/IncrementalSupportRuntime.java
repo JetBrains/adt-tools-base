@@ -32,7 +32,7 @@ public enum IncrementalSupportRuntime {
 
     INSTANCE;
 
-    private final Map<String, Class<?>> patchedClasses = new HashMap<String, Class<?>>();
+    public final Map<String, Class<?>> patchedClasses = new HashMap<String, Class<?>>();
 
     public boolean isPatched(String className) {
         return patchedClasses.containsKey(className);
@@ -42,7 +42,7 @@ public enum IncrementalSupportRuntime {
         return patchedClasses.get(className);
     }
 
-    static IncrementalSupportRuntime get() {
+    public static IncrementalSupportRuntime get() {
         return INSTANCE;
     }
 

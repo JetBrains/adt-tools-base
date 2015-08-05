@@ -21,8 +21,24 @@ package com.android.build.gradle.internal.incremental;
  */
 public class BaseClass {
 
-    void methodA(int a) {
-        System.out.println("BaseClass");
+    public static void load() {
+        System.out.println("1");
+        IncrementalSupportRuntime runtime = IncrementalSupportRuntime.get();
+        ClassLoader loader = BaseClass.class.getClassLoader();
+        System.out.println("loaded runtime " + 2);
+        try {
+            Class<?> aClass = loader.loadClass("foo.bar");
+            runtime.addPatchedClass("foo.bar".replaceAll("\\.", "/"), aClass);
+            System.out.println("patched with " + aClass);
+            aClass = loader.loadClass("bar.foo");
+            runtime.addPatchedClass("bar.foo".replaceAll("\\.", "/"), aClass);
+            System.out.println("patched with " + aClass);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
 
+    void methodA(int a) {
+    }
 }

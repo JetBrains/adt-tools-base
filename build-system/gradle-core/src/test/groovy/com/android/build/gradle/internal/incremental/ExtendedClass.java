@@ -25,8 +25,7 @@ import java.lang.reflect.Method;
 public class ExtendedClass extends BaseClass {
 
     @Override
-    void methodA(int a ) {
-        super.methodA(a);
+    public void methodA(int a ) {
         System.out.println("ExtendedClass");
     }
 

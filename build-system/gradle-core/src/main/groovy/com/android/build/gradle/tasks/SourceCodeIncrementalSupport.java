@@ -22,6 +22,11 @@ import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.UnmodifiableIterator;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
 
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
@@ -33,13 +38,20 @@ import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 import org.gradle.api.tasks.incremental.InputFileDetails;
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Callable;
@@ -87,6 +99,7 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
             processDirectory(getBinaryFolder());
         }
 
+        final ImmutableList.Builder<String> patchFileContents = ImmutableList.builder();
         inputs.outOfDate(new Action<InputFileDetails>() {
             @Override
             public void execute(InputFileDetails inputFileDetails) {
@@ -95,10 +108,12 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
                 if (inputFileDetails.isModified()) {
                     System.out.println("Incremental support change detected "
                             + inputFileDetails.getFile().getAbsolutePath());
-                    createPatchFile(inputFileDetails.getFile());
+                    patchFileContents.add(createPatchFile(inputFileDetails.getFile()));
                 }
             }
         });
+
+        writePatchFileContents(patchFileContents.build());
 
         inputs.removed(new Action<InputFileDetails>() {
             @Override
@@ -111,15 +126,115 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
         });
     }
 
-    private void createPatchFile(File inputFile) {
+    private void writePatchFileContents(ImmutableList<String> patchFileContents) {
+
+        ClassWriter cw = new ClassWriter(0);
+        MethodVisitor mv;
+
+        cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, "com/android/build/Patches", null, "java/lang/Object", null);
+
+        {
+            mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(Opcodes.ALOAD, 0);
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+            mv.visitInsn(Opcodes.RETURN);
+            mv.visitMaxs(1, 1);
+            mv.visitEnd();
+        }
+        {
+            mv = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, "load", "()V", null, null);
+            mv.visitCode();
+            Label l0 = new Label();
+            Label l1 = new Label();
+            Label l2 = new Label();
+            mv.visitTryCatchBlock(l0, l1, l2, "java/lang/ClassNotFoundException");
+            mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+            mv.visitLdcInsn("1");
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
+                    "(Ljava/lang/String;)V", false);
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC,
+                    "com/android/build/gradle/internal/incremental/IncrementalSupportRuntime",
+                    "get",
+                    "()Lcom/android/build/gradle/internal/incremental/IncrementalSupportRuntime;",
+                    false);
+            mv.visitVarInsn(Opcodes.ASTORE, 0);
+            mv.visitLdcInsn(
+                    Type.getType("Lcom/android/build/gradle/internal/incremental/BaseClass;"));
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getClassLoader",
+                    "()Ljava/lang/ClassLoader;", false);
+            mv.visitVarInsn(Opcodes.ASTORE, 1);
+            mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+            mv.visitLdcInsn("loaded runtime " + patchFileContents.size());
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
+                    "(Ljava/lang/String;)V", false);
+            mv.visitLabel(l0);
+            for (String patchFileContent : patchFileContents) {
+                mv.visitVarInsn(Opcodes.ALOAD, 1);
+                mv.visitLdcInsn(patchFileContent + "ISSupport");
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/ClassLoader", "loadClass",
+                        "(Ljava/lang/String;)Ljava/lang/Class;", false);
+                mv.visitVarInsn(Opcodes.ASTORE, 2);
+                mv.visitVarInsn(Opcodes.ALOAD, 0);
+                mv.visitLdcInsn(patchFileContent);
+                mv.visitLdcInsn("\\.");
+                mv.visitLdcInsn("/");
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "replaceAll", "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;", false);
+                mv.visitVarInsn(Opcodes.ALOAD, 2);
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "com/android/build/gradle/internal/incremental/IncrementalSupportRuntime", "addPatchedClass", "(Ljava/lang/String;Ljava/lang/Class;)V", false);
+                mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+                mv.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
+                mv.visitInsn(Opcodes.DUP);
+                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
+                mv.visitLdcInsn("patched with ");
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+                mv.visitVarInsn(Opcodes.ALOAD, 2);
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;", false);
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;", false);
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+            }
+            mv.visitLabel(l1);
+            Label l3 = new Label();
+            mv.visitJumpInsn(Opcodes.GOTO, l3);
+            mv.visitLabel(l2);
+            mv.visitFrame(Opcodes.F_FULL, 2, new Object[] {"com/android/build/gradle/internal/incremental/IncrementalSupportRuntime", "java/lang/ClassLoader"}, 1, new Object[] {"java/lang/ClassNotFoundException"});
+            mv.visitVarInsn(Opcodes.ASTORE, 2);
+            mv.visitVarInsn(Opcodes.ALOAD, 2);
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/ClassNotFoundException", "printStackTrace", "()V", false);
+            mv.visitTypeInsn(Opcodes.NEW, "java/lang/RuntimeException");
+            mv.visitInsn(Opcodes.DUP);
+            mv.visitVarInsn(Opcodes.ALOAD, 2);
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/Throwable;)V", false);
+            mv.visitInsn(Opcodes.ATHROW);
+            mv.visitLabel(l3);
+            mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+            mv.visitInsn(Opcodes.RETURN);
+            mv.visitMaxs(4, 3);
+            mv.visitEnd();
+        }
+
+        cw.visitEnd();
+
+        byte[] classBytes = cw.toByteArray();
+        File outputDir = new File(getPatchedFolder(), "com/android/build");
+        outputDir.mkdirs();
+        try {
+            Files.write(classBytes, new File(outputDir, "Patches.class"));
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String createPatchFile(File inputFile) {
         InputStream classFileReader = null;
         try {
             classFileReader = new FileInputStream(inputFile);
             ClassReader classReader = new ClassReader(classFileReader);
             ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
-            String name = inputFile.getName()
-                    .substring(0, inputFile.getName().length() - ".class".length())
-                    + "ISSupport.class";
+            String rootName = inputFile.getName()
+                    .substring(0, inputFile.getName().length() - ".class".length());
+            String name = rootName + "ISSupport.class";
             if (isRuntimeLibraryClass(inputFile)) {
                 name = inputFile.getName();
                 System.out.println("Skipping runtime library class " + inputFile);
@@ -140,10 +255,14 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
             } finally {
                 stream.close();
             }
+            return relativeFilePath.substring(1,
+                    relativeFilePath.lastIndexOf('/')).replaceAll("/", ".") + "." + rootName;
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            throw new RuntimeException(e);
         } catch (IOException e) {
             e.printStackTrace();
+            throw new RuntimeException(e);
         } finally {
             if (classFileReader != null) {
                 try {
@@ -175,7 +294,7 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
                 System.out.println("Skipping runtime library class " + inputFile);
                 classReader.accept(classWriter, ClassReader.EXPAND_FRAMES);
             } else {
-                IncrementalChangeVisitor visitor = new IncrementalChangeVisitor(classWriter);
+                IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(classWriter);
                 classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
             }
 

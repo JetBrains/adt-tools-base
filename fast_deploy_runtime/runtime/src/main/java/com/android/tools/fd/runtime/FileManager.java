@@ -57,6 +57,9 @@ public class FileManager {
     /** Suffix for classes.dex files */
     public static final String CLASSES_DEX_SUFFIX = ".dex";
 
+    /** Suffix for classes.dex for hotswapping files */
+    public static final String CLASSES_DEX_3_SUFFIX = ".dex.3";
+
     /**
      * The folder where resources and code are located. Within this folder we have two
      * alternatives: "left" and "right". One is in the foreground (in use), one is in the

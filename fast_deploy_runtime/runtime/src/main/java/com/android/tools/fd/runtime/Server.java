@@ -9,11 +9,13 @@ import android.util.Log;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
+import dalvik.system.DexClassLoader;
+
 import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
+import static com.android.tools.fd.runtime.FileManager.CLASSES_DEX_3_SUFFIX;
 import static com.android.tools.fd.runtime.FileManager.CLASSES_DEX_SUFFIX;
 
 /**
@@ -95,6 +97,7 @@ public class Server {
         @Override
         public void run() {
             boolean requiresRestart = false;
+            Activity foregroundActivity = Restarter.getForegroundActivity();
             try {
                 DataInputStream input = new DataInputStream(mSocket.getInputStream());
                 try {
@@ -109,6 +112,26 @@ public class Server {
                         if (path.endsWith(CLASSES_DEX_SUFFIX)) {
                             FileManager.writeDexFile(change.getBytes());
                             requiresRestart = true;
+                        } if (path.endsWith(CLASSES_DEX_3_SUFFIX)) {
+
+                            DexClassLoader dexClassLoader = new DexClassLoader(path,
+                                    foregroundActivity.getCacheDir().getPath(), null,
+                                    getClass().getClassLoader());
+                            try {
+                                // we should transform this process with an interface/impl
+                                Class aClass = dexClassLoader.loadClass("com.android.build.Patches");
+                                try {
+                                    aClass.getDeclaredMethod("load").invoke(null);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    requiresRestart = true;
+                                }
+                            } catch (ClassNotFoundException e) {
+                                e.printStackTrace();
+                                requiresRestart = true;
+                            }
+
+
                         } else {
                             FileManager.writeAaptResources(path, change.getBytes());
                             wroteResources = true;
@@ -138,7 +161,7 @@ public class Server {
             List<Activity> activities = Restarter.getActivities(false);
             File file = FileManager.getExternalResourceFile();
             if (!requiresRestart && file != null) {
-                Activity activity = Restarter.getForegroundActivity();
+                Activity activity = foregroundActivity;
 
                 // Try to just replace the resources on the fly!
                 String resources = file.getPath();
