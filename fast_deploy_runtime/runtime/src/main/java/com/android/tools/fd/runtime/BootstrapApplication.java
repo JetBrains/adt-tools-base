@@ -155,7 +155,7 @@ public class BootstrapApplication extends Application {
                 externalResourcePath);
         MonkeyPatcher.monkeyPatchExistingResources(externalResourcePath, null);
         super.onCreate();
-        Server.create(AppInfo.applicationId);
+        Server.create(AppInfo.applicationId, BootstrapApplication.this);
         //CrashHandler.startCrashCatcher(this);
 
         if (realApplication != null) {

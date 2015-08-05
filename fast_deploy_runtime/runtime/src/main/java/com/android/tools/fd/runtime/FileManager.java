@@ -86,6 +86,11 @@ public class FileManager {
         return new File(base, "dex");
     }
 
+    @NonNull
+    private static File getTempDexFileFolder(File base) {
+        return new File(base, "dex-temp"); // TODO: Clean up occasionally!
+    }
+
     public static File getNativeLibraryFolder() {
         return new File(getDataFolder(), "lib");
     }
@@ -270,6 +275,50 @@ public class FileManager {
         return file;
     }
 
+    /** Produces the next available dex file name */
+    @Nullable
+    public static File getTempDexFile() {
+        // Find the file name of the next dex file to write
+        File dexFolder = getTempDexFileFolder(getDataFolder());
+        if (!dexFolder.exists()) {
+            boolean created = dexFolder.mkdirs();
+            if (!created) {
+                Log.e(LOG_TAG, "Failed to create directory " + dexFolder);
+                return null;
+            }
+        }
+        File[] files = dexFolder.listFiles();
+        int max = -1;
+
+        // Pick highest available number + 1 - we want these to be sortable
+        if (files != null) {
+            for (File file : files) {
+                String name = file.getName();
+                if (name.startsWith(CLASSES_DEX_PREFIX) && name.endsWith(CLASSES_DEX_SUFFIX)) {
+                    String middle = name.substring(CLASSES_DEX_PREFIX.length(),
+                            name.length() - CLASSES_DEX_SUFFIX.length());
+                    try {
+                        int version = Integer.decode(middle);
+                        if (version > max) {
+                            max = version;
+                        }
+                    } catch (NumberFormatException ignore) {
+                    }
+                }
+            }
+        }
+
+        String fileName = String.format("%s0x%04x%s", CLASSES_DEX_PREFIX, max + 1,
+                CLASSES_DEX_SUFFIX);
+        File file = new File(dexFolder, fileName);
+
+        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+            Log.i(LOG_TAG, "Writing new dex file: " + file);
+        }
+
+        return file;
+    }
+
     public static boolean writeRawBytes(@NonNull File destination, @NonNull byte[] bytes) {
         try {
             BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(destination));
@@ -382,5 +431,17 @@ public class FileManager {
         } else {
             writeRawBytes(file, bytes);
         }
+    }
+
+    @Nullable
+    public static String writeTempDexFile(byte[] bytes) {
+        File file = getTempDexFile();
+        if (file != null) {
+            writeRawBytes(file, bytes);
+            return file.getPath();
+        } else {
+            Log.e(LOG_TAG, "No file to write temp dex content to");
+        }
+        return null;
     }
 }

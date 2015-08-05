@@ -148,6 +148,7 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
             Label l0 = new Label();
             Label l1 = new Label();
             Label l2 = new Label();
+            mv.visitLineNumber((int) System.currentTimeMillis(), l0);
             mv.visitTryCatchBlock(l0, l1, l2, "java/lang/ClassNotFoundException");
             mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
             mv.visitLdcInsn("1");
@@ -160,7 +161,7 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
                     false);
             mv.visitVarInsn(Opcodes.ASTORE, 0);
             mv.visitLdcInsn(
-                    Type.getType("Lcom/android/build/gradle/internal/incremental/BaseClass;"));
+                    Type.getType("Lcom/android/build/Patches;"));
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getClassLoader",
                     "()Ljava/lang/ClassLoader;", false);
             mv.visitVarInsn(Opcodes.ASTORE, 1);
