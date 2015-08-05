@@ -16,22 +16,6 @@
 
 package com.android.build.gradle.internal.incremental;
 
-/**
- * Created by jedo on 7/23/15.
- */
-public class SimpleMethodDispatchControl extends BaseClass {
-
-    private int field = 4;
-
-    DelegationClass delegate = new DelegationClass();
-
-    private SimpleMethodDispatchControl(){}
-
-    public long getIntValue(int value) {
-        return calculateIntValue(value, 132) / value;
-    }
-
-    public long calculateIntValue(Integer value, int other) {
-        return System.currentTimeMillis() / (value * field + other - delegate.delegateField);
-    }
+public interface IncrementalChange {
+    Object access$dispatch(String id, Object... args);
 }

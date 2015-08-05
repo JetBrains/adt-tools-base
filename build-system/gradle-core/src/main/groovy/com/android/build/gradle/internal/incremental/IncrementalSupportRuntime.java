@@ -17,97 +17,11 @@
 package com.android.build.gradle.internal.incremental;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Support for registering patched classes.
  */
-public enum IncrementalSupportRuntime {
-
-    INSTANCE;
-
-    public final Map<String, Class<?>> patchedClasses = new HashMap<String, Class<?>>();
-
-    public boolean isPatched(String className) {
-        return patchedClasses.containsKey(className);
-    }
-
-    public Class<?> getPatchedClass(String className) {
-        return patchedClasses.get(className);
-    }
-
-    public static IncrementalSupportRuntime get() {
-        return INSTANCE;
-    }
-
-    public static Object dispatch(Object target, String methodName, String signature, Object... parameters) {
-        try {
-            System.out.println("Invoking " + methodName + " with signature " + signature);
-            List<Class> paramTypes = new ArrayList<Class>();
-            if (parameters.length > 0) {
-                paramTypes = extractParameterTypes(target.getClass().getClassLoader(), signature);
-            }
-
-            paramTypes.add(0, target.getClass());
-            Class patchedClass = INSTANCE.getPatchedClass(target.getClass().getName().replaceAll("\\.", "/"));
-            if (patchedClass == null) {
-                throw new RuntimeException("No patched class...");
-            }
-            Method method = patchedClass.getDeclaredMethod(methodName, paramTypes.toArray(new Class[paramTypes.size()]));
-            if (!Modifier.isStatic(method.getModifiers())) {
-                method = null;
-                for (Method m : target.getClass().getMethods()) {
-                    if (m.getName().equals(methodName) && Modifier.isStatic(m.getModifiers())) {
-                        method = m;
-                        break;
-                    }
-                }
-            }
-            Object[] newParameters = new Object[parameters.length + 1];
-            newParameters[0] = target;
-            for (int i=0; i < parameters.length; i++) {
-                newParameters[i+1] = parameters[i];
-            }
-            if (method != null) {
-                return method.invoke(null, newParameters);
-            }
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private static List<Class> extractParameterTypes(ClassLoader cl, String signature)
-            throws ClassNotFoundException {
-        List<Class> paramTypes = new ArrayList<Class>();
-        String argumentDeclaration = signature.substring(1, signature.indexOf(')'));
-
-        while(!argumentDeclaration.isEmpty()) {
-            if (argumentDeclaration.charAt(0) == 'L') {
-
-                String argumentType = argumentDeclaration.substring(1, argumentDeclaration.indexOf(';'));
-                argumentDeclaration = argumentDeclaration.substring(argumentDeclaration.indexOf(';') + 1);
-                paramTypes.add(cl.loadClass(argumentType.replaceAll("/", ".")));
-            } else {
-                BasicType basicType = BasicType.valueOf(argumentDeclaration.substring(0, 1));
-                argumentDeclaration = argumentDeclaration.substring(1);
-                paramTypes.add(basicType.getJavaType());
-            }
-        }
-        return paramTypes;
-    }
+public class IncrementalSupportRuntime {
 
     public static Object getPrivateField(Object target, String name) {
         try {
@@ -136,10 +50,4 @@ public enum IncrementalSupportRuntime {
             throw new RuntimeException(e);
         }
     }
-
-    public void addPatchedClass(String s, Class<?> enhancedClass) {
-        patchedClasses.put(s, enhancedClass);
-    }
-
-
 }

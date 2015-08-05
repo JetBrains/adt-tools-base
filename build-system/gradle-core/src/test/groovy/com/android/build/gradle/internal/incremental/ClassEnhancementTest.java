@@ -16,9 +16,10 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.io.ByteStreams;
 
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;
@@ -29,11 +30,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -57,66 +59,68 @@ public class ClassEnhancementTest {
         }
     }
 
+    private ClassLoader loadAndPatch(String... classes) throws Exception {
+        Map<String, byte[]> original = new HashMap<String, byte[]>();
+        Map<String, byte[]> enhanced = new HashMap<String, byte[]>();
+        for (String clazz : classes) {
+            InputStream inputStream = getClass().getClassLoader().getResourceAsStream(
+                    clazz.replace(".", "/") + ".class");
+            byte[] bytes = ByteStreams.toByteArray(inputStream);
+            original.put(clazz, bytes);
 
-    @Test
-    public void perpareForIncrementalSupportTest() throws IOException, ClassNotFoundException, IllegalAccessException,
-            InstantiationException, NoSuchMethodException, InvocationTargetException,
-            NoSuchFieldException {
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(
-                "com/android/build/gradle/internal/incremental/SimpleMethodDispatch.class");
-        inputStream.mark(0);
-        assertNotNull(inputStream);
-        try {
-            ClassReader classReader = new ClassReader(inputStream);
+            ClassReader classReader = new ClassReader(bytes);
             ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
             IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(classWriter);
-            classReader.accept(visitor, 0);
+            classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
+            enhanced.put(clazz, classWriter.toByteArray());
+         //   traceClass(classWriter.toByteArray());
 
-            ClassLoader cl = prepareClassLoader(
-                    this.getClass().getClassLoader().getParent(),
-                    ImmutableMap.<String, byte[]>builder()
-                    .put("com.android.build.gradle.internal.incremental.SimpleMethodDispatch",
-                            classWriter.toByteArray())
-                    .build());
-
-            Class<?> originalImplementation = cl.loadClass(
-                    "com.android.build.gradle.internal.incremental.SimpleMethodDispatch");
-
-            traceClass(classWriter.toByteArray());
-
-            Object nonEnhancedInstance = originalImplementation.newInstance();
-
-            // now generate the modified bits.
-            inputStream.reset();
-            classReader = new ClassReader(inputStream);
-            classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
-            IncrementalChangeVisitor incrementalChangeVisitor = new IncrementalChangeVisitor(classWriter);
-            classReader.accept(incrementalChangeVisitor, 0);
-
-            ClassLoader secondaryClassLoader = prepareClassLoader(
-                    cl,
-                    ImmutableMap.<String, byte[]>builder()
-                    .put("com.android.build.gradle.internal.incremental.SimpleMethodDispatchISSupport",
-                            classWriter.toByteArray())
-                    .build());
-
-            traceClass(classWriter.toByteArray());
-
-            Class<?> enhancedClass = secondaryClassLoader.loadClass(
-                    "com.android.build.gradle.internal.incremental.SimpleMethodDispatchISSupport");
-
-            addPatchedClass(cl,
-                    "com/android/build/gradle/internal/incremental/SimpleMethodDispatch",
-                    enhancedClass);
-
-            traceClass(classWriter.toByteArray());
-            Method getStringValue = nonEnhancedInstance.getClass()
-                    .getMethod("getIntValue", Integer.TYPE);
-            System.out.println(getStringValue.invoke(nonEnhancedInstance, 143));
-
-        } finally {
-            inputStream.close();
         }
+        ClassLoader cl = prepareClassLoader(this.getClass().getClassLoader().getParent(), enhanced);
+
+        Map<String, byte[]> change = new HashMap<String, byte[]>();
+        for (String clazz : classes) {
+            ClassReader classReader = new ClassReader(original.get(clazz));
+            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
+            IncrementalChangeVisitor incrementalChangeVisitor = new IncrementalChangeVisitor(
+                    classWriter);
+            classReader.accept(incrementalChangeVisitor, ClassReader.EXPAND_FRAMES);
+            change.put(clazz + "$override", classWriter.toByteArray());
+        //    traceClass(classWriter.toByteArray());
+
+        }
+        ClassLoader secondaryClassLoader = prepareClassLoader(cl, change);
+
+
+        for (String clazz : classes) {
+            Class<?> enhancedClass = secondaryClassLoader.loadClass(clazz + "$override");
+            patchClass(cl, clazz, enhancedClass);
+        }
+
+        return cl;
+    }
+
+    @Test
+    public void superTest() throws Exception {
+        ClassLoader cl = loadAndPatch(
+                "com.android.build.gradle.internal.incremental.BaseClass",
+                "com.android.build.gradle.internal.incremental.ExtendedClass");
+        Class<?> aClass = cl
+                .loadClass("com.android.build.gradle.internal.incremental.ExtendedClass");
+        Object nonEnhancedInstance = aClass.newInstance();
+        Method method = nonEnhancedInstance.getClass().getMethod("methodA");
+        assertEquals(42, method.invoke(nonEnhancedInstance));
+    }
+
+    @Test
+    public void perpareForIncrementalSupportTest() throws Exception {
+        ClassLoader cl = loadAndPatch("com.android.build.gradle.internal.incremental.SimpleMethodDispatch");
+        Class<?> aClass = cl
+                .loadClass("com.android.build.gradle.internal.incremental.SimpleMethodDispatch");
+        Object nonEnhancedInstance = aClass.newInstance();
+        Method getStringValue = nonEnhancedInstance.getClass()
+                .getMethod("getIntValue", Integer.TYPE);
+        System.out.println(getStringValue.invoke(nonEnhancedInstance, 143));
     }
 
     private ClassLoader prepareClassLoader(ClassLoader parentClassLoader, Map<String, byte[]> classDefinitions)
@@ -143,17 +147,11 @@ public class ClassEnhancementTest {
                 classDefinitions);
     }
 
-    private void addPatchedClass(ClassLoader loadingLoader, String name, Class patchedClass)
-            throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException,
-            NoSuchMethodException, InvocationTargetException {
-
-        Class<?> supportRuntimeClass = loadingLoader.loadClass(
-                "com.android.build.gradle.internal.incremental.IncrementalSupportRuntime");
-        Object supportRuntime = supportRuntimeClass.getField("INSTANCE").get(null);
-        Method addPatchedClass = supportRuntimeClass
-                .getMethod("addPatchedClass", String.class, Class.class);
-        assertNotNull(addPatchedClass);
-        addPatchedClass.invoke(supportRuntime, name, patchedClass);
+    private void patchClass(ClassLoader loadingLoader, String name, Class patchedClass) throws Exception {
+        Class<?> supportRuntimeClass = loadingLoader.loadClass(name);
+        Field field = supportRuntimeClass.getField("$change");
+        Object change = patchedClass.newInstance();
+        field.set(null, change);
     }
 
 

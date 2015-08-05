@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.incremental;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -25,7 +26,9 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Visitor for classes that have been changed since the initial push.
@@ -33,30 +36,43 @@ import java.util.Map;
  * This will generate a new class which name is the original class name + Support. This class will
  * have a static method for each method found in the updated class.
  *
- * The static method will be invoked from the generic
- * {@link IncrementalSupportRuntime#dispatch(Object, String, String, Object...)} implementation
+ * The static method will be invoked from the generated access$dispatch method
  * following a delegation request issued by the original method implementation (through the bytecode
  * injection done in {@link IncrementalSupportVisitor}.
  *
  * So far the static method implementation do not require any change since the "this" parameter
  * is passed as the first parameter and is available in register 0.
  */
-public class IncrementalChangeVisitor extends ClassVisitor {
+public class IncrementalChangeVisitor extends IncrementalVisitor {
 
-    String className;
-    String superName;
+    protected String visitedClassName;
+    protected String visitedSuperName;
+    protected Set<Method> methods = new HashSet<Method>();
     Map<String, String> privateFields = new HashMap<String, String>();
 
     public IncrementalChangeVisitor(ClassVisitor classVisitor) {
-        super(Opcodes.ASM5, classVisitor);
+        super(classVisitor);
     }
 
     @Override
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
-        className = name;
-        this.superName = superName;
-        super.visit(version, access, name + "ISSupport", signature, "java/lang/Object", interfaces);
+        super.visit(version, access, name + "$override", signature, "java/lang/Object", new String[] {"com/android/build/gradle/internal/incremental/IncrementalChange"});
+
+        System.out.println("Visiting " + name);
+        visitedClassName = name;
+        visitedSuperName = superName;
+
+        // Create empty constructor
+        MethodVisitor mv = super
+                .visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
+        mv.visitCode();
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V",
+                false);
+        mv.visitInsn(Opcodes.RETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
     }
 
     @Override
@@ -78,7 +94,8 @@ public class IncrementalChangeVisitor extends ClassVisitor {
         if (name.equals("<init>") || name.equals("<clinit>")) {
             return null;
         }
-        String newDesc = "(L" + className + ";" + desc.substring(1);
+        methods.add(new Method(name, desc));
+        String newDesc = "(L" + visitedClassName + ";" + desc.substring(1);
         System.out.println("new Desc is " + newDesc);
         return new ISVisitor(Opcodes.ASM5,
                 super.visitMethod(access + Opcodes.ACC_STATIC, name, newDesc, signature, exceptions),
@@ -94,7 +111,7 @@ public class IncrementalChangeVisitor extends ClassVisitor {
 
         @Override
         public void visitFieldInsn(int opcode, String owner, String name, String desc) {
-            if (privateFields.containsKey(name) && owner.equals(className)) {
+            if (privateFields.containsKey(name) && owner.equals(visitedClassName)) {
                 if (opcode == Opcodes.GETFIELD) {
                     push(name);
                     invokeStatic(Type.getType(IncrementalSupportRuntime.class),
@@ -117,7 +134,84 @@ public class IncrementalChangeVisitor extends ClassVisitor {
         @Override
         public void visitMethodInsn(int opcode, String owner, String name, String desc,
                 boolean itf) {
-            super.visitMethodInsn(opcode, owner, name, desc, itf);
+            if (opcode == Opcodes.INVOKESPECIAL && owner.equals(visitedSuperName)) {
+                int arr = newLocal(Type.getType("[Ljava/lang.Object;"));
+                Type[] args = Type.getArgumentTypes(desc);
+                push(args.length);
+                visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
+                visitVarInsn(Opcodes.ASTORE, arr);
+                for (int i = args.length - 1; i >= 0; i--) {
+                    visitVarInsn(Opcodes.ALOAD, arr);
+                    swap();
+                    push(i);
+                    swap();
+                    box(args[i]);
+                    visitInsn(Opcodes.AASTORE);
+                }
+                push(name + "." + desc);
+                visitVarInsn(Opcodes.ALOAD, arr);
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName, "access$super",
+                        "(L" + visitedClassName
+                                + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;",
+                        false);
+                Type ret = Type.getReturnType(desc);
+                if (ret.getSort() == Type.VOID) {
+                    pop();
+                } else {
+                    unbox(ret);
+                }
+            } else {
+                super.visitMethodInsn(opcode, owner, name, desc, itf);
+            }
         }
+    }
+
+    @Override
+    public void visitEnd() {
+        int access = Opcodes.ACC_PUBLIC | Opcodes.ACC_VARARGS;
+        Method m = new Method("access$dispatch", "(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;");
+        MethodVisitor visitor = super.visitMethod(access,
+                m.getName(),
+                m.getDescriptor(),
+                null, null);
+
+        GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
+
+        for (Method method : methods) {
+            mv.visitVarInsn(Opcodes.ALOAD, 1);
+            mv.visitLdcInsn(method.getName() + "." + method.getDescriptor());
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals",
+                    "(Ljava/lang/Object;)Z", false);
+            Label l0 = new Label();
+            mv.visitJumpInsn(Opcodes.IFEQ, l0);
+            String newDesc = "(L" + visitedClassName + ";" + method.getDescriptor().substring(1);
+
+            Type[] args = Type.getArgumentTypes(newDesc);
+            int argc = 0;
+            for (Type t : args) {
+                mv.visitVarInsn(Opcodes.ALOAD, 2);
+                mv.push(argc);
+                mv.visitInsn(Opcodes.AALOAD);
+                mv.unbox(t);
+                argc++;
+            }
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override", method.getName(), newDesc, false);
+            Type ret = method.getReturnType();
+            if (ret.getSort() == Type.VOID) {
+                mv.visitInsn(Opcodes.ACONST_NULL);
+            } else {
+                mv.box(ret);
+            }
+            mv.visitInsn(Opcodes.ARETURN);
+            mv.visitLabel(l0);
+        }
+
+
+        mv.visitInsn(Opcodes.ACONST_NULL);
+        mv.visitInsn(Opcodes.ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        super.visitEnd();
     }
 }

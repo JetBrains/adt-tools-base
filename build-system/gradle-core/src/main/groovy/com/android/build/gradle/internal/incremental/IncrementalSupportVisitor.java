@@ -24,6 +24,12 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Visitor for classes that will eventually be replaceable at runtime.
  *
@@ -34,17 +40,18 @@ import org.objectweb.asm.commons.Method;
  * hashtable lookup for updated implementation. In the future, we could generate a static field
  * during the class visit with this visitor and have that boolean field indicate the presence of an
  * updated version or not.
- *
- * To redirect the method call, we box all the parameters into a array of {@link Object} and invoke
- * the {@link IncrementalSupportRuntime#dispatch(Object, String, String, Object...)} method.
- *
  */
-public class IncrementalSupportVisitor extends ClassVisitor {
+public class IncrementalSupportVisitor extends IncrementalVisitor {
 
-    private String visitedClassName;
+
+    private static final Type CHANGE_TYPE = Type.getType(IncrementalChange.class);
+
+    protected String visitedClassName;
+    protected String visitedSuperName;
+    protected Set<Method> methods = new HashSet<Method>();
 
     public IncrementalSupportVisitor(ClassVisitor classVisitor) {
-        super(Opcodes.ASM5, classVisitor);
+        super(classVisitor);
     }
 
     @Override
@@ -52,17 +59,21 @@ public class IncrementalSupportVisitor extends ClassVisitor {
             String[] interfaces) {
         System.out.println("Visiting " + name);
         visitedClassName = name;
+        visitedSuperName = superName;
+
+        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "$change", CHANGE_TYPE.getDescriptor(), null, null);
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
-        System.out.println("Visiting method " + name + " signature " + desc);
+        System.out.println("Visiting method " + name + " desc " + desc);
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
         if (name.equals("<init>") || name.equals("<clinit>")) {
             return defaultVisitor;
         }
+        methods.add(new Method(name, desc));
         return new ISMethodVisitor(Opcodes.ASM5, defaultVisitor, access, name, desc);
     }
 
@@ -70,67 +81,53 @@ public class IncrementalSupportVisitor extends ClassVisitor {
 
         private final MethodVisitor mv;
         private final String name;
-        private final String signature;
-        private final java.lang.reflect.Method dispatch;
+        private final String desc;
+        private final int access;
 
         public ISMethodVisitor(int api, MethodVisitor mv, int access,  String name, String desc) {
             super(api, mv, access, name, desc);
             this.mv = mv;
             this.name = name;
-            this.signature = desc;
-            try {
-                dispatch = IncrementalSupportRuntime.class.getDeclaredMethod("dispatch",
-                        Object.class, String.class, String.class, Object[].class);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            }
+            this.desc = desc;
+            this.access = access;
         }
 
         @Override
         public void visitCode() {
             // code to check if a new implementation of the current class is available.
-            Type isrType = Type.getType(IncrementalSupportRuntime.class);
-            getStatic(isrType, "INSTANCE", isrType);
-            push(visitedClassName);
-            invokeVirtual(isrType, Method.getMethod("boolean isPatched(String)"));
-            Label l0 = newLabel();
-            ifZCmp(EQ, l0);
+            visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
+                    CHANGE_TYPE.getDescriptor());
+            Label l0 = new Label();
+            super.visitJumpInsn(Opcodes.IFNULL, l0);
+            visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
+                    CHANGE_TYPE.getDescriptor());
+            push(name + "." + desc);
 
-            // we will delegate the call to the dispatch method.
-            // first put the "this" reference as the first parameter
-            // then the method name, the method signature and box all parameters in an array of
-            // objects.
-            loadThis();
-            push(name);
-            push(signature);
-
-            org.objectweb.asm.Type[] callingMethodArgs = org.objectweb.asm.Type
-                    .getArgumentTypes(signature);
-
-            // create an array to hold all the passed parameters.
-            int parameterNumber = callingMethodArgs.length;
-            push(parameterNumber);
+            List<Type> args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(desc)));
+            boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
+            if (!isStatic) {
+                args.add(0, Type.getType(Object.class));
+            }
+            push(args.size());
             newArray(Type.getType(Object.class));
 
-            // for each parameter, box it if necessary, and store it at the right index in the
-            // array we just created.
-            for (int index = 0; index < callingMethodArgs.length; index++) {
-                Type callingParameter = callingMethodArgs[index];
+            for (int index = 0; index < args.size(); index++) {
+                Type arg = args.get(index);
                 dup();
                 push(index);
-                mv.visitVarInsn(callingParameter.getOpcode(Opcodes.ILOAD), index + 1);
-                box(callingParameter);
+                // This will load "this" when it's not static function as the first element
+                mv.visitVarInsn(arg.getOpcode(Opcodes.ILOAD), index);
+                box(arg);
                 arrayStore(Type.getType(Object.class));
             }
-            // now invoke the generic dispatch method.
-            invokeStatic(isrType, Method.getMethod(dispatch));
 
-            // cast the return type, or unbox into a primitive type if necessary.
-            org.objectweb.asm.Type returnType = Type.getReturnType(signature);
-            if (returnType.getSort() != Type.VOID) {
-                unbox(returnType);
-            } else {
+            // now invoke the generic dispatch method.
+            invokeInterface(CHANGE_TYPE, Method.getMethod("Object access$dispatch(String, Object[])"));
+            Type ret = Type.getReturnType(desc);
+            if (ret == Type.VOID_TYPE) {
                 pop();
+            } else {
+                unbox(ret);
             }
             returnValue();
 
@@ -139,5 +136,55 @@ public class IncrementalSupportVisitor extends ClassVisitor {
             visitLabel(l0);
             super.visitCode();
         }
+    }
+
+    @Override
+    public void visitEnd() {
+        int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VARARGS;
+        Method m = new Method("access$super", "(L" + visitedClassName + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;");
+        MethodVisitor visitor = super.visitMethod(access,
+                        m.getName(),
+                        m.getDescriptor(),
+                        null, null);
+
+        GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
+
+        for (Method method : methods) {
+            mv.visitVarInsn(Opcodes.ALOAD, 1);
+            mv.visitLdcInsn(method.getName() + "." + method.getDescriptor());
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+            Label l0 = new Label();
+            mv.visitJumpInsn(Opcodes.IFEQ, l0);
+            mv.visitVarInsn(Opcodes.ALOAD, 0);
+
+            Type[] args = method.getArgumentTypes();
+            int argc = 0;
+            for (Type t : args) {
+                mv.visitVarInsn(Opcodes.ALOAD, 2);
+                mv.push(argc);
+                mv.visitInsn(Opcodes.AALOAD);
+                mv.unbox(t);
+                argc++;
+            }
+
+            // Call super on the other object, yup this works cos we are on the right place to call from.
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, visitedSuperName, method.getName(), method.getDescriptor(), false);
+            Type ret = method.getReturnType();
+            if (ret.getSort() == Type.VOID) {
+                mv.visitInsn(Opcodes.ACONST_NULL);
+            } else {
+                mv.box(ret);
+            }
+            mv.visitInsn(Opcodes.ARETURN);
+            mv.visitLabel(l0);
+        }
+
+
+        mv.visitInsn(Opcodes.ACONST_NULL);
+        mv.visitInsn(Opcodes.ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        super.visitEnd();
     }
 }

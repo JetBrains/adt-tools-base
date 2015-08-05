@@ -25,13 +25,7 @@ import java.lang.reflect.Method;
 public class ExtendedClass extends BaseClass {
 
     @Override
-    public void methodA(int a ) {
-        System.out.println("ExtendedClass");
-    }
-
-    public static void callSuper(ExtendedClass instance, String method, String signature, Object[] parameters)
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method superMethod = BaseClass.class.getDeclaredMethod("methodA");
-        superMethod.invoke(instance, parameters[0]);
+    public int methodA() {
+        return super.methodA();
     }
 }

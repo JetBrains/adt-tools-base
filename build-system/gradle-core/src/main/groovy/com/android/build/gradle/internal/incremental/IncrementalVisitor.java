@@ -16,26 +16,11 @@
 
 package com.android.build.gradle.internal.incremental;
 
-/**
- * Boxing/unboxing services for primitive types.
- */
-public enum BasicType {
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Opcodes;
 
-    I(Integer.TYPE),
-    J(Long.TYPE),
-    Z(Boolean.TYPE),
-    F(Float.TYPE),
-    D(Double.TYPE),
-    V(Void.TYPE);
-
-    private final Class<?> primitiveJavaType;
-
-    BasicType(Class<?> primitiveType) {
-        this.primitiveJavaType = primitiveType;
+public class IncrementalVisitor extends ClassVisitor {
+    public IncrementalVisitor(ClassVisitor classVisitor) {
+        super(Opcodes.ASM5, classVisitor);
     }
-
-    public Class getJavaType() {
-        return primitiveJavaType;
-    }
-
 }

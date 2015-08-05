@@ -21,6 +21,7 @@ package com.android.build.gradle.internal.incremental;
  */
 public class BaseClass {
 
-    void methodA(int a) {
+    public int methodA() {
+        return 42;
     }
 }
