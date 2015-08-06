@@ -7,6 +7,8 @@ import android.net.LocalSocket;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.android.build.gradle.internal.incremental.PatchesLoader;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -172,9 +174,20 @@ public class Server {
 
                                 // we should transform this process with an interface/impl
 //                                Class<?> aClass = dexClassLoader.loadClass("com.android.build.Patches");
-                                Class<?> aClass = Class.forName("com.android.build.Patches", true, dexClassLoader);
+                                Class<?> aClass = Class.forName("com.android.build.gradle.internal.incremental.AppPatchesLoaderImpl", true, dexClassLoader);
                                 try {
-                                    aClass.getDeclaredMethod("load").invoke(null);
+                                    Log.i(LOG_TAG, "Got the patcher class " + aClass);
+
+                                    PatchesLoader loader = (PatchesLoader) aClass.newInstance();
+                                    Log.i(LOG_TAG, "Got the patcher instance " + loader);
+                                    String[] getPatchedClasses = (String[]) aClass.getDeclaredMethod("getPatchedClasses").invoke(loader);
+                                    Log.i(LOG_TAG, "Got the list of classes ");
+                                    for (int i=0;i<getPatchedClasses.length;i++) {
+                                        Log.i(LOG_TAG, "class " + getPatchedClasses[i]);
+                                    }
+
+
+                                    requiresRestart = !loader.load();
                                     incrementalCode = true;
                                 } catch (Exception e) {
                                     Log.e(LOG_TAG, "Couldn't apply code changes", e);

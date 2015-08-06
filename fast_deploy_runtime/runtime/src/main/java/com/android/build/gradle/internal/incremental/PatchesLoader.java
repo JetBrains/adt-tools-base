@@ -5,5 +5,5 @@ package com.android.build.gradle.internal.incremental;
  */
 public interface PatchesLoader {
 
-    public boolean load();
+    boolean load();
 }

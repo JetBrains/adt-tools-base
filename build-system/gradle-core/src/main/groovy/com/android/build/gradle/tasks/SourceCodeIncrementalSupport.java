@@ -123,96 +123,41 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
 
-        cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, "com/android/build/Patches", null, "java/lang/Object", null);
+        cw.visit(Opcodes.V1_6, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER,
+                "com/android/build/gradle/internal/incremental/AppPatchesLoaderImpl", null,
+                "com/android/build/gradle/internal/incremental/AbstractPatchesLoaderImpl", null);
 
         {
             mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
             mv.visitCode();
             mv.visitVarInsn(Opcodes.ALOAD, 0);
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "com/android/build/gradle/internal/incremental/AbstractPatchesLoaderImpl", "<init>", "()V", false);
             mv.visitInsn(Opcodes.RETURN);
             mv.visitMaxs(1, 1);
             mv.visitEnd();
         }
         {
-            mv = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, "load", "()V", null, null);
+            mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "getPatchedClasses", "()[Ljava/lang/String;", null, null);
             mv.visitCode();
-            Label l0 = new Label();
-            Label l1 = new Label();
-            Label l2 = new Label();
-            mv.visitLineNumber((int) System.currentTimeMillis(), l0);
-            mv.visitTryCatchBlock(l0, l1, l2, "java/lang/ClassNotFoundException");
-            mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-            mv.visitLdcInsn("1");
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
-                    "(Ljava/lang/String;)V", false);
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC,
-                    "com/android/build/gradle/internal/incremental/IncrementalSupportRuntime",
-                    "get",
-                    "()Lcom/android/build/gradle/internal/incremental/IncrementalSupportRuntime;",
-                    false);
-            mv.visitVarInsn(Opcodes.ASTORE, 0);
-            mv.visitLdcInsn(
-                    Type.getType("Lcom/android/build/Patches;"));
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getClassLoader",
-                    "()Ljava/lang/ClassLoader;", false);
-            mv.visitVarInsn(Opcodes.ASTORE, 1);
-            mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-            mv.visitLdcInsn("loaded runtime " + patchFileContents.size());
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println",
-                    "(Ljava/lang/String;)V", false);
-            mv.visitLabel(l0);
-            for (String patchFileContent : patchFileContents) {
-                mv.visitVarInsn(Opcodes.ALOAD, 1);
-                mv.visitLdcInsn(patchFileContent + "ISSupport");
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/ClassLoader", "loadClass",
-                        "(Ljava/lang/String;)Ljava/lang/Class;", false);
-                mv.visitVarInsn(Opcodes.ASTORE, 2);
-                mv.visitVarInsn(Opcodes.ALOAD, 0);
-                mv.visitLdcInsn(patchFileContent);
-                mv.visitLdcInsn("\\.");
-                mv.visitLdcInsn("/");
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "replaceAll", "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;", false);
-                mv.visitVarInsn(Opcodes.ALOAD, 2);
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "com/android/build/gradle/internal/incremental/IncrementalSupportRuntime", "addPatchedClass", "(Ljava/lang/String;Ljava/lang/Class;)V", false);
-                mv.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-                mv.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
+            mv.visitIntInsn(Opcodes.BIPUSH, patchFileContents.size());
+            mv.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/String");
+            for (int index=0; index < patchFileContents.size(); index++) {
                 mv.visitInsn(Opcodes.DUP);
-                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
-                mv.visitLdcInsn("patched with ");
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
-                mv.visitVarInsn(Opcodes.ALOAD, 2);
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;", false);
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;", false);
-                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+                mv.visitIntInsn(Opcodes.BIPUSH, index);
+                mv.visitLdcInsn(patchFileContents.get(index));
+                mv.visitInsn(Opcodes.AASTORE);
             }
-            mv.visitLabel(l1);
-            Label l3 = new Label();
-            mv.visitJumpInsn(Opcodes.GOTO, l3);
-            mv.visitLabel(l2);
-            mv.visitFrame(Opcodes.F_FULL, 2, new Object[] {"com/android/build/gradle/internal/incremental/IncrementalSupportRuntime", "java/lang/ClassLoader"}, 1, new Object[] {"java/lang/ClassNotFoundException"});
-            mv.visitVarInsn(Opcodes.ASTORE, 2);
-            mv.visitVarInsn(Opcodes.ALOAD, 2);
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/ClassNotFoundException", "printStackTrace", "()V", false);
-            mv.visitTypeInsn(Opcodes.NEW, "java/lang/RuntimeException");
-            mv.visitInsn(Opcodes.DUP);
-            mv.visitVarInsn(Opcodes.ALOAD, 2);
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/Throwable;)V", false);
-            mv.visitInsn(Opcodes.ATHROW);
-            mv.visitLabel(l3);
-            mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-            mv.visitInsn(Opcodes.RETURN);
-            mv.visitMaxs(4, 3);
+            mv.visitInsn(Opcodes.ARETURN);
+            mv.visitMaxs(4, 1);
             mv.visitEnd();
         }
-
         cw.visitEnd();
 
         byte[] classBytes = cw.toByteArray();
-        File outputDir = new File(getPatchedFolder(), "com/android/build");
+        File outputDir = new File(getPatchedFolder(), "com/android/build/gradle/internal/incremental/");
         outputDir.mkdirs();
         try {
-            Files.write(classBytes, new File(outputDir, "Patches.class"));
+            Files.write(classBytes, new File(outputDir, "AppPatchesLoaderImpl.class"));
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -227,9 +172,7 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
             ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
             String rootName = inputFile.getName()
                     .substring(0, inputFile.getName().length() - ".class".length());
-            String name = rootName + "ISSupport.class";
             if (isRuntimeLibraryClass(inputFile)) {
-                name = inputFile.getName();
                 System.out.println("Skipping runtime library class " + inputFile);
                 classReader.accept(classWriter, ClassReader.EXPAND_FRAMES);
             } else {
@@ -243,7 +186,7 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
             outputDirectory.mkdirs();
             File outFile = new File(outputDirectory,
                     inputFile.getName().substring(0, inputFile.getName().length() - ".class".length())
-                        + "$override");
+                        + "$override.class");
             FileOutputStream stream = new FileOutputStream(outFile.getAbsolutePath());
             try {
                 stream.write(classWriter.toByteArray());

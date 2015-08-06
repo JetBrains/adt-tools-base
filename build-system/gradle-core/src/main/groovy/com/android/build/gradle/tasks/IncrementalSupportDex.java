@@ -81,24 +81,30 @@ public class IncrementalSupportDex extends BaseTask {
 
         final JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(classesJar));
         final AtomicInteger processedFiles = new AtomicInteger(0);
+
+        final File patchesLoader = new File(getInputFolder(),
+                "com/android/build/gradle/internal/incremental/AppPatchesLoaderImpl.class");
         inputs.outOfDate(new Action<InputFileDetails>() {
             @Override
             public void execute(InputFileDetails inputFileDetails) {
                 if (!inputs.isIncremental() || inputFileDetails.isModified()) {
-                    String entryName = inputFileDetails.getFile().getPath().substring(
-                            getInputFolder().getPath().length() + 1);
-                    JarEntry jarEntry = new JarEntry(entryName);
                     try {
-                        jarOutputStream.putNextEntry(jarEntry);
-                        Files.copy(inputFileDetails.getFile(), jarOutputStream);
-                        jarOutputStream.closeEntry();
-                        processedFiles.incrementAndGet();
+                        if (!patchesLoader.getAbsolutePath().equals(
+                                inputFileDetails.getFile().getAbsolutePath())) {
+                            copyFileInJar(inputFileDetails.getFile(), jarOutputStream);
+                            processedFiles.incrementAndGet();
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
             }
         });
+
+        // always copy the PatchesLoader generated class if present.
+        if (patchesLoader.exists()) {
+            copyFileInJar(patchesLoader, jarOutputStream);
+        }
 
         jarOutputStream.close();
         if (processedFiles.get() == 0) {
@@ -118,6 +124,15 @@ public class IncrementalSupportDex extends BaseTask {
                 false /* incremental */,
                 true /* optimize */,
                 new LoggedProcessOutputHandler(getILogger()));
+    }
+
+    private void copyFileInJar(File inputFile, JarOutputStream jarOutputStream) throws IOException {
+        String entryName = inputFile.getPath().substring(
+                getInputFolder().getPath().length() + 1);
+        JarEntry jarEntry = new JarEntry(entryName);
+        jarOutputStream.putNextEntry(jarEntry);
+        Files.copy(inputFile, jarOutputStream);
+        jarOutputStream.closeEntry();
     }
 
     public static class ConfigAction implements TaskConfigAction<IncrementalSupportDex> {

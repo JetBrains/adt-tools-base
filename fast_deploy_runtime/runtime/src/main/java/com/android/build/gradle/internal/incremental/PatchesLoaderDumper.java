@@ -7,7 +7,7 @@ public class PatchesLoaderDumper {
 
     public static void main(String[] args) {
         try {
-            Class<?> aClass = Class.forName("com.android.build.gradle.internal.incremental.PatcherLoaderImpl");
+            Class<?> aClass = Class.forName("com.android.build.gradle.internal.incremental.AppPatchesLoaderImpl");
             PatchesLoader patchesLoader = (PatchesLoader) aClass.newInstance();
             patchesLoader.load();
         } catch (ClassNotFoundException e) {
