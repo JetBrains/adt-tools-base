@@ -29,6 +29,11 @@ import com.android.tools.rpclib.binary.Namespace;
 import java.io.IOException;
 
 final class Int8Slice extends Box implements BinaryObject {
+    @Override
+    public Object unwrap() {
+        return getValue();
+    }
+
     //<<<Start:Java.ClassBody:1>>>
     byte[] mValue;
 

@@ -29,6 +29,11 @@ import com.android.tools.rpclib.binary.Namespace;
 import java.io.IOException;
 
 final class Uint32 extends Box implements BinaryObject {
+    @Override
+    public Object unwrap() {
+        return getValue();
+    }
+
     //<<<Start:Java.ClassBody:1>>>
     int mValue;
 
