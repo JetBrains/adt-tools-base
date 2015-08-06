@@ -25,7 +25,6 @@ import com.android.tools.rpclib.binary.BinaryObject;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
 import com.android.tools.rpclib.binary.Namespace;
-import NotJava.binary.Object;
 
 import java.io.IOException;
 

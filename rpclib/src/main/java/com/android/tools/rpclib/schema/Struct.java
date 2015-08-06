@@ -28,7 +28,18 @@ import com.android.tools.rpclib.binary.Namespace;
 
 import java.io.IOException;
 
-public final class Struct implements BinaryObject {
+public final class Struct extends Type {
+    @Override
+    public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
+        // TODO: implement variant encode
+    }
+
+    @Override
+    public Object decodeValue(@NotNull Decoder d) throws IOException {
+        // TODO: implement variant decode
+        return null;
+    }
+
     //<<<Start:Java.ClassBody:1>>>
     String mName;
     BinaryID mID;
