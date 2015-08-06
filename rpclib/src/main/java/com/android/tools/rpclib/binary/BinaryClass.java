@@ -15,31 +15,18 @@
  */
 package com.android.tools.rpclib.binary;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * An object used to hold the registry of type id to {@link BinaryObjectCreator}s.
- * </p>
- * See: {@link BinaryObject}
+ *
  */
-public class ObjectTypeID extends Handle {
-  private static Map<ObjectTypeID, BinaryObjectCreator> registry = new HashMap<ObjectTypeID, BinaryObjectCreator>();
-
-  public ObjectTypeID(byte[] value) {
-    super(value);
-  }
-
-  public ObjectTypeID(Decoder d) throws IOException {
-    super(d);
-  }
-
-  public static void register(ObjectTypeID id, BinaryObjectCreator creator) {
-    registry.put(id, creator);
-  }
-
-  public static BinaryObjectCreator lookup(ObjectTypeID id) {
-    return registry.get(id);
-  }
+public interface BinaryClass {
+  @NotNull BinaryID id();
+  @NotNull BinaryObject create();
+  void decode(@NotNull Decoder d, BinaryObject obj) throws IOException;
+  void encode(@NotNull Encoder e, BinaryObject obj) throws IOException;
 }

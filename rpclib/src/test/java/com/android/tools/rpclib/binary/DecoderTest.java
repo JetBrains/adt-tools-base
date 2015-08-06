@@ -17,7 +17,6 @@ package com.android.tools.rpclib.binary;
 
 import junit.framework.TestCase;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Assert;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -196,34 +195,8 @@ public class DecoderTest extends TestCase {
   }
 
   public void testDecodeObject() throws IOException {
-    final byte[] stubObjectTypeIDBytes = new byte[]{
-      0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-      0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
-    };
-    class DummyObject implements BinaryObject {
-      final String dummy = "dummy";
-      @Override
-      public ObjectTypeID type() {
-        return new ObjectTypeID(stubObjectTypeIDBytes);
-      }
-      @Override
-      public void decode(@NotNull Decoder d) throws IOException {
-        assert d.string().equals(dummy);
-      }
-      @Override
-      public void encode(@NotNull Encoder e) throws IOException {
-        e.string(dummy);
-      }
-    }
-    final BinaryObject dummyObject = new DummyObject();
-
-    class DummyObjectCreator implements BinaryObjectCreator {
-      @Override public BinaryObject create() {
-        return dummyObject;
-      }
-    }
-    final BinaryObjectCreator dummyObjectCreator = new DummyObjectCreator();
-    ObjectTypeID.register(dummyObject.type(), dummyObjectCreator);
+    final TypeA dummyObject = new TypeA();
+    dummyObject.setData("dummy");
 
     ByteArrayOutputStream inputBytes = new ByteArrayOutputStream();
 
@@ -231,19 +204,26 @@ public class DecoderTest extends TestCase {
     inputBytes.write(new byte[]{(byte)0x00}); // BinaryObject.NULL_ID
 
     // stubObject:
-    inputBytes.write(new byte[]{0x01}); // stubObject reference
-    inputBytes.write(stubObjectTypeIDBytes); // stubObject.type()
-    inputBytes.write(new byte[]{0x05, 'd', 'u', 'm', 'm', 'y'});
+    inputBytes.write(new byte[]{0x03}); // object sid + encoded
+    inputBytes.write(new byte[]{0x03}); // type sid + encoded
+    inputBytes.write(TypeA.IDBytes); // type id
+    inputBytes.write(new byte[]{0x05, 'd', 'u', 'm', 'm', 'y'}); // payload
 
     // stubObject again, only by reference this time:
-    inputBytes.write(new byte[]{0x01}); // stubObject reference
+    inputBytes.write(new byte[]{0x02}); // repeated object sid
 
     final ByteArrayInputStream input = new ByteArrayInputStream(inputBytes.toByteArray());
     final BinaryObject[] expected = new BinaryObject[]{null, dummyObject, dummyObject};
 
     Decoder d = new Decoder(input);
     for (BinaryObject obj : expected) {
-      assertEquals(obj, d.object());
+      BinaryObject o = d.object();
+      if (obj == null) {
+        assertEquals(obj, o);
+      } else {
+        assertTrue(o instanceof TypeA);
+        assertEquals(((TypeA)obj).getData(), ((TypeA)o).getData());
+      }
     }
   }
 }

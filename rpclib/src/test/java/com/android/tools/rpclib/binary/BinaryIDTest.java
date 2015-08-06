@@ -15,13 +15,22 @@
  */
 package com.android.tools.rpclib.binary;
 
-import org.jetbrains.annotations.NotNull;
+import junit.framework.TestCase;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-/**
- * An object that can be decoded with the {@link Decoder}.
- */
-public interface Decodable {
-  void decode(@NotNull Decoder e) throws IOException;
+public class BinaryIDTest extends TestCase {
+  public void testDecodeObjectTypeID() throws IOException {
+    ByteArrayInputStream input = new ByteArrayInputStream(TypeA.IDBytes);
+    Decoder d = new Decoder(input);
+
+    BinaryID idFromDecoder = new BinaryID(d);
+    assertEquals(TypeA.ID, idFromDecoder);
+  }
+
+  public void testRegisterAndLookupObjectTypeID() {
+    BinaryClass klass = Namespace.lookup(TypeA.ID);
+    assertEquals(klass, TypeA.Klass.INSTANCE);
+  }
 }

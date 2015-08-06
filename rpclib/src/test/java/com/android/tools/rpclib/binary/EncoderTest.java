@@ -225,27 +225,8 @@ public class EncoderTest extends TestCase {
   }
 
   public void testEncodeObject() throws IOException {
-    final byte[] dummyObjectTypeIDBytes = new byte[]{
-      0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-      0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
-    };
-    class DummyObject implements BinaryObject {
-      final String dummy = "dummy";
-      @Override
-      public ObjectTypeID type() {
-        return new ObjectTypeID(dummyObjectTypeIDBytes);
-      }
-      @Override
-      public void decode(@NotNull Decoder d) throws IOException {
-        assert d.string().equals(dummy);
-      }
-      @Override
-      public void encode(@NotNull Encoder e) throws IOException {
-        e.string(dummy);
-      }
-    }
-
-    final BinaryObject dummyObject = new DummyObject();
+    final TypeA dummyObject = new TypeA();
+    dummyObject.setData("dummy");
     final BinaryObject[] input = new BinaryObject[]{null, dummyObject, dummyObject};
     byte[] expected = null;
 
@@ -255,14 +236,15 @@ public class EncoderTest extends TestCase {
     expectedStream.write(new byte[]{(byte)0x00}); // BinaryObject.NULL_ID
 
     // dummyObject:
-    expectedStream.write(new byte[]{0x01}); // dummyObject reference
-    expectedStream.write(dummyObjectTypeIDBytes); // dummyObject.type()
-    expectedStream.write(new byte[]{0x05, 'd', 'u', 'm', 'm', 'y'});
+    expectedStream.write(new byte[]{0x03}); // object sid + encoded
+    expectedStream.write(new byte[]{0x03}); // type sid + encoded
+    expectedStream.write(TypeA.IDBytes); // type id
+    expectedStream.write(new byte[]{0x05, 'd', 'u', 'm', 'm', 'y'}); // payload
 
     // dummyObject again, only by reference this time:
-    expectedStream.write(new byte[]{0x01}); // dummyObject reference
-    expected = expectedStream.toByteArray();
+    expectedStream.write(new byte[]{0x02}); // repeated object sid
 
+    expected = expectedStream.toByteArray();
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 

@@ -21,41 +21,48 @@ import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * A binary resource handle. These are used as 20-byte-unique identifiers to an immutable object or
- * immutable data. They are often returned from RPC calls and if the client already has the object
- * or data cached locally, offer a way to avoid an unnecessary transfer of data from the server.
+ * An ID is a codeable unique identifier.
+ * These are used as 20-byte-unique identifiers, often a sha checksum.
  */
-public class Handle {
+public class BinaryID {
   private static final int SIZE = 20;
+  public static BinaryID INVALID = new BinaryID();
+
   @NotNull private final byte[] mValue = new byte[SIZE];
   private final int mHashCode;
 
-  public Handle(@NotNull byte[] value) {
+  public BinaryID() {
+    mHashCode = 0;
+  }
+
+  public BinaryID(@NotNull byte[] value) {
     assert value.length == SIZE;
     System.arraycopy(value, 0, mValue, 0, SIZE);
     mHashCode = ByteBuffer.wrap(mValue).getInt();
   }
 
-  public Handle(@NotNull Decoder d) throws IOException {
-    assert d.stream().read(mValue) == SIZE;
+  public BinaryID(@NotNull Decoder d) throws IOException {
+    d.read(mValue, SIZE);
     mHashCode = ByteBuffer.wrap(mValue).getInt();
   }
 
-  public void encode(@NotNull Encoder e) throws IOException {
-    e.stream().write(mValue);
+  public void write(@NotNull Encoder e) throws IOException {
+    e.write(mValue, SIZE);
   }
 
   @Override
   public boolean equals(Object other) {
-    if (!(other instanceof Handle)) {
+    if (!(other instanceof BinaryID)) {
       return false;
     }
     if (other == this) {
       return true;
     }
-    return Arrays.equals(mValue, ((Handle)other).mValue);
+    return Arrays.equals(mValue, ((BinaryID)other).mValue);
   }
 
   @Override
