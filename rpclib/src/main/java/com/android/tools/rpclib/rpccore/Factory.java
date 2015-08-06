@@ -19,6 +19,8 @@ package com.android.tools.rpclib.rpccore;
 
 public final class Factory {
     public static void register() {
+        com.android.tools.rpclib.any.Factory.register();
+        com.android.tools.rpclib.schema.Factory.register();
         //<<<Start:Java.FactoryBody:2>>>
         RpcError.register();
         //<<<End:Java.FactoryBody:2>>>
