@@ -17,6 +17,7 @@
  */
 package com.android.tools.rpclib.any;
 
+import com.android.tools.rpclib.schema.Type;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
@@ -28,7 +29,18 @@ import com.android.tools.rpclib.binary.Namespace;
 
 import java.io.IOException;
 
-public final class AnyType implements BinaryObject {
+public final class AnyType extends Type {
+    @Override
+    public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
+        // TODO: implement variant encode
+    }
+
+    @Override
+    public Object decodeValue(@NotNull Decoder d) throws IOException {
+        // TODO: implement variant decode
+        return null;
+    }
+
     //<<<Start:Java.ClassBody:1>>>
 
     // Constructs a default-initialized {@link AnyType}.
