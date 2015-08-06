@@ -16,6 +16,7 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.FD_BUILD_TOOLS;
+import static com.android.SdkConstants.FN_BUILD_GRADLE;
 import static com.android.SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION;
 import static com.android.SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION;
 import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
@@ -27,6 +28,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.MavenCoordinates;
@@ -43,12 +45,16 @@ import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.TextFormat;
+import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -59,9 +65,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Checks Gradle files for potential errors
@@ -240,6 +248,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final String OLD_APP_PLUGIN_ID = "android";
     /** Previous plugin id for libraries */
     public static final String OLD_LIB_PLUGIN_ID = "android-library";
+
+    /** Group ID for GMS */
+    public static final String GMS_GROUP_ID = "com.google.android.gms";
 
     private int mMinSdkVersion;
     private int mCompileSdkVersion;
@@ -794,7 +805,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                             + "compileSdkVersion < 21 is not necessary");
             }
             return;
-        } else if ("com.google.android.gms".equals(dependency.getGroupId())
+        } else if (GMS_GROUP_ID.equals(dependency.getGroupId())
                 && dependency.getArtifactId() != null) {
 
             // 5.2.08 is not supported; special case and warn about this
@@ -889,13 +900,18 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     @Nullable
     private static PreciseRevision getLatestVersionFromRemoteRepo(@NonNull LintClient client,
             @NonNull GradleCoordinate dependency, boolean firstRowOnly, boolean allowPreview) {
+        String groupId = dependency.getGroupId();
+        String artifactId = dependency.getArtifactId();
+        if (groupId == null || artifactId == null) {
+            return null;
+        }
         StringBuilder query = new StringBuilder();
         String encoding = UTF_8.name();
         try {
             query.append("http://search.maven.org/solrsearch/select?q=g:%22");
-            query.append(URLEncoder.encode(dependency.getGroupId(), encoding));
+            query.append(URLEncoder.encode(groupId, encoding));
             query.append("%22+AND+a:%22");
-            query.append(URLEncoder.encode(dependency.getArtifactId(), encoding));
+            query.append(URLEncoder.encode(artifactId, encoding));
         } catch (UnsupportedEncodingException ee) {
             return null;
         }
@@ -1071,6 +1087,13 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         }
     }
 
+    /**
+     * If incrementally editing a single build.gradle file, tracks whether we've already
+     * transitively checked GMS versions such that we don't flag the same error on every
+     * single dependency declaration
+     */
+    private boolean mCheckedGms;
+
     private void checkPlayServices(Context context, GradleCoordinate dependency, Object cookie) {
         String groupId = dependency.getGroupId();
         String artifactId = dependency.getArtifactId();
@@ -1086,6 +1109,91 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         } else {
             checkLocalMavenVersions(context, dependency, cookie, groupId, artifactId,
                     repository);
+        }
+
+        if (!mCheckedGms) {
+            mCheckedGms = true;
+            // Incremental analysis only? If so, tie the check to
+            // a specific GMS play dependency if only, such that it's highlighted
+            // in the editor
+            if (!context.getScope().contains(Scope.ALL_RESOURCE_FILES)) {
+                // Incremental editing: try flagging them in this file!
+                checkConsistentPlayServices(context, cookie);
+            }
+        }
+    }
+
+    private void checkConsistentPlayServices(@NonNull Context context,
+            @Nullable Object cookie) {
+        // Make sure we're using a consistent version across all play services libraries
+        // (b/22709708)
+
+        Project project = context.getMainProject();
+        if (!project.isGradleProject()) {
+            return;
+        }
+        Variant variant = project.getCurrentVariant();
+        if (variant == null) {
+            return;
+        }
+        AndroidArtifact artifact = variant.getMainArtifact();
+        Collection<AndroidLibrary> libraries = artifact.getDependencies().getLibraries();
+        Multimap<String, MavenCoordinates> versionToCoordinate = ArrayListMultimap.create();
+        for (AndroidLibrary library : libraries) {
+            addGmsLibraryVersions(versionToCoordinate, library);
+        }
+        Set<String> versions = versionToCoordinate.keySet();
+        if (versions.size() > 1) {
+            List<String> sortedVersions = Lists.newArrayList(versions);
+            Collections.sort(sortedVersions, Collections.reverseOrder());
+            MavenCoordinates c1 = versionToCoordinate.get(sortedVersions.get(0)).iterator().next();
+            MavenCoordinates c2 = versionToCoordinate.get(sortedVersions.get(1)).iterator().next();
+            // Not using toString because in the IDE, these are model proxies which display garbage output
+            String example1 = c1.getGroupId() + ":" + c1.getArtifactId() + ":" + c1 .getVersion();
+            String example2 = c2.getGroupId() + ":" + c2.getArtifactId() + ":" + c2 .getVersion();
+            String message = "All com.google.android.gms libraries must use the exact same "
+                + "version specification (mixing versions can lead to runtime crashes). "
+                + "Found versions " + Joiner.on(", ").join(sortedVersions) + ". "
+                + "Examples include " + example1 + " and " + example2;
+
+            if (cookie != null) {
+                report(context, cookie, COMPATIBILITY, message);
+            } else {
+                // Associate the error with the top level build.gradle file, if found
+                // (if not, fall back to the project directory). This is necessary because
+                // we're doing this analysis based on the Gradle interpreted model, not from
+                // parsing Gradle files - and the model doesn't provide source positions.
+                File dir = context.getProject().getDir();
+                Location location;
+                File topLevel = new File(dir, FN_BUILD_GRADLE);
+                if (topLevel.exists()) {
+                    location = Location.create(topLevel);
+                } else {
+                    location = Location.create(dir);
+                }
+                context.report(COMPATIBILITY, location, message);
+            }
+        }
+    }
+
+    private static void addGmsLibraryVersions(@NonNull Multimap<String, MavenCoordinates> versions,
+            @NonNull AndroidLibrary library) {
+        MavenCoordinates coordinates = library.getResolvedCoordinates();
+        if (coordinates != null && coordinates.getGroupId().equals(GMS_GROUP_ID)) {
+            versions.put(coordinates.getVersion(), coordinates);
+        }
+
+        for (AndroidLibrary dependency : library.getLibraryDependencies()) {
+            addGmsLibraryVersions(versions, dependency);
+        }
+    }
+
+    @Override
+    public void afterCheckProject(@NonNull Context context) {
+        if (context.getProject() == context.getMainProject() &&
+                // Full analysis? Don't tie check to any specific Gradle DSL element
+                context.getScope().contains(Scope.ALL_RESOURCE_FILES)) {
+            checkConsistentPlayServices(context, null);
         }
     }
 
