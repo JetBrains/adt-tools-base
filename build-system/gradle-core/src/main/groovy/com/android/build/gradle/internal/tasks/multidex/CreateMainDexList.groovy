@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-
-
 package com.android.build.gradle.internal.tasks.multidex
-
 import com.android.build.gradle.internal.PostCompilationData
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
@@ -32,7 +29,6 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 import java.util.concurrent.Callable
-
 /**
  * Task to create the main (non-obfuscated) list of classes to keep.
  * It uses a jar containing all the classes, as well as a shrinked jar file created by proguard.

@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-
-
 package com.android.build.gradle.internal.tasks.multidex
-
 import com.android.build.gradle.internal.PostCompilationData
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
@@ -35,7 +32,6 @@ import org.xml.sax.helpers.DefaultHandler
 
 import javax.xml.parsers.SAXParser
 import javax.xml.parsers.SAXParserFactory
-
 
 class CreateManifestKeepList extends DefaultAndroidTask {
 

@@ -15,12 +15,11 @@
  */
 
 package com.android.build.gradle.internal.tasks.multidex
-
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.android.build.gradle.internal.PostCompilationData
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.google.common.collect.Sets
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
@@ -35,7 +34,6 @@ import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
-
 /**
  * Custom Jar task that can merge other jars.
  * This ignores all non .class files since this is strictly to

@@ -17,7 +17,6 @@
 
 
 package com.android.build.gradle.internal.tasks.multidex
-
 import com.android.build.gradle.internal.PostCompilationData
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
@@ -34,7 +33,6 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
-
 /**
  * Take a list of classes for the main dex (that was computed before obfuscation),
  * a proguard-generated mapping file and create a new list of classes with the new
