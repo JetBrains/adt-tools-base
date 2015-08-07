@@ -74,4 +74,8 @@ public class BinaryID {
   public int hashCode() {
     return mHashCode;
   }
+
+  public byte[] getBytes() {
+    return mValue;
+  }
 }

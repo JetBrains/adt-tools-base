@@ -206,7 +206,7 @@ public class DecoderTest extends TestCase {
     // stubObject:
     inputBytes.write(new byte[]{0x03}); // object sid + encoded
     inputBytes.write(new byte[]{0x03}); // type sid + encoded
-    inputBytes.write(TypeA.IDBytes); // type id
+    inputBytes.write(TypeA.ID.getBytes()); // type id
     inputBytes.write(new byte[]{0x05, 'd', 'u', 'm', 'm', 'y'}); // payload
 
     // stubObject again, only by reference this time:

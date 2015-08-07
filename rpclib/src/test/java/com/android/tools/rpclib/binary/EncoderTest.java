@@ -238,7 +238,7 @@ public class EncoderTest extends TestCase {
     // dummyObject:
     expectedStream.write(new byte[]{0x03}); // object sid + encoded
     expectedStream.write(new byte[]{0x03}); // type sid + encoded
-    expectedStream.write(TypeA.IDBytes); // type id
+    expectedStream.write(TypeA.ID.getBytes()); // type id
     expectedStream.write(new byte[]{0x05, 'd', 'u', 'm', 'm', 'y'}); // payload
 
     // dummyObject again, only by reference this time:

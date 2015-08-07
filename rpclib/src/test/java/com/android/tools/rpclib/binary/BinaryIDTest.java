@@ -22,7 +22,7 @@ import java.io.IOException;
 
 public class BinaryIDTest extends TestCase {
   public void testDecodeObjectTypeID() throws IOException {
-    ByteArrayInputStream input = new ByteArrayInputStream(TypeA.IDBytes);
+    ByteArrayInputStream input = new ByteArrayInputStream(TypeA.ID.getBytes());
     Decoder d = new Decoder(input);
 
     BinaryID idFromDecoder = new BinaryID(d);
