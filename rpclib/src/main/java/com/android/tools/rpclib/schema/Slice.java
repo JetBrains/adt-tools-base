@@ -31,13 +31,22 @@ import java.io.IOException;
 public final class Slice extends Type {
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
-        // TODO: implement variant encode
+        assert(value instanceof Object[]);
+        Object[] array = (Object[])value;
+        e.uint32(array.length);
+        for(Object v : array) {
+            mValueType.encodeValue(e, v);
+        }
     }
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        // TODO: implement variant decode
-        return null;
+        int size = (int)d.uint32();
+        Object[] array = new Object[size];
+        for(int i =0; i < size; i++) {
+            array[i] = mValueType.decodeValue(d);
+        }
+        return array;
     }
 
     //<<<Start:Java.ClassBody:1>>>

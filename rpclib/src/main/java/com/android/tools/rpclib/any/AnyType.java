@@ -32,13 +32,12 @@ import java.io.IOException;
 public final class AnyType extends Type {
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
-        // TODO: implement variant encode
+        throw new IOException("implement variant encode");
     }
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        // TODO: implement variant decode
-        return null;
+        throw new IOException("implement variant decode");
     }
 
     //<<<Start:Java.ClassBody:1>>>
