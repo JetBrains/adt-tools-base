@@ -13,15 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.rpclib.binary;
+package com.android.tools.rpclib.schema;
 
+
+import com.android.tools.rpclib.binary.BinaryObject;
+import com.android.tools.rpclib.binary.Decoder;
+import com.android.tools.rpclib.binary.Encoder;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-/**
- * An object that can be encoded with the {@link Encoder}.
- */
-public interface Encodable {
-  void encode(@NotNull Encoder e) throws IOException;
+public abstract class Type implements BinaryObject {
+  @NotNull
+  public static Type wrap(BinaryObject object) {
+    return (Type)object;
+  }
+
+  @NotNull
+  public BinaryObject unwrap() {
+    return this;
+  }
+
+  public abstract void encodeValue(@NotNull Encoder e, Object value) throws IOException;
+
+  public abstract Object decodeValue(@NotNull Decoder d) throws IOException;
 }

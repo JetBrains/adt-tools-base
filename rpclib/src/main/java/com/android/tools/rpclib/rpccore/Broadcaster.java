@@ -15,6 +15,7 @@
  */
 package com.android.tools.rpclib.rpccore;
 
+import com.android.tools.rpclib.binary.BinaryObject;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
 import com.android.tools.rpclib.multiplex.Channel;
@@ -44,7 +45,7 @@ public class Broadcaster {
     encoder.int8((byte)'0');
   }
 
-  public Result Send(@NotNull Call call) throws IOException, RpcException {
+  public BinaryObject Send(@NotNull BinaryObject call) throws IOException, RpcException {
     Channel channel = mMultiplexer.openChannel();
 
     try {
@@ -62,23 +63,18 @@ public class Broadcaster {
       out.flush();
 
       // Wait for and read the response
-      Object res = d.object();
+      BinaryObject res = d.object();
 
       // Check to see if the response was an error
       if (res instanceof RpcError) {
         throw new RpcException((RpcError)res);
       }
 
-      return (Result)res;
+      return res;
     }
     finally {
       // Close the channel
       channel.close();
     }
-  }
-
-  static {
-    // Make sure the RpcError type is properly registered.
-    assert ObjectFactory.RpcErrorID != null;
   }
 }

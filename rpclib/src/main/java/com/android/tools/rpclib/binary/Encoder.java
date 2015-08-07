@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * An encoder of various primitive types.
@@ -30,13 +32,19 @@ import java.io.UnsupportedEncodingException;
  */
 public class Encoder {
   @NotNull private final OutputStream mOutputStream;
-  @NotNull private final TObjectIntHashMap<BinaryObject> mEncodedMap;
+  @NotNull private final TObjectIntHashMap<BinaryObject> mObjects;
+  @NotNull private final TObjectIntHashMap<BinaryID> mIDs;
   @NotNull private final byte[] mBuffer;
 
   public Encoder(@NotNull OutputStream out) {
-    mEncodedMap = new TObjectIntHashMap<BinaryObject>();
+    mObjects = new TObjectIntHashMap<BinaryObject>();
+    mIDs = new TObjectIntHashMap<BinaryID>();
     mOutputStream = out;
     mBuffer = new byte[9];
+  }
+
+  public void write(byte[] b, int len) throws IOException {
+    mOutputStream.write(b, 0, len);
   }
 
   public void bool(boolean v) throws IOException {
@@ -140,23 +148,45 @@ public class Encoder {
     }
   }
 
+  public void id(@NotNull BinaryID id) throws IOException {
+    if (mIDs.containsKey(id)) {
+      int sid = mIDs.get(id);
+      uint32(sid << 1);
+    }
+    int sid = mIDs.size() + 1;
+    mIDs.put(id, sid);
+    uint32((sid << 1 ) | 1);
+    id.write(this);
+  }
+
+  public void value(@Nullable BinaryObject obj) throws IOException {
+    obj.klass().encode(this, obj);
+  }
+
+  public void variant(@Nullable BinaryObject obj) throws IOException {
+    if (obj == null) {
+      id(BinaryID.INVALID);
+      return;
+    }
+    BinaryClass c = obj.klass();
+    id(c.id());
+    c.encode(this, obj);
+  }
+
   public void object(@Nullable BinaryObject obj) throws IOException {
     if (obj == null) {
       uint32(BinaryObject.NULL_ID);
       return;
     }
-
-    if (mEncodedMap.containsKey(obj)) {
-      int key = mEncodedMap.get(obj);
-      uint16(key);
+    if (mObjects.containsKey(obj)) {
+      int sid = mObjects.get(obj);
+      uint32(sid << 1);
       return;
     }
-
-    int key = mEncodedMap.size() + 1;
-    mEncodedMap.put(obj, key);
-    uint32(key);
-    obj.type().encode(this);
-    obj.encode(this);
+    int sid = mObjects.size() + 1;
+    mObjects.put(obj, sid);
+    uint32((sid << 1) | 1);
+    variant(obj);
   }
 
   public OutputStream stream() {

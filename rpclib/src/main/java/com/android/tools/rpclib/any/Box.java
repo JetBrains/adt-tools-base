@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.rpclib.binary;
+package com.android.tools.rpclib.any;
 
-/**
- * An object used to construct {@link BinaryObject}s from an RPC encoded type.
- * </p>
- * See: {@link BinaryObject}
- */
-public interface BinaryObjectCreator {
-  BinaryObject create();
+import com.android.tools.rpclib.binary.BinaryObject;
+
+public abstract class Box implements BinaryObject {
+  public abstract Object unwrap();
 }

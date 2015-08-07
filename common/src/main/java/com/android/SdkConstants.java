@@ -1116,6 +1116,8 @@ public final class SdkConstants {
     public static final String EXT_AAR = "aar"; //$NON-NLS-1$
     /** Extension for Java heap dumps. */
     public static final String EXT_HPROF = "hprof"; //$NON-NLS-1$
+    /** Extension for graphics trace files. */
+    public static final String EXT_GFXTRACE = "gfxtrace"; //$NON-NLS-1$
 
     private static final String DOT = "."; //$NON-NLS-1$
 
@@ -1149,6 +1151,8 @@ public final class SdkConstants {
     public static final String DOT_AAR = DOT + EXT_AAR; //$NON-NLS-1$
     /** Dot-Extension for Java heap dumps. */
     public static final String DOT_HPROF = DOT + EXT_HPROF; //$NON-NLS-1$
+    /** Dot-Extension for graphics trace files. */
+    public static final String DOT_GFXTRACE = DOT + EXT_GFXTRACE; //$NON-NLS-1$
 
     /** Resource base name for java files and classes */
     public static final String FN_RESOURCE_BASE = "R"; //$NON-NLS-1$
