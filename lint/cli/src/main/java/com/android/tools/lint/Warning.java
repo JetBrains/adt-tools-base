@@ -195,7 +195,7 @@ public class Warning implements Comparable<Warning> {
             return false;
         }
 
-        // This handles the case where you have a huge XML document without hewlines,
+        // This handles the case where you have a huge XML document without newlines,
         // such that all the errors end up on the same line.
         //noinspection RedundantIfStatement
         if (location != null && warning.location != null &&
