@@ -28,6 +28,10 @@ public class Dynamic implements BinaryObject  {
     mKlass = klass;
   }
 
+  public SchemaClass type() {
+    return mKlass.mType;
+  }
+
   public static void register(SchemaClass type) {
     Namespace.register(type.getTypeID(), new Klass(type));
   }
