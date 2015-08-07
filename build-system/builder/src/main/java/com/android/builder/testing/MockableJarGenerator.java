@@ -51,6 +51,10 @@ import java.util.zip.ZipEntry;
  * Given a "standard" android.jar, creates a "mockable" version, where all classes and methods
  * are not final. Optionally makes all methods return "default" values, instead of throwing the
  * infamous "Stub!" exceptions.
+ *
+ * <p>ATTENTION! If you change this class, please update the gradle tasks to reflect that in the
+ * generated file name (e.g. add a "v2"). This will force Gradle to re-generate the jars in
+ * existing projects.
  */
 public class MockableJarGenerator {
     private static final int EMPTY_FLAGS = 0;
