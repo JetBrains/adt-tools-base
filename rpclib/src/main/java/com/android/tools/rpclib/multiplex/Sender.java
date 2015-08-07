@@ -235,7 +235,7 @@ class Sender {
 
     SendData(long channel, byte[] data, int off, int len) {
       super(channel);
-      mData = data;
+      mData = data.clone();
       mOffset = off;
       mLength = len;
     }
