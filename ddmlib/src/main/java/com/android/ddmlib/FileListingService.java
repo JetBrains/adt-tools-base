@@ -88,12 +88,11 @@ public final class FileListingService {
     /**
      * Regexp pattern to parse the result from ls.
      */
-    private static final Pattern LS_L_PATTERN = Pattern.compile(
-            "^([bcdlsp-][-r][-w][-xsS][-r][-w][-xsS][-r][-w][-xstST])\\s+(\\S+)\\s+(\\S+)\\s+" +
+    public static final Pattern LS_L_PATTERN = Pattern.compile(
+            "^([bcdlsp-][-r][-w][-xsS][-r][-w][-xsS][-r][-w][-xstST])\\s+" +
+            "(?:\\d+\\s+)?" + // toolbox ls (<=M) didn't have nlink; toybox's POSIX ls does.
+            "(\\S+)\\s+(\\S+)\\s+" +
             "([\\d\\s,]*)\\s+(\\d{4}-\\d\\d-\\d\\d)\\s+(\\d\\d:\\d\\d)\\s+(.*)$"); //$NON-NLS-1$
-
-    private static final Pattern LS_LD_PATTERN = Pattern.compile(
-                    "d[rwx-]{9}\\s+\\S+\\s+\\S+\\s+[0-9-]{10}\\s+\\d{2}:\\d{2}$"); //$NON-NLS-1$
 
 
     private Device mDevice;
@@ -575,52 +574,6 @@ public final class FileListingService {
         public boolean isCancelled() {
             return false;
         }
-
-        /**
-         * Determine if any symlinks in the <code entries> list are links-to-directories, and if so
-         * mark them as such.  This allows us to traverse them properly later on.
-         */
-        public void finishLinks(IDevice device, ArrayList<FileEntry> entries)
-                throws TimeoutException, AdbCommandRejectedException,
-                ShellCommandUnresponsiveException, IOException {
-            final int[] nLines = {0};
-            MultiLineReceiver receiver = new MultiLineReceiver() {
-                @Override
-                public void processNewLines(String[] lines) {
-                    for (String line : lines) {
-                        Matcher m = LS_LD_PATTERN.matcher(line);
-                        if (m.matches()) {
-                            nLines[0]++;
-                        }
-                    }
-                }
-
-                @Override
-                public boolean isCancelled() {
-                    return false;
-                }
-            };
-
-            for (FileEntry entry : entries) {
-                if (entry.getType() != TYPE_LINK) continue;
-
-                // We simply need to determine whether the referent is a directory or not.
-                // We do this by running `ls -ld ${link}/`.  If the referent exists and is a
-                // directory, we'll see the normal directory listing.  Otherwise, we'll see an
-                // error of some sort.
-                nLines[0] = 0;
-
-                final String command = String.format("ls -l -d %s%s", entry.getFullEscapedPath(),
-                        FILE_SEPARATOR);
-
-                device.executeShellCommand(command, receiver);
-
-                if (nLines[0] > 0) {
-                    // We saw lines matching the directory pattern, so it's a directory!
-                    entry.setType(TYPE_DIRECTORY_LINK);
-                }
-            }
-        }
     }
 
     /**
@@ -836,9 +789,6 @@ public final class FileListingService {
 
             // call ls.
             mDevice.executeShellCommand(command, receiver);
-
-            // finish the process of the receiver to handle links
-            receiver.finishLinks(mDevice, entryList);
         } finally {
             // at this point we need to refresh the viewer
             entry.fetchTime = System.currentTimeMillis();
