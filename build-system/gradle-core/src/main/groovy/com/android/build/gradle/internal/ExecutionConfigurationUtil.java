@@ -16,25 +16,20 @@
 
 package com.android.build.gradle.internal;
 
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.ide.common.internal.ExecutorSingleton;
 
 import org.gradle.api.Project;
 
 public class ExecutionConfigurationUtil {
 
-    private static final String THREAD_POOL_SIZE_PROPERTY = "com.android.build.threadPoolSize";
 
     public static void setThreadPoolSize(Project project) {
-        if (!project.hasProperty(THREAD_POOL_SIZE_PROPERTY)) {
+        Integer size = AndroidGradleOptions.getThreadPoolSize(project);
+        if (size == null) {
             return;
         }
 
-        String threadPoolSizeProperty = project.property(THREAD_POOL_SIZE_PROPERTY).toString();
-
-        try {
-            ExecutorSingleton.setThreadPoolSize(Integer.parseInt(threadPoolSizeProperty));
-        } catch (NumberFormatException e) {
-            project.getLogger().error("com.android.threadPoolSize should be an integer.");
-        }
+        ExecutorSingleton.setThreadPoolSize(size);
     }
 }
