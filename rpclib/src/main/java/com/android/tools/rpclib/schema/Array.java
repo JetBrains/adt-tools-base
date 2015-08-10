@@ -31,13 +31,20 @@ import java.io.IOException;
 public final class Array extends Type {
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
-        // TODO: implement variant encode
+        assert(value instanceof Object[]);
+        Object[] array = (Object[])value;
+        for(int i =0; i < mSize; i++) {
+            mValueType.encodeValue(e, array[i]);
+        }
     }
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        // TODO: implement variant decode
-        return null;
+        Object[] array = new Object[mSize];
+        for(int i =0; i < mSize; i++) {
+            array[i] = mValueType.decodeValue(d);
+        }
+        return array;
     }
 
     //<<<Start:Java.ClassBody:1>>>
