@@ -209,8 +209,8 @@ class Sender {
           }
           if (item != null) {
             map.add(item);
-            map.flush(mEncoder);
           }
+          map.flush(mEncoder);
         }
         // Drain map
         while (map.size() > 0) {
