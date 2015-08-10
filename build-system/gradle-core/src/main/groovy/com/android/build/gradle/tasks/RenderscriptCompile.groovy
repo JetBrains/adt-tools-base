@@ -186,8 +186,7 @@ public class RenderscriptCompile extends NdkTask {
                         "$scope.globalScope.buildDir/${FD_INTERMEDIATES}/rs/${variantData.variantConfiguration.dirName}/obj")
             }
             ConventionMappingHelper.map(renderscriptTask, "libOutputDir") {
-                new File(
-                        "$scope.globalScope.buildDir/${FD_INTERMEDIATES}/rs/${variantData.variantConfiguration.dirName}/lib")
+                scope.getRenderscriptLibOutputDir()
             }
             ConventionMappingHelper.map(renderscriptTask, "ndkConfig") { config.ndkConfig }
         }
