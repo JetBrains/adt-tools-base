@@ -24,6 +24,8 @@ import com.google.common.io.ByteStreams;
 import org.junit.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.io.IOException;
@@ -35,6 +37,7 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,18 +48,8 @@ public class ClassEnhancementTest {
 
     @Test
     public void traceSimpleMethod() throws IOException {
-        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(
+        traceClass(getClass().getClassLoader(),
                 "com/android/build/gradle/internal/incremental/SimpleMethodDispatchControl.class");
-        assertNotNull(inputStream);
-        try {
-            ClassReader classReader = new ClassReader(inputStream);
-            StringWriter sw = new StringWriter();
-            TraceClassVisitor traceClassVisitor = new TraceClassVisitor(new PrintWriter(sw));
-            classReader.accept(traceClassVisitor, 0);
-            System.out.println(sw.toString());
-        } finally {
-            inputStream.close();
-        }
     }
 
     private ClassLoader loadAndPatch(String... classes) throws Exception {
@@ -69,11 +62,14 @@ public class ClassEnhancementTest {
             original.put(clazz, bytes);
 
             ClassReader classReader = new ClassReader(bytes);
+            ClassNode classNode = new ClassNode(Opcodes.ASM5);
+            classReader.accept(classNode, ClassReader.EXPAND_FRAMES | ClassReader.SKIP_CODE);
             ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
-            IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(classWriter);
+            IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(
+                    classNode, Collections.EMPTY_LIST, classWriter);
             classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
             enhanced.put(clazz, classWriter.toByteArray());
-         //   traceClass(classWriter.toByteArray());
+            traceClass(classWriter.toByteArray());
 
         }
         ClassLoader cl = prepareClassLoader(this.getClass().getClassLoader().getParent(), enhanced);
@@ -81,12 +77,14 @@ public class ClassEnhancementTest {
         Map<String, byte[]> change = new HashMap<String, byte[]>();
         for (String clazz : classes) {
             ClassReader classReader = new ClassReader(original.get(clazz));
+            ClassNode classNode = new ClassNode(Opcodes.ASM5);
+            classReader.accept(classNode, ClassReader.EXPAND_FRAMES | ClassReader.SKIP_CODE);
             ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
             IncrementalChangeVisitor incrementalChangeVisitor = new IncrementalChangeVisitor(
-                    classWriter);
+                    classNode, Collections.EMPTY_LIST, classWriter);
             classReader.accept(incrementalChangeVisitor, ClassReader.EXPAND_FRAMES);
             change.put(clazz + "$override", classWriter.toByteArray());
-        //    traceClass(classWriter.toByteArray());
+            traceClass(classWriter.toByteArray());
 
         }
         ClassLoader secondaryClassLoader = prepareClassLoader(cl, change);

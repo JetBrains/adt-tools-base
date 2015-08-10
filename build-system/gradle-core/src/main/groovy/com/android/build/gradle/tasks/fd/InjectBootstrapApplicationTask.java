@@ -64,6 +64,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.jar.JarInputStream;
 import java.util.zip.ZipEntry;
 
@@ -205,7 +206,9 @@ public class InjectBootstrapApplicationTask extends BaseTask {
     }
 
     static void extractLibrary(@NonNull File destDir) throws IOException {
-        InputStream stream = InjectBootstrapApplicationTask.class.getResourceAsStream("/fd-runtime.jar");
+        InputStream stream = new BufferedInputStream(new FileInputStream(
+                new File("/Users/jedo/src/10x/tools/base/build-system/gradle-core/src/main/resources/fd-runtime.jar")));
+        //InputStream stream = InjectBootstrapApplicationTask.class.getResourceAsStream("/fd-runtime.jar");
         if (stream == null) {
             System.err.println("Couldn't find embedded Fast Deployment runtime library");
             return;

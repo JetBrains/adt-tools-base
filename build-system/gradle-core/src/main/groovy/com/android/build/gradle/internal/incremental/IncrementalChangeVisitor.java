@@ -17,16 +17,19 @@
 package com.android.build.gradle.internal.incremental;
 
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodNode;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,13 +48,9 @@ import java.util.Set;
  */
 public class IncrementalChangeVisitor extends IncrementalVisitor {
 
-    protected String visitedClassName;
-    protected String visitedSuperName;
-    protected Set<Method> methods = new HashSet<Method>();
-    Map<String, String> privateFields = new HashMap<String, String>();
 
-    public IncrementalChangeVisitor(ClassVisitor classVisitor) {
-        super(classVisitor);
+    public IncrementalChangeVisitor(ClassNode classNode, List<ClassNode> parentNodes, ClassVisitor classVisitor) {
+        super(classNode, parentNodes, classVisitor);
     }
 
     @Override
@@ -76,17 +75,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     }
 
     @Override
-    public FieldVisitor visitField(int access, String name, String desc, String signature,
-            Object value) {
-        boolean isPrivate=(access & Opcodes.ACC_PRIVATE) != 0;
-        boolean isProtected=(access & Opcodes.ACC_PROTECTED) != 0;
-        if (isPrivate || isProtected) {
-            privateFields.put(name, desc);
-        }
-        return super.visitField(access, name, desc, signature, value);
-    }
-
-    @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
 
@@ -94,13 +82,17 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         if (name.equals("<init>") || name.equals("<clinit>")) {
             return null;
         }
-        methods.add(new Method(name, desc));
-        String newDesc = "(L" + visitedClassName + ";" + desc.substring(1);
+        boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
+        String newDesc = isStatic ? desc : "(L" + visitedClassName + ";" + desc.substring(1);
         System.out.println("new Desc is " + newDesc);
+
+        // clear the private bit if present,
+        // change the method visibility to always be public and static.
+        access  = (access & ~Opcodes.ACC_PRIVATE) | Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
         return new ISVisitor(Opcodes.ASM5,
-                super.visitMethod(access + Opcodes.ACC_STATIC, name, newDesc, signature, exceptions),
-                access + Opcodes.ACC_STATIC,
-                name, desc);
+                super.visitMethod(access, name, newDesc, signature, exceptions),
+                access,
+                name, newDesc);
     }
 
     public class ISVisitor extends GeneratorAdapter {
@@ -111,7 +103,24 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         @Override
         public void visitFieldInsn(int opcode, String owner, String name, String desc) {
-            if (privateFields.containsKey(name) && owner.equals(visitedClassName)) {
+            // if we are access another object's field, nothing needs to be done.
+            if (!owner.equals(visitedClassName)) {
+                super.visitFieldInsn(opcode, owner, name, desc);
+                return;
+            }
+            // check the field access bits.
+            FieldNode fieldNode = getFieldByName(name);
+            if (fieldNode == null) {
+                // this is an error, we should know of the fields we are visiting.
+                throw new RuntimeException("Unknown field access " + name);
+            }
+            boolean isPrivate = (fieldNode.access & Opcodes.ACC_PRIVATE) != 0;
+            boolean isProtected = (fieldNode.access & Opcodes.ACC_PROTECTED) != 0;
+            boolean isPackagePrivate = fieldNode.access == 0;
+
+            // we should me this more efficient, have a per field access type method
+            // for getting and setting field values.
+            if (isPrivate || isProtected || isPackagePrivate) {
                 if (opcode == Opcodes.GETFIELD) {
                     push(name);
                     invokeStatic(Type.getType(IncrementalSupportRuntime.class),
@@ -134,32 +143,90 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         @Override
         public void visitMethodInsn(int opcode, String owner, String name, String desc,
                 boolean itf) {
-            if (opcode == Opcodes.INVOKESPECIAL && owner.equals(visitedSuperName)) {
-                int arr = newLocal(Type.getType("[Ljava/lang.Object;"));
-                Type[] args = Type.getArgumentTypes(desc);
-                push(args.length);
-                visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
-                visitVarInsn(Opcodes.ASTORE, arr);
-                for (int i = args.length - 1; i >= 0; i--) {
+            if (opcode == Opcodes.INVOKESPECIAL) {
+                if (owner.equals(visitedSuperName)) {
+                    int arr = newLocal(Type.getType("[Ljava/lang.Object;"));
+                    Type[] args = Type.getArgumentTypes(desc);
+                    push(args.length);
+                    visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
+                    visitVarInsn(Opcodes.ASTORE, arr);
+                    for (int i = args.length - 1; i >= 0; i--) {
+                        visitVarInsn(Opcodes.ALOAD, arr);
+                        swap();
+                        push(i);
+                        swap();
+                        box(args[i]);
+                        visitInsn(Opcodes.AASTORE);
+                    }
+                    push(name + "." + desc);
                     visitVarInsn(Opcodes.ALOAD, arr);
+                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName, "access$super",
+                            "(L" + visitedClassName
+                                    + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;",
+                            false);
+                    Type ret = Type.getReturnType(desc);
+                    if (ret.getSort() == Type.VOID) {
+                        pop();
+                    } else {
+                        unbox(ret);
+                    }
+                }
+                else if (owner.equals(visitedClassName)) {
+                    // private method dispatch, just invoke the $override class static method.
+                    super.visitMethodInsn(opcode, owner + "$override", name, desc, itf);
+                } else {
+                    super.visitMethodInsn(opcode, owner, name, desc, itf);
+                }
+            } else if (opcode == Opcodes.INVOKEVIRTUAL && owner.equals(visitedClassName)) {
+                // we are calling a method on the "this" object, we must first verify this
+                // is not a protected method. If it is, we cannot invoke directly from here, so
+                // we should go through reflection.
+                // possible enhancement to study : make the $override a subclass when not final
+                // and bypass reflection.
+                // for public method, we should be able to directly call the enhanced class although
+                // I am not sure how well this would play when dealing with removing the
+                // called method for instance (and hoping the super class will pick it up).
+                Type[] parameterTypes = Type.getArgumentTypes(desc);
+
+                push(parameterTypes.length);
+                int parameters = newLocal(Type.getType(Object.class));
+                newArray(Type.getType(Object.class));
+                storeLocal(parameters);
+
+                for (int i = parameterTypes.length - 1; i >= 0; i--) {
+                    loadLocal(parameters);
                     swap();
                     push(i);
                     swap();
-                    box(args[i]);
-                    visitInsn(Opcodes.AASTORE);
+                    box(parameterTypes[i]);
+                    arrayStore(Type.getType(Object.class));
                 }
-                push(name + "." + desc);
-                visitVarInsn(Opcodes.ALOAD, arr);
-                mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName, "access$super",
-                        "(L" + visitedClassName
-                                + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;",
-                        false);
-                Type ret = Type.getReturnType(desc);
-                if (ret.getSort() == Type.VOID) {
-                    pop();
-                } else {
-                    unbox(ret);
+
+                push(name);
+                push(parameterTypes.length);
+                newArray(Type.getType(String.class));
+
+                for (int i = 0; i < parameterTypes.length; i++) {
+                    dup();
+                    push(i);
+                    push(parameterTypes[i].getClassName());
+                    arrayStore(Type.getType(String.class));
                 }
+
+                loadLocal(parameters);
+
+                invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+                        Method.getMethod(
+                                "Object invokeProtectedMethod(Object, String, String[], Object[])"));
+                unbox(Type.getReturnType(desc));
+            } else if (opcode == Opcodes.INVOKESTATIC && owner.equals(visitedClassName)) {
+                // we must do something similar as for non static method,
+                // which is to call back the ORIGINAL static method
+                // using reflection when the called method is anything but public.
+                // I thought for a while we could bypass and call directly the $override method
+                // but we can't because the static method could be of the super class and we don't
+                // necessarily have an enhanced class to call directly.
+                super.visitMethodInsn(opcode, owner, name, desc, itf);
             } else {
                 super.visitMethodInsn(opcode, owner, name, desc, itf);
             }
@@ -177,14 +244,21 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
 
-        for (Method method : methods) {
+        List<MethodNode> methods = classNode.methods;
+        for (MethodNode methodNode : methods) {
+            if (methodNode.name.equals("<init>") || methodNode.name.equals("<clinit>")) {
+                continue;
+            }
             mv.visitVarInsn(Opcodes.ALOAD, 1);
-            mv.visitLdcInsn(method.getName() + "." + method.getDescriptor());
+            mv.visitLdcInsn(methodNode.name + "." + methodNode.desc);
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals",
                     "(Ljava/lang/Object;)Z", false);
             Label l0 = new Label();
             mv.visitJumpInsn(Opcodes.IFEQ, l0);
-            String newDesc = "(L" + visitedClassName + ";" + method.getDescriptor().substring(1);
+            // this should be abstracted somewhere.
+            String newDesc = (methodNode.access & Opcodes.ACC_STATIC) != 0
+                    ? methodNode.desc
+                    : "(L" + visitedClassName + ";" + methodNode.desc.substring(1);
 
             Type[] args = Type.getArgumentTypes(newDesc);
             int argc = 0;
@@ -195,8 +269,10 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 mv.unbox(t);
                 argc++;
             }
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override", method.getName(), newDesc, false);
-            Type ret = method.getReturnType();
+            // TODO: change the method name as it can now collide with existing static methods with
+            // the same signature.
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override", methodNode.name, newDesc, false);
+            Type ret = Type.getReturnType(methodNode.desc);
             if (ret.getSort() == Type.VOID) {
                 mv.visitInsn(Opcodes.ACONST_NULL);
             } else {

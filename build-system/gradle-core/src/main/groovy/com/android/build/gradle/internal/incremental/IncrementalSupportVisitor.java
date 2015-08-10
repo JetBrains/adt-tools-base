@@ -23,12 +23,13 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+
 
 /**
  * Visitor for classes that will eventually be replaceable at runtime.
@@ -46,12 +47,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
     private static final Type CHANGE_TYPE = Type.getType(IncrementalChange.class);
 
-    protected String visitedClassName;
-    protected String visitedSuperName;
-    protected Set<Method> methods = new HashSet<Method>();
-
-    public IncrementalSupportVisitor(ClassVisitor classVisitor) {
-        super(classVisitor);
+    public IncrementalSupportVisitor(ClassNode classNode, List<ClassNode> parentNodes, ClassVisitor classVisitor) {
+        super(classNode, parentNodes, classVisitor);
     }
 
     @Override
@@ -73,7 +70,6 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         if (name.equals("<init>") || name.equals("<clinit>")) {
             return defaultVisitor;
         }
-        methods.add(new Method(name, desc));
         return new ISMethodVisitor(Opcodes.ASM5, defaultVisitor, access, name, desc);
     }
 
@@ -149,15 +145,19 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
 
-        for (Method method : methods) {
+        List<MethodNode> methods = classNode.methods;
+        for (MethodNode methodNode : methods) {
+            if (methodNode.name.equals("<init>") || methodNode.name.equals("<clinit>")) {
+                continue;
+            }
             mv.visitVarInsn(Opcodes.ALOAD, 1);
-            mv.visitLdcInsn(method.getName() + "." + method.getDescriptor());
+            mv.visitLdcInsn(methodNode.name + "." + methodNode.desc);
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
             Label l0 = new Label();
             mv.visitJumpInsn(Opcodes.IFEQ, l0);
             mv.visitVarInsn(Opcodes.ALOAD, 0);
 
-            Type[] args = method.getArgumentTypes();
+            Type[] args = Type.getArgumentTypes(methodNode.desc);
             int argc = 0;
             for (Type t : args) {
                 mv.visitVarInsn(Opcodes.ALOAD, 2);
@@ -168,8 +168,9 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             }
 
             // Call super on the other object, yup this works cos we are on the right place to call from.
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, visitedSuperName, method.getName(), method.getDescriptor(), false);
-            Type ret = method.getReturnType();
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, visitedSuperName, methodNode.name,
+                    methodNode.desc, false);
+            Type ret = Type.getReturnType(methodNode.desc);
             if (ret.getSort() == Type.VOID) {
                 mv.visitInsn(Opcodes.ACONST_NULL);
             } else {

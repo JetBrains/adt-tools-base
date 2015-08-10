@@ -16,11 +16,71 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodNode;
+
+import java.util.Iterator;
+import java.util.List;
 
 public class IncrementalVisitor extends ClassVisitor {
-    public IncrementalVisitor(ClassVisitor classVisitor) {
+
+    protected String visitedClassName;
+    protected String visitedSuperName;
+    @NonNull
+    protected final ClassNode classNode;
+    @NonNull
+    protected final List<ClassNode> parentNodes;
+
+    public IncrementalVisitor(@NonNull ClassNode classNode, List<ClassNode> parentNodes, ClassVisitor classVisitor) {
         super(Opcodes.ASM5, classVisitor);
+        this.classNode = classNode;
+        this.parentNodes = parentNodes;
+    }
+
+    @Nullable
+    FieldNode getFieldByName(String fieldName) {
+        FieldNode fieldNode = getFieldByNameInClass(fieldName, classNode);
+        Iterator<ClassNode> iterator = parentNodes.iterator();
+        while(fieldNode == null && iterator.hasNext()) {
+            ClassNode parentNode = iterator.next();
+            fieldNode = getFieldByNameInClass(fieldName, parentNode);
+        }
+        return fieldNode;
+    }
+
+    FieldNode getFieldByNameInClass(String fieldName, ClassNode classNode) {
+        List<FieldNode> fields = classNode.fields;
+        for (FieldNode field: fields) {
+            if (field.name.equals(fieldName)) {
+                return field;
+            }
+        }
+        return null;
+    }
+
+    MethodNode getMethodByName(String methodName, String desc) {
+        MethodNode methodNode = getMethodByNameInClass(methodName, desc, classNode);
+        Iterator<ClassNode> iterator = parentNodes.iterator();
+        while(methodNode == null && iterator.hasNext()) {
+            ClassNode parentNode = iterator.next();
+            methodNode = getMethodByNameInClass(methodName, desc, parentNode);
+        }
+        return methodNode;
+    }
+
+    MethodNode getMethodByNameInClass(String methodName, String desc, ClassNode classNode) {
+        List<MethodNode> methods = classNode.methods;
+        for (MethodNode method : methods) {
+            if (method.name.equals(methodName) && method.desc.equals(desc)) {
+                return method;
+            }
+        }
+        return null;
     }
 }

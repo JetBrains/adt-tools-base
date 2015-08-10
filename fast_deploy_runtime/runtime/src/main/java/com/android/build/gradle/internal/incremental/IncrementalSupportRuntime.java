@@ -16,119 +16,23 @@
 
 package com.android.build.gradle.internal.incremental;
 
-import android.util.Log;
-
-import com.android.tools.fd.runtime.BootstrapApplication;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
 
 /**
  * Support for registering patched classes.
  */
-public enum IncrementalSupportRuntime {
-
-    INSTANCE;
-
-    public final Map<String, Class<?>> patchedClasses = new HashMap<String, Class<?>>();
-
-    public boolean isPatched(String className) {
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, String.format("Asking if %s is patched : %b", className,
-                    patchedClasses.containsKey(className)));
-        }
-        return patchedClasses.containsKey(className);
-    }
-
-    public Class<?> getPatchedClass(String className) {
-        return patchedClasses.get(className);
-    }
-
-    public static IncrementalSupportRuntime get() {
-        return INSTANCE;
-    }
-
-    public static Object dispatch(Object target, String methodName, String signature, Object... parameters) {
-        try {
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, String.format("Invoking %s with signature %s", methodName, signature));
-            }
-            List<Class> paramTypes = new ArrayList<Class>();
-            if (parameters.length > 0) {
-                paramTypes = extractParameterTypes(target.getClass().getClassLoader(), signature);
-            }
-
-            paramTypes.add(0, target.getClass());
-            Class patchedClass = INSTANCE.getPatchedClass(target.getClass().getName().replaceAll("\\.", "/"));
-            if (patchedClass == null) {
-                throw new RuntimeException("No patched class...");
-            }
-            Method method = patchedClass.getDeclaredMethod(methodName, paramTypes.toArray(new Class[paramTypes.size()]));
-            if (!Modifier.isStatic(method.getModifiers())) {
-                method = null;
-                for (Method m : target.getClass().getMethods()) {
-                    if (m.getName().equals(methodName) && Modifier.isStatic(m.getModifiers())) {
-                        method = m;
-                        break;
-                    }
-                }
-            }
-            Object[] newParameters = new Object[parameters.length + 1];
-            newParameters[0] = target;
-            for (int i=0; i < parameters.length; i++) {
-                newParameters[i+1] = parameters[i];
-            }
-            if (method != null) {
-                return method.invoke(null, newParameters);
-            }
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private static List<Class> extractParameterTypes(ClassLoader cl, String signature)
-            throws ClassNotFoundException {
-        List<Class> paramTypes = new ArrayList<Class>();
-        String argumentDeclaration = signature.substring(1, signature.indexOf(')'));
-
-        while(!argumentDeclaration.isEmpty()) {
-            if (argumentDeclaration.charAt(0) == 'L') {
-
-                String argumentType = argumentDeclaration.substring(1, argumentDeclaration.indexOf(';'));
-                argumentDeclaration = argumentDeclaration.substring(argumentDeclaration.indexOf(';') + 1);
-                paramTypes.add(cl.loadClass(argumentType.replaceAll("/", ".")));
-            } else {
-                BasicType basicType = BasicType.valueOf(argumentDeclaration.substring(0, 1));
-                argumentDeclaration = argumentDeclaration.substring(1);
-                paramTypes.add(basicType.getJavaType());
-            }
-        }
-        return paramTypes;
-    }
+public class IncrementalSupportRuntime {
 
     public static Object getPrivateField(Object target, String name) {
         try {
-            Field declaredField = target.getClass().getDeclaredField(name);
+            Field declaredField = getFieldByName(target.getClass(), name);
+            if (declaredField == null) {
+                throw new RuntimeException(new NoSuchFieldException(name));
+            }
             declaredField.setAccessible(true);
             return declaredField.get(target);
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -137,10 +41,42 @@ public enum IncrementalSupportRuntime {
 
     public static void setPrivateField(Object target, String name, Object value) {
         try {
-            Field declaredField = target.getClass().getDeclaredField(name);
+            Field declaredField = getFieldByName(target.getClass(), name);
+            if (declaredField == null) {
+                throw new RuntimeException(new NoSuchFieldException(name));
+            }
             declaredField.setAccessible(true);
             declaredField.set(target, value);
-        } catch (NoSuchFieldException e) {
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Object invokeProtectedMethod(Object target, String name, String[] parameterTypes,
+            Object[] params) {
+        System.out.println("invoke protected called");
+        Class[] paramTypes = new Class[parameterTypes.length];
+        for (int i=0; i<parameterTypes.length; i++) {
+            BasicType basicType = BasicType.parse(parameterTypes[i]);
+            if (basicType != null) {
+                paramTypes[i] = basicType.getJavaType();
+            } else {
+                try {
+                    paramTypes[i] = target.getClass().getClassLoader().loadClass(parameterTypes[i]);
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        try {
+            Method toDispatchTo = getMethodByName(target.getClass(), name, paramTypes);
+            if (toDispatchTo == null) {
+                throw new RuntimeException(new NoSuchMethodException(name));
+            }
+            toDispatchTo.setAccessible(true);
+            return toDispatchTo.invoke(target, params);
+        } catch (InvocationTargetException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
@@ -149,12 +85,27 @@ public enum IncrementalSupportRuntime {
         }
     }
 
-    public void addPatchedClass(String s, Class<?> enhancedClass) {
-        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, String.format("Registering class patch %s", s));
+    private static Field getFieldByName(Class<?> aClass, String name) {
+        Class<?> currentClass = aClass;
+        while (currentClass != null) {
+            try {
+                return currentClass.getDeclaredField(name);
+            } catch (NoSuchFieldException e) {
+                currentClass = currentClass.getSuperclass();
+            }
         }
-        patchedClasses.put(s, enhancedClass);
+        return null;
     }
 
-
+    private static Method getMethodByName(Class<?> aClass, String name, Class[] paramTypes) {
+        Class<?> currentClass = aClass;
+        while (currentClass != null) {
+            try {
+                return currentClass.getDeclaredMethod(name, paramTypes);
+            } catch (NoSuchMethodException e) {
+                currentClass = aClass.getSuperclass();
+            }
+        }
+        return null;
+    }
 }

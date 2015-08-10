@@ -16,22 +16,36 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import com.android.annotations.Nullable;
+
 /**
- * Created by jedo on 7/23/15.
+ * Created by jedo on 8/7/15.
  */
-public class SimpleMethodDispatch {
+public enum BasicType {
+    I(Integer.TYPE),
+    J(Long.TYPE),
+    Z(Boolean.TYPE),
+    F(Float.TYPE),
+    D(Double.TYPE),
+    V(Void.TYPE);
 
-    private int field = 183*4;
-    public int otherField = 40;
+    private final Class<?> primitiveJavaType;
 
-    public long getIntValue(int value) {
-        System.out.println("out !");
-        return calculateIntValue(value, otherField);
+    BasicType(Class<?> primitiveType) {
+        this.primitiveJavaType = primitiveType;
     }
 
-    public long calculateIntValue(Integer value, int otherValue) {
-        int newValue = value + otherValue;
-        System.out.println("hello " + newValue);
-        return field / (newValue);
+    public Class getJavaType() {
+        return primitiveJavaType;
+    }
+
+    @Nullable
+    public static BasicType parse(String name) {
+        for (BasicType basicType : BasicType.values()) {
+            if (basicType.getJavaType().getName().equals(name)) {
+                return basicType;
+            }
+        }
+        return null;
     }
 }

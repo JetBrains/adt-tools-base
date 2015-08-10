@@ -17,6 +17,8 @@
 package com.android.build.gradle.internal.incremental;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * Support for registering patched classes.
@@ -25,12 +27,12 @@ public class IncrementalSupportRuntime {
 
     public static Object getPrivateField(Object target, String name) {
         try {
-            Field declaredField = target.getClass().getDeclaredField(name);
+            Field declaredField = getFieldByName(target.getClass(), name);
+            if (declaredField == null) {
+                throw new RuntimeException(new NoSuchFieldException(name));
+            }
             declaredField.setAccessible(true);
             return declaredField.get(target);
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -39,15 +41,71 @@ public class IncrementalSupportRuntime {
 
     public static void setPrivateField(Object target, String name, Object value) {
         try {
-            Field declaredField = target.getClass().getDeclaredField(name);
+            Field declaredField = getFieldByName(target.getClass(), name);
+            if (declaredField == null) {
+                throw new RuntimeException(new NoSuchFieldException(name));
+            }
             declaredField.setAccessible(true);
             declaredField.set(target, value);
-        } catch (NoSuchFieldException e) {
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Object invokeProtectedMethod(Object target, String name, String[] parameterTypes,
+            Object[] params) {
+        System.out.println("invoke protected called");
+        Class[] paramTypes = new Class[parameterTypes.length];
+        for (int i=0; i<parameterTypes.length; i++) {
+            BasicType basicType = BasicType.parse(parameterTypes[i]);
+            if (basicType != null) {
+                paramTypes[i] = basicType.getJavaType();
+            } else {
+                try {
+                    paramTypes[i] = target.getClass().getClassLoader().loadClass(parameterTypes[i]);
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        try {
+            Method toDispatchTo = getMethodByName(target.getClass(), name, paramTypes);
+            if (toDispatchTo == null) {
+                throw new RuntimeException(new NoSuchMethodException(name));
+            }
+            toDispatchTo.setAccessible(true);
+            return toDispatchTo.invoke(target, params);
+        } catch (InvocationTargetException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+    }
+
+    private static Field getFieldByName(Class<?> aClass, String name) {
+        Class<?> currentClass = aClass;
+        while (currentClass != null) {
+            try {
+                return currentClass.getDeclaredField(name);
+            } catch (NoSuchFieldException e) {
+                currentClass = currentClass.getSuperclass();
+            }
+        }
+        return null;
+    }
+
+    private static Method getMethodByName(Class<?> aClass, String name, Class[] paramTypes) {
+        Class<?> currentClass = aClass;
+        while (currentClass != null) {
+            try {
+                return currentClass.getDeclaredMethod(name, paramTypes);
+            } catch (NoSuchMethodException e) {
+                currentClass = aClass.getSuperclass();
+            }
+        }
+        return null;
     }
 }

@@ -39,13 +39,18 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.ClassNode;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -176,7 +181,12 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
                 System.out.println("Skipping runtime library class " + inputFile);
                 classReader.accept(classWriter, ClassReader.EXPAND_FRAMES);
             } else {
-                IncrementalChangeVisitor visitor = new IncrementalChangeVisitor(classWriter);
+                ClassNode classNode = new ClassNode();
+                classReader.accept(classNode, ClassReader.EXPAND_FRAMES | ClassReader.SKIP_CODE);
+                // get all type hierarchy.
+                // for now we assume they are co-located which is obviously not always true.
+                List<ClassNode> parentNodes = parseParents(inputFile, classNode);
+                IncrementalChangeVisitor visitor = new IncrementalChangeVisitor(classNode, parentNodes, classWriter);
                 classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
             }
             // write the modified class.
@@ -212,6 +222,28 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
         }
     }
 
+    private List<ClassNode> parseParents(File inputFile, ClassNode classNode) throws IOException {
+        File binaryFolder = new File(inputFile.getAbsolutePath().substring(0,
+                inputFile.getAbsolutePath().length() - (classNode.name.length() + ".class".length())));
+        List<ClassNode> parentNodes = new ArrayList<ClassNode>();
+        String currentParentName = classNode.superName;
+        while (!currentParentName.equals(Type.getType(Object.class).getInternalName())) {
+            File parentFile = new File(binaryFolder, currentParentName + ".class");
+            System.out.println("parsing " + parentFile);
+            if (parentFile.exists()) {
+                InputStream parentFileClassReader = new BufferedInputStream(new FileInputStream(parentFile));
+                ClassReader parentClassReader = new ClassReader(parentFileClassReader);
+                ClassNode parentNode = new ClassNode();
+                parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES | ClassReader.SKIP_CODE);
+                parentNodes.add(parentNode);
+                currentParentName = parentNode.superName;
+            } else {
+                return parentNodes;
+            }
+        }
+        return parentNodes;
+    }
+
     private void processDirectory(File inputDir) {
         for (File inputFile : inputDir.listFiles()) {
             if (inputFile.isDirectory()) {
@@ -232,8 +264,10 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
                 System.out.println("Skipping runtime library class " + inputFile);
                 classReader.accept(classWriter, ClassReader.EXPAND_FRAMES);
             } else {
-                IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(classWriter);
-                classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
+                ClassNode classNode = new ClassNode();
+                IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(classNode, Collections.<ClassNode>emptyList(), classWriter);
+                classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
+                classNode.accept(visitor);
             }
 
             // write the modified class.
