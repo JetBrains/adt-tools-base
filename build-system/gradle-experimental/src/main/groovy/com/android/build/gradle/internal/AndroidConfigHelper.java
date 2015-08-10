@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.dsl.PreprocessingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
 import com.android.build.gradle.managed.AndroidConfig;
@@ -52,7 +51,6 @@ public class AndroidConfigHelper {
         model.setDefaultPublishConfig(BuilderConstants.RELEASE);
         model.setPublishNonDefault(false);
         model.setGeneratePureSplits(false);
-        model.setPreProcessingOptions(instantiator.newInstance(PreprocessingOptions.class));
         model.setDeviceProviders(Lists.<DeviceProvider>newArrayList());
         model.setTestServers(Lists.<TestServer>newArrayList());
         model.setAaptOptions(instantiator.newInstance(AaptOptions.class));

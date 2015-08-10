@@ -54,6 +54,8 @@ class VectorDrawableTest {
         assertThatApk(apk).containsResource("drawable-hdpi-v4/heart.png")
         assertThatApk(apk).containsResource("drawable-xhdpi-v4/heart.png")
         assertThatApk(apk).containsResource("drawable-xhdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-anydpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-nodpi-v4/heart.xml")
         assertThatApk(apk).doesNotContainResource("drawable-hdpi-v22/no_need.png")
         assertThatApk(apk).containsResource("drawable-v22/no_need.xml")
 
@@ -308,6 +310,19 @@ class VectorDrawableTest {
         assertThatApk(apk).containsResource("drawable-hdpi-v4/heart.png")
         assertThatApk(apk).containsResource("drawable-xhdpi-v4/heart.png")
         assertThatApk(apk).containsResource("drawable-xhdpi-v21/heart.xml")
+    }
+
+    @Test
+    public void "default densities work"() throws Exception {
+        project.execute(["-PcheckDefaultDensities=true"], "clean", "assembleDebug")
+        File apk = project.getApk("debug")
+        assertThatApk(apk).containsResource("drawable/icon.png")
+        assertThatApk(apk).doesNotContainResource("drawable/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-v21/heart.xml")
+        assertThatApk(apk).containsResource("drawable-hdpi-v21/heart.xml")
+        assertThatApk(apk).containsResource("drawable-hdpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable-ldpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable-ldpi-v21/heart.xml")
     }
 
     private void checkIncrementalBuild() {

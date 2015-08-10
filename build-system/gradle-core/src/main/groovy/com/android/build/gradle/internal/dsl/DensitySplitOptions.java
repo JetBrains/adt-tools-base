@@ -39,12 +39,10 @@ public class DensitySplitOptions extends SplitOptions {
 
     @Override
     protected Set<String> getDefaultValues() {
-        Density[] values = Density.values();
-        Set<String> fullList = Sets.newHashSetWithExpectedSize(values.length - 2);
+        Set<Density> values = Density.getRecommendedValuesForDevice();
+        Set<String> fullList = Sets.newHashSetWithExpectedSize(values.size());
         for (Density value : values) {
-            if (value != Density.NODPI && value != Density.ANYDPI && value.isRecommended()) {
-                fullList.add(value.getResourceValue());
-            }
+            fullList.add(value.getResourceValue());
         }
 
         return fullList;

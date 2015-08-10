@@ -24,7 +24,6 @@ import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.dsl.PreprocessingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
 import com.android.build.gradle.model.AndroidComponentModelSourceSet;
@@ -40,8 +39,6 @@ import org.gradle.model.Unmanaged;
 
 import java.util.Collection;
 import java.util.List;
-
-import groovy.lang.Closure;
 
 /**
  * Component model for all Android plugin.
@@ -95,11 +92,6 @@ public interface AndroidConfig {
     /** Whether to generate pure splits or multi apk */
     Boolean getGeneratePureSplits();
     void setGeneratePureSplits(Boolean generateSplits);
-
-    /** Whether to preprocess resources */
-    @Unmanaged
-    PreprocessingOptions getPreProcessingOptions();
-    void setPreProcessingOptions(PreprocessingOptions preprocessingOptions);
 
     /** Build types used by this project. */
     ModelMap<BuildType> getBuildTypes();
