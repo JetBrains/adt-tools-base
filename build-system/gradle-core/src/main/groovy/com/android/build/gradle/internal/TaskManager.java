@@ -245,7 +245,6 @@ public abstract class TaskManager {
         globalScope = new GlobalScope(
                 project,
                 androidBuilder,
-                checkNotNull((String) project.getProperties().get("archivesBaseName")),
                 extension,
                 sdkHandler,
                 toolingRegistry);
