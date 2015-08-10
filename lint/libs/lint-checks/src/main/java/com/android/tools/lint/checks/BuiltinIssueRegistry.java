@@ -31,7 +31,7 @@ import java.util.List;
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
-    static final int INITIAL_CAPACITY = 247;
+    static final int INITIAL_CAPACITY = 248;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -47,6 +47,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(AndroidAutoDetector.MISSING_ON_PLAY_FROM_SEARCH);
         issues.add(AnnotationDetector.FLAG_STYLE);
         issues.add(AnnotationDetector.INSIDE_METHOD);
+        issues.add(AnnotationDetector.SWITCH_TYPE_DEF);
         issues.add(AnnotationDetector.UNIQUE);
         issues.add(ApiDetector.INLINED);
         issues.add(ApiDetector.OVERRIDE);
@@ -312,7 +313,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
             }
 
             if (scope.contains(Scope.JAVA_FILE)) {
-                initialSize += 62;
+                initialSize += 64;
             } else if (scope.contains(Scope.CLASS_FILE)) {
                 initialSize += 15;
             } else if (scope.contains(Scope.MANIFEST)) {

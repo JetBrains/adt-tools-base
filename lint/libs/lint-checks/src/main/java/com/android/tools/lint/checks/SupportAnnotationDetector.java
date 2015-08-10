@@ -1207,7 +1207,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     }
 
     @Nullable
-    private static ResolvedAnnotation findIntDef(
+    static ResolvedAnnotation findIntDef(
             @NonNull Iterable<ResolvedAnnotation> annotations) {
         for (ResolvedAnnotation annotation : annotations) {
             if (INT_DEF_ANNOTATION.equals(annotation.getName())) {

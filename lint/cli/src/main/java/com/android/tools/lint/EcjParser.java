@@ -1775,6 +1775,30 @@ public class EcjParser extends JavaParser {
         public int getModifiers() {
             return 0;
         }
+
+        @SuppressWarnings("RedundantIfStatement")
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjResolvedPackage that = (EcjResolvedPackage) o;
+
+            if (mBinding != null ? !mBinding.equals(that.mBinding) : that.mBinding != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return mBinding != null ? mBinding.hashCode() : 0;
+        }
     }
 
     private class EcjResolvedField extends ResolvedField {

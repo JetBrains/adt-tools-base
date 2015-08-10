@@ -21,19 +21,28 @@ import static com.android.SdkConstants.ATTR_VALUE;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Position;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
 
 import java.util.Collections;
 import java.util.List;
 
+import lombok.ast.For;
 import lombok.ast.Identifier;
+import lombok.ast.If;
 import lombok.ast.Node;
+import lombok.ast.Return;
 import lombok.ast.StrictListAccessor;
+import lombok.ast.Switch;
+import lombok.ast.Throw;
+import lombok.ast.TypeDeclaration;
 import lombok.ast.TypeReference;
 import lombok.ast.TypeReferencePart;
+import lombok.ast.While;
 
 /**
  * A wrapper for a Java parser. This allows tools integrating lint to map directly
@@ -90,6 +99,45 @@ public abstract class JavaParser {
      */
     @NonNull
     public abstract Location getLocation(@NonNull JavaContext context, @NonNull Node node);
+
+    /**
+     * Returns a {@link Location} for the given node. This attempts to pick a shorter
+     * location range than the entire node; for a class or method for example, it picks
+     * the name node (if found). For statement constructs such as a {@code switch} statement
+     * it will highlight the keyword, etc.
+     *
+     * @param context information about the file being parsed
+     * @param node the node to create a location for
+     * @return a location for the given node
+     */
+    @NonNull
+    public Location getNameLocation(@NonNull JavaContext context, @NonNull Node node) {
+        Node nameNode = JavaContext.findNameNode(node);
+        if (nameNode != null) {
+            node = nameNode;
+        } else {
+            if (node instanceof Switch
+                    || node instanceof For
+                    || node instanceof If
+                    || node instanceof While
+                    || node instanceof Throw
+                    || node instanceof Return) {
+                // Lint doesn't want to highlight the entire statement/block associated
+                // with this node, it wants to just highlight the keyword.
+                Location location = getLocation(context, node);
+                Position start = location.getStart();
+                if (start != null) {
+                    // The Lombok classes happen to have the same length as the target keyword
+                    int length = node.getClass().getSimpleName().length();
+                    return Location.create(location.getFile(), start,
+                            new DefaultPosition(start.getLine(), start.getColumn() + length,
+                                    start.getOffset() + length));
+                }
+            }
+        }
+
+        return getLocation(context, node);
+    }
 
     /**
      * Creates a light-weight handle to a location for the given node. It can be
