@@ -65,7 +65,7 @@ public final class NativeStackCallInfo {
             } catch (NumberFormatException e) {
                 // do nothing, the line number will stay at -1
             }
-            if (m.groupCount() == 3) {
+            if (m.groupCount() == 3 && m.group(3) != null) {
                 // A discriminator was found, add that in the source file name.
                 mSourceFile += m.group(3);
             }
