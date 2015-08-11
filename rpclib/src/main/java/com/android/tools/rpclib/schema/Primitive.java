@@ -30,6 +30,31 @@ import java.io.IOException;
 
 public final class Primitive extends Type {
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Primitive primitive = (Primitive)o;
+
+        if (!mName.equals(primitive.mName)) return false;
+        if (mMethod != primitive.mMethod) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mName.hashCode();
+        result = 31 * result + mMethod.hashCode();
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return mName +"(" + mMethod + ")";
+    }
+
+    @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
         switch (mMethod) {
             case ID: e.id((BinaryID)value); break;
