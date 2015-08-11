@@ -16,7 +16,13 @@
 package com.android.tools.rpclib.any;
 
 import com.android.tools.rpclib.binary.BinaryObject;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public abstract class Box implements BinaryObject {
   public abstract Object unwrap();
+
+  public static Box wrap(Object value) {
+    // TODO: implement boxing, only needed when we try to tweak parameters
+    throw new NotImplementedException();
+  }
 }
