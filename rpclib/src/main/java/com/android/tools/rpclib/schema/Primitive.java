@@ -112,25 +112,25 @@ public final class Primitive extends Type {
                 component.append(String.format("%d", (Byte)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
             case Uint8:
-                component.append(String.format("0x%.2X", (Byte)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                component.append(String.format("%d", ((Byte)value).intValue() & 0xff), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
             case Int16:
                 component.append(String.format("%d", (Short)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
             case Uint16:
-                component.append(String.format("0x%.4X", (Short)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                component.append(String.format("%d", ((Short)value).intValue() & 0xffff), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
             case Int32:
                 component.append(String.format("%d", (Integer)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
             case Uint32:
-                component.append(String.format("0x%X", (Integer)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                component.append(String.format("%d", ((Integer)value).longValue()&0xffffffffL), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
             case Int64:
                 component.append(String.format("%d", (Long)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
             case Uint64:
-                component.append(Long.toHexString((Long)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                component.append(String.format("0x%s", Long.toHexString((Long)value)), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
             case Float32:
                 component.append(String.format("%f", (Float)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
