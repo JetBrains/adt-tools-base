@@ -3,22 +3,22 @@
     <dependency mavenUrl="com.google.android.gms:play-services:4.2.42" />
     <dependency mavenUrl="com.android.support:appcompat-v7:${targetApi}.+" />
 
-    <merge from="AndroidManifest.xml.ftl"
+    <merge from="root/AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
 
-    <instantiate from="res/layout/activity_map.xml.ftl"
+    <instantiate from="root/res/layout/activity_map.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
 
-    <merge from="res/values/strings.xml.ftl"
+    <merge from="root/res/values/strings.xml.ftl"
              to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
 
-    <instantiate from="src/app_package/MapActivity.java.ftl"
+    <instantiate from="root/src/app_package/MapActivity.java.ftl"
                    to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 
-    <merge from="debugRes/values/google_maps_api.xml.ftl"
+    <merge from="root/debugRes/values/google_maps_api.xml.ftl"
              to="${escapeXmlAttribute(debugResOut)}/values/google_maps_api.xml" />
 
-    <merge from="releaseRes/values/google_maps_api.xml.ftl"
+    <merge from="root/releaseRes/values/google_maps_api.xml.ftl"
              to="${escapeXmlAttribute(releaseResOut)}/values/google_maps_api.xml" />
 
     <open file="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />

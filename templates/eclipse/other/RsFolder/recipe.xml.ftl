@@ -3,7 +3,7 @@
 
   <#if remapFolder>
     <mkdir at="${escapeXmlAttribute(projectOut)}/${escapeXmlAttribute(newLocation)}" />
-    <merge from="build.gradle.ftl"
+    <merge from="root/build.gradle.ftl"
              to="${escapeXmlAttribute(projectOut)}/build.gradle" />
   <#else>
     <mkdir at="${escapeXmlAttribute(manifestOut)}/rs/" />

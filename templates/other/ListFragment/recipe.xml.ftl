@@ -3,24 +3,24 @@
 
     <#if useSupport><dependency mavenUrl="com.android.support:support-v4:${targetApi}.+"/></#if>
 <#if switchGrid == true>
-    <merge from="res/values/refs.xml.ftl"
+    <merge from="root/res/values/refs.xml.ftl"
              to="${escapeXmlAttribute(resOut)}/values/refs.xml" />
-    <merge from="res/values/refs_lrg.xml.ftl"
+    <merge from="root/res/values/refs_lrg.xml.ftl"
            to="${escapeXmlAttribute(resOut)}/values-large/refs.xml" />
-    <merge from="res/values/refs_lrg.xml.ftl"
+    <merge from="root/res/values/refs_lrg.xml.ftl"
            to="${escapeXmlAttribute(resOut)}/values-sw600dp/refs.xml" />
 
-    <instantiate from="res/layout/fragment_grid.xml"
+    <instantiate from="root/res/layout/fragment_grid.xml"
                  to="${escapeXmlAttribute(resOut)}/layout/${fragment_layout_grid}.xml" />
 
-    <instantiate from="res/layout/fragment_list.xml"
+    <instantiate from="root/res/layout/fragment_list.xml"
                  to="${escapeXmlAttribute(resOut)}/layout/${fragment_layout_list}.xml" />
 </#if>
 
-    <instantiate from="src/app_package/ListFragment.java.ftl"
+    <instantiate from="root/src/app_package/ListFragment.java.ftl"
                  to="${escapeXmlAttribute(srcOut)}/${className}.java" />
 
-    <instantiate from="src/app_package/dummy/DummyContent.java.ftl"
+    <instantiate from="root/src/app_package/dummy/DummyContent.java.ftl"
                  to="${escapeXmlAttribute(srcOut)}/dummy/DummyContent.java" />
 
     <open file="${escapeXmlAttribute(srcOut)}/${className}.java" />
