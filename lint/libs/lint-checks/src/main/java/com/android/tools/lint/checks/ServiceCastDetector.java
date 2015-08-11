@@ -129,7 +129,7 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
     @NonNull
     private static Map<String, String> getServiceMap() {
         if (sServiceMap == null) {
-            final int EXPECTED_SIZE = 49;
+            final int EXPECTED_SIZE = 55;
             sServiceMap = Maps.newHashMapWithExpectedSize(EXPECTED_SIZE);
 
             sServiceMap.put("ACCESSIBILITY_SERVICE", "android.view.accessibility.AccessibilityManager");
@@ -143,13 +143,15 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
             sServiceMap.put("BLUETOOTH_SERVICE", "android.bluetooth.BluetoothManager");
             sServiceMap.put("CAMERA_SERVICE", "android.hardware.camera2.CameraManager");
             sServiceMap.put("CAPTIONING_SERVICE", "android.view.accessibility.CaptioningManager");
-            sServiceMap.put("CLIPBOARD_SERVICE", "android.text.ClipboardManager");
+            sServiceMap.put("CARRIER_CONFIG_SERVICE", "android.telephony.CarrierConfigManager");
+            sServiceMap.put("CLIPBOARD_SERVICE", "android.text.ClipboardManager"); // also allow @Deprecated android.content.ClipboardManager
             sServiceMap.put("CONNECTIVITY_SERVICE", "android.net.ConnectivityManager");
             sServiceMap.put("CONSUMER_IR_SERVICE", "android.hardware.ConsumerIrManager");
             sServiceMap.put("DEVICE_POLICY_SERVICE", "android.app.admin.DevicePolicyManager");
             sServiceMap.put("DISPLAY_SERVICE", "android.hardware.display.DisplayManager");
             sServiceMap.put("DOWNLOAD_SERVICE", "android.app.DownloadManager");
             sServiceMap.put("DROPBOX_SERVICE", "android.os.DropBoxManager");
+            sServiceMap.put("FINGERPRINT_SERVICE", "android.hardware.fingerprint.FingerprintManager");
             sServiceMap.put("INPUT_METHOD_SERVICE", "android.view.inputmethod.InputMethodManager");
             sServiceMap.put("INPUT_SERVICE", "android.hardware.input.InputManager");
             sServiceMap.put("JOB_SCHEDULER_SERVICE", "android.app.job.JobScheduler");
@@ -160,6 +162,8 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
             sServiceMap.put("MEDIA_PROJECTION_SERVICE", "android.media.projection.MediaProjectionManager");
             sServiceMap.put("MEDIA_ROUTER_SERVICE", "android.media.MediaRouter");
             sServiceMap.put("MEDIA_SESSION_SERVICE", "android.media.session.MediaSessionManager");
+            sServiceMap.put("MIDI_SERVICE", "android.media.midi.MidiManager");
+            sServiceMap.put("NETWORK_STATS_SERVICE", "android.app.usage.NetworkStatsManager");
             sServiceMap.put("NFC_SERVICE", "android.nfc.NfcManager");
             sServiceMap.put("NOTIFICATION_SERVICE", "android.app.NotificationManager");
             sServiceMap.put("NSD_SERVICE", "android.net.nsd.NsdManager");
@@ -171,9 +175,11 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
             sServiceMap.put("STORAGE_SERVICE", "android.os.storage.StorageManager");
             sServiceMap.put("TELECOM_SERVICE", "android.telecom.TelecomManager");
             sServiceMap.put("TELEPHONY_SERVICE", "android.telephony.TelephonyManager");
+            sServiceMap.put("TELEPHONY_SUBSCRIPTION_SERVICE", "android.telephony.SubscriptionManager");
             sServiceMap.put("TEXT_SERVICES_MANAGER_SERVICE", "android.view.textservice.TextServicesManager");
             sServiceMap.put("TV_INPUT_SERVICE", "android.media.tv.TvInputManager");
             sServiceMap.put("UI_MODE_SERVICE", "android.app.UiModeManager");
+            sServiceMap.put("USAGE_STATS_SERVICE", "android.app.usage.UsageStatsManager");
             sServiceMap.put("USB_SERVICE", "android.hardware.usb.UsbManager");
             sServiceMap.put("USER_SERVICE", "android.os.UserManager");
             sServiceMap.put("VIBRATOR_SERVICE", "android.os.Vibrator");
