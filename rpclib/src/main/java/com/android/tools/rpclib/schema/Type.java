@@ -37,4 +37,8 @@ public abstract class Type implements BinaryObject {
   public abstract void encodeValue(@NotNull Encoder e, Object value) throws IOException;
 
   public abstract Object decodeValue(@NotNull Decoder d) throws IOException;
+
+  public String render(Object value) {
+    return value.toString();
+  }
 }
