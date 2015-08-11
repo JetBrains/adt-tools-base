@@ -1141,7 +1141,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
 
     public void testVector() throws Exception {
         assertEquals(""
-                        + "res/drawable/vector.xml:1: Error: <vector> requires API level 21 (current min is 4) [NewApi]\n"
+                        + "res/drawable/vector.xml:1: Error: <vector> requires API level 21 (current min is 4) or building with Android Gradle plugin 1.4 or higher [NewApi]\n"
                         + "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\" >\n"
                         + "^\n"
                         + "1 errors, 0 warnings\n",

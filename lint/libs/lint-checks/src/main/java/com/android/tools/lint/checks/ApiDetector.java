@@ -551,12 +551,10 @@ public class ApiDetector extends ResourceXmlDetector
         ResourceFolderType folderType = context.getResourceFolderType();
         if (folderType != ResourceFolderType.LAYOUT) {
             if (folderType == ResourceFolderType.DRAWABLE) {
-                if (!projectSupportsVectorDrawables(context)) {
-                    checkElement(context, element, TAG_VECTOR, 21, UNSUPPORTED);
-                }
-                checkElement(context, element, TAG_RIPPLE, 21, UNSUPPORTED);
-                checkElement(context, element, TAG_ANIMATED_SELECTOR, 21, UNSUPPORTED);
-                checkElement(context, element, TAG_ANIMATED_VECTOR, 21, UNSUPPORTED);
+                checkElement(context, element, TAG_VECTOR, 21, "1.4", UNSUPPORTED);
+                checkElement(context, element, TAG_RIPPLE, 21, null, UNSUPPORTED);
+                checkElement(context, element, TAG_ANIMATED_SELECTOR, 21, null, UNSUPPORTED);
+                checkElement(context, element, TAG_ANIMATED_VECTOR, 21, null, UNSUPPORTED);
             }
             if (element.getParentNode().getNodeType() != Node.ELEMENT_NODE) {
                 // Root node
@@ -597,7 +595,7 @@ public class ApiDetector extends ResourceXmlDetector
                 }
             } else {
                 // TODO: Complain if <tag> is used at the root level!
-                checkElement(context, element, TAG, 21, UNUSED);
+                checkElement(context, element, TAG, 21, null, UNUSED);
             }
 
             // Check widgets to make sure they're available in this version of the SDK.
@@ -626,17 +624,24 @@ public class ApiDetector extends ResourceXmlDetector
     /** Checks whether the given element is the given tag, and if so, whether it satisfied
      * the minimum version that the given tag is supported in */
     private void checkElement(@NonNull XmlContext context, @NonNull Element element,
-            @NonNull String tag, int api, @NonNull Issue issue) {
+            @NonNull String tag, int api, @Nullable String gradleVersion, @NonNull Issue issue) {
         if (tag.equals(element.getTagName())) {
             int minSdk = getMinSdk(context);
-            if (api > minSdk && api > context.getFolderVersion()
-                    && api > getLocalMinSdk(element)) {
+            if (api > minSdk
+                    && api > context.getFolderVersion()
+                    && api > getLocalMinSdk(element)
+                    && !featureProvidedByGradle(context, gradleVersion)) {
                 Location location = context.getLocation(element);
                 String message;
                 if (issue == UNSUPPORTED) {
                     message = String.format(
                             "`<%1$s>` requires API level %2$d (current min is %3$d)", tag, api,
                             minSdk);
+                    if (gradleVersion != null) {
+                        message += String.format(
+                                " or building with Android Gradle plugin %1$s or higher",
+                                gradleVersion);
+                    }
                 } else {
                     assert issue == UNUSED : issue;
                     message = String.format(
@@ -1346,15 +1351,26 @@ public class ApiDetector extends ResourceXmlDetector
     }
 
     /**
-     * Checks if vector drawables are supported by the build system, in which case there is no min API requirement.
+     * Checks if the current project supports features added in {@code minGradleVersion} version of the
+     * Android gradle plugin.
      *
-     * <p>This is the case with Android gradle plugin 1.4+.
+     * @param context Current context.
+     * @param minGradleVersion Version in which support for a given feature was added, or null if it's
+ *                      not supported at build time.
      */
-    private static boolean projectSupportsVectorDrawables(XmlContext context) {
+    private static boolean featureProvidedByGradle(@NonNull XmlContext context,
+            @Nullable String minGradleVersion) {
+        if (minGradleVersion == null) {
+            return false;
+        }
+
         AndroidProject gradleModel = context.getProject().getGradleProjectModel();
         if (gradleModel != null) {
-            FullRevision gradleModelVersion = FullRevision.parseRevision(gradleModel.getModelVersion());
-            if (gradleModelVersion.compareTo(FullRevision.parseRevision("1.4"), FullRevision.PreviewComparison.IGNORE) >= 0) {
+            FullRevision gradleModelVersion =
+                    FullRevision.parseRevision(gradleModel.getModelVersion());
+            if (gradleModelVersion.compareTo(
+                    FullRevision.parseRevision(minGradleVersion),
+                    FullRevision.PreviewComparison.IGNORE) >= 0) {
                 return true;
             }
         }
