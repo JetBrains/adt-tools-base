@@ -835,7 +835,7 @@ public class ManifestMerger2 {
          * @return itself.
          */
         @NonNull
-        public Invoker setPlaceHolderValues(@NonNull Map<String, String> keyValuePairs) {
+        public Invoker setPlaceHolderValues(@NonNull Map<String, Object> keyValuePairs) {
             mPlaceholders.putAll(keyValuePairs);
             return thisAsT();
         }

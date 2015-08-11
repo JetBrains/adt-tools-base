@@ -1216,6 +1216,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="sdk-common-base" exported="" />
+    <orderEntry type="module" module-name="manifest-merger-base" exported="" />
     <orderEntry type="module" module-name="transform-api" exported="" />
     <orderEntry type="module" module-name="lint-api-base" exported="" />
     <orderEntry type="module" module-name="lint-checks-base" exported="" />

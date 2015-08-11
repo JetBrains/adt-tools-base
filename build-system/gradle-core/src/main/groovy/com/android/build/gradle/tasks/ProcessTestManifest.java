@@ -13,78 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.tasks
-import com.android.build.gradle.internal.DependencyManager
-import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
-import com.android.build.gradle.internal.scope.ConventionMappingHelper
-import com.android.build.gradle.internal.scope.TaskConfigAction
-import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.builder.core.VariantConfiguration
-import com.google.common.collect.Lists
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.ParallelizableTask
+package com.android.build.gradle.tasks;
+
+import com.android.build.gradle.internal.DependencyManager;
+import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
+import com.android.build.gradle.internal.dsl.CoreBuildType;
+import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.core.VariantConfiguration;
+import com.google.common.collect.Lists;
+
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.ParallelizableTask;
+
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+
 /**
  * A task that processes the manifest
  */
 @ParallelizableTask
 public class ProcessTestManifest extends ManifestProcessorTask {
 
-    @InputFile
-    @Optional
-    File testManifestFile
-
-    File tmpDir
-
-    // ----- PRIVATE TASK API -----
-
-    @Input
-    String testApplicationId
-
-    @Input @Optional
-    String minSdkVersion
-
-    @Input @Optional
-    String targetSdkVersion
-
-    @Input
-    String testedApplicationId
-
-    @Input
-    String instrumentationRunner
-
-    @Input
-    Boolean handleProfiling;
-
-    @Input
-    Boolean functionalTest;
-
-    @Input
-    Map<String, Object> placeholdersValues;
-
-    List<ManifestDependencyImpl> libraries
-
-    /*
-     * since libraries above can't return it's input files (@Nested doesn't
-     * work on lists), so do a method that will gather them and return them.
-     */
-    @InputFiles
-    List<File> getLibraryManifests() {
-        List<ManifestDependencyImpl> libs = getLibraries()
-        if (libs == null || libs.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<File> files = Lists.newArrayListWithCapacity(libs.size() * 2)
-        for (ManifestDependencyImpl mdi : libs) {
-            files.addAll(mdi.getAllManifests())
-        }
-
-        return files;
-    }
+    private File testManifestFile;
+    private File tmpDir;
+    private String testApplicationId;
+    private String minSdkVersion;
+    private String targetSdkVersion;
+    private String testedApplicationId;
+    private String instrumentationRunner;
+    private Boolean handleProfiling;
+    private Boolean functionalTest;
+    private Map<String, Object> placeholdersValues;
+    private List<ManifestDependencyImpl> libraries;
 
     @Override
     protected void doFullTaskAction() {
@@ -100,87 +70,245 @@ public class ProcessTestManifest extends ManifestProcessorTask {
                 getLibraries(),
                 getPlaceholdersValues(),
                 getManifestOutputFile(),
-                getTmpDir())
+                getTmpDir());
     }
 
-    // ----- ConfigAction -----
+    @InputFile
+    @Optional
+    public File getTestManifestFile() {
+        return testManifestFile;
+    }
 
+    public void setTestManifestFile(File testManifestFile) {
+        this.testManifestFile = testManifestFile;
+    }
+
+    public File getTmpDir() {
+        return tmpDir;
+    }
+
+    public void setTmpDir(File tmpDir) {
+        this.tmpDir = tmpDir;
+    }
+
+    @Input
+    public String getTestApplicationId() {
+        return testApplicationId;
+    }
+
+    public void setTestApplicationId(String testApplicationId) {
+        this.testApplicationId = testApplicationId;
+    }
+
+    @Input
+    @Optional
+    public String getMinSdkVersion() {
+        return minSdkVersion;
+    }
+
+    public void setMinSdkVersion(String minSdkVersion) {
+        this.minSdkVersion = minSdkVersion;
+    }
+
+    @Input
+    @Optional
+    public String getTargetSdkVersion() {
+        return targetSdkVersion;
+    }
+
+    public void setTargetSdkVersion(String targetSdkVersion) {
+        this.targetSdkVersion = targetSdkVersion;
+    }
+
+    @Input
+    public String getTestedApplicationId() {
+        return testedApplicationId;
+    }
+
+    public void setTestedApplicationId(String testedApplicationId) {
+        this.testedApplicationId = testedApplicationId;
+    }
+
+    @Input
+    public String getInstrumentationRunner() {
+        return instrumentationRunner;
+    }
+
+    public void setInstrumentationRunner(String instrumentationRunner) {
+        this.instrumentationRunner = instrumentationRunner;
+    }
+
+    @Input
+    public Boolean getHandleProfiling() {
+        return handleProfiling;
+    }
+
+    public void setHandleProfiling(Boolean handleProfiling) {
+        this.handleProfiling = handleProfiling;
+    }
+
+    @Input
+    public Boolean getFunctionalTest() {
+        return functionalTest;
+    }
+
+    public void setFunctionalTest(Boolean functionalTest) {
+        this.functionalTest = functionalTest;
+    }
+
+    @Input
+    public Map<String, Object> getPlaceholdersValues() {
+        return placeholdersValues;
+    }
+
+    public void setPlaceholdersValues(
+            Map<String, Object> placeholdersValues) {
+        this.placeholdersValues = placeholdersValues;
+    }
+
+    public List<ManifestDependencyImpl> getLibraries() {
+        return libraries;
+    }
+
+    public void setLibraries(
+            List<ManifestDependencyImpl> libraries) {
+        this.libraries = libraries;
+    }
+
+    /**
+     * A synthetic input to allow gradle up-to-date checks to work.
+     *
+     * Since List<ManifestDependencyImpl> can't be used directly, as @Nested doesn't work on lists,
+     * this method gathers and returns the underlying manifest files.
+     */
+    @SuppressWarnings("unused")
+    @InputFiles
+    public List<File> getLibraryManifests() {
+        List<ManifestDependencyImpl> libs = getLibraries();
+        if (libs == null || libs.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<File> files = Lists.newArrayListWithCapacity(libs.size() * 2);
+        for (ManifestDependencyImpl mdi : libs) {
+            files.addAll(mdi.getAllManifests());
+        }
+
+        return files;
+    }
 
     public static class ConfigAction implements TaskConfigAction<ProcessTestManifest> {
 
-        VariantScope scope
+        private VariantScope scope;
 
-        ConfigAction(VariantScope scope) {
-            this.scope = scope
+        public ConfigAction(VariantScope scope) {
+            this.scope = scope;
         }
 
         @Override
-        String getName() {
-            return scope.getTaskName("process", "Manifest")
+        public String getName() {
+            return scope.getTaskName("process", "Manifest");
         }
 
         @Override
-        Class<ProcessTestManifest> getType() {
-            return ProcessTestManifest
+        public Class<ProcessTestManifest> getType() {
+            return ProcessTestManifest.class;
         }
 
         @Override
-        void execute(ProcessTestManifest processTestManifestTask) {
+        public void execute(final ProcessTestManifest processTestManifestTask) {
 
-            VariantConfiguration config = scope.variantConfiguration
-            ConventionMappingHelper.map(processTestManifestTask, "testManifestFile") {
-                config.getMainManifest()
-            }
-            ConventionMappingHelper.map(processTestManifestTask, "tmpDir") {
-                new File(scope.globalScope.getIntermediatesDir(), "manifest/tmp")
-            }
+            final VariantConfiguration<CoreBuildType, CoreProductFlavor, CoreProductFlavor> config =
+                    scope.getVariantConfiguration();
+
+            processTestManifestTask.setTestManifestFile(config.getMainManifest());
+
+            processTestManifestTask.setTmpDir(
+                    new File(scope.getGlobalScope().getIntermediatesDir(), "manifest/tmp"));
 
             // get single output for now.
-            BaseVariantOutputData variantOutputData = scope.variantData.outputs.get(0)
+            final BaseVariantOutputData variantOutputData =
+                    scope.getVariantData().getOutputs().get(0);
 
-            variantOutputData.manifestProcessorTask = processTestManifestTask
+            variantOutputData.manifestProcessorTask = processTestManifestTask;
 
-            processTestManifestTask.androidBuilder = scope.globalScope.androidBuilder
-            processTestManifestTask.setVariantName(config.getFullName())
+            processTestManifestTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            processTestManifestTask.setVariantName(config.getFullName());
 
-            ConventionMappingHelper.map(processTestManifestTask, "testApplicationId") {
-                config.applicationId
-            }
-            ConventionMappingHelper.map(processTestManifestTask, "minSdkVersion") {
-                if (scope.globalScope.androidBuilder.isPreviewTarget()) {
-                    return scope.globalScope.androidBuilder.getTargetCodename()
-                }
+            processTestManifestTask.setTestApplicationId(config.getApplicationId());
+            ConventionMappingHelper.map(processTestManifestTask, "minSdkVersion",
+                    new Callable<String>() {
+                        @Override
+                        public String call() throws Exception {
+                            if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
+                                return scope.getGlobalScope().getAndroidBuilder()
+                                        .getTargetCodename();
+                            }
+                            return config.getMinSdkVersion().getApiString();
+                        }
+                    });
 
-                config.minSdkVersion?.apiString
-            }
-            ConventionMappingHelper.map(processTestManifestTask, "targetSdkVersion") {
-                if (scope.globalScope.androidBuilder.isPreviewTarget()) {
-                    return scope.globalScope.androidBuilder.getTargetCodename()
-                }
+            ConventionMappingHelper.map(processTestManifestTask, "targetSdkVersion",
+                    new Callable<String>() {
+                        @Override
+                        public String call() throws Exception {
+                            if (scope.getGlobalScope().getAndroidBuilder().isPreviewTarget()) {
+                                return scope.getGlobalScope().getAndroidBuilder()
+                                        .getTargetCodename();
+                            }
 
-                return config.targetSdkVersion?.apiString
-            }
-            ConventionMappingHelper.map(processTestManifestTask, "testedApplicationId") {
-                config.testedApplicationId
-            }
-            ConventionMappingHelper.map(processTestManifestTask, "instrumentationRunner") {
-                config.instrumentationRunner
-            }
-            ConventionMappingHelper.map(processTestManifestTask, "handleProfiling") {
-                config.handleProfiling
-            }
-            ConventionMappingHelper.map(processTestManifestTask, "functionalTest") {
-                config.functionalTest
-            }
-            ConventionMappingHelper.map(processTestManifestTask, "libraries") {
-                DependencyManager.getManifestDependencies(config.directLibraries)
-            }
-            ConventionMappingHelper.map(processTestManifestTask, "manifestOutputFile") {
-                variantOutputData.getScope().getManifestOutputFile()
-            }
-            ConventionMappingHelper.map(processTestManifestTask, "placeholdersValues") {
-                config.getManifestPlaceholders()
-            }
+                            return config.getTargetSdkVersion().getApiString();
+                        }
+                    });
+            ConventionMappingHelper.map(processTestManifestTask, "testedApplicationId",
+                    new Callable<String>() {
+                        @Override
+                        public String call() throws Exception {
+                            return config.getTestedApplicationId();
+                        }
+                    });
+            ConventionMappingHelper.map(processTestManifestTask, "instrumentationRunner",
+                    new Callable<String>() {
+                        @Override
+                        public String call() throws Exception {
+                            return config.getInstrumentationRunner();
+                        }
+                    });
+
+            ConventionMappingHelper.map(processTestManifestTask, "handleProfiling",
+                    new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return config.getHandleProfiling();
+                        }
+                    });
+            ConventionMappingHelper.map(processTestManifestTask, "functionalTest",
+                    new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return config.getFunctionalTest();
+                        }
+                    });
+
+            ConventionMappingHelper.map(processTestManifestTask, "libraries",
+                    new Callable<List<ManifestDependencyImpl>>() {
+                        @Override
+                        public List<ManifestDependencyImpl> call() throws Exception {
+                            return DependencyManager.getManifestDependencies(
+                                    config.getDirectLibraries());
+                        }
+                    });
+
+            processTestManifestTask.setManifestOutputFile(
+                    variantOutputData.getScope().getManifestOutputFile());
+
+            ConventionMappingHelper.map(processTestManifestTask, "placeholdersValues",
+                    new Callable<Map<String, Object>>() {
+                        @Override
+                        public Map<String, Object> call() throws Exception {
+                            return config.getManifestPlaceholders();
+                        }
+                    });
         }
     }
 }
