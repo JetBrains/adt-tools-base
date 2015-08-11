@@ -50,8 +50,7 @@ public final class Struct extends Type {
 
     @Override
     public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
-        // TODO: Customise renderer
-        component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+        renderObject(value, component);
     }
 
     //<<<Start:Java.ClassBody:1>>>

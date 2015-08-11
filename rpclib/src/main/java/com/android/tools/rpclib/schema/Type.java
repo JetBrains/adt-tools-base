@@ -61,4 +61,16 @@ public abstract class Type implements BinaryObject {
       component.append("...", SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
   }
+  public static void renderObject(@NotNull Object value, @NotNull SimpleColoredComponent component) {
+    assert (value instanceof BinaryObject);
+    if (value instanceof Renderable) {
+      ((Renderable)value).render(component);
+    } else {
+      component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+    }
+  }
+
+  public interface Renderable {
+    void render(@NotNull SimpleColoredComponent component);
+  }
 }
