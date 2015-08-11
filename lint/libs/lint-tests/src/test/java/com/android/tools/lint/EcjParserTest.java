@@ -39,6 +39,7 @@ import org.intellij.lang.annotations.Language;
 import org.junit.Assert;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -51,6 +52,7 @@ import lombok.ast.ExpressionStatement;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.Identifier;
 import lombok.ast.KeywordModifier;
+import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Modifiers;
 import lombok.ast.Node;
@@ -238,6 +240,86 @@ public class EcjParserTest extends AbstractCheckTest {
                 }
 
                 return super.visitClassDeclaration(node);
+            }
+        });
+        assertTrue(found.get());
+    }
+
+    @SuppressWarnings("ClassNameDiffersFromFileName")
+    public void testRemoveDuplicates() throws Exception {
+        @SuppressWarnings("override")
+        @Language("JAVA")
+        String source = ""
+                + "package test.pkg;\n"
+                + "import java.lang.annotation.Retention;\n"
+                + "import java.lang.annotation.RetentionPolicy;\n"
+                + "\n"
+                + "@SuppressWarnings(\"unused\")\n"
+                + "public class AnnotationTest {\n"
+                + "    @Retention(RetentionPolicy.CLASS)\n"
+                + "    public @interface Annotation1 {};\n"
+                + "    @Retention(RetentionPolicy.CLASS)\n"
+                + "    public @interface Annotation2 {};\n"
+                + "    @Retention(RetentionPolicy.CLASS)\n"
+                + "    public @interface Annotation3 {};\n"
+                + "\n"
+                + "    public static void method(ChildClass child) {\n"
+                + "        child.method(0xff0000);\n"
+                + "    }\n"
+                + "\n"
+                + "    public static class ParentClass {\n"
+                + "        @Annotation1\n"
+                + "        void method(@Annotation2 int rgb) {\n"
+                + "        }\n"
+                + "    }\n"
+                + "\n"
+                + "    public static class ChildClass extends ParentClass {\n"
+                + "        @Annotation1\n"
+                + "        void method(@Annotation2 @Annotation3 int rgb) {\n"
+                + "        }\n"
+                + "    }\n"
+                + "}\n";
+
+        final JavaContext context = LintUtilsTest.parse(source,
+                new File("src/test/pkg/AnnotationTest.java"));
+        assertNotNull(context);
+
+        Node compilationUnit = context.getCompilationUnit();
+        assertNotNull(compilationUnit);
+        final AtomicBoolean found = new AtomicBoolean();
+        compilationUnit.accept(new ForwardingAstVisitor() {
+            @Override
+            public boolean visitMethodInvocation(MethodInvocation node) {
+                if (node.astName().astValue().equals("method")) {
+                    found.set(true);
+                    ResolvedNode resolved = context.resolve(node);
+                    assertNotNull(resolved);
+                    ResolvedMethod method = (ResolvedMethod) resolved;
+                    List<ResolvedAnnotation> methodAnnotations =
+                            Lists.newArrayList(method.getAnnotations());
+                    // This is the point of this test: make sure there is only *one* occurrence
+                    // of this annotation (prior to this fix, we'd accumulate up the hierarchy)
+                    assertEquals(1, methodAnnotations.size());
+                    assertEquals("test.pkg.AnnotationTest.Annotation1",
+                            methodAnnotations.get(0).getName());
+                    assertEquals(methodAnnotations.get(0).getName(),
+                            methodAnnotations.get(0).getSignature());
+
+                    List<ResolvedAnnotation> annotations =
+                            Lists.newArrayList(method.getParameterAnnotations(0));
+                    assertEquals(2, annotations.size());
+                    String first = annotations.get(0).getName();
+                    String second = annotations.get(1).getName();
+                    if (first.compareTo(second) > 0) {
+                        String temp = first;
+                        first = second;
+                        second = temp;
+                    }
+                    assertEquals("test.pkg.AnnotationTest.Annotation2", first);
+                    assertEquals("test.pkg.AnnotationTest.Annotation3", second);
+                }
+
+                return super.visitMethodInvocation(node);
             }
         });
         assertTrue(found.get());
