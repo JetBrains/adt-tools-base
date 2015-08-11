@@ -361,7 +361,7 @@ public class VariantScopeImpl implements VariantScope {
     @Override
     @NonNull
     public File getRenderscriptLibOutputDir() {
-        return new File(globalScope.getGeneratedDir(),
+        return new File(globalScope.getIntermediatesDir(),
                 "rs/" + variantData.getVariantConfiguration().getDirName() + "/lib");
     }
 
