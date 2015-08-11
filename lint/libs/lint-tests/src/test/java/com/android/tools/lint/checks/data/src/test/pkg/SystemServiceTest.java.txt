@@ -26,5 +26,6 @@ public class SystemServiceTest extends Activity {
     public void clipboard() {
       ClipboardManager clipboard = (ClipboardManager)context.getSystemService(Context.CLIPBOARD_SERVICE);
       android.content.ClipboardManager clipboard =  (android.content.ClipboardManager)context.getSystemService(Context.CLIPBOARD_SERVICE);
+      android.text.ClipboardManager clipboard =  (android.text.ClipboardManager)context.getSystemService(Context.CLIPBOARD_SERVICE);
     }
 }
