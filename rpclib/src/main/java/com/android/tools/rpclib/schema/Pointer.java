@@ -17,6 +17,8 @@
  */
 package com.android.tools.rpclib.schema;
 
+import com.intellij.ui.SimpleColoredComponent;
+import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
@@ -38,6 +40,12 @@ public final class Pointer extends Type {
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
         return d.object();
+    }
+
+    @Override
+    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
+        // TODO: Customise renderer
+        component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
     }
 
     //<<<Start:Java.ClassBody:1>>>
