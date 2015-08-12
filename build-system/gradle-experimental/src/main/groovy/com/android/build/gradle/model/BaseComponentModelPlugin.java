@@ -315,7 +315,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         }
 
-        @Mutate
+        @Defaults
         public void initDebugBuildTypes(
                 @Path("android.buildTypes") ModelMap<BuildType> buildTypes,
                 @Path("android.signingConfigs") final ModelMap<SigningConfig> signingConfigs) {
@@ -350,7 +350,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             buildType.setTestProguardFiles(Sets.<File>newHashSet());
         }
 
-        @Mutate
+        @Defaults
         public void initDefaultConfig(@Path("android.defaultConfig") ProductFlavor defaultConfig) {
             initProductFlavor(defaultConfig);
 
@@ -362,7 +362,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             defaultConfig.setGeneratedDensities(strings);
         }
 
-        @Mutate
+        @Defaults
         public void initProductFlavors(
                 @Path("android.productFlavors") final ModelMap<ProductFlavor> productFlavors) {
             productFlavors.beforeEach(new Action<ProductFlavor>() {
