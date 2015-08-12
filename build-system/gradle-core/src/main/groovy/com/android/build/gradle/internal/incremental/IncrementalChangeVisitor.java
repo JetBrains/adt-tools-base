@@ -52,7 +52,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     @Override
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
-        super.visit(version, access, name + "$override", signature, "java/lang/Object", new String[] {"com/android/build/gradle/internal/incremental/IncrementalChange"});
+        super.visit(version, access, name + "$override", signature, "java/lang/Object",
+                new String[]{"com/android/build/gradle/internal/incremental/IncrementalChange"});
 
         System.out.println("Visiting " + name);
         visitedClassName = name;
@@ -82,9 +83,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         String newDesc = isStatic ? desc : "(L" + visitedClassName + ";" + desc.substring(1);
         System.out.println("new Desc is " + newDesc);
 
-        // clear the private bit if present,
+        // clear the private/protected bit if present, package private is 0.
         // change the method visibility to always be public and static.
-        access  = (access & ~Opcodes.ACC_PRIVATE) | Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
+        access  = access & ~Opcodes.ACC_PRIVATE;
+        access =  access & ~Opcodes.ACC_PROTECTED;
+        access = access | Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
         return new ISVisitor(Opcodes.ASM5,
                 super.visitMethod(access, name, newDesc, signature, exceptions),
                 access,
@@ -210,7 +213,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             boolean isProtected = (fieldNode.access & Opcodes.ACC_PROTECTED) != 0;
             boolean isPackagePrivate = fieldNode.access == 0;
 
-            // we should me this more efficient, have a per field access type method
+            // we should make this more efficient, have a per field access type method
             // for getting and setting field values.
             if (isPrivate || isProtected || isPackagePrivate) {
                 if (opcode == Opcodes.GETFIELD) {
@@ -235,49 +238,74 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         @Override
         public void visitMethodInsn(int opcode, String owner, String name, String desc,
                 boolean itf) {
+            boolean opcodeHandled = false;
             if (opcode == Opcodes.INVOKESPECIAL) {
-                if (owner.equals(visitedSuperName)) {
-                    int arr = newLocal(Type.getType("[Ljava/lang.Object;"));
-                    Type[] args = Type.getArgumentTypes(desc);
-                    push(args.length);
-                    visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
-                    visitVarInsn(Opcodes.ASTORE, arr);
-                    for (int i = args.length - 1; i >= 0; i--) {
-                        visitVarInsn(Opcodes.ALOAD, arr);
-                        swap();
-                        push(i);
-                        swap();
-                        box(args[i]);
-                        visitInsn(Opcodes.AASTORE);
-                    }
-                    push(name + "." + desc);
+                opcodeHandled = handleSpecialOpcode(opcode, owner, name, desc, itf);
+            } else if (opcode == Opcodes.INVOKEVIRTUAL) {
+                opcodeHandled = handleVirtualOpcode(opcode, owner, name, desc, itf);
+            } else if (opcode == Opcodes.INVOKESTATIC) {
+                opcodeHandled = handleStaticOpcode(opcode, owner, name, desc, itf);
+            }
+            if (!opcodeHandled) {
+                super.visitMethodInsn(opcode, owner, name, desc, itf);
+            }
+        }
+
+        private boolean handleSpecialOpcode(int opcode, String owner, String name, String desc,
+                boolean itf) {
+            if (owner.equals(visitedSuperName)) {
+                int arr = newLocal(Type.getType("[Ljava/lang.Object;"));
+                Type[] args = Type.getArgumentTypes(desc);
+                push(args.length);
+                visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
+                visitVarInsn(Opcodes.ASTORE, arr);
+                for (int i = args.length - 1; i >= 0; i--) {
                     visitVarInsn(Opcodes.ALOAD, arr);
-                    mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName, "access$super",
-                            "(L" + visitedClassName
-                                    + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;",
-                            false);
-                    Type ret = Type.getReturnType(desc);
-                    if (ret.getSort() == Type.VOID) {
-                        pop();
-                    } else {
-                        unbox(ret);
-                    }
+                    swap();
+                    push(i);
+                    swap();
+                    box(args[i]);
+                    visitInsn(Opcodes.AASTORE);
                 }
-                else if (owner.equals(visitedClassName)) {
-                    // private method dispatch, just invoke the $override class static method.
-                    super.visitMethodInsn(opcode, owner + "$override", name, desc, itf);
+                push(name + "." + desc);
+                visitVarInsn(Opcodes.ALOAD, arr);
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName, "access$super",
+                        "(L" + visitedClassName
+                                + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;",
+                        false);
+                Type ret = Type.getReturnType(desc);
+                if (ret.getSort() == Type.VOID) {
+                    pop();
                 } else {
-                    super.visitMethodInsn(opcode, owner, name, desc, itf);
+                    unbox(ret);
                 }
-            } else if (opcode == Opcodes.INVOKEVIRTUAL && owner.equals(visitedClassName)) {
-                // we are calling a method on the "this" object, we must first verify this
-                // is not a protected method. If it is, we cannot invoke directly from here, so
-                // we should go through reflection.
-                // possible enhancement to study : make the $override a subclass when not final
-                // and bypass reflection.
-                // for public method, we should be able to directly call the enhanced class although
-                // I am not sure how well this would play when dealing with removing the
-                // called method for instance (and hoping the super class will pick it up).
+                return true;
+            } else if (owner.equals(visitedClassName)) {
+                // private method dispatch, just invoke the $override class static method.
+                String newDesc = "(L" + visitedClassName + ";" + desc.substring(1);
+                super.visitMethodInsn(Opcodes.INVOKESTATIC, owner + "$override", name, newDesc, itf);
+                return true;
+            }
+            return false;
+        }
+
+        private boolean handleVirtualOpcode(int opcode, String owner, String name, String desc,
+                boolean itf) {
+            if (owner.equals(visitedClassName)) {
+
+                MethodNode methodNode = getMethodByName(name, desc);
+                boolean isPublic = methodNode != null
+                        && ((methodNode.access & Opcodes.ACC_PUBLIC) != 0);
+
+                // if this is a public method, just let the normal invoke virtual invoke the
+                // original method implementation which in most case will just call back
+                // into the enhanced code.
+                if (isPublic) {
+                    return false;
+                }
+
+                // for anything else, private, protected and package private, we must go through
+                // reflection.
                 Type[] parameterTypes = Type.getArgumentTypes(desc);
 
                 push(parameterTypes.length);
@@ -311,17 +339,20 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                         Method.getMethod(
                                 "Object invokeProtectedMethod(Object, String, String[], Object[])"));
                 unbox(Type.getReturnType(desc));
-            } else if (opcode == Opcodes.INVOKESTATIC && owner.equals(visitedClassName)) {
-                // we must do something similar as for non static method,
-                // which is to call back the ORIGINAL static method
-                // using reflection when the called method is anything but public.
-                // I thought for a while we could bypass and call directly the $override method
-                // but we can't because the static method could be of the super class and we don't
-                // necessarily have an enhanced class to call directly.
-                super.visitMethodInsn(opcode, owner, name, desc, itf);
-            } else {
-                super.visitMethodInsn(opcode, owner, name, desc, itf);
+                return true;
             }
+            return false;
+        }
+
+        // we must do something similar as for non static method,
+        // which is to call back the ORIGINAL static method
+        // using reflection when the called method is anything but public.
+        // I thought for a while we could bypass and call directly the $override method
+        // but we can't because the static method could be of the super class and we don't
+        // necessarily have an enhanced class to call directly.
+        private boolean handleStaticOpcode(int opcode, String owner, String name, String desc,
+                boolean itf) {
+            return false;
         }
     }
 

@@ -29,7 +29,7 @@ public class SimpleMethodDispatch {
         return calculateIntValue(value, otherField);
     }
 
-    public long calculateIntValue(Integer value, int otherValue) {
+    private long calculateIntValue(Integer value, int otherValue) {
         int newValue = value + otherValue;
         System.out.println("hello " + newValue);
         return field / (newValue);
