@@ -40,12 +40,13 @@ import java.util.Set;
 /**
  * An adaptor to convert a ProductFlavor to CoreProductFlavor.
  */
-public class ProductFlavorAdaptor implements CoreProductFlavor {
+public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProductFlavor {
 
     @NonNull
     protected final ProductFlavor productFlavor;
 
     public ProductFlavorAdaptor(@NonNull ProductFlavor productFlavor) {
+        super(productFlavor);
         this.productFlavor = productFlavor;
     }
 
@@ -59,83 +60,6 @@ public class ProductFlavorAdaptor implements CoreProductFlavor {
     @Override
     public String getDimension() {
         return productFlavor.getDimension();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, ClassField> getBuildConfigFields() {
-        ImmutableMap.Builder<String, ClassField> builder = ImmutableMap.builder();
-        for (com.android.build.gradle.managed.ClassField cf : productFlavor.getBuildConfigFields()) {
-            builder.put(
-                    cf.getName(),
-                    new ClassFieldImpl(
-                            cf.getType(),
-                            cf.getName(),
-                            cf.getValue(),
-                            Objects.firstNonNull(cf.getAnnotations(), ImmutableSet.<String>of()),
-                            Objects.firstNonNull(cf.getDocumentation(), "")));
-        }
-        return builder.build();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, ClassField> getResValues() {
-        ImmutableMap.Builder<String, ClassField> builder = ImmutableMap.builder();
-        for (com.android.build.gradle.managed.ClassField cf : productFlavor.getResValues()) {
-            builder.put(
-                    cf.getName(),
-                    new ClassFieldImpl(
-                            cf.getType(),
-                            cf.getName(),
-                            cf.getValue(),
-                            Objects.firstNonNull(cf.getAnnotations(), ImmutableSet.<String>of()),
-                            Objects.firstNonNull(cf.getDocumentation(), "")));
-        }
-        return builder.build();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getProguardFiles() {
-        return productFlavor.getProguardFiles();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getConsumerProguardFiles() {
-        return productFlavor.getConsumerProguardFiles();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getTestProguardFiles() {
-        return productFlavor.getTestProguardFiles();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getManifestPlaceholders() {
-        // TODO: To be implemented
-        return Maps.newHashMap();
-    }
-
-    @Nullable
-    @Override
-    public Boolean getMultiDexEnabled() {
-        return productFlavor.getMultiDexEnabled();
-    }
-
-    @Nullable
-    @Override
-    public File getMultiDexKeepFile() {
-        return productFlavor.getMultiDexKeepFile();
-    }
-
-    @Nullable
-    @Override
-    public File getMultiDexKeepProguard() {
-        return productFlavor.getMultiDexKeepProguard();
     }
 
     @Nullable
