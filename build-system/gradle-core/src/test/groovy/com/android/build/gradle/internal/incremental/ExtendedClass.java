@@ -16,13 +16,14 @@
 
 package com.android.build.gradle.internal.incremental;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-/**
- * Created by jedo on 7/30/15.
- */
 public class ExtendedClass extends BaseClass {
+
+    public int extendedInt;
+
+    public ExtendedClass(int i) {
+        super(i++);
+        extendedInt = i;
+    }
 
     @Override
     public int methodA() {

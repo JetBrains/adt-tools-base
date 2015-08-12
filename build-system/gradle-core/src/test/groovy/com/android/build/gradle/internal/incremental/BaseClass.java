@@ -16,10 +16,17 @@
 
 package com.android.build.gradle.internal.incremental;
 
-/**
- * Created by jedo on 7/30/15.
- */
 public class BaseClass {
+
+    public int baseInt;
+
+    public BaseClass() {
+        baseInt = 0xDEAD;
+    }
+
+    public BaseClass(int i) {
+        baseInt = i;
+    }
 
     public int methodA() {
         return 42;

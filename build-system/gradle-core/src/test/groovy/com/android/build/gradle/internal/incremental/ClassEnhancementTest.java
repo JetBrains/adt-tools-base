@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -41,9 +42,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by jedo on 7/23/15.
- */
 public class ClassEnhancementTest {
 
     @Test
@@ -63,8 +61,8 @@ public class ClassEnhancementTest {
 
             ClassReader classReader = new ClassReader(bytes);
             ClassNode classNode = new ClassNode(Opcodes.ASM5);
-            classReader.accept(classNode, ClassReader.EXPAND_FRAMES | ClassReader.SKIP_CODE);
-            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
+            classReader.accept(classNode, 0);
+            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
             IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(
                     classNode, Collections.EMPTY_LIST, classWriter);
             classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
@@ -78,8 +76,8 @@ public class ClassEnhancementTest {
         for (String clazz : classes) {
             ClassReader classReader = new ClassReader(original.get(clazz));
             ClassNode classNode = new ClassNode(Opcodes.ASM5);
-            classReader.accept(classNode, ClassReader.EXPAND_FRAMES | ClassReader.SKIP_CODE);
-            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
+            classReader.accept(classNode, 0);
+            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
             IncrementalChangeVisitor incrementalChangeVisitor = new IncrementalChangeVisitor(
                     classNode, Collections.EMPTY_LIST, classWriter);
             classReader.accept(incrementalChangeVisitor, ClassReader.EXPAND_FRAMES);
@@ -105,9 +103,15 @@ public class ClassEnhancementTest {
                 "com.android.build.gradle.internal.incremental.ExtendedClass");
         Class<?> aClass = cl
                 .loadClass("com.android.build.gradle.internal.incremental.ExtendedClass");
-        Object nonEnhancedInstance = aClass.newInstance();
+        Constructor<?> constructor = aClass.getConstructor(int.class);
+        Object nonEnhancedInstance = constructor.newInstance(42);
         Method method = nonEnhancedInstance.getClass().getMethod("methodA");
         assertEquals(42, method.invoke(nonEnhancedInstance));
+
+        Field baseInt = nonEnhancedInstance.getClass().getField("baseInt");
+        assertEquals(42, baseInt.getInt(nonEnhancedInstance));
+        Field extendedInt = nonEnhancedInstance.getClass().getField("extendedInt");
+        assertEquals(43, extendedInt.getInt(nonEnhancedInstance));
     }
 
     @Test

@@ -67,22 +67,140 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             String[] exceptions) {
         System.out.println("Visiting method " + name + " desc " + desc);
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
-        if (name.equals("<init>") || name.equals("<clinit>")) {
+        if (name.equals("<clinit>")) {
             return defaultVisitor;
+        } else  if (name.equals("<init>")) {
+            return new ISConstructorVisitor(Opcodes.ASM5, defaultVisitor, access, name, desc);
+        } else {
+            return new ISMethodVisitor(Opcodes.ASM5, defaultVisitor, access, name, desc);
         }
-        return new ISMethodVisitor(Opcodes.ASM5, defaultVisitor, access, name, desc);
+    }
+
+    private class ISConstructorVisitor extends GeneratorAdapter {
+
+        private final String name;
+        private final String desc;
+        private final int access;
+        private final Label label;
+        int change;
+        int array;
+
+        public ISConstructorVisitor(int api, MethodVisitor mv, int access,  String name, String desc) {
+            super(api, mv, access, name, desc);
+            this.name = name;
+            this.desc = desc;
+            this.access = access;
+            this.label = new Label();
+
+        }
+
+        @Override
+        public void visitCode() {
+            // code to check if a new implementation of the current class is available.
+
+            array = newLocal(Type.getType("[Ljava/lang/Object;"));
+            visitInsn(Opcodes.ACONST_NULL);
+            storeLocal(array);
+
+            change = newLocal(CHANGE_TYPE);
+            visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
+                    CHANGE_TYPE.getDescriptor());
+            dup();
+            storeLocal(change);
+            visitJumpInsn(Opcodes.IFNONNULL, label);
+
+            super.visitCode();
+        }
+
+        @Override
+        public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf)  {
+            if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && owner.equals(visitedSuperName)) {
+                Label l0 = new Label();
+                goTo(l0);
+                visitLabel(label);
+
+                visitVarInsn(Opcodes.ALOAD, 0);
+                loadLocal(change);
+                push(desc);
+
+                List<Type> args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(this.desc)));
+                args.add(0, Type.getType(Object.class));
+                push(args.size());
+                newArray(Type.getType(Object.class));
+
+                // We cannot pass "this" (ie: 0), as this happens before calling super. However
+                // we need the function to be able to change the local variables, at this point
+                // the only local variables available are the parameters, so adding that list
+                // as the first argument.
+                dup();
+                push(0);
+                loadLocal(array); // First element of itself.
+                arrayStore(Type.getType(Object.class));
+
+                dup();
+                storeLocal(array);
+
+                for (int index = 1; index < args.size(); index++) {
+                    Type arg = args.get(index);
+                    dup();
+                    push(index);
+
+                    visitVarInsn(arg.getOpcode(Opcodes.ILOAD), index);
+                    box(arg);
+
+                    arrayStore(Type.getType(Object.class));
+                }
+
+                // now invoke the generic ctr method.
+                invokeInterface(CHANGE_TYPE, Method.getMethod("Object[] access$ctr(String, Object[])"));
+                Type[] superArgs = Type.getArgumentTypes(desc);
+                for (int index = 0; index < superArgs.length; index++) {
+                    dup();
+                    push(index);
+                    arrayLoad(Type.getType(Object.class));
+                    unbox(superArgs[index]);
+                    swap(); // puts the extracted argument behind the array.
+                }
+                pop();
+
+                visitLabel(l0);
+
+                super.visitMethodInsn(opcode, owner, name, desc, itf); // ORIGINAL SUPER CALL STAYS
+
+                Label l1 = new Label();
+                loadLocal(change);
+                visitJumpInsn(Opcodes.IFNULL, l1);
+                loadLocal(change);
+                push("init$override." + this.desc);
+                loadLocal(array);
+                // set the right "this"
+                dup();
+                push(0);
+                visitVarInsn(Opcodes.ALOAD, 0);
+                arrayStore(Type.getType(Object.class));
+
+                // now invoke the generic dispatch method.
+                invokeInterface(CHANGE_TYPE,
+                        Method.getMethod("Object access$dispatch(String, Object[])"));
+                pop();
+                returnValue();
+                visitLabel(l1);
+
+                super.visitCode();
+            } else {
+                super.visitMethodInsn(opcode, owner, name, desc, itf);
+            }
+        }
     }
 
     private class ISMethodVisitor extends GeneratorAdapter {
 
-        private final MethodVisitor mv;
         private final String name;
         private final String desc;
         private final int access;
 
         public ISMethodVisitor(int api, MethodVisitor mv, int access,  String name, String desc) {
             super(api, mv, access, name, desc);
-            this.mv = mv;
             this.name = name;
             this.desc = desc;
             this.access = access;
@@ -112,7 +230,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 dup();
                 push(index);
                 // This will load "this" when it's not static function as the first element
-                mv.visitVarInsn(arg.getOpcode(Opcodes.ILOAD), index);
+                visitVarInsn(arg.getOpcode(Opcodes.ILOAD), index);
                 box(arg);
                 arrayStore(Type.getType(Object.class));
             }

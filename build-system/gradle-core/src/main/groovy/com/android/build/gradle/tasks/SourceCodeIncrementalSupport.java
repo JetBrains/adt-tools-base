@@ -182,7 +182,7 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
                 classReader.accept(classWriter, ClassReader.EXPAND_FRAMES);
             } else {
                 ClassNode classNode = new ClassNode();
-                classReader.accept(classNode, ClassReader.EXPAND_FRAMES | ClassReader.SKIP_CODE);
+                classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
                 // get all type hierarchy.
                 // for now we assume they are co-located which is obviously not always true.
                 List<ClassNode> parentNodes = parseParents(inputFile, classNode);
@@ -234,7 +234,7 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
                 InputStream parentFileClassReader = new BufferedInputStream(new FileInputStream(parentFile));
                 ClassReader parentClassReader = new ClassReader(parentFileClassReader);
                 ClassNode parentNode = new ClassNode();
-                parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES | ClassReader.SKIP_CODE);
+                parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES);
                 parentNodes.add(parentNode);
                 currentParentName = parentNode.superName;
             } else {
