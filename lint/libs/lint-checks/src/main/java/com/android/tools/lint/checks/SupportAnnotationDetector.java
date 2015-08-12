@@ -527,8 +527,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     /** Returns the error message shown when a revocable permission call is not properly handled */
     public static String getUnhandledPermissionMessage() {
         return "Call requires permission which may be rejected by user: code should explicitly "
-                + "check to see if permission is available (with `checkPermission`) or handle "
-                + "a potential `SecurityException`";
+                + "check to see if permission is available (with `checkPermission`) or explicitly "
+                + "handle a potential `SecurityException`";
     }
 
     /**
@@ -581,10 +581,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             @NonNull JavaContext context,
             @NonNull TypeReference typeReference) {
         TypeDescriptor type = context.getType(typeReference);
-        return type != null && (type.matchesSignature("java.lang.SecurityException") ||
-                type.matchesSignature("java.lang.RuntimeException") ||
-                type.matchesSignature("java.lang.Exception") ||
-                type.matchesSignature("java.lang.Throwable"));
+        // In earlier versions we checked not just for java.lang.SecurityException but
+        // any super type as well, however that probably hides warnings in cases where
+        // users don't want that; see http://b.android.com/182165
+        return type != null && type.matchesSignature("java.lang.SecurityException");
     }
 
     private PermissionHolder mPermissions;
