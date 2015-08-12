@@ -59,7 +59,8 @@ public class ToolchainConfiguration {
             final NdkHandler ndkHandler) {
         final Toolchain ndkToolchain = Toolchain.getByName(toolchainName);
         toolchainRegistry.create("ndk-" + toolchainName,
-                toolchainName.equals("gcc") ? Gcc.class : Clang.class,
+                (Class <? extends GccCompatibleToolChain>)
+                        (toolchainName.equals("gcc") ? Gcc.class : Clang.class),
                 new Action<GccCompatibleToolChain>() {
                     @Override
                     public void execute(GccCompatibleToolChain toolchain) {
