@@ -1,3 +1,5 @@
+import com.google.common.io.Files
+
 apply plugin: 'groovy'
 apply plugin: 'jacoco'
 apply plugin: 'clone-artifacts'
@@ -7,11 +9,21 @@ configurations {
     includeInJar
 }
 
+// Incremental update test support
+File classesDir = new File(project.buildDir, "classes/incremental-test")
+File baseClasses = new File(classesDir, "base")
+File baseInstrumentedClasses = new File(classesDir, "baseInstrumented")
+
 sourceSets {
     main {
         groovy.srcDirs = ['src/main/groovy', 'src/fromGradle/groovy']
         resources.srcDirs = ['src/main/resources', 'src/fromGradle/resources']
         compileClasspath += configurations.provided
+    }
+
+    test {
+        compileClasspath += files(baseClasses)
+        runtimeClasspath += files(baseInstrumentedClasses)
     }
 }
 
@@ -33,6 +45,7 @@ dependencies {
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.9.5'
+    testCompile 'com.google.truth:truth:0.26'
     testCompile project(':base:project-test-lib')
     testCompile project(':base:testutils')
 }
@@ -82,9 +95,47 @@ task javadocJar(type: Jar, dependsOn:groovydoc) {
     from        groovydoc.destinationDir
 }
 
+
+
 // Only package JavaDoc if using --init-script=buildSrc/base/release.gradle
 if (project.has("release")) {
   artifacts {
     archives javadocJar
   }
 }
+
+
+// Incremental update test support
+
+// Compile default
+Task compileIncrementalTestClasses = tasks.create(
+        name: "compileIncrementalTestClasses",
+        type: org.gradle.api.tasks.compile.JavaCompile) {
+    source = new File(project.getProjectDir(), "src/test/incremental-test-classes/base")
+    classpath = project.files()
+    destinationDir = baseClasses
+}
+
+compileTestJava.dependsOn compileIncrementalTestClasses
+
+
+// Compile other changesets. They have the default changset on their classpath.
+Task compileIncrementalTestPatches = tasks.create("compileIncrementalTestPatches")
+testClasses.dependsOn compileIncrementalTestPatches
+
+File incrementalTestOutDir = new File(classesDir, "patches")
+
+for (File f: new File(project.projectDir, "src/test/incremental-test-classes/patches").listFiles()) {
+    System.out.println(f);
+    Task t = tasks.create(
+            name: "compileIncrementalTestPatch${f.getName().capitalize()}",
+            type: org.gradle.api.tasks.compile.JavaCompile) {
+        source = project.files(f)
+        classpath = project.files(baseClasses)
+        destinationDir = new File(incrementalTestOutDir, f.getName())
+    }
+
+    t.dependsOn compileIncrementalTestClasses
+    compileIncrementalTestPatches.dependsOn t
+}
+
