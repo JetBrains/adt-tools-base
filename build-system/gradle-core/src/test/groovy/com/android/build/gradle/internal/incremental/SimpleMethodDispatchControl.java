@@ -32,6 +32,7 @@ public class SimpleMethodDispatchControl extends BaseClass {
     }
 
     public long calculateIntValue(Integer value, int other) {
-        return System.currentTimeMillis() / (value * field + other - delegate.delegateField);
+        return 0;
+        //return System.currentTimeMillis() / (value * field + other - delegate.delegateField);
     }
 }
