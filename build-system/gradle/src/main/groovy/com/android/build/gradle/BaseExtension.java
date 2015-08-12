@@ -36,7 +36,6 @@ import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.dsl.PreprocessingOptions;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.dsl.Splits;
@@ -48,9 +47,10 @@ import com.android.builder.model.SourceProvider;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
+import com.android.resources.Density;
 import com.android.sdklib.repository.FullRevision;
-import com.google.common.annotations.Beta;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
@@ -68,6 +68,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Base 'android' extension for all android plugins.
@@ -106,9 +107,6 @@ public abstract class BaseExtension implements AndroidConfig {
 
     /** Packaging options. */
     final PackagingOptions packagingOptions;
-
-    /** Options to control resources preprocessing. Not finalized yet.*/
-    final PreprocessingOptions preprocessingOptions;
 
     /** JaCoCo options. */
     final JacocoExtension jacoco;
@@ -192,7 +190,6 @@ public abstract class BaseExtension implements AndroidConfig {
         testOptions = instantiator.newInstance(TestOptions.class);
         compileOptions = instantiator.newInstance(CompileOptions.class);
         packagingOptions = instantiator.newInstance(PackagingOptions.class);
-        preprocessingOptions = instantiator.newInstance(PreprocessingOptions.class);
         jacoco = instantiator.newInstance(JacocoExtension.class);
         adbOptions = instantiator.newInstance(AdbOptions.class);
         splits = instantiator.newInstance(Splits.class, instantiator);
@@ -238,6 +235,17 @@ public abstract class BaseExtension implements AndroidConfig {
         });
 
         sourceSetsContainer.create(defaultConfig.getName());
+
+        setDefaultConfigValues();
+    }
+
+    private void setDefaultConfigValues() {
+        Set<Density> densities = Density.getRecommendedValuesForDevice();
+        Set<String> strings = Sets.newHashSetWithExpectedSize(densities.size());
+        for (Density density : densities) {
+            strings.add(density.getResourceValue());
+        }
+        defaultConfig.setGeneratedDensities(strings);
     }
 
     /**
@@ -436,14 +444,6 @@ public abstract class BaseExtension implements AndroidConfig {
     }
 
     /**
-     * Configures preprocessing options.
-     */
-    public void preprocessingOptions(Action<PreprocessingOptions> action) {
-        checkWritability();
-        action.execute(preprocessingOptions);
-    }
-
-    /**
      * Configures JaCoCo options.
      */
     public void jacoco(Action<JacocoExtension> action) {
@@ -579,13 +579,6 @@ public abstract class BaseExtension implements AndroidConfig {
     @Override
     public boolean getGeneratePureSplits() {
         return generatePureSplits;
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    @Beta
-    public PreprocessingOptions getPreprocessingOptions() {
-        return preprocessingOptions;
     }
 
     public void resourcePrefix(String prefix) {

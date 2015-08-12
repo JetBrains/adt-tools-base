@@ -35,6 +35,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * An adaptor to convert a ProductFlavor to CoreProductFlavor.
@@ -238,6 +239,12 @@ public class ProductFlavorAdaptor implements CoreProductFlavor {
         return productFlavor.getSigningConfig() == null ?
                 null :
                 new SigningConfigAdaptor(productFlavor.getSigningConfig());
+    }
+
+    @Nullable
+    @Override
+    public Set<String> getGeneratedDensities() {
+        return productFlavor.getGeneratedDensities();
     }
 
     @Override

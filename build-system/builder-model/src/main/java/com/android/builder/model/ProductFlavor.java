@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * a Product Flavor. This is only the configuration of the flavor.
@@ -177,4 +178,7 @@ public interface ProductFlavor extends BaseConfig, DimensionAware {
      */
     @Nullable
     SigningConfig getSigningConfig();
+
+    @Nullable
+    Set<String> getGeneratedDensities();
 }

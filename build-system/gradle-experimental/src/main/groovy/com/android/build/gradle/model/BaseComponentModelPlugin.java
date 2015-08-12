@@ -63,9 +63,9 @@ import com.android.builder.profile.ThreadRecorder;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.ide.common.internal.ExecutorSingleton;
-import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
+import com.android.resources.Density;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -102,6 +102,7 @@ import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -352,6 +353,13 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public void initDefaultConfig(@Path("android.defaultConfig") ProductFlavor defaultConfig) {
             initProductFlavor(defaultConfig);
+
+            Set<Density> densities = Density.getRecommendedValuesForDevice();
+            Set<String> strings = Sets.newHashSetWithExpectedSize(densities.size());
+            for (Density density : densities) {
+                strings.add(density.getResourceValue());
+            }
+            defaultConfig.setGeneratedDensities(strings);
         }
 
         @Mutate

@@ -619,6 +619,44 @@ public class AppPluginDslTest extends BaseTest {
         }
     }
 
+    public void testGeneratedDensities() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
+
+            productFlavors {
+                f1 {
+                }
+
+                f2  {
+                    generatedDensities = ["ldpi"]
+                    generatedDensities += ["mdpi"]
+                }
+
+                f3 {
+                    generatedDensities = defaultConfig.generatedDensities - ["ldpi", "mdpi"]
+                }
+            }
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        assert project.mergeF1DebugResources.generatedDensities ==
+                ["ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"] as Set
+
+        assert project.mergeF2DebugResources.generatedDensities ==
+                ["ldpi", "mdpi"] as Set
+
+        assert project.mergeF3DebugResources.generatedDensities ==
+                ["hdpi", "xhdpi", "xxhdpi", "xxxhdpi"] as Set
+    }
+
     private static void checkTestedVariant(@NonNull String variantName,
                                            @NonNull String testedVariantName,
                                            @NonNull Collection<ApplicationVariant> variants,
