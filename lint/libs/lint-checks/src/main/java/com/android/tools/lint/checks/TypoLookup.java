@@ -26,10 +26,10 @@ import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
+import com.google.common.io.ByteSink;
 import com.google.common.io.Files;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -409,9 +409,8 @@ public class TypoLookup {
         byte[] b = new byte[size];
         buffer.rewind();
         buffer.get(b);
-        FileOutputStream output = Files.newOutputStreamSupplier(file).getOutput();
-        output.write(b);
-        output.close();
+        ByteSink sink = Files.asByteSink(file);
+        sink.write(b);
     }
 
     // For debugging only
