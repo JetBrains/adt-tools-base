@@ -25,7 +25,7 @@ import com.android.resources.ResourceType;
 @SuppressWarnings("deprecation")
 public class ResourceValue extends ResourceReference implements IResourceValue {
     private final ResourceType mType;
-    protected String mValue = null;
+    protected String mValue;
 
     public ResourceValue(ResourceType type, String name, boolean isFramework) {
         super(name, isFramework);
