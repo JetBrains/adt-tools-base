@@ -55,6 +55,7 @@ model {
     }
     android.ndk {
         moduleName = "hello-jni"
+        platformVersion = 19
     }
 }
 """
@@ -100,6 +101,11 @@ model {
         assertThatZip(apk).contains("lib/armeabi-v7a/libhello-jni.so")
         assertThatZip(apk).contains("lib/armeabi-v7a/gdbserver")
         assertThatZip(apk).contains("lib/armeabi-v7a/gdb.setup")
+
+        // 64-bits binaries will not be produced if platform version 19 is used.
+        assertThatZip(apk).doesNotContain("lib/x86_64/libhello-jni.so")
+        assertThatZip(apk).doesNotContain("lib/arm64-v8a/libhello-jni.so")
+        assertThatZip(apk).doesNotContain("lib/mips64/libhello-jni.so")
     }
 
     @Test

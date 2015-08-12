@@ -2,6 +2,7 @@ package com.android.build.gradle.ndk.internal;
 
 import com.android.build.gradle.internal.core.Toolchain;
 import com.android.build.gradle.managed.NdkConfig;
+import com.google.common.primitives.Ints;
 
 import org.gradle.api.InvalidUserDataException;
 
@@ -31,6 +32,12 @@ public class NdkExtensionConvention {
             ndkConfig.setStl(DEFAULT_STL);
         } else {
             StlConfiguration.checkStl(ndkConfig.getStl());
+        }
+
+        if (ndkConfig.getPlatformVersion() != null
+                && !ndkConfig.getPlatformVersion().startsWith("android-")
+                && Ints.tryParse(ndkConfig.getPlatformVersion()) != null) {
+            ndkConfig.setPlatformVersion("android-" + ndkConfig.getPlatformVersion());
         }
     }
 }
