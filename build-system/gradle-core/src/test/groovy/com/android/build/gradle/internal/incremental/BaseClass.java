@@ -28,7 +28,36 @@ public class BaseClass {
         baseInt = i;
     }
 
+    protected String protectedField ="protected";
+    private String privateField="private";
+    String packagePrivateField="package";
+    public String publicField="public";
+
     public int methodA() {
         return 42;
+    }
+
+    public String getAll() {
+        return publicField + protectedField + packagePrivateField + privateField;
+    }
+
+    public String invokeAll() {
+        return publicMethod() + privateMethod() + protectedMethod() + packagePrivateMethod();
+    }
+
+    protected String protectedMethod() {
+        return protectedField;
+    }
+
+    String packagePrivateMethod() {
+        return protectedField;
+    }
+
+    private String privateMethod() {
+        return privateField;
+    }
+
+    public String publicMethod() {
+        return publicField;
     }
 }

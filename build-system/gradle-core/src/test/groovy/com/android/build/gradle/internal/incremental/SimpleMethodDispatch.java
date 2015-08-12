@@ -19,7 +19,7 @@ package com.android.build.gradle.internal.incremental;
 /**
  * Created by jedo on 7/23/15.
  */
-public class SimpleMethodDispatch {
+public class SimpleMethodDispatch extends BaseClass {
 
     private int field = 183*4;
     public int otherField = 40;
@@ -33,5 +33,13 @@ public class SimpleMethodDispatch {
         int newValue = value + otherValue;
         System.out.println("hello " + newValue);
         return field / (newValue);
+    }
+
+    public String getStringValue() {
+        return protectedField + publicField + packagePrivateField;
+    }
+
+    public String invokeAllParent() {
+        return super.packagePrivateMethod() + super.protectedMethod() + super.publicMethod();
     }
 }

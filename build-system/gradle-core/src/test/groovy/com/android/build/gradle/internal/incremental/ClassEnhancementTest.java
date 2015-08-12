@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -38,8 +39,9 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ClassEnhancementTest {
@@ -53,6 +55,7 @@ public class ClassEnhancementTest {
     private ClassLoader loadAndPatch(String... classes) throws Exception {
         Map<String, byte[]> original = new HashMap<String, byte[]>();
         Map<String, byte[]> enhanced = new HashMap<String, byte[]>();
+        Map<String, List<ClassNode>> parentClassNodes = new HashMap<String, List<ClassNode>>();
         for (String clazz : classes) {
             InputStream inputStream = getClass().getClassLoader().getResourceAsStream(
                     clazz.replace(".", "/") + ".class");
@@ -61,10 +64,28 @@ public class ClassEnhancementTest {
 
             ClassReader classReader = new ClassReader(bytes);
             ClassNode classNode = new ClassNode(Opcodes.ASM5);
-            classReader.accept(classNode, 0);
-            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
+            classReader.accept(classNode, ClassReader.EXPAND_FRAMES | ClassReader.SKIP_CODE);
+            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
+
+            List<ClassNode> parentClassList = new ArrayList<ClassNode>();
+            ClassNode currentClassNode = classNode;
+            while(!currentClassNode.superName.equals(Type.getType(Object.class).getInternalName())) {
+                InputStream parentStream = getClass().getClassLoader().getResourceAsStream(
+                        classNode.superName + ".class");
+
+                byte[] parentBytes = ByteStreams.toByteArray(parentStream);
+
+                ClassReader parentClassReader = new ClassReader(parentBytes);
+                ClassNode parentClassNode = new ClassNode(Opcodes.ASM5);
+                parentClassReader.accept(parentClassNode, ClassReader.EXPAND_FRAMES | ClassReader.SKIP_CODE);
+                parentClassList.add(parentClassNode);
+                currentClassNode = parentClassNode;
+            }
+
+            parentClassNodes.put(clazz, parentClassList);
+
             IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(
-                    classNode, Collections.EMPTY_LIST, classWriter);
+                    classNode, parentClassList, classWriter);
             classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
             enhanced.put(clazz, classWriter.toByteArray());
             traceClass(classWriter.toByteArray());
@@ -79,7 +100,7 @@ public class ClassEnhancementTest {
             classReader.accept(classNode, 0);
             ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
             IncrementalChangeVisitor incrementalChangeVisitor = new IncrementalChangeVisitor(
-                    classNode, Collections.EMPTY_LIST, classWriter);
+                    classNode, parentClassNodes.get(clazz), classWriter);
             classReader.accept(incrementalChangeVisitor, ClassReader.EXPAND_FRAMES);
             change.put(clazz + "$override", classWriter.toByteArray());
             traceClass(classWriter.toByteArray());
@@ -116,13 +137,28 @@ public class ClassEnhancementTest {
 
     @Test
     public void perpareForIncrementalSupportTest() throws Exception {
-        ClassLoader cl = loadAndPatch("com.android.build.gradle.internal.incremental.SimpleMethodDispatch");
+        ClassLoader cl = loadAndPatch(
+                "com.android.build.gradle.internal.incremental.BaseClass",
+                "com.android.build.gradle.internal.incremental.SimpleMethodDispatch");
         Class<?> aClass = cl
                 .loadClass("com.android.build.gradle.internal.incremental.SimpleMethodDispatch");
         Object nonEnhancedInstance = aClass.newInstance();
-        Method getStringValue = nonEnhancedInstance.getClass()
+        Method getIntValue = nonEnhancedInstance.getClass()
                 .getMethod("getIntValue", Integer.TYPE);
-        System.out.println(getStringValue.invoke(nonEnhancedInstance, 143));
+        System.out.println(getIntValue.invoke(nonEnhancedInstance, 143));
+
+        Method getStringValue = nonEnhancedInstance.getClass()
+                .getMethod("getStringValue");
+        System.out.println(getStringValue.invoke(nonEnhancedInstance));
+
+        Method method = nonEnhancedInstance.getClass()
+                .getMethod("invokeAll");
+        System.out.println(method.invoke(nonEnhancedInstance));
+
+        method = nonEnhancedInstance.getClass()
+                .getMethod("invokeAllParent");
+        System.out.println(method.invoke(nonEnhancedInstance));
+
     }
 
     private ClassLoader prepareClassLoader(ClassLoader parentClassLoader, Map<String, byte[]> classDefinitions)

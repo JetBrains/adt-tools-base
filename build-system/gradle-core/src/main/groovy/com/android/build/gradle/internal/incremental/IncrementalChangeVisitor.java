@@ -366,6 +366,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 null, null);
 
         GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
+
+        mv.loadArg(0);
+        mv.invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+                Method.getMethod("void trace(String)"));
+
         List<MethodNode> methods = classNode.methods;
         List<MethodNode> constructors = new ArrayList<MethodNode>();
         for (MethodNode methodNode : methods) {

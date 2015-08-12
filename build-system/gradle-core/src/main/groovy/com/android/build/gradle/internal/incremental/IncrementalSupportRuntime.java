@@ -108,4 +108,8 @@ public class IncrementalSupportRuntime {
         }
         return null;
     }
+
+    public static void trace(String s) {
+        System.out.println("Redirectirng " + s);
+    }
 }
