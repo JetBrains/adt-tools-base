@@ -415,7 +415,7 @@ public class InstrumentationResultParserTest extends TestCase {
                 "testPreconditions");
         mMockListener.testStarted(HELLO_WORLD);
         mMockListener.testEnded(HELLO_WORLD, Collections.EMPTY_MAP);
-        mMockListener.testRunEnded(EasyMock.eq(676L), EasyMock.anyObject(Map.class));
+        mMockListener.testRunEnded(EasyMock.eq(676L), EasyMock.<Map>anyObject());
 
         injectAndVerifyTestString(output.toString());
 }

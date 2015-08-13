@@ -16,11 +16,6 @@
 
 package com.android.ide.common.res2;
 
-import static com.android.SdkConstants.ATTR_NAME;
-import static com.android.SdkConstants.FD_RES_DRAWABLE;
-import static com.android.SdkConstants.FD_RES_LAYOUT;
-import static com.android.SdkConstants.TAG_ATTR;
-
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -34,7 +29,6 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
-
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.w3c.dom.Attr;
@@ -42,17 +36,14 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.xml.parsers.DocumentBuilderFactory;
+import static com.android.SdkConstants.*;
 
 public class ResourceMergerTest extends BaseTestCase {
 

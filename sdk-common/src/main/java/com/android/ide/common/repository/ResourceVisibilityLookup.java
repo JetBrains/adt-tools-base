@@ -15,8 +15,6 @@
  */
 package com.android.ide.common.repository;
 
-import static com.android.SdkConstants.FN_RESOURCE_TEXT;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidArtifact;
@@ -37,6 +35,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import static com.android.SdkConstants.FN_RESOURCE_TEXT;
 
 /**
  * Class which provides information about whether Android resources for a given library are

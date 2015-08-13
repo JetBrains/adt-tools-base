@@ -16,11 +16,6 @@
 
 package com.android.ide.common.blame.parser;
 
-import static com.android.SdkConstants.DOT_XML;
-import static com.android.SdkConstants.PLATFORM_WINDOWS;
-import static com.android.SdkConstants.currentPlatform;
-import static com.android.utils.SdkUtils.createPathComment;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.blame.Message;
@@ -29,11 +24,9 @@ import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.blame.parser.aapt.AaptOutputParser;
 import com.android.ide.common.blame.parser.aapt.AbstractAaptOutputParser;
 import com.android.utils.StdLogger;
-import com.android.utils.StringHelper;
 import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
-
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
@@ -44,6 +37,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+
+import static com.android.SdkConstants.*;
+import static com.android.utils.SdkUtils.createPathComment;
 
 /**
  * Tests for {@link ToolOutputParser}.
@@ -73,7 +69,7 @@ public class AaptOutputParserTest extends TestCase {
             Message message = messages.get(i);
             sb.append(Integer.toString(i)).append(':').append(' ');
             sb.append(
-                    StringHelper.capitalize(message.getKind().toString().toLowerCase(Locale.US)))
+                    message.getKind().toString().toLowerCase(Locale.US))
                     .append(':'); // INFO => Info
             sb.append(message.getText());
             if (!message.getSourceFilePositions().isEmpty() &&

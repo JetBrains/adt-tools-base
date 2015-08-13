@@ -11,5 +11,7 @@
     <orderEntry type="module" module-name="ddmlib" exported="" />
     <orderEntry type="library" exported="" name="guava-tools" level="project" />
     <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
+    <orderEntry type="module" module-name="android-annotations" />
+    <orderEntry type="module" module-name="common" />
   </component>
 </module>

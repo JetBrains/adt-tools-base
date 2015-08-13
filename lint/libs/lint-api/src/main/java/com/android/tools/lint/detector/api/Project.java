@@ -16,36 +16,12 @@
 
 package com.android.tools.lint.detector.api;
 
-import static com.android.SdkConstants.ANDROID_LIBRARY;
-import static com.android.SdkConstants.ANDROID_LIBRARY_REFERENCE_FORMAT;
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-import static com.android.SdkConstants.ANDROID_URI;
-import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
-import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
-import static com.android.SdkConstants.ATTR_PACKAGE;
-import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
-import static com.android.SdkConstants.FN_PROJECT_PROGUARD_FILE;
-import static com.android.SdkConstants.OLD_PROGUARD_FILE;
-import static com.android.SdkConstants.PROGUARD_CONFIG;
-import static com.android.SdkConstants.PROJECT_PROPERTIES;
-import static com.android.SdkConstants.RES_FOLDER;
-import static com.android.SdkConstants.SUPPORT_LIB_ARTIFACT;
-import static com.android.SdkConstants.TAG_USES_SDK;
-import static com.android.SdkConstants.VALUE_TRUE;
-import static com.android.sdklib.SdkVersionInfo.HIGHEST_KNOWN_API;
-
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
-import com.android.builder.model.AndroidArtifact;
-import com.android.builder.model.AndroidArtifactOutput;
-import com.android.builder.model.AndroidLibrary;
-import com.android.builder.model.AndroidProject;
-import com.android.builder.model.ProductFlavor;
-import com.android.builder.model.ProductFlavorContainer;
-import com.android.builder.model.Variant;
+import com.android.builder.model.*;
 import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
@@ -64,7 +40,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -73,15 +48,12 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.android.SdkConstants.*;
+import static com.android.sdklib.SdkVersionInfo.HIGHEST_KNOWN_API;
 
 /**
  * A project contains information about an Android project being scanned for

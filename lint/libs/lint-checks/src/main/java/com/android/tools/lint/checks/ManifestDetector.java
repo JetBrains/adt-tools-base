@@ -16,70 +16,23 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-import static com.android.SdkConstants.ANDROID_URI;
-import static com.android.SdkConstants.ATTR_ALLOW_BACKUP;
-import static com.android.SdkConstants.ATTR_ICON;
-import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
-import static com.android.SdkConstants.ATTR_NAME;
-import static com.android.SdkConstants.ATTR_PACKAGE;
-import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
-import static com.android.SdkConstants.ATTR_VERSION_CODE;
-import static com.android.SdkConstants.ATTR_VERSION_NAME;
-import static com.android.SdkConstants.DRAWABLE_PREFIX;
-import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
-import static com.android.SdkConstants.TAG_ACTIVITY;
-import static com.android.SdkConstants.TAG_APPLICATION;
-import static com.android.SdkConstants.TAG_INTENT_FILTER;
-import static com.android.SdkConstants.TAG_PERMISSION;
-import static com.android.SdkConstants.TAG_PROVIDER;
-import static com.android.SdkConstants.TAG_RECEIVER;
-import static com.android.SdkConstants.TAG_SERVICE;
-import static com.android.SdkConstants.TAG_USES_FEATURE;
-import static com.android.SdkConstants.TAG_USES_LIBRARY;
-import static com.android.SdkConstants.TAG_USES_PERMISSION;
-import static com.android.SdkConstants.TAG_USES_SDK;
-import static com.android.xml.AndroidManifest.NODE_ACTION;
-import static com.android.xml.AndroidManifest.NODE_DATA;
-import static com.android.xml.AndroidManifest.NODE_METADATA;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.model.AndroidProject;
-import com.android.builder.model.ApiVersion;
-import com.android.builder.model.BuildTypeContainer;
-import com.android.builder.model.ProductFlavor;
-import com.android.builder.model.ProductFlavorContainer;
-import com.android.builder.model.SourceProviderContainer;
-import com.android.builder.model.Variant;
+import com.android.builder.model.*;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.resources.ResourceUrl;
-import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.Context;
-import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Implementation;
-import com.android.tools.lint.detector.api.Issue;
-import com.android.tools.lint.detector.api.LintUtils;
-import com.android.tools.lint.detector.api.Location;
-import com.android.tools.lint.detector.api.Project;
-import com.android.tools.lint.detector.api.Scope;
-import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
-import com.android.tools.lint.detector.api.XmlContext;
+import com.android.tools.lint.detector.api.*;
 import com.google.common.collect.Maps;
-
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
+import static com.android.SdkConstants.*;
+import static com.android.xml.AndroidManifest.*;
 
 /**
  * Checks for issues in AndroidManifest files such as declaring elements in the
