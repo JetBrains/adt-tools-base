@@ -36,8 +36,7 @@ import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.Variant;
 import com.android.ide.common.resources.LocaleManager;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
-import com.android.ide.common.resources.configuration.LanguageQualifier;
-import com.android.ide.common.resources.configuration.RegionQualifier;
+import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -70,7 +69,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * Checks for incomplete translations - e.g. keys that are only present in some
@@ -80,9 +78,6 @@ public class TranslationDetector extends ResourceXmlDetector {
     @VisibleForTesting
     static boolean sCompleteRegions =
             System.getenv("ANDROID_LINT_COMPLETE_REGIONS") != null; //$NON-NLS-1$
-
-    private static final Pattern LANGUAGE_PATTERN = Pattern.compile("^[a-z]{2}$"); //$NON-NLS-1$
-    private static final Pattern REGION_PATTERN = Pattern.compile("^r([A-Z]{2})$"); //$NON-NLS-1$
 
     private static final Implementation IMPLEMENTATION = new Implementation(
             TranslationDetector.class,
@@ -278,7 +273,7 @@ public class TranslationDetector extends ResourceXmlDetector {
             String name = parent.getName();
 
             // Look up the language for this folder.
-            String language = getLanguage(name);
+            String language = getLanguageTag(name);
             if (language == null) {
                 language = defaultLanguage;
             }
@@ -523,21 +518,16 @@ public class TranslationDetector extends ResourceXmlDetector {
 
 
     /** Look up the language for the given folder name */
-    private static String getLanguage(String name) {
+    private static String getLanguageTag(String name) {
         if (FD_RES_VALUES.equals(name)) {
             return null;
         }
 
         FolderConfiguration configuration = FolderConfiguration.getConfigForFolder(name);
         if (configuration != null) {
-          LanguageQualifier language = configuration.getEffectiveLanguage();
-          if (language != null && !language.hasFakeValue()) {
-              RegionQualifier region = configuration.getRegionQualifier();
-              if (region != null && !region.hasFakeValue()) {
-                  return language.getValue() + '-' + region.getValue();
-              } else {
-                  return language.getValue();
-              }
+          LocaleQualifier locale = configuration.getLocaleQualifier();
+          if (locale != null && !locale.hasFakeValue()) {
+              return locale.getTag();
           }
         }
 
@@ -559,7 +549,7 @@ public class TranslationDetector extends ResourceXmlDetector {
             }
             String name = attribute.getValue();
             if (mMissingLocations != null && mMissingLocations.containsKey(name)) {
-                String language = getLanguage(context.file.getParentFile().getName());
+                String language = getLanguageTag(context.file.getParentFile().getName());
                 if (language == null) {
                     if (context.getDriver().isSuppressed(context, MISSING, element)) {
                         mMissingLocations.remove(name);
@@ -573,7 +563,7 @@ public class TranslationDetector extends ResourceXmlDetector {
                 }
             }
             if (mExtraLocations != null && mExtraLocations.containsKey(name)) {
-                String language = getLanguage(context.file.getParentFile().getName());
+                String language = getLanguageTag(context.file.getParentFile().getName());
                 if (language != null) {
                     if (context.getDriver().isSuppressed(context, EXTRA, element)) {
                         mExtraLocations.remove(name);

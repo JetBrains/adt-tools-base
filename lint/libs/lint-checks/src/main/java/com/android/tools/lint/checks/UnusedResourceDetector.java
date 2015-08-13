@@ -35,6 +35,7 @@ import static com.android.SdkConstants.TAG_PLURALS;
 import static com.android.SdkConstants.TAG_RESOURCES;
 import static com.android.SdkConstants.TAG_STRING_ARRAY;
 import static com.android.SdkConstants.TAG_STYLE;
+import static com.android.utils.SdkUtils.getResourceFieldName;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -92,7 +93,8 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
 
     private static final Implementation IMPLEMENTATION = new Implementation(
             UnusedResourceDetector.class,
-            EnumSet.of(Scope.MANIFEST, Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES));
+            EnumSet.of(Scope.MANIFEST, Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES,
+                    Scope.TEST_SOURCES));
 
     /** Unused resources (other than ids). */
     public static final Issue ISSUE = Issue.create(
@@ -376,10 +378,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
             for (Element item : LintUtils.getChildren(element)) {
                 Attr nameAttribute = item.getAttributeNode(ATTR_NAME);
                 if (nameAttribute != null) {
-                    String name = nameAttribute.getValue();
-                    if (name.indexOf('.') != -1) {
-                        name = name.replace('.', '_');
-                    }
+                    String name = getResourceFieldName(nameAttribute.getValue());
                     String type = item.getTagName();
                     if (type.equals(TAG_ITEM)) {
                         type = item.getAttribute(ATTR_TYPE);

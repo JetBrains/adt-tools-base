@@ -253,23 +253,25 @@ public class PreValidator {
                 case REMOVE:
                     // check we are not provided a new value.
                     if (attribute.isPresent()) {
+                        // Add one to startLine so the first line is displayed as 1.
                         xmlElement.addMessage(mergingReport, ERROR, String.format(
                                 "tools:remove specified at line:%d for attribute %s, but "
                                         + "attribute also declared at line:%d, "
                                         + "do you want to use tools:replace instead ?",
-                                xmlElement.getLine(),
+                                xmlElement.getPosition().getStartLine() + 1,
                                 attributeOperationTypeEntry.getKey(),
-                                attribute.get().getPosition().getLine()
+                                attribute.get().getPosition().getStartLine() + 1
                         ));
                     }
                     break;
                 case REPLACE:
                     // check we are provided a new value
                     if (!attribute.isPresent()) {
+                        // Add one to startLine so the first line is displayed as 1.
                         xmlElement.addMessage(mergingReport, ERROR, String.format(
                                 "tools:replace specified at line:%d for attribute %s, but "
                                         + "no new value specified",
-                                xmlElement.getLine(),
+                                xmlElement.getPosition().getStartLine() + 1,
                                 attributeOperationTypeEntry.getKey()
                         ));
                     }

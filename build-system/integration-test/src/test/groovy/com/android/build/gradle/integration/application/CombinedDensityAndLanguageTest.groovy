@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
@@ -33,7 +32,6 @@ import static com.android.builder.core.BuilderConstants.DEBUG
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
-
 /**
  * test driver for combined density and language pure splits test.
  */
@@ -43,11 +41,12 @@ class CombinedDensityAndLanguageTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("combinedDensityAndLanguagePureSplits")
+            .fromTestProject("combinedDensityAndLanguagePureSplits")
             .create()
 
     @BeforeClass
     static void setup() {
+        GradleTestProject.assumeBuildToolsAtLeast(21)
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
@@ -81,11 +80,12 @@ class CombinedDensityAndLanguageTest {
         expected.add("xhdpi")
         expected.add("xxhdpi")
         expected.add("en")
-        expected.add("fr")
+        expected.add("fr,fr-rBE")
+        expected.add("fr-rCA")
 
         assertEquals(1, debugOutputs.size())
         AndroidArtifactOutput output = debugOutputs.iterator().next()
-        assertEquals(7, output.getOutputs().size())
+        assertEquals(8, output.getOutputs().size())
         for (OutputFile outputFile : output.getOutputs()) {
             String filter = ModelHelper.getFilter(outputFile, OutputFile.DENSITY)
             if (filter == null) {

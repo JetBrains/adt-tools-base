@@ -28,6 +28,7 @@ import com.android.builder.model.ProductFlavorContainer
 import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -41,9 +42,10 @@ import static org.junit.Assert.assertNotNull
 /**
  * Assemble tests for artifactApi.
  */
+@CompileStatic
 class ArtifactApiTest {
     // Unit test variants produce an extra Java artifact.
-    private static final DEFAULT_EXTRA_JAVA_ARTIFACTS = 1
+    private static final int DEFAULT_EXTRA_JAVA_ARTIFACTS = 1
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

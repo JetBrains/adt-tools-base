@@ -18,6 +18,7 @@ package com.android.ide.common.resources.configuration;
 
 import com.android.annotations.Nullable;
 import com.android.resources.NightMode;
+import com.android.resources.ScreenRound;
 import com.android.resources.UiMode;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.devices.Hardware;
@@ -58,6 +59,12 @@ public class DeviceConfigHelper {
         config.setScreenSizeQualifier(new ScreenSizeQualifier(screen.getSize()));
         config.setTextInputMethodQualifier(new TextInputMethodQualifier(hw.getKeyboard()));
         config.setTouchTypeQualifier(new TouchScreenQualifier(screen.getMechanism()));
+        ScreenRound screenRound = screen.getScreenRound();
+        if (screenRound == null) {
+            // The default is not round.
+            screenRound = ScreenRound.NOTROUND;
+        }
+        config.setScreenRoundQualifier(new ScreenRoundQualifier(screenRound));
 
         config.setKeyboardStateQualifier(new KeyboardStateQualifier(state.getKeyState()));
         config.setNavigationStateQualifier(new NavigationStateQualifier(state.getNavState()));
@@ -70,10 +77,9 @@ public class DeviceConfigHelper {
         config.setUiModeQualifier(new UiModeQualifier(UiMode.NORMAL));
         config.setNightModeQualifier(new NightModeQualifier(NightMode.NOTNIGHT));
         config.setCountryCodeQualifier(new CountryCodeQualifier());
-        config.setLanguageQualifier(new LanguageQualifier());
+        config.setLocaleQualifier(new LocaleQualifier());
         config.setLayoutDirectionQualifier(new LayoutDirectionQualifier());
         config.setNetworkCodeQualifier(new NetworkCodeQualifier());
-        config.setRegionQualifier(new RegionQualifier());
         config.setVersionQualifier(new VersionQualifier());
 
         return config;

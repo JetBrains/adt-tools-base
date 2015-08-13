@@ -33,6 +33,7 @@ import java.util.TreeMap;
  * This is used to write the simplified XML file containing all the public API.
  *
  */
+@SuppressWarnings({"UnnecessaryUnboxing", "UnnecessaryBoxing"})
 public class ApiClass {
 
     private final String mName;
@@ -45,11 +46,14 @@ public class ApiClass {
 
     private final Map<String, Integer> mFields = new HashMap<String, Integer>();
     private final Map<String, Integer> mMethods = new HashMap<String, Integer>();
+	private final Map<String, Integer> mDeprecated = new HashMap<String, Integer>();
 
     public ApiClass(String name, int since) {
         mName = name;
         mSince = since;
     }
+
+    public int deprecatedIn = Integer.MAX_VALUE;
 
     public String getName() {
         return mName;
@@ -59,17 +63,30 @@ public class ApiClass {
         return mSince;
     }
 
-    public void addField(String name, int since) {
+    public void addField(String name, int since, boolean deprecated) {
         Integer i = mFields.get(name);
         if (i == null || i.intValue() > since) {
             mFields.put(name, Integer.valueOf(since));
         }
+
+        if (deprecated) {
+            i = mDeprecated.get(name);
+            if (i == null || i.intValue() > since) {
+                mDeprecated.put(name, Integer.valueOf(since));
+            }
+        }
     }
 
-    public void addMethod(String name, int since) {
+    public void addMethod(String name, int since, boolean deprecated) {
         Integer i = mMethods.get(name);
         if (i == null || i.intValue() > since) {
             mMethods.put(name, Integer.valueOf(since));
+        }
+        if (deprecated) {
+            i = mDeprecated.get(name);
+            if (i == null || i.intValue() > since) {
+                mDeprecated.put(name, Integer.valueOf(since));
+            }
         }
     }
 
@@ -114,6 +131,10 @@ public class ApiClass {
         stream.print(mName);
         stream.print("\" since=\"");
         stream.print(mSince);
+        if (deprecatedIn < Integer.MAX_VALUE) {
+            stream.print("\" deprecated=\"");
+            stream.print(deprecatedIn);
+        }
         stream.println("\">");
 
         print(mSuperClasses, "extends", stream);
@@ -134,11 +155,16 @@ public class ApiClass {
         });
 
         for (Pair<String, Integer> pair : list) {
+            Integer deprecated = mDeprecated.get(pair.getFirst());
             if (mSince == pair.getSecond()) {
                 stream.print("\t\t<");
                 stream.print(name);
                 stream.print(" name=\"");
                 stream.print(encodeAttribute(pair.getFirst()));
+                if (deprecated != null) {
+                    stream.print("\" deprecated=\"");
+                    stream.print(deprecated);
+                }
                 stream.println("\" />");
             } else {
                 stream.print("\t\t<");
@@ -147,6 +173,10 @@ public class ApiClass {
                 stream.print(encodeAttribute(pair.getFirst()));
                 stream.print("\" since=\"");
                 stream.print(pair.getSecond());
+                if (deprecated != null) {
+                    stream.print("\" deprecated=\"");
+                    stream.print(deprecated);
+                }
                 stream.println("\" />");
             }
         }
@@ -156,11 +186,16 @@ public class ApiClass {
         TreeMap<String, Integer> map2 = new TreeMap<String, Integer>(map);
 
         for (Entry<String, Integer> entry : map2.entrySet()) {
+            Integer deprecated = mDeprecated.get(entry.getKey());
             if (mSince == entry.getValue()) {
                 stream.print("\t\t<");
                 stream.print(name);
                 stream.print(" name=\"");
                 stream.print(encodeAttribute(entry.getKey()));
+                if (deprecated != null) {
+                    stream.print("\" deprecated=\"");
+                    stream.print(deprecated);
+                }
                 stream.println("\" />");
             } else {
                 stream.print("\t\t<");
@@ -169,6 +204,10 @@ public class ApiClass {
                 stream.print(encodeAttribute(entry.getKey()));
                 stream.print("\" since=\"");
                 stream.print(entry.getValue());
+                if (deprecated != null) {
+                    stream.print("\" deprecated=\"");
+                    stream.print(deprecated);
+                }
                 stream.println("\" />");
             }
         }

@@ -24,6 +24,7 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.utils.SparseArray;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import java.io.File;
@@ -139,6 +140,7 @@ public class FakeAndroidTarget implements IAndroidTarget {
         return "android";
     }
 
+    @NonNull
     @Override
     public AndroidVersion getVersion() {
         return new AndroidVersion(mApiLevel, null);
@@ -169,6 +171,7 @@ public class FakeAndroidTarget implements IAndroidTarget {
         return false;
     }
 
+    @NonNull
     @Override
     public File[] getSkins() {
         return new File[0];
@@ -179,9 +182,16 @@ public class FakeAndroidTarget implements IAndroidTarget {
         return null;
     }
 
+    @NonNull
     @Override
-    public IOptionalLibrary[] getOptionalLibraries() {
-        return new IOptionalLibrary[0];
+    public List<OptionalLibrary> getAdditionalLibraries() {
+        return ImmutableList.of();
+    }
+
+    @NonNull
+    @Override
+    public List<OptionalLibrary> getOptionalLibraries() {
+        return ImmutableList.of();
     }
 
     @Override

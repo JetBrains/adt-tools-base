@@ -129,6 +129,17 @@ public class LayoutLog {
     public static final String TAG_MISSING_ASSET = "missingasset";
 
     /**
+     * Fidelity Tag used when something went wrong in rendering text.
+     */
+    public static final String TAG_TEXT_RENDERING = "textRendering";
+
+    /**
+     * Tag for reporting messages that should not be logged in the render error panel,
+     * but silently logged to a more detailed log file.
+     */
+    public static final String TAG_INFO = "info";
+
+    /**
      * Logs a warning.
      * @param tag a tag describing the type of the warning
      * @param message the message of the warning

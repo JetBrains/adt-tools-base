@@ -139,4 +139,32 @@ public interface AndroidLibrary extends Library {
      */
     @NonNull
     File getLintJar();
+
+    /**
+     * Returns the location of the external annotations zip file (which may not exist)
+     *
+     * @return a File for the zip file. The file may not point to an existing file.
+     */
+    @NonNull
+    File getExternalAnnotations();
+
+    /**
+     * Returns the location of an optional file that lists the only
+     * resources that should be considered public.
+     *
+     * @return a File for the file. The file may not point to an existing file.
+     */
+    @NonNull
+    File getPublicResources();
+
+    /**
+     * Returns whether the library is considered optional, meaning that it may or may not
+     * be present in the final APK.
+     *
+     * If the library is optional, then:
+     * - if the consumer is a library, it'll get skipped from resource merging and won't show up
+     *   in the consumer R.txt
+     * - if the consumer is a separate test project, all the resources gets skipped from merging.
+     */
+    boolean isOptional();
 }

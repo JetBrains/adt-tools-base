@@ -18,7 +18,9 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.google.common.collect.ImmutableList
 import com.google.common.collect.Sets
+import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -26,8 +28,13 @@ import org.junit.Test
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
-import static org.junit.Assert.assertTrue
+import static com.google.common.truth.Truth.assert_
 
+@CompileStatic
+/**
+ * Tests to ensure that changing the build tools version in the build.gradle will trigger
+ * re-execution of some tasks even if no source file change was detected.
+ */
 class BuildToolsTest {
 
     private static final Pattern UP_TO_DATE_PATTERN = ~/:(\S+)\s+UP-TO-DATE/
@@ -35,19 +42,27 @@ class BuildToolsTest {
     private static final Pattern INPUT_CHANGED_PATTERN =
             ~/Value of input property 'buildToolsVersion' has changed for task ':(\S+)'/
 
-    private static final String[] tasks = [
-            "preDexDebug", "dexDebug", "compileDebugAidl", "compileDebugRenderscript",
+    private static final String[] COMMON_TASKS = [
+            "compileDebugAidl", "compileDebugRenderscript",
             "mergeDebugResources", "processDebugResources",
-            "preDexRelease", "dexRelease", "compileReleaseAidl", "compileReleaseRenderscript",
+            "compileReleaseAidl", "compileReleaseRenderscript",
             "mergeReleaseResources", "processReleaseResources"
     ]
 
+    private static final List<String> JAVAC_TASKS = ImmutableList.builder().add(COMMON_TASKS)
+            .add("preDexDebug").add("dexDebug").add("preDexRelease").add("dexRelease").build()
+    private static final List<String> JACK_TASKS = ImmutableList.builder().add(COMMON_TASKS)
+            .add("jillDebugRuntimeLibraries").add("jillDebugPackagedLibraries")
+            .add("jillReleaseRuntimeLibraries").add("jillReleasePackagedLibraries").build()
+
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().captureStdOut(true).create()
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldApp())
+            .captureStdOut(true)
+            .create()
 
     @Before
     public void setUp() {
-        new HelloWorldApp().writeSources(project.testDir)
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 
@@ -65,32 +80,35 @@ android {
         project.execute("assemble")
 
         Set<String> skippedTasks = getTasksMatching(UP_TO_DATE_PATTERN, project.stdout)
-        for (String task : tasks) {
-            assertTrue(String.format("Expecting task %s to be UP-TO-DATE" , task),
-                    skippedTasks.contains(task))
-        }
+        assert_().withFailureMessage("Expecting tasks to be UP-TO-DATE").that(skippedTasks)
+                .containsAllIn(GradleTestProject.USE_JACK ? JACK_TASKS : JAVAC_TASKS)
     }
 
     @Test
     public void invalidateBuildTools() {
         project.execute("assemble")
+        // Change our build tools version to 22.0.1 unless it is already the current version,
+        // in that case, downgrade to 21.1.2.
+        // The point is, change the build tools version from what it was when the "assemble" task
+        // was executed right before this comment.
+        String newBuildToolVersion =
+                GradleTestProject.DEFAULT_BUILD_TOOL_VERSION.contentEquals("22.0.1") ?
+                        "21.1.2" : "22.0.1"
 
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    buildToolsVersion "19.1.0"
+    buildToolsVersion '$newBuildToolVersion'
 }
 """
 
         project.stdout.reset()
         project.execute("assemble")
         Set<String> affectedTasks = getTasksMatching(INPUT_CHANGED_PATTERN, project.stdout)
-        for (String task : tasks) {
-            assertTrue(String.format("Expecting task %s to be invalidated", task),
-                    affectedTasks.contains(task))
-        }
+        assert_().withFailureMessage("Expecting tasks to be invalidated").that(affectedTasks)
+                .containsAllIn(GradleTestProject.USE_JACK ? JACK_TASKS : JAVAC_TASKS)
     }
 
     private static Set<String> getTasksMatching(Pattern pattern, ByteArrayOutputStream output) {

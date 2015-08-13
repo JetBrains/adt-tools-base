@@ -23,7 +23,7 @@ import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkSource;
@@ -46,7 +46,12 @@ import java.util.Properties;
  * Note that a source package has a version and thus implements {@link IAndroidVersionProvider}.
  * However there is no mandatory dependency that limits installation so this does not
  * implement {@link IPlatformDependency}.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class SourcePackage extends MajorRevisionPackage implements IAndroidVersionProvider {
 
     /** The package version, for platform, add-on and doc packages. */
@@ -80,11 +85,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
         }
         mVersion = new AndroidVersion(apiLevel, codeName);
 
-        mPkgDesc = PkgDesc.Builder
-                .newSource(mVersion,
-                           (MajorRevision) getRevision())
-                .setDescriptions(this)
-                .create();
+        mPkgDesc = setDescriptions(PkgDesc.Builder.newSource(mVersion, (MajorRevision)getRevision())).create();
     }
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
@@ -113,11 +114,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
                 );
         mVersion = platformVersion;
 
-        mPkgDesc = PkgDesc.Builder
-                .newSource(mVersion,
-                           (MajorRevision) getRevision())
-                .setDescriptions(this)
-                .create();
+        mPkgDesc = setDescriptions(PkgDesc.Builder.newSource(mVersion, (MajorRevision) getRevision())).create();
     }
 
     /**

@@ -155,6 +155,26 @@ public class HtmlBuilder {
         return this;
     }
 
+    public HtmlBuilder beginItalic() {
+        mStringBuilder.append("<I>");
+
+        return this;
+    }
+
+    public HtmlBuilder endItalic() {
+        mStringBuilder.append("</I>");
+
+        return this;
+    }
+
+    public HtmlBuilder addItalic(String text) {
+        beginItalic();
+        add(text);
+        endItalic();
+
+        return this;
+    }
+
     public HtmlBuilder beginDiv() {
         return beginDiv(null);
     }

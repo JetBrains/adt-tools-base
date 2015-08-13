@@ -288,7 +288,7 @@ public class DeviceManagerTest extends SdkManagerTestCase {
     public final void testHasHardwarePropHashChanged_Oem() {
         final Device d2 = dm.getDevice("Nexus One", "Google");
 
-        assertEquals("MD5:d886364fc30320c0518f51002d0ef22d",
+        assertEquals("MD5:36362a51e6c830c2ab515a312c9ecbff",
                 DeviceManager.hasHardwarePropHashChanged(
                         d2,
                         "invalid"));
@@ -296,15 +296,15 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         assertEquals(null,
                 DeviceManager.hasHardwarePropHashChanged(
                         d2,
-                        "MD5:d886364fc30320c0518f51002d0ef22d"));
+                        "MD5:36362a51e6c830c2ab515a312c9ecbff"));
 
         // change the device hardware props, this should change the hash
         d2.getDefaultHardware().setKeyboard(Keyboard.QWERTY);
 
-        assertEquals("MD5:db682e0a58e74a8614e43e6e15c05176",
+        assertEquals("MD5:f8f4b390755f2f58dfeb7d3020cd87db",
                 DeviceManager.hasHardwarePropHashChanged(
                         d2,
-                        "MD5:d886364fc30320c0518f51002d0ef22d"));
+                        "MD5:36362a51e6c830c2ab515a312c9ecbff"));
 
         // change the property back, should revert its hash to the previous one
         d2.getDefaultHardware().setKeyboard(Keyboard.NOKEY);
@@ -312,6 +312,6 @@ public class DeviceManagerTest extends SdkManagerTestCase {
         assertEquals(null,
                 DeviceManager.hasHardwarePropHashChanged(
                         d2,
-                        "MD5:d886364fc30320c0518f51002d0ef22d"));
+                        "MD5:36362a51e6c830c2ab515a312c9ecbff"));
     }
 }

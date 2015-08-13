@@ -19,7 +19,9 @@ package com.android.manifmerger;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.utils.PositionXmlParser;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -105,11 +107,11 @@ public class XmlAttribute extends XmlNode {
 
     @NonNull
     @Override
-    public PositionXmlParser.Position getPosition() {
+    public SourcePosition getPosition() {
         try {
             return mOwnerElement.getDocument().getNodePosition(this);
         } catch(Exception e) {
-            return PositionImpl.UNKNOWN;
+            return SourcePosition.UNKNOWN;
         }
     }
 
@@ -343,18 +345,18 @@ public class XmlAttribute extends XmlNode {
                 higherPriority.getId(),
                 higherPriority.getValue(),
                 attributeRecord != null
-                        ? attributeRecord.getActionLocation().toString()
+                        ? attributeRecord.getActionLocation().print(true /*shortFormat*/)
                         : "(unknown)",
                 printPosition(),
                 getValue(),
                 mXml.getName(),
                 getOwnerElement().getType().toXmlName(),
-                higherPriority.getOwnerElement().printPosition(true)
+                higherPriority.getOwnerElement().printPosition()
         );
         higherPriority.addMessage(report,
                 attributeRecord != null
                         ? attributeRecord.getActionLocation().getPosition()
-                        : PositionImpl.UNKNOWN,
+                        : SourcePosition.UNKNOWN,
                 MergingReport.Record.Severity.ERROR, error);
     }
 
@@ -365,18 +367,17 @@ public class XmlAttribute extends XmlNode {
     }
 
     void addMessage(MergingReport.Builder report,
-            PositionXmlParser.Position position,
+            SourcePosition position,
             MergingReport.Record.Severity severity,
             String message) {
-        report.addMessage(getOwnerElement().getDocument().getSourceLocation(),
-                position.getLine(),
-                position.getColumn(),
+        report.addMessage(
+                new SourceFilePosition(getOwnerElement().getDocument().getSourceFile(), position),
                 severity, message);
     }
 
     @NonNull
     @Override
-    public XmlLoader.SourceLocation getSourceLocation() {
-        return getOwnerElement().getSourceLocation();
+    public SourceFile getSourceFile() {
+        return getOwnerElement().getSourceFile();
     }
 }

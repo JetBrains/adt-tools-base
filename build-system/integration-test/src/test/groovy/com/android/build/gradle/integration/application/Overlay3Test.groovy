@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ImageHelper
 import com.android.builder.model.AndroidProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -29,11 +30,12 @@ import org.junit.experimental.categories.Category
 /**
  * Assemble tests for overlay3.
  */
+@CompileStatic
 class Overlay3Test {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("overlay3")
+            .fromTestProject("overlay3")
             .create()
 
     @BeforeClass
@@ -52,7 +54,7 @@ class Overlay3Test {
         int RED = ImageHelper.RED
 
         File drawableOutput = project.file(
-                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/freebeta/debug/drawable")
+                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/merged/freebeta/debug/drawable")
 
         ImageHelper.checkImageColor(drawableOutput, "no_overlay.png", GREEN)
         ImageHelper.checkImageColor(drawableOutput, "debug_overlay.png", GREEN)
@@ -63,7 +65,7 @@ class Overlay3Test {
         ImageHelper.checkImageColor(drawableOutput, "free_normal_overlay.png", RED)
 
         drawableOutput = project.file(
-                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/freenormal/debug/drawable")
+                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/merged/freenormal/debug/drawable")
 
         ImageHelper.checkImageColor(drawableOutput, "no_overlay.png", GREEN)
         ImageHelper.checkImageColor(drawableOutput, "debug_overlay.png", GREEN)
@@ -74,7 +76,7 @@ class Overlay3Test {
         ImageHelper.checkImageColor(drawableOutput, "free_normal_overlay.png", GREEN)
 
         drawableOutput = project.file(
-                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/paidbeta/debug/drawable")
+                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/merged/paidbeta/debug/drawable")
 
         ImageHelper.checkImageColor(drawableOutput, "no_overlay.png", GREEN)
         ImageHelper.checkImageColor(drawableOutput, "debug_overlay.png", GREEN)
@@ -93,6 +95,6 @@ class Overlay3Test {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

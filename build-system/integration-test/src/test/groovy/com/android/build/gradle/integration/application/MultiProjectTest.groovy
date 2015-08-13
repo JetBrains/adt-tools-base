@@ -22,6 +22,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.JavaLibrary
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -32,10 +33,11 @@ import static org.junit.Assert.assertNotNull
 /**
  * Assemble tests for multiproject.
  */
+@CompileStatic
 class MultiProjectTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("multiproject")
+            .fromTestProject("multiproject")
             .create()
     static Map<String, AndroidProject> models
 
@@ -76,6 +78,6 @@ class MultiProjectTest {
         Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries()
         assertNotNull("jar dep list null-check", javaLibraries)
         // TODO these are jars coming from ':util' They shouldn't be there.
-        assertEquals("jar dep count", 2, javaLibraries.size())
+        assertEquals("jar dep count", 1, javaLibraries.size())
     }
 }

@@ -18,6 +18,7 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.Message;
 import com.android.utils.ILogger;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
@@ -63,6 +64,8 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
     private final String mConfigName;
 
+    private final boolean mValidateEnabled;
+
     /**
      * List of source files. The may not have been loaded yet.
      */
@@ -92,8 +95,9 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      *
      * @param configName the name of the config this set is associated with.
      */
-    public DataSet(String configName) {
+    public DataSet(String configName, boolean validateEnabled) {
         mConfigName = configName;
+        mValidateEnabled = validateEnabled;
     }
 
     protected abstract DataSet<I, F> createSet(String name);
@@ -106,7 +110,8 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @param fileNode the XML node.
      * @return a DataFile
      */
-    protected abstract F createFileAndItems(@NonNull File file, @NonNull Node fileNode);
+    protected abstract F createFileAndItems(@NonNull File file, @NonNull Node fileNode)
+            throws MergingException;
 
     /**
      * Reads the content of a data folders and loads the DataItem.
@@ -228,14 +233,20 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @throws MergingException if something goes wrong
      */
     public void loadFromFiles(ILogger logger) throws MergingException {
+        List<Message> errors = Lists.newArrayList();
         for (File file : mSourceFiles) {
             if (file.isDirectory()) {
-                readSourceFolder(file, logger);
+                try {
+                    readSourceFolder(file, logger);
+                } catch (MergingException e) {
+                    errors.addAll(e.getMessages());
+                }
 
             } else if (file.isFile()) {
                 // TODO support resource bundle
             }
         }
+        MergingException.throwIfNonEmpty(errors);
         checkItems();
     }
 
@@ -306,7 +317,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @param dataSetNode the node to read from.
      * @return a new DataSet object or null.
      */
-    DataSet<I,F> createFromXml(Node dataSetNode) {
+    DataSet<I,F> createFromXml(Node dataSetNode) throws MergingException {
         // get the config name
         Attr configNameAttr = (Attr) dataSetNode.getAttributes().getNamedItem(ATTR_CONFIG);
         if (configNameAttr == null) {
@@ -366,6 +377,10 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @throws DuplicateDataException if a duplicated item is found.
      */
     protected void checkItems() throws DuplicateDataException {
+        if (!mValidateEnabled) {
+            return;
+        }
+        Collection<Collection<I>> duplicateCollections = Lists.newArrayList();
         // check a list for duplicate, ignoring removed items.
         for (Map.Entry<String, Collection<I>> entry : mItems.asMap().entrySet()) {
             Collection<I> items = entry.getValue();
@@ -377,10 +392,15 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
                     if (lastItem == null) {
                         lastItem = item;
                     } else {
-                        throw new DuplicateDataException(item, lastItem);
+                        // We have duplicates, store them and throw the exception later, so
+                        // the user gets all the error messages at once.
+                        duplicateCollections.add(items);
                     }
                 }
             }
+        }
+        if (!duplicateCollections.isEmpty()) {
+            throw new DuplicateDataException(DuplicateDataException.createMessages(duplicateCollections));
         }
     }
 
@@ -433,7 +453,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
 
     protected void processNewDataFile(@NonNull File sourceFolder,
                                       @NonNull F dataFile,
-                                      boolean setTouched) {
+                                      boolean setTouched) throws MergingException {
         Collection<I> dataItems = dataFile.getItems();
 
         addDataFile(sourceFolder, dataFile);
@@ -449,11 +469,13 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
     protected boolean handleChangedFile(@NonNull File sourceFolder,
                                         @NonNull File changedFile) throws MergingException {
         F dataFile = mDataFileMap.get(changedFile);
-        dataFile.getItem().setTouched();
+        for (I item : dataFile.getItems()) {
+            item.setTouched();
+        }
         return true;
     }
 
-    protected void addItem(@NonNull I item, @Nullable String key) {
+    protected void addItem(@NonNull I item, @Nullable String key) throws MergingException {
         if (key == null) {
             key = item.getKey();
         }
@@ -486,7 +508,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @param file the file to check
      * @return true if it is a valid file, false if it should be ignored.
      */
-    protected boolean checkFileForAndroidRes(@NonNull File file) {
+    protected static boolean checkFileForAndroidRes(@NonNull File file) {
         return !isIgnored(file);
     }
 
@@ -586,5 +608,9 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         }
 
         return ignore;
+    }
+
+    protected boolean getValidateEnabled() {
+        return mValidateEnabled;
     }
 }

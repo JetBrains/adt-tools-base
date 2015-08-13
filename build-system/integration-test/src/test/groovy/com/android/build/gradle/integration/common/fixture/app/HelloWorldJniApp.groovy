@@ -156,10 +156,15 @@ public class HelloJniTest extends ActivityInstrumentationTestCase<HelloJni> {
 }
 """);
 
-    public HelloWorldJniApp() {
-        this(false);
-    }
-    public HelloWorldJniApp(boolean useCppSource) {
-        addFiles(javaSource, useCppSource ? cppSource : cSource, resSource, manifest, androidTestSource);
+    public HelloWorldJniApp(Map args = [:]) {
+        def defaultArgs = [jniDir: "jni", useCppSource: false]
+        defaultArgs << args
+        TestSourceFile jniSource = defaultArgs.useCppSource ? cppSource : cSource
+        addFiles(
+                javaSource,
+                new TestSourceFile("src/main/$defaultArgs.jniDir", jniSource.name, jniSource.content),
+                resSource,
+                manifest,
+                androidTestSource);
     }
 }

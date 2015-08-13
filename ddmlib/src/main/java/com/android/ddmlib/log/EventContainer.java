@@ -42,7 +42,7 @@ public class EventContainer {
         private final String mName;
         private final String mTestString;
 
-        private CompareMethod(String name, String testString) {
+        CompareMethod(String name, String testString) {
             mName = name;
             mTestString = testString;
         }
@@ -67,7 +67,7 @@ public class EventContainer {
     /**
      * Type for event data.
      */
-    public static enum EventValueType {
+    public enum EventValueType {
         UNKNOWN(0),
         INT(1),
         LONG(2),
@@ -162,7 +162,7 @@ public class EventContainer {
             return super.toString().toLowerCase(Locale.US);
         }
 
-        private EventValueType(int value) {
+        EventValueType(int value) {
             mValue = value;
         }
     }

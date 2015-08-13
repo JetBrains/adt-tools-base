@@ -17,6 +17,8 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.truth.TruthHelper
+import com.android.build.gradle.integration.common.truth.ZipFileSubject
 import com.android.builder.model.AndroidProject
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
@@ -41,12 +43,13 @@ import static com.google.common.truth.Truth.assertThat
 class MinifyTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("minify")
+            .fromTestProject("minify")
             .create()
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", "assembleMinified", "assembleMinifiedAndroidTest")
+        project.execute("clean", "assembleMinified",
+                "assembleMinifiedAndroidTest", "jarDebugClasses")
     }
 
     @AfterClass
@@ -62,7 +65,7 @@ class MinifyTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 
     @Test
@@ -88,9 +91,13 @@ class MinifyTest {
         JarFile minifiedJar = new JarFile(project.file(
                 "build/$AndroidProject.FD_INTERMEDIATES/classes-proguard/androidTest/minified/classes.jar"))
 
-        def testClassFiles = minifiedJar.entries().toSet().collect { it.name }
+        def testClassFiles = minifiedJar.entries()
+                .toSet()
+                .collect { it.name }
+                .findAll { !it.startsWith("org/hamcrest") }
 
         assertThat(testClassFiles).containsExactly(
+                "LICENSE.txt", // Comes from hamcrest, is not packaged.
                 "com/android/tests/basic/MainTest.class",
                 "com/android/tests/basic/UnusedTestClass.class",
                 "com/android/tests/basic/UsedTestClass.class",
@@ -98,6 +105,15 @@ class MinifyTest {
         )
 
         checkClassFile(minifiedJar)
+    }
+
+    @Test
+    void 'Test classes.jar is present for non Jack enabled variants'() throws Exception {
+        ZipFileSubject classes = TruthHelper.assertThatZip(project.file(
+                "build/$AndroidProject.FD_INTERMEDIATES/packaged/debug/classes.jar"))
+
+        classes.contains("com/android/tests/basic/Main.class")
+        classes.doesNotContain("com/android/tests/basic/MainTest.class")
     }
 
     @CompileDynamic

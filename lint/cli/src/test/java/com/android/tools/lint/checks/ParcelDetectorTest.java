@@ -26,10 +26,10 @@ public class ParcelDetectorTest extends AbstractCheckTest {
 
     public void test() throws Exception {
         assertEquals(""
-                + "src/test/bytecode/MyParcelable1.java:6: Warning: This class implements Parcelable but does not provide a CREATOR field [ParcelCreator]\n"
+                + "src/test/bytecode/MyParcelable1.java:6: Error: This class implements Parcelable but does not provide a CREATOR field [ParcelCreator]\n"
                 + "public class MyParcelable1 implements Parcelable {\n"
                 + "             ~~~~~~~~~~~~~\n"
-                + "0 errors, 1 warnings\n",
+                + "1 errors, 0 warnings\n",
 
             lintProject(
                 "bytecode/.classpath=>.classpath",

@@ -28,7 +28,7 @@ public enum ScreenRatio implements ResourceEnum {
     private final String mShortDisplayValue;
     private final String mLongDisplayValue;
 
-    private ScreenRatio(String value, String displayValue, String longDisplayValue) {
+    ScreenRatio(String value, String displayValue, String longDisplayValue) {
         mValue = value;
         mShortDisplayValue = displayValue;
         mLongDisplayValue = longDisplayValue;

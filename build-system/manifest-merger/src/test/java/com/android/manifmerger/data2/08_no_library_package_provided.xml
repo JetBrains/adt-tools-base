@@ -205,4 +205,4 @@
 </manifest>
 
 @errors
-WARNING:Missing 'package' declaration in manifest at ManifestMerger2Test1_lib1.xml:1:1
+WARNING:Missing 'package' declaration in manifest at ManifestMerger2Test1_lib1.xml:1:1-12

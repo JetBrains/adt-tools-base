@@ -19,6 +19,9 @@ package com.android.manifmerger;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.xml.XmlFormatPreferences;
 import com.android.ide.common.xml.XmlFormatStyle;
 import com.android.ide.common.xml.XmlPrettyPrinter;
@@ -74,22 +77,20 @@ public class XmlDocument {
     private final Element mRootElement;
     // this is initialized lazily to avoid un-necessary early parsing.
     private final AtomicReference<XmlElement> mRootNode = new AtomicReference<XmlElement>(null);
-    private final PositionXmlParser mPositionXmlParser;
-    private final XmlLoader.SourceLocation mSourceLocation;
+    private final SourceFile mSourceFile;
     private final KeyResolver<String> mSelectors;
     private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
     private final Type mType;
     private final Optional<String> mMainManifestPackageName;
 
-    public XmlDocument(@NonNull PositionXmlParser positionXmlParser,
-            @NonNull XmlLoader.SourceLocation sourceLocation,
+    public XmlDocument(
+            @NonNull SourceFile sourceLocation,
             @NonNull KeyResolver<String> selectors,
             @NonNull KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
             @NonNull Element element,
             @NonNull Type type,
             @NonNull Optional<String> mainManifestPackageName) {
-        this.mPositionXmlParser = Preconditions.checkNotNull(positionXmlParser);
-        this.mSourceLocation = Preconditions.checkNotNull(sourceLocation);
+        this.mSourceFile = Preconditions.checkNotNull(sourceLocation);
         this.mRootElement = Preconditions.checkNotNull(element);
         this.mSelectors = Preconditions.checkNotNull(selectors);
         this.mSystemPropertyResolver = Preconditions.checkNotNull(systemPropertyResolver);
@@ -144,8 +145,8 @@ public class XmlDocument {
      * @return a new {@link com.android.manifmerger.XmlDocument} with up to date information.
      */
     public XmlDocument reparse() {
-        return new XmlDocument(mPositionXmlParser,
-                mSourceLocation,
+        return new XmlDocument(
+                mSourceFile,
                 mSelectors,
                 mSystemPropertyResolver,
                 mRootElement,
@@ -182,59 +183,24 @@ public class XmlDocument {
     }
 
     /**
-     * Returns a {@link XmlNode} position automatically offsetting the line and number
-     * columns by one (for PositionXmlParser, document starts at line 0, however for the common
-     * understanding, document should start at line 1).
+     * Returns the position of the specified {@link XmlNode}.
      */
     @NonNull
-    PositionXmlParser.Position getNodePosition(XmlNode node) {
+    static SourcePosition getNodePosition(XmlNode node) {
         return getNodePosition(node.getXml());
     }
 
     /**
-     * Returns a {@link org.w3c.dom.Node} position automatically offsetting the line and number
-     * columns by one (for PositionXmlParser, document starts at line 0, however for the common
-     * understanding, document should start at line 1).
+     * Returns the position of the specified {@link org.w3c.dom.Node}.
      */
     @NonNull
-    PositionXmlParser.Position getNodePosition(Node xml) {
-
-        final PositionXmlParser.Position position =  mPositionXmlParser.getPosition(xml);
-        if (position == null) {
-            return PositionImpl.UNKNOWN;
-        }
-        return new PositionXmlParser.Position() {
-            @Nullable
-            @Override
-            public PositionXmlParser.Position getEnd() {
-                return position.getEnd();
-            }
-
-            @Override
-            public void setEnd(@NonNull PositionXmlParser.Position end) {
-                position.setEnd(end);
-            }
-
-            @Override
-            public int getLine() {
-                return position.getLine() + 1;
-            }
-
-            @Override
-            public int getOffset() {
-                return position.getOffset();
-            }
-
-            @Override
-            public int getColumn() {
-                return position.getColumn() +1;
-            }
-        };
+    static SourcePosition getNodePosition(Node xml) {
+        return PositionXmlParser.getPosition(xml);
     }
 
     @NonNull
-    public XmlLoader.SourceLocation getSourceLocation() {
-        return mSourceLocation;
+    public SourceFile getSourceFile() {
+        return mSourceFile;
     }
 
     public synchronized XmlElement getRootNode() {
@@ -387,9 +353,10 @@ public class XmlDocument {
             XmlElement usesSdkElement = usesSdk.get();
             if (usesSdkElement.getOperationType() != NodeOperationType.MERGE) {
                 mergingReport
-                        .addMessage(getSourceLocation(),
-                                usesSdkElement.getLine(),
-                                usesSdkElement.getColumn(),
+                        .addMessage(
+                                new SourceFilePosition(
+                                        getSourceFile(),
+                                        usesSdkElement.getPosition()),
                                 MergingReport.Record.Severity.ERROR,
                                 "uses-sdk element cannot have a \"tools:node\" attribute");
                 return;
@@ -411,13 +378,13 @@ public class XmlDocument {
         if (!Character.isDigit(libraryTargetSdkVersion.charAt(0))) {
             // this is a code name, ensure this document uses the same code name.
             if (!libraryTargetSdkVersion.equals(getTargetSdkVersion())) {
-                mergingReport.addMessage(getSourceLocation(), 0, 0, MergingReport.Record.Severity.ERROR,
+                mergingReport.addMessage(getSourceFile(), MergingReport.Record.Severity.ERROR,
                         String.format(
                                 "uses-sdk:targetSdkVersion %1$s cannot be different than version "
                                         + "%2$s declared in library %3$s",
                                 getTargetSdkVersion(),
                                 libraryTargetSdkVersion,
-                                lowerPriorityDocument.getSourceLocation().print(false)
+                                lowerPriorityDocument.getSourceFile().print(false)
                         )
                 );
                 return;
@@ -429,13 +396,13 @@ public class XmlDocument {
         if (!Character.isDigit(libraryMinSdkVersion.charAt(0))) {
             // this is a code name, ensure this document uses the same code name.
             if (!libraryMinSdkVersion.equals(getMinSdkVersion())) {
-                mergingReport.addMessage(getSourceLocation(), 0, 0, MergingReport.Record.Severity.ERROR,
+                mergingReport.addMessage(getSourceFile(), MergingReport.Record.Severity.ERROR,
                         String.format(
                                 "uses-sdk:minSdkVersion %1$s cannot be different than version "
                                         + "%2$s declared in library %3$s",
                                 getMinSdkVersion(),
                                 libraryMinSdkVersion,
-                                lowerPriorityDocument.getSourceLocation().print(false)
+                                lowerPriorityDocument.getSourceFile().print(false)
                         )
                 );
                 return;
@@ -443,20 +410,23 @@ public class XmlDocument {
         }
 
         if (!checkUsesSdkMinVersion(lowerPriorityDocument, mergingReport)) {
-            mergingReport.addMessage(getSourceLocation(),
-                    usesSdk.isPresent() ? usesSdk.get().getLine() : 0,
-                    usesSdk.isPresent() ? usesSdk.get().getColumn() : 0,
-                    MergingReport.Record.Severity.ERROR,
-                    String.format(
+            String error = String.format(
                             "uses-sdk:minSdkVersion %1$s cannot be smaller than version "
                                     + "%2$s declared in library %3$s\n"
                                     + "\tSuggestion: use tools:overrideLibrary=\"%4$s\" to force usage",
                             getMinSdkVersion(),
                             lowerPriorityDocument.getRawMinSdkVersion(),
-                            lowerPriorityDocument.getSourceLocation().print(false),
-                            lowerPriorityDocument.getPackageName()
-                    )
-            );
+                            lowerPriorityDocument.getSourceFile().print(false),
+                            lowerPriorityDocument.getPackageName());
+            if (usesSdk.isPresent()) {
+                mergingReport.addMessage(
+                        new SourceFilePosition(getSourceFile(), usesSdk.get().getPosition()),
+                        MergingReport.Record.Severity.ERROR,
+                        error);
+            } else {
+                mergingReport.addMessage(
+                        getSourceFile(), MergingReport.Record.Severity.ERROR, error);
+            }
             return;
         }
 
@@ -478,9 +448,7 @@ public class XmlDocument {
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("WRITE_EXTERNAL_STORAGE"),
-                    lowerPriorityDocument.getPackageName() + " has a targetSdkVersion < 4",
-                    Pair.of("maxSdkVersion", "18") // permission became implied at 19.
-            );
+                    lowerPriorityDocument.getPackageName() + " has a targetSdkVersion < 4");
             hasWriteToExternalStoragePermission = true;
 
             addIfAbsent(mergingReport.getActionRecorder(),
@@ -498,10 +466,7 @@ public class XmlDocument {
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("READ_EXTERNAL_STORAGE"),
-                    lowerPriorityDocument.getPackageName() + " requested WRITE_EXTERNAL_STORAGE",
-                    // NOTE TO @xav, where can we find the list of implied permissions at versions X
-                    Pair.of("maxSdkVersion", "18") // permission became implied at 19, DID IT ???
-            );
+                    lowerPriorityDocument.getPackageName() + " requested WRITE_EXTERNAL_STORAGE");
         }
 
         // Pre-JellyBean call log permission compatibility.

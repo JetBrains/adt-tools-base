@@ -38,6 +38,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class AaptProcess {
 
+    private static final int DEFAULT_SLAVE_APPT_TIMEOUT_IN_SECONDS = 5;
+    private static final int SLAVE_AAPT_TIMEOUT_IN_SECONDS =
+            System.getenv("SLAVE_AAPT_TIMEOUT") == null
+                    ? DEFAULT_SLAVE_APPT_TIMEOUT_IN_SECONDS
+                    : Integer.parseInt(System.getenv("SLAVE_AAPT_TIMEOUT"));
+
     private final Process mProcess;
     private final ILogger mLogger;
 
@@ -71,6 +77,8 @@ public class AaptProcess {
     public void crunch(@NonNull File in, @NonNull File out, @NonNull Job<AaptProcess> job)
             throws IOException {
 
+        mLogger.verbose("Process(" + mProcess.hashCode() + ")" + in.getName() +
+                "job: " + job.toString());
         if (!mReady.get()) {
             throw new RuntimeException("AAPT process not ready to receive commands");
         }
@@ -84,12 +92,20 @@ public class AaptProcess {
         mWriter.write(out.getAbsolutePath());
         mWriter.write("\n");
         mWriter.flush();
+        mLogger.verbose("Processed(" + mProcess.hashCode() + ")" + in.getName() +
+                "job: " + job.toString());
         mMessages.add("Process(" + mProcess.hashCode() + ") processed " + in.getName() +
             "job: " + job.toString());
     }
 
     public void waitForReady() throws InterruptedException {
-        mReadyLatch.await(TimeUnit.NANOSECONDS.convert(5, TimeUnit.SECONDS));
+        if (!mReadyLatch.await(TimeUnit.NANOSECONDS.convert(
+                SLAVE_AAPT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS))) {
+            throw new RuntimeException("Timed out while waiting for slave aapt process, "
+                    + "try setting environment variable SLAVE_AAPT_TIMEOUT to a value bigger than "
+                    + SLAVE_AAPT_TIMEOUT_IN_SECONDS + " seconds");
+        }
+
         mLogger.info("Slave %1$s is ready", hashCode());
     }
 
@@ -192,7 +208,8 @@ public class AaptProcess {
             }
             NotifierProcessOutput delegate = getNotifier();
             if (delegate != null) {
-                mLogger.verbose("AAPT err(%1$s): %2$s -> %3$s", mProcess.hashCode(), line, delegate.mJob);
+                mLogger.verbose("AAPT err(%1$s): %2$s -> %3$s", mProcess.hashCode(), line,
+                        delegate.mJob);
                 delegate.err(line);
             } else {
                 if (!mReady.get()) {
@@ -207,8 +224,8 @@ public class AaptProcess {
             }
         }
 
-        synchronized boolean isProcessRead() {
-            return ready.get();
+        Process getProcess() {
+            return mProcess;
         }
     }
 
@@ -246,7 +263,11 @@ public class AaptProcess {
         @Override
         public void err(@Nullable String line) {
             if (line != null) {
-                mLogger.warning("AAPT warning(%1$s): %2$s", mJob, line);
+                mLogger.verbose("AAPT warning(%1$s), Job(%2$s): %3$s",
+                        mOwner.getProcess().hashCode(), mJob, line);
+                mLogger.warning("AAPT: %3$s",
+                        mOwner.getProcess().hashCode(), mJob, line);
+
             }
         }
     }

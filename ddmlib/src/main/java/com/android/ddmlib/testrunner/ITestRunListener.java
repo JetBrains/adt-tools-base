@@ -44,14 +44,14 @@ public interface ITestRunListener {
      * @param runName the test run name
      * @param testCount total number of tests in test run
      */
-    public void testRunStarted(String runName, int testCount);
+    void testRunStarted(String runName, int testCount);
 
     /**
      * Reports the start of an individual test case.
      *
      * @param test identifies the test
      */
-    public void testStarted(TestIdentifier test);
+    void testStarted(TestIdentifier test);
 
     /**
      * Reports the failure of a individual test case.
@@ -61,7 +61,7 @@ public interface ITestRunListener {
      * @param test identifies the test
      * @param trace stack trace of failure
      */
-    public void testFailed(TestIdentifier test, String trace);
+    void testFailed(TestIdentifier test, String trace);
 
     /**
      * Called when an atomic test flags that it assumes a condition that is
@@ -70,7 +70,7 @@ public interface ITestRunListener {
      * @param test identifies the test
      * @param trace stack trace of failure
      */
-    public void testAssumptionFailure(TestIdentifier test, String trace);
+    void testAssumptionFailure(TestIdentifier test, String trace);
 
     /**
      * Called when a test will not be run, generally because a test method is annotated
@@ -78,7 +78,7 @@ public interface ITestRunListener {
      *
      * @param test identifies the test
      */
-    public void testIgnored(TestIdentifier test);
+    void testIgnored(TestIdentifier test);
 
     /**
      * Reports the execution end of an individual test case.
@@ -89,14 +89,14 @@ public interface ITestRunListener {
      * @param test identifies the test
      * @param testMetrics a {@link Map} of the metrics emitted
      */
-    public void testEnded(TestIdentifier test, Map<String, String> testMetrics);
+    void testEnded(TestIdentifier test, Map<String, String> testMetrics);
 
     /**
      * Reports test run failed to complete due to a fatal error.
      *
      * @param errorMessage {@link String} describing reason for run failure.
      */
-    public void testRunFailed(String errorMessage);
+    void testRunFailed(String errorMessage);
 
     /**
      * Reports test run stopped before completion due to a user request.
@@ -105,7 +105,7 @@ public interface ITestRunListener {
      *
      * @param elapsedTime device reported elapsed time, in milliseconds
      */
-    public void testRunStopped(long elapsedTime);
+    void testRunStopped(long elapsedTime);
 
     /**
      * Reports end of test run.
@@ -113,5 +113,5 @@ public interface ITestRunListener {
      * @param elapsedTime device reported elapsed time, in milliseconds
      * @param runMetrics key-value pairs reported at the end of a test run
      */
-    public void testRunEnded(long elapsedTime, Map<String, String> runMetrics);
+    void testRunEnded(long elapsedTime, Map<String, String> runMetrics);
 }

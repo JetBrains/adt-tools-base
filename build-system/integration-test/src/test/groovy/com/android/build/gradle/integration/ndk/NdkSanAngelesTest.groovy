@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.ndk
 
+import com.android.SdkConstants
 import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.category.DeviceTests
@@ -24,14 +25,17 @@ import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
+import com.android.builder.model.NativeLibrary
 import com.android.builder.model.Variant
 import com.google.common.collect.Maps
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.builder.core.BuilderConstants.DEBUG
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
@@ -40,10 +44,12 @@ import static org.junit.Assert.assertTrue
 /**
  * Assemble tests for ndkSanAngeles.
  */
+@CompileStatic
 class NdkSanAngelesTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkSanAngeles")
+            .fromTestProject("ndkSanAngeles")
+            .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
 
     static AndroidProject model
@@ -72,11 +78,11 @@ class NdkSanAngelesTest {
         // get the main artifact of the debug artifact
         Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
         assertNotNull("debug Variant null-check", debugVariant)
-        AndroidArtifact debugMainArficat = debugVariant.getMainArtifact()
-        assertNotNull("Debug main info null-check", debugMainArficat)
+        AndroidArtifact debugMainArtifact = debugVariant.getMainArtifact()
+        assertNotNull("Debug main info null-check", debugMainArtifact)
 
         // get the outputs.
-        Collection<AndroidArtifactOutput> debugOutputs = debugMainArficat.getOutputs()
+        Collection<AndroidArtifactOutput> debugOutputs = debugMainArtifact.getOutputs()
         assertNotNull(debugOutputs)
         assertEquals(3, debugOutputs.size())
 
@@ -107,10 +113,9 @@ class NdkSanAngelesTest {
         assertTrue(expected.isEmpty())
     }
 
-
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

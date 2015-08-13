@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.library
-
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
@@ -24,6 +23,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.JavaLibrary
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -35,14 +35,14 @@ import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
-
 /**
  * Assemble tests for libTestDep.
  */
+@CompileStatic
 class LibTestDepTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("libTestDep")
+            .fromTestProject("libTestDep")
             .create()
     static AndroidProject model
 
@@ -78,7 +78,7 @@ class LibTestDepTest {
         assertEquals(2, javaLibraries.size())
         for (JavaLibrary lib : javaLibraries) {
             File f = lib.getJarFile()
-            assertTrue(f.getName().equals("guava-11.0.2.jar") || f.getName().equals("jsr305-1.3.9.jar"))
+            assertTrue(f.getName().equals("guava-15.0.jar") || f.getName().equals("jsr305-1.3.9.jar"))
         }
     }
 
@@ -90,6 +90,6 @@ class LibTestDepTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

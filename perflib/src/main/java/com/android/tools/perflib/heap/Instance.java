@@ -19,13 +19,12 @@ package com.android.tools.perflib.heap;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.perflib.heap.io.HprofBuffer;
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 public abstract class Instance {
 
@@ -47,6 +46,12 @@ public abstract class Instance {
     //  Another identifier for this Instance, that we computed during the analysis phase.
     int mTopologicalOrder;
 
+    int mDistanceToGcRoot = Integer.MAX_VALUE;
+
+    boolean mReferencesAdded = false;
+
+    Instance mNextInstanceToGcRoot = null;
+
     //  The immediate dominator of this instance, or null if not reachable from any GC roots.
     @Nullable
     private Instance mImmediateDominator;
@@ -58,7 +63,11 @@ public abstract class Instance {
     private long[] mRetainedSizes;
 
     //  List of all objects that hold a live reference to this object
-    private final ArrayList<Instance> mReferences = new ArrayList<Instance>();
+    private final ArrayList<Instance> mHardReferences = new ArrayList<Instance>();
+
+    //  List of all objects that hold a soft/weak/phantom reference to this object.
+    //  Don't create an actual list until we need to.
+    private ArrayList<Instance> mSoftReferences = null;
 
     Instance(long id, @NonNull StackTrace stackTrace) {
         mId = id;
@@ -67,6 +76,10 @@ public abstract class Instance {
 
     public long getId() {
         return mId;
+    }
+
+    public long getUniqueId() {
+        return getId() & mHeap.mSnapshot.getIdSizeMask();
     }
 
     public abstract void accept(Visitor visitor);
@@ -80,14 +93,9 @@ public abstract class Instance {
     }
 
     public final int getCompositeSize() {
-        CollectingVisitor visitor = new CollectingVisitor();
-        this.accept(visitor);
-
-        int size = 0;
-        for (Instance instance : visitor.getVisited()) {
-            size += instance.getSize();
-        }
-        return size;
+        CompositeSizeVisitor visitor = new CompositeSizeVisitor();
+        visitor.doVisit(ImmutableList.of(this));
+        return visitor.getCompositeSize();
     }
 
     //  Returns the instrinsic size of a given object
@@ -124,6 +132,23 @@ public abstract class Instance {
         mImmediateDominator = dominator;
     }
 
+    public int getDistanceToGcRoot() {
+        return mDistanceToGcRoot;
+    }
+
+    public Instance getNextInstanceToGcRoot() {
+        return mNextInstanceToGcRoot;
+    }
+
+    public void setDistanceToGcRoot(int newDistance) {
+        assert(newDistance < mDistanceToGcRoot);
+        mDistanceToGcRoot = newDistance;
+    }
+
+    public void setNextInstanceToGcRoot(Instance instance) {
+        mNextInstanceToGcRoot = instance;
+    }
+
     public void resetRetainedSize() {
         List<Heap> allHeaps = mHeap.mSnapshot.mHeaps;
         if (mRetainedSizes == null) {
@@ -142,14 +167,52 @@ public abstract class Instance {
         return mRetainedSizes[heapIndex];
     }
 
-    //  Add to the list of objects that have a hard reference to this Instance
-    public void addReference(Instance reference) {
-        mReferences.add(reference);
+    public long getTotalRetainedSize() {
+        if (mRetainedSizes == null) {
+            return 0;
+        }
+
+        long totalSize = 0;
+        for (long mRetainedSize : mRetainedSizes) {
+            totalSize += mRetainedSize;
+        }
+        return totalSize;
+    }
+
+    /**
+     * Add to the list of objects that references this Instance.
+     *
+     * @param reference another instance that references this instance
+     */
+    public void addReference(@NonNull Instance reference) {
+        if (reference.getIsSoftReference()) {
+            if (mSoftReferences == null) {
+                mSoftReferences = new ArrayList<Instance>();
+            }
+            mSoftReferences.add(reference);
+        }
+        else {
+            mHardReferences.add(reference);
+        }
     }
 
     @NonNull
-    public ArrayList<Instance> getReferences() {
-        return mReferences;
+    public ArrayList<Instance> getHardReferences() {
+        return mHardReferences;
+    }
+
+    @Nullable
+    public ArrayList<Instance> getSoftReferences() {
+        return mSoftReferences;
+    }
+
+    /**
+     * There is an underlying assumption that a class that is a soft reference will only have one referent.
+     *
+     * @return true if the instance is a soft reference type, or false otherwise
+     */
+    public boolean getIsSoftReference() {
+        return false;
     }
 
     @Nullable
@@ -157,11 +220,7 @@ public abstract class Instance {
         switch (type) {
             case OBJECT:
                 long id = readId();
-                Instance result = mHeap.mSnapshot.findReference(id);
-                if (result != null) {
-                    result.addReference(this);
-                }
-                return result;
+                return mHeap.mSnapshot.findInstance(id);
             case BOOLEAN:
                 return getBuffer().readByte() != 0;
             case CHAR:
@@ -184,7 +243,7 @@ public abstract class Instance {
 
     protected long readId() {
         // As long as we don't interpret IDs, reading signed values here is fine.
-        switch (Type.OBJECT.getSize()) {
+        switch (mHeap.mSnapshot.getTypeSize(Type.OBJECT)) {
             case 1:
                 return getBuffer().readByte();
             case 2:
@@ -209,22 +268,18 @@ public abstract class Instance {
         return mHeap.mSnapshot.mBuffer;
     }
 
-    public static class CollectingVisitor implements Visitor {
 
-        private final Set<Instance> mVisited = Sets.newHashSet();
+    public static class CompositeSizeVisitor extends NonRecursiveVisitor {
 
-        @Override
-        public boolean visitEnter(Instance instance) {
-            //  If we're in the set then we and our children have been visited
-            return mVisited.add(instance);
-        }
+        int mSize = 0;
 
         @Override
-        public void visitLeave(Instance instance) {
+        protected void defaultAction(Instance node) {
+            mSize += node.getSize();
         }
 
-        public Set<Instance> getVisited() {
-            return mVisited;
+        public int getCompositeSize() {
+            return mSize;
         }
-      }
+    }
 }

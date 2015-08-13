@@ -32,7 +32,9 @@ import com.google.android.gms.common.SignInButton;
 </#if>
 import java.util.ArrayList;
 import java.util.List;
-<#if applicationPackage??>import ${applicationPackage}.R;</#if>
+<#if applicationPackage??>
+import ${applicationPackage}.R;
+</#if>
 
 /**
  * A login screen that offers login via email/password<#if includeGooglePlus> and via Google+ sign in</#if>.
@@ -169,7 +171,6 @@ public class ${activityClass} extends <#if includeGooglePlus>PlusBase</#if>Activ
 
         boolean cancel = false;
         View focusView = null;
-
 
         // Check for a valid password, if the user entered one.
         if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
@@ -447,6 +448,4 @@ public class ${activityClass} extends <#if includeGooglePlus>PlusBase</#if>Activ
         }
     }
 }
-
-
 

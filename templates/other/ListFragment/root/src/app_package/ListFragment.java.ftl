@@ -21,8 +21,9 @@ import android.widget.TextView;
 <#else>
 import android.widget.ListView;
 </#if>
-<#if applicationPackage??>import ${applicationPackage}.R;</#if>
-
+<#if applicationPackage??>
+import ${applicationPackage}.R;
+</#if>
 import ${packageName}.dummy.DummyContent;
 
 /**
@@ -141,7 +142,6 @@ public class ${className} extends ListFragment {
         super.onDetach();
         mListener = null;
     }
-
 
 <#if switchGrid == true>
     @Override

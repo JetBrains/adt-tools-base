@@ -46,6 +46,7 @@ import javax.xml.parsers.ParserConfigurationException;
  * {@link ResourceFile}.
  */
 public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, ResourceSet> {
+    private static final String NODE_MERGED_ITEMS = "mergedItems";
 
     /**
      * Override of the normal ResourceItem to handle merged item cases.
@@ -99,7 +100,7 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
 
 
     @Override
-    protected ResourceSet createFromXml(Node node) {
+    protected ResourceSet createFromXml(Node node) throws MergingException {
         ResourceSet set = new ResourceSet("");
         return (ResourceSet) set.createFromXml(node);
     }
@@ -214,7 +215,7 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
                 }
             }
         } catch (ParserConfigurationException e) {
-            throw new MergingException(e);
+            throw MergingException.wrapException(e).build();
         }
     }
 
@@ -228,8 +229,21 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
         return null;
     }
 
+    @NonNull
     @Override
-    protected void loadMergedItems(@NonNull Node mergedItemsNode) {
+    protected String getAdditionalDataTagName() {
+        return NODE_MERGED_ITEMS;
+    }
+
+    @Override
+    protected void loadAdditionalData(@NonNull Node mergedItemsNode, boolean incrementalState) throws MergingException {
+        // only load the merged item in incremental state.
+        // In non incremental state, they will be recreated by the touched
+        // items anyway.
+        if (!incrementalState) {
+            return;
+        }
+
         // loop on the qualifiers.
         NodeList configurationList = mergedItemsNode.getChildNodes();
 
@@ -269,8 +283,8 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
     }
 
     @Override
-    protected void writeMergedItems(Document document, Node rootNode) {
-        Node mergedItemsNode = document.createElement(NODE_MERGED_ITEMS);
+    protected void writeAdditionalData(Document document, Node rootNode) {
+        Node mergedItemsNode = document.createElement(getAdditionalDataTagName());
         rootNode.appendChild(mergedItemsNode);
 
         for (String qualifier : mMergedItems.keySet()) {
@@ -306,7 +320,8 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
      * @param node the node representing the resource.
      * @return a ResourceItem object or null.
      */
-    static MergedResourceItem getMergedResourceItem(@NonNull Node node, @NonNull String qualifiers) {
+    static MergedResourceItem getMergedResourceItem(@NonNull Node node, @NonNull String qualifiers)
+            throws MergingException {
         ResourceType type = ValueResourceParser2.getType(node, null);
         String name = ValueResourceParser2.getName(node);
 

@@ -18,13 +18,15 @@
     <instantiate from="res/layout/activity_fragment_container.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
 
-
     <instantiate from="res/layout/fragment_simple.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/${fragmentLayoutName}.xml" />
 
     <instantiate from="src/app_package/SimpleActivity.java.ftl"
                    to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 
-    <open file="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
+    <instantiate from="src/app_package/SimpleActivityFragment.ftl"
+                   to="${escapeXmlAttribute(srcOut)}/${fragmentClass}.java" />
+
+    <open file="${escapeXmlAttribute(srcOut)}/${activityClass}Fragment.java" />
     <open file="${escapeXmlAttribute(resOut)}/layout/${fragmentLayoutName}.xml" />
 </recipe>

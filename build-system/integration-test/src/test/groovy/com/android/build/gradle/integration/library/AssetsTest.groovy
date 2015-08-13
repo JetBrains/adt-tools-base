@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -27,10 +28,11 @@ import org.junit.experimental.categories.Category
 /**
  * Assemble tests for assets.
  */
+@CompileStatic
 class AssetsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("assets")
+            .fromTestProject("assets")
             .create()
 
     @BeforeClass
@@ -56,6 +58,6 @@ class AssetsTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

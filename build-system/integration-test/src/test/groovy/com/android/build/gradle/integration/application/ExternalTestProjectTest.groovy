@@ -50,7 +50,7 @@ include ':app2'
 """
         // app1 module
         File app1 = new File(rootFile, "app1")
-        new HelloWorldApp().writeSources(app1)
+        new HelloWorldApp().write(app1, null)
         new File(app1, "build.gradle") << """
 apply plugin: 'com.android.application'
 
@@ -74,7 +74,7 @@ artifacts {
 """
         // app2 module
         File app2 = new File(rootFile, "app2")
-        new HelloWorldApp().writeSources(app2)
+        new HelloWorldApp().write(app2, null)
         app2BuildFile = new File(app2, "build.gradle")
     }
 
@@ -122,7 +122,7 @@ dependencies {
             // looks like we can't actually test the instance t against GradleException
             // due to it coming through the tooling API from a different class loader.
             assertEquals("org.gradle.api.GradleException", t.getClass().canonicalName)
-            assertEquals("Dependency Error. See console for details", t.getMessage())
+            assertEquals("Dependency Error. See console for details.", t.getMessage())
         }
 
         // check there is a version of the error, after the task name:
@@ -149,12 +149,12 @@ dependencies {
 }
 """
 
-        Map<String, AndroidProject> modelMap = project.getAllModels()
+        Map<String, AndroidProject> modelMap = project.getAllModelsIgnoringSyncIssues()
 
         AndroidProject model = modelMap.get(':app2')
         assertNotNull(model)
 
-        SyncIssue issue = assertThat(model).issues().hasSingleIssue(
+        SyncIssue issue = assertThat(model).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_DEPENDENCY_IS_APK,
                 'project:app1:unspecified')

@@ -30,7 +30,12 @@ import java.util.Properties;
 /**
  * Represents a package in an SDK repository that has a {@link MajorRevision},
  * which is a single major revision number (not minor, micro or previews).
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public abstract class MajorRevisionPackage extends Package {
 
     private final MajorRevision mRevision;

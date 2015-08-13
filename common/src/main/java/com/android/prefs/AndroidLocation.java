@@ -61,7 +61,7 @@ public final class AndroidLocation {
         final boolean mIsSysProp;
         final boolean mIsEnvVar;
 
-        private EnvVar(String name, boolean isSysProp, boolean isEnvVar) {
+        EnvVar(String name, boolean isSysProp, boolean isEnvVar) {
             mName = name;
             mIsSysProp = isSysProp;
             mIsEnvVar = isEnvVar;

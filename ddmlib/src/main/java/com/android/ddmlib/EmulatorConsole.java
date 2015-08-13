@@ -116,7 +116,7 @@ public final class EmulatorConsole {
     };
 
     /** Gsm Mode enum. */
-    public static enum GsmMode {
+    public enum GsmMode {
         UNKNOWN((String)null),
         UNREGISTERED(new String[] { "unregistered", "off" }),
         HOME(new String[] { "home", "on" }),

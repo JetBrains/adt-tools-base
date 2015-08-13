@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -28,6 +29,7 @@ import static org.junit.Assert.assertTrue
 /**
  * Integration tests for manifest merging.
  */
+@CompileStatic
 class ManifestMergingTest {
 
     @ClassRule
@@ -39,13 +41,13 @@ class ManifestMergingTest {
     @ClassRule
     static public GradleTestProject libsTest = GradleTestProject.builder()
             .withName("libsTest")
-            .fromSample("libsTest")
+            .fromTestProject("libsTest")
             .create()
 
     @ClassRule
     static public GradleTestProject flavors = GradleTestProject.builder()
             .withName("flavors")
-            .fromSample("flavors")
+            .fromTestProject("flavors")
             .create()
 
 

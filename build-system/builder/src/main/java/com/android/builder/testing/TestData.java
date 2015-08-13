@@ -19,10 +19,15 @@ package com.android.builder.testing;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.ApiVersion;
+import com.android.builder.testing.api.DeviceConfigProvider;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
+import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Data representing the test app and the tested application/library.
@@ -49,10 +54,7 @@ public interface TestData {
     String getInstrumentationRunner();
 
     @NonNull
-    Boolean getHandleProfiling();
-
-    @NonNull
-    Boolean getFunctionalTest();
+    Map<String, String> getInstrumentationRunnerArguments();
 
     /**
      * Returns whether the tested app is enabled for code coverage
@@ -69,16 +71,36 @@ public interface TestData {
 
     /**
      * Returns an APK file to install based on given density and abis.
-     * @param density the density
-     * @param language the device's language
-     * @param region the device's region
-     * @param abis a list of ABIs in descending priority order.
+     * @param processExecutor an executor for slave processes.
+     * @param splitSelectExe path to the split-select native tool.
+     * @param deviceConfigProvider provider for the test device characteristics.
      * @return the file to install or null if non is compatible.
      */
     @NonNull
     ImmutableList<File> getTestedApks(
-            int density,
-            @Nullable String language,
-            @Nullable String region,
-            @NonNull List<String> abis);
+            @NonNull ProcessExecutor processExecutor,
+            @Nullable File splitSelectExe,
+            @NonNull DeviceConfigProvider deviceConfigProvider,
+            ILogger logger) throws ProcessException;
+    /**
+     * Returns the flavor name being test.
+     * @return the tested flavor name.
+     */
+    @NonNull
+    String getFlavorName();
+
+    /**
+     * Returns the APK containing the test classes for the application.
+     * @return the APK file.
+     */
+    @NonNull
+    File getTestApk();
+
+    /**
+     * Returns the list of directories containing test so the build system can check the presence
+     * of tests before deploying anything.
+     * @return list of folders containing test source files.
+     */
+    @NonNull
+    List<File> getTestDirectories();
 }

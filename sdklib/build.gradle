@@ -1,12 +1,3 @@
-buildscript {
-    repositories {
-        maven { url = uri(rootProject.cloneArtifacts.repository) }
-    }
-    dependencies {
-        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.0"
-    }
-}
-
 apply plugin: 'java'
 apply plugin: 'sdk-java-lib'
 
@@ -20,12 +11,13 @@ dependencies {
     compile project(':base:layoutlib-api')
     compile project(':base:dvlib')
 
+    compile 'com.google.code.gson:gson:2.2.4'
     compile 'org.apache.commons:commons-compress:1.8.1'
     compile 'org.apache.httpcomponents:httpclient:4.1.1'
     compile 'org.apache.httpcomponents:httpmime:4.1'
 
     testCompile project(':base:dvlib').sourceSets.test.output
-    testCompile 'junit:junit:3.8.1'
+    testCompile 'junit:junit:4.12'
 }
 
 test {

@@ -801,10 +801,7 @@ public class ApiLookup {
             return true;
         }
         if (owner.startsWith(ANDROID_PKG)) {
-            if (owner.startsWith("/support/", 7)) {       //$NON-NLS-1$
-                return false;
-            }
-            return true;
+            return !owner.startsWith("/support/", 7);
         } else if (owner.startsWith("org/")) {            //$NON-NLS-1$
             if (owner.startsWith("xml", 4)                //$NON-NLS-1$
                     || owner.startsWith("w3c/", 4)        //$NON-NLS-1$

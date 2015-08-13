@@ -54,7 +54,12 @@ import javax.xml.validation.Validator;
  * <p/>
  * This returns information stored on the repository in a different XML file
  * and isn't directly tied to the existence of the listed platforms.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class SdkStats {
 
     public static class PlatformStatBase {

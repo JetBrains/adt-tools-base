@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.utils.SourceProviderHelper
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ProductFlavorContainer
 import com.android.builder.model.SourceProviderContainer
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -37,10 +38,11 @@ import static org.junit.Assert.assertNotNull
 /**
  * Assemble tests for migrated.
  */
+@CompileStatic
 class MigratedTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("migrated")
+            .fromTestProject("migrated")
             .create()
 
     static AndroidProject model
@@ -100,6 +102,6 @@ class MigratedTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

@@ -65,7 +65,7 @@ public final class LogReceiver {
          * Sent when a new {@link LogEntry} has been parsed by the {@link LogReceiver}.
          * @param entry the new log entry.
          */
-        public void newEntry(LogEntry entry);
+        void newEntry(LogEntry entry);
         
         /**
          * Sent when new raw data is coming from the log service.
@@ -73,7 +73,7 @@ public final class LogReceiver {
          * @param offset the offset into the buffer signaling the beginning of the new data.
          * @param length the length of the new data.
          */
-        public void newData(byte[] data, int offset, int length);
+        void newData(byte[] data, int offset, int length);
     }
 
     /** Current {@link LogEntry} being read, before sending it to the listener. */

@@ -47,10 +47,10 @@ public class Util {
      */
     public static Rectangle scaleRectangle(Rectangle rect, float scaleFactor) {
         return new Rectangle(
-                (int) Math.round(rect.x * scaleFactor),
-                (int) Math.round(rect.y * scaleFactor),
-                (int) Math.round(rect.width * scaleFactor),
-                (int) Math.round(rect.height * scaleFactor));
+                Math.round(rect.x * scaleFactor),
+                Math.round(rect.y * scaleFactor),
+                Math.round(rect.width * scaleFactor),
+                Math.round(rect.height * scaleFactor));
     }
 
     /**

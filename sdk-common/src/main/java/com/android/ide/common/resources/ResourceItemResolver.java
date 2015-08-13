@@ -26,6 +26,7 @@ import com.android.ide.common.rendering.api.RenderResources;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.res2.MergingException;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
 
@@ -170,8 +171,8 @@ public class ResourceItemResolver extends RenderResources {
                     return null;
                 }
             }
-            ResourceValue item = myAppResources.getConfiguredValue(resType, resName,
-                    mConfiguration);
+            ResourceValue item = null;
+            item = myAppResources.getConfiguredValue(resType, resName, mConfiguration);
             if (item != null) {
                 if (mLookupChain != null) {
                     mLookupChain.add(item);

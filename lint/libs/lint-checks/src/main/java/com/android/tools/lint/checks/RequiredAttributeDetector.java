@@ -44,6 +44,7 @@ import static com.android.tools.lint.detector.api.LintUtils.getLayoutName;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -297,12 +298,13 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
         return false;
     }
 
-    private static boolean hasLayoutVariations(File file) {
+    @VisibleForTesting
+    static boolean hasLayoutVariations(File file) {
         File parent = file.getParentFile();
         if (parent == null) {
             return false;
         }
-        File res = file.getParentFile();
+        File res = parent.getParentFile();
         if (res == null) {
             return false;
         }

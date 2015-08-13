@@ -142,7 +142,6 @@ public class ${className} extends ListFragment {
         mListener = null;
     }
 
-
 <#if switchGrid == true>
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {

@@ -99,18 +99,13 @@ class ValueResourceParser2 {
             ResourceItem resource = getResource(node, mFile);
             if (resource != null) {
                 // check this is not a dup
-                checkDuplicate(resource, map);
+                checkDuplicate(resource, map, mFile);
 
                 resources.add(resource);
 
                 if (resource.getType() == ResourceType.DECLARE_STYLEABLE) {
                     // Need to also create ATTR items for its children
-                    try {
-                        addStyleableItems(node, resources, map, mFile);
-                    } catch (MergingException e) {
-                        e.setFile(mFile);
-                        throw e;
-                    }
+                    addStyleableItems(node, resources, map, mFile);
                 }
             }
         }
@@ -123,14 +118,19 @@ class ValueResourceParser2 {
      * @param node the node representing the resource.
      * @return a ResourceItem object or null.
      */
-    static ResourceItem getResource(@NonNull Node node, @Nullable File from) {
+    static ResourceItem getResource(@NonNull Node node, @Nullable File from)
+            throws MergingException {
         ResourceType type = getType(node, from);
         String name = getName(node);
 
         if (name != null) {
             if (type != null) {
+                ValueResourceNameValidator.validate(name, type, from);
                 return new ResourceItem(name, type, node);
             }
+        } else if (type == ResourceType.PUBLIC) {
+            // Allow a <public /> node with no name: this means all resources are private
+            return new ResourceItem("", type, node);
         }
 
         return null;
@@ -141,7 +141,7 @@ class ValueResourceParser2 {
      * @param node the node
      * @return the ResourceType or null if it could not be inferred.
      */
-    static ResourceType getType(@NonNull Node node, @Nullable File from) {
+    static ResourceType getType(@NonNull Node node, @Nullable File from) throws MergingException {
         String nodeName = node.getLocalName();
         String typeString = null;
 
@@ -162,17 +162,11 @@ class ValueResourceParser2 {
             if (type != null) {
                 return type;
             }
-
-            if (from != null) {
-                throw new RuntimeException(String.format("Unsupported type '%s' in file %s", typeString, from));
-            }
-            throw new RuntimeException(String.format("Unsupported type '%s'", typeString));
+            throw MergingException.withMessage("Unsupported type '%s'", typeString).withFile(from)
+                    .build();
         }
 
-        if (from != null) {
-            throw new RuntimeException(String.format("Unsupported node '%s' in file %s", nodeName, from));
-        }
-        throw new RuntimeException(String.format("Unsupported node '%s'", nodeName));
+        throw MergingException.withMessage("Unsupported node '%s'", nodeName).withFile(from).build();
     }
 
     /**
@@ -180,7 +174,7 @@ class ValueResourceParser2 {
      * @param node the node.
      * @return the name or null if it could not be inferred.
      */
-    static String getName(Node node) {
+    static String getName(@NonNull Node node) {
         Attr attribute = (Attr) node.getAttributes().getNamedItemNS(null, ATTR_NAME);
 
         if (attribute != null) {
@@ -197,25 +191,17 @@ class ValueResourceParser2 {
      * @throws MergingException if a merging exception happens
      */
     @NonNull
-    static Document parseDocument(File file) throws MergingException {
+    static Document parseDocument(@NonNull File file) throws MergingException {
         try {
             return XmlUtils.parseUtfXmlFile(file, true /*namespaceAware*/);
         } catch (SAXParseException e) {
-            String message = e.getLocalizedMessage();
-            MergingException exception = new MergingException(message, e);
-            exception.setFile(file);
-            int lineNumber = e.getLineNumber();
-            if (lineNumber != -1) {
-                exception.setLine(lineNumber - 1); // make line numbers 0-based
-                exception.setColumn(e.getColumnNumber() - 1);
-            }
-            throw exception;
+            throw MergingException.wrapException(e).withFile(file).build();
         } catch (ParserConfigurationException e) {
-            throw new MergingException(e).setFile(file);
+            throw MergingException.wrapException(e).withFile(file).build();
         } catch (SAXException e) {
-            throw new MergingException(e).setFile(file);
+            throw MergingException.wrapException(e).withFile(file).build();
         } catch (IOException e) {
-            throw new MergingException(e).setFile(file);
+            throw MergingException.wrapException(e).withFile(file).build();
         }
     }
 
@@ -249,7 +235,7 @@ class ValueResourceParser2 {
                 // is the attribute in the android namespace?
                 if (!resource.getName().startsWith(ANDROID_NS_NAME_PREFIX)) {
                     if (hasFormatAttribute(node) || XmlUtils.hasElementChildren(node)) {
-                        checkDuplicate(resource, map);
+                        checkDuplicate(resource, map, from);
                         resource.setIgnoredFromDiskMerge(true);
                         list.add(resource);
                     }
@@ -259,7 +245,8 @@ class ValueResourceParser2 {
     }
 
     private static void checkDuplicate(@NonNull ResourceItem resource,
-                                       @Nullable Map<ResourceType, Set<String>> map)
+                                       @Nullable Map<ResourceType, Set<String>> map,
+                                       @Nullable File from)
             throws MergingException {
         if (map == null) {
             return;
@@ -271,10 +258,10 @@ class ValueResourceParser2 {
             set = Sets.newHashSet(name);
             map.put(resource.getType(), set);
         } else {
-            if (set.contains(name)) {
-                throw new MergingException(String.format(
+            if (set.contains(name) && resource.getType() != ResourceType.PUBLIC) {
+                throw MergingException.withMessage(
                         "Found item %s/%s more than one time",
-                        resource.getType().getDisplayName(), name));
+                        resource.getType().getDisplayName(), name).withFile(from).build();
             }
 
             set.add(name);

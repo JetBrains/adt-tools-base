@@ -237,7 +237,7 @@ public interface IClientRulesEngine {
      * @param px the pixel dimension
      * @return the corresponding dp dimension
      */
-    public int pxToDp(int px);
+    int pxToDp(int px);
 
     /**
      * Converts a device independent pixel to a screen pixel for the current screen density
@@ -245,7 +245,7 @@ public interface IClientRulesEngine {
      * @param dp the device independent pixel dimension
      * @return the corresponding pixel dimension
      */
-    public int dpToPx(int dp);
+    int dpToPx(int dp);
 
     /**
      * Converts an IDE screen pixel distance to the corresponding layout distance. This
@@ -256,7 +256,7 @@ public interface IClientRulesEngine {
      * @param pixels the size in IDE screen pixels
      * @return the corresponding pixel distance in the layout coordinate system
      */
-    public int screenToLayout(int pixels);
+    int screenToLayout(int pixels);
 
     /**
      * Measure the preferred or actual ("wrap_content") size of the given nodes.
@@ -276,7 +276,7 @@ public interface IClientRulesEngine {
      * nodes being rendered, for example to force width and height values to wrap_content
      * when measuring preferred size.
      */
-    public interface AttributeFilter {
+    interface AttributeFilter {
         /**
          * Returns the attribute value for the given node and attribute name. This filter
          * allows a client to adjust the attribute values that a node presents to the
@@ -307,7 +307,7 @@ public interface IClientRulesEngine {
      *         (e.g. "@+id/something")
      */
     @NonNull
-    public String getUniqueId(@NonNull String fqcn);
+    String getUniqueId(@NonNull String fqcn);
 
     /**
      * Returns the namespace URI for attributes declared and used inside the
@@ -316,6 +316,6 @@ public interface IClientRulesEngine {
      * @return the namespace URI
      */
     @NonNull
-    public String getAppNameSpace();
+    String getAppNameSpace();
 }
 

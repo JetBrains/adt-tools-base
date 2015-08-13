@@ -15,29 +15,34 @@
  */
 package com.android.tools.perflib.heap.io;
 
+import java.nio.ByteOrder;
+
 public interface HprofBuffer {
+    public static final ByteOrder HPROF_BYTE_ORDER = ByteOrder.BIG_ENDIAN;
 
-    public byte readByte();
+    byte readByte();
 
-    public void read(byte[] b);
+    void read(byte[] b);
 
-    public char readChar();
+    void readSubSequence(byte[] b, int sourceStart, int sourceEnd);
 
-    public short readShort();
+    char readChar();
 
-    public int readInt();
+    short readShort();
 
-    public long readLong();
+    int readInt();
 
-    public float readFloat();
+    long readLong();
 
-    public double readDouble();
+    float readFloat();
 
-    public void setPosition(long position);
+    double readDouble();
 
-    public long position();
+    void setPosition(long position);
 
-    public boolean hasRemaining();
+    long position();
 
-    public long remaining();
+    boolean hasRemaining();
+
+    long remaining();
 }

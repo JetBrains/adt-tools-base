@@ -21,6 +21,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.JavaLibrary
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -31,10 +32,11 @@ import static org.junit.Assert.assertNotNull
 /**
  * Assemble tests for localJars.
  */
+@CompileStatic
 class LocalJarsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("localJars")
+            .fromTestProject("localJars")
             .create()
     static Map<String, AndroidProject> models
 
@@ -70,9 +72,8 @@ class LocalJarsTest {
         Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries()
         assertNotNull(javaLibraries)
 
-        //  com.google.guava:guava:11.0.2
-        //  \--- com.google.code.findbugs:jsr305:1.3.9
+        //  com.google.guava:guava:15.0
         //  + the local jar
-        assertEquals(3, javaLibraries.size())
+        assertEquals(2, javaLibraries.size())
     }
 }

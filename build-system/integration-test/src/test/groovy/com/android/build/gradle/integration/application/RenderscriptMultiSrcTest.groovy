@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -25,10 +26,11 @@ import org.junit.Test
 /**
  * Assemble tests for renderscriptMultiSrc.
  */
+@CompileStatic
 class RenderscriptMultiSrcTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("renderscriptMultiSrc")
+            .fromTestProject("renderscriptMultiSrc")
             .create()
 
     @BeforeClass

@@ -52,7 +52,7 @@ public interface IMenuCallback {
 
     /** Callback which does nothing */
     @NonNull
-    public static final IMenuCallback NONE = new IMenuCallback() {
+    IMenuCallback NONE = new IMenuCallback() {
         @Override
         public void action(
                 @NonNull RuleAction action,

@@ -30,13 +30,14 @@ import java.util.List;
 /** Registry which provides a list of checks to be performed on an Android project */
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
-    static final int INITIAL_CAPACITY = 208;
+    static final int INITIAL_CAPACITY = 220;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
 
         issues.add(AccessibilityDetector.ISSUE);
         issues.add(AddJavascriptInterfaceDetector.ISSUE);
+        issues.add(AlarmDetector.ISSUE);
         issues.add(AlwaysShowActionDetector.ISSUE);
         issues.add(AnnotationDetector.ISSUE);
         issues.add(ApiDetector.INLINED);
@@ -45,6 +46,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ApiDetector.UNUSED);
         issues.add(AppCompatCallDetector.ISSUE);
         issues.add(AppCompatResourceDetector.ISSUE);
+        issues.add(AppIndexingApiDetector.ISSUE_ERROR);
+        issues.add(AppIndexingApiDetector.ISSUE_WARNING);
         issues.add(ArraySizeDetector.INCONSISTENT);
         issues.add(AssertDetector.ISSUE);
         issues.add(ButtonDetector.BACK_BUTTON);
@@ -53,14 +56,12 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ButtonDetector.STYLE);
         issues.add(ByteOrderMarkDetector.BOM);
         issues.add(CallSuperDetector.ISSUE);
-        issues.add(CheckPermissionDetector.ISSUE);
         issues.add(ChildCountDetector.ADAPTER_VIEW_ISSUE);
         issues.add(ChildCountDetector.SCROLLVIEW_ISSUE);
         issues.add(CipherGetInstanceDetector.ISSUE);
         issues.add(CleanupDetector.COMMIT_FRAGMENT);
         issues.add(CleanupDetector.RECYCLE_RESOURCE);
         issues.add(ClickableViewAccessibilityDetector.ISSUE);
-        issues.add(ColorUsageDetector.ISSUE);
         issues.add(CommentDetector.EASTER_EGG);
         issues.add(CommentDetector.STOP_SHIP);
         issues.add(CustomViewDetector.ISSUE);
@@ -75,7 +76,9 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(DuplicateResourceDetector.TYPE_MISMATCH);
         issues.add(ExtraTextDetector.ISSUE);
         issues.add(FieldGetterDetector.ISSUE);
+        issues.add(FullBackupContentDetector.ISSUE);
         issues.add(FragmentDetector.ISSUE);
+        issues.add(GetSignaturesDetector.ISSUE);
         issues.add(GradleDetector.COMPATIBILITY);
         issues.add(GradleDetector.GRADLE_PLUGIN_COMPATIBILITY);
         issues.add(GradleDetector.DEPENDENCY);
@@ -202,11 +205,20 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(SetJavaScriptEnabledDetector.ISSUE);
         issues.add(SharedPrefsDetector.ISSUE);
         issues.add(SignatureOrSystemDetector.ISSUE);
+        issues.add(SQLiteDetector.ISSUE);
         issues.add(StateListDetector.ISSUE);
         issues.add(StringFormatDetector.ARG_COUNT);
         issues.add(StringFormatDetector.ARG_TYPES);
         issues.add(StringFormatDetector.INVALID);
         issues.add(StringFormatDetector.POTENTIAL_PLURAL);
+        issues.add(SupportAnnotationDetector.CHECK_PERMISSION);
+        issues.add(SupportAnnotationDetector.CHECK_RESULT);
+        issues.add(SupportAnnotationDetector.COLOR_USAGE);
+        issues.add(SupportAnnotationDetector.MISSING_PERMISSION);
+        issues.add(SupportAnnotationDetector.RANGE);
+        issues.add(SupportAnnotationDetector.RESOURCE_TYPE);
+        issues.add(SupportAnnotationDetector.THREAD);
+        issues.add(SupportAnnotationDetector.TYPE_DEF);
         issues.add(SystemPermissionsDetector.ISSUE);
         issues.add(TextFieldDetector.ISSUE);
         issues.add(TextViewDetector.ISSUE);
@@ -266,13 +278,13 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         } else {
             int initialSize = 12;
             if (scope.contains(Scope.RESOURCE_FILE)) {
-                initialSize += 70;
+                initialSize += 75;
             } else if (scope.contains(Scope.ALL_RESOURCE_FILES)) {
                 initialSize += 10;
             }
 
             if (scope.contains(Scope.JAVA_FILE)) {
-                initialSize += 45;
+                initialSize += 55;
             } else if (scope.contains(Scope.CLASS_FILE)) {
                 initialSize += 15;
             } else if (scope.contains(Scope.MANIFEST)) {

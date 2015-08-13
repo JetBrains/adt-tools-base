@@ -17,10 +17,10 @@
 package com.android.ide.common.blame.parser;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.blame.output.GradleMessage;
+import com.android.ide.common.blame.Message;
+import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
 import com.android.utils.ILogger;
-import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -50,14 +50,14 @@ public class ToolOutputParser {
         mLogger = logger;
     }
 
-    public List<GradleMessage> parseToolOutput(@NonNull String output) {
+    public List<Message> parseToolOutput(@NonNull String output) {
         OutputLineReader outputReader = new OutputLineReader(output);
 
         if (outputReader.getLineCount() == 0) {
             return Collections.emptyList();
         }
 
-        List<GradleMessage> messages = Lists.newArrayList();
+        List<Message> messages = Lists.newArrayList();
         String line;
         while ((line = outputReader.readLine()) != null) {
             if (line.isEmpty()) {
@@ -78,7 +78,7 @@ public class ToolOutputParser {
             if (handled) {
                 int messageCount = messages.size();
                 if (messageCount > 0) {
-                    GradleMessage last = messages.get(messageCount - 1);
+                    Message last = messages.get(messageCount - 1);
                     if (last.getText().contains("Build cancelled")) {
                         // Build was cancelled, just quit. Extra messages are just confusing noise.
                         break;
@@ -86,11 +86,11 @@ public class ToolOutputParser {
                 }
             }
             else {
-                // If none of the standard parsers recognize the input, include it as info such
+                // If none of the standard parsers recogni ze the input, include it as info such
                 // that users don't miss potentially vital output such as gradle plugin exceptions.
                 // If there is predictable useless input we don't want to appear here, add a custom
                 // parser to digest it.
-                messages.add(new GradleMessage(GradleMessage.Kind.SIMPLE, line));
+                messages.add(new Message(Message.Kind.SIMPLE, line, SourceFilePosition.UNKNOWN));
             }
         }
         return messages;

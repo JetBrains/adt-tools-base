@@ -363,6 +363,10 @@ div.chapter {
     margin-right: 10px;
 }
 
+div.chapter > p {
+    margin: 2em 0 2em 0;
+}
+
 .text-container h1, .text-container h2, .text-container h3, .text-container h4, .text-container h5,
 div.book h1, div.book h2, div.book h3, div.book h4, div.book h5,
 div.chapter h1, div.chapter h2, div.chapter h3, div.chapter h4, div.chapter h5 {

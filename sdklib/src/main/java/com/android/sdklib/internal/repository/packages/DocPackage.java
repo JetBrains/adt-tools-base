@@ -20,8 +20,8 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.sources.SdkSource;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
@@ -39,7 +39,12 @@ import java.util.Properties;
  * Note that a doc package has a version and thus implements {@link IAndroidVersionProvider}.
  * However there is no mandatory dependency that limits installation so this does not
  * implement {@link IPlatformDependency}.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class DocPackage extends MajorRevisionPackage implements IAndroidVersionProvider {
 
     private final AndroidVersion mVersion;
@@ -70,9 +75,8 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
         }
         mVersion = new AndroidVersion(apiLevel, codeName);
 
-        mPkgDesc = PkgDesc.Builder
-                .newDoc(mVersion, (MajorRevision) getRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(
+                PkgDesc.Builder.newDoc(mVersion, (MajorRevision) getRevision()))
                 .create();
     }
 
@@ -114,9 +118,7 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
                 archiveOsPath);
         mVersion = new AndroidVersion(props, apiLevel, codename);
 
-        mPkgDesc = PkgDesc.Builder
-                .newDoc(mVersion, (MajorRevision) getRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder.newDoc(mVersion, (MajorRevision) getRevision()))
                 .create();
     }
 

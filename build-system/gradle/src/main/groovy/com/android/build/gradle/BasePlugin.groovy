@@ -18,36 +18,50 @@ package com.android.build.gradle
 
 import com.android.annotations.Nullable
 import com.android.annotations.VisibleForTesting
+import com.android.build.gradle.internal.ApiObjectFactory
 import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.DependencyManager
+import com.android.build.gradle.internal.ExecutionConfigurationUtil
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.LibraryCache
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.SdkHandler
+import com.android.build.gradle.internal.TaskContainerAdaptor
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.BuildTypeFactory
-import com.android.build.gradle.internal.dsl.GroupableProductFlavor
-import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
+import com.android.build.gradle.internal.dsl.ProductFlavor
+import com.android.build.gradle.internal.dsl.ProductFlavorFactory
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
+import com.android.build.gradle.internal.NativeLibraryFactoryImpl
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
+import com.android.build.gradle.internal.profile.RecordingBuildListener
+import com.android.build.gradle.internal.profile.SpanRecorders
+import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
+import com.android.build.gradle.internal.NdkHandler
 import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.PreDex
+import com.android.builder.Version
 import com.android.builder.core.AndroidBuilder
-import com.android.builder.core.DefaultBuildType
+import com.android.builder.core.BuilderConstants
 import com.android.builder.internal.compiler.JackConversionCache
 import com.android.builder.internal.compiler.PreDexCache
+import com.android.builder.profile.ExecutionType
+import com.android.builder.profile.ProcessRecorderFactory
+import com.android.builder.profile.ThreadRecorder
 import com.android.builder.sdk.TargetInfo
 import com.android.ide.common.blame.output.BlameAwareLoggedProcessOutputHandler
 import com.android.ide.common.internal.ExecutorSingleton
 import com.android.utils.ILogger
+import com.google.common.base.CharMatcher
 import groovy.transform.CompileStatic
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
@@ -56,25 +70,17 @@ import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.tasks.TaskContainer
+import org.gradle.api.tasks.StopExecutionException
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import java.security.MessageDigest
-import java.util.Calendar
-import java.util.jar.Attributes
 import java.util.jar.Manifest
 import java.util.regex.Pattern
 
-import static com.android.builder.core.BuilderConstants.DEBUG
-import static com.android.builder.core.BuilderConstants.RELEASE
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TYPE
+import static com.google.common.base.Preconditions.checkState
 import static java.io.File.separator
 
 /**
@@ -84,13 +90,14 @@ import static java.io.File.separator
 public abstract class BasePlugin {
 
     private static final String GRADLE_MIN_VERSION = "2.2"
-    public static final String GRADLE_TEST_VERSION = "2.2"
     public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*")
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck"
+    private static final String SKIP_PATH_CHECK_PROPERTY =
+            "com.android.build.gradle.overridePathCheck"
+    /** default retirement age in days since its inception date for RC or beta versions. */
+    private static final int DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE = 40
 
-    // default retirement age in days since its inception date for RC or beta versions.
-    private static final int DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE = 40;
 
     protected BaseExtension extension
 
@@ -102,9 +109,13 @@ public abstract class BasePlugin {
 
     protected SdkHandler sdkHandler
 
+    private NdkHandler ndkHandler
+
     protected AndroidBuilder androidBuilder
 
     protected Instantiator instantiator
+
+    protected VariantFactory variantFactory
 
     private ToolingModelBuilderRegistry registry
 
@@ -118,21 +129,13 @@ public abstract class BasePlugin {
 
     private boolean hasCreatedTasks = false
 
-    // set the creation date of this plugin. Remember than month is zero based (0 is January).
-    private static final GregorianCalendar inceptionDate = new GregorianCalendar(2015, 0, 26)
-    // retirement age for the plugin in days from the inceptionDate, -1 for eternal.
-    private static final int retirementAge = 40
-
     protected BasePlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
         this.instantiator = instantiator
         this.registry = registry
-        String pluginVersion = getLocalVersion()
-        if (pluginVersion != null) {
-            creator = "Android Gradle " + pluginVersion
-        } else  {
-            creator = "Android Gradle"
-        }
+        creator = "Android Gradle " + Version.ANDROID_GRADLE_PLUGIN_VERSION
         verifyRetirementAge()
+
+        ModelBuilder.clearCaches();
     }
 
     /**
@@ -146,7 +149,6 @@ public abstract class BasePlugin {
             URL url = cl.findResource("META-INF/MANIFEST.MF");
             manifest = new Manifest(url.openStream());
         } catch (IOException ignore) {
-            getLogger().info(ignore.toString());
             return;
         }
 
@@ -197,19 +199,19 @@ public abstract class BasePlugin {
     }
 
     private static int getRetirementAge(@Nullable String version) {
-        if (version == null || version.contains("rc") || version.contains("beta")) {
+        if (version == null || version.contains("rc") || version.contains("beta")
+                || version.contains("alpha")) {
             return DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE
         }
         return -1;
     }
 
     protected abstract Class<? extends BaseExtension> getExtensionClass()
-    protected abstract VariantFactory getVariantFactory()
+    protected abstract VariantFactory createVariantFactory()
     protected abstract TaskManager createTaskManager(
             Project project,
-            TaskContainer tasks,
             AndroidBuilder androidBuilder,
-            BaseExtension extension,
+            AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry)
@@ -237,14 +239,31 @@ public abstract class BasePlugin {
 
     protected void apply(Project project) {
         this.project = project
-        configureProject()
-        createExtension()
-        createTasks()
+
+        ExecutionConfigurationUtil.setThreadPoolSize(project)
+        checkPathForErrors()
+        checkModulesForErrors()
+
+        ProcessRecorderFactory.initialize(logger, project.rootProject.
+                file("profiler" + System.currentTimeMillis() + ".json"))
+        project.gradle.addListener(new RecordingBuildListener(ThreadRecorder.get()));
+
+        SpanRecorders.record(project, ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE) {
+            configureProject()
+        }
+
+        SpanRecorders.record(project, ExecutionType.BASE_PLUGIN_PROJECT_BASE_EXTENSTION_CREATION) {
+            createExtension()
+        }
+
+        SpanRecorders.record(project, ExecutionType.BASE_PLUGIN_PROJECT_TASKS_CREATION) {
+            createTasks()
+        }
     }
 
     protected void configureProject() {
         checkGradleVersion()
-        extraModelInfo = new ExtraModelInfo(project)
+        extraModelInfo = new ExtraModelInfo(project, isLibrary())
         sdkHandler = new SdkHandler(project, logger)
         androidBuilder = new AndroidBuilder(
                 project == project.rootProject ? project.name : project.path,
@@ -253,6 +272,7 @@ public abstract class BasePlugin {
                 new GradleJavaProcessExecutor(project),
                 new BlameAwareLoggedProcessOutputHandler(getLogger(),
                         extraModelInfo.getErrorFormatMode()),
+                extraModelInfo,
                 logger,
                 verbose)
 
@@ -271,15 +291,18 @@ public abstract class BasePlugin {
         project.gradle.buildFinished {
             ExecutorSingleton.shutdown()
             sdkHandler.unload()
-            PreDexCache.getCache().clear(
-                    project.rootProject.file(
-                            "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"),
-                    logger)
-            JackConversionCache.getCache().clear(
-                    project.rootProject.file(
-                            "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/jack-cache/cache.xml"),
-                    logger)
-            LibraryCache.getCache().unload()
+            SpanRecorders.record(project, ExecutionType.BASE_PLUGIN_BUILD_FINISHED) {
+                PreDexCache.getCache().clear(
+                        project.rootProject.file(
+                                "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"),
+                        logger)
+                JackConversionCache.getCache().clear(
+                        project.rootProject.file(
+                                "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/jack-cache/cache.xml"),
+                        logger)
+                LibraryCache.getCache().unload()
+            }
+            ProcessRecorderFactory.shutdown();
         }
 
         project.gradle.taskGraph.whenReady { TaskExecutionGraph taskGraph ->
@@ -302,8 +325,8 @@ public abstract class BasePlugin {
     private void createExtension() {
         def buildTypeContainer = project.container(BuildType,
                 new BuildTypeFactory(instantiator, project, project.getLogger()))
-        def productFlavorContainer = project.container(GroupableProductFlavor,
-                new GroupableProductFlavorFactory(instantiator, project, project.getLogger()))
+        def productFlavorContainer = project.container(ProductFlavor,
+                new ProductFlavorFactory(instantiator, project, project.getLogger()))
         def signingConfigContainer = project.container(SigningConfig,
                 new SigningConfigFactory(instantiator))
 
@@ -312,46 +335,60 @@ public abstract class BasePlugin {
                 buildTypeContainer, productFlavorContainer, signingConfigContainer,
                 extraModelInfo, isLibrary())
 
+        // create the default mapping configuration.
+        project.configurations.create("default-mapping").description = "Configuration for default mapping artifacts."
+        project.configurations.create("default-metadata").description = "Metadata for the produced APKs."
+
         DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
         taskManager = createTaskManager(
                 project,
-                project.tasks,
                 androidBuilder,
                 extension,
                 sdkHandler,
                 dependencyManager,
                 registry)
 
+        variantFactory = createVariantFactory()
         variantManager = new VariantManager(
                 project,
                 androidBuilder,
                 extension,
-                getVariantFactory(),
+                variantFactory,
                 taskManager,
                 instantiator)
 
+        ndkHandler = new NdkHandler(
+                project.rootDir,
+                null, /* compileSkdVersion, this will be set in afterEvaluate */
+                "gcc",
+                "" /*toolchainVersion*/);
+
         // Register a builder for the custom tooling model
         ModelBuilder modelBuilder = new ModelBuilder(
-                androidBuilder, variantManager, taskManager, extension, extraModelInfo, isLibrary())
+                androidBuilder,
+                variantManager,
+                taskManager,
+                extension,
+                extraModelInfo,
+                ndkHandler,
+                new NativeLibraryFactoryImpl(ndkHandler),
+                isLibrary())
         registry.register(modelBuilder);
 
         // map the whenObjectAdded callbacks on the containers.
         signingConfigContainer.whenObjectAdded { SigningConfig signingConfig ->
-            variantManager.addSigningConfig((SigningConfig) signingConfig)
+            variantManager.addSigningConfig(signingConfig)
         }
 
-        buildTypeContainer.whenObjectAdded { DefaultBuildType buildType ->
-            variantManager.addBuildType((BuildType) buildType)
+        buildTypeContainer.whenObjectAdded { BuildType buildType ->
+            SigningConfig signingConfig = signingConfigContainer.findByName(BuilderConstants.DEBUG)
+            buildType.init(signingConfig)
+            variantManager.addBuildType(buildType)
         }
 
-        productFlavorContainer.whenObjectAdded { GroupableProductFlavor productFlavor ->
+        productFlavorContainer.whenObjectAdded { ProductFlavor productFlavor ->
             variantManager.addProductFlavor(productFlavor)
         }
-
-        // create default Objects, signingConfig first as its used by the BuildTypes.
-        signingConfigContainer.create(DEBUG)
-        buildTypeContainer.create(DEBUG)
-        buildTypeContainer.create(RELEASE)
 
         // map whenObjectRemoved on the containers to throw an exception.
         signingConfigContainer.whenObjectRemoved {
@@ -363,14 +400,20 @@ public abstract class BasePlugin {
         productFlavorContainer.whenObjectRemoved {
             throw new UnsupportedOperationException("Removing product flavors is not supported.")
         }
+
+        // create default Objects, signingConfig first as its used by the BuildTypes.
+        variantFactory.createDefaultComponents(buildTypeContainer, productFlavorContainer, signingConfigContainer)
     }
 
     private void createTasks() {
-        taskManager.createTasks()
+        SpanRecorders.record(project, ExecutionType.TASK_MANAGER_CREATE_TASKS) {
+            taskManager.createTasksBeforeEvaluate(new TaskContainerAdaptor(project.getTasks()))
+        }
 
         project.afterEvaluate {
-            ensureTargetSetup()
-            createAndroidTasks(false)
+            SpanRecorders.record(project, ExecutionType.BASE_PLUGIN_CREATE_ANDROID_TASKS) {
+                createAndroidTasks(false)
+            }
         }
     }
 
@@ -397,11 +440,19 @@ public abstract class BasePlugin {
 
     @VisibleForTesting
     final void createAndroidTasks(boolean force) {
+        // Make sure unit tests set the required fields.
+        checkState(extension.getBuildToolsRevision() != null, "buildToolsVersion is not specified.")
+        checkState(extension.getCompileSdkVersion() != null, "compileSdkVersion is not specified.")
+
+        ndkHandler.compileSdkVersion = extension.compileSdkVersion
+
         // get current plugins and look for the default Java plugin.
         if (project.plugins.hasPlugin(JavaPlugin.class)) {
             throw new BadPluginException(
                     "The 'java' plugin has been applied, but it is not compatible with the Android plugins.")
         }
+
+        ensureTargetSetup()
 
         // don't do anything if the project was not initialized.
         // Unless TEST_SDK_DIR is set in which case this is unit tests and we don't return.
@@ -428,30 +479,14 @@ public abstract class BasePlugin {
         }
 
         taskManager.createMockableJarTask()
-        variantManager.createAndroidTasks(getSigningOverride())
-    }
-
-    private SigningConfig getSigningOverride() {
-        if (project.hasProperty(PROPERTY_SIGNING_STORE_FILE) &&
-                project.hasProperty(PROPERTY_SIGNING_STORE_PASSWORD) &&
-                project.hasProperty(PROPERTY_SIGNING_KEY_ALIAS) &&
-                project.hasProperty(PROPERTY_SIGNING_KEY_PASSWORD)) {
-
-            SigningConfig signingConfigDsl = new SigningConfig("externalOverride")
-            Map<String, ?> props = project.getProperties();
-
-            signingConfigDsl.setStoreFile(new File((String) props.get(PROPERTY_SIGNING_STORE_FILE)))
-            signingConfigDsl.setStorePassword((String) props.get(PROPERTY_SIGNING_STORE_PASSWORD));
-            signingConfigDsl.setKeyAlias((String) props.get(PROPERTY_SIGNING_KEY_ALIAS));
-            signingConfigDsl.setKeyPassword((String) props.get(PROPERTY_SIGNING_KEY_PASSWORD));
-
-            if (project.hasProperty(PROPERTY_SIGNING_STORE_TYPE)) {
-                signingConfigDsl.setStoreType((String) props.get(PROPERTY_SIGNING_STORE_TYPE))
+        SpanRecorders.record(project, ExecutionType.VARIANT_MANAGER_CREATE_ANDROID_TASKS) {
+            variantManager.createAndroidTasks()
+            ApiObjectFactory apiObjectFactory =
+                    new ApiObjectFactory(androidBuilder, extension, variantFactory, instantiator)
+            for (BaseVariantData variantData : variantManager.getVariantDataList())  {
+                apiObjectFactory.create(variantData)
             }
-
-            return signingConfigDsl
         }
-        return null
     }
 
     private boolean isVerbose() {
@@ -462,33 +497,72 @@ public abstract class BasePlugin {
         // check if the target has been set.
         TargetInfo targetInfo = androidBuilder.getTargetInfo()
         if (targetInfo == null) {
+            if (extension.getCompileOptions() == null) {
+                throw new GradleException("Calling getBootClasspath before compileSdkVersion")
+            }
+
             sdkHandler.initTarget(
                     extension.getCompileSdkVersion(),
                     extension.buildToolsRevision,
+                    extension.getLibraryRequests(),
                     androidBuilder)
         }
     }
 
-    private static String getLocalVersion() {
-        try {
-            Class clazz = BasePlugin.class
-            String className = clazz.getSimpleName() + ".class"
-            String classPath = clazz.getResource(className).toString()
-            if (!classPath.startsWith("jar")) {
-                // Class not from JAR, unlikely
-                return null
+    /**
+     * Check the sub-projects structure :
+     * So far, checks that 2 modules do not have the same identification (group+name).
+     */
+    private void checkModulesForErrors() {
+        Project rootProject = project.getRootProject();
+        Map<String, Project> subProjectsById = new HashMap<>();
+        for (Project subProject : rootProject.getAllprojects()) {
+            String id = subProject.getGroup().toString() + ":" + subProject.getName();
+            if (subProjectsById.containsKey(id)) {
+                String message = """
+Your project contains 2 or more modules with the same identification ${id}
+at "${subProjectsById.get(id).getPath()}" and "${subProject.getPath()}".
+You must use different identification (either name or group) for each modules.
+""".trim();
+                throw new StopExecutionException(message)
+            } else {
+                subProjectsById.put(id, subProject);
             }
-            String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1) +
-                    "/META-INF/MANIFEST.MF";
-
-            URLConnection jarConnection = new URL(manifestPath).openConnection();
-            jarConnection.setUseCaches(false);
-            InputStream jarInputStream = jarConnection.getInputStream();
-            Attributes attr = new Manifest(jarInputStream).getMainAttributes();
-            jarInputStream.close();
-            return attr.getValue("Plugin-Version");
-        } catch (Throwable t) {
-            return null;
         }
+    }
+
+    private void checkPathForErrors() {
+        // See if the user disabled the check:
+        if (Boolean.getBoolean(SKIP_PATH_CHECK_PROPERTY)) {
+            return
+        }
+
+        if (project.hasProperty(SKIP_PATH_CHECK_PROPERTY)
+                && project.property(SKIP_PATH_CHECK_PROPERTY) instanceof String
+                && Boolean.valueOf((String) project.property(SKIP_PATH_CHECK_PROPERTY))) {
+            return
+        }
+
+        // See if we're on Windows:
+        if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
+            return
+        }
+
+        // See if the path contains non-ASCII characters.
+        if (CharMatcher.ASCII.matchesAllOf(project.rootDir.absolutePath)) {
+            return
+        }
+
+        String message = """
+Your project path contains non-ASCII characters. This will most likely
+cause the build to fail on Windows. Please move your project to a different
+directory. See http://b.android.com/95744 for details.
+
+This warning can be disabled by using the command line flag
+-D${SKIP_PATH_CHECK_PROPERTY}=true, or adding the line
+'${SKIP_PATH_CHECK_PROPERTY}=true' to gradle.properties file
+in the project directory.""".trim()
+
+        throw new StopExecutionException(message)
     }
 }

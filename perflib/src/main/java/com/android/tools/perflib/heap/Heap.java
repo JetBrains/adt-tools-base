@@ -20,8 +20,8 @@ import com.android.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 
+import com.google.common.collect.*;
 import gnu.trove.TIntObjectHashMap;
 import gnu.trove.TLongObjectHashMap;
 import gnu.trove.TObjectProcedure;
@@ -53,8 +53,7 @@ public class Heap {
     @NonNull
     TLongObjectHashMap<ClassObj> mClassesById = new TLongObjectHashMap<ClassObj>();
 
-    @NonNull
-    HashMap<String, ClassObj> mClassesByName = new HashMap<String, ClassObj>();
+    @NonNull Multimap<String, ClassObj> mClassesByName = ArrayListMultimap.create();
 
     //  List of instances of above class definitions
     private final TLongObjectHashMap<Instance> mInstances = new TLongObjectHashMap<Instance>();
@@ -134,13 +133,21 @@ public class Heap {
     }
 
     public final ClassObj getClass(String name) {
+        Collection<ClassObj> classes = mClassesByName.get(name);
+        if (classes.size() == 1) {
+            return classes.iterator().next();
+        }
+        return null;
+    }
+
+    public final Collection<ClassObj> getClasses(String name) {
         return mClassesByName.get(name);
     }
 
     public final void dumpInstanceCounts() {
         for (Object value : mClassesById.getValues()) {
             ClassObj theClass = (ClassObj) value;
-            int count = theClass.mInstances.size();
+            int count = theClass.getInstanceCount();
 
             if (count > 0) {
                 System.out.println(theClass + ": " + count);
@@ -166,7 +173,7 @@ public class Heap {
 
             int size = 0;
 
-            for (Instance instance : theClass.mInstances) {
+            for (Instance instance : theClass.getHeapInstances(getId())) {
                 size += instance.getCompositeSize();
             }
 
@@ -193,5 +200,9 @@ public class Heap {
             }
         });
         return result;
+    }
+
+    public int getInstancesCount() {
+        return mInstances.size();
     }
 }

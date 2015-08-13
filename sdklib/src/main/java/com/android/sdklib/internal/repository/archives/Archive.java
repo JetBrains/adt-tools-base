@@ -20,7 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
-import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.io.FileOp;
@@ -38,7 +38,12 @@ import java.util.Properties;
  * <p/>
  * Packages are offered by a {@link SdkSource} (a download site).
  * The {@link ArchiveInstaller} takes care of downloading, unpacking and installing an archive.
- */
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
+*/
+@Deprecated
 public class Archive implements IDescription, Comparable<Archive> {
 
     private final String mUrl;

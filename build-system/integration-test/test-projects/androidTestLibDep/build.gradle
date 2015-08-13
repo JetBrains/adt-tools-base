@@ -1,0 +1,16 @@
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+
+
+apply plugin: 'com.android.library'
+
+apply from: "../commonLocalRepo.gradle"
+
+dependencies {
+    androidTestCompile 'com.google.guava:guava:11.0.2'
+}
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+}

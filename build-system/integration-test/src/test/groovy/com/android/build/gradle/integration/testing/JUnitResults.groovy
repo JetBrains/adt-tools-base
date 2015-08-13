@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.testing
-
 /**
  * Helper class for inspecting JUnit XML files.
  */
@@ -47,5 +46,13 @@ class JUnitResults {
         } else {
             Outcome.FAILED
         }
+    }
+
+    String getStdErr() {
+        return testSuite.'system-err'.text()
+    }
+
+    String getStdOut() {
+        return testSuite.'system-out'.text()
     }
 }

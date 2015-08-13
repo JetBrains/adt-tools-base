@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  *  </ul>
  */
 public class VmTraceData {
-    public static enum VmClockType { THREAD_CPU, WALL, DUAL }
+    public enum VmClockType { THREAD_CPU, WALL, DUAL }
 
     private final int mVersion;
     private final boolean mDataFileOverflow;

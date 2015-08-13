@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-def gradleVersion = System.env.CUSTOM_GRADLE ?: '1.1.1'
+def env = new Object() {
+    String gradleVersion
+    String experimentalGradleVersion
+};
+apply from: "commonGradlePluginVersion.gradle", to: env
 
-repositories {
-    if (System.env.CUSTOM_REPO != null) {
-        maven { url System.env.CUSTOM_REPO }
-    } else {
-        mavenCentral()
-    }
-}
+apply from: "commonLocalRepo.gradle"
 
 dependencies {
-    classpath "com.android.tools.build:gradle:$gradleVersion"
+    classpath "com.android.tools.build:gradle:$env.gradleVersion"
+    classpath "com.google.gms:google-services:$env.gradleVersion"
+    if (System.env.TEST_CLASSPATH_DEPENDENCY) {
+        classpath System.env.TEST_CLASSPATH_DEPENDENCY
+    }
 }

@@ -26,7 +26,6 @@ import com.android.annotations.VisibleForTesting;
 import com.android.builder.dependency.DependencyContainer;
 import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryDependency;
-import com.android.utils.StringHelper;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.ClassField;
@@ -35,15 +34,13 @@ import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
 import com.android.ide.common.res2.AssetSet;
 import com.android.ide.common.res2.ResourceSet;
-import com.google.common.collect.ArrayListMultimap;
+import com.android.utils.StringHelper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -124,37 +121,45 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     private final VariantConfiguration mTestedConfig;
 
-    /** An optional output that is only valid if the type is Type#LIBRARY so that the test
-     * for the library can use the library as if it was a normal dependency. */
+    /**
+     * An optional output that is only valid if the type is Type#LIBRARY so that the test
+     * for the library can use the library as if it was a normal dependency.
+     */
     private LibraryDependency mOutput;
 
     @NonNull
     private ProductFlavor mMergedFlavor;
 
     /**
-     * External/Jar dependencies
+     * External/Jar dependencies.
      */
     private final Set<JarDependency> mExternalJars = Sets.newHashSet();
 
     /**
-     * Local Jar dependencies
+     * Local Jar dependencies.
      */
     private final Set<JarDependency> mLocalJars = Sets.newHashSet();
 
-    /** List of direct library dependencies. Each object defines its own dependencies. */
+    /**
+     * List of direct library dependencies. Each object defines its own dependencies.
+     */
     private final List<LibraryDependency> mDirectLibraries = Lists.newArrayList();
 
-    /** list of all library dependencies in a flat list.
-     * The order is based on the order needed to call aapt: earlier libraries override resources
-     * of latter ones. */
+    /**
+     * List of all library dependencies in a flat list.
+     *
+     * <p>The order is based on the order needed to call aapt: earlier libraries override resources
+     * of latter ones.
+     */
     private final List<LibraryDependency> mFlatLibraries = Lists.newArrayList();
 
     /**
-     * Variant-specific build Config fields
+     * Variant-specific build Config fields.
      */
     private final Map<String, ClassField> mBuildConfigFields = Maps.newTreeMap();
+
     /**
-     * Variant-specific res values
+     * Variant-specific res values.
      */
     private final Map<String, ClassField> mResValues = Maps.newTreeMap();
 
@@ -218,6 +223,10 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             @NonNull VariantType type,
             @Nullable VariantConfiguration testedConfig,
             @Nullable SigningConfig signingConfigOverride) {
+        checkNotNull(defaultConfig);
+        checkNotNull(defaultSourceProvider);
+        checkNotNull(buildType);
+        checkNotNull(type);
         checkArgument(
                 !type.isForTesting() || testedConfig != null,
                 "You have to specify the tested variant for this variant type.");
@@ -499,114 +508,6 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
-     * Checks the SourceProviders to ensure that they don't use the same folders.
-     *
-     * This can't be allowed as it can break incremental support, or
-     * generate dup files in resulting APK.
-     *
-     * @throws java.lang.RuntimeException if a dup is found.
-     */
-    public void checkSourceProviders() {
-        List<SourceProvider> providers = Lists.newArrayListWithExpectedSize(
-                4 + mFlavorSourceProviders.size());
-
-        providers.add(mDefaultSourceProvider);
-        if (mBuildTypeSourceProvider != null) {
-            providers.add(mBuildTypeSourceProvider);
-        }
-
-        providers.addAll(mFlavorSourceProviders);
-        if (mVariantSourceProvider != null) {
-            providers.add(mVariantSourceProvider);
-        }
-        if (mMultiFlavorSourceProvider != null) {
-            providers.add(mMultiFlavorSourceProvider);
-        }
-
-        try {
-            checkFileSourceSet(providers, SourceProvider.class.getMethod("getManifestFile"), "manifest");
-            checkFileCollectionSourceSet(providers,
-                    SourceProvider.class.getMethod("getJavaDirectories"), "java");
-            checkFileCollectionSourceSet(providers,
-                    SourceProvider.class.getMethod("getResourcesDirectories"), "resources");
-            checkFileCollectionSourceSet(providers,
-                    SourceProvider.class.getMethod("getAidlDirectories"), "aidl");
-            checkFileCollectionSourceSet(providers,
-                    SourceProvider.class.getMethod("getRenderscriptDirectories"), "rs");
-            checkFileCollectionSourceSet(providers,
-                    SourceProvider.class.getMethod("getCDirectories"), "c");
-            checkFileCollectionSourceSet(providers,
-                    SourceProvider.class.getMethod("getCppDirectories"), "cpp");
-            checkFileCollectionSourceSet(providers,
-                    SourceProvider.class.getMethod("getResDirectories"), "res");
-            checkFileCollectionSourceSet(providers,
-                    SourceProvider.class.getMethod("getAssetsDirectories"), "assets");
-            checkFileCollectionSourceSet(providers,
-                    SourceProvider.class.getMethod("getJniLibsDirectories"), "jniLibs");
-
-        } catch (NoSuchMethodException ignored) {
-        } catch (InvocationTargetException ignored) {
-        } catch (IllegalAccessException ignored) {
-        }
-    }
-
-    private static void checkFileSourceSet(
-            List<SourceProvider> providers,
-            Method m,
-            @NonNull String name)
-            throws IllegalAccessException, InvocationTargetException {
-        Map<String, File> map = Maps.newHashMap();
-        for (SourceProvider sourceProvider : providers) {
-            File file = (File) m.invoke(sourceProvider);
-
-            if (!map.isEmpty()) {
-                for (Map.Entry<String, File> entry : map.entrySet()) {
-                    if (file.equals(entry.getValue())) {
-                        throw new RuntimeException(String.format(
-                                "SourceSets '%s' and '%s' use the same file for '%s': %s",
-                                sourceProvider.getName(),
-                                entry.getKey(),
-                                name,
-                                file));
-                    }
-                }
-            }
-
-            map.put(sourceProvider.getName(), file);
-        }
-    }
-
-    private static void checkFileCollectionSourceSet(
-            List<SourceProvider> providers,
-            Method m,
-            @NonNull String name)
-            throws IllegalAccessException, InvocationTargetException {
-        Multimap<String, File> map = ArrayListMultimap.create();
-        for (SourceProvider sourceProvider : providers) {
-            //noinspection unchecked
-            Collection<File> list = (Collection<File>) m.invoke(sourceProvider);
-
-            if (!map.isEmpty()) {
-                for (Map.Entry<String, Collection<File>> entry : map.asMap().entrySet()) {
-                    Collection<File> existingFiles = entry.getValue();
-                    for (File f : list) {
-                        if (existingFiles.contains(f)) {
-                            throw new RuntimeException(String.format(
-                                    "SourceSets '%s' and '%s' use the same file/folder for '%s': %s",
-                                    sourceProvider.getName(),
-                                    entry.getKey(),
-                                    name,
-                                    f));
-                        }
-                    }
-                }
-            }
-
-            map.putAll(sourceProvider.getName(), list);
-        }
-    }
-
-    /**
      * Sets the variant-specific source provider.
      * @param sourceProvider the source provider for the product flavor
      *
@@ -666,9 +567,6 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
         resolveIndirectLibraryDependencies(mDirectLibraries, mFlatLibraries);
 
-        for (LibraryDependency libraryDependency : mFlatLibraries) {
-            mLocalJars.addAll(libraryDependency.getLocalDependencies());
-        }
         return this;
     }
 
@@ -703,6 +601,18 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     public VariantConfiguration setOutput(LibraryDependency output) {
         mOutput = output;
         return this;
+    }
+
+    /**
+     * Returns the {@link LibraryDependency} that this library variant produces. Used so that
+     * related test variants can use it as a dependency. Returns null if this is not a library
+     * variant.
+     *
+     * @see #mOutput
+     */
+    @Nullable
+    public LibraryDependency getOutput() {
+        return mOutput;
     }
 
     @NonNull
@@ -843,10 +753,17 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             checkState(mTestedConfig != null);
 
             id = mMergedFlavor.getTestApplicationId();
+            String testedPackage = mTestedConfig.getApplicationId();
             if (id == null) {
-                String testedPackage = mTestedConfig.getApplicationId();
                 id = testedPackage + ".test";
+            } else {
+                if (id.equals(testedPackage)) {
+                    throw new RuntimeException(String.format("Application and test application id "
+                                    + "cannot be the same: both are '%s' for %s",
+                            id, getFullName()));
+                }
             }
+
         } else {
             // first get package override.
             id = getIdOverride();
@@ -967,6 +884,20 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
         String runner = config.mMergedFlavor.getTestInstrumentationRunner();
         return runner != null ? runner : DEFAULT_TEST_RUNNER;
+    }
+
+    /**
+     * Returns the instrumentationRunner arguments to use to test this variant, or if the
+     * variant is a test, the ones to use to test the tested variant
+     */
+    @NonNull
+    public Map<String, String> getInstrumentationRunnerArguments() {
+        VariantConfiguration config = this;
+        if (mType.isForTesting()) {
+            config = getTestedConfig();
+            checkState(config != null);
+        }
+        return config.mMergedFlavor.getTestInstrumentationRunnerArguments();
     }
 
     /**
@@ -1186,11 +1117,13 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         if (includeDependencies) {
             for (int n = mFlatLibraries.size() - 1 ; n >= 0 ; n--) {
                 LibraryDependency dependency = mFlatLibraries.get(n);
-                File resFolder = dependency.getResFolder();
-                if (resFolder.isDirectory()) {
-                    ResourceSet resourceSet = new ResourceSet(dependency.getFolder().getName());
-                    resourceSet.addSource(resFolder);
-                    resourceSets.add(resourceSet);
+                if (!dependency.isOptional()) {
+                    File resFolder = dependency.getResFolder();
+                    if (resFolder.isDirectory()) {
+                        ResourceSet resourceSet = new ResourceSet(dependency.getFolder().getName());
+                        resourceSet.addSource(resFolder);
+                        resourceSets.add(resourceSet);
+                    }
                 }
             }
         }
@@ -1492,13 +1425,15 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
 
         for (LibraryDependency libraryDependency : mFlatLibraries) {
-            File libJar = libraryDependency.getJarFile();
-            if (libJar.exists()) {
-                jars.add(libJar);
-            }
-            for (File jarFile : libraryDependency.getLocalJars()) {
-                if (jarFile.isFile()) {
-                    jars.add(jarFile);
+            if (!libraryDependency.isOptional()) {
+                File libJar = libraryDependency.getJarFile();
+                if (libJar.exists()) {
+                    jars.add(libJar);
+                }
+                for (File jarFile : libraryDependency.getLocalJars()) {
+                    if (jarFile.isFile()) {
+                        jars.add(jarFile);
+                    }
                 }
             }
         }
@@ -1528,6 +1463,21 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
                 jars.add(jarFile);
             }
         }
+
+        for (LibraryDependency libraryDependency : mFlatLibraries) {
+            if (libraryDependency.isOptional()) {
+                File libJar = libraryDependency.getJarFile();
+                if (libJar.exists()) {
+                    jars.add(libJar);
+                }
+                for (File jarFile : libraryDependency.getLocalJars()) {
+                    if (jarFile.isFile()) {
+                        jars.add(jarFile);
+                    }
+                }
+            }
+        }
+
 
         return Lists.newArrayList(jars);
     }
@@ -1774,6 +1724,24 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return fullList;
     }
 
+    /**
+     * Returns the proguard config files to be used for the test APK.
+     */
+    @NonNull
+    public List<File> getTestProguardFiles() {
+        List<File> fullList = Lists.newArrayList();
+
+        // add the config files from the build type, main config and flavors
+        fullList.addAll(mDefaultConfig.getTestProguardFiles());
+        fullList.addAll(mBuildType.getTestProguardFiles());
+
+        for (F flavor : mFlavors) {
+            fullList.addAll(flavor.getTestProguardFiles());
+        }
+
+        return fullList;
+    }
+
     @NonNull
     public List<Object> getConsumerProguardFiles() {
         List<Object> fullList = Lists.newArrayList();
@@ -1876,5 +1844,13 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
         // default is false.
         return false;
+    }
+
+    public Collection<File> getJarJarRuleFiles() {
+
+        ImmutableList.Builder<File> jarjarRuleFiles = ImmutableList.builder();
+        jarjarRuleFiles.addAll(getMergedFlavor().getJarJarRuleFiles());
+        jarjarRuleFiles.addAll(mBuildType.getJarJarRuleFiles());
+        return jarjarRuleFiles.build();
     }
 }

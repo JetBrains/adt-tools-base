@@ -1,0 +1,39 @@
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+
+apply plugin: 'com.android.application'
+
+android {
+  compileSdkVersion 21
+  buildToolsVersion = rootProject.ext.buildToolsVersion
+
+  defaultConfig {
+    buildConfigField "String", "FOO", "\"foo\""
+    multiDexEnabled = true
+    useJack project.ext.useJack
+  }
+
+  productFlavors {
+    ics {
+      minSdkVersion 14
+    }
+    lollipop {
+      minSdkVersion 21
+    }
+  }
+
+  buildTypes {
+    debug {
+      buildConfigField "String", "FOO", "\"bar\""
+      resValue "string", "foo", "foo2"
+    }
+    proguard {
+      minifyEnabled true
+      proguardFile file('proguard-android.txt')
+    }
+  }
+
+  lintOptions {
+    abortOnError !rootProject.ext.useJack
+  }
+}

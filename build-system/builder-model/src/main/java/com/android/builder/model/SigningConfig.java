@@ -32,7 +32,7 @@ public interface SigningConfig {
      * @return the name of the config
      */
     @NonNull
-    public String getName();
+    String getName();
 
     /**
      * Returns the keystore file.

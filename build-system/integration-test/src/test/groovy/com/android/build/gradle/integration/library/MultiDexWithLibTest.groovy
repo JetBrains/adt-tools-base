@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -27,14 +28,16 @@ import org.junit.experimental.categories.Category
 /**
  * Assemble tests for multiDexWithLib.
  */
+@CompileStatic
 class MultiDexWithLibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("multiDexWithLib")
+            .fromTestProject("multiDexWithLib")
             .create()
 
     @BeforeClass
     static void setUp() {
+        GradleTestProject.assumeBuildToolsAtLeast(21)
         project.execute("clean", "assembleDebug")
     }
 
@@ -56,6 +59,6 @@ class MultiDexWithLibTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

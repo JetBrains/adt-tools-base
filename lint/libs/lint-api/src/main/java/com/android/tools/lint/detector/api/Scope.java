@@ -122,6 +122,9 @@ public enum Scope {
     /** The analysis considers Java property files */
     PROPERTY_FILE,
 
+    /** The analysis considers test sources as well */
+    TEST_SOURCES,
+
     /**
      * Scope for other files. Issues that specify a custom scope will be called unconditionally.
      * This will call {@link Detector#run(Context)}} on the detectors unconditionally.

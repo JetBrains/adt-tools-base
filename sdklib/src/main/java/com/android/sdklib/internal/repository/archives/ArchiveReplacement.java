@@ -16,14 +16,19 @@
 
 package com.android.sdklib.internal.repository.archives;
 
-import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.packages.Package;
 
 
 /**
  * Represents an archive that we want to install and the archive that it is
  * going to replace, if any.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class ArchiveReplacement implements IDescription {
 
     private final Archive mNewArchive;

@@ -16,8 +16,8 @@
 
 package com.android.sdklib;
 
-import com.android.sdklib.internal.repository.MockAddonTarget;
-import com.android.sdklib.internal.repository.MockPlatformTarget;
+import com.android.sdklib.internal.androidTarget.MockAddonTarget;
+import com.android.sdklib.internal.androidTarget.MockPlatformTarget;
 
 import junit.framework.TestCase;
 

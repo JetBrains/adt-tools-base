@@ -23,6 +23,7 @@ import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.BeforeClass
@@ -35,17 +36,19 @@ import static org.junit.Assert.assertNotNull
 /**
  * Test for unresolved placeholders in libraries.
  */
+@CompileStatic
 class PlaceholderInLibsTest {
     static Map<String, AndroidProject> models
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("placeholderInLibsTest")
+            .fromTestProject("placeholderInLibsTest")
             .create()
 
     @BeforeClass
     static void setup() {
-        models = project.executeAndReturnMultiModel("clean", "app:assembleDebug")
+        models = project.executeAndReturnMultiModel("clean",
+                ":examplelibrary:generateDebugAndroidTestSources", "app:assembleDebug")
     }
 
     @AfterClass
@@ -76,7 +79,7 @@ class PlaceholderInLibsTest {
         assertEquals(1, output.getOutputs().size())
 
         List<String> apkBadging =
-                ApkHelper.getApkBadging(output.getOutputs().getAt(0).getOutputFile());
+                ApkHelper.getApkBadging(output.getOutputs().iterator().next().getOutputFile());
 
         for (String line : apkBadging) {
             if (line.contains("uses-permission: name=" +

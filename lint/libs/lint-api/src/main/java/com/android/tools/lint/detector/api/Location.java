@@ -18,6 +18,7 @@ package com.android.tools.lint.detector.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.res2.ResourceFile;
 import com.android.ide.common.res2.ResourceItem;
 import com.google.common.annotations.Beta;
@@ -186,6 +187,31 @@ public class Location {
     @NonNull
     public static Location create(@NonNull File file) {
         return new Location(file, null /*start*/, null /*end*/);
+    }
+
+    /**
+     * Creates a new location for the given file and SourcePosition.
+     *
+     * @param file the file containing the positions
+     * @param position the source position
+     * @return a new location
+     */
+    @NonNull
+    public static Location create(
+            @NonNull File file,
+            @NonNull SourcePosition position) {
+        if (position.equals(SourcePosition.UNKNOWN)) {
+            return new Location(file, null /*start*/, null /*end*/);
+        }
+        return new Location(file,
+                new DefaultPosition(
+                        position.getStartLine(),
+                        position.getStartColumn(),
+                        position.getStartOffset()),
+                new DefaultPosition(
+                        position.getEndLine(),
+                        position.getEndColumn(),
+                        position.getEndOffset()));
     }
 
     /**

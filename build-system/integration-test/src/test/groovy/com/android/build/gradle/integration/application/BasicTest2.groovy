@@ -35,6 +35,7 @@ import com.android.builder.model.ProductFlavor
 import com.android.builder.model.Variant
 import com.google.common.collect.Maps
 import com.google.common.collect.Sets
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -52,10 +53,11 @@ import static org.junit.Assert.assertTrue
 /**
  * Assemble tests for basic that loads the model but doesn't build.
  */
+@CompileStatic
 class BasicTest2 {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("basic")
+            .fromTestProject("basic")
             .create()
 
     static public AndroidProject model
@@ -282,12 +284,13 @@ class BasicTest2 {
     @Test
     @Category(DeviceTests.class)
     void install() {
+        GradleTestProject.assumeLocalDevice();
         project.execute("installDebug", "uninstallAll")
     }
 
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

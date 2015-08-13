@@ -1,48 +1,37 @@
-buildscript {
-    repositories {
-        maven { url = uri(rootProject.cloneArtifacts.repository) }
-    }
-    dependencies {
-        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.0"
-    }
-}
-
 apply plugin: 'groovy'
 apply plugin: 'clone-artifacts'
+
+configurations {
+    provided
+}
 
 sourceSets {
     main {
         groovy.srcDirs = ['src/main/groovy', 'src/fromGradle/groovy']
         resources.srcDirs = ['src/main/resources', 'src/fromGradle/resources']
+        compileClasspath += configurations.provided
     }
 }
 
-ext.proguardVersion = "5.1"
+ext.proguardVersion = "5.2.1"
 
 dependencies {
-    compile gradleApi()
-    compile localGroovy()
     compile project(':base:builder')
     compile project(':base:lint')
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
 
-    testCompile 'junit:junit:3.8.1'
+    // Add gradleApi to classpath for compilation, but use provided configuration so that groovy is
+    // not exposed as a runtime dependency.
+    provided gradleApi()
+    testCompile gradleApi()
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile project(':base:project-test-lib')
+    testCompile project(':base:testutils')
 }
 
-// configuration for dependencies provided by the runtime,
-// in this case proguard.
-configurations{
-    provided
-}
-
-dependencies{
-    provided "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
-}
-
-//Include provided for compilation
-sourceSets.main.compileClasspath += configurations.provided
-
+tasks.compileJava.dependsOn ":setupGradleInIde"
 
 group = 'com.android.tools.build'
 archivesBaseName = 'gradle-core'
@@ -72,6 +61,8 @@ groovydoc {
     header ""
     footer "Copyright (C) 2012 The Android Open Source Project"
     overview ""
+
+    groovyClasspath = configurations.provided
 }
 
 task javadocJar(type: Jar, dependsOn:groovydoc) {

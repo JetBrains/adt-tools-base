@@ -51,7 +51,7 @@ public class SettingsControllerTest extends AndroidLocationTestCase {
         m.loadSettings();
         Settings s = m.getSettings();
         assertFalse(s.getAskBeforeAdbRestart());
-        assertFalse(s.getEnablePreviews());
+        assertTrue(s.getEnablePreviews());
         assertFalse(s.getForceHttp());
         assertTrue (s.getShowUpdateOnly());
         assertTrue (s.getUseDownloadCache());
@@ -63,14 +63,14 @@ public class SettingsControllerTest extends AndroidLocationTestCase {
 
         Settings s1 = m.getSettings();
         assertFalse(s1.getAskBeforeAdbRestart());
-        assertFalse(s1.getEnablePreviews());
+        assertTrue (s1.getEnablePreviews());
         assertFalse(s1.getForceHttp());
         assertTrue (s1.getShowUpdateOnly());
         assertTrue (s1.getUseDownloadCache());
         assertEquals(-1, s1.getMonitorDensity());
 
         m.setSetting(ISettingsPage.KEY_ASK_ADB_RESTART, true);
-        m.setSetting(ISettingsPage.KEY_ENABLE_PREVIEWS, true);
+        m.setSetting(ISettingsPage.KEY_ENABLE_PREVIEWS, false);
         m.setSetting(ISettingsPage.KEY_FORCE_HTTP, true);
         m.setShowUpdateOnly(false);
         m.setSetting(ISettingsPage.KEY_USE_DOWNLOAD_CACHE, false);
@@ -79,7 +79,7 @@ public class SettingsControllerTest extends AndroidLocationTestCase {
         Settings s2 = m.getSettings();
         assertSame(s2, s1);
         assertTrue (s2.getAskBeforeAdbRestart());
-        assertTrue (s2.getEnablePreviews());
+        assertFalse(s2.getEnablePreviews());
         assertTrue (s2.getForceHttp());
         assertFalse(s2.getShowUpdateOnly());
         assertFalse(s2.getUseDownloadCache());
@@ -94,7 +94,7 @@ public class SettingsControllerTest extends AndroidLocationTestCase {
         Settings s3 = m3.getSettings();
         assertNotSame(s3, s1);
         assertTrue (s3.getAskBeforeAdbRestart());
-        assertTrue (s3.getEnablePreviews());
+        assertFalse(s3.getEnablePreviews());
         assertTrue (s3.getForceHttp());
         assertFalse(s3.getShowUpdateOnly());
         assertFalse(s3.getUseDownloadCache());

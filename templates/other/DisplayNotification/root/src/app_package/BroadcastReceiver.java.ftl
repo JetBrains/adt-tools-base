@@ -7,7 +7,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.widget.Toast;
-<#if applicationPackage??>import ${applicationPackage}.R;</#if>
+<#if applicationPackage??>
+import ${applicationPackage}.R;
+</#if>
 
 public class ${receiverClass} extends BroadcastReceiver {
     public static final String CONTENT_KEY = "contentText";
@@ -20,7 +22,7 @@ public class ${receiverClass} extends BroadcastReceiver {
         Intent displayIntent = new Intent(context, ${displayActivityClass}.class);
         String text = intent.getStringExtra(CONTENT_KEY);
         Notification notification = new Notification.Builder(context)
-                .setSmallIcon(R.drawable.ic_launcher)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(text)
                 .extend(new Notification.WearableExtender()
                         .setDisplayIntent(PendingIntent.getActivity(context, 0, displayIntent,

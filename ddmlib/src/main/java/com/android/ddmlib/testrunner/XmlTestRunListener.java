@@ -285,9 +285,11 @@ public class XmlTestRunListener implements ITestRunListener {
         serializer.attribute(ns, ATTR_TIME, Double.toString((double)elapsedTimeMs / 1000.f));
 
         switch (testResult.getStatus()) {
-            case FAILURE: // intentional fall through
-            case ASSUMPTION_FAILURE:
+            case FAILURE:
                 printFailedTest(serializer, FAILURE, testResult.getStackTrace());
+                break;
+            case ASSUMPTION_FAILURE:
+                printFailedTest(serializer, SKIPPED_TAG, testResult.getStackTrace());
                 break;
             case IGNORED:
                 serializer.startTag(ns, SKIPPED_TAG);

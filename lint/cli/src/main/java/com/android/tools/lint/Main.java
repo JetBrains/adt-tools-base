@@ -836,7 +836,7 @@ public class Main {
             "`$ lint --ignore UnusedResources,UselessLeaf /my/project/path`\n" +
             "\n" +
             "For more information, see " +
-            "http://tools.android.com/tips/lint/suppressing-lint-warnings\n";
+            "http://g.co/androidstudio/suppressing-lint-warnings\n";
     }
 
     private static void printVersion(LintCliClient client) {

@@ -36,8 +36,8 @@ import java.util.Set;
 
 class MultiFilesTask extends BuildTypedTask {
 
-    static enum DisplayType {
-        FOUND, COMPILING, REMOVE_OUTPUT, REMOVE_DEP;
+    enum DisplayType {
+        FOUND, COMPILING, REMOVE_OUTPUT, REMOVE_DEP
     }
 
     interface SourceProcessor {

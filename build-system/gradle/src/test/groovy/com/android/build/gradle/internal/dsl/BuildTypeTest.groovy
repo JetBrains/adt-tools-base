@@ -19,7 +19,7 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.internal.test.BaseTest
 import com.android.builder.core.BuilderConstants
-import com.android.builder.core.DefaultBuildType
+import com.android.builder.model.BuildType
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 
@@ -40,7 +40,7 @@ public class BuildTypeTest extends BaseTest {
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
-        DefaultBuildType type = plugin.variantManager.buildTypes.get(BuilderConstants.DEBUG).buildType
+        BuildType type = plugin.variantManager.buildTypes.get(BuilderConstants.DEBUG).buildType
 
         assertTrue(type.isDebuggable())
         assertFalse(type.isJniDebuggable())
@@ -62,7 +62,7 @@ public class BuildTypeTest extends BaseTest {
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
-        DefaultBuildType type = plugin.variantManager.buildTypes.get(BuilderConstants.RELEASE).buildType
+        BuildType type = plugin.variantManager.buildTypes.get(BuilderConstants.RELEASE).buildType
 
         assertFalse(type.isDebuggable())
         assertFalse(type.isJniDebuggable())
@@ -74,7 +74,8 @@ public class BuildTypeTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        BuildType object1 = new BuildType("foo", project, project.getLogger())
+        com.android.build.gradle.internal.dsl.BuildType object1 =
+                new com.android.build.gradle.internal.dsl.BuildType("foo", project, project.getLogger())
 
         // change every value from their default.
         object1.setDebuggable(true)
@@ -89,7 +90,8 @@ public class BuildTypeTest extends BaseTest {
         object1.setShrinkResources(true)
         object1.setUseJack(Boolean.FALSE)
 
-        BuildType object2 = new BuildType(object1.name, project, project.getLogger())
+        com.android.build.gradle.internal.dsl.BuildType object2 =
+                new com.android.build.gradle.internal.dsl.BuildType(object1.name, project, project.getLogger())
         object2.initWith(object1)
 
         assertEquals(object1, object2)

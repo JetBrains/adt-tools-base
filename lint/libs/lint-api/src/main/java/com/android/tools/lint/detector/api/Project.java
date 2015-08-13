@@ -46,6 +46,7 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.Variant;
+import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
@@ -121,6 +122,7 @@ public class Project {
     protected List<File> mJavaSourceFolders;
     protected List<File> mJavaClassFolders;
     protected List<File> mJavaLibraries;
+    protected List<File> mTestSourceFolders;
     protected List<File> mResourceFolders;
     protected List<Project> mDirectLibraries;
     protected List<Project> mAllLibraries;
@@ -129,6 +131,7 @@ public class Project {
     protected Boolean mSupportLib;
     protected Boolean mAppCompat;
     private Map<String, String> mSuperClassMap;
+    private ResourceVisibilityLookup mResourceVisibility;
 
     /**
      * Creates a new {@link Project} for the given directory.
@@ -445,6 +448,20 @@ public class Project {
         }
 
         return mJavaLibraries;
+    }
+
+    /**
+     * Returns the list of source folders for Java test source files
+     *
+     * @return a list of source folders to search for .java files
+     */
+    @NonNull
+    public List<File> getTestSourceFolders() {
+        if (mTestSourceFolders == null) {
+            mTestSourceFolders = mClient.getTestSourceFolders(this);
+        }
+
+        return mTestSourceFolders;
     }
 
     /**
@@ -1302,5 +1319,58 @@ public class Project {
                 }
             }
         }
+    }
+
+    /**
+     * Returns a shared {@link ResourceVisibilityLookup}
+     *
+     * @return a shared provider for looking up resource visibility
+     */
+    @NonNull
+    public ResourceVisibilityLookup getResourceVisibility() {
+        if (mResourceVisibility == null) {
+            if (isGradleProject()) {
+                AndroidProject project = getGradleProjectModel();
+                Variant variant = getCurrentVariant();
+                if (project != null && variant != null) {
+                    mResourceVisibility = mClient.getResourceVisibilityProvider().get(project,
+                            variant);
+
+                } else if (getGradleLibraryModel() != null) {
+                    try {
+                        mResourceVisibility = mClient.getResourceVisibilityProvider()
+                                .get(getGradleLibraryModel());
+                    } catch (Exception ignore) {
+                        // Handle talking to older Gradle plugins (where we don't
+                        // have access to the model version to check up front
+                    }
+                }
+            }
+            if (mResourceVisibility == null) {
+                mResourceVisibility = ResourceVisibilityLookup.NONE;
+            }
+        }
+
+        return mResourceVisibility;
+    }
+
+    /**
+     * Returns the associated client
+     *
+     * @return the client
+     */
+    @NonNull
+    public LintClient getClient() {
+        return mClient;
+    }
+
+    /**
+     * Returns the compile target to use for this project
+     *
+     * @return the compile target to use to build this project
+     */
+    @Nullable
+    public IAndroidTarget getCompileTarget() {
+        return mClient.getCompileTarget(this);
     }
 }

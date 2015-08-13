@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,20 +49,31 @@ public interface BaseConfig {
     Map<String, ClassField> getResValues();
 
     /**
-     * Returns the list of proguard rule files.
+     * Returns the collection of proguard rule files.
      *
-     * @return a non-null list of files.
+     * <p>These files are only applied to the production code.
+     *
+     * @return a non-null collection of files.
+     * @see #getTestProguardFiles()
      */
     @NonNull
     Collection<File> getProguardFiles();
 
     /**
-     * Returns the list of proguard rule files for consumers of the library to use.
+     * Returns the collection of proguard rule files for consumers of the library to use.
      *
-     * @return a non-null list of files.
+     * @return a non-null collection of files.
      */
     @NonNull
     Collection<File> getConsumerProguardFiles();
+
+    /**
+     * Returns the collection of proguard rule files to use for the test APK.
+     *
+     * @return a non-null collection of files.
+     */
+    @NonNull
+    Collection<File> getTestProguardFiles();
 
     /**
      * Returns the map of key value pairs for placeholder substitution in the android manifest file.
@@ -85,4 +97,14 @@ public interface BaseConfig {
 
     @Nullable
     File getMultiDexKeepProguard();
+
+    /**
+     * Returns the optional jarjar rule files, or empty if jarjar should be skipped.
+     * If more than one file is provided, the rule files will be merged in order with last one
+     * win in case of rule redefinition.
+     * Can only be used with Jack toolchain.
+     * @return the optional jarjar rule file.
+     */
+    @NonNull
+    List<File> getJarJarRuleFiles();
 }

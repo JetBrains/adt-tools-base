@@ -27,8 +27,8 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
 import com.google.common.truth.FailureStrategy;
-import com.google.common.truth.ListSubject;
-import com.google.common.truth.Subject;
+import com.google.common.truth.IterableSubject;
+import com.google.common.truth.SubjectFactory;
 import com.google.common.truth.Truth;
 
 import junit.framework.Assert;
@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
 /**
  * Truth support for apk files.
  */
-public class ApkSubject extends Subject<ApkSubject, File> {
+public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
 
     private static final Pattern PATTERN_CLASS_DESC = Pattern.compile(
             "^Class descriptor\\W*:\\W*'(L.+;)'$");
@@ -50,12 +50,31 @@ public class ApkSubject extends Subject<ApkSubject, File> {
     private static final Pattern PATTERN_MAX_SDK_VERSION = Pattern.compile(
             "^maxSdkVersion\\W*:\\W*'(.+)'$");
 
-    public ApkSubject(FailureStrategy failureStrategy, File subject) {
+    static class Factory extends SubjectFactory<ApkSubject, File> {
+        @NonNull
+        public static Factory get() {
+            return new Factory();
+        }
+
+        private Factory() {}
+
+        @Override
+        public ApkSubject getSubject(
+                @NonNull FailureStrategy failureStrategy,
+                @NonNull File subject) {
+            return new ApkSubject(failureStrategy, subject);
+        }
+    }
+
+
+    public ApkSubject(
+            @NonNull FailureStrategy failureStrategy,
+            @NonNull File subject) {
         super(failureStrategy, subject);
     }
 
     @NonNull
-    public ListSubject locales() throws ProcessException {
+    public IterableSubject<? extends IterableSubject<?, String, List<String>>, String, List<String>> locales() throws ProcessException {
         File apk = getSubject();
         List<String> locales = ApkHelper.getLocales(apk);
 
@@ -64,19 +83,6 @@ public class ApkSubject extends Subject<ApkSubject, File> {
         }
 
         return Truth.assertThat(locales);
-    }
-
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void containsClass(String className) throws IOException, ProcessException {
-        if (!checkForClass(className)) {
-            failWithRawMessage("'%s' does not contain '%s'", getDisplaySubject(), className);
-        }
-    }
-
-    public void doesNotContainClass(String className) throws IOException, ProcessException {
-        if (checkForClass(className)) {
-            failWithRawMessage("'%s' unexpectedly contains '%s'", getDisplaySubject(), className);
-        }
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
@@ -96,7 +102,7 @@ public class ApkSubject extends Subject<ApkSubject, File> {
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void hasVersionName(String versionName) throws ProcessException {
+    public void hasVersionName(@NonNull String versionName) throws ProcessException {
         File apk = getSubject();
 
         ApkInfoParser.ApkInfo apkInfo = getApkInfo(apk);
@@ -129,7 +135,8 @@ public class ApkSubject extends Subject<ApkSubject, File> {
      * Returns true if the provided class is present in the file.
      * @param expectedClassName the class name in the format Lpkg1/pk2/Name;
      */
-    private boolean checkForClass(
+    @Override
+    protected boolean checkForClass(
             @NonNull String expectedClassName)
             throws ProcessException, IOException {
         // get the dexdump exec
@@ -157,7 +164,7 @@ public class ApkSubject extends Subject<ApkSubject, File> {
     }
 
     @NonNull
-    private static ApkInfoParser.ApkInfo getApkInfo(File apk) throws ProcessException {
+    private static ApkInfoParser.ApkInfo getApkInfo(@NonNull File apk) throws ProcessException {
         ProcessExecutor processExecutor = new DefaultProcessExecutor(
                 new StdLogger(StdLogger.Level.ERROR));
         ApkInfoParser parser = new ApkInfoParser(SdkHelper.getAapt(), processExecutor);
@@ -165,7 +172,7 @@ public class ApkSubject extends Subject<ApkSubject, File> {
     }
 
     @VisibleForTesting
-    void checkMaxSdkVersion(List<String> output, int maxSdkVersion) {
+    void checkMaxSdkVersion(@NonNull List<String> output, int maxSdkVersion) {
         for (String line : output) {
             Matcher m = PATTERN_MAX_SDK_VERSION.matcher(line.trim());
             if (m.matches()) {

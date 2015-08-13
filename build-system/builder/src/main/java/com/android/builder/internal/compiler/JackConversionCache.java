@@ -24,6 +24,7 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
+import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.io.Files;
 
@@ -90,7 +91,8 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
             @NonNull BuildToolInfo buildToolInfo,
             boolean verbose,
             @NonNull JavaProcessExecutor processExecutor,
-            @NonNull ProcessOutputHandler processOutputHandler)
+            @NonNull ProcessOutputHandler processOutputHandler,
+            @NonNull ILogger logger)
             throws ProcessException, InterruptedException, IOException {
 
         Key itemKey = Key.of(inputFile, buildToolInfo.getRevision());
@@ -102,14 +104,15 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
         if (pair.getSecond()) {
             try {
                 // haven't process this file yet so do it and record it.
-                List<File> files = AndroidBuilder.convertLibraryToJack(
+                List<File> files = AndroidBuilder.convertLibaryToJackUsingApis(
                         inputFile,
                         outFile,
                         dexOptions,
                         buildToolInfo,
                         verbose,
                         processExecutor,
-                        processOutputHandler);
+                        processOutputHandler,
+                        logger);
                 item.getOutputFiles().addAll(files);
 
                 incrementMisses();

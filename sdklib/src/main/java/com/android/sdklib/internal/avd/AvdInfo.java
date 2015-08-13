@@ -42,7 +42,7 @@ public final class AvdInfo implements Comparable<AvdInfo> {
     /**
      * Status for an {@link AvdInfo}. Indicates whether or not this AVD is valid.
      */
-    public static enum AvdStatus {
+    public enum AvdStatus {
         /** No error */
         OK,
         /** Missing 'path' property in the ini file */

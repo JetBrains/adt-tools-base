@@ -2,9 +2,7 @@ apply from: "../commonHeader.gradle"
 buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 apply plugin: 'com.android.application'
 
-repositories {
-  mavenCentral()
-}
+apply from: "../commonLocalRepo.gradle"
 
 android {
     compileSdkVersion 19

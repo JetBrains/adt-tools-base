@@ -20,7 +20,7 @@ import java.io.File;
 
 public class FileValidity<S extends DataSet> {
 
-    public static enum FileStatus {
+    public enum FileStatus {
         VALID_FILE,
         IGNORED_FILE,
         UNKNOWN_FILE
@@ -40,5 +40,11 @@ public class FileValidity<S extends DataSet> {
 
     public File getSourceFile() {
         return sourceFile;
+    }
+
+    public void clear() {
+        dataSet = null;
+        sourceFile = null;
+        status = FileStatus.UNKNOWN_FILE;
     }
 }

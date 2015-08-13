@@ -20,7 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.internal.repository.packages.License;
+import com.android.sdklib.repository.License;
 import com.android.sdklib.repository.MajorRevision;
 
 /**

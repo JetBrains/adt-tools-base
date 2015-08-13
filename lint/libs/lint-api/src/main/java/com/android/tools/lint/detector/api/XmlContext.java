@@ -23,6 +23,7 @@ import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.XmlParser;
 import com.google.common.annotations.Beta;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -75,6 +76,28 @@ public class XmlContext extends ResourceContext {
     @NonNull
     public Location getLocation(@NonNull Node node) {
         return mParser.getLocation(this, node);
+    }
+
+    /**
+     * Returns the location for name-portion of the given element or attribute.
+     *
+     * @param node the node to look up the location for
+     * @return the location for the node
+     */
+    @NonNull
+    public Location getNameLocation(@NonNull Node node) {
+        return mParser.getNameLocation(this, node);
+    }
+
+    /**
+     * Returns the location for value-portion of the given attribute
+     *
+     * @param node the node to look up the location for
+     * @return the location for the node
+     */
+    @NonNull
+    public Location getValueLocation(@NonNull Attr node) {
+        return mParser.getValueLocation(this, node);
     }
 
     /**

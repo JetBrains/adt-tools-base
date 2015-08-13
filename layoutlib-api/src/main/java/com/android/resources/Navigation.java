@@ -30,7 +30,7 @@ public enum Navigation implements ResourceEnum {
     private final String mShortDisplayValue;
     private final String mLongDisplayValue;
 
-    private Navigation(String value, String shortDisplayValue, String longDisplayValue) {
+    Navigation(String value, String shortDisplayValue, String longDisplayValue) {
         mValue = value;
         mShortDisplayValue = shortDisplayValue;
         mLongDisplayValue = longDisplayValue;

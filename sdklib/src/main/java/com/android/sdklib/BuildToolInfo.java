@@ -85,6 +85,10 @@ public class BuildToolInfo {
      */
     private static final String PROP_RUNTIME_JVM = "Runtime.Jvm";
 
+    /**
+     * First version with native multi-dex support.
+     */
+    public static final int SDK_LEVEL_FOR_MULTIDEX_NATIVE_SUPPORT = 21;
 
     public enum PathId {
         /** OS Path to the target's version of the aapt tool. */

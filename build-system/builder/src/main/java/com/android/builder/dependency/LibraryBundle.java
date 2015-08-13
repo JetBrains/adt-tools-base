@@ -16,6 +16,17 @@
 
 package com.android.builder.dependency;
 
+import static com.android.SdkConstants.FD_AIDL;
+import static com.android.SdkConstants.FD_ASSETS;
+import static com.android.SdkConstants.FD_JARS;
+import static com.android.SdkConstants.FD_RES;
+import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
+import static com.android.SdkConstants.FN_CLASSES_JAR;
+import static com.android.SdkConstants.FN_PUBLIC_TXT;
+import static com.android.SdkConstants.FN_RESOURCE_TEXT;
+import static com.android.SdkConstants.LIBS_FOLDER;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -65,11 +76,6 @@ public abstract class LibraryBundle implements LibraryDependency {
         return mName;
     }
 
-    @Override
-    public String toString() {
-        return mName;
-    }
-
     @Nullable
     @Override
     public String getProject() {
@@ -85,13 +91,13 @@ public abstract class LibraryBundle implements LibraryDependency {
     @Override
     @NonNull
     public File getManifest() {
-        return new File(mBundleFolder, SdkConstants.FN_ANDROID_MANIFEST_XML);
+        return new File(mBundleFolder, FN_ANDROID_MANIFEST_XML);
     }
 
     @Override
     @NonNull
     public File getSymbolFile() {
-        return new File(mBundleFolder, "R.txt");
+        return new File(mBundleFolder, FN_RESOURCE_TEXT);
     }
 
     @Override
@@ -109,7 +115,7 @@ public abstract class LibraryBundle implements LibraryDependency {
     @Override
     @NonNull
     public File getJarFile() {
-        return new File(mBundleFolder, SdkConstants.FN_CLASSES_JAR);
+        return new File(getJarsRootFolder(), FN_CLASSES_JAR);
     }
 
     @Override
@@ -128,7 +134,7 @@ public abstract class LibraryBundle implements LibraryDependency {
     @Override
     public List<File> getLocalJars() {
         List<File> localJars = Lists.newArrayList();
-        File[] jarList = new File(mBundleFolder, SdkConstants.LIBS_FOLDER).listFiles();
+        File[] jarList = new File(getJarsRootFolder(), LIBS_FOLDER).listFiles();
         if (jarList != null) {
             for (File jars : jarList) {
                 if (jars.isFile() && jars.getName().endsWith(".jar")) {
@@ -143,13 +149,13 @@ public abstract class LibraryBundle implements LibraryDependency {
     @Override
     @NonNull
     public File getResFolder() {
-        return new File(mBundleFolder, SdkConstants.FD_RES);
+        return new File(mBundleFolder, FD_RES);
     }
 
     @Override
     @NonNull
     public File getAssetsFolder() {
-        return new File(mBundleFolder, SdkConstants.FD_ASSETS);
+        return new File(mBundleFolder, FD_ASSETS);
     }
 
     @Override
@@ -161,7 +167,7 @@ public abstract class LibraryBundle implements LibraryDependency {
     @Override
     @NonNull
     public File getAidlFolder() {
-        return new File(mBundleFolder, SdkConstants.FD_AIDL);
+        return new File(mBundleFolder, FD_AIDL);
     }
 
     @Override
@@ -179,7 +185,19 @@ public abstract class LibraryBundle implements LibraryDependency {
     @Override
     @NonNull
     public File getLintJar() {
-        return new File(mBundleFolder, "lint.jar");
+        return new File(getJarsRootFolder(), "lint.jar");
+    }
+
+    @Override
+    @NonNull
+    public File getExternalAnnotations() {
+        return new File(mBundleFolder, FN_ANNOTATIONS_ZIP);
+    }
+
+    @Override
+    @NonNull
+    public File getPublicResources() {
+        return new File(mBundleFolder, FN_PUBLIC_TXT);
     }
 
     @NonNull
@@ -187,18 +205,36 @@ public abstract class LibraryBundle implements LibraryDependency {
         return mBundleFolder;
     }
 
+    @NonNull
+    protected File getJarsRootFolder() {
+        return new File(mBundleFolder, FD_JARS);
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         LibraryBundle that = (LibraryBundle) o;
-
-        return Objects.equal(mName, that.mName);
+        return Objects.equal(mName, that.mName) &&
+                Objects.equal(mProjectPath, that.mProjectPath);
     }
 
     @Override
     public int hashCode() {
-        return mName != null ? mName.hashCode() : 0;
+        return Objects.hashCode(mName, mProjectPath);
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("mBundle", mBundle)
+                .add("mBundleFolder", mBundleFolder)
+                .add("mName", mName)
+                .add("mProjectPath", mProjectPath)
+                .toString();
     }
 }

@@ -36,7 +36,7 @@ import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
 public class ${detailsFragment} extends DetailsFragment {
-    private static final String TAG = "${detailsFragment}";
+    private static final String TAG = "${truncate(detailsFragment,23)}";
 
     private static final int ACTION_WATCH_TRAILER = 1;
     private static final int ACTION_RENT = 2;
@@ -78,7 +78,6 @@ public class ${detailsFragment} extends DetailsFragment {
         mDetailRowBuilderTask = (DetailRowBuilderTask) new DetailRowBuilderTask().execute(mSelectedMovie);
         mDorPresenter.setSharedElementEnterTransition(getActivity(),
                 ${detailsActivity}.SHARED_ELEMENT_NAME);
-
 
         updateBackground(mSelectedMovie.getBackgroundImageURI());
         setOnItemViewClickedListener(new ItemViewClickedListener());
@@ -155,7 +154,12 @@ public class ${detailsFragment} extends DetailsFragment {
                 listRowAdapter.add(list.get(j % 5));
             }
 
-            HeaderItem header = new HeaderItem(0, subcategories[0], null);
+            <#if buildApi gte 22>
+                HeaderItem header = new HeaderItem(0, subcategories[0]);
+            <#else>
+                HeaderItem header = new HeaderItem(0, subcategories[0], null);
+            </#if>
+
             adapter.add(new ListRow(header, listRowAdapter));
 
             setAdapter(adapter);

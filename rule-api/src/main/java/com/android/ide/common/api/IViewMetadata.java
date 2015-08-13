@@ -42,7 +42,7 @@ public interface IViewMetadata {
      * @return the user visible name of views of this type (never null)
      */
     @NonNull
-    public String getDisplayName();
+    String getDisplayName();
 
     /**
      * Gets the insets for this view
@@ -50,7 +50,7 @@ public interface IViewMetadata {
      * @return the insets for this view
      */
     @NonNull
-    public Margins getInsets();
+    Margins getInsets();
 
     /**
      * Returns the {@link FillPreference} of this view
@@ -59,7 +59,7 @@ public interface IViewMetadata {
      *     {@link FillPreference#NONE}
      */
     @NonNull
-    public FillPreference getFillPreference();
+    FillPreference getFillPreference();
 
     /**
      * Returns the most common attributes for this view.
@@ -68,14 +68,14 @@ public interface IViewMetadata {
      *         are commonly set for this type of view, never null
      */
     @NonNull
-    public List<String> getTopAttributes();
+    List<String> getTopAttributes();
 
     /**
      * Types of fill behavior that views can prefer.
      * <p>
      * TODO: Consider better names. FillPolicy? Stretchiness?
      */
-    public enum FillPreference {
+    enum FillPreference {
         /** This view does not want to fill */
         NONE,
         /** This view wants to always fill both horizontal and vertical */

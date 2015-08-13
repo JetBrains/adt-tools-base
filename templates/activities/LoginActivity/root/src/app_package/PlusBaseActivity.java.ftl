@@ -1,22 +1,23 @@
 package ${packageName};
 
+import ${superClassFqcn};
 import android.content.Intent;
 import android.content.IntentSender;
 import android.os.Bundle;
-<#if minApiLevel lt 14>import android.support.v7.app.ActionBarActivity;</#if>
-<#if minApiLevel gte 14>import android.app.Activity;</#if>
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.common.Scopes;
 import com.google.android.gms.plus.PlusClient;
-<#if applicationPackage??>import ${applicationPackage}.R;</#if>
+<#if applicationPackage??>
+import ${applicationPackage}.R;
+</#if>
 
 /**
  * A base class to wrap communication with the Google Play Services PlusClient.
  */
-public abstract class PlusBaseActivity extends <#if minApiLevel lt 14>ActionBar</#if>Activity
+public abstract class PlusBaseActivity extends ${superClass}
         implements GooglePlayServicesClient.ConnectionCallbacks,
         GooglePlayServicesClient.OnConnectionFailedListener {
 
@@ -38,7 +39,6 @@ public abstract class PlusBaseActivity extends <#if minApiLevel lt 14>ActionBar<
     // attempt has been made, this is non-null.
     // If this IS null, then the connect method is still running.
     private ConnectionResult mConnectionResult;
-
 
     /**
      * Called when the {@link PlusClient} revokes access to this app.

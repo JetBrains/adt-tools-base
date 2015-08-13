@@ -216,7 +216,7 @@ public interface INode {
      * @return the {@link IAttributeInfo} if the attribute is known, or <code>null</code>.
      */
     @Nullable
-    public IAttributeInfo getAttributeInfo(@Nullable String uri, @NonNull String attrName);
+    IAttributeInfo getAttributeInfo(@Nullable String uri, @NonNull String attrName);
 
     /**
      * Returns the list of all attributes declared by this node's descriptor.
@@ -236,7 +236,7 @@ public interface INode {
      * @return A non-null possibly-empty list of {@link IAttributeInfo}.
      */
     @NonNull
-    public IAttributeInfo[] getDeclaredAttributes();
+    IAttributeInfo[] getDeclaredAttributes();
 
     /**
      * Returns the list of classes (fully qualified class names) that are
@@ -251,7 +251,7 @@ public interface INode {
      *         contribute attributes.
      */
     @NonNull
-    public List<String> getAttributeSources();
+    List<String> getAttributeSources();
 
     /**
      * Returns the list of all attributes defined in the XML for this node.
@@ -267,7 +267,7 @@ public interface INode {
      * @return A non-null possibly-empty list of {@link IAttribute}.
      */
     @NonNull
-    public IAttribute[] getLiveAttributes();
+    IAttribute[] getLiveAttributes();
 
     // -----------
 
@@ -278,5 +278,5 @@ public interface INode {
      * The namespace URI can be empty for an attribute without a namespace but is never null.
      * The value can be empty but cannot be null.
      */
-    public static interface IAttribute extends IDragAttribute { }
+    interface IAttribute extends IDragAttribute { }
 }

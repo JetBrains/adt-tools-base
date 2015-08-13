@@ -16,6 +16,12 @@
 
 package com.android.sdklib.internal.repository;
 
+/**
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
+ */
+@Deprecated
 public class UserCredentials {
     private final String mUserName;
     private final String mPassword;

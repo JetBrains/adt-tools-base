@@ -28,6 +28,7 @@ import com.android.builder.model.Variant
 import com.google.common.base.Charsets
 import com.google.common.collect.Maps
 import com.google.common.io.Files
+import groovy.transform.CompileStatic
 import junit.framework.Assert
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -41,15 +42,17 @@ import static org.junit.Assert.assertNotNull
  * Test for BuildConfig field declared in build type, flavors, and variant and how they
  * override each other
  */
+@CompileStatic
 class BuildConfigTest {
     @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder().create()
+    public static GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldApp())
+            .create()
 
     private static AndroidProject model
 
     @BeforeClass
     static void setUp() {
-        new HelloWorldApp().writeSources(project.testDir)
         project.getBuildFile() << """
             apply plugin: 'com.android.application'
 

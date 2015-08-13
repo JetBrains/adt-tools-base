@@ -32,19 +32,15 @@ import static com.android.tools.lint.checks.GradleDetector.getNamedDependency;
 import static com.android.tools.lint.checks.GradleDetector.getNewValue;
 import static com.android.tools.lint.checks.GradleDetector.getOldValue;
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
-import static org.easymock.EasyMock.createNiceMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidLibrary;
-import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.MavenCoordinates;
-import com.android.builder.model.ProductFlavor;
-import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.Variant;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Context;
@@ -80,7 +76,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -468,7 +463,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
         mEnabled = Collections.singleton(REMOTE_VERSION);
         try {
             HashMap<String, String> data = Maps.newHashMap();
-            GradleDetector.ourMockData = data;
+            GradleDetector.sMockData = data;
             data.put("http://search.maven.org/solrsearch/select?q=g:%22joda-time%22+AND+a:%22joda-time%22&core=gav&rows=1&wt=json",
                     "{\"responseHeader\":{\"status\":0,\"QTime\":1,\"params\":{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"joda-time\\\" AND a:\\\"joda-time\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"rows\":\"1\",\"version\":\"2.2\"}},\"response\":{\"numFound\":17,\"start\":0,\"docs\":[{\"id\":\"joda-time:joda-time:2.3\",\"g\":\"joda-time\",\"a\":\"joda-time\",\"v\":\"2.3\",\"p\":\"jar\",\"timestamp\":1376674285000,\"tags\":[\"replace\",\"time\",\"library\",\"date\",\"handling\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\".pom\"]}]}}");
             data.put("http://search.maven.org/solrsearch/select?q=g:%22com.squareup.dagger%22+AND+a:%22dagger%22&core=gav&rows=1&wt=json",
@@ -485,7 +480,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
                     lintProject("gradle/RemoteVersions.gradle=>build.gradle"));
         } finally {
-            GradleDetector.ourMockData = null;
+            GradleDetector.sMockData = null;
         }
     }
 
@@ -494,7 +489,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
         mEnabled = Collections.singleton(REMOTE_VERSION);
         try {
             HashMap<String, String> data = Maps.newHashMap();
-            GradleDetector.ourMockData = data;
+            GradleDetector.sMockData = data;
             data.put("http://search.maven.org/solrsearch/select?q=g:%22com.google.guava%22+AND+a:%22guava%22&core=gav&rows=1&wt=json",
                     "{\"responseHeader\":{\"status\":0,\"QTime\":0,\"params\":{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.google.guava\\\" AND a:\\\"guava\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"rows\":\"1\",\"version\":\"2.2\"}},\"response\":{\"numFound\":38,\"start\":0,\"docs\":[{\"id\":\"com.google.guava:guava:18.0-rc1\",\"g\":\"com.google.guava\",\"a\":\"guava\",\"v\":\"18.0-rc1\",\"p\":\"bundle\",\"timestamp\":1407266204000,\"tags\":[\"spec\",\"libraries\",\"classes\",\"google\",\"code\",\"expanded\",\"much\",\"include\",\"annotation\",\"dependency\",\"that\",\"more\",\"utility\",\"guava\",\"javax\",\"only\",\"core\",\"suite\",\"collections\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\".jar\",\"-site.jar\",\".pom\"]}]}}");
             data.put("http://search.maven.org/solrsearch/select?q=g:%22com.google.guava%22+AND+a:%22guava%22&core=gav&wt=json",
@@ -511,7 +506,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
                     lintProject("gradle/RemoteVersions2.gradle=>build.gradle"));
         } finally {
-            GradleDetector.ourMockData = null;
+            GradleDetector.sMockData = null;
         }
     }
 
@@ -662,28 +657,23 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
                         com.google.android.gms:play-services-wearable:5.0.77"
                          */
-                        MavenCoordinates coordinates = createNiceMock(MavenCoordinates.class);
-                        expect(coordinates.getGroupId()).andReturn("com.google.android.gms").anyTimes();
-                        expect(coordinates.getArtifactId()).andReturn("play-services-wearable").anyTimes();
-                        expect(coordinates.getVersion()).andReturn("5.0.77").anyTimes();
-                        replay(coordinates);
+                        MavenCoordinates coordinates = mock(MavenCoordinates.class);
+                        when(coordinates.getGroupId()).thenReturn("com.google.android.gms");
+                        when(coordinates.getArtifactId()).thenReturn("play-services-wearable");
+                        when(coordinates.getVersion()).thenReturn("5.0.77");
 
-                        AndroidLibrary library = createNiceMock(AndroidLibrary.class);
-                        expect(library.getResolvedCoordinates()).andReturn(coordinates).anyTimes();
-                        replay(library);
+                        AndroidLibrary library = mock(AndroidLibrary.class);
+                        when(library.getResolvedCoordinates()).thenReturn(coordinates);
                         List<AndroidLibrary> libraries = Collections.singletonList(library);
 
-                        Dependencies dependencies = createNiceMock(Dependencies.class);
-                        expect(dependencies.getLibraries()).andReturn(libraries).anyTimes();
-                        replay(dependencies);
+                        Dependencies dependencies = mock(Dependencies.class);
+                        when(dependencies.getLibraries()).thenReturn(libraries);
 
-                        AndroidArtifact artifact = createNiceMock(AndroidArtifact.class);
-                        expect(artifact.getDependencies()).andReturn(dependencies).anyTimes();
-                        replay(artifact);
+                        AndroidArtifact artifact = mock(AndroidArtifact.class);
+                        when(artifact.getDependencies()).thenReturn(dependencies);
 
-                        Variant variant = createNiceMock(Variant.class);
-                        expect(variant.getMainArtifact()).andReturn(artifact).anyTimes();
-                        replay(variant);
+                        Variant variant = mock(Variant.class);
+                        when(variant.getMainArtifact()).thenReturn(artifact);
                         return variant;
                     }
                 };

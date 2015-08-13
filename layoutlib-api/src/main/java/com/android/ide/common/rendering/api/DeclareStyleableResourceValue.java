@@ -16,57 +16,69 @@
 
 package com.android.ide.common.rendering.api;
 
+import com.android.annotations.NonNull;
 import com.android.resources.ResourceType;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * A Resource value representing a declare-styleable resource.
  *
- * {@link #getValue()} will return null, instead use {@link #getAttributeValues(String)} to
- * get the enum/flag value associated with an attribute defined in the declare-styleable.
- *
- * @deprecated This class is broken as it does not handle the namespace for each attribute.
- * Thankfully, newer versions of layoutlib don't actually use it, so we just keep it as is for
- * backward compatibility on older layoutlibs.
- *
+ * {@link #getValue()} will return null, instead use {@link #getAllAttributes()} to
+ * get the list of attributes defined in the declare-styleable.
  */
-@Deprecated
 public class DeclareStyleableResourceValue extends ResourceValue {
 
+    /** Used only for {@link #getAttributeValues(String)}, which is used only by old LayoutLibs. */
+    @Deprecated
     private Map<String, AttrResourceValue> mAttrMap;
 
-    public DeclareStyleableResourceValue(ResourceType type, String name, boolean isFramework) {
+    @NonNull
+    private List<AttrResourceValue> mAttrs = new ArrayList<AttrResourceValue>();
+
+    public DeclareStyleableResourceValue(@NonNull ResourceType type, @NonNull String name,
+            boolean isFramework) {
         super(type, name, isFramework);
+        assert type == ResourceType.DECLARE_STYLEABLE;
     }
 
     /**
      * Return the enum/flag integer value for a given attribute.
+     *
      * @param name the name of the attribute
      * @return the map of (name, integer) values.
+     * @deprecated the method doesn't respect namespaces and is only present for older versions
+     *             of LayoutLibs.
      */
+    @Deprecated
     public Map<String, Integer> getAttributeValues(String name) {
+        if (mAttrMap == null && !mAttrs.isEmpty()) {
+            // Preserve insertion order. This order affects the int[] indices for styleables.
+            mAttrMap = new LinkedHashMap<String, AttrResourceValue>(mAttrs.size());
+            for (AttrResourceValue attr : mAttrs) {
+                mAttrMap.put(attr.getName(), attr);
+            }
+        }
         if (mAttrMap != null) {
             AttrResourceValue attr = mAttrMap.get(name);
             if (attr != null) {
                 return attr.getAttributeValues();
             }
         }
-
         return null;
     }
 
-    public Map<String, AttrResourceValue> getAllAttributes() {
-        return mAttrMap;
+    @NonNull
+    public List<AttrResourceValue> getAllAttributes() {
+        return mAttrs;
     }
 
-    public void addValue(AttrResourceValue attr) {
-        if (mAttrMap == null) {
-            // Preserve insertion order. This order affects the int[] indices for styleables.
-            mAttrMap = new LinkedHashMap<String, AttrResourceValue>();
-        }
-
-        mAttrMap.put(attr.getName(), attr);
+    public void addValue(@NonNull AttrResourceValue attr) {
+        assert attr.isFramework() || !isFramework()
+                : "Can't add non-framework attributes to framework resource.";
+        mAttrs.add(attr);
     }
 }

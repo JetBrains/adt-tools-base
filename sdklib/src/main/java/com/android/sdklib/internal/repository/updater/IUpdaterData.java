@@ -26,19 +26,24 @@ import com.android.utils.ILogger;
 /**
  * Interface used to retrieve some parameters from an {@link UpdaterData} instance.
  * Useful mostly for unit tests purposes.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public interface IUpdaterData {
 
-    public abstract ITaskFactory getTaskFactory();
+    ITaskFactory getTaskFactory();
 
-    public abstract ILogger getSdkLog();
+    ILogger getSdkLog();
 
-    public abstract DownloadCache getDownloadCache();
+    DownloadCache getDownloadCache();
 
-    public abstract SdkManager getSdkManager();
+    SdkManager getSdkManager();
 
-    public abstract AvdManager getAvdManager();
+    AvdManager getAvdManager();
 
-    public abstract SettingsController getSettingsController();
+    SettingsController getSettingsController();
 
 }

@@ -26,7 +26,12 @@ import com.android.sdklib.AndroidVersion;
  * The {@link IPlatformDependency} denotes that a given package can only be installed if the
  * requested platform is present, whereas this interface denotes that the given package simply
  * has a version, which is not necessarily a dependency.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public interface IAndroidVersionProvider {
 
     /**
@@ -34,5 +39,5 @@ public interface IAndroidVersionProvider {
      * Can be 0 if this is a local package of unknown api-level.
      */
     @NonNull
-    public abstract AndroidVersion getAndroidVersion();
+    AndroidVersion getAndroidVersion();
 }

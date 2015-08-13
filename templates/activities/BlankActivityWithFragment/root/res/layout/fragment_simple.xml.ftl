@@ -6,7 +6,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:paddingBottom="@dimen/activity_vertical_margin"
-    tools:context="${relativePackage}.${activityClass}$PlaceholderFragment">
+    tools:context="${relativePackage}.${fragmentClass}">
 
     <TextView
         android:text="@string/hello_world"

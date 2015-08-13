@@ -61,6 +61,21 @@ public interface AndroidProject {
     String getModelVersion();
 
     /**
+     * Returns the model api version.
+     * <p/>
+     * This is different from {@link #getModelVersion()} in a way that new model
+     * version might increment model version but keep existing api. That means that
+     * code which was built against particular 'api version' might be safely re-used for all
+     * new model versions as long as they don't change the api.
+     * <p/>
+     * Every new model version is assumed to return an 'api version' value which
+     * is equal or greater than the value used by the previous model version.
+     *
+     * @return model's api version
+     */
+    int getApiVersion();
+
+    /**
      * Returns the name of the module.
      *
      * @return the name of the module.
@@ -110,6 +125,14 @@ public interface AndroidProject {
     Collection<Variant> getVariants();
 
     /**
+     * Returns a list of all the flavor dimensions, may be empty.
+     *
+     * @return a list of the flavor dimensions.
+     */
+    @NonNull
+    Collection<String> getFlavorDimensions();
+
+    /**
      * Returns a list of extra artifacts meta data. This does not include the main artifact.
      *
      * @return a list of extra artifacts
@@ -140,6 +163,14 @@ public interface AndroidProject {
      */
     @NonNull
     Collection<File> getFrameworkSources();
+
+    /**
+     * Returns the collection of toolchains used to create any native libraries.
+     *
+     * @return collection of toolchains.
+     */
+    @NonNull
+    Collection<NativeToolchain> getNativeToolchains();
 
     /**
      * Returns a list of {@link SigningConfig}.

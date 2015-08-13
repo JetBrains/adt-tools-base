@@ -116,9 +116,9 @@ public class XmlAttributeTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+                TestUtils.sourceFile(getClass(), "higherPriority"), higherPriority);
         XmlDocument otherDocument = TestUtils.xmlLibraryFromString(
-                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+                TestUtils.sourceFile(getClass(), "lowerPriority"), lowerPriority);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
                 new StdLogger(StdLogger.Level.VERBOSE));
@@ -149,7 +149,7 @@ public class XmlAttributeTest extends TestCase {
         Actions.AttributeRecord attributeRecord = attributeRecords.get(0);
         assertEquals(Actions.ActionType.REJECTED, attributeRecord.getActionType());
         assertEquals(AttributeOperationType.REMOVE, attributeRecord.getOperationType());
-        assertEquals(7, attributeRecord.getActionLocation().getPosition().getLine());
+        assertEquals(6, attributeRecord.getActionLocation().getPosition().getStartLine());
     }
 
     public void testNamespaceAwareAttributeRemoval()
@@ -177,9 +177,9 @@ public class XmlAttributeTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+                TestUtils.sourceFile(getClass(), "higherPriority"), higherPriority);
         XmlDocument otherDocument = TestUtils.xmlLibraryFromString(
-                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+                TestUtils.sourceFile(getClass(), "lowerPriority"), lowerPriority);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
                 new StdLogger(StdLogger.Level.VERBOSE));
@@ -226,9 +226,9 @@ public class XmlAttributeTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+                TestUtils.sourceFile(getClass(), "higherPriority"), higherPriority);
         XmlDocument otherDocument = TestUtils.xmlLibraryFromString(
-                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+                TestUtils.sourceFile(getClass(), "lowerPriority"), lowerPriority);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
                 new StdLogger(StdLogger.Level.VERBOSE));
@@ -287,11 +287,11 @@ public class XmlAttributeTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument highPriority = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "highPriority"), higherPriority);
+                TestUtils.sourceFile(getClass(), "highPriority"), higherPriority);
         XmlDocument lowPriority = TestUtils.xmlLibraryFromString(
-                new TestUtils.TestSourceLocation(getClass(), "lowPriority"), lowerPriority);
+                TestUtils.sourceFile(getClass(), "lowPriority"), lowerPriority);
         XmlDocument lowestPriority = TestUtils.xmlLibraryFromString(
-                new TestUtils.TestSourceLocation(getClass(), "lowestPriority"), evenLowerPriority);
+                TestUtils.sourceFile(getClass(), "lowestPriority"), evenLowerPriority);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
                 new StdLogger(StdLogger.Level.VERBOSE));
@@ -329,15 +329,15 @@ public class XmlAttributeTest extends TestCase {
         assertEquals(Actions.ActionType.REJECTED, attributeRecord.getActionType());
         assertEquals(AttributeOperationType.REMOVE, attributeRecord.getOperationType());
         assertEquals("XmlAttributeTest#lowPriority",
-                attributeRecord.getActionLocation().getSourceLocation().print(true));
-        assertEquals(8, attributeRecord.getActionLocation().getPosition().getLine());
+                attributeRecord.getActionLocation().getFile().print(true));
+        assertEquals(7, attributeRecord.getActionLocation().getPosition().getStartLine());
 
         attributeRecord = attributeRecords.get(1);
         assertEquals(Actions.ActionType.REJECTED, attributeRecord.getActionType());
         assertEquals(AttributeOperationType.REMOVE, attributeRecord.getOperationType());
         assertEquals("XmlAttributeTest#lowestPriority",
-                attributeRecord.getActionLocation().getSourceLocation().print(true));
-        assertEquals(7, attributeRecord.getActionLocation().getPosition().getLine());
+                attributeRecord.getActionLocation().getFile().print(true));
+        assertEquals(6, attributeRecord.getActionLocation().getPosition().getStartLine());
     }
 
     public void testDefaultValueIllegalOverriding()
@@ -367,9 +367,9 @@ public class XmlAttributeTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+                TestUtils.sourceFile(getClass(), "higherPriority"), higherPriority);
         XmlDocument otherDocument = TestUtils.xmlLibraryFromString(
-                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+                TestUtils.sourceFile(getClass(), "lowerPriority"), lowerPriority);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
                 new StdLogger(StdLogger.Level.VERBOSE));
@@ -404,9 +404,9 @@ public class XmlAttributeTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+                TestUtils.sourceFile(getClass(), "higherPriority"), higherPriority);
         XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+                TestUtils.sourceFile(getClass(), "lowerPriority"), lowerPriority);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
                 new StdLogger(StdLogger.Level.VERBOSE));
@@ -456,9 +456,9 @@ public class XmlAttributeTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+                TestUtils.sourceFile(getClass(), "higherPriority"), higherPriority);
         XmlDocument otherDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "lowerPriority"), lowerPriority);
+                TestUtils.sourceFile(getClass(), "lowerPriority"), lowerPriority);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
                 new StdLogger(StdLogger.Level.VERBOSE));

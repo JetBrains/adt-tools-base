@@ -28,6 +28,7 @@ import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.prefs.AndroidLocation;
@@ -59,6 +60,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -239,6 +241,17 @@ public abstract class LintClient {
     }
 
     /**
+     * Returns the list of source folders for test source files
+     *
+     * @param project the project to look up test source file locations for
+     * @return a list of source folders to search for .java files
+     */
+    @NonNull
+    public List<File> getTestSourceFolders(@NonNull Project project) {
+        return getClassPath(project).getTestSourceFolders();
+    }
+
+    /**
      * Returns the resource folders.
      *
      * @param project the project to look up the resource folder for
@@ -401,14 +414,17 @@ public abstract class LintClient {
         private final List<File> mClassFolders;
         private final List<File> mSourceFolders;
         private final List<File> mLibraries;
+        private final List<File> mTestFolders;
 
         public ClassPathInfo(
                 @NonNull List<File> sourceFolders,
                 @NonNull List<File> classFolders,
-                @NonNull List<File> libraries) {
+                @NonNull List<File> libraries,
+                @NonNull List<File> testFolders) {
             mSourceFolders = sourceFolders;
             mClassFolders = classFolders;
             mLibraries = libraries;
+            mTestFolders = testFolders;
         }
 
         @NonNull
@@ -424,6 +440,10 @@ public abstract class LintClient {
         @NonNull
         public List<File> getLibraries() {
             return mLibraries;
+        }
+
+        public List<File> getTestSourceFolders() {
+            return mTestFolders;
         }
     }
 
@@ -452,6 +472,9 @@ public abstract class LintClient {
             List<File> sources = new ArrayList<File>(2);
             List<File> classes = new ArrayList<File>(1);
             List<File> libraries = new ArrayList<File>();
+            // No test folders in Eclipse:
+            // https://bugs.eclipse.org/bugs/show_bug.cgi?id=224708
+            List<File> tests = Collections.emptyList();
 
             File projectDir = project.getDir();
             File classpathFile = new File(projectDir, ".classpath"); //$NON-NLS-1$
@@ -549,7 +572,7 @@ public abstract class LintClient {
                 }
             }
 
-            info = new ClassPathInfo(sources, classes, libraries);
+            info = new ClassPathInfo(sources, classes, libraries, tests);
             mProjectInfo.put(project, info);
         }
 
@@ -597,6 +620,16 @@ public abstract class LintClient {
         project = createProject(dir, referenceDir);
         mDirToProject.put(canonicalDir, project);
         return project;
+    }
+
+    /**
+     * Returns the list of known projects (projects registered via
+     * {@link #getProject(File, File)}
+     *
+     * @return a collection of projects in any order
+     */
+    public Collection<Project> getKnownProjects() {
+        return mDirToProject != null ? mDirToProject.values() : Collections.<Project>emptyList();
     }
 
     /**
@@ -1001,5 +1034,20 @@ public abstract class LintClient {
     @NonNull
     public Location.Handle createResourceItemHandle(@NonNull ResourceItem item) {
         return new Location.ResourceItemHandle(item);
+    }
+
+    private ResourceVisibilityLookup.Provider mResourceVisibility;
+
+    /**
+     * Returns a shared {@link ResourceVisibilityLookup.Provider}
+     *
+     * @return a shared provider for looking up resource visibility
+     */
+    @NonNull
+    public ResourceVisibilityLookup.Provider getResourceVisibilityProvider() {
+        if (mResourceVisibility == null) {
+            mResourceVisibility = new ResourceVisibilityLookup.Provider();
+        }
+        return mResourceVisibility;
     }
 }

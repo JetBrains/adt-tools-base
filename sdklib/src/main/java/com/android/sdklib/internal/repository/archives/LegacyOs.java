@@ -27,7 +27,12 @@ package com.android.sdklib.internal.repository.archives;
  * by the &lt;host-os&gt; element and {@link ArchFilter}.
  *
  * @see HostOs
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public enum LegacyOs {
     ANY("Any"),
     LINUX("Linux"),
@@ -36,7 +41,7 @@ public enum LegacyOs {
 
     private final String mUiName;
 
-    private LegacyOs(String uiName) {
+    LegacyOs(String uiName) {
         mUiName = uiName;
     }
 

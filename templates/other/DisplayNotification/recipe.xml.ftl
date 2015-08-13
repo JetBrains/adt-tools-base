@@ -3,7 +3,6 @@
     <merge from="AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
 
-
     <instantiate from="res/layout/activity_display.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/${displayActivityLayout}.xml" />
     <instantiate from="src/app_package/StubActivity.java.ftl"

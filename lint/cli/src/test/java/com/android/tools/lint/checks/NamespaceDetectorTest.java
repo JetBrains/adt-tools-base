@@ -29,7 +29,7 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
         assertEquals(
             "res/layout/customview.xml:5: Error: When using a custom namespace attribute in a library project, use the namespace \"http://schemas.android.com/apk/res-auto\" instead. [LibraryCustomView]\n" +
             "    xmlns:foo=\"http://schemas.android.com/apk/res/foo\"\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "1 errors, 0 warnings\n",
 
             lintProject(
@@ -43,7 +43,7 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
         assertEquals(""
                 + "res/layout/customview.xml:5: Error: In Gradle projects, always use http://schemas.android.com/apk/res-auto for custom attributes [ResAuto]\n"
                 + "    xmlns:foo=\"http://schemas.android.com/apk/res/foo\"\n"
-                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
 
                 lintProject(
@@ -83,7 +83,7 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
         assertEquals(
             "res/layout/wrong_namespace.xml:2: Error: Unexpected namespace URI bound to the \"android\" prefix, was http://schemas.android.com/apk/res/andriod, expected http://schemas.android.com/apk/res/android [NamespaceTypo]\n" +
             "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/andriod\"\n" +
-            "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "1 errors, 0 warnings\n",
 
             lintProject("res/layout/wrong_namespace.xml"));
@@ -93,7 +93,7 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
         assertEquals(
             "res/layout/wrong_namespace2.xml:2: Error: URI is case sensitive: was \"http://schemas.android.com/apk/res/Android\", expected \"http://schemas.android.com/apk/res/android\" [NamespaceTypo]\n" +
             "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/Android\"\n" +
-            "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "1 errors, 0 warnings\n",
 
             lintProject("res/layout/wrong_namespace2.xml"));
@@ -103,7 +103,7 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
         assertEquals(
             "res/layout/wrong_namespace3.xml:2: Error: Unexpected namespace URI bound to the \"android\" prefix, was http://schemas.android.com/apk/res/androi, expected http://schemas.android.com/apk/res/android [NamespaceTypo]\n" +
             "<LinearLayout xmlns:a=\"http://schemas.android.com/apk/res/androi\"\n" +
-            "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "1 errors, 0 warnings\n",
 
             lintProject("res/layout/wrong_namespace3.xml"));
@@ -113,13 +113,13 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
         assertEquals(
             "res/layout/wrong_namespace5.xml:2: Error: Suspicious namespace: should start with http:// [NamespaceTypo]\n" +
             "    xmlns:noturi=\"tp://schems.android.com/apk/res/com.my.package\"\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "res/layout/wrong_namespace5.xml:3: Error: Possible typo in URL: was \"http://schems.android.com/apk/res/com.my.package\", should probably be \"http://schemas.android.com/apk/res/com.my.package\" [NamespaceTypo]\n" +
             "    xmlns:typo1=\"http://schems.android.com/apk/res/com.my.package\"\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "res/layout/wrong_namespace5.xml:4: Error: Possible typo in URL: was \"http://schems.android.comm/apk/res/com.my.package\", should probably be \"http://schemas.android.com/apk/res/com.my.package\" [NamespaceTypo]\n" +
             "    xmlns:typo2=\"http://schems.android.comm/apk/res/com.my.package\"\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "3 errors, 0 warnings\n",
 
             lintProject("res/layout/wrong_namespace5.xml"));
@@ -171,7 +171,7 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
         assertEquals(
             "res/layout/namespace3.xml:2: Error: When using a custom namespace attribute in a library project, use the namespace \"http://schemas.android.com/apk/res-auto\" instead. [LibraryCustomView]\n" +
             "    xmlns:app=\"http://schemas.android.com/apk/res/com.example.apicalltest\"\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "1 errors, 0 warnings\n",
 
             lintFiles("res/layout/namespace3.xml",
@@ -183,7 +183,7 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
         assertEquals(
             "res/layout/namespace4.xml:3: Error: When using a custom namespace attribute in a library project, use the namespace \"http://schemas.android.com/apk/res-auto\" instead. [LibraryCustomView]\n" +
             "    xmlns:app=\"http://schemas.android.com/apk/res/com.example.apicalltest\"\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "1 errors, 0 warnings\n",
 
             lintFiles("res/layout/namespace4.xml",
@@ -195,7 +195,7 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
         assertEquals(
             "res/layout/namespace5.xml:3: Error: Suspicious namespace: Did you mean http://schemas.android.com/apk/res-auto? [ResAuto]\n" +
             "    xmlns:app=\"http://schemas.android.com/apk/auto-res/\"\n" +
-            "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "1 errors, 0 warnings\n",
 
             lintFiles("res/layout/namespace5.xml",
@@ -207,7 +207,7 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
         assertEquals(""
             + "AndroidManifest.xml:2: Error: Suspicious namespace: should start with http:// [NamespaceTypo]\n"
             + "<manifest xmlns:android=\"https://schemas.android.com/apk/res/android\"\n"
-            + "          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
             + "1 errors, 0 warnings\n",
 
             lintFiles("https_namespace.xml=>AndroidManifest.xml"));

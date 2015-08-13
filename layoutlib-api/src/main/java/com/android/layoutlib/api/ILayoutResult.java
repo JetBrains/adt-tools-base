@@ -32,13 +32,13 @@ public interface ILayoutResult {
     /**
      * Success return code
      */
-    static final int SUCCESS = 0;
+    int SUCCESS = 0;
 
     /**
      * Error return code, in which case an error message is guaranteed to be defined.
      * @see #getErrorMessage()
      */
-    static final int ERROR = 1;
+    int ERROR = 1;
 
     /**
      * Returns the result code.
@@ -68,7 +68,7 @@ public interface ILayoutResult {
      * @deprecated
      */
     @Deprecated
-    public interface ILayoutViewInfo {
+    interface ILayoutViewInfo {
 
         /**
          * Returns the list of children views.

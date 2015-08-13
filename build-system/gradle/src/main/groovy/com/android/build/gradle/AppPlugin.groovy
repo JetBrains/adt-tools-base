@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.builder.core.AndroidBuilder
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.tasks.TaskContainer
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
@@ -48,15 +47,13 @@ class AppPlugin extends BasePlugin implements Plugin<Project> {
     @Override
     protected TaskManager createTaskManager(
             Project project,
-            TaskContainer tasks,
             AndroidBuilder androidBuilder,
-            BaseExtension extension,
+            AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
-        return new ApplicationTaskManager (
+        return new ApplicationTaskManager(
                 project,
-                tasks,
                 androidBuilder,
                 extension,
                 sdkHandler,
@@ -70,7 +67,7 @@ class AppPlugin extends BasePlugin implements Plugin<Project> {
     }
 
     @Override
-    protected VariantFactory getVariantFactory() {
+    protected VariantFactory createVariantFactory() {
         return new ApplicationVariantFactory(instantiator, androidBuilder, extension)
     }
 }

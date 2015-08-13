@@ -35,7 +35,6 @@ public class PlaybackOverlayActivity extends Activity implements
     private static final double MEDIA_BOTTOM_MARGIN = 0.025;
     private static final double MEDIA_LEFT_MARGIN = 0.025;
 
-
     private VideoView mVideoView;
     private PlaybackState mPlaybackState = PlaybackState.IDLE;
 
@@ -56,6 +55,7 @@ public class PlaybackOverlayActivity extends Activity implements
         super.onDestroy();
         mVideoView.suspend();
     }
+
     /**
      * Implementation of OnPlayPauseClickedListener
      */
@@ -117,7 +117,6 @@ public class PlaybackOverlayActivity extends Activity implements
             }
         });
 
-
         mVideoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
@@ -126,7 +125,6 @@ public class PlaybackOverlayActivity extends Activity implements
                 }
             }
         });
-
 
         mVideoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override

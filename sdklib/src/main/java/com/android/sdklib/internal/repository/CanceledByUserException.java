@@ -19,7 +19,12 @@ package com.android.sdklib.internal.repository;
 /**
  * Exception thrown by {@link DownloadCache} and {@link UrlOpener} when a user
  * cancels an HTTP Basic authentication or NTML authentication dialog.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class CanceledByUserException extends Exception {
     private static final long serialVersionUID = -7669346110926032403L;
 

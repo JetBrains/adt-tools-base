@@ -17,9 +17,6 @@
 package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.sdklib.internal.repository.packages.Package;
-import com.android.sdklib.internal.repository.packages.PlatformToolPackage;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
@@ -43,28 +40,5 @@ public class LocalPlatformToolPkgInfo extends LocalPkgInfo {
     @Override
     public IPkgDesc getDesc() {
         return mDesc;
-    }
-
-    @Nullable
-    @Override
-    public Package getPackage() {
-        Package pkg = super.getPackage();
-        if (pkg == null) {
-            try {
-                pkg = PlatformToolPackage.create(
-                        null,                       //source
-                        getSourceProperties(),      //properties
-                        0,                          //revision
-                        null,                       //license
-                        "Platform Tools",           //description
-                        null,                       //descUrl
-                        getLocalDir().getPath()     //archiveOsPath
-                        );
-                setPackage(pkg);
-            } catch (Exception e) {
-                appendLoadError("Failed to parse package: %1$s", e.toString());
-            }
-        }
-        return pkg;
     }
 }

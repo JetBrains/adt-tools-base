@@ -40,18 +40,18 @@ android.applicationVariants.all { variant ->
             variant,                                     // associate it with a variant
             "assemble:$variant.name",                    // name of the assemble task for this artifact
             "compile:$variant.name",                     // name of the java compile task for this artifact
+            [],                                          // generated source folders
             [],                                          // tasks to generate sources etc. in the IDE.
             configurations.foo,
             new File("classesFolder:$variant.name"),     // location of the classes folder (compile output)
+            new File("resources:$variant.name"),         // location of the resources folder
             getProvider("provider:$variant.name"))       // source provider specific to this variant for the artifact.
 }
-
 
 // after the artifact is created, add a dependency
 dependencies {
    foo files('libs/util-1.0.jar')
 }
-
 
 android {
     compileSdkVersion 19

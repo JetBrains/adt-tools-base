@@ -77,7 +77,7 @@ public enum NodeOperationType implements ConvertibleName {
     // specifies whether the node operation can support an associated {@link Selector}
     private final boolean mIsSelectable;
 
-    private NodeOperationType(boolean isSelectable) {
+    NodeOperationType(boolean isSelectable) {
         mIsSelectable = isSelectable;
     }
 

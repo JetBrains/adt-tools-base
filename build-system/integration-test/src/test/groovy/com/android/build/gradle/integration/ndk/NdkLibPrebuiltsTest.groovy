@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.ndk
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -27,10 +28,12 @@ import org.junit.experimental.categories.Category
 /**
  * Assemble tests for ndkLibPrebuilts.
  */
+@CompileStatic
 class NdkLibPrebuiltsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkLibPrebuilts")
+            .fromTestProject("ndkLibPrebuilts")
+            .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
 
     @BeforeClass
@@ -56,6 +59,6 @@ class NdkLibPrebuiltsTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

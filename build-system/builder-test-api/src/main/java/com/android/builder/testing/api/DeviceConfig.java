@@ -18,10 +18,12 @@ package com.android.builder.testing.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -32,23 +34,23 @@ import java.util.StringTokenizer;
  */
 public interface DeviceConfig {
 
-    public enum Catetory {
+    enum Catetory {
         CONFIG, ABI
     }
 
     @NonNull
-    public Optional<String> getValue(Catetory catetory);
+    Optional<String> getValue(Catetory catetory);
 
     @NonNull
-    public List<String> getAbis();
+    List<String> getAbis();
 
     @NonNull
-    public String getConfigForAllAbis();
+    String getConfigForAllAbis();
 
     @NonNull
-    public String getConfigFor(@Nullable String abi);
+    String getConfigFor(@Nullable String abi);
 
-    public static class Builder {
+    class Builder {
 
         private static class Values {
 
@@ -107,15 +109,15 @@ public interface DeviceConfig {
                 public String getConfigForAllAbis() {
                     StringBuilder completeConfig = new StringBuilder();
                     Optional<String> config = getValue(Catetory.CONFIG);
-                    Optional<String> abi = getValue(Catetory.ABI);
-                    if (config.isPresent()) {
+                    List<String> abis = getAbis();
+                    if (abis.isEmpty() && config.isPresent()) {
                         completeConfig.append(config.get());
-                        if (abi.isPresent()) {
+                    } else {
+                        if (config.isPresent()) {
+                            completeConfig.append(config.get());
                             completeConfig.append(":");
                         }
-                    }
-                    if (abi.isPresent()) {
-                        completeConfig.append(abi.get());
+                        Joiner.on(",").appendTo(completeConfig, abis);
                     }
                     return completeConfig.toString();
                 }

@@ -99,5 +99,3 @@ public class ${className}ConfigureActivity extends Activity {
     }
 }
 
-
-

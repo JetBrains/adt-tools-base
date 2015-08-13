@@ -23,20 +23,18 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.internal.repository.IDescription;
-import com.android.sdklib.internal.repository.IListDescription;
+import com.android.sdklib.repository.IDescription;
+import com.android.sdklib.repository.IListDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkAddonSource;
 import com.android.sdklib.internal.repository.sources.SdkRepoSource;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.io.IFileOp;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.PkgProps;
-import com.android.sdklib.repository.SdkAddonConstants;
-import com.android.sdklib.repository.SdkRepoConstants;
+import com.android.sdklib.repository.*;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 
+import com.android.sdklib.repository.descriptors.PkgDesc;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.w3c.dom.Node;
 
@@ -57,7 +55,12 @@ import java.util.Properties;
  * Packages are contained by a {@link SdkSource} (a download site).
  * <p/>
  * Derived classes must implement the {@link IDescription} methods.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public abstract class Package implements IDescription, IListDescription, Comparable<Package> {
 
     private final String mObsolete;
@@ -84,7 +87,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * but just not an update.
      * @see #canBeUpdatedBy(Package)
      */
-    public static enum UpdateInfo {
+    public enum UpdateInfo {
         /** Means that the 2 packages are not the same thing */
         INCOMPATIBLE,
         /** Means that the 2 packages are the same thing but one does not upgrade the other.
@@ -150,14 +153,19 @@ public abstract class Package implements IDescription, IListDescription, Compara
             descUrl = "";
         }
 
-        mLicense     = new License(getProperty(props, PkgProps.PKG_LICENSE, license),
-                                   getProperty(props, PkgProps.PKG_LICENSE_REF, null));
+        license = getProperty(props, PkgProps.PKG_LICENSE, license);
+        if (license != null) {
+            mLicense = new License(license, getProperty(props, PkgProps.PKG_LICENSE_REF, null));
+        }
+        else {
+            mLicense = null;
+        }
         mListDisplay = getProperty(props, PkgProps.PKG_LIST_DISPLAY, "");       //$NON-NLS-1$
         mDescription = getProperty(props, PkgProps.PKG_DESC,         description);
         mDescUrl     = getProperty(props, PkgProps.PKG_DESC_URL,     descUrl);
         mReleaseNote = getProperty(props, PkgProps.PKG_RELEASE_NOTE, "");       //$NON-NLS-1$
         mReleaseUrl  = getProperty(props, PkgProps.PKG_RELEASE_URL,  "");       //$NON-NLS-1$
-        mObsolete    = getProperty(props, PkgProps.PKG_OBSOLETE,     null);
+        mObsolete    = getProperty(props, PkgProps.PKG_OBSOLETE, null);
 
         // If source is null and we can find a source URL in the properties, generate
         // a dummy source just to store the URL. This allows us to easily remember where
@@ -879,5 +887,16 @@ public abstract class Package implements IDescription, IListDescription, Compara
             return false;
         }
         return true;
+    }
+
+    // TODO(jbakermalone): This is moved here from the more logical location in PkgDesc.Builder since Package will soon be forked into
+    //                     studio and this version deprecated, whereas PkgDesc will not.
+    protected PkgDesc.Builder setDescriptions(PkgDesc.Builder builder) {
+        builder.setDescriptionShort(getShortDescription());
+        builder.setDescriptionUrl(getDescUrl());
+        builder.setListDisplay(getListDisplay());
+        builder.setIsObsolete(isObsolete());
+        builder.setLicense(getLicense());
+        return builder;
     }
 }

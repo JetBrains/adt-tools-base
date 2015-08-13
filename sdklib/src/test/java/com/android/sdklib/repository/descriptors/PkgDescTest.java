@@ -139,6 +139,11 @@ public class PkgDescTest extends TestCase {
                 PkgDesc.Builder.newTool(new FullRevision(1, 2, 3, 1), min5671).create();
         assertFalse(p1231.isUpdateFor(f122));
         assertFalse(f122 .isUpdateFor(p1231));
+        assertFalse(p1231.isUpdateFor(f122, FullRevision.PreviewComparison.COMPARE_NUMBER));
+        assertFalse(p1231.isUpdateFor(f122, FullRevision.PreviewComparison.COMPARE_TYPE));
+        // ...unless we ignore them explicitly
+        assertTrue(p1231.isUpdateFor(f122, FullRevision.PreviewComparison.IGNORE));
+
         // but previews are used for comparisons
         assertTrue (p1231.compareTo(f122 ) > 0);
         assertTrue (f123 .compareTo(p1231) > 0);
@@ -283,12 +288,12 @@ public class PkgDescTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull(p.getMinPlatformToolsRev());
 
-        assertEquals("doc-19", p.getInstallId());
+        assertEquals("doc", p.getInstallId());
         assertEquals(FileOp.append(mRoot, "docs"),
                 p.getCanonicalInstallFolder(mRoot));
 
         assertEquals("<PkgDesc Type=doc Android=API 19 MajorRev=1>", p.toString());
-        assertEquals("Documentation for Android SDK 19", p.getListDescription());
+        assertEquals("Documentation for Android SDK", p.getListDescription());
     }
 
     public final void testPkgDescDoc_Update() throws Exception {
@@ -371,8 +376,8 @@ public class PkgDescTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
 
-        assertEquals("build-tools-1.2.3_rc4", p.getInstallId());
-        assertEquals(FileOp.append(mRoot, "build-tools", "build-tools-1.2.3_rc4"),
+        assertEquals("build-tools-1.2.3-preview", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "build-tools", "build-tools-1.2.3-preview"),
                 p.getCanonicalInstallFolder(mRoot));
 
         assertEquals("<PkgDesc Type=build_tools FullRev=1.2.3 rc4>", p.toString());

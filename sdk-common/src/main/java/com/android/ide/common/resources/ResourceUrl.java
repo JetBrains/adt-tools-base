@@ -20,7 +20,9 @@ import static com.android.SdkConstants.ATTR_REF_PREFIX;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.PREFIX_THEME_REF;
 import static com.android.SdkConstants.RESOURCE_CLZ_ATTR;
+import static com.android.ide.common.rendering.api.RenderResources.REFERENCE_EMPTY;
 import static com.android.ide.common.rendering.api.RenderResources.REFERENCE_NULL;
+import static com.android.ide.common.rendering.api.RenderResources.REFERENCE_UNDEFINED;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -80,12 +82,24 @@ public class ResourceUrl {
      */
     @Nullable
     public static ResourceUrl parse(@NonNull String url) {
+        return parse(url, false);
+    }
+
+    /**
+     * Return the resource type of the given url, and the resource name.
+     *
+     * @param url the resource url to be parsed
+     * @param forceFramework force the returned value to be a framework resource.
+     * @return a pair of the resource type and the resource name
+     */
+    @Nullable
+    public static ResourceUrl parse(@NonNull String url, boolean forceFramework) {
         // Handle theme references
         if (url.startsWith(PREFIX_THEME_REF)) {
             String remainder = url.substring(PREFIX_THEME_REF.length());
             if (url.startsWith(ATTR_REF_PREFIX)) {
                 url = PREFIX_RESOURCE_REF + url.substring(PREFIX_THEME_REF.length());
-                return setTheme(parse(url));
+                return setTheme(parse(url, forceFramework));
             }
             int colon = url.indexOf(':');
             if (colon != -1) {
@@ -95,17 +109,17 @@ public class ResourceUrl {
                             + remainder.substring(colon);
                 }
                 url = PREFIX_RESOURCE_REF + remainder;
-                return setTheme(parse(url));
+                return setTheme(parse(url, forceFramework));
             } else {
                 int slash = url.indexOf('/');
                 if (slash == -1) {
                     url = PREFIX_RESOURCE_REF + RESOURCE_CLZ_ATTR + '/' + remainder;
-                    return setTheme(parse(url));
+                    return setTheme(parse(url, forceFramework));
                 }
             }
         }
 
-        if (!url.startsWith(PREFIX_RESOURCE_REF) || url.equals(REFERENCE_NULL)) {
+        if (!url.startsWith(PREFIX_RESOURCE_REF) || isNullOrEmpty(url)) {
             return null;
         }
 
@@ -120,7 +134,7 @@ public class ResourceUrl {
         int typeBegin = create ? 2 : 1;
 
         int colon = url.lastIndexOf(':', typeEnd);
-        boolean framework = false;
+        boolean framework = forceFramework;
         if (colon != -1) {
             if (url.startsWith(ANDROID_NS_NAME, typeBegin)) {
                 framework = true;
@@ -143,6 +157,12 @@ public class ResourceUrl {
             url.theme = true;
         }
         return url;
+    }
+
+    /** Returns if the resource url is @null, @empty or @undefined. */
+    public static boolean isNullOrEmpty(@NonNull String url) {
+        return url.equals(REFERENCE_NULL) || url.equals(REFERENCE_EMPTY) ||
+                url.equals(REFERENCE_UNDEFINED);
     }
 
     /**

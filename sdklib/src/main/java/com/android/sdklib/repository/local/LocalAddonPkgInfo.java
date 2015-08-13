@@ -27,18 +27,12 @@ import com.android.sdklib.SystemImage;
 import com.android.sdklib.internal.androidTarget.AddOnTarget;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.internal.project.ProjectProperties;
-import com.android.sdklib.internal.repository.packages.AddonPackage;
-import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
-import com.android.sdklib.repository.descriptors.IPkgDesc;
-import com.android.sdklib.repository.descriptors.IPkgDescAddon;
-import com.android.sdklib.repository.descriptors.IdDisplay;
-import com.android.sdklib.repository.descriptors.PkgDesc;
-import com.android.sdklib.repository.descriptors.PkgType;
+import com.android.sdklib.repository.descriptors.*;
 import com.android.utils.Pair;
 import com.google.common.base.Objects;
 import com.google.common.collect.SetMultimap;
@@ -46,16 +40,7 @@ import com.google.common.collect.TreeMultimap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -121,22 +106,6 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
     }
 
     //-----
-
-    /**
-     * Creates an AddonPackage wrapping the IAndroidTarget if defined.
-     * Invoked by {@link #getPackage()}.
-     *
-     * @return A Package or null if target isn't available.
-     */
-    @Override
-    @Nullable
-    protected Package createPackage() {
-        IAndroidTarget target = getAndroidTarget();
-        if (target != null) {
-            return AddonPackage.create(target, getSourceProperties());
-        }
-        return null;
-    }
 
     /**
      * Creates the AddOnTarget. Invoked by {@link #getAndroidTarget()}.
@@ -265,7 +234,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
             Map<String, File> skinsMap = new TreeMap<String, File>();
 
-            for (File f : parseSkinFolder(targetSkinFolder)) {
+            for (File f : PackageParserUtils.parseSkinFolder(targetSkinFolder, fileOp)) {
                 skinsMap.put(f.getName().toLowerCase(Locale.US), f);
             }
             for (ISystemImage si : systemImages) {
@@ -342,8 +311,13 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                             SdkConstants.FN_MANIFEST_INI);
                     break;
                 }
-            } catch (FileNotFoundException ignore) {}
-            assert propertyMap != null;
+            } catch (FileNotFoundException e) {
+                // this can happen if the system fails to open the file because of too many
+                // open files.
+                error = String.format("Failed to parse properties from %1$s: %2$s",
+                        SdkConstants.FN_MANIFEST_INI, e.getMessage());
+                break;
+            }
 
             // look for some specific values in the map.
             // we require name, vendor, and api
@@ -472,20 +446,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                 final IdDisplay tag = mAddonDesc.getName();
                 final String abi = d.getPath();
                 if (abi != null && !tagToAbiFound.containsEntry(tag, abi)) {
-                    List<File> parsedSkins = parseSkinFolder(
-                            new File(pkg.getLocalDir(), SdkConstants.FD_SKINS));
-                    File[] skins = FileOp.EMPTY_FILE_ARRAY;
-                    if (!parsedSkins.isEmpty()) {
-                        skins = parsedSkins.toArray(new File[parsedSkins.size()]);
-                    }
-
-                    found.add(new SystemImage(
-                            pkg.getLocalDir(),
-                            LocationType.IN_SYSTEM_IMAGE,
-                            tag,
-                            mAddonDesc.getVendor(),
-                            abi,
-                            skins));
+                    found.add(((LocalAddonSysImgPkgInfo)pkg).getSystemImage());
                     tagToAbiFound.put(tag, abi);
                 }
             }

@@ -17,12 +17,11 @@
 package com.android.sdklib.repository;
 
 
-import com.android.sdklib.internal.repository.sources.SdkSource;
-
 import java.io.InputStream;
 
 /**
  * Public constants for the sdk-addon XML Schema.
+ * @deprecated moved to studio
  */
 public class SdkAddonConstants extends RepoConstants {
 
@@ -33,7 +32,7 @@ public class SdkAddonConstants extends RepoConstants {
     public static final int NS_LATEST_VERSION = 7;
 
     /**
-     * The default name looked for by {@link SdkSource} when trying to load an
+     * The default name looked for by SdkSource when trying to load an
      * sdk-addon XML if the URL doesn't match an existing resource.
      */
     public static final String URL_DEFAULT_FILENAME = "addon.xml";         //$NON-NLS-1$

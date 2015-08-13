@@ -29,5 +29,5 @@ public interface GraphicGeneratorContext {
      *             the context implementer.
      * @return The loaded image resource, or null if there was an error.
      */
-    public BufferedImage loadImageResource(String path);
+    BufferedImage loadImageResource(String path);
 }

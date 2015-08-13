@@ -23,6 +23,7 @@ import com.android.utils.ILogger;
 import com.google.common.annotations.Beta;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -40,7 +41,8 @@ public interface TestRunner {
      * @param testData
      * @param deviceList
      * @param maxThreads the max number of threads to run in parallel. 0 means unlimited.
-     * @param timeout
+     * @param timeoutInMs time out in milliseconds
+     * @param installOptions parameters passed to the pm install command.
      * @param resultsDir
      * @param coverageDir
      * @param logger
@@ -56,13 +58,14 @@ public interface TestRunner {
             @NonNull  TestData testData,
             @NonNull  List<? extends DeviceConnector> deviceList,
                       int maxThreads,
-                      int timeout,
+                      int timeoutInMs,
+            @NonNull  Collection<String> installOptions,
             @NonNull  File resultsDir,
             @NonNull  File coverageDir,
             @NonNull  ILogger logger)
                 throws TestException, NoAuthorizedDeviceFoundException, InterruptedException;
 
-    public class NoAuthorizedDeviceFoundException extends Exception {
+    class NoAuthorizedDeviceFoundException extends Exception {
 
         public NoAuthorizedDeviceFoundException() {
             super("No suitable device connected");

@@ -44,7 +44,7 @@ public class ResourceFile extends DataFile<ResourceItem> {
      *
      * The source file is set on the item with {@link ResourceItem#setSource(DataFile)}
      *
-     * The type of the ResourceFile will by {@link FileType#SINGLE}.
+     * The type of the ResourceFile will be {@link FileType#SINGLE}.
      *
      * @param file the File
      * @param item the resource item
@@ -62,7 +62,7 @@ public class ResourceFile extends DataFile<ResourceItem> {
      *
      * The source file is set on the items with {@link ResourceItem#setSource(DataFile)}
      *
-     * The type of the ResourceFile will by {@link FileType#MULTI}.
+     * The type of the ResourceFile will be {@link FileType#MULTI}.
      *
      * @param file the File
      * @param items the resource items

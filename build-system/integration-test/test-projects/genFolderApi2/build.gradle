@@ -11,4 +11,13 @@ android {
 android.applicationVariants.all { variant ->
     File sourceFolder = file("${buildDir}/customCode/${variant.dirName}")
     variant.addJavaSourceFoldersToModel(sourceFolder)
+
+    def unitTestVariant = variant.unitTestVariant
+    File unitTestSourceFolder = file("${buildDir}/customCode/${unitTestVariant.dirName}-1")
+    unitTestVariant.addJavaSourceFoldersToModel(unitTestSourceFolder)
+}
+
+android.unitTestVariants.all { unitTestVariant ->
+    File unitTestSourceFolder = file("${buildDir}/customCode/${unitTestVariant.dirName}-2")
+    unitTestVariant.addJavaSourceFoldersToModel(unitTestSourceFolder)
 }

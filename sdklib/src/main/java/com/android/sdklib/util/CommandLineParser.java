@@ -632,7 +632,7 @@ public class CommandLineParser {
 
     //----
 
-    protected static enum Accept {
+    protected enum Accept {
         CONTINUE,
         ACCEPT_AND_STOP,
         REJECT_AND_STOP,
@@ -642,7 +642,7 @@ public class CommandLineParser {
      * The mode of an argument specifies the type of variable it represents,
      * whether an extra parameter is required after the flag and how to parse it.
      */
-    protected static enum Mode {
+    protected enum Mode {
         /** Argument value is a Boolean. Default value is a Boolean. */
         BOOLEAN {
             @Override

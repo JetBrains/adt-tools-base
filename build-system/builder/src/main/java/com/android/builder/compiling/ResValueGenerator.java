@@ -17,6 +17,7 @@ package com.android.builder.compiling;
 
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TYPE;
+import static com.android.SdkConstants.TAG_STRING;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_RESOURCES;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -26,8 +27,10 @@ import com.android.annotations.Nullable;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.ClassField;
 import com.android.ide.common.xml.XmlPrettyPrinter;
+import com.android.resources.ResourceType;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
@@ -50,6 +53,19 @@ import javax.xml.parsers.ParserConfigurationException;
 public class ResValueGenerator {
 
     public static final String RES_VALUE_FILENAME_XML = "generated.xml";
+
+    private static final List<ResourceType> RESOURCES_WITH_TAGS = ImmutableList.of(
+            ResourceType.ARRAY,
+            ResourceType.ATTR,
+            ResourceType.BOOL,
+            ResourceType.COLOR,
+            ResourceType.DECLARE_STYLEABLE,
+            ResourceType.DIMEN,
+            ResourceType.FRACTION,
+            ResourceType.INTEGER,
+            ResourceType.PLURALS,
+            ResourceType.STRING,
+            ResourceType.STYLE);
 
     private final File mGenFolder;
 
@@ -117,17 +133,24 @@ public class ResValueGenerator {
             if (item instanceof ClassField) {
                 ClassField field = (ClassField)item;
 
-                Node itemNode = document.createElement(TAG_ITEM);
+                ResourceType type = ResourceType.getEnum(field.getType());
+                boolean hasResourceTag = (type != null && RESOURCES_WITH_TAGS.contains(type));
 
+                Node itemNode = document.createElement(hasResourceTag ? field.getType() : TAG_ITEM);
                 Attr nameAttr = document.createAttribute(ATTR_NAME);
+
                 nameAttr.setValue(field.getName());
                 itemNode.getAttributes().setNamedItem(nameAttr);
 
-                Attr typeAttr = document.createAttribute(ATTR_TYPE);
-                typeAttr.setValue(field.getType());
-                itemNode.getAttributes().setNamedItem(typeAttr);
+                if (!hasResourceTag) {
+                    Attr typeAttr = document.createAttribute(ATTR_TYPE);
+                    typeAttr.setValue(field.getType());
+                    itemNode.getAttributes().setNamedItem(typeAttr);
+                }
 
-                itemNode.appendChild(document.createTextNode(field.getValue()));
+                if (!field.getValue().isEmpty()) {
+                    itemNode.appendChild(document.createTextNode(field.getValue()));
+                }
 
                 rootNode.appendChild(itemNode);
             } else if (item instanceof String) {

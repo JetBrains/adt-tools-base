@@ -22,16 +22,15 @@ import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.SdkHandler
-import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.test.BaseTest
+import com.android.resources.Density
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 
 import static com.android.build.gradle.DslTestUtil.DEFAULT_VARIANTS
 import static com.android.build.gradle.DslTestUtil.countVariants
-
 /**
  * Tests for the public DSL of the App plugin ("android")
  */
@@ -39,17 +38,18 @@ public class AppPluginDslTest extends BaseTest {
 
     @Override
     protected void setUp() throws Exception {
-        SdkHandler.testSdkFolder = new File("foo")
+        SdkHandler.testSdkFolder = new File(System.getenv("ANDROID_HOME"))
     }
 
     public void testBasic() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -73,12 +73,13 @@ public class AppPluginDslTest extends BaseTest {
      */
     public void testBasic2() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion = 15
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -99,12 +100,13 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBasicWithStringTarget() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion "android-15"
+            compileSdkVersion "android-" + COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -125,12 +127,13 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testMultiRes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/multires")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/multires")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
 
             sourceSets {
                 main {
@@ -146,12 +149,13 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBuildTypes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
             testBuildType "staging"
 
             buildTypes {
@@ -185,12 +189,13 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
 
             productFlavors {
                 flavor1 {
@@ -227,12 +232,13 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testMultiFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
 
             flavorDimensions   "dimension1", "dimension2"
 
@@ -289,12 +295,13 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testSourceSetsApi() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
         }
 
         // query the sourceSets, will throw if missing
@@ -307,12 +314,13 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testObfuscationMappingFile() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
 
             buildTypes {
                 release {
@@ -344,12 +352,13 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testProguardDsl() throws Exception {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
 
             buildTypes {
                 release {
@@ -404,14 +413,58 @@ public class AppPluginDslTest extends BaseTest {
         }
     }
 
+    public void testProguardDsl_initWith() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
+
+            buildTypes {
+                common {
+                    testProguardFile 'file1.1'
+                }
+
+                custom1.initWith(buildTypes.common)
+                custom2.initWith(buildTypes.common)
+
+                custom1 {
+                    testProguardFile 'file2.1'
+                }
+            }
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        def variantsData = plugin.variantManager.variantDataList
+        Map<String, GradleVariantConfiguration> variantMap =
+                variantsData.collectEntries {[it.name, it.variantConfiguration]}
+
+        def expectedFiles = [
+                common: ["file1.1"],
+                custom1: ["file1.1", "file2.1"],
+                custom2: ["file1.1"],
+        ]
+
+        expectedFiles.each { name, expected ->
+            List<File> actual = variantMap[name].testProguardFiles
+            assert (actual*.name as Set) == (expected as Set), name
+        }
+    }
+
     public void testSettingLanguageLevelFromCompileSdk() {
         def testLanguageLevel = { version, expectedLanguageLevel, useJack ->
             Project project = ProjectBuilder.builder().withProjectDir(
-                    new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                    new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
             project.apply plugin: 'com.android.application'
             project.android {
                 compileSdkVersion version
+                buildToolsVersion '20.0.0'
             }
 
             AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -420,11 +473,11 @@ public class AppPluginDslTest extends BaseTest {
             assertEquals(
                     "target compatibility for ${version}",
                     expectedLanguageLevel.toString(),
-                    project.compileReleaseJava.targetCompatibility)
+                    project.compileReleaseJavaWithJavac.targetCompatibility)
             assertEquals(
                     "source compatibility for ${version}",
                     expectedLanguageLevel.toString(),
-                    project.compileReleaseJava.sourceCompatibility)
+                    project.compileReleaseJavaWithJavac.sourceCompatibility)
         }
 
         for (useJack in [true, false]) {
@@ -432,16 +485,16 @@ public class AppPluginDslTest extends BaseTest {
             String originalVersion = System.getProperty(propName)
             try{
                 System.setProperty(propName, '1.7')
-                testLanguageLevel(15, JavaVersion.VERSION_1_6, useJack)
-                testLanguageLevel(21, JavaVersion.VERSION_1_7, useJack)
+                testLanguageLevel('android-15', JavaVersion.VERSION_1_6, useJack)
                 testLanguageLevel('android-21', JavaVersion.VERSION_1_7, useJack)
-                testLanguageLevel('Google:GoogleInc:22', JavaVersion.VERSION_1_7, useJack)
+                testLanguageLevel('android-21', JavaVersion.VERSION_1_7, useJack)
+                testLanguageLevel('Google Inc.:Google APIs:22', JavaVersion.VERSION_1_7, useJack)
 
                 System.setProperty(propName, '1.6')
                 testLanguageLevel(15, JavaVersion.VERSION_1_6, useJack)
                 testLanguageLevel(21, JavaVersion.VERSION_1_6, useJack)
                 testLanguageLevel('android-21', JavaVersion.VERSION_1_6, useJack)
-                testLanguageLevel('Google:GoogleInc:22', JavaVersion.VERSION_1_6, useJack)
+                testLanguageLevel('Google Inc.:Google APIs:22', JavaVersion.VERSION_1_6, useJack)
             } finally {
                 System.setProperty(propName, originalVersion)
             }
@@ -450,11 +503,13 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testSettingLanguageLevelFromCompileSdk_dontOverride() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
         project.android {
-            compileSdkVersion 21
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
+
             compileOptions {
                 sourceCompatibility JavaVersion.VERSION_1_6
                 targetCompatibility JavaVersion.VERSION_1_6
@@ -465,29 +520,127 @@ public class AppPluginDslTest extends BaseTest {
 
         assertEquals(
                 JavaVersion.VERSION_1_6.toString(),
-                project.compileReleaseJava.targetCompatibility)
+                project.compileReleaseJavaWithJavac.targetCompatibility)
         assertEquals(
                 JavaVersion.VERSION_1_6.toString(),
-                project.compileReleaseJava.sourceCompatibility)
+                project.compileReleaseJavaWithJavac.sourceCompatibility)
     }
 
-    public void testSettingLanguageLevelFromCompileSdk_unknownVersion() {
+    public void testMockableJarName() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion "Google Inc.:Google APIs:" + COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        def mockableJarFile = plugin.taskManager.createMockableJar.outputFile
+        assertFalse(mockableJarFile.absolutePath.contains(":"))
+        assertEquals("mockable-Google-Inc.-Google-APIs-21.jar", mockableJarFile.name)
+    }
+
+    public void testEncoding() {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
         project.android {
-            compileSdkVersion 'foo'
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
+
+            compileOptions {
+                encoding "foo"
+            }
         }
+
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(false)
 
         assertEquals(
-                JavaVersion.VERSION_1_6.toString(),
-                project.compileReleaseJava.targetCompatibility)
-        assertEquals(
-                JavaVersion.VERSION_1_6.toString(),
-                project.compileReleaseJava.sourceCompatibility)
+                "foo",
+                project.compileReleaseJavaWithJavac.options.encoding)
+    }
+
+    public void testPreprocessResourcesDsl() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.ext['com.android.build.gradle.experimentalPreprocessResources'] = 'true'
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion 15
+            buildToolsVersion '21.0.0'
+
+            preprocessingOptions {
+                preprocessResources = true
+                densities += "ldpi"
+            }
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        assert project.preprocessDebugResources.densitiesToGenerate.contains(Density.LOW)
+    }
+
+    public void testInstrumentationRunnerArguments_merging() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
+
+            defaultConfig {
+                testInstrumentationRunnerArguments(value: "default", size: "small")
+            }
+
+            productFlavors {
+                f1 {
+                }
+
+                f2  {
+                    testInstrumentationRunnerArgument "value", "f2"
+                }
+
+                f3  {
+                    testInstrumentationRunnerArguments["otherValue"] = "f3"
+                }
+
+                f4  {
+                    testInstrumentationRunnerArguments(otherValue: "f4.1")
+                    testInstrumentationRunnerArguments = [otherValue: "f4.2"]
+                }
+            }
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        def variantsData = plugin.variantManager.variantDataList
+        Map<String, GradleVariantConfiguration> variantMap =
+                variantsData.collectEntries {[it.name, it.variantConfiguration]}
+
+        def expectedArgs = [
+                f1Debug: [value: "default", size: "small"],
+                f2Debug: [value: "f2", size: "small"],
+                f3Debug: [value: "default", size: "small", otherValue: "f3"],
+                f4Debug: [value: "default", size: "small", otherValue: "f4.2"],
+        ]
+
+        expectedArgs.each { name, expected ->
+            assert expected == variantMap[name].instrumentationRunnerArguments
+        }
     }
 
     private static void checkTestedVariant(@NonNull String variantName,

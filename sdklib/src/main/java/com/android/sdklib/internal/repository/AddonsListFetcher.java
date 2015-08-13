@@ -56,7 +56,12 @@ import javax.xml.validation.Validator;
  * SDK Manager. <br/>
  * The XML must conform to the sdk-addons-list-N.xsd. <br/>
  * Constants used in the XML are defined in {@link SdkAddonsListConstants}.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class AddonsListFetcher {
 
     public enum SiteType {

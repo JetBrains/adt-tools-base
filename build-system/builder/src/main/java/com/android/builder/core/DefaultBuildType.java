@@ -64,6 +64,9 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
+    /**
+     * Name of this build type.
+     */
     @Override
     @NonNull
     public String getName() {
@@ -89,6 +92,22 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         mTestCoverageEnabled = testCoverageEnabled;
     }
 
+    /**
+     * Whether test coverage is enabled for this build type.
+     *
+     * <p>If enabled this uses Jacoco to capture coverage and creates a report in the build
+     * directory.
+     *
+     * <p>The version of Jacoco can be configured with:
+     * <pre>
+     * android {
+     *   jacoco {
+     *     version = '0.6.2.201302030002'
+     *   }
+     * }
+     * </pre>
+     *
+     */
     @Override
     public boolean isTestCoverageEnabled() {
         return mTestCoverageEnabled;
@@ -98,6 +117,12 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         mPseudoLocalesEnabled = pseudoLocalesEnabled;
     }
 
+    /**
+     * Whether to generate pseudo locale in the APK.
+     *
+     * <p>If enabled, 2 fake pseudo locales (en-XA and ar-XB) will be added to the APK to help
+     * test internationalization support in the app.
+     */
     @Override
     public boolean isPseudoLocalesEnabled() {
         return mPseudoLocalesEnabled;
@@ -136,7 +161,9 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
-    /** Optimization level to use by the renderscript compiler. */
+    /**
+     * Optimization level to use by the renderscript compiler.
+     */
     @Override
     public int getRenderscriptOptimLevel() {
         return mRenderscriptOptimLevel;
@@ -220,6 +247,18 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return mSigningConfig;
     }
 
+    /**
+     * Whether a linked Android Wear app should be embedded in variant using this build type.
+     *
+     * <p>Wear apps can be linked with the following code:
+     *
+     * <pre>
+     * dependencies {
+     *   freeWearApp project(:wear:free') // applies to variant using the free flavor
+     *   wearApp project(':wear:base') // applies to all other variants
+     * }
+     * </pre>
+     */
     @Override
     public boolean isEmbedMicroApp() {
         return mEmbedMicroApp;
@@ -237,49 +276,38 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
 
         DefaultBuildType buildType = (DefaultBuildType) o;
 
-        if (!mName.equals(buildType.mName)) return false;
-        if (mDebuggable != buildType.mDebuggable) return false;
-        if (mTestCoverageEnabled != buildType.mTestCoverageEnabled) return false;
-        if (mJniDebuggable != buildType.mJniDebuggable) return false;
-        if (mPseudoLocalesEnabled != buildType.mPseudoLocalesEnabled) return false;
-        if (mRenderscriptDebuggable != buildType.mRenderscriptDebuggable) return false;
-        if (mRenderscriptOptimLevel != buildType.mRenderscriptOptimLevel) return false;
-        if (mMinifyEnabled != buildType.mMinifyEnabled) return false;
-        if (mZipAlignEnabled != buildType.mZipAlignEnabled) return false;
-        if (mApplicationIdSuffix != null ?
-                !mApplicationIdSuffix.equals(buildType.mApplicationIdSuffix) :
-                buildType.mApplicationIdSuffix != null)
-            return false;
-        if (mVersionNameSuffix != null ?
-                !mVersionNameSuffix.equals(buildType.mVersionNameSuffix) :
-                buildType.mVersionNameSuffix != null)
-            return false;
-        if (mSigningConfig != null ?
-                !mSigningConfig.equals(buildType.mSigningConfig) :
-                buildType.mSigningConfig != null)
-            return false;
-        if (mEmbedMicroApp != buildType.mEmbedMicroApp) return false;
-
-        return true;
+        return Objects.equal(mName, buildType.mName) &&
+                mDebuggable == buildType.mDebuggable &&
+                mTestCoverageEnabled == buildType.mTestCoverageEnabled &&
+                mJniDebuggable == buildType.mJniDebuggable &&
+                mPseudoLocalesEnabled == buildType.mPseudoLocalesEnabled &&
+                mRenderscriptDebuggable == buildType.mRenderscriptDebuggable &&
+                mRenderscriptOptimLevel == buildType.mRenderscriptOptimLevel &&
+                mMinifyEnabled == buildType.mMinifyEnabled &&
+                mZipAlignEnabled == buildType.mZipAlignEnabled &&
+                mEmbedMicroApp == buildType.mEmbedMicroApp &&
+                Objects.equal(mApplicationIdSuffix, buildType.mApplicationIdSuffix) &&
+                Objects.equal(mVersionNameSuffix, buildType.mVersionNameSuffix) &&
+                Objects.equal(mSigningConfig, buildType.mSigningConfig);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (mName.hashCode());
-        result = 31 * result + (mDebuggable ? 1 : 0);
-        result = 31 * result + (mTestCoverageEnabled ? 1 : 0);
-        result = 31 * result + (mJniDebuggable ? 1 : 0);
-        result = 31 * result + (mPseudoLocalesEnabled ? 1 : 0);
-        result = 31 * result + (mRenderscriptDebuggable ? 1 : 0);
-        result = 31 * result + mRenderscriptOptimLevel;
-        result = 31 * result + (mApplicationIdSuffix != null ? mApplicationIdSuffix.hashCode() : 0);
-        result = 31 * result + (mVersionNameSuffix != null ? mVersionNameSuffix.hashCode() : 0);
-        result = 31 * result + (mMinifyEnabled ? 1 : 0);
-        result = 31 * result + (mZipAlignEnabled ? 1 : 0);
-        result = 31 * result + (mSigningConfig != null ? mSigningConfig.hashCode() : 0);
-        result = 31 * result + (mEmbedMicroApp ? 1 : 0);
-        return result;
+        return Objects.hashCode(
+                super.hashCode(),
+                mName,
+                mDebuggable,
+                mTestCoverageEnabled,
+                mJniDebuggable,
+                mPseudoLocalesEnabled,
+                mRenderscriptDebuggable,
+                mRenderscriptOptimLevel,
+                mApplicationIdSuffix,
+                mVersionNameSuffix,
+                mMinifyEnabled,
+                mZipAlignEnabled,
+                mSigningConfig,
+                mEmbedMicroApp);
     }
 
     @Override

@@ -19,7 +19,7 @@ package com.android.sdklib.internal.repository.packages;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.repository.FullRevision;
@@ -31,7 +31,12 @@ import java.util.Properties;
 /**
  * Represents an SDK repository package that is incomplete.
  * It has a distinct icon and a specific error that is supposed to help the user on how to fix it.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class BrokenPackage extends MajorRevisionPackage
         implements IExactApiLevelDependency, IMinApiLevelDependency {
 

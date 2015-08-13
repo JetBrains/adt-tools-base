@@ -19,7 +19,7 @@ package com.android.sdklib.repository.descriptors;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.internal.repository.packages.License;
+import com.android.sdklib.repository.License;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 
@@ -45,7 +45,7 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
                  @Nullable IdDisplay vendor,
                  @Nullable FullRevision minToolsRev,
                  @Nullable FullRevision minPlatformToolsRev,
-                 @NonNull  String nameDisplay,
+                 @Nullable  String nameDisplay,
                  @Nullable final String[] oldPaths) {
         super(type,
               license,
@@ -76,7 +76,7 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
     @NonNull
     @Override
     public String getNameDisplay() {
-        return mNameDisplay;
+        return mNameDisplay == null ? String.format("Unknown (%s)", getInstallId()) : mNameDisplay;
     }
 
     // ---- Helpers ----

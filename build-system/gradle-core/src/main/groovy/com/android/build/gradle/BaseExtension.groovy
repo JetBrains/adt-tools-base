@@ -20,7 +20,7 @@ import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
-import com.android.build.gradle.api.TestVariant
+import com.android.build.gradle.api.VariantFilter
 import com.android.build.gradle.internal.CompileOptions
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.LoggingUtil
@@ -28,53 +28,55 @@ import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.SourceSetSourceProviderWrapper
 import com.android.build.gradle.internal.coverage.JacocoExtension
 import com.android.build.gradle.internal.dsl.AaptOptions
+import com.android.build.gradle.internal.dsl.AdbOptions
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory
 import com.android.build.gradle.internal.dsl.BuildType
+import com.android.build.gradle.internal.dsl.CoreProductFlavor
 import com.android.build.gradle.internal.dsl.DexOptions
-import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.LintOptions
 import com.android.build.gradle.internal.dsl.PackagingOptions
+import com.android.build.gradle.internal.dsl.PreprocessingOptions
 import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.Splits
-import com.android.build.gradle.internal.test.TestOptions
+import com.android.build.gradle.internal.dsl.TestOptions
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
+import com.android.builder.core.LibraryRequest
 import com.android.builder.model.SourceProvider
 import com.android.builder.sdk.TargetInfo
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.sdklib.repository.FullRevision
 import com.google.common.collect.Lists
+import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
-import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.SourceSet
 import org.gradle.internal.reflect.Instantiator
 
-import static com.android.builder.core.VariantType.ANDROID_TEST
-import static com.android.builder.core.VariantType.UNIT_TEST
-
 /**
  * Base 'android' extension for all android plugins.
  *
  * <p>This is never used directly. Instead,
  *<ul>
- * <li>Plugin 'com.android.application' uses {@link AppExtension}</li>
- * <li>Plugin 'com.android.library' uses {@link LibraryExtension}</li>
+ * <li>Plugin <code>com.android.application</code> uses {@link AppExtension}</li>
+ * <li>Plugin <code>com.android.library</code> uses {@link LibraryExtension}</li>
+ * <li>Plugin <code>com.android.test</code> uses {@link TestedExtension}</li>
  * </ul>
  */
-public abstract class BaseExtension {
+public abstract class BaseExtension implements AndroidConfig {
 
     private String target
     private FullRevision buildToolsRevision
+    private List<LibraryRequest> libraryRequests = []
 
     /** Default config, shared by all flavors. */
     final ProductFlavor defaultConfig
@@ -97,14 +99,21 @@ public abstract class BaseExtension {
     /** Packaging options. */
     final PackagingOptions packagingOptions
 
+    /** Options to control resources preprocessing. Not finalized yet.*/
+    final PreprocessingOptions preprocessingOptions
+
     /** JaCoCo options. */
     final JacocoExtension jacoco
 
-    /** APK splits */
+    /**
+     * APK splits options.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/apk-splits">APK Splits</a>.
+     */
     final Splits splits
 
     /** All product flavors used by this project. */
-    final NamedDomainObjectContainer<GroupableProductFlavor> productFlavors
+    final NamedDomainObjectContainer<CoreProductFlavor> productFlavors
 
     /** Build types used by this project. */
     final NamedDomainObjectContainer<BuildType> buildTypes
@@ -116,20 +125,18 @@ public abstract class BaseExtension {
 
     protected Project project
 
+    /** Adb options */
+    final AdbOptions adbOptions;
+
     /** A prefix to be used when creating new resources. Used by Studio */
     String resourcePrefix
 
     List<String> flavorDimensionList
-    String testBuildType = "debug"
 
     private String defaultPublishConfig = "release"
     private boolean publishNonDefault = false
-    private boolean useNewNativePlugin = false
 
     private Closure<Void> variantFilter
-
-    private final DefaultDomainObjectSet<TestVariant> testVariantList =
-        new DefaultDomainObjectSet<TestVariant>(TestVariant.class)
 
     private final List<DeviceProvider> deviceProviderList = Lists.newArrayList();
     private final List<TestServer> testServerList = Lists.newArrayList();
@@ -153,7 +160,7 @@ public abstract class BaseExtension {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull SdkHandler sdkHandler,
             @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
-            @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<ProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
             @NonNull ExtraModelInfo extraModelInfo,
             boolean isLibrary) {
@@ -176,7 +183,9 @@ public abstract class BaseExtension {
         testOptions = instantiator.newInstance(TestOptions)
         compileOptions = instantiator.newInstance(CompileOptions)
         packagingOptions = instantiator.newInstance(PackagingOptions)
+        preprocessingOptions = instantiator.newInstance(PreprocessingOptions)
         jacoco = instantiator.newInstance(JacocoExtension)
+        adbOptions = instantiator.newInstance(AdbOptions)
         splits = instantiator.newInstance(Splits, instantiator)
 
         sourceSetsContainer = project.container(AndroidSourceSet,
@@ -215,8 +224,6 @@ public abstract class BaseExtension {
         }
 
         sourceSetsContainer.create(defaultConfig.name)
-        sourceSetsContainer.create(ANDROID_TEST.prefix)
-        sourceSetsContainer.create(UNIT_TEST.prefix)
     }
 
     /**
@@ -226,7 +233,7 @@ public abstract class BaseExtension {
         isWritable = false
     }
 
-    private checkWritability() {
+    protected checkWritability() {
         if (!isWritable) {
             throw new GradleException(
                     "Android tasks have already been created.\n" +
@@ -275,6 +282,24 @@ public abstract class BaseExtension {
         compileSdkVersion(target)
     }
 
+    /**
+     * Request the use a of Library. The library is then added to the classpath.
+     * @param name the name of the library.
+     */
+    void useLibrary(String name) {
+        useLibrary(name, true)
+    }
+
+    /**
+     * Request the use a of Library. The library is then added to the classpath.
+     * @param name the name of the library.
+     * @param required if using the library requires a manifest entry, the  entry will
+     * indicate that the library is not required.
+     */
+    void useLibrary(String name, boolean required) {
+        libraryRequests.add(new LibraryRequest(name, required))
+    }
+
     void buildToolsVersion(String version) {
         checkWritability()
         buildToolsRevision = FullRevision.parseRevision(version)
@@ -305,7 +330,7 @@ public abstract class BaseExtension {
     /**
      * Configures the product flavors.
      */
-    void productFlavors(Action<? super NamedDomainObjectContainer<GroupableProductFlavor>> action) {
+    void productFlavors(Action<? super NamedDomainObjectContainer<CoreProductFlavor>> action) {
         checkWritability()
         action.execute(productFlavors)
     }
@@ -396,11 +421,27 @@ public abstract class BaseExtension {
     }
 
     /**
+     * Configures preprocessing options.
+     */
+    void preprocessingOptions(Action<PreprocessingOptions> action) {
+        checkWritability()
+        action.execute(preprocessingOptions)
+    }
+
+    /**
      * Configures JaCoCo options.
      */
     void jacoco(Action<JacocoExtension> action) {
         checkWritability()
         action.execute(jacoco)
+    }
+
+    /**
+     * Configures adb options.
+     */
+    void adbOptions(Action<AdbOptions> action) {
+        checkWritability()
+        action.execute(adbOptions)
     }
 
     /**
@@ -463,27 +504,19 @@ public abstract class BaseExtension {
         return publishNonDefault
     }
 
-    /**
-     * Sets a variant filter to control which variant are excluded. The closure is passed a single
-     * object of type {@link com.android.build.gradle.internal.api.VariantFilter}
-     * @param filter the filter as a closure
-     */
     void variantFilter(Closure<Void> filter) {
         setVariantFilter(filter)
     }
 
-    /**
-     * Sets a variant filter to control which variant are excluded. The closure is passed a single
-     * object of type {@link com.android.build.gradle.internal.api.VariantFilter}
-     * @param filter the filter as a closure
-     */
     void setVariantFilter(Closure<Void> filter) {
         variantFilter = filter
     }
 
     /**
-     * A variant filter to control which variant are excluded. The filter is a closure which
-     * is passed a single object of type {@link com.android.build.gradle.internal.api.VariantFilter}
+     * A variant filter to control which variants are excluded.
+     * <p>The filter is a closure which is passed a single object of type
+     * {@link com.android.build.gradle.internal.api.VariantFilter}. It should set the
+     * {@link VariantFilter#setIgnore(boolean)} flag to filter out the given variant.
      */
     public Closure<Void> getVariantFilter() {
         return variantFilter;
@@ -493,20 +526,7 @@ public abstract class BaseExtension {
         resourcePrefix = prefix
     }
 
-    /**
-     * Returns the list of test variants. Since the collections is built after evaluation,
-     * it should be used with Groovy's <code>all</code> iterator to process future items.
-     */
-    @NonNull
-    public DefaultDomainObjectSet<TestVariant> getTestVariants() {
-        return testVariantList
-    }
-
     abstract void addVariant(BaseVariant variant)
-
-    void addTestVariant(TestVariant testVariant) {
-        testVariantList.add(testVariant)
-    }
 
     public void registerArtifactType(@NonNull String name,
                                      boolean isTest,
@@ -523,23 +543,26 @@ public abstract class BaseExtension {
 
     public void registerProductFlavorSourceProvider(
             @NonNull String name,
-            @NonNull ProductFlavor productFlavor,
+            @NonNull CoreProductFlavor productFlavor,
             @NonNull SourceProvider sourceProvider) {
         extraModelInfo.registerProductFlavorSourceProvider(name, productFlavor, sourceProvider)
     }
 
+    @CompileStatic
     public void registerJavaArtifact(
             @NonNull String name,
             @NonNull BaseVariant variant,
             @NonNull String assembleTaskName,
             @NonNull String javaCompileTaskName,
+            @NonNull Collection<File> generatedSourceFolders,
             @NonNull Iterable<String> ideSetupTaskNames,
             @NonNull Configuration configuration,
             @NonNull File classesFolder,
+            @NonNull File javaResourceFolder,
             @Nullable SourceProvider sourceProvider) {
         extraModelInfo.registerJavaArtifact(name, variant, assembleTaskName,
-                javaCompileTaskName, ideSetupTaskNames,
-                configuration, classesFolder, sourceProvider)
+                javaCompileTaskName, generatedSourceFolders, ideSetupTaskNames,
+                configuration, classesFolder, javaResourceFolder, sourceProvider)
     }
 
     public void registerMultiFlavorSourceProvider(
@@ -557,6 +580,10 @@ public abstract class BaseExtension {
     /**
      * <strong>Required.</strong> Compile SDK version.
      *
+     * <p>Your code will be compiled against the android.jar from this API level. You should
+     * generally use the most up-to-date SDK version here. Use the Lint tool to make sure you don't
+     * use APIs not available in earlier platform version without checking.
+     *
      * <p>Setter can be called with a string like "android-21" or a number.
      *
      * <p>Value assigned to this property is parsed and stored in a normalized form, so reading it
@@ -570,8 +597,16 @@ public abstract class BaseExtension {
         return buildToolsRevision
     }
 
+    public Collection<LibraryRequest> getLibraryRequests() {
+        return libraryRequests
+    }
+
     public File getSdkDirectory() {
         return sdkHandler.getSdkFolder()
+    }
+
+    public File getNdkDirectory() {
+        return sdkHandler.getNdkFolder()
     }
 
     public List<File> getBootClasspath() {
@@ -593,7 +628,6 @@ public abstract class BaseExtension {
 
     // ---------------
     // TEMP for compatibility
-    // STOPSHIP Remove in 1.0
 
     // by default, we do not generate pure splits
     boolean generatePureSplits = false;
@@ -609,7 +643,7 @@ public abstract class BaseExtension {
 
     public void enforceUniquePackageName(boolean value) {
         if (!value) {
-            LoggingUtil.displayDeprecationWarning(logger, project, "Support for libraries with same package name is deprecated and will be removed in 1.0")
+            LoggingUtil.displayDeprecationWarning(logger, project, "Support for libraries with same package name is deprecated and will be removed in a future release.")
         }
         enforceUniquePackageName = value
     }
@@ -618,16 +652,8 @@ public abstract class BaseExtension {
         enforceUniquePackageName(value)
     }
 
-    public getEnforceUniquePackageName() {
+    public boolean getEnforceUniquePackageName() {
         return enforceUniquePackageName
-    }
-
-    public boolean getUseNewNativePlugin() {
-        return useNewNativePlugin
-    }
-
-    public void setUseNewNativePlugin(boolean value) {
-        useNewNativePlugin = value
     }
 
     private void ensureTargetSetup() {
@@ -637,7 +663,14 @@ public abstract class BaseExtension {
             sdkHandler.initTarget(
                     getCompileSdkVersion(),
                     buildToolsRevision,
+                    libraryRequests,
                     androidBuilder)
         }
+    }
+
+    // For compatibility with LibraryExtension.
+    @Override
+    Boolean getPackageBuildConfig() {
+        throw new GradleException("packageBuildConfig is not supported.");
     }
 }

@@ -17,19 +17,13 @@
 package com.android.tools.perflib.heap.analysis;
 
 import com.android.annotations.NonNull;
-import com.android.tools.perflib.heap.ArrayInstance;
-import com.android.tools.perflib.heap.ClassInstance;
-import com.android.tools.perflib.heap.ClassObj;
-import com.android.tools.perflib.heap.Field;
-import com.android.tools.perflib.heap.RootObj;
-import com.android.tools.perflib.heap.RootType;
-import com.android.tools.perflib.heap.Snapshot;
-import com.android.tools.perflib.heap.Type;
+import com.android.tools.perflib.heap.*;
 import com.android.tools.perflib.heap.io.InMemoryBuffer;
 import com.google.common.collect.Maps;
 
 import junit.framework.TestCase;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -52,7 +46,7 @@ public class VisitorsTest extends TestCase {
     }
 
     public void testSimpleStaticFieldsGraph() {
-        Type.setIdSize(4);
+        mSnapshot.setIdSize(4);
         final ClassInstance object1 = new ClassInstance(1, null, 0);
         object1.setClassId(42);
         object1.setSize(20);
@@ -85,7 +79,7 @@ public class VisitorsTest extends TestCase {
     }
 
     public void testSimpleArray() {
-        Type.setIdSize(4);
+        mSnapshot.setIdSize(4);
         final ClassInstance object = new ClassInstance(1, null, 0);
         object.setClassId(42);
         object.setSize(20);
@@ -114,12 +108,12 @@ public class VisitorsTest extends TestCase {
                 .addReferences(2, 4)
                 .addReferences(3, 4)
                 .addRoot(1)
-                .getSnapshot();
+                .build();
 
-        assertEquals(10, snapshot.findReference(1).getCompositeSize());
-        assertEquals(6, snapshot.findReference(2).getCompositeSize());
-        assertEquals(7, snapshot.findReference(3).getCompositeSize());
-        assertEquals(4, snapshot.findReference(4).getCompositeSize());
+        assertEquals(10, snapshot.findInstance(1).getCompositeSize());
+        assertEquals(6, snapshot.findInstance(2).getCompositeSize());
+        assertEquals(7, snapshot.findInstance(3).getCompositeSize());
+        assertEquals(4, snapshot.findInstance(4).getCompositeSize());
     }
 
     public void testBasicCycle() {
@@ -128,11 +122,41 @@ public class VisitorsTest extends TestCase {
                 .addReferences(2, 3)
                 .addReferences(3, 1)
                 .addRoot(1)
-                .getSnapshot();
+                .build();
 
         // The composite size is a sum over all nodes participating in the cycle.
-        assertEquals(6, snapshot.findReference(1).getCompositeSize());
-        assertEquals(6, snapshot.findReference(2).getCompositeSize());
-        assertEquals(6, snapshot.findReference(3).getCompositeSize());
+        assertEquals(6, snapshot.findInstance(1).getCompositeSize());
+        assertEquals(6, snapshot.findInstance(2).getCompositeSize());
+        assertEquals(6, snapshot.findInstance(3).getCompositeSize());
+    }
+
+    public void testTopSortSimpleGraph() {
+        Snapshot snapshot = new SnapshotBuilder(6)
+                .addReferences(1, 2, 3)
+                .addReferences(2, 4, 6)
+                .addReferences(3, 4, 5)
+                .addReferences(4, 6)
+                .addRoot(1)
+                .build();
+
+        List<Instance> topSort = TopologicalSort.compute(snapshot.getGCRoots());
+        assertEquals(6, topSort.size());
+        // Make sure finishing times are computed correctly. A visitor simply collecting nodes as
+        // they are expanded will not yield the correct order. The correct invariant for a DAG is:
+        // for each directed edge (u,v), topsort(u) < topsort(v).
+        assertTrue(snapshot.findInstance(1).getTopologicalOrder() <
+                snapshot.findInstance(2).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(1).getTopologicalOrder() <
+                snapshot.findInstance(3).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(2).getTopologicalOrder() <
+                snapshot.findInstance(4).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(2).getTopologicalOrder() <
+                snapshot.findInstance(6).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(3).getTopologicalOrder() <
+                snapshot.findInstance(4).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(3).getTopologicalOrder() <
+                snapshot.findInstance(5).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(4).getTopologicalOrder() <
+                snapshot.findInstance(6).getTopologicalOrder());
     }
 }

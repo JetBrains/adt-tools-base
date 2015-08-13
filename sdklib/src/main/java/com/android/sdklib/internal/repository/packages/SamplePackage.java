@@ -22,7 +22,7 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkSource;
@@ -48,7 +48,12 @@ import java.util.Properties;
 
 /**
  * Represents a sample XML node in an SDK repository.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class SamplePackage extends MinToolsPackage
         implements IAndroidVersionProvider, IMinApiLevelDependency {
 
@@ -92,11 +97,8 @@ public class SamplePackage extends MinToolsPackage
                     SdkRepoConstants.NODE_MIN_API_LEVEL,
                     MIN_API_LEVEL_NOT_SPECIFIED);
 
-        mPkgDesc = PkgDesc.Builder
-                .newSample(mVersion,
-                           (MajorRevision) getRevision(),
-                           getMinToolsRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                .newSample(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
                 .create();
     }
 
@@ -130,13 +132,10 @@ public class SamplePackage extends MinToolsPackage
         mVersion = target.getVersion();
 
         mMinApiLevel = getPropertyInt(props, PkgProps.SAMPLE_MIN_API_LEVEL,
-                                             MIN_API_LEVEL_NOT_SPECIFIED);
+                MIN_API_LEVEL_NOT_SPECIFIED);
 
-        mPkgDesc = PkgDesc.Builder
-                .newSample(mVersion,
-                          (MajorRevision) getRevision(),
-                          getMinToolsRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                .newSample(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
                 .create();
     }
 
@@ -172,11 +171,8 @@ public class SamplePackage extends MinToolsPackage
         mMinApiLevel = getPropertyInt(props, PkgProps.SAMPLE_MIN_API_LEVEL,
                                              MIN_API_LEVEL_NOT_SPECIFIED);
 
-        mPkgDesc = PkgDesc.Builder
-                .newSample(mVersion,
-                           (MajorRevision) getRevision(),
-                           getMinToolsRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                .newSample(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
                 .create();
     }
 

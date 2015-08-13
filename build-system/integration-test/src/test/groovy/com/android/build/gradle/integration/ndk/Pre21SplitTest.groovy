@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.ndk
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -28,14 +29,16 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 /**
  * Test split DSL with API level < 21.
  */
+@CompileStatic
 class Pre21SplitTest {
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder().create()
+    static public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldJniApp())
+            .addGradleProperties("android.useDeprecatedNdk=true")
+            .create()
 
     @BeforeClass
     static public void setUp() {
-        new HelloWorldJniApp().writeSources(project.testDir)
-
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 

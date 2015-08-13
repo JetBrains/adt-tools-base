@@ -21,6 +21,7 @@ import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_PLURALS;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.checks.PluralsDatabase.Quantity;
 import com.android.tools.lint.detector.api.Category;
@@ -31,7 +32,6 @@ import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
-import com.android.utils.Pair;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -84,7 +84,7 @@ public class PluralsDetector extends ResourceXmlDetector {
             "\n" +
             "This lint check looks at the quantity strings defined for each translation and " +
             "flags any quantity strings that are unused (because the language does not make that " +
-            "quantity distinction, and Android will therefore not look it up.)." +
+            "quantity distinction, and Android will therefore not look it up.).\n" +
             "\n" +
             "For example, in Chinese, only the `other` quantity is used, so even if you " +
             "provide translations for `zero` and `one`, these strings will *not* be returned " +
@@ -138,14 +138,11 @@ public class PluralsDetector extends ResourceXmlDetector {
             return;
         }
 
-        Pair<String, String> locale = TypoDetector.getLocale(context);
-        if (locale == null) {
+        LocaleQualifier locale = LintUtils.getLocale(context);
+        if (locale == null || !locale.hasLanguage()) {
             return;
         }
-        String language = locale.getFirst();
-        if (language == null) {
-            return;
-        }
+        String language = locale.getLanguage();
 
         PluralsDatabase plurals = PluralsDatabase.get();
 

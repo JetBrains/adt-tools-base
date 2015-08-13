@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="icu4j">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/ibm/icu/icu4j/54.1.1/icu4j-54.1.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/ibm/icu/icu4j/54.1.1/icu4j-54.1.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

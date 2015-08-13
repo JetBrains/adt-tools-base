@@ -16,9 +16,20 @@
 
 package com.android.tools.perflib.heap;
 
+import com.android.annotations.NonNull;
+
 public interface Visitor {
 
-    public boolean visitEnter(Instance instance);
+    void visitRootObj(@NonNull RootObj root);
 
-    public void visitLeave(Instance instance);
+    void visitArrayInstance(@NonNull ArrayInstance instance);
+
+    void visitClassInstance(@NonNull ClassInstance instance);
+
+    void visitClassObj(@NonNull ClassObj instance);
+
+    /**
+     * Marks an instance to be visited later, depending on the visitor's traversal strategy.
+     */
+    void visitLater(Instance parent, @NonNull Instance child);
 }

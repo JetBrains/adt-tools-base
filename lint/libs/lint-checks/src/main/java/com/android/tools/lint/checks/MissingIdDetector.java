@@ -52,7 +52,7 @@ public class MissingIdDetector extends LayoutDetector {
             "\n" +
             "\"Each fragment requires a unique identifier that the system can use " +
             "to restore the fragment if the activity is restarted (and which you can " +
-            "use to capture the fragment to perform transactions, such as remove it)." +
+            "use to capture the fragment to perform transactions, such as remove it).\n" +
             "\n" +
             "* Supply the android:id attribute with a unique ID.\n" +
             "* Supply the android:tag attribute with a unique string.\n" +

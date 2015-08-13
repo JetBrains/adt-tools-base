@@ -46,7 +46,8 @@ import static org.junit.Assert.assertTrue
 class BasicTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("basic")
+            .fromTestProject("basic")
+            .withoutNdk()
             .create()
 
     static public AndroidProject model
@@ -85,8 +86,13 @@ class BasicTest {
                 model.getAaptOptions().getFailOnMissingConfigEntry())
 
         JavaCompileOptions javaCompileOptions = model.getJavaCompileOptions()
-        assertEquals("1.6", javaCompileOptions.getSourceCompatibility())
-        assertEquals("1.6", javaCompileOptions.getTargetCompatibility())
+        // since source and target compatibility are not explicitly set in the build.gradle,
+        // the default value should be the JDK version used to build against.
+        assertEquals(System.getProperty("java.specification.version"),
+                javaCompileOptions.getSourceCompatibility())
+        assertEquals(System.getProperty("java.specification.version"),
+                javaCompileOptions.getTargetCompatibility())
+        assertEquals("UTF-8", javaCompileOptions.getEncoding())
     }
 
     @Test
@@ -142,14 +148,20 @@ class BasicTest {
     }
 
     @Test
+    void "we don't fail on LICENSE.txt when packaging dependencies"() {
+        project.execute("assembleAndroidTest")
+    }
+
+    @Test
     @Category(DeviceTests.class)
     void install() {
+        GradleTestProject.assumeLocalDevice();
         project.execute("installDebug", "uninstallAll")
     }
 
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

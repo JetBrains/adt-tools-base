@@ -291,11 +291,8 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
     private static boolean shouldSkip(File file) {
         // No need to do work on this library, which is included in pretty much all new ADT
         // projects
-        if (file.getPath().endsWith("android-support-v4.jar")) { //$NON-NLS-1$
-            return true;
-        }
+        return file.getPath().endsWith("android-support-v4.jar");
 
-        return false;
     }
 
     private static class Candidate {

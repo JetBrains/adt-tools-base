@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -27,10 +28,11 @@ import org.junit.experimental.categories.Category
 /**
  * Assemble tests for multiproject.
  */
+@CompileStatic
 class MultiprojectTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("multiproject")
+            .fromTestProject("multiproject")
             .create()
 
     @BeforeClass
@@ -56,6 +58,9 @@ class MultiprojectTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheckAndReport() {
-        project.execute("connectedCheck", "mergeAndroidReports")
+        project.executeConnectedCheck()
+        // android-reporting plugin currently executes connected tasks.
+        GradleTestProject.assumeLocalDevice();
+        project.execute("mergeAndroidReports")
     }
 }

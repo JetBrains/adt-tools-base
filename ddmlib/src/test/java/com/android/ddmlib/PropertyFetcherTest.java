@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 public class PropertyFetcherTest extends TestCase {
     final static String GETPROP_RESPONSE =
-            "[ro.sf.lcd_density]: [480]\r\n" +
+            "\n[ro.sf.lcd_density]: [480]\n" +
             "[ro.secure]: [1]\r\n";
 
     /**

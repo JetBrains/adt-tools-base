@@ -68,6 +68,7 @@ public class LintCliXmlParserTest extends TestCase {
                 "</LinearLayout>\n";
         LintCliXmlParser parser = new LintCliXmlParser();
         File file = File.createTempFile("parsertest", ".xml");
+        //noinspection IOResourceOpenedButNotSafelyClosed
         Writer fw = new BufferedWriter(new FileWriter(file));
         fw.write(xml);
         fw.close();
@@ -93,10 +94,32 @@ public class LintCliXmlParserTest extends TestCase {
         Location location = parser.getLocation(context, attr);
         Position start = location.getStart();
         Position end = location.getEnd();
+        assertNotNull(start);
+        assertNotNull(end);
         assertEquals(2, start.getLine());
         assertEquals(xml.indexOf("android:layout_width"), start.getOffset());
         assertEquals(2, end.getLine());
         String target = "android:layout_width=\"match_parent\"";
+        assertEquals(xml.indexOf(target) + target.length(), end.getOffset());
+
+        // Check attribute name positions
+        location = parser.getNameLocation(context, attr);
+        start = location.getStart();
+        end = location.getEnd();
+        assertNotNull(start);
+        assertNotNull(end);
+        target = "android:layout_width";
+        assertEquals(target, xml.substring(start.getOffset(), end.getOffset()));
+        assertEquals(xml.indexOf(target) + target.length(), end.getOffset());
+
+        // Check attribute value positions
+        location = parser.getValueLocation(context, attr);
+        start = location.getStart();
+        end = location.getEnd();
+        assertNotNull(start);
+        assertNotNull(end);
+        target = "match_parent";
+        assertEquals(target, xml.substring(start.getOffset(), end.getOffset()));
         assertEquals(xml.indexOf(target) + target.length(), end.getOffset());
 
         // Check element positions
@@ -104,11 +127,23 @@ public class LintCliXmlParserTest extends TestCase {
         location = parser.getLocation(context, button);
         start = location.getStart();
         end = location.getEnd();
+        assertNotNull(start);
+        assertNotNull(end);
         assertEquals(6, start.getLine());
         assertEquals(xml.indexOf("<Button"), start.getOffset());
         assertEquals(xml.indexOf("/>") + 2, end.getOffset());
         assertEquals(10, end.getLine());
         int button1End = end.getOffset();
+
+        // Check element name positions
+        location = parser.getNameLocation(context, button);
+        start = location.getStart();
+        end = location.getEnd();
+        assertNotNull(start);
+        assertNotNull(end);
+        target = "Button";
+        assertEquals(target, xml.substring(start.getOffset(), end.getOffset()));
+        assertEquals(xml.indexOf(target) + target.length(), end.getOffset());
 
         Handle handle = parser.createLocationHandle(context, button);
         Location location2 = handle.resolve();
@@ -122,6 +157,8 @@ public class LintCliXmlParserTest extends TestCase {
         location = parser.getLocation(context, button2);
         start = location.getStart();
         end = location.getEnd();
+        assertNotNull(start);
+        assertNotNull(end);
         assertEquals(12, start.getLine());
         assertEquals(xml.indexOf("<Button", button1End), start.getOffset());
         assertEquals(xml.indexOf("/>", start.getOffset()) + 2, end.getOffset());
@@ -129,6 +166,7 @@ public class LintCliXmlParserTest extends TestCase {
 
         parser.dispose(context, document);
 
+        //noinspection ResultOfMethodCallIgnored
         file.delete();
     }
 
@@ -142,6 +180,7 @@ public class LintCliXmlParserTest extends TestCase {
                 "</LinearLayout>\r\n";
         LintCliXmlParser parser = new LintCliXmlParser();
         File file = File.createTempFile("parsertest2", ".xml");
+        //noinspection IOResourceOpenedButNotSafelyClosed
         Writer fw = new BufferedWriter(new FileWriter(file));
         fw.write(xml);
         fw.close();
@@ -152,6 +191,7 @@ public class LintCliXmlParserTest extends TestCase {
         Document document = parser.parseXml(context);
         assertNotNull(document);
 
+        //noinspection ResultOfMethodCallIgnored
         file.delete();
     }
 

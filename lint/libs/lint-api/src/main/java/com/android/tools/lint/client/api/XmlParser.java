@@ -23,6 +23,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.annotations.Beta;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -71,6 +72,26 @@ public abstract class XmlParser {
     @NonNull
     public abstract Location getLocation(@NonNull XmlContext context, @NonNull Node node,
             int start, int end);
+
+    /**
+     * Returns a {@link Location} for the given DOM node
+     *
+     * @param context information about the file being parsed
+     * @param node the node to create a location for
+     * @return a location for the given node
+     */
+    @NonNull
+    public abstract Location getNameLocation(@NonNull XmlContext context, @NonNull Node node);
+
+    /**
+     * Returns a {@link Location} for the given DOM node
+     *
+     * @param context information about the file being parsed
+     * @param node the node to create a location for
+     * @return a location for the given node
+     */
+    @NonNull
+    public abstract Location getValueLocation(@NonNull XmlContext context, @NonNull Attr node);
 
     /**
      * Creates a light-weight handle to a location for the given node. It can be

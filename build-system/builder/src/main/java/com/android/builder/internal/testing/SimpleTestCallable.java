@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableList;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -67,8 +68,10 @@ public class SimpleTestCallable implements Callable<Boolean> {
     private final List<File> testedApks;
     @NonNull
     private final File adbExec;
+    @NonNull
+    private final Collection<String> installOptions;
 
-    private final int timeout;
+    private final int timeoutInMs;
     @NonNull
     private final ILogger logger;
 
@@ -82,7 +85,8 @@ public class SimpleTestCallable implements Callable<Boolean> {
             @NonNull  TestData testData,
             @NonNull  File resultsDir,
             @NonNull  File coverageDir,
-                      int timeout,
+                      int timeoutInMs,
+            @NonNull Collection<String> installOptions,
             @NonNull  ILogger logger) {
         this.projectName = projectName;
         this.device = device;
@@ -93,7 +97,8 @@ public class SimpleTestCallable implements Callable<Boolean> {
         this.testedApks = testedApks;
         this.testData = testData;
         this.adbExec = adbExec;
-        this.timeout = timeout;
+        this.timeoutInMs = timeoutInMs;
+        this.installOptions = installOptions;
         this.logger = logger;
     }
 
@@ -112,7 +117,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
         String coverageFile = "/data/data/" + testData.getTestedApplicationId() + "/" + FILE_COVERAGE_EC;
 
         try {
-            device.connect(timeout, logger);
+            device.connect(timeoutInMs, logger);
 
             if (!testedApks.isEmpty()) {
                 logger.verbose("DeviceConnector '%s': installing %s", deviceName,
@@ -122,17 +127,21 @@ public class SimpleTestCallable implements Callable<Boolean> {
                             + " require a device with API level 21+");
                 }
                 if (device.getApiLevel() >= 21) {
-                    device.installPackages(testedApks, timeout, logger);
+                    device.installPackages(testedApks,
+                            ImmutableList.<String>of() /* installOptions */, timeoutInMs, logger);
                 } else {
-                    device.installPackage(testedApks.get(0), timeout, logger);
+                    device.installPackage(testedApks.get(0),
+                            ImmutableList.<String>of() /* installOptions */, timeoutInMs, logger);
                 }
             }
 
             logger.verbose("DeviceConnector '%s': installing %s", deviceName, testApk);
             if (device.getApiLevel() >= 21) {
-                device.installPackages(ImmutableList.of(testApk), timeout, logger);
+                device.installPackages(ImmutableList.of(testApk),
+                        ImmutableList.<String>of() /* installOptions */,timeoutInMs, logger);
             } else {
-                device.installPackage(testApk, timeout, logger);
+                device.installPackage(testApk,
+                        ImmutableList.<String>of() /* installOptions */, timeoutInMs, logger);
             }
             isInstalled = true;
 
@@ -141,13 +150,18 @@ public class SimpleTestCallable implements Callable<Boolean> {
                     testData.getInstrumentationRunner(),
                     device);
 
+            for (Map.Entry<String, String> argument:
+                    testData.getInstrumentationRunnerArguments().entrySet()) {
+                runner.addInstrumentationArg(argument.getKey(), argument.getValue());
+            }
+
             if (testData.isTestCoverageEnabled()) {
                 runner.addInstrumentationArg("coverage", "true");
                 runner.addInstrumentationArg("coverageFile", coverageFile);
             }
 
             runner.setRunName(deviceName);
-            runner.setMaxtimeToOutputResponse(timeout);
+            runner.setMaxtimeToOutputResponse(timeoutInMs);
 
             runner.run(runListener);
 
@@ -164,9 +178,13 @@ public class SimpleTestCallable implements Callable<Boolean> {
 
                 // create a fake test output
                 Map<String, String> emptyMetrics = Collections.emptyMap();
-                TestIdentifier fakeTest = new TestIdentifier(device.getClass().getName(), "hasTests");
+                TestIdentifier fakeTest = new TestIdentifier(device.getClass().getName(), "No tests found.");
                 fakeRunListener.testStarted(fakeTest);
-                fakeRunListener.testFailed(fakeTest , "No tests found.");
+                fakeRunListener.testFailed(
+                        fakeTest,
+                        "No tests found. This usually means that your test classes are"
+                                + " not in the form that your test runner expects (e.g. don't inherit from"
+                                + " TestCase or lack @Test annotations).");
                 fakeRunListener.testEnded(fakeTest, emptyMetrics);
 
                 // end the run to generate the XML file.
@@ -239,7 +257,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
                 }
             }
 
-            device.disconnect(timeout, logger);
+            device.disconnect(timeoutInMs, logger);
         }
     }
 
@@ -248,7 +266,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
             throws DeviceException {
         if (packageName != null) {
             logger.verbose("DeviceConnector '%s': uninstalling %s", deviceName, packageName);
-            device.uninstallPackage(packageName, timeout, logger);
+            device.uninstallPackage(packageName, timeoutInMs, logger);
         } else {
             logger.verbose("DeviceConnector '%s': unable to uninstall %s: unable to get package name",
                     deviceName, apkFile);

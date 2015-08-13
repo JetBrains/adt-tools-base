@@ -31,11 +31,13 @@ class NdkJniPureSplitLibTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkJniPureSplitLib")
+            .fromTestProject("ndkJniPureSplitLib")
+            .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
 
     @BeforeClass
     static void setUp() {
+        GradleTestProject.assumeBuildToolsAtLeast(21)
         project.execute("clean", ":app:assembleDebug")
     }
 

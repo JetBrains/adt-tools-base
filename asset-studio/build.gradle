@@ -8,7 +8,7 @@ version = rootProject.ext.baseVersion
 dependencies {
     compile project(':base:layoutlib-api')
 
-    testCompile 'junit:junit:3.8.1'
+    testCompile 'junit:junit:4.12'
 }
 
 sourceSets {

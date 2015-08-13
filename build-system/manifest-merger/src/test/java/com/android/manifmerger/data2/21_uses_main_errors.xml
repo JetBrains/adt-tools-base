@@ -58,6 +58,6 @@
 
 @errors
 
-ERROR:Attribute uses-library#com.example.SomeLibrary2_RequiredTrue@required at ManifestMerger2Test0_main.xml:27:13 has an illegal value=\(booh!\), expected 'true' or 'false'
-ERROR:Element uses-library#com.example.SomeLibrary3_RequiredFalse at ManifestMerger2Test0_main.xml:35:9 duplicated with element declared at ManifestMerger2Test0_main.xml:30:9
+ERROR:Attribute uses-library#com.example.SomeLibrary2_RequiredTrue@required at ManifestMerger2Test0_main.xml:27:13-37 has an illegal value=\(booh!\), expected 'true' or 'false'
+ERROR:Element uses-library#com.example.SomeLibrary3_RequiredFalse at ManifestMerger2Test0_main.xml:35:9-37:39 duplicated with element declared at ManifestMerger2Test0_main.xml:30:9-32:40
 ERROR:Validation failed, exiting

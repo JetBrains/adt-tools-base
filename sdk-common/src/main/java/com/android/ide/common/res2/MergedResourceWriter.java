@@ -16,6 +16,8 @@
 
 package com.android.ide.common.res2;
 
+import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.DOT_9PNG;
 import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_XML;
@@ -35,10 +37,12 @@ import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.File;
@@ -55,13 +59,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
  * A {@link MergeWriter} for assets, using {@link ResourceItem}.
  */
 public class MergedResourceWriter extends MergeWriter<ResourceItem> {
-    /** Filename to save the merged file as */
-    public static final String FN_VALUES_XML = "values.xml";
-    /** Prefix in comments which mark the source locations for merge results */
-    public static final String FILENAME_PREFIX = "From: ";
 
     @NonNull
     private final PngCruncher mCruncher;
+
+    /**
+     * If non-null, points to a File that we should write public.txt to
+     */
+    private final File mPublicFile;
 
     private DocumentBuilderFactory mFactory;
 
@@ -71,27 +76,31 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
     private final boolean mProcess9Patch;
 
+    private final int mCruncherKey;
+
     /**
      * map of XML values files to write after parsing all the files. the key is the qualifier.
      */
     private ListMultimap<String, ResourceItem> mValuesResMap;
 
     /**
-     * Set of qualifier that had a previously written resource now gone.
-     * This is to keep a list of values files that must be written out even with no
-     * touched or updated resources, in case one or more resources were removed.
+     * Set of qualifier that had a previously written resource now gone. This is to keep a list of
+     * values files that must be written out even with no touched or updated resources, in case one
+     * or more resources were removed.
      */
     private Set<String> mQualifierWithDeletedValues;
 
     public MergedResourceWriter(@NonNull File rootFolder,
             @NonNull PngCruncher pngRunner,
             boolean crunchPng,
-            boolean process9Patch) {
+            boolean process9Patch,
+            @Nullable File publicFile) {
         super(rootFolder);
         mCruncher = pngRunner;
+        mCruncherKey = mCruncher.start();
         mCrunchPng = crunchPng;
         mProcess9Patch = process9Patch;
-
+        mPublicFile = publicFile;
     }
 
     /**
@@ -100,7 +109,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      * @param insertSourceMarkers if true, insert source markers
      */
     public void setInsertSourceMarkers(boolean insertSourceMarkers) {
-      mInsertSourceMarkers = insertSourceMarkers;
+        mInsertSourceMarkers = insertSourceMarkers;
     }
 
     /**
@@ -109,7 +118,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      * @return whether this manifest merger will insert source markers into the merged source
      */
     public boolean isInsertSourceMarkers() {
-      return mInsertSourceMarkers;
+        return mInsertSourceMarkers;
     }
 
     @Override
@@ -124,9 +133,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     public void end() throws ConsumerException {
         super.end();
         try {
-            if (mCruncher != null) {
-                mCruncher.end();
-            }
+            mCruncher.end(mCruncherKey);
         } catch (InterruptedException e) {
             throw new ConsumerException(e);
         }
@@ -162,33 +169,12 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         File file = resourceFile.getFile();
 
                         String filename = file.getName();
-
-                        // Validate the filename here. Waiting for aapt isn't good
-                        // because the error messages don't point back to the original
-                        // file (if it's not an XML file) and besides, aapt prints
-                        // the wrong path (it hard-codes "res" into the path for example,
-                        // even if the file is not in a folder named res.
-                        for (int i = 0, n = filename.length(); i < n; i++) {
-                            // This is a direct port of the aapt file check in aapt's
-                            // Resource.cpp#makeFileResources validation
-                            char c = filename.charAt(i);
-                            if (!((c >= 'a' && c <= 'z')
-                                    || (c >= '0' && c <= '9')
-                                    || c == '_' || c == '.')) {
-                                String message =
-                                        "Invalid file name: must contain only lowercase "
-                                        + "letters and digits ([a-z0-9_.])";
-                                throw new MergingException(message).setFile(file);
-                            }
-                        }
-
                         String folderName = getFolderName(item);
-
                         File typeFolder = new File(getRootFolder(), folderName);
                         try {
                             createDir(typeFolder);
                         } catch (IOException ioe) {
-                            throw new MergingException(ioe).setFile(typeFolder);
+                            throw MergingException.wrapException(ioe).withFile(typeFolder).build();
                         }
 
                         File outFile = new File(typeFolder, filename);
@@ -199,12 +185,12 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                                 Files.copy(file, outFile);
                             } else if (filename.endsWith(DOT_PNG)) {
                                 if (mCrunchPng && mProcess9Patch) {
-                                    mCruncher.crunchPng(file, outFile);
+                                    mCruncher.crunchPng(mCruncherKey, file, outFile);
                                 } else {
                                     // we should not crunch the png files, but we should still
                                     // process the nine patch.
                                     if (mProcess9Patch && filename.endsWith(DOT_9PNG)) {
-                                        mCruncher.crunchPng(file, outFile);
+                                        mCruncher.crunchPng(mCruncherKey, file, outFile);
                                     } else {
                                         Files.copy(file, outFile);
                                     }
@@ -215,9 +201,9 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                                 Files.copy(file, outFile);
                             }
                         } catch (PngException e) {
-                            throw new MergingException(e).setFile(file);
+                            throw MergingException.wrapException(e).withFile(file).build();
                         } catch (IOException ioe) {
-                            throw new MergingException(ioe).setFile(file);
+                            throw MergingException.wrapException(ioe).withFile(file).build();
                         }
                         return null;
                     }
@@ -286,13 +272,17 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         ResourceFolderType.VALUES.getName() + RES_QUALIFIER_SEP + key;
 
                 File valuesFolder = new File(getRootFolder(), folderName);
-                File outFile = new File(valuesFolder, FN_VALUES_XML);
+                // Name of the file is the same as the folder as AAPT gets confused with name
+                // collision when not normalizing folders name.
+                File outFile = new File(valuesFolder, folderName + DOT_XML);
                 ResourceFile currentFile = null;
                 try {
                     createDir(valuesFolder);
 
                     DocumentBuilder builder = mFactory.newDocumentBuilder();
                     Document document = builder.newDocument();
+                    final String publicTag = ResourceType.PUBLIC.getName();
+                    List<Node> publicNodes = null;
 
                     Node rootNode = document.createElement(TAG_RESOURCES);
                     document.appendChild(rootNode);
@@ -300,6 +290,15 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     Collections.sort(items);
 
                     for (ResourceItem item : items) {
+                        Node nodeValue = item.getValue();
+                        if (nodeValue != null && publicTag.equals(nodeValue.getNodeName())) {
+                            if (publicNodes == null) {
+                                publicNodes = Lists.newArrayList();
+                            }
+                            publicNodes.add(nodeValue);
+                            continue;
+                        }
+
                         // add a carriage return so that the nodes are not all on the same line.
                         // also add an indent of 4 spaces.
                         rootNode.appendChild(document.createTextNode("\n    "));
@@ -317,9 +316,9 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                             rootNode.appendChild(document.createElement(TAG_EAT_COMMENT));
                             rootNode.appendChild(document.createTextNode("\n    "));
                         }
-                        Node adoptedNode = NodeUtils.adoptNode(document, item.getValue());
-                        rootNode.appendChild(adoptedNode);
 
+                        Node adoptedNode = NodeUtils.adoptNode(document, nodeValue);
+                        rootNode.appendChild(adoptedNode);
                     }
 
                     // finish with a carriage return
@@ -329,9 +328,34 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                     String content = XmlUtils.toXml(document, true /*preserveWhitespace*/);
                     Files.write(content, outFile, Charsets.UTF_8);
+
+                    if (publicNodes != null && mPublicFile != null) {
+                        // Generate public.txt:
+                        int size = publicNodes.size();
+                        StringBuilder sb = new StringBuilder(size * 80);
+                        for (Node node : publicNodes) {
+                            if (node.getNodeType() == Node.ELEMENT_NODE) {
+                                Element element = (Element) node;
+                                String name = element.getAttribute(ATTR_NAME);
+                                String type = element.getAttribute(ATTR_TYPE);
+                                if (!name.isEmpty() && !type.isEmpty()) {
+                                    sb.append(type).append(' ').append(name).append('\n');
+                                }
+                            }
+                        }
+                        File parentFile = mPublicFile.getParentFile();
+                        if (!parentFile.exists()) {
+                            boolean mkdirs = parentFile.mkdirs();
+                            if (!mkdirs) {
+                                throw new IOException("Could not create " + parentFile);
+                            }
+                        }
+                        String text = sb.toString();
+                        Files.write(text, mPublicFile, Charsets.UTF_8);
+                    }
                 } catch (Throwable t) {
-                    ConsumerException exception = new ConsumerException(t);
-                    exception.setFile(currentFile != null ? currentFile.getFile() : outFile);
+                    ConsumerException exception = new ConsumerException(t,
+                            currentFile != null ? currentFile.getFile() : outFile);
                     throw exception;
                 }
             }
@@ -343,7 +367,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     ResourceFolderType.VALUES.getName() + RES_QUALIFIER_SEP + key :
                     ResourceFolderType.VALUES.getName();
 
-            removeOutFile(folderName, FN_VALUES_XML);
+            removeOutFile(folderName, folderName + DOT_XML);
         }
     }
 
@@ -370,7 +394,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      * Removes a file from a folder based on a sub folder name and a filename
      *
      * @param folderName the sub folder name
-     * @param fileName the file name.
+     * @param fileName   the file name.
      * @return true if success.
      */
     private boolean removeOutFile(String folderName, String fileName) {
@@ -387,6 +411,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
     /**
      * Calculates the right folder name give a resource item.
+     *
      * @param resourceItem the resource item to calculate the folder name from.
      * @return a relative folder name
      */

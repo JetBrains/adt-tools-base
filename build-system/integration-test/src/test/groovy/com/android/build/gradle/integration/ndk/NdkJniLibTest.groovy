@@ -32,7 +32,8 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 class NdkJniLibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkJniLib")
+            .fromTestProject("ndkJniLib")
+            .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
 
     @BeforeClass
@@ -67,6 +68,6 @@ class NdkJniLibTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

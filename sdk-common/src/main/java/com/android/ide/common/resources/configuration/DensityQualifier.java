@@ -113,10 +113,10 @@ public final class DensityQualifier extends EnumBasedResourceQualifier {
         DensityQualifier compareQ = (DensityQualifier)compareTo;
         DensityQualifier referenceQ = (DensityQualifier)reference;
 
-        if (compareQ.mValue == referenceQ.mValue) {
+        if (compareQ.mValue == referenceQ.mValue || compareQ.mValue == Density.ANYDPI) {
             // what we have is already the best possible match (exact match)
             return false;
-        } else if (mValue == referenceQ.mValue) {
+        } else if (mValue == referenceQ.mValue || mValue == Density.ANYDPI) {
             // got new exact value, this is the best!
             return true;
         } else {

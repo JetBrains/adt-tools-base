@@ -33,7 +33,7 @@ import com.android.sdklib.internal.repository.NullTaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.archives.ArchiveInstaller;
 import com.android.sdklib.internal.repository.packages.AddonPackage;
-import com.android.sdklib.internal.repository.packages.License;
+import com.android.sdklib.repository.License;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.packages.PlatformToolPackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
@@ -74,7 +74,12 @@ import java.util.TreeSet;
 
 /**
  * Data shared by the SDK Manager updaters.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class UpdaterData implements IUpdaterData {
 
     public static final int NO_TOOLS_MSG = 0;

@@ -1,3 +1,92 @@
+1.3.0
+- By default, "LICENSE" and "LICENSE.txt" are excluded when creating an APK.
+  This can be changed from the DSL:
+
+    android {
+      packagingOptions.excludes = []
+    }
+
+- New sourceSets task for inspecting the set of all available source sets.
+- Unit tests recognize multi-flavor and per-variant source folders (e.g.
+  testDemoDebug). Android tests recognized multi-flavor source folders.
+- Unit testing improvements
+  * Run javac on main and test sources, even if useJack is true.
+  * Correctly recognize per-build-type dependencies.
+- It's now possible to specify instrumentation test runner arguments in
+  build.gradle (in defaultConfig or per flavor):
+
+    android {
+      defaultConfig {
+        testInstrumentationRunnerArguments size: "medium"
+      }
+
+      productFlavors {
+        foo {
+          testInstrumentationRunnerArguments foo: "bar"
+        }
+      }
+    }
+
+  or from the command line:
+
+    ./gradlew cC \
+       -Pandroid.testInstrumentationRunnerArguments.size=medium \
+       -Pandroid.testInstrumentationRunnerArguments.class=TestA,TestB
+
+- Arbitrary additional AAPT parameters can be set in build.gradle:
+    android {
+      aaptOptions {
+        additionalParameters "--custom_option", "value"
+      }
+    }
+- Resource names are validated before they are merged.
+- When building aar, do not provide automatic @{applicationId} placeholder
+  in manifest merger. Use a different placeholder like @{libApplicationId}
+  and provide a value for it if applicationIds should be baked in the library.
+- Introduce support for incremental compilation support with Jill and Jack. Change is purely
+  internal and does not require DSL change nor can it be disabled.
+
+1.2.0
+- Unit testing improvements
+  * Fixed task dependencies for library projects, so test classes should now
+    be up-to-date when running tests.
+  * Java-style resources are now put on the class path when running unit tests
+    through Gradle.
+  * Unit test configurations (e.g. testCompile) can now depend on AAR
+    artifacts.
+  * Fixes to mockable-android.jar: correct handling of enums, stripping the
+    final modifier of public instance fields.
+  * DSL: new code block for configuring the test tasks:
+    android {
+      testOptions {
+        unitTest.all {
+          jvmArgs '-XX:MaxPermSize=256m' // Or any other gradle option.
+        }
+      }
+    }
+
+  * Variants API: unit-testing variants are now exposed in the API and can be
+    manipulated (e.g. by calling addJavaSourceFoldersToModel).
+    android {
+      unitTestVariants.all { ... }
+      applicationVariants.all { v -> v.unitTestVariant }
+    }
+- Test-only ProGuard files. When running instrumentation tests (i.e. connectedCheck) against
+  a minified variant, the test APK needs to be processed by ProGuard to rename references to code
+  in the main APK. Flags for this ProGuard run (mostly for silencing warnings) can now be specified
+  like this:
+    android {
+        testBuildType = "minified"
+        buildTypes {
+            minified.initWith(buildTypes.debug)
+            minified {
+                minifyEnabled true
+                proguardFiles getDefaultProguardFile('proguard-android.txt'), "proguard-rules.pro"
+                testProguardFile "test-proguard-rules.pro"
+            }
+        }
+    }
+
 1.1.0
 - Unit testing support. Unit testing code is run on the local JVM, against a
   special version of android.jar that is compatible with popular mocking
@@ -8,6 +97,8 @@
   * New configurations for adding test-only dependencies, e.g.
       testCompile 'junit:junit:4.11'
       testMyFlavorCompile 'some:library:1.0'
+  * New option, android.testOptions.unitTests.returnDefaultValues to control
+    the behaviour of the "mockable" android.jar.
 - Task names that used to contain 'Test', e.g. 'assembleDebugTest' now use
   'AndroidTest', e.g. 'assembleDebugAndroidTest'. This is to distinguish them
   from the unit test tasks, e.g. 'assembleDebugUnitTest'.
@@ -28,6 +119,7 @@
             useNewCruncher false
         }
     }
+- Improved DSL reference. See http://developer.android.com/tools/building/plugin-for-gradle.html
 
 1.0.0
 - Final 1.0.0 version

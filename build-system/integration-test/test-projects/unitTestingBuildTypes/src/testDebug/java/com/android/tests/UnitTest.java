@@ -19,10 +19,14 @@ package com.android.tests;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import org.junit.Ignore;
-import android.app.Application;
 import android.app.Activity;
+import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
+import com.google.common.collect.Lists;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.List;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class UnitTest {
@@ -31,5 +35,20 @@ public class UnitTest {
         // Reference code for the tested build type.
         DebugOnlyClass foo = new DebugOnlyClass();
         assertEquals("debug", foo.foo());
+    }
+
+    @Test
+    public void resourcesOnClasspath() throws Exception {
+        // resource_file.txt is only for buildTypeWithResource.
+        URL url = UnitTest.class.getClassLoader().getResource("resource_file.txt");
+        assertNull(url);
+
+        InputStream stream = UnitTest.class.getClassLoader().getResourceAsStream("resource_file.txt");
+        assertNull(stream);
+    }
+
+    @Test
+    public void useDebugOnlyDependency() {
+        List<String> strings = Lists.newArrayList();
     }
 }

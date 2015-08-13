@@ -14,25 +14,24 @@
  * limitations under the License.
  */
 
-
-
-
-
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
+@CompileStatic
 class DensitySplitWithPublishNonDefaultTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create()
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldApp())
+            .create()
 
     @Before
     public void setUp() {
-        new HelloWorldApp().writeSources(project.testDir)
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 

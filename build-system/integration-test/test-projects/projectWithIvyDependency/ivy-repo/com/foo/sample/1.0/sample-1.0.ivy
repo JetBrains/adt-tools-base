@@ -1,0 +1,11 @@
+<ivy-module xmlns:m="http://ant.apache.org/ivy/maven" version="2.0">
+    <info organisation="com.foo" module="sample" revision="1.0" status="release">
+    </info>
+    <configurations>
+        <conf name="default" visibility="public" description="" extends="master"/>
+        <conf name="master" visibility="public" description=""/>
+    </configurations>
+    <publications>
+        <artifact name="sample" type="bundle" ext="jar" conf="master"/>
+    </publications>
+</ivy-module>

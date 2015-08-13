@@ -16,6 +16,8 @@
 
 package com.android.tools.lint.client.api;
 
+import static com.android.SdkConstants.ATTR_VALUE;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Context;
@@ -188,10 +190,15 @@ public abstract class JavaParser {
         /** If the type is not primitive, returns the class of the type if known */
         @Nullable
         public abstract ResolvedClass getTypeClass();
+
+        @Override
+        public abstract boolean equals(Object o);
+
     }
 
     /** Convenience implementation of {@link TypeDescriptor} */
     public static class DefaultTypeDescriptor extends TypeDescriptor {
+
         private String mName;
 
         public DefaultTypeDescriptor(String name) {
@@ -230,6 +237,26 @@ public abstract class JavaParser {
         public ResolvedClass getTypeClass() {
             return null;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            DefaultTypeDescriptor that = (DefaultTypeDescriptor) o;
+
+            return !(mName != null ? !mName.equals(that.mName) : that.mName != null);
+
+        }
+
+        @Override
+        public int hashCode() {
+            return mName != null ? mName.hashCode() : 0;
+        }
     }
 
     /** A resolved declaration from an AST Node reference */
@@ -246,9 +273,30 @@ public abstract class JavaParser {
         public String toString() {
             return getSignature();
         }
+
+        /** Returns any annotations defined on this node */
+        @NonNull
+        public abstract Iterable<ResolvedAnnotation> getAnnotations();
+
+        /**
+         * Searches for the annotation of the given type on this node
+         *
+         * @param type the fully qualified name of the annotation to check
+         * @return the annotation, or null if not found
+         */
+        @Nullable
+        public ResolvedAnnotation getAnnotation(@NonNull String type) {
+            for (ResolvedAnnotation annotation : getAnnotations()) {
+                if (annotation.getType().matchesSignature(type)) {
+                    return annotation;
+                }
+            }
+
+            return null;
+        }
     }
 
-    /** A resolved class declaration */
+    /** A resolved class declaration (class, interface, enumeration or annotation) */
     public abstract static class ResolvedClass extends ResolvedNode {
         /** Returns the fully qualified name of this class */
         @Override
@@ -258,6 +306,17 @@ public abstract class JavaParser {
         /** Returns the simple of this class */
         @NonNull
         public abstract String getSimpleName();
+
+        /** Returns the package name of this class */
+        @NonNull
+        public String getPackageName() {
+            String name = getName();
+            String simpleName = getSimpleName();
+            if (name.length() > simpleName.length() + 1) {
+                return name.substring(0, name.length() - simpleName.length() - 1);
+            }
+            return name;
+        }
 
         /** Returns whether this class' fully qualified name matches the given name */
         public abstract boolean matches(@NonNull String name);
@@ -296,10 +355,6 @@ public abstract class JavaParser {
         /** Returns the named field defined in this class, or optionally inherited from a superclass */
         @Nullable
         public abstract ResolvedField getField(@NonNull String name, boolean includeInherited);
-
-        /** Returns any annotations defined on this class */
-        @NonNull
-        public abstract Iterable<ResolvedAnnotation> getAnnotations();
     }
 
     /** A method or constructor declaration */
@@ -319,6 +374,11 @@ public abstract class JavaParser {
         @NonNull
         public abstract TypeDescriptor getArgumentType(int index);
 
+        /** Returns true if the parameter at the given index matches the given type signature */
+        public boolean argumentMatchesType(int index, @NonNull String signature) {
+            return getArgumentType(index).matchesSignature(signature);
+        }
+
         @Nullable
         public abstract TypeDescriptor getReturnType();
 
@@ -326,9 +386,55 @@ public abstract class JavaParser {
             return getReturnType() == null;
         }
 
-        /** Returns any annotations defined on this method */
+        /** Returns any annotations defined on the given parameter of this method */
         @NonNull
-        public abstract Iterable<ResolvedAnnotation> getAnnotations();
+        public abstract Iterable<ResolvedAnnotation> getParameterAnnotations(int index);
+
+        /**
+         * Searches for the annotation of the given type on the method
+         *
+         * @param type the fully qualified name of the annotation to check
+         * @param parameterIndex the index of the parameter to look up
+         * @return the annotation, or null if not found
+         */
+        @Nullable
+        public ResolvedAnnotation getParameterAnnotation(@NonNull String type,
+                int parameterIndex) {
+            for (ResolvedAnnotation annotation : getParameterAnnotations(parameterIndex)) {
+                if (annotation.getType().matchesSignature(type)) {
+                    return annotation;
+                }
+            }
+
+            return null;
+        }
+
+        /** Returns the super implementation of the given method, if any */
+        @Nullable
+        public ResolvedMethod getSuperMethod() {
+            ResolvedClass cls = getContainingClass().getSuperClass();
+            if (cls != null) {
+                String methodName = getName();
+                int argCount = getArgumentCount();
+                for (ResolvedMethod method : cls.getMethods(methodName, true)) {
+                    if (argCount != method.getArgumentCount()) {
+                        continue;
+                    }
+                    boolean sameTypes = true;
+                    for (int arg = 0; arg < argCount; arg++) {
+                        if (!method.getArgumentType(arg).equals(getArgumentType(arg))) {
+                            sameTypes = false;
+                            break;
+                        }
+                    }
+                    if (sameTypes) {
+                        return method;
+                    }
+                }
+            }
+
+            return null;
+        }
     }
 
     /** A field declaration */
@@ -349,12 +455,16 @@ public abstract class JavaParser {
         @Nullable
         public abstract Object getValue();
 
-        /** Returns any annotations defined on this field */
-        @NonNull
-        public abstract Iterable<ResolvedAnnotation> getAnnotations();
+        public String getContainingClassName() {
+            return getContainingClass().getName();
+        }
     }
 
-    /** An annotation reference */
+    /**
+     * An annotation <b>reference</b>. Note that this refers to a usage of an annotation,
+     * not a declaraton of an annotation. You can call {@link #getClassType()} to
+     * find the declaration for the annotation.
+     */
     public abstract static class ResolvedAnnotation extends ResolvedNode {
         @Override
         @NonNull
@@ -365,6 +475,10 @@ public abstract class JavaParser {
 
         @NonNull
         public abstract TypeDescriptor getType();
+
+        /** Returns the {@link ResolvedClass} which defines the annotation */
+        @Nullable
+        public abstract ResolvedClass getClassType();
 
         public static class Value {
             @NonNull public final String name;
@@ -380,7 +494,25 @@ public abstract class JavaParser {
         public abstract List<Value> getValues();
 
         @Nullable
-        public abstract Object getValue(@NonNull String name);
+        public Object getValue(@NonNull String name) {
+            for (Value value : getValues()) {
+                if (name.equals(value.name)) {
+                    return value.value;
+                }
+            }
+            return null;
+        }
+
+        @Nullable
+        public Object getValue() {
+            return getValue(ATTR_VALUE);
+        }
+
+        @NonNull
+        @Override
+        public Iterable<ResolvedAnnotation> getAnnotations() {
+            return Collections.emptyList();
+        }
     }
 
     /** A local variable or parameter declaration */

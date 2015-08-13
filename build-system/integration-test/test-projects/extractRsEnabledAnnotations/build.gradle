@@ -1,0 +1,22 @@
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+
+
+apply plugin: 'com.android.library'
+
+dependencies {
+    compile 'com.android.support:support-annotations:+'
+}
+
+android {
+    resourcePrefix 'lib1_'
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 19
+        renderscriptTargetApi 18
+        renderscriptSupportModeEnabled true
+   }
+}

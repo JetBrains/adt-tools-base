@@ -1,11 +1,13 @@
 package ${packageName};
 
+import ${superClassFqcn};
 import android.content.Intent;
 import android.os.Bundle;
-import <#if appCompat>android.support.v7.app.ActionBarActivity<#else>android.app.Activity</#if>;
 <#if minApiLevel lt 16>import android.support.v4.app.NavUtils;</#if>
 import android.view.MenuItem;
-<#if applicationPackage??>import ${applicationPackage}.R;</#if>
+<#if applicationPackage??>
+import ${applicationPackage}.R;
+</#if>
 
 /**
  * An activity representing a single ${objectKind} detail screen. This
@@ -16,7 +18,7 @@ import android.view.MenuItem;
  * This activity is mostly just a 'shell' activity containing nothing
  * more than a {@link ${DetailName}Fragment}.
  */
-public class ${DetailName}Activity extends ${appCompat?string('ActionBar','')}Activity {
+public class ${DetailName}Activity extends ${superClass} {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

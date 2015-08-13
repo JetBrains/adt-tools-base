@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ImageHelper
 import com.android.builder.model.AndroidProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -29,11 +30,12 @@ import org.junit.experimental.categories.Category
 /**
  * Assemble tests for overlay2.
  */
+@CompileStatic
 class Overlay2Test {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("overlay2")
+            .fromTestProject("overlay2")
             .create()
 
     @BeforeClass
@@ -50,7 +52,7 @@ class Overlay2Test {
     void "check image color"() {
         int GREEN = ImageHelper.GREEN
         File drawableOutput = project.file(
-                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/one/debug/drawable")
+                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/merged/one/debug/drawable")
 
         ImageHelper.checkImageColor(drawableOutput, "no_overlay.png", GREEN)
         ImageHelper.checkImageColor(drawableOutput, "type_overlay.png", GREEN)
@@ -67,6 +69,6 @@ class Overlay2Test {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

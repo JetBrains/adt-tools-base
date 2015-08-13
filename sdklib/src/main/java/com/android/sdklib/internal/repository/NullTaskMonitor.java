@@ -29,7 +29,12 @@ import com.android.utils.NullLogger;
  * have any UI to update or means to report tracked progress.
  * A custom {@link ILogger} is used. Clients could use {@link NullLogger} if
  * they really don't care about the logging either.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class NullTaskMonitor implements ITaskMonitor {
 
     private final ILogger mLog;

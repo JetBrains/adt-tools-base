@@ -31,7 +31,7 @@ public class LibraryPluginDslTest extends BaseTest {
 
     @Override
     protected void setUp() throws Exception {
-        SdkHandler.testSdkFolder = new File("foo")
+        SdkHandler.testSdkFolder = new File(System.getenv("ANDROID_HOME"))
     }
 
     public void testBasic() {
@@ -41,7 +41,7 @@ public class LibraryPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.library'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion 21
         }
 
         project.afterEvaluate {

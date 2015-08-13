@@ -16,40 +16,51 @@
 package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.builder.model.SyncIssue;
 import com.android.utils.ILogger;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.logging.Logging;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Checks for dependencies to ensure Android compatibility
  */
 public class DependencyChecker {
+    @NonNull
+    private static final ILogger logger =
+            new LoggerWrapper(Logging.getLogger(DependencyChecker.class));
 
     @NonNull
     private final VariantDependencies configurationDependencies;
+
+    private final boolean skipLibrariesInThePlatform;
+
+    /**
+     * Contains API levels obtained from dependencies on the legacy com.google.android:android
+     * artifact. Keys are specific versions of the artifact, values are the corresponding API
+     * levels.
+     */
     @NonNull
-    private final ILogger logger;
-    @NonNull
-    private final List<Integer> foundAndroidApis = Lists.newArrayList();
-    @NonNull
-    private final List<String> foundBouncyCastle = Lists.newArrayList();
-    @NonNull
+    private final Map<ModuleVersionIdentifier, Integer> legacyApiLevels = Maps.newHashMap();
+
     private final List<SyncIssue> syncIssues = Lists.newArrayList();
 
     public DependencyChecker(
             @NonNull VariantDependencies configurationDependencies,
-            @NonNull ILogger logger) {
+            boolean skipLibrariesInThePlatform) {
         this.configurationDependencies = configurationDependencies;
-        this.logger = logger;
+        this.skipLibrariesInThePlatform = skipLibrariesInThePlatform;
     }
 
     @NonNull
-    public List<Integer> getFoundAndroidApis() {
-        return foundAndroidApis;
+    public Map<ModuleVersionIdentifier, Integer> getLegacyApiLevels() {
+        return legacyApiLevels;
     }
 
     @NonNull
@@ -75,11 +86,15 @@ public class DependencyChecker {
 
         if ("com.google.android".equals(group) && "android".equals(name)) {
             int moduleLevel = getApiLevelFromMavenArtifact(version);
-            foundAndroidApis.add(moduleLevel);
+            legacyApiLevels.put(id, moduleLevel);
 
             logger.info("Ignoring Android API artifact %s for %s", id,
                     configurationDependencies.getName());
             return true;
+        }
+
+        if (!skipLibrariesInThePlatform) {
+            return false;
         }
 
         if (("org.apache.httpcomponents".equals(group) && "httpclient".equals(name)) ||
@@ -108,10 +123,6 @@ public class DependencyChecker {
                             "         In case of problem, please repackage with jarjar to change the class packages",
                     id, configurationDependencies.getName());
             return true;
-        }
-
-        if ("org.bouncycastle".equals(group) && name.startsWith("bcprov")) {
-            foundBouncyCastle.add(version);
         }
 
         return false;

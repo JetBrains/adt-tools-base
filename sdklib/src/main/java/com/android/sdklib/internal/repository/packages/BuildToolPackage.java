@@ -21,11 +21,12 @@ import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.PkgProps;
+import com.android.sdklib.repository.PreciseRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
@@ -39,7 +40,12 @@ import java.util.Set;
 
 /**
  * Represents a build-tool XML node in an SDK repository.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class BuildToolPackage extends FullRevisionPackage {
 
     /** The base value returned by {@link BuildToolPackage#installId()}. */
@@ -64,9 +70,9 @@ public class BuildToolPackage extends FullRevisionPackage {
             Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
 
-        mPkgDesc = PkgDesc.Builder
-                .newBuildTool(getRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                        .newBuildTool(getRevision())
+        )
                 .create();
     }
 
@@ -206,10 +212,7 @@ public class BuildToolPackage extends FullRevisionPackage {
                 descUrl,
                 archiveOsPath);
 
-        mPkgDesc = PkgDesc.Builder
-                .newBuildTool(getRevision())
-                .setDescriptions(this)
-                .create();
+        mPkgDesc = setDescriptions(PkgDesc.Builder.newBuildTool(getRevision())).create();
     }
 
     @Override
@@ -227,7 +230,7 @@ public class BuildToolPackage extends FullRevisionPackage {
      */
     @Override
     public String installId() {
-        return INSTALL_ID_BASE + getRevision().toString().replace(' ', '_');
+        return getPkgDesc().getInstallId();
     }
 
     /**
@@ -295,7 +298,21 @@ public class BuildToolPackage extends FullRevisionPackage {
     @Override
     public File getInstallFolder(String osSdkRoot, SdkManager sdkManager) {
         File folder = new File(osSdkRoot, SdkConstants.FD_BUILD_TOOLS);
-        folder = new File(folder, getRevision().toString().replace(' ', '_'));
+        StringBuilder sb = new StringBuilder();
+
+        PreciseRevision revision = getPkgDesc().getPreciseRevision();
+        int[] version = revision.toIntArray(false);
+        for (int i = 0; i < version.length; i++) {
+            sb.append(version[i]);
+            if (i != version.length - 1) {
+                sb.append('.');
+            }
+        }
+        if (getPkgDesc().getPreciseRevision().isPreview()) {
+            sb.append(PkgDesc.PREVIEW_SUFFIX);
+        }
+
+        folder = new File(folder, sb.toString());
         return folder;
     }
 

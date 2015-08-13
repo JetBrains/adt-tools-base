@@ -235,7 +235,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         }
 
         @NonNull
-        private FullRevision getBuildToolsRevision() {
+        public FullRevision getBuildToolsRevision() {
             return mBuildToolsRevision;
         }
 

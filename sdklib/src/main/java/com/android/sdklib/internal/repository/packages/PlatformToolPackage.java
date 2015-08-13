@@ -22,14 +22,13 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.AdbWrapper;
-import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
-
 import org.w3c.dom.Node;
 
 import java.io.File;
@@ -40,7 +39,12 @@ import java.util.Set;
 
 /**
  * Represents a platform-tool XML node in an SDK repository.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class PlatformToolPackage extends FullRevisionPackage {
 
     /** The value returned by {@link PlatformToolPackage#installId()}. */
@@ -64,10 +68,7 @@ public class PlatformToolPackage extends FullRevisionPackage {
             String nsUri, Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
 
-        mPkgDesc = PkgDesc.Builder
-                .newPlatformTool(getRevision())
-                .setDescriptions(this)
-                .create();
+        mPkgDesc = setDescriptions(PkgDesc.Builder.newPlatformTool(getRevision())).create();
     }
 
     /**
@@ -167,10 +168,7 @@ public class PlatformToolPackage extends FullRevisionPackage {
                 descUrl,
                 archiveOsPath);
 
-        mPkgDesc = PkgDesc.Builder
-                .newPlatformTool(getRevision())
-                .setDescriptions(this)
-                .create();
+        mPkgDesc = setDescriptions(PkgDesc.Builder.newPlatformTool(getRevision())).create();
     }
 
     @Override

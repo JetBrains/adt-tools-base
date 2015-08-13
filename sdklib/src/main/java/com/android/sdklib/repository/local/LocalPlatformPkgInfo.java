@@ -19,16 +19,17 @@ package com.android.sdklib.repository.local;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.IAndroidTarget.OptionalLibrary;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SdkManager.LayoutlibVersion;
 import com.android.sdklib.SystemImage;
+import com.android.sdklib.internal.androidTarget.OptionalLibraryImpl;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.internal.project.ProjectProperties;
-import com.android.sdklib.internal.repository.packages.Package;
-import com.android.sdklib.internal.repository.packages.PlatformPackage;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.FullRevision;
@@ -38,13 +39,20 @@ import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
+import com.google.common.io.Files;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -102,33 +110,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         return mLoaded;
     }
 
-    @Override
-    public Package getPackage() {
-        Package pkg = super.getPackage();
-        if (pkg != null) {
-            return pkg;
-        }
-        pkg = createPackage();
-        setPackage(pkg);
-        return pkg;
-    }
-
     //-----
-
-    /**
-     * Creates a PlatformPackage wrapping the IAndroidTarget if defined.
-     * Invoked by {@link #getPackage()}.
-     *
-     * @return A Package or null if target isn't available.
-     */
-    @Nullable
-    protected Package createPackage() {
-        IAndroidTarget target = getAndroidTarget();
-        if (target != null) {
-            return PlatformPackage.create(target, getSourceProperties());
-        }
-        return null;
-    }
 
     /**
      * Creates the PlatformTarget. Invoked by {@link #getAndroidTarget()}.
@@ -274,10 +256,11 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 layoutlibVersion,
                 systemImages,
                 platformProp,
+                getOptionalLibraries(platformFolder),
                 sdk.getLatestBuildTool());
 
         // add the skins from the platform. Make a copy to not modify the original collection.
-        List<File> skins = new ArrayList<File>(parseSkinFolder(pt.getFile(IAndroidTarget.SKINS)));
+        List<File> skins = new ArrayList<File>(PackageParserUtils.parseSkinFolder(pt.getFile(IAndroidTarget.SKINS), fileOp));
 
         // add the system-image specific skins, if any.
         for (ISystemImage systemImage : systemImages) {
@@ -335,19 +318,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 IdDisplay tag = d.getTag();
                 String abi = d.getPath();
                 if (tag != null && abi != null && !tagToAbiFound.containsEntry(tag, abi)) {
-                    List<File> parsedSkins = parseSkinFolder(
-                            new File(pkg.getLocalDir(), SdkConstants.FD_SKINS));
-                    File[] skins = FileOp.EMPTY_FILE_ARRAY;
-                    if (!parsedSkins.isEmpty()) {
-                        skins = parsedSkins.toArray(new File[parsedSkins.size()]);
-                    }
-
-                    found.add(new SystemImage(
-                            pkg.getLocalDir(),
-                            LocationType.IN_SYSTEM_IMAGE,
-                            tag,
-                            abi,
-                            skins));
+                    found.add(((LocalSysImgPkgInfo)pkg).getSystemImage());
                     tagToAbiFound.put(tag, abi);
                 }
             }
@@ -398,39 +369,57 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         return found.toArray(new ISystemImage[found.size()]);
     }
 
-    /**
-     * Parses the skin folder and builds the skin list.
-     * @param skinRootFolder The path to the skin root folder.
-     */
-    @NonNull
-    protected List<File> parseSkinFolder(@NonNull File skinRootFolder) {
-        IFileOp fileOp = getLocalSdk().getFileOp();
-
-        if (fileOp.isDirectory(skinRootFolder)) {
-            ArrayList<File> skinList = new ArrayList<File>();
-
-            File[] files = fileOp.listFiles(skinRootFolder);
-
-            for (File skinFolder : files) {
-                if (fileOp.isDirectory(skinFolder)) {
-                    // check for layout file
-                    File layout = new File(skinFolder, SdkConstants.FN_SKIN_LAYOUT);
-
-                    if (fileOp.isFile(layout)) {
-                        // for now we don't parse the content of the layout and
-                        // simply add the directory to the list.
-                        skinList.add(skinFolder);
-                    }
-                }
-            }
-
-            Collections.sort(skinList);
-            return skinList;
+    private List<OptionalLibrary> getOptionalLibraries(@NonNull File platformDir) {
+        File optionalDir = new File(platformDir, "optional");
+        if (!optionalDir.isDirectory()) {
+            return Collections.emptyList();
         }
 
-        return Collections.emptyList();
+        File optionalJson = new File(optionalDir, "optional.json");
+        if (!optionalJson.isFile()) {
+            return Collections.emptyList();
+        }
+
+        return getLibsFromJson(optionalJson);
     }
 
+    public static class Library {
+        String name;
+        String jar;
+        boolean manifest;
+    }
+
+
+    @VisibleForTesting
+    static List<OptionalLibrary> getLibsFromJson(@NonNull File jsonFile) {
+
+        Gson gson = new Gson();
+
+        try {
+            Type collectionType = new TypeToken<Collection<Library>>() {
+            }.getType();
+            Collection<Library> libs = gson
+                    .fromJson(Files.newReader(jsonFile, Charsets.UTF_8), collectionType);
+
+            // convert into the right format.
+            List<OptionalLibrary> optionalLibraries = Lists.newArrayListWithCapacity(libs.size());
+
+            File rootFolder = jsonFile.getParentFile();
+            for (Library lib : libs) {
+                optionalLibraries.add(new OptionalLibraryImpl(
+                        lib.name,
+                        new File(rootFolder, lib.jar),
+                        lib.name,
+                        lib.manifest));
+            }
+
+            return optionalLibraries;
+        } catch (FileNotFoundException e) {
+            // shouldn't happen since we've checked the file is here, but can happen in
+            // some cases (too many files open).
+            return Collections.emptyList();
+        }
+    }
 
     /** List of items in the platform to check when parsing it. These paths are relative to the
      * platform root folder. */

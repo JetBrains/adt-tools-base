@@ -1,0 +1,45 @@
+import com.android.build.OutputFile;
+
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+
+
+if (buildToolsVersion < '21.0.0') {
+    println ("Warning : this sample requires build-tools version 21 or above")
+}
+
+apply plugin: 'com.android.application'
+
+android {
+  compileSdkVersion 21
+  buildToolsVersion = rootProject.ext.buildToolsVersion
+
+  defaultConfig {
+    versionCode 12
+    minSdkVersion 16
+    targetSdkVersion 20
+
+    buildConfigField "String", "FOO", "\"bar\""
+  }
+
+  splits {
+    density {
+      enable true
+      exclude "ldpi", "tvdpi", "xxxhdpi", "400dpi", "560dpi"
+      compatibleScreens 'small', 'normal', 'large', 'xlarge'
+    }
+  }
+}
+
+// map for the version code
+ext.versionCodes = [all:1, mdpi:2, hdpi:3, xhdpi:4, xxhdpi:5]
+
+android.applicationVariants.all { variant ->
+  // assign different version code for each output
+  variant.outputs.each { output ->
+    def key = output.getFilter(OutputFile.DENSITY) == null ? "all" : output.getFilter(OutputFile.DENSITY)
+    def code = project.ext.versionCodes.get(key) * 100 + android.defaultConfig.versionCode
+    output.versionCodeOverride = code
+    output.versionNameOverride = "version ${code}"
+  }
+}

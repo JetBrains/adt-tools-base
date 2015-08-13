@@ -73,7 +73,12 @@ import java.util.Properties;
  * there's no caching. However from an implementation perspective it's still recommended
  * to pass down a {@link DownloadCache} instance, which will let us override the implementation
  * later on (for testing, for example.)
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 class UrlOpener {
 
     private static final boolean DEBUG =

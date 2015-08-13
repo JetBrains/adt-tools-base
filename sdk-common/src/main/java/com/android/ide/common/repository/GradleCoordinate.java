@@ -397,7 +397,8 @@ public class GradleCoordinate {
         return new GradleCoordinate(NONE, NONE, parseRevisionNumber(revision), null);
     }
 
-    public static List<RevisionComponent> parseRevisionNumber(String revision) {
+    @NonNull
+    public static List<RevisionComponent> parseRevisionNumber(@NonNull String revision) {
         List<RevisionComponent> components = new ArrayList<RevisionComponent>();
         StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < revision.length(); i++) {

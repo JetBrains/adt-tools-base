@@ -22,6 +22,7 @@ import java.io.InputStream;
 
 /**
  * Public constants common to the sdk-repository and sdk-addon XML Schemas.
+ * @deprecated moved to studio
  */
 public class RepoConstants {
 
@@ -209,5 +210,4 @@ public class RepoConstants {
 
         return stream;
     }
-
 }

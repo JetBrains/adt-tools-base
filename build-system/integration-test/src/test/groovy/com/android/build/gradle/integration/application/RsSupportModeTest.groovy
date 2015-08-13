@@ -24,6 +24,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.JavaLibrary
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -36,10 +37,12 @@ import static org.junit.Assert.assertTrue
 /**
  * Assemble tests for rsSupportMode.
  */
+@CompileStatic
 class RsSupportModeTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("rsSupportMode")
+            .fromTestProject("rsSupportMode")
+            .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
     static AndroidProject model
 

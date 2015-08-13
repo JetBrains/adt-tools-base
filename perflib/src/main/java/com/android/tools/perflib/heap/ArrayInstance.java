@@ -17,6 +17,10 @@
 package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
+import com.android.tools.perflib.heap.io.HprofBuffer;
+
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 
 public class ArrayInstance extends Instance {
 
@@ -45,23 +49,45 @@ public class ArrayInstance extends Instance {
         return values;
     }
 
+    @NonNull
+    private byte[] asRawByteArray(int start, int elementCount) {
+        getBuffer().setPosition(mValuesOffset);
+        assert mType != Type.OBJECT;
+        assert start + elementCount <= mLength;
+        byte[] bytes = new byte[elementCount * mType.getSize()];
+        getBuffer().readSubSequence(bytes, start * mType.getSize(), elementCount * mType.getSize());
+        return bytes;
+    }
+
+    @NonNull
+    public char[] asCharArray(int offset, int length) {
+        assert mType == Type.CHAR;
+        // TODO: Make this copy less by supporting offset in asRawByteArray.
+        CharBuffer charBuffer = ByteBuffer.wrap(asRawByteArray(offset, length)).order(HprofBuffer.HPROF_BYTE_ORDER).asCharBuffer();
+        char[] result = new char[length];
+        charBuffer.get(result);
+        return result;
+    }
+
     @Override
     public final int getSize() {
         // TODO: Take the rest of the fields into account: length, type, etc (~16 bytes).
-        return mLength * mType.getSize();
+        return mLength * mHeap.mSnapshot.getTypeSize(mType);
     }
 
     @Override
     public final void accept(@NonNull Visitor visitor) {
-        if (visitor.visitEnter(this)) {
-            if (mType == Type.OBJECT) {
-                for (Object value : getValues()) {
-                    if (value instanceof Instance) {
-                        ((Instance) value).accept(visitor);
+        visitor.visitArrayInstance(this);
+        if (mType == Type.OBJECT) {
+            for (Object value : getValues()) {
+                if (value instanceof Instance) {
+                    if (!mReferencesAdded) {
+                        ((Instance)value).addReference(this);
                     }
+                    visitor.visitLater(this, (Instance)value);
                 }
             }
-            visitor.visitLeave(this);
+            mReferencesAdded = true;
         }
     }
 
@@ -75,7 +101,15 @@ public class ArrayInstance extends Instance {
         }
     }
 
+    public Type getArrayType() {
+        return mType;
+    }
+
     public final String toString() {
-        return String.format("%s[%d]@0x%08x", mType.name(), mLength, mId);
+        String className = getClassObj().getClassName();
+        if (className.endsWith("[]")) {
+            className = className.substring(0, className.length() - 2);
+        }
+        return String.format("%s[%d]@%d (0x%x)", className, mLength, getUniqueId(), getUniqueId());
     }
 }

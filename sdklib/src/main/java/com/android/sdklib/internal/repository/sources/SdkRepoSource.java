@@ -42,7 +42,12 @@ import javax.xml.parsers.DocumentBuilderFactory;
 /**
  * An sdk-repository source, i.e. a download site.
  * A repository describes one or more {@link Package}s available for download.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class SdkRepoSource extends SdkSource {
 
     /**

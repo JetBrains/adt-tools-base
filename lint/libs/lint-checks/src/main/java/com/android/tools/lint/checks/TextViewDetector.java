@@ -86,7 +86,7 @@ public class TextViewDetector extends LayoutDetector {
             "of the editing support is provided by `TextView`, so it's possible to set " +
             "some input-related properties on a `TextView`. However, using a `TextView` " +
             "along with input attributes is usually a cut & paste error. To input " +
-            "text you should be using `<EditText>`." +
+            "text you should be using `<EditText>`.\n" +
             "\n" +
             "This check also checks subclasses of `TextView`, such as `Button` and `CheckBox`, " +
             "since these have the same issue: they should not be used with editable " +

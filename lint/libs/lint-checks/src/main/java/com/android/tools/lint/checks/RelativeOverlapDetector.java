@@ -318,11 +318,8 @@ public class RelativeOverlapDetector extends LayoutDetector {
             }
 
             // Skip all includes and Views
-            if (mNode.getTagName().equals(VIEW_INCLUDE)
-                    || mNode.getTagName().equals(VIEW)) {
-                return true;
-            }
-            return false;
+            return mNode.getTagName().equals(VIEW_INCLUDE)
+                    || mNode.getTagName().equals(VIEW);
         }
 
         public boolean sameBucket(@NonNull LayoutNode node) {
@@ -392,7 +389,7 @@ public class RelativeOverlapDetector extends LayoutDetector {
                     continue;
                 }
                 Set<LayoutNode> canGrowRight = left.canGrowRight();
-                if (canGrowLeft.size() > 0 || canGrowRight.size() > 0) {
+                if (!canGrowLeft.isEmpty() || !canGrowRight.isEmpty()) {
                     canGrowRight.addAll(canGrowLeft);
                     LayoutNode nodeToBlame = right;
                     LayoutNode otherNode = left;

@@ -6,12 +6,11 @@ apply plugin: 'maven'
 
 repositories {
     mavenLocal()
-    mavenCentral()
 }
 
 dependencies {
     compile 'com.example.android.multiproject:util:1.0'
-    releaseCompile 'com.google.guava:guava:11.0.2'
+    releaseCompile 'com.google.guava:guava:15.0'
 }
 
 android {

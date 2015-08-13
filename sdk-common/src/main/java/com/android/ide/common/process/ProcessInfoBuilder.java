@@ -19,6 +19,7 @@ package com.android.ide.common.process;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -277,6 +278,14 @@ public class ProcessInfoBuilder extends ProcessEnvBuilder<ProcessInfoBuilder> {
         return this;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Executable : ").append(mExecutable).append("\n");
+        sb.append("arguments : \n").append(Joiner.on("\n").join(mArgs)).append("\n");
+        sb.append("jvmArgs : \n").append(Joiner.on(",").join(mJvmArgs)).append("\n");
+        return sb.toString();
+    }
 
     protected static class ProcessInfoImpl implements ProcessInfo {
 

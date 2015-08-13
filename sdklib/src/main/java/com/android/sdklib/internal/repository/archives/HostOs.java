@@ -28,7 +28,12 @@ import java.util.Locale;
  * <p/>
  * The actual OS requirements for the SDK are listed at
  * <a href="http://d.android.com/sdk">http://d.android.com/sdk</a>
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public enum HostOs {
     /** Any of the Unix-like host OSes. */
     LINUX("Linux"),
@@ -39,7 +44,7 @@ public enum HostOs {
 
     private final String mUiName;
 
-    private HostOs(@NonNull String uiName) {
+    HostOs(@NonNull String uiName) {
         mUiName = uiName;
     }
 

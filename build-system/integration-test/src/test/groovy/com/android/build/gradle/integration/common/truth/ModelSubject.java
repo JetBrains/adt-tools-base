@@ -16,26 +16,163 @@
 
 package com.android.build.gradle.integration.common.truth;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+
+import com.android.annotations.NonNull;
 import com.android.builder.model.AndroidProject;
-import com.google.common.truth.CollectionSubject;
+import com.android.builder.model.SyncIssue;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
-import com.google.common.truth.Truth;
+import com.google.common.truth.SubjectFactory;
+
+import java.util.Collection;
 
 /**
  * Truth support for AndroidProject.
  */
 public class ModelSubject extends Subject<ModelSubject, AndroidProject> {
 
-    public ModelSubject(FailureStrategy failureStrategy, AndroidProject subject) {
+    static class Factory extends SubjectFactory<ModelSubject, AndroidProject> {
+
+        @NonNull
+        public static Factory get() {
+            return new Factory();
+        }
+
+        private Factory() {}
+
+        @Override
+        public ModelSubject getSubject(
+                @NonNull FailureStrategy failureStrategy,
+                @NonNull AndroidProject subject) {
+            return new ModelSubject(failureStrategy, subject);
+        }
+    }
+
+    public ModelSubject(
+            @NonNull FailureStrategy failureStrategy,
+            @NonNull AndroidProject subject) {
         super(failureStrategy, subject);
     }
 
-    public CollectionIssueSubject issues() {
-        return new CollectionIssueSubject(failureStrategy, getSubject().getSyncIssues());
+
+    /**
+     * Asserts that the issue collection has only a single element with the given properties.
+     * Not specified properties are not tested and could have any value.
+     *
+     * @param severity the expected severity
+     * @param type the expected type
+     * @return the found issue for further testing.
+     */
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public SyncIssue hasSingleIssue(int severity, int type) {
+        Collection<SyncIssue> subject = getSubject().getSyncIssues();
+
+        assertThat(subject).hasSize(1);
+
+        SyncIssue issue = subject.iterator().next();
+        assertThat(issue).isNotNull();
+        assertThat(issue).hasSeverity(severity);
+        assertThat(issue).hasType(type);
+
+        return issue;
     }
 
-    public CollectionSubject issuesAsCollection() {
-        return Truth.assertThat(getSubject().getSyncIssues());
+    /**
+     * Asserts that the issue collection has only a single element with the given properties.
+     * Not specified properties are not tested and could have any value.
+     *
+     * @param severity the expected severity
+     * @param type the expected type
+     * @param data the expected data
+     * @return the found issue for further testing.
+     */
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public SyncIssue hasSingleIssue(int severity, int type, String data) {
+        Collection<SyncIssue> subject = getSubject().getSyncIssues();
+
+        assertThat(subject).hasSize(1);
+
+        SyncIssue issue = subject.iterator().next();
+        assertThat(issue).isNotNull();
+        assertThat(issue).hasSeverity(severity);
+        assertThat(issue).hasType(type);
+        assertThat(issue).hasData(data);
+
+        return issue;
+    }
+
+    /**
+     * Asserts that the issue collection has only a single element with the given properties.
+     *
+     * @param severity the expected severity
+     * @param type the expected type
+     * @param data the expected data
+     * @param message the expected message
+     */
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void hasSingleIssue(int severity, int type, String data, String message) {
+        Collection<SyncIssue> subject = getSubject().getSyncIssues();
+
+        assertThat(subject).hasSize(1);
+
+        SyncIssue issue = subject.iterator().next();
+        assertThat(issue).isNotNull();
+        assertThat(issue).hasSeverity(severity);
+        assertThat(issue).hasType(type);
+        assertThat(issue).hasData(data);
+        assertThat(issue).hasMessage(message);
+    }
+
+    /**
+     * Asserts that the issue collection has only an element with the given properties.
+     * Not specified properties are not tested and could have any value.
+     *
+     * @param severity the expected severity
+     * @param type the expected type
+     * @return the found issue for further testing.
+     */
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public SyncIssue hasIssue(int severity, int type) {
+        Collection<SyncIssue> subject = getSubject().getSyncIssues();
+
+        for (SyncIssue issue : subject) {
+            if (severity == issue.getSeverity() &&
+                    type == issue.getType()) {
+                return issue;
+            }
+        }
+
+        failWithRawMessage("'%s' does not contain <%s / %s>", getDisplaySubject(),
+                severity, type);
+        // won't reach
+        return null;
+    }
+
+    /**
+     * Asserts that the issue collection has only an element with the given properties.
+     * Not specified properties are not tested and could have any value.
+     *
+     * @param severity the expected severity
+     * @param type the expected type
+     * @param data the expected data
+     * @return the found issue for further testing.
+     */
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public SyncIssue hasIssue(int severity, int type, String data) {
+        Collection<SyncIssue> subject = getSubject().getSyncIssues();
+
+        for (SyncIssue issue : subject) {
+            if (severity == issue.getSeverity() &&
+                    type == issue.getType() &&
+                    data.equals(issue.getData())) {
+                return issue;
+            }
+        }
+
+        failWithRawMessage("'%s' does not contain <%s / %s / %s>", getDisplaySubject(),
+                severity, type, data);
+        // won't reach
+        return null;
     }
 }

@@ -20,11 +20,13 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -38,6 +40,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private final Map<String, ClassField> mResValues = Maps.newTreeMap();
     private final List<File> mProguardFiles = Lists.newArrayList();
     private final List<File> mConsumerProguardFiles = Lists.newArrayList();
+    private final List<File> mTestProguardFiles = Lists.newArrayList();
     private final Map<String, Object> mManifestPlaceholders = Maps.newHashMap();
     @Nullable
     private Boolean mMultiDexEnabled;
@@ -48,57 +51,123 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     @Nullable
     private File mMultiDexKeepFile;
 
+    @NonNull
+    private List<File> mJarJarRuleFiles = Lists.newArrayList();
+
+    /**
+     * Adds a BuildConfig field.
+     */
     public void addBuildConfigField(@NonNull ClassField field) {
         mBuildConfigFields.put(field.getName(), field);
     }
 
-    public void addResValue(@NonNull ClassField field) {
-        mResValues.put(field.getName(), field);
+    /**
+     * Adds a generated resource value.
+     */
+    public void addResValue(@NonNull ClassField field) { mResValues.put(field.getName(), field);
     }
 
+    /**
+     * Adds a generated resource value.
+     */
     public void addResValues(@NonNull Map<String, ClassField> values) {
         mResValues.putAll(values);
     }
 
+    /**
+     * Returns the BuildConfig fields.
+     */
     @Override
     @NonNull
     public Map<String, ClassField> getBuildConfigFields() {
         return mBuildConfigFields;
     }
 
+    /**
+     * Adds BuildConfig fields.
+     */
     public void addBuildConfigFields(@NonNull Map<String, ClassField> fields) {
         mBuildConfigFields.putAll(fields);
     }
 
+    /**
+     * Returns the generated resource values.
+     */
     @NonNull
     @Override
     public Map<String, ClassField> getResValues() {
         return mResValues;
     }
 
+    /**
+     * Returns ProGuard configuration files to be used.
+     *
+     * <p>There are 2 default rules files
+     * <ul>
+     *     <li>proguard-android.txt
+     *     <li>proguard-android-optimize.txt
+     * </ul>
+     * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
+     * full path to the files. They are identical except for enabling optimizations.
+     *
+     * <p>See similarly named methods to specify the files.
+     */
     @Override
     @NonNull
     public List<File> getProguardFiles() {
         return mProguardFiles;
     }
 
+    /**
+     * ProGuard rule files to be included in the published AAR.
+     *
+     * <p>These proguard rule files will then be used by any application project that consumes the
+     * AAR (if ProGuard is enabled).
+     *
+     * <p>This allows AAR to specify shrinking or obfuscation exclude rules.
+     *
+     * <p>This is only valid for Library project. This is ignored in Application project.
+     */
     @Override
     @NonNull
     public List<File> getConsumerProguardFiles() {
         return mConsumerProguardFiles;
     }
 
+    @NonNull
+    @Override
+    public List<File> getTestProguardFiles() {
+        return mTestProguardFiles;
+    }
 
+    /**
+     * Returns the manifest placeholders.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/manifest-merger#TOC-Placeholder-support">
+     *     Manifest merger</a>.
+     */
     @NonNull
     @Override
     public Map<String, Object> getManifestPlaceholders() {
         return mManifestPlaceholders;
     }
 
-    public void addManifestPlaceHolders(@NonNull Map<String, Object> manifestPlaceholders) {
+    /**
+     * Adds manifest placeholders.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/manifest-merger#TOC-Placeholder-support">
+     *     Manifest merger</a>.
+     */
+    public void addManifestPlaceholders(@NonNull Map<String, Object> manifestPlaceholders) {
         mManifestPlaceholders.putAll(manifestPlaceholders);
     }
 
+    /**
+     * Sets a new set of manifest placeholders.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/manifest-merger#TOC-Placeholder-support">
+     *     Manifest merger</a>.
+     */
     public void setManifestPlaceholders(@NonNull Map<String, Object> manifestPlaceholders) {
         mManifestPlaceholders.clear();
         this.mManifestPlaceholders.putAll(manifestPlaceholders);
@@ -114,6 +183,9 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mConsumerProguardFiles.clear();
         mConsumerProguardFiles.addAll(that.getConsumerProguardFiles());
 
+        mTestProguardFiles.clear();
+        mTestProguardFiles.addAll(that.getTestProguardFiles());
+
         mManifestPlaceholders.clear();
         mManifestPlaceholders.putAll(that.getManifestPlaceholders());
 
@@ -121,6 +193,8 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
 
         mMultiDexKeepFile = that.getMultiDexKeepFile();
         mMultiDexKeepProguard = that.getMultiDexKeepProguard();
+
+        mJarJarRuleFiles = that.getJarJarRuleFiles();
     }
 
     private void setBuildConfigFields(@NonNull Map<String, ClassField> fields) {
@@ -166,6 +240,16 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mMultiDexKeepProguard = file;
     }
 
+    public void setJarJarRuleFiles(@NonNull List<File> files) {
+        mJarJarRuleFiles = files;
+    }
+
+    @NonNull
+    @Override
+    public List<File> getJarJarRuleFiles() {
+        return mJarJarRuleFiles;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -177,48 +261,30 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
 
         BaseConfigImpl that = (BaseConfigImpl) o;
 
-        if (!mBuildConfigFields.equals(that.mBuildConfigFields)) {
-            return false;
-        }
-        if (!mConsumerProguardFiles.equals(that.mConsumerProguardFiles)) {
-            return false;
-        }
-        if (!mManifestPlaceholders.equals(that.mManifestPlaceholders)) {
-            return false;
-        }
-        if (mMultiDexEnabled != null ? !mMultiDexEnabled.equals(that.mMultiDexEnabled) :
-                that.mMultiDexEnabled != null) {
-            return false;
-        }
-        if (mMultiDexKeepFile != null ? !mMultiDexKeepFile.equals(that.mMultiDexKeepFile) :
-                that.mMultiDexKeepFile != null) {
-            return false;
-        }
-        if (mMultiDexKeepProguard != null ? !mMultiDexKeepProguard.equals(that.mMultiDexKeepProguard) :
-                that.mMultiDexKeepProguard != null) {
-            return false;
-        }
-        if (!mProguardFiles.equals(that.mProguardFiles)) {
-            return false;
-        }
-        if (!mResValues.equals(that.mResValues)) {
-            return false;
-        }
+        return Objects.equal(mBuildConfigFields, that.mBuildConfigFields) &&
+                Objects.equal(mConsumerProguardFiles, that.mConsumerProguardFiles) &&
+                Objects.equal(mManifestPlaceholders, that.mManifestPlaceholders) &&
+                Objects.equal(mMultiDexEnabled, that.mMultiDexEnabled) &&
+                Objects.equal(mMultiDexKeepFile, that.mMultiDexKeepFile) &&
+                Objects.equal(mMultiDexKeepProguard, that.mMultiDexKeepProguard) &&
+                Objects.equal(mProguardFiles, that.mProguardFiles) &&
+                Objects.equal(mResValues, that.mResValues) &&
+                Objects.equal(mJarJarRuleFiles, that.mJarJarRuleFiles);
 
-        return true;
     }
 
     @Override
     public int hashCode() {
-        int result = mBuildConfigFields.hashCode();
-        result = 31 * result + mResValues.hashCode();
-        result = 31 * result + mProguardFiles.hashCode();
-        result = 31 * result + mConsumerProguardFiles.hashCode();
-        result = 31 * result + mManifestPlaceholders.hashCode();
-        result = 31 * result + (mMultiDexEnabled != null ? mMultiDexEnabled.hashCode() : 0);
-        result = 31 * result + (mMultiDexKeepFile != null ? mMultiDexKeepFile.hashCode() : 0);
-        result = 31 * result + (mMultiDexKeepProguard != null ? mMultiDexKeepProguard.hashCode() : 0);
-        return result;
+        return Objects.hashCode(
+                mBuildConfigFields,
+                mResValues,
+                mProguardFiles,
+                mConsumerProguardFiles,
+                mManifestPlaceholders,
+                mMultiDexEnabled,
+                mMultiDexKeepFile,
+                mMultiDexKeepProguard,
+                mJarJarRuleFiles);
     }
 
     @Override
@@ -232,6 +298,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
                 ", mMultiDexEnabled=" + mMultiDexEnabled +
                 ", mMultiDexKeepFile=" + mMultiDexKeepFile +
                 ", mMultiDexKeepProguard=" + mMultiDexKeepProguard +
+                ", mJarJarRuleFiles=" + mJarJarRuleFiles +
                 '}';
     }
 }

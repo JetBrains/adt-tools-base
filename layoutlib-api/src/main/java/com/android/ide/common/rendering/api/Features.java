@@ -79,7 +79,28 @@ public class Features {
      */
     public static final int SIMULATE_PLATFORM = 13;
     /**
+     * All features before this map to the ones in {@link Capability}. Any feature greater than this
+     * is guaranteed to be not supported by a LayoutLib using the older api.
+     */
+    public static final int LAST_CAPABILITY = SIMULATE_PLATFORM;
+    /**
      * Ability to render preferences.
      */
     public static final int PREFERENCES_RENDERING = 14;
+    /**
+     * Ability to render all states of a StateListDrawable and return all in a
+     * single call.
+     */
+    public static final int RENDER_ALL_DRAWABLE_STATES = 15;
+    /**
+     * Ability to provide a fake Adapter for RecyclerView. This is an IDE feature.
+     */
+    public static final int RECYCLER_VIEW_ADAPTER = 16;
+    /**
+     * Last known feature.
+     * <p/>
+     * This should be avoided on the LayoutLib since, since using this makes updating the API used
+     * by the LayoutLib without implementing any newly added features.
+     */
+    public static final int LAST_FEATURE = RECYCLER_VIEW_ADAPTER;
 }

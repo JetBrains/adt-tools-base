@@ -20,8 +20,10 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.Immutable;
+import com.android.ide.common.blame.MessageJsonSerializer;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
 import com.android.utils.ILogger;
-import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -33,10 +35,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 
 import org.xml.sax.SAXException;
 
@@ -192,12 +191,12 @@ public class Actions {
     public abstract static class Record {
 
         @NonNull protected final ActionType mActionType;
-        @NonNull protected final ActionLocation mActionLocation;
+        @NonNull protected final SourceFilePosition mActionLocation;
         @NonNull protected final XmlNode.NodeKey mTargetId;
         @Nullable protected final String mReason;
 
         private Record(@NonNull ActionType actionType,
-                @NonNull ActionLocation actionLocation,
+                @NonNull SourceFilePosition actionLocation,
                 @NonNull XmlNode.NodeKey targetId,
                 @Nullable String reason) {
             mActionType = Preconditions.checkNotNull(actionType);
@@ -210,7 +209,7 @@ public class Actions {
             return mActionType;
         }
 
-        public ActionLocation getActionLocation() {
+        public SourceFilePosition getActionLocation() {
             return mActionLocation;
         }
 
@@ -237,7 +236,7 @@ public class Actions {
         private final NodeOperationType mNodeOperationType;
 
         NodeRecord(@NonNull ActionType actionType,
-                @NonNull ActionLocation actionLocation,
+                @NonNull SourceFilePosition actionLocation,
                 @NonNull XmlNode.NodeKey targetId,
                 @Nullable String reason,
                 @NonNull NodeOperationType nodeOperationType) {
@@ -264,7 +263,7 @@ public class Actions {
 
         AttributeRecord(
                 @NonNull ActionType actionType,
-                @NonNull ActionLocation actionLocation,
+                @NonNull SourceFilePosition actionLocation,
                 @NonNull XmlNode.NodeKey targetId,
                 @Nullable String reason,
                 @Nullable AttributeOperationType operationType) {
@@ -285,80 +284,10 @@ public class Actions {
         }
     }
 
-    /**
-     * Defines an action location which is composed of a pointer to the source location (e.g. a
-     * file) and a position within that source location.
-     */
-    public static final class ActionLocation {
-
-        private final XmlLoader.SourceLocation mSourceLocation;
-
-        private final PositionXmlParser.Position mPosition;
-
-        public ActionLocation(@NonNull XmlLoader.SourceLocation sourceLocation,
-                @NonNull PositionXmlParser.Position position) {
-            mSourceLocation = Preconditions.checkNotNull(sourceLocation);
-            mPosition = Preconditions.checkNotNull(position);
-        }
-
-        public PositionXmlParser.Position getPosition() {
-            return mPosition;
-        }
-
-        public XmlLoader.SourceLocation getSourceLocation() {
-            return mSourceLocation;
-        }
-
-        @Override
-        public String toString() {
-            String toString = mSourceLocation.print(true);
-            if (mPosition != null) {
-                toString += ":" + mPosition.getLine() + ":" + mPosition.getColumn();
-            }
-            return toString;
-        }
-
-        private static final class ActionLocationAdapter
-                implements JsonSerializer<ActionLocation>, JsonDeserializer<ActionLocation> {
-
-            private static final String POSITION_ELEMENT = "position";
-
-            private static final String LINE_ATTRIBUTE = "line";
-
-            private static final String COLUMN_ATTRIBUTE = "col";
-
-            private static final String OFFSET_ATTRIBUTE = "offset";
-
-            @Override
-            public ActionLocation deserialize(JsonElement json, Type typeOfT,
-                    JsonDeserializationContext context) throws JsonParseException {
-                XmlLoader.SourceLocation sourceLocation =
-                        context.deserialize(json.getAsJsonObject().get(POSITION_ELEMENT),
-                                XmlLoader.SourceLocation.class);
-                PositionImpl position = new PositionImpl(
-                        json.getAsJsonObject().get(LINE_ATTRIBUTE).getAsInt(),
-                        json.getAsJsonObject().get(COLUMN_ATTRIBUTE).getAsInt(),
-                        json.getAsJsonObject().get(OFFSET_ATTRIBUTE).getAsInt());
-                return new ActionLocation(sourceLocation, position);
-            }
-
-            @Override
-            public JsonElement serialize(ActionLocation src, Type typeOfSrc,
-                    JsonSerializationContext context) {
-                JsonObject jsonObject = new JsonObject();
-                jsonObject.add(POSITION_ELEMENT, context.serialize(src.getSourceLocation()));
-                jsonObject.addProperty(LINE_ATTRIBUTE, src.getPosition().getLine());
-                jsonObject.addProperty(COLUMN_ATTRIBUTE, src.getPosition().getColumn());
-                jsonObject.addProperty(OFFSET_ATTRIBUTE, src.getPosition().getOffset());
-                return jsonObject;
-            }
-        }
-    }
-
     public String persist() throws IOException  {
         GsonBuilder gson = new GsonBuilder().setPrettyPrinting();
         gson.enableComplexMapKeySerialization();
-        gson.registerTypeAdapter(ActionLocation.class, new ActionLocation.ActionLocationAdapter());
+        MessageJsonSerializer.registerTypeAdapters(gson);
         return gson.create().toJson(this);
     }
 
@@ -392,14 +321,14 @@ public class Actions {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.enableComplexMapKeySerialization();
         gsonBuilder.registerTypeAdapter(XmlNode.NodeName.class, new NodeNameDeserializer());
-        gsonBuilder.registerTypeAdapter(ActionLocation.class, new ActionLocation.ActionLocationAdapter());
+        MessageJsonSerializer.registerTypeAdapters(gsonBuilder);
         return gsonBuilder.create();
     }
 
     public ImmutableMultimap<Integer, Record> getResultingSourceMapping(XmlDocument xmlDocument)
             throws ParserConfigurationException, SAXException, IOException {
 
-        XmlLoader.SourceLocation inMemory = XmlLoader.UNKNOWN;
+        SourceFile inMemory = SourceFile.UNKNOWN;
 
         XmlDocument loadedWithLineNumbers = XmlLoader.load(
                 xmlDocument.getSelectors(),
@@ -422,13 +351,13 @@ public class Actions {
         if (decisionTreeRecord != null) {
             Actions.NodeRecord nodeRecord = findNodeRecord(decisionTreeRecord);
             if (nodeRecord != null) {
-                mappings.put(element.getPosition().getLine(), nodeRecord);
+                mappings.put(element.getPosition().getStartLine(), nodeRecord);
             }
             for (XmlAttribute xmlAttribute : element.getAttributes()) {
                 Actions.AttributeRecord attributeRecord = findAttributeRecord(decisionTreeRecord,
                         xmlAttribute);
                 if (attributeRecord != null) {
-                    mappings.put(xmlAttribute.getPosition().getLine(), attributeRecord);
+                    mappings.put(xmlAttribute.getPosition().getStartLine(), attributeRecord);
                 }
             }
         }
@@ -447,12 +376,12 @@ public class Actions {
 
         StringBuilder actualMappings = new StringBuilder();
         String line;
-        int count = 1;
+        int count = 0;
         while ((line = lineReader.readLine()) != null) {
-            actualMappings.append(count).append(line).append("\n");
+            actualMappings.append(count + 1).append(line).append("\n");
             if (resultingSourceMapping.containsKey(count)) {
                 for (Record record : resultingSourceMapping.get(count)) {
-                    actualMappings.append(count).append("-->")
+                    actualMappings.append(count + 1).append("-->")
                             .append(record.getActionLocation().toString())
                             .append("\n");
                 }

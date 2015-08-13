@@ -29,7 +29,7 @@ public enum TouchScreen implements ResourceEnum {
     private final String mShortDisplayValue;
     private final String mLongDisplayValue;
 
-    private TouchScreen(String value, String displayValue, String longDisplayValue) {
+    TouchScreen(String value, String displayValue, String longDisplayValue) {
         mValue = value;
         mShortDisplayValue = displayValue;
         mLongDisplayValue = longDisplayValue;

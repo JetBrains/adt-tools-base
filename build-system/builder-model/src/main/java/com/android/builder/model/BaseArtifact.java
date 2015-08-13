@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -54,6 +55,13 @@ public interface BaseArtifact {
      */
     @NonNull
     File getClassesFolder();
+
+    /**
+     * Returns the folder containing resource files that classes form this artifact expect to find
+     * on the classpath.
+     */
+    @NonNull
+    File getJavaResourcesFolder();
 
     /**
      * Returns the resolved dependencies for this artifact. This is a composite of all the
@@ -93,4 +101,14 @@ public interface BaseArtifact {
      */
     @NonNull
     Set<String> getIdeSetupTaskNames();
+
+    /**
+     * Returns all the source folders that are generated. This is typically folders for the R,
+     * the aidl classes, and the renderscript classes.
+     *
+     * @return a list of folders.
+     * @since 1.2
+     */
+    @NonNull
+    Collection<File> getGeneratedSourceFolders();
 }

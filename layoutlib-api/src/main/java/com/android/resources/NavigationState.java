@@ -28,7 +28,7 @@ public enum NavigationState implements ResourceEnum {
     private final String mShortDisplayValue;
     private final String mLongDisplayValue;
 
-    private NavigationState(String value, String shortDisplayValue, String longDisplayValue) {
+    NavigationState(String value, String shortDisplayValue, String longDisplayValue) {
         mValue = value;
         mShortDisplayValue = shortDisplayValue;
         mLongDisplayValue = longDisplayValue;

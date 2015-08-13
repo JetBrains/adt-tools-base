@@ -29,7 +29,7 @@ public enum Keyboard implements ResourceEnum {
     private final String mShortDisplayValue;
     private final String mLongDisplayValue;
 
-    private Keyboard(String value, String value2, String shortDisplayValue,
+    Keyboard(String value, String value2, String shortDisplayValue,
             String longDisplayValue) {
         mValue = value;
         mValue2 = value2;

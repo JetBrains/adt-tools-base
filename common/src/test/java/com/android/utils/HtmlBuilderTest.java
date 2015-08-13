@@ -21,7 +21,8 @@ import java.io.File;
 import java.io.IOException;
 
 public class HtmlBuilderTest extends TestCase {
-    public void test1() {
+
+    public void testAddLink() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.add("Plain.");
         builder.addLink(" (link) ", "runnable:0");
@@ -30,34 +31,19 @@ public class HtmlBuilderTest extends TestCase {
         assertEquals("Plain. <A HREF=\"runnable:0\">(link)</A>Plain.", builder.getHtml());
     }
 
-    public void test2() {
+    public void testAddBold() {
         HtmlBuilder builder = new HtmlBuilder();
-        builder.add("Plain").newline().addLink("mylink", "runnable:0").newline();
-        builder.beginList().listItem().add("item 1").listItem().add("item 2").endList();
-
-        assertEquals("Plain<BR/>\n" +
-                "<A HREF=\"runnable:0\">mylink</A><BR/>\n" +
-                "<DL>\n" +
-                "<DD>-&NBSP;item 1\n" +
-                "<DD>-&NBSP;item 2\n" +
-                "</DL>", builder.getHtml());
+        builder.addBold("This is bold");
+        assertEquals("<B>This is bold</B>", builder.getHtml());
     }
 
-    public void test3() {
-        HtmlBuilder builder1 = new HtmlBuilder();
-        builder1.addBold("This is bold");
-        assertEquals("<B>This is bold</B>", builder1.getHtml());
-
-        HtmlBuilder builder2 = new HtmlBuilder();
-        builder2.add("Plain. ");
-        builder2.beginBold();
-        builder2.add("Bold. ");
-        builder2.addLink("mylink", "runnable:0");
-        builder2.endBold();
-        assertEquals("Plain. <B>Bold. <A HREF=\"runnable:0\">mylink</A></B>", builder2.getHtml());
+    public void testAddItalic() {
+        HtmlBuilder builder = new HtmlBuilder();
+        builder.addItalic("This is italic");
+        assertEquals("<I>This is italic</I>", builder.getHtml());
     }
 
-    public void test4() {
+    public void testNestLinkInBold() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.add("Plain. ");
         builder.beginBold();
@@ -65,46 +51,58 @@ public class HtmlBuilderTest extends TestCase {
         builder.addLink("mylink", "foo://bar:123");
         builder.endBold();
         assertEquals("Plain. <B>Bold. <A HREF=\"foo://bar:123\">mylink</A></B>",
-                builder.getHtml());
+                     builder.getHtml());
     }
 
-    public void test5() {
+    public void testAddList() {
+        HtmlBuilder builder = new HtmlBuilder();
+        builder.add("Plain").newline();
+        builder.beginList().listItem().add("item 1").listItem().add("item 2").endList();
+
+        assertEquals("Plain<BR/>\n" +
+                     "<DL>\n" +
+                     "<DD>-&NBSP;item 1\n" +
+                     "<DD>-&NBSP;item 2\n" +
+                     "</DL>", builder.getHtml());
+    }
+
+    public void testAddLinkWithBeforeAndAfterText() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.addLink("This is the ", "linked text", "!", "foo://bar");
         assertEquals("This is the <A HREF=\"foo://bar\">linked text</A>!", builder.getHtml());
     }
 
-    public void testTable1() {
+    public void testAddTable() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.beginTable().addTableRow(true, "Header1", "Header2")
-                .addTableRow("Data1", "Data2")
-                .endTable();
+          .addTableRow("Data1", "Data2")
+          .endTable();
         assertEquals(
-                "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Data1</td><td>Data2</td></tr></table>",
-                builder.getHtml());
+          "<table><tr><th>Header1</th><th>Header2</th></tr><tr><td>Data1</td><td>Data2</td></tr></table>",
+          builder.getHtml());
     }
 
-    public void testTable2() {
+    public void testAddTableWithAlignment() {
         HtmlBuilder builder = new HtmlBuilder();
         builder.beginTable("valign=\"top\"").addTableRow("Data1", "Data2").endTable();
         assertEquals(
-                "<table><tr><td valign=\"top\">Data1</td><td valign=\"top\">Data2</td></tr></table>",
-                builder.getHtml());
+          "<table><tr><td valign=\"top\">Data1</td><td valign=\"top\">Data2</td></tr></table>",
+          builder.getHtml());
     }
 
-    public void testDiv1() {
+    public void testAddDiv() {
         HtmlBuilder builder = new HtmlBuilder();
         assertEquals("<div>Hello</div>", builder.beginDiv().add("Hello").endDiv().getHtml());
     }
 
-    public void testDiv2() {
+    public void testAddDivWithPadding() {
         HtmlBuilder builder = new HtmlBuilder();
         assertEquals("<div style=\"padding: 10px; text-color: gray\">Hello</div>",
-                builder.beginDiv("padding: 10px; text-color: gray").add("Hello").endDiv()
-                        .getHtml());
+                     builder.beginDiv("padding: 10px; text-color: gray").add("Hello").endDiv()
+                       .getHtml());
     }
 
-    public void testImage() throws IOException {
+    public void testAddImage() throws IOException {
         File f = File.createTempFile("img", "png");
         f.deleteOnExit();
 

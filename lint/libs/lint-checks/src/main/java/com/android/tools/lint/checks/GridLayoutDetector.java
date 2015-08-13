@@ -148,6 +148,8 @@ public class GridLayoutDetector extends LayoutDetector {
                 ensureAppNamespace(context, child, ATTR_LAYOUT_GRAVITY);
                 ensureAppNamespace(context, child, ATTR_LAYOUT_ROW);
                 ensureAppNamespace(context, child, ATTR_LAYOUT_ROW_SPAN);
+                ensureAppNamespace(context, child, "layout_rowWeight");
+                ensureAppNamespace(context, child, "layout_columnWeight");
             }
         }
     }

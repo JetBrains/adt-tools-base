@@ -314,6 +314,112 @@ public class InstrumentationResultParserTest extends TestCase {
         assertEquals(3, captureMetrics.getValue().size());
     }
 
+    public void testParse_AssumptionFailuresIgnored() {
+        StringBuilder output = new StringBuilder();
+        addLine(output, "INSTRUMENTATION_STATUS: numtests=3");
+        addLine(output, "INSTRUMENTATION_STATUS: stream=");
+        addLine(output,  "com.example.helloworld.FailureAssumptionTest:");
+        addLine(output,  "INSTRUMENTATION_STATUS: id=AndroidJUnitRunner");
+        addLine(output,  "INSTRUMENTATION_STATUS: test=checkIgnoreTestsArePossible");
+        addLine(output,  "INSTRUMENTATION_STATUS: class=com.example.helloworld.FailureAssumptionTest");
+        addLine(output,  "INSTRUMENTATION_STATUS: current=1");
+        addLine(output,  "INSTRUMENTATION_STATUS_CODE: -3");
+        addLine(output,  "INSTRUMENTATION_STATUS: numtests=3");
+        addLine(output,  "INSTRUMENTATION_STATUS: stream=");
+        addLine(output,  "INSTRUMENTATION_STATUS: id=AndroidJUnitRunner");
+        addLine(output,  "INSTRUMENTATION_STATUS: test=checkAssumptionIsSkipped");
+        addLine(output,  "INSTRUMENTATION_STATUS: class=com.example.helloworld.FailureAssumptionTest");
+        addLine(output,  "INSTRUMENTATION_STATUS: current=2");
+        addLine(output,  "INSTRUMENTATION_STATUS_CODE: 1");
+        addLine(output,  "INSTRUMENTATION_STATUS: numtests=3");
+        addLine(output,  "INSTRUMENTATION_STATUS: stream=");
+        addLine(output,  "INSTRUMENTATION_STATUS: id=AndroidJUnitRunner");
+        addLine(output,  "INSTRUMENTATION_STATUS: test=checkAssumptionIsSkipped");
+        addLine(output,  "INSTRUMENTATION_STATUS: class=com.example.helloworld.FailureAssumptionTest");
+        addLine(output,  "INSTRUMENTATION_STATUS: stack=org.junit.AssumptionViolatedException: got: <false>, expected: is <true>");
+        addLine(output,  "at org.junit.Assume.assumeThat(Assume.java:95)");
+        addLine(output,  "at org.junit.Assume.assumeTrue(Assume.java:41)");
+        addLine(output,  "at com.example.helloworld.FailureAssumptionTest.checkAssumptionIsSkipped(FailureAssumptionTest.java:19)");
+        addLine(output,  "at java.lang.reflect.Method.invoke(Native Method)");
+        addLine(output,  "at java.lang.reflect.Method.invoke(Method.java:372)");
+        addLine(output,  "at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)");
+        addLine(output,  "at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)");
+        addLine(output,  "at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)");
+        addLine(output,  "at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)");
+        addLine(output,  "at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)");
+        addLine(output,  "at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)");
+        addLine(output,  "at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)");
+        addLine(output,  "at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)");
+        addLine(output,  "at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)");
+        addLine(output,  "at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)");
+        addLine(output,  "at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)");
+        addLine(output,  "at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)");
+        addLine(output,  "at org.junit.runners.ParentRunner.run(ParentRunner.java:363)");
+        addLine(output,  "at org.junit.runners.Suite.runChild(Suite.java:128)");
+        addLine(output,  "at org.junit.runners.Suite.runChild(Suite.java:27)");
+        addLine(output,  "at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)");
+        addLine(output,  "at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)");
+        addLine(output,  "at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)");
+        addLine(output,  "at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)");
+        addLine(output,  "at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)");
+        addLine(output,  "at org.junit.runners.ParentRunner.run(ParentRunner.java:363)");
+        addLine(output,  "at org.junit.runner.JUnitCore.run(JUnitCore.java:137)");
+        addLine(output,  "at org.junit.runner.JUnitCore.run(JUnitCore.java:115)");
+        addLine(output,  "at android.support.test.internal.runner.TestExecutor.execute(TestExecutor.java:54)");
+        addLine(output,  "at android.support.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:228)");
+        addLine(output,  "at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:1853)");
+        addLine(output,  "");
+        addLine(output,  "INSTRUMENTATION_STATUS: current=2");
+        addLine(output,  "INSTRUMENTATION_STATUS_CODE: -4");
+        addLine(output,  "INSTRUMENTATION_STATUS: numtests=3");
+        addLine(output,  "INSTRUMENTATION_STATUS: stream=");
+        addLine(output,  "com.example.helloworld.HelloWorldTest:");
+        addLine(output,  "INSTRUMENTATION_STATUS: id=AndroidJUnitRunner");
+        addLine(output,  "INSTRUMENTATION_STATUS: test=testPreconditions");
+        addLine(output,  "INSTRUMENTATION_STATUS: class=com.example.helloworld.HelloWorldTest");
+        addLine(output,  "INSTRUMENTATION_STATUS: current=3");
+        addLine(output,  "INSTRUMENTATION_STATUS_CODE: 1");
+        addLine(output,  "INSTRUMENTATION_STATUS: numtests=3");
+        addLine(output,  "INSTRUMENTATION_STATUS: stream=.");
+        addLine(output,  "INSTRUMENTATION_STATUS: id=AndroidJUnitRunner");
+        addLine(output,  "INSTRUMENTATION_STATUS: test=testPreconditions");
+        addLine(output,  "INSTRUMENTATION_STATUS: class=com.example.helloworld.HelloWorldTest");
+        addLine(output,  "INSTRUMENTATION_STATUS: current=3");
+        addLine(output,  "INSTRUMENTATION_STATUS_CODE: 0");
+        addLine(output,  "INSTRUMENTATION_RESULT: stream=");
+        addLine(output,  "");
+        addLine(output,  "Time: 0.676");
+        addLine(output,  "");
+        addLine(output,  "OK (2 tests)");
+        addLine(output,  "");
+        addLine(output,  "");
+        addLine(output,  "INSTRUMENTATION_CODE: -1");
+
+
+        mMockListener.testRunStarted(RUN_NAME, 3);
+        final TestIdentifier IGNORED_ANNOTATION = new TestIdentifier(
+                "com.example.helloworld.FailureAssumptionTest",
+                "checkIgnoreTestsArePossible");
+        mMockListener.testStarted(IGNORED_ANNOTATION);
+        mMockListener.testIgnored(IGNORED_ANNOTATION);
+        mMockListener.testEnded(IGNORED_ANNOTATION, Collections.EMPTY_MAP);
+        final TestIdentifier ASSUME_FALSE = new TestIdentifier(
+                "com.example.helloworld.FailureAssumptionTest",
+                "checkAssumptionIsSkipped");
+        mMockListener.testStarted(ASSUME_FALSE);
+        mMockListener.testAssumptionFailure(EasyMock.eq(ASSUME_FALSE),
+                EasyMock.startsWith(
+                        "org.junit.AssumptionViolatedException: got: <false>, expected: is <true>"));
+        mMockListener.testEnded(ASSUME_FALSE, Collections.EMPTY_MAP);
+        final TestIdentifier HELLO_WORLD = new TestIdentifier("com.example.helloworld.HelloWorldTest",
+                "testPreconditions");
+        mMockListener.testStarted(HELLO_WORLD);
+        mMockListener.testEnded(HELLO_WORLD, Collections.EMPTY_MAP);
+        mMockListener.testRunEnded(EasyMock.eq(676L), EasyMock.anyObject(Map.class));
+
+        injectAndVerifyTestString(output.toString());
+}
+
     /**
      * Builds a common test result using TEST_NAME and TEST_CLASS.
      */

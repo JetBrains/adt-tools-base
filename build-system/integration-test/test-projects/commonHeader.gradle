@@ -15,8 +15,32 @@
  */
 
 ext {
-    buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '21.0.1'].find()
+    buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '22.0.1'].find()
     latestCompileSdk = 21
 
     useJack = System.env.CUSTOM_JACK || project.properties["CUSTOM_JACK"]
+
+    def remoteTestProvider = System.env.REMOTE_TEST_PROVIDER
+    if (remoteTestProvider != null) {
+        plugins.withId('com.android.application') {
+            apply plugin: remoteTestProvider
+        }
+        plugins.withId('com.android.library') {
+            apply plugin: remoteTestProvider
+        }
+        plugins.withId('com.android.model.application') {
+            apply plugin: remoteTestProvider
+        }
+        plugins.withId('com.android.model.library') {
+            apply plugin: remoteTestProvider
+        }
+    }
+}
+
+plugins.withId("com.android.application") { plugin ->
+    plugin.extension.defaultConfig.useJack = ext.useJack
+}
+
+plugins.withId("com.android.library") { plugin ->
+    plugin.extension.defaultConfig.useJack = ext.useJack
 }

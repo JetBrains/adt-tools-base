@@ -17,20 +17,19 @@
 
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.google.common.collect.ImmutableList
-import org.gradle.tooling.BuildException
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-
 /**
  * Test Jack integration.
  */
+@CompileStatic
 class JackTest {
     private final static List<String> JACK_OPTIONS = ImmutableList.of(
             "-PCUSTOM_JACK=1",
@@ -39,23 +38,24 @@ class JackTest {
     @ClassRule
     static public GradleTestProject basic = GradleTestProject.builder()
             .withName("basic")
-            .fromSample("basic")
+            .fromTestProject("basic")
             .create()
 
     @ClassRule
     static public GradleTestProject minify = GradleTestProject.builder()
             .withName("minify")
-            .fromSample("minify")
+            .fromTestProject("minify")
             .create()
 
     @ClassRule
     static public GradleTestProject multiDex = GradleTestProject.builder()
             .withName("multiDex")
-            .fromSample("multiDex")
+            .fromTestProject("multiDex")
             .create()
 
     @BeforeClass
     static void setUp() {
+        GradleTestProject.assumeBuildToolsAtLeast(21, 1, 0)
         basic.execute(JACK_OPTIONS, "clean", "assembleDebug")
         minify.execute(JACK_OPTIONS, "clean", "assembleDebug")
         multiDex.execute(JACK_OPTIONS, "clean", "assembleDebug")
@@ -76,19 +76,13 @@ class JackTest {
     @Test
     @Category(DeviceTests.class)
     void "basic connectedCheck"() {
-        basic.execute(JACK_OPTIONS, "connectedCheck")
-    }
-
-    @Test
-    @Category(DeviceTests.class)
-    void "minify connectedCheck"() {
-        minify.execute(JACK_OPTIONS, "connectedCheck")
+        basic.executeConnectedCheck(JACK_OPTIONS)
     }
 
     @Test
     @Category(DeviceTests.class)
     void "multiDex connectedCheck"() {
-        multiDex.execute(JACK_OPTIONS, "connectedCheck")
+        multiDex.executeConnectedCheck(JACK_OPTIONS)
     }
 
     @Test
@@ -96,8 +90,16 @@ class JackTest {
         minify.execute("testMinified")
     }
 
-    @Test(expected = BuildException.class)
+    @Test
     void "minify unitTests with Jack"() {
-        minify.execute(JACK_OPTIONS, "testMinified")
+        minify.execute(JACK_OPTIONS, "clean", "testMinified")
+
+        // Make sure javac was run.
+        File classesDir = new File(minify.testDir, "/build/intermediates/classes/minified")
+        assert classesDir.exists()
+
+        // Make sure jack was not run.
+        File jillDir = new File(minify.testDir, "/build/intermediates/jill")
+        assert !jillDir.exists()
     }
 }

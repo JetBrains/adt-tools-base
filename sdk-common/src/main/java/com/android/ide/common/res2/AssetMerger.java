@@ -29,7 +29,7 @@ import java.util.List;
 public class AssetMerger extends DataMerger<AssetItem, AssetFile, AssetSet> {
 
     @Override
-    protected AssetSet createFromXml(Node node) {
+    protected AssetSet createFromXml(Node node) throws MergingException {
         AssetSet set = new AssetSet("");
         return (AssetSet) set.createFromXml(node);
     }

@@ -16,14 +16,18 @@
 
 package com.android.build.gradle.integration.common.fixture.app;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 
@@ -31,9 +35,10 @@ import java.util.NoSuchElementException;
  * Abstract class implementing AndroidTestApp.
  */
 public abstract class AbstractAndroidTestApp implements AndroidTestApp {
+
     private Multimap<String, TestSourceFile> sourceFiles = ArrayListMultimap.create();
 
-    protected void addFiles(TestSourceFile ... files) {
+    protected void addFiles(TestSourceFile... files) {
         for (TestSourceFile file : files) {
             sourceFiles.put(file.getName(), file);
         }
@@ -80,10 +85,23 @@ public abstract class AbstractAndroidTestApp implements AndroidTestApp {
     }
 
     @Override
-    public void writeSources(File sourceDir) throws IOException {
+    public void write(@NonNull File projectDir, @Nullable String buildScriptContent)
+            throws IOException {
+        // Create build.gradle.
+        if (buildScriptContent != null) {
+            Files.write(
+                    buildScriptContent,
+                    new File(projectDir, "build.gradle"),
+                    Charset.defaultCharset());
+        }
+
         for (TestSourceFile srcFile : getAllSourceFiles()) {
-            srcFile.writeToDir(sourceDir);
+            srcFile.writeToDir(projectDir);
         }
     }
 
+    @Override
+    public boolean containsFullBuildScript() {
+        return false;
+    }
 }

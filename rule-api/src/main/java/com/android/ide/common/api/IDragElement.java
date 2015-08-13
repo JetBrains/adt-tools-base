@@ -38,7 +38,7 @@ public interface IDragElement {
      * a View to inflate.
      */
     @NonNull
-    public abstract String getFqcn();
+    String getFqcn();
 
     /**
      * Returns the bounds of the element's node, if it originated from an existing
@@ -48,7 +48,7 @@ public interface IDragElement {
      * The bounds are absolute for the canvas.
      */
     @NonNull
-    public abstract Rect getBounds();
+    Rect getBounds();
 
     /**
      * Returns the fully qualified class name of the parent, if the element originated
@@ -56,7 +56,7 @@ public interface IDragElement {
      * level element or an element originating from the object palette.
      */
     @Nullable
-    public abstract String getParentFqcn();
+    String getParentFqcn();
 
     /**
      * Returns the bounds of the element's parent, absolute for the canvas, or invalid if there
@@ -65,25 +65,25 @@ public interface IDragElement {
      * The returned rectangle can be invalid. It is never null.
      */
     @NonNull
-    public abstract Rect getParentBounds();
+    Rect getParentBounds();
 
     /**
      * Returns a list of attributes. The list can be empty but is never null.
      */
     @NonNull
-    public abstract IDragAttribute[] getAttributes();
+    IDragAttribute[] getAttributes();
 
     /**
      * Returns the requested attribute or null if not found.
      */
     @Nullable
-    public abstract IDragAttribute getAttribute(@Nullable String uri, @NonNull String localName);
+    IDragAttribute getAttribute(@Nullable String uri, @NonNull String localName);
 
     /**
      * Returns a list of inner elements. The list can be empty but is never null.
      */
     @NonNull
-    public abstract IDragElement[] getInnerElements();
+    IDragElement[] getInnerElements();
 
     /**
      * Returns true if the given {@link INode} represents this drag element
@@ -91,7 +91,7 @@ public interface IDragElement {
      * @param node the node to be checked
      * @return true if the given node represents this drag element
      */
-    public abstract boolean isSame(@NonNull INode node);
+    boolean isSame(@NonNull INode node);
 
     /**
      * An XML attribute in the {@link IDragElement}.
@@ -101,22 +101,22 @@ public interface IDragElement {
      * The namespace URI can be empty for an attribute without a namespace but is never null.
      * The value can be empty but cannot be null.
      */
-    public interface IDragAttribute {
+    interface IDragAttribute {
 
         /**
          * Returns the namespace URI of the attribute.
          * Can be empty for an attribute without a namespace but is never null.
          */
         @NonNull
-        public abstract String getUri();
+        String getUri();
 
         /** Returns the XML local name of the attribute. Cannot be null nor empty. */
         @NonNull
-        public abstract String getName();
+        String getName();
 
         /** Returns the value of the attribute. Cannot be null. Can be empty. */
         @NonNull
-        public abstract String getValue();
+        String getValue();
     }
 }
 

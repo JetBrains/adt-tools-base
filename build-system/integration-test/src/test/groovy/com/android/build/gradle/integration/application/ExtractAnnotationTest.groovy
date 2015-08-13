@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-
-
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
+import com.google.common.base.Charsets
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -29,11 +29,18 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 
 /**
  * Integration test for extracting annotations.
+ * <p>
+ * Tip: To execute just this test after modifying the annotations extraction code:
+ * <pre>
+ *     $ cd tools
+ *     $ ./gradlew :base:i:test -Dtest.single=ExtractAnnotationTest
+ * </pre>
  */
+@CompileStatic
 class ExtractAnnotationTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("extractAnnotations")
+            .fromTestProject("extractAnnotations")
             .create()
 
     @BeforeClass
@@ -49,42 +56,17 @@ class ExtractAnnotationTest {
     @Test
     void "check extract annotation"() {
         File debugFileOutput = project.file("build/$AndroidProject.FD_INTERMEDIATES/annotations/debug")
+        File classesJar = project.file("build/$AndroidProject.FD_INTERMEDIATES/bundles/debug/classes.jar")
         File file = new File(debugFileOutput, "annotations.zip")
 
         //noinspection SpellCheckingInspection
         String expectedContent = (""
                 + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
                 + "<root>\n"
-                + "  <item name=\"com.android.tests.extractannotations.ExtractTest ExtractTest(int, java.lang.String) 0\">\n"
-                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
-                + "  </item>\n"
-                // This item should be removed when I start supporting @hide
-                + "  <item name=\"com.android.tests.extractannotations.ExtractTest int getHiddenMethod()\">\n"
-                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
-                + "  </item>\n"
-                // This item should be removed when I start supporting @hide
-                + "  <item name=\"com.android.tests.extractannotations.ExtractTest int getPrivate()\">\n"
-                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
-                + "  </item>\n"
                 + "  <item name=\"com.android.tests.extractannotations.ExtractTest int getVisibility()\">\n"
                 + "    <annotation name=\"android.support.annotation.IntDef\">\n"
                 + "      <val name=\"value\" val=\"{com.android.tests.extractannotations.ExtractTest.VISIBLE, com.android.tests.extractannotations.ExtractTest.INVISIBLE, com.android.tests.extractannotations.ExtractTest.GONE, 5, 17, com.android.tests.extractannotations.Constants.CONSTANT_1}\" />\n"
                 + "    </annotation>\n"
-                + "  </item>\n"
-                + "  <item name=\"com.android.tests.extractannotations.ExtractTest int resourceTypeMethod(int, int)\">\n"
-                + "    <annotation name=\"android.support.annotation.StringRes\" />\n"
-                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
-                + "  </item>\n"
-                + "  <item name=\"com.android.tests.extractannotations.ExtractTest int resourceTypeMethod(int, int) 0\">\n"
-                + "    <annotation name=\"android.support.annotation.DrawableRes\" />\n"
-                + "  </item>\n"
-                + "  <item name=\"com.android.tests.extractannotations.ExtractTest int resourceTypeMethod(int, int) 1\">\n"
-                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
-                + "    <annotation name=\"android.support.annotation.ColorRes\" />\n"
-                + "  </item>\n"
-                // This item should be removed when I start supporting @hide
-                + "  <item name=\"com.android.tests.extractannotations.ExtractTest java.lang.Object getPackagePrivate()\">\n"
-                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
                 + "  </item>\n"
                 + "  <item name=\"com.android.tests.extractannotations.ExtractTest java.lang.String getStringMode(int)\">\n"
                 + "    <annotation name=\"android.support.annotation.StringDef\">\n"
@@ -98,41 +80,52 @@ class ExtractAnnotationTest {
                 + "  </item>\n"
                 + "  <item name=\"com.android.tests.extractannotations.ExtractTest void checkForeignTypeDef(int) 0\">\n"
                 + "    <annotation name=\"android.support.annotation.IntDef\">\n"
-                + "      <val name=\"value\" val=\"{com.android.tests.extractannotations.Constants.CONSTANT_1, com.android.tests.extractannotations.Constants.CONSTANT_2}\" />\n"
                 + "      <val name=\"flag\" val=\"true\" />\n"
+                + "      <val name=\"value\" val=\"{com.android.tests.extractannotations.Constants.CONSTANT_1, com.android.tests.extractannotations.Constants.CONSTANT_2}\" />\n"
                 + "    </annotation>\n"
-                + "  </item>\n"
-                + "  <item name=\"com.android.tests.extractannotations.ExtractTest void resourceTypeMethodWithTypeArgs(java.util.Map&lt;java.lang.String,? extends java.lang.Number&gt;, T, int) 0\">\n"
-                + "    <annotation name=\"android.support.annotation.StringRes\" />\n"
-                + "  </item>\n"
-                + "  <item name=\"com.android.tests.extractannotations.ExtractTest void resourceTypeMethodWithTypeArgs(java.util.Map&lt;java.lang.String,? extends java.lang.Number&gt;, T, int) 1\">\n"
-                + "    <annotation name=\"android.support.annotation.DrawableRes\" />\n"
-                + "  </item>\n"
-                + "  <item name=\"com.android.tests.extractannotations.ExtractTest void resourceTypeMethodWithTypeArgs(java.util.Map&lt;java.lang.String,? extends java.lang.Number&gt;, T, int) 2\">\n"
-                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
                 + "  </item>\n"
                 + "  <item name=\"com.android.tests.extractannotations.ExtractTest void testMask(int) 0\">\n"
                 + "    <annotation name=\"android.support.annotation.IntDef\">\n"
-                + "      <val name=\"value\" val=\"{0, com.android.tests.extractannotations.Constants.FLAG_VALUE_1, com.android.tests.extractannotations.Constants.FLAG_VALUE_2}\" />\n"
                 + "      <val name=\"flag\" val=\"true\" />\n"
+                + "      <val name=\"value\" val=\"{0, com.android.tests.extractannotations.Constants.FLAG_VALUE_1, com.android.tests.extractannotations.Constants.FLAG_VALUE_2}\" />\n"
                 + "    </annotation>\n"
                 + "  </item>\n"
                 + "  <item name=\"com.android.tests.extractannotations.ExtractTest void testNonMask(int) 0\">\n"
                 + "    <annotation name=\"android.support.annotation.IntDef\">\n"
+                + "      <val name=\"flag\" val=\"false\" />\n"
                 + "      <val name=\"value\" val=\"{0, com.android.tests.extractannotations.Constants.CONSTANT_1, com.android.tests.extractannotations.Constants.CONSTANT_3}\" />\n"
                 + "    </annotation>\n"
                 + "  </item>\n"
-                // This should be hidden when we start filtering out hidden classes on @hide!
-                + "  <item name=\"com.android.tests.extractannotations.ExtractTest.HiddenClass int getHiddenMember()\">\n"
-                + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
+                + "  <item name=\"com.android.tests.extractannotations.TopLevelTypeDef\">\n"
+                + "    <annotation name=\"android.support.annotation.IntDef\">\n"
+                + "      <val name=\"flag\" val=\"true\" />\n"
+                + "      <val name=\"value\" val=\"{com.android.tests.extractannotations.Constants.CONSTANT_1, com.android.tests.extractannotations.Constants.CONSTANT_2}\" />\n"
+                + "    </annotation>\n"
                 + "  </item>\n"
-                + "</root>")
-
+                + "</root>\n")
 
         assertThatZip(file).containsFileWithContent(
                 "com/android/tests/extractannotations/annotations.xml", expectedContent)
 
         // check the resulting .aar file to ensure annotations.zip inclusion.
         assertThatZip(project.getAar("debug")).contains("annotations.zip")
+
+        // Check typedefs removals:
+
+        // public typedef: should be present
+        assertThatZip(classesJar).contains(
+                "com/android/tests/extractannotations/ExtractTest\$Visibility.class")
+
+        // private/protected typedefs: should have been removed
+        assertThatZip(classesJar).doesNotContain(
+                "com/android/tests/extractannotations/ExtractTest\$Mask.class")
+        assertThatZip(classesJar).doesNotContain(
+                "com/android/tests/extractannotations/ExtractTest\$NonMaskType.class")
+
+        // Make sure the NonMask symbol (from a private typedef) is completely gone from the
+        // outer class
+        assertThatZip(classesJar).containsFileWithoutContent(
+                "com/android/tests/extractannotations/ExtractTest.class",
+                "NonMaskType".getBytes(Charsets.UTF_8));
     }
 }

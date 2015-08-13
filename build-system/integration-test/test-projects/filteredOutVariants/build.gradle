@@ -1,0 +1,37 @@
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    variantFilter {
+        String abi = it.flavors.get(0).name
+        if ("cupcake".equals(it.flavors.get(1).name) && ("x86".equals(abi) || "mips".equals(abi))) {
+            it.ignore = true
+        }
+    }
+
+    flavorDimensions "abi", "api"
+
+    productFlavors {
+        x86 {
+            flavorDimension "abi"
+        }
+        mips {
+            flavorDimension "abi"
+        }
+        arm {
+            flavorDimension "abi"
+        }
+        cupcake {
+            flavorDimension "api"
+        }
+        gingerbread {
+            flavorDimension "api"
+        }
+    }
+}

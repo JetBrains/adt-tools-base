@@ -26,7 +26,12 @@ import com.android.sdklib.repository.SdkRepoConstants;
  * <p/>
  * A package that has this dependency can only be installed if the requested platform-tools
  * revision is present or installed at the same time.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public interface IMinPlatformToolsDependency {
 
     /**
@@ -35,7 +40,7 @@ public interface IMinPlatformToolsDependency {
      * Since this is a required attribute in the XML schema, it can only happen when dealing
      * with an invalid repository XML.
      */
-    public static final FullRevision MIN_PLATFORM_TOOLS_REV_INVALID =
+    FullRevision MIN_PLATFORM_TOOLS_REV_INVALID =
         new FullRevision(FullRevision.MISSING_MAJOR_REV);
 
     /**
@@ -45,6 +50,6 @@ public interface IMinPlatformToolsDependency {
      * This attribute is mandatory and should not be normally missing.
      * It can only happen when dealing with an invalid repository XML.
      */
-    public abstract FullRevision getMinPlatformToolsRevision();
+    FullRevision getMinPlatformToolsRevision();
 
 }

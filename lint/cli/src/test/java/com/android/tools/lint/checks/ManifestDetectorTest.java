@@ -17,9 +17,8 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-import static org.easymock.EasyMock.createNiceMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -540,6 +539,173 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         "mipmap.xml=>AndroidManifest.xml"));
     }
 
+    public void testFullBackupContentBoolean() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals("No warnings.",
+
+                lintProjectIncrementally(
+                        "AndroidManifest.xml",
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:allowBackup=\"true\"\n"
+                                + "        android:fullBackupContent=\"true\"\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    public void testFullBackupContentMissing() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals(""
+                + "AndroidManifest.xml:7: Warning: Missing <full-backup-content> resource [AllowBackup]\n"
+                + "        android:fullBackupContent=\"@xml/backup\"\n"
+                + "                                   ~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProjectIncrementally(
+                        "AndroidManifest.xml",
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:allowBackup=\"true\"\n"
+                                + "        android:fullBackupContent=\"@xml/backup\"\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                        + "\n"
+                        + "</manifest>\n")));
+    }
+
+    public void testFullBackupContentOk() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals("No warnings.",
+
+                lintProjectIncrementally(
+                        "AndroidManifest.xml",
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:allowBackup=\"true\"\n"
+                                + "        android:fullBackupContent=\"@xml/backup\"\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n"),
+                        xml("res/xml/backup.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<full-backup-content>\n"
+                                + "     <include domain=\"file\" path=\"dd\"/>\n"
+                                + "     <exclude domain=\"file\" path=\"dd/fo3o.txt\"/>\n"
+                                + "     <exclude domain=\"file\" path=\"dd/ss/foo.txt\"/>\n"
+                                + "</full-backup-content>")));
+    }
+
+    public void testHasBackupSpecifiedInTarget23() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"23\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:fullBackupContent=\"no\"\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    public void testMissingBackupInTarget23() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals(""
+                + "AndroidManifest.xml:5: Warning: Should explicitly set android:fullBackupContent to true or false to opt-in to or out of full app data back-up and restore, or alternatively to an @xml resource which specifies which files to backup [AllowBackup]\n"
+                + "    <application\n"
+                + "    ^\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"23\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    public void testMissingBackupWithoutGcmPreTarget23() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"21\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    public void testMissingBackupWithGcmPreTarget23() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals(""
+                + "AndroidManifest.xml:5: Warning: Should explicitly set android:fullBackupContent to avoid backing up the GCM device specific regId. [AllowBackup]\n"
+                + "    <application\n"
+                + "    ^\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"21\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >"
+                                + "        <receiver\n"
+                                + "            android:name=\".GcmBroadcastReceiver\"\n"
+                                + "            android:permission=\"com.google.android.c2dm.permission.SEND\" >\n"
+                                + "            <intent-filter>\n"
+                                + "                <action android:name=\"com.google.android.c2dm.intent.RECEIVE\" />\n"
+                                + "                <category android:name=\"com.example.gcm\" />\n"
+                                + "            </intent-filter>\n"
+                                + "        </receiver>\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
     // Custom project which locates all manifest files in the project rather than just
     // being hardcoded to the root level
 
@@ -579,69 +745,58 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                                     paid { flavorDimension "pricing" }
                                 }
                              */
-                            ProductFlavor flavorFree = createNiceMock(ProductFlavor.class);
-                            expect(flavorFree.getName()).andReturn("free").anyTimes();
-                            expect(flavorFree.getResourceConfigurations())
-                                    .andReturn(Collections.<String>emptyList()).anyTimes();
-                            replay(flavorFree);
+                            ProductFlavor flavorFree = mock(ProductFlavor.class);
+                            when(flavorFree.getName()).thenReturn("free");
+                            when(flavorFree.getResourceConfigurations())
+                                    .thenReturn(Collections.<String>emptyList());
 
-                            ProductFlavor flavorNormal = createNiceMock(ProductFlavor.class);
-                            expect(flavorNormal.getName()).andReturn("normal").anyTimes();
-                            expect(flavorNormal.getResourceConfigurations())
-                                    .andReturn(Collections.<String>emptyList()).anyTimes();
-                            replay(flavorNormal);
+                            ProductFlavor flavorNormal = mock(ProductFlavor.class);
+                            when(flavorNormal.getName()).thenReturn("normal");
+                            when(flavorNormal.getResourceConfigurations())
+                                    .thenReturn(Collections.<String>emptyList());
 
-                            ProductFlavor flavorPaid = createNiceMock(ProductFlavor.class);
-                            expect(flavorPaid.getName()).andReturn("paid").anyTimes();
-                            expect(flavorPaid.getResourceConfigurations())
-                                    .andReturn(Collections.<String>emptyList()).anyTimes();
-                            replay(flavorPaid);
+                            ProductFlavor flavorPaid = mock(ProductFlavor.class);
+                            when(flavorPaid.getName()).thenReturn("paid");
+                            when(flavorPaid.getResourceConfigurations())
+                                    .thenReturn(Collections.<String>emptyList());
 
-                            ProductFlavor flavorBeta = createNiceMock(ProductFlavor.class);
-                            expect(flavorBeta.getName()).andReturn("beta").anyTimes();
+                            ProductFlavor flavorBeta = mock(ProductFlavor.class);
+                            when(flavorBeta.getName()).thenReturn("beta");
                             List<String> resConfigs = Arrays.asList("hdpi", "en", "de", "nodpi");
-                            expect(flavorBeta.getResourceConfigurations()).andReturn(resConfigs).anyTimes();
-                            replay(flavorBeta);
+                            when(flavorBeta.getResourceConfigurations()).thenReturn(resConfigs);
 
-                            ProductFlavor defaultFlavor = createNiceMock(ProductFlavor.class);
-                            expect(defaultFlavor.getName()).andReturn("main").anyTimes();
-                            expect(defaultFlavor.getResourceConfigurations()).andReturn(
-                                    Collections.singleton("cs")).anyTimes();
-                            replay(defaultFlavor);
+                            ProductFlavor defaultFlavor = mock(ProductFlavor.class);
+                            when(defaultFlavor.getName()).thenReturn("main");
+                            when(defaultFlavor.getResourceConfigurations()).thenReturn(
+                                    Collections.singleton("cs"));
 
                             ProductFlavorContainer containerBeta =
-                                    createNiceMock(ProductFlavorContainer.class);
-                            expect(containerBeta.getProductFlavor()).andReturn(flavorBeta).anyTimes();
-                            replay(containerBeta);
+                                    mock(ProductFlavorContainer.class);
+                            when(containerBeta.getProductFlavor()).thenReturn(flavorBeta);
 
                             ProductFlavorContainer containerFree =
-                                    createNiceMock(ProductFlavorContainer.class);
-                            expect(containerFree.getProductFlavor()).andReturn(flavorFree).anyTimes();
-                            replay(containerFree);
+                                    mock(ProductFlavorContainer.class);
+                            when(containerFree.getProductFlavor()).thenReturn(flavorFree);
 
                             ProductFlavorContainer containerPaid =
-                                    createNiceMock(ProductFlavorContainer.class);
-                            expect(containerPaid.getProductFlavor()).andReturn(flavorPaid).anyTimes();
-                            replay(containerPaid);
+                                    mock(ProductFlavorContainer.class);
+                            when(containerPaid.getProductFlavor()).thenReturn(flavorPaid);
 
                             ProductFlavorContainer containerNormal =
-                                    createNiceMock(ProductFlavorContainer.class);
-                            expect(containerNormal.getProductFlavor()).andReturn(flavorNormal).anyTimes();
-                            replay(containerNormal);
+                                    mock(ProductFlavorContainer.class);
+                            when(containerNormal.getProductFlavor()).thenReturn(flavorNormal);
 
                             ProductFlavorContainer defaultContainer =
-                                    createNiceMock(ProductFlavorContainer.class);
-                            expect(defaultContainer.getProductFlavor()).andReturn(defaultFlavor).anyTimes();
-                            replay(defaultContainer);
+                                    mock(ProductFlavorContainer.class);
+                            when(defaultContainer.getProductFlavor()).thenReturn(defaultFlavor);
 
                             List<ProductFlavorContainer> containers = Arrays.asList(
                                     containerPaid, containerFree, containerNormal, containerBeta
                             );
 
-                            AndroidProject project = createNiceMock(AndroidProject.class);
-                            expect(project.getProductFlavors()).andReturn(containers).anyTimes();
-                            expect(project.getDefaultConfig()).andReturn(defaultContainer).anyTimes();
-                            replay(project);
+                            AndroidProject project = mock(AndroidProject.class);
+                            when(project.getProductFlavors()).thenReturn(containers);
+                            when(project.getDefaultConfig()).thenReturn(defaultContainer);
                             return project;
                         }
 
@@ -649,9 +804,8 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         @Override
                         public Variant getCurrentVariant() {
                             List<String> productFlavorNames = Arrays.asList("free", "beta");
-                            Variant mock = createNiceMock(Variant.class);
-                            expect(mock.getProductFlavors()).andReturn(productFlavorNames).anyTimes();
-                            replay(mock);
+                            Variant mock = mock(Variant.class);
+                            when(mock.getProductFlavors()).thenReturn(productFlavorNames);
                             return mock;
                         }
                     };
@@ -689,9 +843,8 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         }
 
                         @NonNull SourceProvider createSourceProvider(File manifest) {
-                            SourceProvider provider = createNiceMock(SourceProvider.class);
-                            expect(provider.getManifestFile()).andReturn(manifest).anyTimes();
-                            replay(provider);
+                            SourceProvider provider = mock(SourceProvider.class);
+                            when(provider.getManifestFile()).thenReturn(manifest);
                             return provider;
                         }
 
@@ -710,36 +863,30 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                             SourceProvider debugSourceProvider = createSourceProvider(debug);
                             SourceProvider testSourceProvider = createSourceProvider(test);
 
-                            ProductFlavorContainer defaultConfig = createNiceMock(ProductFlavorContainer.class);
-                            expect(defaultConfig.getSourceProvider()).andReturn(defaultSourceProvider).anyTimes();
-                            replay(defaultConfig);
+                            ProductFlavorContainer defaultConfig = mock(ProductFlavorContainer.class);
+                            when(defaultConfig.getSourceProvider()).thenReturn(defaultSourceProvider);
 
-                            BuildType buildType = createNiceMock(BuildType.class);
-                            expect(buildType.isDebuggable()).andReturn(true).anyTimes();
-                            replay(buildType);
+                            BuildType buildType = mock(BuildType.class);
+                            when(buildType.isDebuggable()).thenReturn(true);
 
-                            BuildTypeContainer buildTypeContainer = createNiceMock(BuildTypeContainer.class);
-                            expect(buildTypeContainer.getBuildType()).andReturn(buildType).anyTimes();
-                            expect(buildTypeContainer.getSourceProvider()).andReturn(debugSourceProvider).anyTimes();
+                            BuildTypeContainer buildTypeContainer = mock(BuildTypeContainer.class);
+                            when(buildTypeContainer.getBuildType()).thenReturn(buildType);
+                            when(buildTypeContainer.getSourceProvider()).thenReturn(debugSourceProvider);
                             List<BuildTypeContainer> buildTypes = Lists.newArrayList(buildTypeContainer);
-                            replay(buildTypeContainer);
 
-                            SourceProviderContainer extraProvider = createNiceMock(SourceProviderContainer.class);
-                            expect(extraProvider.getArtifactName()).andReturn(AndroidProject.ARTIFACT_ANDROID_TEST).anyTimes();
-                            expect(extraProvider.getSourceProvider()).andReturn(testSourceProvider).anyTimes();
+                            SourceProviderContainer extraProvider = mock(SourceProviderContainer.class);
+                            when(extraProvider.getArtifactName()).thenReturn(AndroidProject.ARTIFACT_ANDROID_TEST);
+                            when(extraProvider.getSourceProvider()).thenReturn(testSourceProvider);
                             List<SourceProviderContainer> extraProviders = Lists.newArrayList(extraProvider);
-                            replay(extraProvider);
 
-                            ProductFlavorContainer productFlavorContainer = createNiceMock(ProductFlavorContainer.class);
-                            expect(productFlavorContainer.getExtraSourceProviders()).andReturn(extraProviders).anyTimes();
+                            ProductFlavorContainer productFlavorContainer = mock(ProductFlavorContainer.class);
+                            when(productFlavorContainer.getExtraSourceProviders()).thenReturn(extraProviders);
                             List<ProductFlavorContainer> productFlavors = Lists.newArrayList(productFlavorContainer);
-                            replay(productFlavorContainer);
 
-                            AndroidProject project = createNiceMock(AndroidProject.class);
-                            expect(project.getDefaultConfig()).andReturn(defaultConfig).anyTimes();
-                            expect(project.getBuildTypes()).andReturn(buildTypes).anyTimes();
-                            expect(project.getProductFlavors()).andReturn(productFlavors).anyTimes();
-                            replay(project);
+                            AndroidProject project = mock(AndroidProject.class);
+                            when(project.getDefaultConfig()).thenReturn(defaultConfig);
+                            when(project.getBuildTypes()).thenReturn(buildTypes);
+                            when(project.getProductFlavors()).thenReturn(productFlavors);
                             return project;
                         }
                     };
@@ -759,36 +906,33 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         @Nullable
                         @Override
                         public Variant getCurrentVariant() {
-                            ProductFlavor flavor = createNiceMock(ProductFlavor.class);
+                            ProductFlavor flavor = mock(ProductFlavor.class);
                             if (getName().equals("ManifestDetectorTest_testGradleOverridesOk") ||
                                     getName().equals(
                                         "ManifestDetectorTest_testManifestPackagePlaceholder")) {
-                                expect(flavor.getMinSdkVersion()).andReturn(null).anyTimes();
-                                expect(flavor.getTargetSdkVersion()).andReturn(null).anyTimes();
-                                expect(flavor.getVersionCode()).andReturn(null).anyTimes();
-                                expect(flavor.getVersionName()).andReturn(null).anyTimes();
+                                when(flavor.getMinSdkVersion()).thenReturn(null);
+                                when(flavor.getTargetSdkVersion()).thenReturn(null);
+                                when(flavor.getVersionCode()).thenReturn(null);
+                                when(flavor.getVersionName()).thenReturn(null);
                             } else {
                                 assertEquals(getName(), "ManifestDetectorTest_testGradleOverrides");
 
-                                ApiVersion apiMock = createNiceMock(ApiVersion.class);
-                                expect(apiMock.getApiLevel()).andReturn(5);
-                                expect(apiMock.getApiString()).andReturn("5");
-                                expect(flavor.getMinSdkVersion()).andReturn(apiMock).anyTimes();
-                                replay(apiMock);
+                                ApiVersion apiMock = mock(ApiVersion.class);
+                                when(apiMock.getApiLevel()).thenReturn(5);
+                                when(apiMock.getApiString()).thenReturn("5");
+                                when(flavor.getMinSdkVersion()).thenReturn(apiMock);
 
-                                apiMock = createNiceMock(ApiVersion.class);
-                                expect(apiMock.getApiLevel()).andReturn(16);
-                                expect(apiMock.getApiString()).andReturn("16");
-                                expect(flavor.getTargetSdkVersion()).andReturn(apiMock).anyTimes();
-                                replay(apiMock);
+                                apiMock = mock(ApiVersion.class);
+                                when(apiMock.getApiLevel()).thenReturn(16);
+                                when(apiMock.getApiString()).thenReturn("16");
+                                when(flavor.getTargetSdkVersion()).thenReturn(apiMock);
 
-                                expect(flavor.getVersionCode()).andReturn(2).anyTimes();
-                                expect(flavor.getVersionName()).andReturn("MyName").anyTimes();
+                                when(flavor.getVersionCode()).thenReturn(2);
+                                when(flavor.getVersionName()).thenReturn("MyName");
                             }
-                            replay(flavor);
-                            Variant mock = createNiceMock(Variant.class);
-                            expect(mock.getMergedFlavor()).andReturn(flavor).anyTimes();
-                            replay(mock);
+
+                            Variant mock = mock(Variant.class);
+                            when(mock.getMergedFlavor()).thenReturn(flavor);
                             return mock;
                         }
                     };

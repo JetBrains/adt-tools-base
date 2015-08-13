@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.ClassRule
 import org.junit.Test
 
@@ -28,12 +29,13 @@ import static junit.framework.Assert.assertTrue
 /**
  * Integration test for the cruncherEnabled settings.
  */
+@CompileStatic
 class NoCruncherTest {
 
     @ClassRule
     static public GradleTestProject noPngCrunch = GradleTestProject.builder()
             .withName("noPngCrunch")
-            .fromSample("noPngCrunch")
+            .fromTestProject("noPngCrunch")
             .create()
 
     @Test
@@ -41,7 +43,7 @@ class NoCruncherTest {
         noPngCrunch.execute("clean", "assembleDebug")
 
         File srcFile = noPngCrunch.file("src/main/res/drawable/icon.png")
-        File destFile = noPngCrunch.file("build/" + FD_INTERMEDIATES + "/res/debug/drawable/icon.png")
+        File destFile = noPngCrunch.file("build/" + FD_INTERMEDIATES + "/res/merged/debug/drawable/icon.png")
 
         // assert size are unchanged.
         assertTrue(srcFile.exists())
@@ -50,7 +52,7 @@ class NoCruncherTest {
 
         // check the png files is changed.
         srcFile = noPngCrunch.file("src/main/res/drawable/lib_bg.9.png")
-        destFile = noPngCrunch.file("build/" + FD_INTERMEDIATES + "/res/debug/drawable/lib_bg.9.png")
+        destFile = noPngCrunch.file("build/" + FD_INTERMEDIATES + "/res/merged/debug/drawable/lib_bg.9.png")
 
         // assert size are changed.
         assertTrue(srcFile.exists())

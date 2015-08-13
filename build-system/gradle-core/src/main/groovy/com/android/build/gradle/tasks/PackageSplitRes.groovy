@@ -20,17 +20,14 @@ import com.android.annotations.NonNull
 import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
-import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.model.FilterDataImpl
-import com.android.build.gradle.internal.tasks.BaseTask
+import com.android.builder.model.SigningConfig
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Callables
-import org.gradle.api.Nullable
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
@@ -42,7 +39,7 @@ import java.util.regex.Pattern
  * Package each split resources into a specific signed apk file.
  */
 @ParallelizableTask
-class PackageSplitRes extends BaseTask {
+class PackageSplitRes extends SplitRelatedTask {
 
     @Input
     Set<String> densitySplits
@@ -70,6 +67,10 @@ class PackageSplitRes extends BaseTask {
         getOutputSplitFiles()*.getOutputFile()
     }
 
+    File getApkMetadataFile() {
+        return null
+    }
+
     /**
      * This directories are not officially input/output to the task as
      * they are shared among tasks. To be parallelizable, we must only
@@ -89,13 +90,13 @@ class PackageSplitRes extends BaseTask {
             FilterData filterData = null;
             for (String density : densitySplits) {
                 if (split.startsWith(density)) {
-                    filterData = FilterDataImpl.Builder.build(
+                    filterData = FilterDataImpl.build(
                             OutputFile.FilterType.DENSITY.toString(), density)
                 }
             }
-            if (languageSplits.contains(split)) {
-                filterData = FilterDataImpl.Builder.build(
-                        OutputFile.FilterType.LANGUAGE.toString(), split);
+            if (languageSplits.contains(unMangleSplitName(split))) {
+                filterData = FilterDataImpl.build(
+                        OutputFile.FilterType.LANGUAGE.toString(), unMangleSplitName(split));
             }
             if (filterData != null) {
                 builder.add(new ApkOutputFile(OutputFile.OutputType.SPLIT,
@@ -125,12 +126,29 @@ class PackageSplitRes extends BaseTask {
         Pattern resourcePattern = Pattern.compile(
                 "resources-${outputBaseName}.ap__(.*)")
 
+        // make a copy of the expected densities and languages filters.
+        List<String> densitiesCopy = new ArrayList<>(densitySplits)
+        List<String> languagesCopy = new ArrayList<>(languageSplits)
+
         // resources- and .ap_ should be shared in a setting somewhere. see BasePlugin:1206
         for (File file : inputDirectory.listFiles()) {
-            Matcher match = resourcePattern.matcher(file.getName());
-            if (match.matches() && !match.group(1).isEmpty() && isValidSplit(match.group(1))) {
+            Matcher match = resourcePattern.matcher(file.getName())
+            // each time we match, we remove the associated filter from our copies.
+            if (match.matches() && !match.group(1).isEmpty()
+                    && isValidSplit(densitiesCopy, languagesCopy, match.group(1))) {
                 closure(match.group(1), file)
             }
+        }
+        // manually invoke the closure for filters we did not find associated files, apply best
+        // guess on the actual file names.
+        for (String density : densitiesCopy) {
+            closure(density,
+                    new File(inputDirectory, "resources-${outputBaseName}.ap__${density}"));
+        }
+        for (String language : languagesCopy) {
+            closure(language,
+                    new File(inputDirectory, "resources-${outputBaseName}.ap__${language}"));
+
         }
     }
 
@@ -139,17 +157,52 @@ class PackageSplitRes extends BaseTask {
      * requested split for this task). A density split identifier can be suffixed with characters
      * added by aapt.
      */
-    private boolean isValidSplit(@NonNull String splitWithOptionalSuffix) {
-        for (String density : densitySplits) {
+    private static boolean isValidSplit(
+            List<String> densities,
+            List<String> languages,
+            @NonNull String splitWithOptionalSuffix) {
+        for (String density : densities) {
             if (splitWithOptionalSuffix.startsWith(density)) {
+                densities.remove(density);
                 return true;
             }
         }
-        return languageSplits.contains(splitWithOptionalSuffix);
+        String mangledName = unMangleSplitName(splitWithOptionalSuffix);
+        if (languages.contains(mangledName)) {
+            languages.remove(mangledName);
+            return true;
+        }
+        return false;
     }
 
     String getOutputFileNameForSplit(String split) {
         String apkName = "${project.archivesBaseName}-${outputBaseName}_${split}"
         return apkName + (signingConfig == null ? "-unsigned.apk" : "-unaligned.apk")
+    }
+
+    @Override
+    List<FilterData> getSplitsData() {
+        ImmutableList.Builder<FilterData> filterDataBuilder = ImmutableList.builder();
+        addAllFilterData(filterDataBuilder, densitySplits, OutputFile.FilterType.DENSITY);
+        addAllFilterData(filterDataBuilder, languageSplits, OutputFile.FilterType.LANGUAGE);
+        return filterDataBuilder.build();
+    }
+
+    /**
+     * Un-mangle a split name as created by the aapt tool to retrieve a split name as configured
+     * in the project's build.gradle.
+     *
+     * when dealing with several split language in a single split, each language (+ optional region)
+     * will be seperated by an underscore.
+     *
+     * note that there is currently an aapt bug, remove the 'r' in the region so for instance,
+     * fr-rCA becomes fr-CA, temporarily put it back until it is fixed.
+     *
+     * @param splitWithOptionalSuffix the mangled split name.
+     * @return
+     */
+    static String unMangleSplitName(String splitWithOptionalSuffix) {
+        String mangledName = splitWithOptionalSuffix.replaceAll('_', ',');
+        return mangledName.contains("-r") ? mangledName : mangledName.replace("-", "-r");
     }
 }

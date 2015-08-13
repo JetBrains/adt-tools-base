@@ -57,7 +57,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     static final String FN_MERGER_XML = "merger.xml";
     static final String NODE_MERGER = "merger";
     static final String NODE_DATA_SET = "dataSet";
-    static final String NODE_MERGED_ITEMS = "mergedItems";
+
     static final String NODE_CONFIGURATION = "configuration";
 
     static final String ATTR_VERSION = "version";
@@ -78,7 +78,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
         mFactory.setIgnoringComments(true);
     }
 
-    protected abstract S createFromXml(Node node);
+    protected abstract S createFromXml(Node node) throws MergingException;
 
     protected abstract boolean requiresMerge(@NonNull String dataItemKey);
 
@@ -332,23 +332,23 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             }
 
             // write merged items
-            writeMergedItems(document, rootNode);
+            writeAdditionalData(document, rootNode);
 
             String content = XmlUtils.toXml(document, true /*preserveWhitespace*/);
 
             try {
                 createDir(blobRootFolder);
             } catch (IOException ioe) {
-                throw new MergingException(ioe).setFile(blobRootFolder);
+                throw MergingException.wrapException(ioe).withFile(blobRootFolder).build();
             }
             File file = new File(blobRootFolder, FN_MERGER_XML);
             try {
                 Files.write(content, file, Charsets.UTF_8);
             } catch (IOException ioe) {
-                throw new MergingException(ioe).setFile(file);
+                throw MergingException.wrapException(ioe).withFile(file).build();
             }
         } catch (ParserConfigurationException e) {
-            throw new MergingException(e);
+            throw MergingException.wrapException(e).build();
         }
     }
 
@@ -410,13 +410,11 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 if (NODE_DATA_SET.equals(node.getLocalName())) {
                     S dataSet = createFromXml(node);
                     if (dataSet != null) {
-                        mDataSets.add(dataSet);
+                        addDataSet(dataSet);
                     }
-                } else if (incrementalState && NODE_MERGED_ITEMS.equals(node.getLocalName())) {
-                    // only load the merged item in incremental state.
-                    // In non incremental state, they will be recreated by the touched
-                    // items anyway.
-                    loadMergedItems(node);
+                } else if (incrementalState
+                        && getAdditionalDataTagName().equals(node.getLocalName())) {
+                    loadAdditionalData(node, incrementalState);
                 }
             }
 
@@ -428,28 +426,29 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
 
             return true;
         } catch (SAXParseException e) {
-            MergingException exception = new MergingException(e);
-            exception.setFile(file);
-            int lineNumber = e.getLineNumber();
-            if (lineNumber != -1) {
-                exception.setLine(lineNumber - 1); // make line numbers 0-based
-                exception.setColumn(e.getColumnNumber() - 1);
-            }
-            throw exception;
+            throw MergingException.wrapException(e).withFile(file).build();
         } catch (IOException e) {
-            throw new MergingException(e).setFile(file);
+            throw MergingException.wrapException(e).withFile(file).build();
         } catch (ParserConfigurationException e) {
-            throw new MergingException(e).setFile(file);
+            throw MergingException.wrapException(e).withFile(file).build();
         } catch (SAXException e) {
-            throw new MergingException(e).setFile(file);
+            throw MergingException.wrapException(e).withFile(file).build();
         }
     }
 
-    protected void loadMergedItems(@NonNull Node mergedItemsNode) {
+    @NonNull
+    protected String getAdditionalDataTagName() {
+        // No tag can have an empty name, so mergers that store additional data, have to provide
+        // this.
+        return "";
+    }
+
+    protected void loadAdditionalData(@NonNull Node additionalDataNode, boolean incrementalState)
+            throws MergingException {
         // do nothing by default.
     }
 
-    protected void writeMergedItems(Document document, Node rootNode) {
+    protected void writeAdditionalData(Document document, Node rootNode) throws MergingException {
         // do nothing by default.
     }
 

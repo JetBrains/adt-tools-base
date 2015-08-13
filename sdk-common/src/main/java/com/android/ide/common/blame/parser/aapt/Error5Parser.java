@@ -17,7 +17,7 @@ package com.android.ide.common.blame.parser.aapt;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.ide.common.blame.output.GradleMessage;
+import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
 import com.android.ide.common.blame.parser.ParsingFailedException;
 import com.android.utils.ILogger;
@@ -44,7 +44,7 @@ class Error5Parser extends AbstractAaptOutputParser {
     );
 
     @Override
-    public boolean parse(@NonNull String line, @NonNull OutputLineReader reader, @NonNull List<GradleMessage> messages, @NonNull ILogger logger)
+    public boolean parse(@NonNull String line, @NonNull OutputLineReader reader, @NonNull List<Message> messages, @NonNull ILogger logger)
             throws ParsingFailedException {
         for (Pattern pattern : MSG_PATTERNS) {
             Matcher m = pattern.matcher(line);
@@ -52,15 +52,15 @@ class Error5Parser extends AbstractAaptOutputParser {
                 String sourcePath = m.group(1);
                 String lineNumber = m.group(2);
                 String msgText = m.group(3);
-                GradleMessage.Kind kind = GradleMessage.Kind.ERROR;
+                Message.Kind kind = Message.Kind.ERROR;
                 if (msgText.startsWith("warning: ")) {
                     // NDK warning also matches this regexp
-                    kind = GradleMessage.Kind.WARNING;
+                    kind = Message.Kind.WARNING;
                 }
                 if (sourcePath.endsWith(SdkConstants.DOT_JAVA)) {
                     return false;
                 }
-                GradleMessage msg = createMessage(kind, msgText, sourcePath, lineNumber, "", logger);
+                Message msg = createMessage(kind, msgText, sourcePath, lineNumber, "", logger);
                 messages.add(msg);
                 return true;
             }

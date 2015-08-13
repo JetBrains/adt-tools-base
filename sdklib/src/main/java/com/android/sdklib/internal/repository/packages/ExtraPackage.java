@@ -22,12 +22,12 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.LocalSdkParser;
 import com.android.sdklib.internal.repository.NullTaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.RepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDescExtra;
@@ -36,7 +36,6 @@ import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDescExtra;
 import com.android.sdklib.repository.local.LocalExtraPkgInfo;
 import com.android.utils.NullLogger;
-
 import org.w3c.dom.Node;
 
 import java.io.File;
@@ -48,7 +47,12 @@ import java.util.regex.Pattern;
 
 /**
  * Represents a extra XML node in an SDK repository.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class ExtraPackage extends NoPreviewRevisionPackage
     implements IMinApiLevelDependency, IMinToolsDependency {
 
@@ -155,14 +159,9 @@ public class ExtraPackage extends NoPreviewRevisionPackage
 
         mOldPaths = PackageParserUtils.getXmlString(packageNode, RepoConstants.NODE_OLD_PATHS);
 
-        mPkgDesc = (IPkgDescExtra) PkgDesc.Builder
-                .newExtra(mVendor,
-                          mPath,
-                          mDisplayName,
-                          getOldPaths(),
-                          getRevision())
-                .setDescriptions(this)
-                .create();
+        mPkgDesc =
+          (IPkgDescExtra)setDescriptions(PkgDesc.Builder.newExtra(mVendor, mPath, mDisplayName,
+                  getOldPaths(), getRevision())).create();
     }
 
     private String[] parseProjectFiles(Node projectFilesNode) {
@@ -291,13 +290,8 @@ public class ExtraPackage extends NoPreviewRevisionPackage
 
         mProjectFiles = filePaths.toArray(new String[filePaths.size()]);
 
-        mPkgDesc = (IPkgDescExtra) PkgDesc.Builder
-                .newExtra(mVendor,
-                          mPath,
-                          mDisplayName,
-                          getOldPaths(),
-                          getRevision())
-                .setDescriptions(this)
+        mPkgDesc = (IPkgDescExtra) setDescriptions(PkgDesc.Builder
+                .newExtra(mVendor, mPath, mDisplayName, getOldPaths(), getRevision()))
                 .create();
     }
 

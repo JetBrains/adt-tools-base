@@ -25,19 +25,24 @@ import com.android.sdklib.repository.SdkRepoConstants;
  * <p/>
  * A package that has this dependency can only be installed if the requested tools revision
  * is present or installed at the same time.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public interface IMinToolsDependency {
 
     /**
      * The value of {@link #getMinToolsRevision()} when the
      * {@link SdkRepoConstants#NODE_MIN_TOOLS_REV} was not specified in the XML source.
      */
-    public static final FullRevision MIN_TOOLS_REV_NOT_SPECIFIED =
+    FullRevision MIN_TOOLS_REV_NOT_SPECIFIED =
         new FullRevision(FullRevision.MISSING_MAJOR_REV);
 
     /**
      * The minimal revision of the tools package required by this extra package if > 0,
      * or {@link #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
      */
-    public abstract FullRevision getMinToolsRevision();
+    FullRevision getMinToolsRevision();
 }

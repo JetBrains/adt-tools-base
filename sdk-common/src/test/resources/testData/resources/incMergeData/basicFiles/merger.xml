@@ -6,7 +6,7 @@
             <file name="touched" path="$TOP$$SEP$main$SEP$drawable$SEP$touched.png" qualifiers="" type="drawable"/>
             <file name="new_overlay" path="$TOP$$SEP$main$SEP$drawable$SEP$new_overlay.png" qualifiers="" type="drawable"/>
             <file name="removed" path="$TOP$$SEP$main$SEP$drawable$SEP$removed.png" qualifiers="" type="drawable"/>
-            <file name="removed" path="$TOP$$SEP$main$SEP$drawable-ldpi$SEP$removed.png" qualifiers="ldpi-v4" type="drawable"/>
+            <file name="removed" path="$TOP$$SEP$main$SEP$drawable-ldpi$SEP$removed.png" qualifiers="ldpi" type="drawable"/>
             <file name="removed_overlay" path="$TOP$$SEP$main$SEP$drawable$SEP$removed_overlay.png" qualifiers="" type="drawable"/>
         </source>
     </dataSet>

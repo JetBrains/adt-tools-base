@@ -6,7 +6,7 @@ archivesBaseName = 'ninepatch'
 version = rootProject.ext.baseVersion
 
 dependencies {
-    testCompile 'junit:junit:3.8.1'
+    testCompile 'junit:junit:4.12'
 }
 
 sourceSets {

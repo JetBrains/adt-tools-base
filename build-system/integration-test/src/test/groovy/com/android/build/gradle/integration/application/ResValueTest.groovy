@@ -28,6 +28,7 @@ import com.android.builder.model.Variant
 import com.google.common.base.Charsets
 import com.google.common.collect.Maps
 import com.google.common.io.Files
+import groovy.transform.CompileStatic
 import junit.framework.Assert
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -42,15 +43,17 @@ import static org.junit.Assert.assertNotNull
  * Test for Res Values declared in build type, flavors, and variant and how they
  * override each other
  */
+@CompileStatic
 class ResValueTest {
     @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder().create()
+    public static GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldApp())
+            .create()
 
     private static AndroidProject model
 
     @BeforeClass
     static void setUp() {
-        new HelloWorldApp().writeSources(project.testDir)
         project.getBuildFile() << """
             apply plugin: 'com.android.application'
 
@@ -116,13 +119,13 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from the variant -->
-    <item name="VALUE_VARIANT" type="string">1000</item>
+    <string name="VALUE_VARIANT">1000</string>
     <!-- Values from build type: debug -->
-    <item name="VALUE_DEBUG" type="string">100</item>
+    <string name="VALUE_DEBUG">100</string>
     <!-- Values from product flavor: flavor1 -->
-    <item name="VALUE_FLAVOR" type="string">10</item>
+    <string name="VALUE_FLAVOR">10</string>
     <!-- Values from default config. -->
-    <item name="VALUE_DEFAULT" type="string">1</item>
+    <string name="VALUE_DEFAULT">1</string>
 
 </resources>
 """
@@ -148,13 +151,13 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from the variant -->
-    <item name="VALUE_VARIANT" type="string">1000</item>
+    <string name="VALUE_VARIANT">1000</string>
     <!-- Values from build type: debug -->
-    <item name="VALUE_DEBUG" type="string">100</item>
+    <string name="VALUE_DEBUG">100</string>
     <!-- Values from product flavor: flavor2 -->
-    <item name="VALUE_FLAVOR" type="string">20</item>
+    <string name="VALUE_FLAVOR">20</string>
     <!-- Values from default config. -->
-    <item name="VALUE_DEFAULT" type="string">1</item>
+    <string name="VALUE_DEFAULT">1</string>
 
 </resources>
 """
@@ -180,11 +183,11 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from product flavor: flavor1 -->
-    <item name="VALUE_DEBUG" type="string">10</item>
-    <item name="VALUE_FLAVOR" type="string">10</item>
-    <item name="VALUE_VARIANT" type="string">10</item>
+    <string name="VALUE_DEBUG">10</string>
+    <string name="VALUE_FLAVOR">10</string>
+    <string name="VALUE_VARIANT">10</string>
     <!-- Values from default config. -->
-    <item name="VALUE_DEFAULT" type="string">1</item>
+    <string name="VALUE_DEFAULT">1</string>
 
 </resources>
 """
@@ -210,11 +213,11 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from product flavor: flavor2 -->
-    <item name="VALUE_DEBUG" type="string">20</item>
-    <item name="VALUE_FLAVOR" type="string">20</item>
-    <item name="VALUE_VARIANT" type="string">20</item>
+    <string name="VALUE_DEBUG">20</string>
+    <string name="VALUE_FLAVOR">20</string>
+    <string name="VALUE_VARIANT">20</string>
     <!-- Values from default config. -->
-    <item name="VALUE_DEFAULT" type="string">1</item>
+    <string name="VALUE_DEFAULT">1</string>
 
 </resources>
 """
@@ -233,7 +236,7 @@ class ResValueTest {
 
     private static void checkBuildConfig(@NonNull String expected, @NonNull String variantDir) {
         File outputFile = new File(project.getTestDir(),
-                "build/generated/res/generated/$variantDir/values/generated.xml")
+                "build/generated/res/resValues/$variantDir/values/generated.xml")
         Assert.assertTrue("Missing file: " + outputFile, outputFile.isFile())
         assertEquals(expected, Files.asByteSource(outputFile).asCharSource(Charsets.UTF_8).read())
     }

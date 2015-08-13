@@ -16,11 +16,10 @@
 
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.JavaArtifact
-import org.junit.Before
+import groovy.transform.CompileStatic
 import org.junit.Rule
 import org.junit.Test
 
@@ -29,27 +28,17 @@ import static com.google.common.truth.Truth.assertThat
 /**
  * Tests for the unit-tests related parts of the builder model.
  */
+@CompileStatic
 class UnitTestingModelTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create();
-
-    @Before
-    public void setUp() {
-        new HelloWorldApp().writeSources(project.testDir)
-        project.buildFile << """
-apply plugin: 'com.android.application'
-
-android {
-    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-}
-"""
-    }
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestProject("unitTestingComplexProject")
+            .create();
 
     @Test
     public void "Unit testing artifacts are included in the model"() {
-        AndroidProject model = project.singleModel
+        AndroidProject model = project.allModels[":app"]
 
         assertThat(model.extraArtifacts*.name).containsExactly(
                 AndroidProject.ARTIFACT_ANDROID_TEST,
@@ -76,6 +65,11 @@ android {
             // No per-variant source code.
             assertThat(unitTestArtifact.variantSourceProvider).isNull()
             assertThat(unitTestArtifact.multiFlavorSourceProvider).isNull()
+
+            assertThat(variant.mainArtifact.javaResourcesFolder.path)
+                    .endsWith("intermediates/javaResources/" + variant.name)
+            assertThat(unitTestArtifact.javaResourcesFolder.path)
+                    .endsWith("intermediates/javaResources/test/" + variant.name)
         }
 
         def sourceProvider = model.defaultConfig
@@ -89,13 +83,12 @@ android {
 
     @Test
     public void flavors() throws Exception {
-        project.buildFile << """
+        project.getSubproject("app").buildFile << """
 android {
     productFlavors { paid; free }
 }
 """
-
-        AndroidProject model = project.singleModel
+        AndroidProject model = project.allModels[":app"]
 
         assertThat(model.productFlavors).hasSize(2)
 

@@ -68,10 +68,13 @@ import org.w3c.dom.NodeList;
 public class ResourceItem extends DataItem<ResourceFile>
         implements Configurable, Comparable<ResourceItem> {
 
+    @NonNull
     private final ResourceType mType;
 
+    @Nullable
     private Node mValue;
 
+    @Nullable
     protected ResourceValue mResourceValue;
 
     /**
@@ -148,7 +151,7 @@ public class ResourceItem extends DataItem<ResourceFile>
      *
      * @param from the resource to copy the value from.
      */
-    void setValue(ResourceItem from) {
+    void setValue(@NonNull ResourceItem from) {
         mValue = from.mValue;
         setTouched();
     }
@@ -160,7 +163,7 @@ public class ResourceItem extends DataItem<ResourceFile>
             return new FolderConfiguration();
         }
 
-        return FolderConfiguration.getConfigFromQualifiers(Splitter.on('-').split(qualifier));
+        return FolderConfiguration.getConfigForQualifierString(qualifier);
     }
 
     /**
@@ -180,11 +183,20 @@ public class ResourceItem extends DataItem<ResourceFile>
                     "ResourceItem.getKey called on object with no ResourceFile: " + this);
         }
         String qualifiers = getQualifiers();
-        if (!qualifiers.isEmpty()) {
-            return mType.getName() + "-" + qualifiers + "/" + getName();
+
+        String typeName = mType.getName();
+        if (mType == ResourceType.PUBLIC && mValue != null) {
+            String typeAttribute = ((Element) mValue).getAttribute(ATTR_TYPE);
+            if (typeAttribute != null) {
+                typeName += "_" + typeAttribute;
+            }
         }
 
-        return mType.getName() + "/" + getName();
+        if (!qualifiers.isEmpty()) {
+            return typeName + "-" + qualifiers + "/" + getName();
+        }
+
+        return typeName + "/" + getName();
     }
 
     @Override
@@ -198,7 +210,8 @@ public class ResourceItem extends DataItem<ResourceFile>
             //noinspection VariableNotUsedInsideIf
             if (mValue == null) {
                 // Density based resource value?
-                Density density = mType == ResourceType.DRAWABLE ? getFolderDensity() : null;
+                Density density = mType == ResourceType.DRAWABLE || mType == ResourceType.MIPMAP
+                        ? getFolderDensity() : null;
                 if (density != null) {
                     mResourceValue = new DensityBasedResourceValue(mType, getName(),
                             getSource().getFile().getAbsolutePath(), density, isFrameworks);
@@ -315,14 +328,13 @@ public class ResourceItem extends DataItem<ResourceFile>
                     value = parseStyleValue(
                             new StyleResourceValue(type, name, parent, isFrameworks));
                 } catch (Throwable t) {
-                    // TEMPORARY DIAGNOSTICS
+                    //noinspection UseOfSystemOutOrSystemErr
                     System.err.println("Problem parsing attribute " + name + " of type " + type
                             + " for node " + mValue);
                     return null;
                 }
                 break;
             case DECLARE_STYLEABLE:
-                //noinspection deprecation
                 value = parseDeclareStyleable(new DeclareStyleableResourceValue(type, name,
                         isFrameworks));
                 break;
@@ -468,7 +480,6 @@ public class ResourceItem extends DataItem<ResourceFile>
         return value;
     }
 
-    @SuppressWarnings("deprecation") // support for deprecated (but supported) API
     @NonNull
     private ResourceValue parseDeclareStyleable(
             @NonNull DeclareStyleableResourceValue declareStyleable) {

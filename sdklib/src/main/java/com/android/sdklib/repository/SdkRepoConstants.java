@@ -18,7 +18,6 @@ package com.android.sdklib.repository;
 
 
 import com.android.annotations.NonNull;
-import com.android.sdklib.internal.repository.sources.SdkSource;
 
 import java.io.InputStream;
 import java.util.regex.Matcher;
@@ -26,6 +25,7 @@ import java.util.regex.Pattern;
 
 /**
  * Public constants for the sdk-repository XML Schema.
+ * @deprecated moved to studio
  */
 public class SdkRepoConstants extends RepoConstants {
 
@@ -33,7 +33,7 @@ public class SdkRepoConstants extends RepoConstants {
      * The latest version of the sdk-repository XML Schema.
      * Valid version numbers are between 1 and this number, included.
      */
-    public static final int NS_LATEST_VERSION = 10;
+    public static final int NS_LATEST_VERSION = 11;
 
     /**
      * The min version of the sdk-repository XML Schema we'll try to load.
@@ -53,7 +53,7 @@ public class SdkRepoConstants extends RepoConstants {
         "https://dl.google.com/android/repository/";                        //$NON-NLS-1$
 
     /**
-     * The default name looked for by {@link SdkSource} when trying to load an
+     * The default name looked for by SdkSource when trying to load an
      * sdk-repository XML if the URL doesn't match an existing resource.
      */
     public static final String URL_DEFAULT_FILENAME = "repository.xml";         //$NON-NLS-1$
@@ -114,7 +114,6 @@ public class SdkRepoConstants extends RepoConstants {
     public static final String NODE_SAMPLE          = "sample";               //$NON-NLS-1$
     /** A source package. */
     public static final String NODE_SOURCE          = "source";               //$NON-NLS-1$
-
 
     /**
      * List of possible nodes in a repository XML. Used to populate options automatically

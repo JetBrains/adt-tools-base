@@ -7,8 +7,9 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-<#if applicationPackage??>import ${applicationPackage}.R;</#if>
-
+<#if applicationPackage??>
+import ${applicationPackage}.R;
+</#if>
 import com.google.android.gms.plus.PlusOneButton;
 
 /**
@@ -93,7 +94,6 @@ public class ${className} extends Fragment {
 
         return view;
     }
-
 
     @Override
     public void onResume() {

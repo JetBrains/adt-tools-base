@@ -23,13 +23,13 @@ import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SystemImage;
-import com.android.sdklib.internal.repository.packages.License;
-import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.sdklib.repository.License;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.sdklib.repository.PreciseRevision;
 
 import java.io.File;
 import java.util.Locale;
@@ -47,6 +47,7 @@ import java.util.Locale;
  * methods provided in the base {@link PkgDesc}.
  */
 public class PkgDesc implements IPkgDesc {
+    public static final String PREVIEW_SUFFIX = "-preview";
     private final PkgType mType;
     private final FullRevision mFullRevision;
     private final MajorRevision mMajorRevision;
@@ -186,10 +187,25 @@ public class PkgDesc implements IPkgDesc {
         return mMajorRevision;
     }
 
+    @NonNull
+    @Override
+    public final PreciseRevision getPreciseRevision() {
+        if (mMajorRevision == null) {
+            return new PreciseRevision(mFullRevision.getMajor(), mFullRevision.getMinor(),
+                                       mFullRevision.getMicro(), mFullRevision.getPreview());
+        }
+        return new PreciseRevision(mMajorRevision.getMajor());
+    }
+
     @Nullable
     @Override
     public AndroidVersion getAndroidVersion() {
         return mAndroidVersion;
+    }
+
+    @Override
+    public boolean isPreview() {
+        return getPreciseRevision().isPreview();
     }
 
     @Nullable
@@ -228,10 +244,19 @@ public class PkgDesc implements IPkgDesc {
 
     @Override
     public String getInstallId() {
+        String id = getBaseInstallId();
+        if (getPreciseRevision().isPreview()) {
+            return id + PREVIEW_SUFFIX;
+        }
+        return id;
+    }
+
+    @Override
+    public String getBaseInstallId() {
         StringBuilder sb = new StringBuilder();
 
         /* iid patterns:
-        tools, platform-tools => FOLDER / FOLDER-preview
+        tools, platform-tools => FOLDER
         build-tools => FOLDER-REV
         doc, sample, source => ENUM-API
         extra => ENUM-VENDOR.id-PATH
@@ -245,17 +270,25 @@ public class PkgDesc implements IPkgDesc {
         case PKG_TOOLS:
         case PKG_PLATFORM_TOOLS:
             sb.append(mType.getFolderName());
-            if (getFullRevision().isPreview()) {
-                sb.append("-preview");
-            }
             break;
 
         case PKG_BUILD_TOOLS:
-            sb.append(mType.getFolderName());
-            sb.append('-').append(getFullRevision().toString());
+            sb.append(mType.getFolderName()).append('-');
+            // Add version number without the preview revision number. This is to make preview
+            // packages be updatable to the next revision.
+            int[] version = getPreciseRevision().toIntArray(false);
+            for (int i = 0; i < version.length; i++) {
+                sb.append(version[i]);
+                if (i != version.length - 1) {
+                    sb.append('.');
+                }
+            }
             break;
 
         case PKG_DOC:
+            sb.append("doc");
+            break;
+
         case PKG_SAMPLE:
         case PKG_SOURCE:
             sb.append(mType.toString().toLowerCase(Locale.US).replace("pkg_", ""));
@@ -270,12 +303,13 @@ public class PkgDesc implements IPkgDesc {
             break;
 
         case PKG_PLATFORM:
-            sb.append(AndroidTargetHash.PLATFORM_HASH_PREFIX).append(getAndroidVersion().getApiString());
+            sb.append(AndroidTargetHash.PLATFORM_HASH_PREFIX)
+                    .append(getAndroidVersion().getApiString());
             break;
 
         case PKG_ADDON:
             sb.append("addon-")
-              .append(((IPkgDescAddon) this).getName().getId())
+              .append(((IPkgDescAddon)this).getName().getId())
               .append('-')
               .append(getVendor().getId())
               .append('-')
@@ -300,7 +334,11 @@ public class PkgDesc implements IPkgDesc {
               .append(getVendor().getId())
               .append('-')
               .append(getAndroidVersion().getApiString());
-          break;
+            break;
+
+        case PKG_NDK:
+            sb.append("ndk");
+            break;
 
         default:
             throw new IllegalArgumentException("IID not defined for type " + mType.toString());
@@ -337,13 +375,16 @@ public class PkgDesc implements IPkgDesc {
         case PKG_PLATFORM:
         case PKG_SAMPLE:
         case PKG_SOURCE:
-            f = FileOp.append(f, AndroidTargetHash.PLATFORM_HASH_PREFIX + sanitize(getAndroidVersion().getApiString()));
+            f = FileOp.append(f, AndroidTargetHash.PLATFORM_HASH_PREFIX + sanitize(
+                    getAndroidVersion().getApiString()));
             break;
 
         case PKG_SYS_IMAGE:
             f = FileOp.append(f,
-                    AndroidTargetHash.PLATFORM_HASH_PREFIX + sanitize(getAndroidVersion().getApiString()),
-                    sanitize(SystemImage.DEFAULT_TAG.equals(getTag()) ? "android" : getTag().getId()),
+                    AndroidTargetHash.PLATFORM_HASH_PREFIX + sanitize(
+                            getAndroidVersion().getApiString()),
+                    sanitize(SystemImage.DEFAULT_TAG.equals(getTag()) ? "android"
+                            : getTag().getId()),
                     sanitize(getPath()));   // path==abi
             break;
 
@@ -366,7 +407,8 @@ public class PkgDesc implements IPkgDesc {
             break;
 
         default:
-            throw new IllegalArgumentException("CanonicalFolder not defined for type " + mType.toString());
+            throw new IllegalArgumentException(
+                    "CanonicalFolder not defined for type " + mType.toString());
         }
 
         return f;
@@ -384,10 +426,16 @@ public class PkgDesc implements IPkgDesc {
      */
     @Override
     public boolean isUpdateFor(@NonNull IPkgDesc existingDesc) {
+        return isUpdateFor(existingDesc, PreviewComparison.COMPARE_NUMBER);
+    }
+
+    @Override
+    public boolean isUpdateFor(@NonNull IPkgDesc existingDesc,
+            @NonNull PreviewComparison previewComparison) {
         if (mCustomIsUpdateFor != null) {
             return mCustomIsUpdateFor.isUpdateFor(this, existingDesc);
         } else {
-            return isGenericUpdateFor(existingDesc);
+            return isGenericUpdateFor(existingDesc, previewComparison);
         }
     }
 
@@ -397,9 +445,11 @@ public class PkgDesc implements IPkgDesc {
      * as needed.
      *
      * @param existingDesc A non-null package descriptor to compare with.
+     * @param previewComparison The type of preview comparison to do.
      * @return True if this package descriptor would generally update the given one.
      */
-    private boolean isGenericUpdateFor(@NonNull IPkgDesc existingDesc) {
+    private boolean isGenericUpdateFor(@NonNull IPkgDesc existingDesc,
+                                       PreviewComparison previewComparison) {
 
         if (existingDesc == null || !getType().equals(existingDesc.getType())) {
             return false;
@@ -444,7 +494,8 @@ public class PkgDesc implements IPkgDesc {
         // Packages that have a full revision are generally updates if it increases
         // but keeps the same kind of preview (e.g. previews are only updates by previews.)
         if (hasFullRevision() &&
-                getFullRevision().isPreview() == existingDesc.getFullRevision().isPreview()) {
+                (previewComparison == PreviewComparison.IGNORE
+                        || existingDesc.isPreview() == isPreview())) {
             // If both packages match in their preview type (both previews or both not previews)
             // then is the RC/preview number an update?
             return getFullRevision().compareTo(existingDesc.getFullRevision(),
@@ -548,10 +599,13 @@ public class PkgDesc implements IPkgDesc {
         // Flags for list description pattern string, used in PkgType:
         //      $MAJ  $FULL  $API  $PATH  $TAG  $VEND  $NAME (for extras)
 
-        result = result.replace("$MAJ",  hasMajorRevision()  ? getMajorRevision().toShortString() : "");
-        result = result.replace("$FULL", hasFullRevision()   ? getFullRevision() .toShortString() : "");
-        result = result.replace("$API",  hasAndroidVersion() ? getAndroidVersion().getApiString() : "");
-        result = result.replace("$PATH", hasPath()           ? getPath()                          : "");
+        result = result
+                .replace("$MAJ", hasMajorRevision() ? getMajorRevision().toShortString() : "");
+        result = result
+                .replace("$FULL", hasFullRevision() ? getFullRevision().toShortString() : "");
+        result = result
+                .replace("$API", hasAndroidVersion() ? getAndroidVersion().getApiString() : "");
+        result = result.replace("$PATH", hasPath() ? getPath() : "");
         result = result.replace("$TAG",  hasTag() && !getTag().equals(SystemImage.DEFAULT_TAG) ?
                                                 getTag().getDisplay() : "");
         result = result.replace("$VEND",  hasVendor() ? getVendor().getDisplay() : "");
@@ -759,11 +813,11 @@ public class PkgDesc implements IPkgDesc {
     // ---- Constructors -----
 
     public interface IIsUpdateFor {
-        public boolean isUpdateFor(@NonNull PkgDesc thisPkgDesc, @NonNull IPkgDesc existingDesc);
+        boolean isUpdateFor(@NonNull PkgDesc thisPkgDesc, @NonNull IPkgDesc existingDesc);
     }
 
     public interface IGetPath {
-        public String getPath(@NonNull PkgDesc thisPkgDesc);
+        String getPath(@NonNull PkgDesc thisPkgDesc);
     }
 
     public static class Builder {
@@ -798,7 +852,7 @@ public class PkgDesc implements IPkgDesc {
          *
          * @param revision The revision of the tool package.
          * @param minPlatformToolsRev The {@code min-platform-tools-rev}.
-         *                  Use {@link FullRevision#NOT_SPECIFIED} to indicate there is no requirement.
+         *          Use {@link FullRevision#NOT_SPECIFIED} to indicate there is no requirement.
          * @return A {@link PkgDesc} describing this tool package.
          */
         @NonNull
@@ -839,10 +893,11 @@ public class PkgDesc implements IPkgDesc {
                     // Generic test checks that the preview type is the same (both previews or not).
                     // Build tool is different in that the full revision must be an exact match
                     // and not an increase.
-                    return thisPkgDesc.isGenericUpdateFor(existingDesc) &&
-                        thisPkgDesc.getFullRevision().compareTo(
-                                            existingDesc.getFullRevision(),
-                                           PreviewComparison.COMPARE_TYPE) == 0;
+                    return thisPkgDesc
+                            .isGenericUpdateFor(existingDesc, PreviewComparison.COMPARE_NUMBER) &&
+                            thisPkgDesc.getFullRevision().compareTo(
+                                    existingDesc.getFullRevision(),
+                                    PreviewComparison.COMPARE_TYPE) == 0;
                 }
             };
             return p;
@@ -893,7 +948,7 @@ public class PkgDesc implements IPkgDesc {
         @NonNull
         public static Builder newExtra(@NonNull  IdDisplay vendor,
                                        @NonNull  String path,
-                                       @NonNull  String displayName,
+                                       @Nullable  String displayName,
                                        @Nullable String[] oldPaths,
                                        @NonNull  NoPreviewRevision revision) {
             Builder p = new Builder(PkgType.PKG_EXTRA);
@@ -1047,13 +1102,17 @@ public class PkgDesc implements IPkgDesc {
             return p;
         }
 
-        public Builder setDescriptions(@NonNull Package pkg) {
-            mDescriptionShort = pkg.getShortDescription();
-            mDescriptionUrl   = pkg.getDescUrl();
-            mListDisplay      = pkg.getListDisplay();
-            mIsObsolete       = pkg.isObsolete();
-            mLicense          = pkg.getLicense();
-            return this;
+        /**
+         * Creates a new NDK package descriptor.
+         *
+         * @param revision The revision of the NDK package.
+         * @return A {@link PkgDesc} describing this NDK package.
+         */
+        @NonNull
+        public static Builder newNdk(@NonNull FullRevision revision) {
+            Builder p = new Builder(PkgType.PKG_NDK);
+            p.mFullRevision = revision;
+            return p;
         }
 
         public Builder setLicense(@Nullable License license) {

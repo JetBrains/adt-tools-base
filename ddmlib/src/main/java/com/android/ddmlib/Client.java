@@ -65,6 +65,8 @@ public class Client {
     public static final int CHANGE_HEAP_ALLOCATION_STATUS     = 0x0400;
     /** Client change bit mask: allocation information updated */
     public static final int CHANGE_METHOD_PROFILING_STATUS    = 0x0800;
+    /** Client change bit mask: hprof data updated */
+    public static final int CHANGE_HPROF                      = 0x1000;
 
     /** Client change bit mask: combination of {@link Client#CHANGE_NAME},
      * {@link Client#CHANGE_DEBUGGER_STATUS}, and {@link Client#CHANGE_PORT}.
@@ -655,7 +657,10 @@ public class Client {
     void sendAndConsume(JdwpPacket packet, ChunkHandler replyHandler)
         throws IOException {
 
-        if (mChan == null) {
+        // Fix to avoid a race condition on mChan. This should be better synchronized
+        // but just capturing the channel here, avoids a NPE.
+        SocketChannel chan = mChan;
+        if (chan == null) {
             // can happen for e.g. THST packets
             Log.v("ddms", "Not sending packet -- client is closed");
             return;
@@ -670,9 +675,13 @@ public class Client {
             addRequestId(packet.getId(), replyHandler);
         }
 
-        synchronized (mChan) {
+        // Synchronizing on this variable is still useful as we do not want to threads
+        // reading at the same time from the same channel, and the only change that
+        // can happen to this channel is to be closed and mChan become null.
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (chan) {
             try {
-                packet.writeAndConsume(mChan);
+                packet.writeAndConsume(chan);
             }
             catch (IOException ioe) {
                 removeRequestId(packet.getId());

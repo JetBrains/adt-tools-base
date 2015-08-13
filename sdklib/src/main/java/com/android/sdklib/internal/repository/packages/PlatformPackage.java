@@ -25,7 +25,7 @@ import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
@@ -42,7 +42,12 @@ import java.util.Properties;
 
 /**
  * Represents a platform XML node in an SDK repository.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class PlatformPackage extends MinToolsPackage
         implements IAndroidVersionProvider, ILayoutlibVersion {
 
@@ -90,15 +95,12 @@ public class PlatformPackage extends MinToolsPackage
         mVersion = new AndroidVersion(apiLevel, codeName);
 
         mIncludedAbi = PackageParserUtils.getOptionalXmlString(packageNode,
-                                        SdkRepoConstants.NODE_ABI_INCLUDED);
+                SdkRepoConstants.NODE_ABI_INCLUDED);
 
         mLayoutlibVersion = new LayoutlibVersionMixin(packageNode);
 
-        mPkgDesc = PkgDesc.Builder
-                .newPlatform(mVersion,
-                             (MajorRevision) getRevision(),
-                             getMinToolsRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                .newPlatform(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
                 .create();
     }
 
@@ -137,11 +139,8 @@ public class PlatformPackage extends MinToolsPackage
         mLayoutlibVersion = new LayoutlibVersionMixin(props);
         mIncludedAbi = props == null ? null : props.getProperty(PkgProps.PLATFORM_INCLUDED_ABI);
 
-        mPkgDesc = PkgDesc.Builder
-                .newPlatform(mVersion,
-                             (MajorRevision) getRevision(),
-                             getMinToolsRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                .newPlatform(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
                 .create();
     }
 

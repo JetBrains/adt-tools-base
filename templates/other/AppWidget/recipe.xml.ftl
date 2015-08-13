@@ -9,7 +9,6 @@
     <instantiate from="res/layout/appwidget.xml"
                    to="${escapeXmlAttribute(resOut)}/layout/${class_name}.xml" />
 
-
     <#if configurable>
     <instantiate from="res/layout/appwidget_configure.xml"
                    to="${escapeXmlAttribute(resOut)}/layout/${class_name}_configure.xml" />

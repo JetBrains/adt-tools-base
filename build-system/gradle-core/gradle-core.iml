@@ -12,7 +12,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" scope="TEST" name="JUnit3" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="library" exported="" name="proguard-gradle" level="project" />
     <orderEntry type="module-library" exported="">
       <library>
@@ -849,15 +849,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/core-3.1.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/jsp-api-2.1-6.1.14.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -1157,11 +1148,11 @@
     <orderEntry type="module-library" scope="TEST">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/repository/junit/junit/3.8.1/junit-3.8.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/repository/junit/junit/4.12/junit-4.12.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/repository/junit/junit/3.8.1/junit-3.8.1-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/repository/junit/junit/4.12/junit-4.12-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
@@ -1216,5 +1207,7 @@
     <orderEntry type="module" module-name="lint-api-base" />
     <orderEntry type="module" module-name="lint-checks-base" />
     <orderEntry type="library" exported="" name="jacoco" level="project" />
+    <orderEntry type="library" name="mockito" level="project" />
+    <orderEntry type="library" name="ecj" level="project" />
   </component>
 </module>

@@ -1,14 +1,14 @@
 apply plugin: 'java'
 apply plugin: 'idea'
 
-repositories {
-    if (System.env.CUSTOM_REPO != null) {
-        maven { url System.env.CUSTOM_REPO }
-    } else {
-        mavenCentral()
-    }
-}
+def env = new Object() {
+    String gradleVersion
+    String experimentalGradleVersion
+};
+
+apply from: "../../commonGradlePluginVersion.gradle", to: env
+apply from: "../../commonLocalRepo.gradle"
 
 dependencies {
-    compile 'com.android.tools.build:builder-test-api:1.1.1'
+    compile "com.android.tools.build:builder-test-api:$env.gradleVersion"
 }

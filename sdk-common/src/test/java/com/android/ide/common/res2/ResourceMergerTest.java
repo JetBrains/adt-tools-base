@@ -66,13 +66,56 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     public void testMergeByCount() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
+
+        assertEquals(32, merger.size());
+    }
+
+    public void testMergeWithNormalizationByCount() throws Exception {
+        ResourceMerger merger = getResourceMerger(true /*normalize*/);
 
         assertEquals(31, merger.size());
     }
 
     public void testMergedResourcesByName() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
+
+        verifyResourceExists(merger,
+                "drawable/icon",
+                "drawable-ldpi/icon",
+                "drawable/icon2",
+                "drawable/patch",
+                "raw/foo",
+                "layout/main",
+                "layout/layout_ref",
+                "layout/alias_replaced_by_file",
+                "layout/file_replaced_by_alias",
+                "drawable/color_drawable",
+                "drawable/drawable_ref",
+                "color/color",
+                "string/basic_string",
+                "string/xliff_string",
+                "string/xliff_with_carriage_return",
+                "string/styled_string",
+                "style/style",
+                "array/string_array",
+                "attr/dimen_attr",
+                "attr/string_attr",
+                "attr/enum_attr",
+                "attr/flag_attr",
+                "attr/blah",
+                "attr/blah2",
+                "attr/flagAttr",
+                "declare-styleable/declare_styleable",
+                "dimen/dimen",
+                "dimen-sw600dp/offset",
+                "id/item_id",
+                "integer/integer"
+        );
+    }
+
+    public void testMergedResourcesWithNormalizationByName() throws Exception {
+        ResourceMerger merger = getResourceMerger(true /*normalize*/);
 
         verifyResourceExists(merger,
                 "drawable/icon",
@@ -108,12 +151,12 @@ public class ResourceMergerTest extends BaseTestCase {
         );
     }
 
-    private String getPlatformPath(String path) {
+    private static String getPlatformPath(String path) {
         return path.replaceAll("/", Matcher.quoteReplacement(File.separator));
     }
 
     public void testReplacedLayout() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
         ListMultimap<String, ResourceItem> mergedMap = merger.getDataMap();
 
         List<ResourceItem> values = mergedMap.get("layout/main");
@@ -128,7 +171,7 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     public void testReplacedAlias() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
         ListMultimap<String, ResourceItem> mergedMap = merger.getDataMap();
 
         List<ResourceItem> values = mergedMap.get("layout/alias_replaced_by_file");
@@ -142,7 +185,7 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     public void testReplacedFile() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
         ListMultimap<String, ResourceItem> mergedMap = merger.getDataMap();
 
         List<ResourceItem> values = mergedMap.get("layout/file_replaced_by_alias");
@@ -156,7 +199,7 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     public void testMergeWrite() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
         RecordingLogger logger =  new RecordingLogger();
 
         File folder = getWrittenResources();
@@ -172,7 +215,7 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     public void testXliffString() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
 
         // check the result of the load
         List<ResourceItem> values = merger.getDataMap().get("string/xliff_string");
@@ -210,7 +253,7 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     public void testXliffStringWithCarriageReturn() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
 
         // check the result of the load
         List<ResourceItem> values = merger.getDataMap().get("string/xliff_with_carriage_return");
@@ -280,11 +323,11 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     public void testNotMergedAttrFromMerge() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
 
         File folder = Files.createTempDir();
         merger.writeBlobTo(folder,
-                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false));
+                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false, null));
 
         ResourceMerger loadedMerger = new ResourceMerger();
         assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
@@ -350,11 +393,11 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     public void testMergeBlob() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
 
         File folder = Files.createTempDir();
         merger.writeBlobTo(folder,
-                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false));
+                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false, null));
 
         ResourceMerger loadedMerger = new ResourceMerger();
         assertTrue(loadedMerger.loadFromBlob(folder, true /*incrementalState*/));
@@ -475,7 +518,7 @@ public class ResourceMergerTest extends BaseTestCase {
         assertTrue(newOverlay.isTouched());
 
         // check new alternate: one objects, last one is TOUCHED
-        List<ResourceItem> drawableHdpiNewAlternate = mergedMap.get("drawable-hdpi-v4/new_alternate");
+        List<ResourceItem> drawableHdpiNewAlternate = mergedMap.get("drawable-hdpi/new_alternate");
         assertEquals(1, drawableHdpiNewAlternate.size());
         ResourceItem newAlternate = drawableHdpiNewAlternate.get(0);
         assertEquals(overlayDrawableHdpiNewAlternate, newAlternate.getSource().getFile());
@@ -487,7 +530,8 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher, false, false);
+        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher, false,
+                false, null);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -499,9 +543,9 @@ public class ResourceMergerTest extends BaseTestCase {
                 (int) 0xFF00FF00);
         checkImageColor(new File(resFolder, "drawable" + File.separator + "removed_overlay.png"),
                 (int) 0xFF00FF00);
-        checkImageColor(new File(resFolder, "drawable-hdpi-v4" + File.separator + "new_alternate.png"),
+        checkImageColor(new File(resFolder, "drawable-hdpi" + File.separator + "new_alternate.png"),
                 (int) 0xFF00FF00);
-        assertFalse(new File(resFolder, "drawable-ldpi-v4" + File.separator + "removed.png").isFile());
+        assertFalse(new File(resFolder, "drawable-ldpi" + File.separator + "removed.png").isFile());
     }
 
     public void testUpdateWithBasicValues() throws Exception {
@@ -601,7 +645,8 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher, false, false);
+        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher, false,
+                false, null);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -612,13 +657,13 @@ public class ResourceMergerTest extends BaseTestCase {
         assertEquals("touched", map.get("touched"));
         assertEquals("new_overlay", map.get("new_overlay"));
 
-        // values/values-fr.xml
+        // values-fr/values-fr.xml
         map = quickStringOnlyValueFileParser(
-                new File(resFolder, "values-fr" + File.separator + "values.xml"));
+                new File(resFolder, "values-fr" + File.separator + "values-fr.xml"));
         assertEquals("new_alternate", map.get("new_alternate"));
 
-        // deleted values-en/values.xml
-        assertFalse(new File(resFolder, "values-en" + File.separator + "values.xml").isFile());
+        // deleted values-en/values-en.xml
+        assertFalse(new File(resFolder, "values-en" + File.separator + "values-en.xml").isFile());
     }
 
     public void testUpdateWithBasicValues2() throws Exception {
@@ -678,7 +723,8 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher, false, false);
+        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher, false,
+                false, null);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -777,7 +823,8 @@ public class ResourceMergerTest extends BaseTestCase {
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher, false, false);
+        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher, false,
+                false, null);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // deleted layout/file_replaced_by_alias.xml
@@ -813,7 +860,7 @@ public class ResourceMergerTest extends BaseTestCase {
         // write merger1 on disk to test writing empty ResourceSets.
         File folder = Files.createTempDir();
         merger1.writeBlobTo(folder,
-                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false));
+                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false, null));
 
         // reload it
         ResourceMerger loadedMerger = new ResourceMerger();
@@ -841,8 +888,8 @@ public class ResourceMergerTest extends BaseTestCase {
         });
 
         // 2nd merger with different order source files in sets.
-        ResourceMerger merger2 = createMerger(new String[][] {
-                new String[] { "main",    "/main/res2", "/main/res1" },
+        ResourceMerger merger2 = createMerger(new String[][]{
+                new String[]{"main", "/main/res2", "/main/res1"},
         });
 
         assertFalse(merger1.checkValidUpdate(merger2.getDataSets()));
@@ -897,7 +944,7 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     public void testChangedIgnoredFile() throws Exception {
-        ResourceSet res = ResourceSetTest.getBaseResourceSet();
+        ResourceSet res = ResourceSetTest.getBaseResourceSet(false /*normalize*/);
 
         ResourceMerger resourceMerger = new ResourceMerger();
         resourceMerger.addDataSet(res);
@@ -952,7 +999,8 @@ public class ResourceMergerTest extends BaseTestCase {
         File outFolder = getFolderCopy(new File(root, "out"));
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = new MergedResourceWriter(outFolder, mPngCruncher, false, false);
+        MergedResourceWriter writer = new MergedResourceWriter(outFolder, mPngCruncher, false,
+                false, null);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         File outDrawableFolder = new File(outFolder, ResourceFolderType.DRAWABLE.getName());
@@ -1001,7 +1049,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File folder = Files.createTempDir();
         folder.deleteOnExit();
 
-        MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false, false);
+        MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false, false, null);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // load the result as a set.
@@ -1275,7 +1323,7 @@ public class ResourceMergerTest extends BaseTestCase {
         File folder = Files.createTempDir();
         folder.deleteOnExit();
 
-        MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false, false);
+        MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false, false, null);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // load the result as a set.
@@ -1326,15 +1374,16 @@ public class ResourceMergerTest extends BaseTestCase {
         return merger;
     }
 
-    private static ResourceMerger getResourceMerger()
+    private static ResourceMerger getResourceMerger(boolean normalize)
             throws MergingException, IOException {
         File root = TestUtils.getRoot("resources", "baseMerge");
 
-        ResourceSet res = ResourceSetTest.getBaseResourceSet();
+        ResourceSet res = ResourceSetTest.getBaseResourceSet(normalize);
 
         RecordingLogger logger = new RecordingLogger();
 
         ResourceSet overlay = new ResourceSet("overlay");
+        overlay.setNormalizeResources(normalize);
         overlay.addSource(new File(root, "overlay"));
         overlay.loadFromFiles(logger);
 
@@ -1348,11 +1397,11 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     private File getWrittenResources() throws MergingException, IOException {
-        ResourceMerger resourceMerger = getResourceMerger();
+        ResourceMerger resourceMerger = getResourceMerger(false /*normalize*/);
 
         File folder = Files.createTempDir();
 
-        MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false, false);
+        MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false, false, null);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         return folder;
@@ -1440,7 +1489,7 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     public void testAppendedSourceComment() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
         RecordingLogger logger =  new RecordingLogger();
         File folder = getWrittenResources();
         ResourceSet writtenSet = new ResourceSet("unused");
@@ -1470,7 +1519,7 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     public void testWritePermission() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
 
         File folder = Files.createTempDir();
         boolean writable = folder.setWritable(false);
@@ -1480,7 +1529,7 @@ public class ResourceMergerTest extends BaseTestCase {
         }
         try {
         merger.writeBlobTo(folder,
-                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false));
+                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false, null));
         } catch (MergingException e) {
             File file = new File(folder, "merger.xml");
             assertEquals(file.getPath() + ": Error: (Permission denied)",
@@ -1491,11 +1540,11 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     public void testWriteAndReadBlob() throws Exception {
-        ResourceMerger merger = getResourceMerger();
+        ResourceMerger merger = getResourceMerger(false /*normalize*/);
 
         File folder = Files.createTempDir();
         merger.writeBlobTo(folder,
-                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false));
+                new MergedResourceWriter(Files.createTempDir(), mPngCruncher, false, false, null));
 
         // new merger to read the blob
         ResourceMerger loadedMerger = new ResourceMerger();
@@ -1507,21 +1556,37 @@ public class ResourceMergerTest extends BaseTestCase {
         ResourceSet resourceSet = new ResourceSet("brokenSet5");
         resourceSet.addSource(root);
         RecordingLogger logger =  new RecordingLogger();
-        resourceSet.loadFromFiles(logger);
 
-        ResourceMerger resourceMerger = new ResourceMerger();
-        resourceMerger.addDataSet(resourceSet);
-
-
-        File folder = Files.createTempDir();
         try {
-            MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false, false);
-            resourceMerger.mergeData(writer, false /*doCleanUp*/);
+            resourceSet.loadFromFiles(logger);
         } catch (MergingException e) {
             File file = new File(root, "layout" + File.separator + "ActivityMain.xml");
             file = file.getAbsoluteFile();
-            assertEquals(file.getPath() + ": Error: Invalid file name: must contain only "
-                    + "lowercase letters and digits ([a-z0-9_.])",
+            assertEquals(
+                    file.getPath() +
+                            ": Error: 'A' is not a valid file-based resource name character: "
+                            + "File-based resource names must contain only lowercase a-z, 0-9,"
+                            + " or underscore",
+                    e.getMessage());
+            return;
+        }
+        fail("Expected error");
+    }
+
+    public void testStricterInvalidFileNames() throws Exception {
+        File root = TestUtils.getRoot("resources", "brokenSetDrawableFileName");
+        ResourceSet resourceSet = new ResourceSet("brokenSetDrawableFileName");
+        resourceSet.addSource(root);
+        RecordingLogger logger =  new RecordingLogger();
+
+        try {
+            resourceSet.loadFromFiles(logger);
+        } catch (MergingException e) {
+            File file = new File(root, "drawable" + File.separator + "1icon.png");
+            file = file.getAbsoluteFile();
+            assertEquals(
+                    file.getPath() +
+                            ": Error: The resource name must start with a letter",
                     e.getMessage());
             return;
         }
@@ -1541,12 +1606,13 @@ public class ResourceMergerTest extends BaseTestCase {
 
 
             File folder = Files.createTempDir();
-            MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false, false);
+            MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false,
+                    false, null);
             resourceMerger.mergeData(writer, false /*doCleanUp*/);
         } catch (MergingException e) {
             File file = new File(root, "values" + File.separator + "dimens.xml");
             file = file.getAbsoluteFile();
-            assertEquals(file.getPath() + ":3:5: Error: The content of elements must consist "
+            assertEquals(file.getPath() + ":4:6: Error: The content of elements must consist "
                     + "of well-formed character data or markup.",
                     e.getMessage());
             return;
@@ -1567,12 +1633,13 @@ public class ResourceMergerTest extends BaseTestCase {
 
 
             File folder = Files.createTempDir();
-            MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false, false);
+            MergedResourceWriter writer = new MergedResourceWriter(folder, mPngCruncher, false,
+                    false, null);
             resourceMerger.mergeData(writer, false /*doCleanUp*/);
         } catch (MergingException e) {
             File file = new File(root, "values" + File.separator + "dimens.xml");
             file = file.getAbsoluteFile();
-            assertEquals(file.getPath() + ":1:16: Error: Open quote is expected for "
+            assertEquals(file.getPath() + ":2:17: Error: Open quote is expected for "
                     + "attribute \"{1}\" associated with an  element type  \"name\".",
                     e.getMessage());
             return;

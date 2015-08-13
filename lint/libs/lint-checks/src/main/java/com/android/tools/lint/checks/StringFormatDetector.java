@@ -401,7 +401,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
      * Checks whether the text begins with a non-unit word, pointing to a string
      * that should probably be a plural instead. This
      */
-    private boolean checkPotentialPlural(XmlContext context, Element element, String text,
+    private static boolean checkPotentialPlural(XmlContext context, Element element, String text,
             int wordBegin) {
         // This method should only be called if the text is known to start with a word
         assert Character.isLetter(text.charAt(wordBegin));
@@ -453,8 +453,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         }
 
         // This heuristic only works in English!
-        Pair<String, String> locale = TypoDetector.getLocale(context);
-        if (locale == null || "en".equals(locale.getFirst())) {
+        if (LintUtils.isEnglishResource(context, true)) {
             String message = String.format("Formatting %%d followed by words (\"%1$s\"): "
                             + "This should probably be a plural rather than a string", word);
             context.report(POTENTIAL_PLURAL, element,

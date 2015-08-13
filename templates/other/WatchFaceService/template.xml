@@ -38,7 +38,7 @@
     <!-- 128x128 thumbnails relative to template.xml -->
     <thumbs>
         <!-- default thumbnail is required -->
-        <thumb>digital_round.png</thumb>
+        <thumb>template_thumbnail.png</thumb>
         <thumb style="analog">analog_round.png</thumb>
         <thumb style="digital">digital_square.png</thumb>
     </thumbs>

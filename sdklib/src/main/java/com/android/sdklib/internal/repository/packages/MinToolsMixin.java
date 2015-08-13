@@ -27,7 +27,12 @@ import java.util.Properties;
 
 /**
  * Represents an XML node in an SDK repository that has a min-tools-rev requirement.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 class MinToolsMixin implements IMinToolsDependency {
 
     /**

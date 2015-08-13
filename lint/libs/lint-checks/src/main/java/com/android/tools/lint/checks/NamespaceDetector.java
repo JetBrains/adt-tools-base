@@ -153,14 +153,14 @@ public class NamespaceDetector extends LayoutDetector {
                         continue;
                     } else if (!value.startsWith("http://")) { //$NON-NLS-1$
                         if (context.isEnabled(TYPO)) {
-                            context.report(TYPO, attribute, context.getLocation(attribute),
+                            context.report(TYPO, attribute, context.getValueLocation(attribute),
                                     "Suspicious namespace: should start with `http://`");
                         }
 
                         continue;
                     } else if (!value.equals(AUTO_URI) && value.contains("auto") && //$NON-NLS-1$
                             value.startsWith("http://schemas.android.com/")) { //$NON-NLS-1$
-                        context.report(RES_AUTO, attribute, context.getLocation(attribute),
+                        context.report(RES_AUTO, attribute, context.getValueLocation(attribute),
                                 "Suspicious namespace: Did you mean `" + AUTO_URI + "`?");
                     }
 
@@ -177,7 +177,8 @@ public class NamespaceDetector extends LayoutDetector {
                             if (!urlPrefix.equals(URI_PREFIX) &&
                                     LintUtils.editDistance(URI_PREFIX, urlPrefix) <= 3) {
                                 String correctUri = URI_PREFIX + value.substring(resIndex + 5);
-                                context.report(TYPO, attribute, context.getLocation(attribute),
+                                context.report(TYPO, attribute,
+                                        context.getValueLocation(attribute),
                                         String.format(
                                             "Possible typo in URL: was `\"%1$s\"`, should " +
                                             "probably be `\"%2$s\"`",
@@ -198,12 +199,12 @@ public class NamespaceDetector extends LayoutDetector {
                     }
 
                     if (value.equalsIgnoreCase(ANDROID_URI)) {
-                        context.report(TYPO, attribute, context.getLocation(attribute),
+                        context.report(TYPO, attribute, context.getValueLocation(attribute),
                                 String.format(
                                     "URI is case sensitive: was `\"%1$s\"`, expected `\"%2$s\"`",
                                     value, ANDROID_URI));
                     } else {
-                        context.report(TYPO, attribute, context.getLocation(attribute),
+                        context.report(TYPO, attribute, context.getValueLocation(attribute),
                                 String.format(
                                     "Unexpected namespace URI bound to the `\"android\"` " +
                                     "prefix, was `%1$s`, expected `%2$s`", value, ANDROID_URI));
@@ -245,11 +246,11 @@ public class NamespaceDetector extends LayoutDetector {
                 if (uri != null && !uri.isEmpty() && uri.startsWith(URI_PREFIX)
                         && !uri.equals(ANDROID_URI)) {
                     if (context.getProject().isGradleProject()) {
-                        context.report(RES_AUTO, attribute, context.getLocation(attribute),
+                        context.report(RES_AUTO, attribute, context.getValueLocation(attribute),
                             "In Gradle projects, always use `" + AUTO_URI + "` for custom " +
                             "attributes");
                     } else {
-                        context.report(CUSTOM_VIEW, attribute, context.getLocation(attribute),
+                        context.report(CUSTOM_VIEW, attribute, context.getValueLocation(attribute),
                             "When using a custom namespace attribute in a library project, " +
                             "use the namespace `\"" + AUTO_URI + "\"` instead.");
                     }

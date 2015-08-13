@@ -21,6 +21,7 @@ import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.SourceFile;
 import com.google.common.base.Optional;
 
 import org.w3c.dom.Document;
@@ -61,15 +62,12 @@ public class TestUtils {
                 }
             };
 
-    static class TestSourceLocation extends XmlLoader.SourceLocation {
-
-        TestSourceLocation(Class sourceClass, String location) {
-            super(sourceClass.getSimpleName() + "#" + location, null);
-        }
+    static SourceFile sourceFile(Class sourceClass, String location) {
+        return new SourceFile(sourceClass.getSimpleName() + "#" + location);
     }
 
     static XmlDocument xmlDocumentFromString(
-            XmlLoader.SourceLocation location,
+            SourceFile location,
             String input)  throws IOException, SAXException, ParserConfigurationException {
 
         return XmlLoader.load(
@@ -78,7 +76,7 @@ public class TestUtils {
     }
 
     static XmlDocument xmlLibraryFromString(
-            XmlLoader.SourceLocation location,
+            SourceFile location,
             String input)  throws IOException, SAXException, ParserConfigurationException {
 
         return XmlLoader.load(
@@ -87,7 +85,7 @@ public class TestUtils {
     }
 
     static XmlDocument xmlDocumentFromString(
-            XmlLoader.SourceLocation location,
+            SourceFile location,
             String input,
             XmlDocument.Type type,
             Optional<String> mainManifestPackageName)  throws IOException, SAXException, ParserConfigurationException {
@@ -97,7 +95,7 @@ public class TestUtils {
 
     static XmlDocument xmlDocumentFromString(
             @NonNull KeyResolver<String> selectors,
-            @NonNull XmlLoader.SourceLocation location,
+            @NonNull SourceFile location,
             String input)  throws IOException, SAXException, ParserConfigurationException {
 
         return XmlLoader.load(selectors, NO_PROPERTY_RESOLVER, location, input,

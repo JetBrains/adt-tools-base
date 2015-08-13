@@ -21,7 +21,8 @@ import static com.android.manifmerger.XmlNode.NodeKey;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
-import com.android.utils.PositionXmlParser;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
@@ -57,7 +58,7 @@ import java.util.Map;
  * <ul>
  *     <li>{@link com.android.manifmerger.Actions.ActionType} to identify whether the action
  *     applies to an attribute or an element.</li>
- *     <li>{@link com.android.manifmerger.Actions.ActionLocation} to identify the source xml
+ *     <li>{@link com.android.ide.common.blame.SourceFilePosition} to identify the source xml
  *     location for the node.</li>
  * </ul>
  *
@@ -123,8 +124,8 @@ public class ActionRecorder {
             mRecords.put(storageKey, nodeDecisionTree);
         }
         Actions.NodeRecord record = new Actions.NodeRecord(Actions.ActionType.IMPLIED,
-                new Actions.ActionLocation(
-                        xmlElement.getDocument().getSourceLocation(),
+                new SourceFilePosition(
+                        xmlElement.getDocument().getSourceFile(),
                         xmlElement.getDocument().getRootNode().getPosition()),
                 xmlElement.getOriginalId(),
                 reason,
@@ -159,8 +160,8 @@ public class ActionRecorder {
             XmlElement targetElement) {
 
         Actions.NodeRecord record = new Actions.NodeRecord(actionType,
-                new Actions.ActionLocation(
-                        targetElement.getDocument().getSourceLocation(),
+                new SourceFilePosition(
+                        targetElement.getDocument().getSourceFile(),
                         targetElement.getPosition()),
                 targetElement.getOriginalId(),
                 null, /* reason */
@@ -215,15 +216,15 @@ public class ActionRecorder {
      */
     synchronized void recordAttributeAction(
             @NonNull XmlAttribute attribute,
-            @NonNull PositionXmlParser.Position attributePosition,
+            @NonNull SourcePosition attributePosition,
             @NonNull Actions.ActionType actionType,
             @Nullable AttributeOperationType attributeOperationType) {
 
         XmlElement originElement = attribute.getOwnerElement();
         Actions.AttributeRecord attributeRecord = new Actions.AttributeRecord(
                 actionType,
-                new Actions.ActionLocation(
-                        originElement.getDocument().getSourceLocation(),
+                new SourceFilePosition(
+                        originElement.getDocument().getSourceFile(),
                         attributePosition),
                 attribute.getOriginalId(),
                 null, /* reason */
@@ -260,8 +261,8 @@ public class ActionRecorder {
         List<Actions.AttributeRecord> attributeRecords = getAttributeRecords(attribute);
         Actions.AttributeRecord attributeRecord = new Actions.AttributeRecord(
                 Actions.ActionType.REJECTED,
-                new Actions.ActionLocation(
-                        implicitAttributeOwner.getDocument().getSourceLocation(),
+                new SourceFilePosition(
+                        implicitAttributeOwner.getDocument().getSourceFile(),
                         implicitAttributeOwner.getPosition()),
                 attribute.getOriginalId(),
                 null, /* reason */

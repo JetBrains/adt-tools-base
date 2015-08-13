@@ -3,7 +3,9 @@ package ${packageName};
 import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
-<#if applicationPackage??>import ${applicationPackage}.R;</#if>
+<#if applicationPackage??>
+import ${applicationPackage}.R;
+</#if>
 
 public class ${displayActivityClass} extends Activity {
 

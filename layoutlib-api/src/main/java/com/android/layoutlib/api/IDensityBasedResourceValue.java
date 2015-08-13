@@ -31,7 +31,7 @@ public interface IDensityBasedResourceValue extends IResourceValue {
      * @deprecated use {@link com.android.resources.Density}.
      */
     @Deprecated
-    public static enum Density {
+    enum Density {
         XHIGH(320),
         HIGH(240),
         MEDIUM(160),

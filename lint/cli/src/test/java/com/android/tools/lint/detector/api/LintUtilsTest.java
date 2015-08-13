@@ -24,9 +24,8 @@ import static com.android.tools.lint.detector.api.LintUtils.getFormattedParamete
 import static com.android.tools.lint.detector.api.LintUtils.getLocaleAndRegion;
 import static com.android.tools.lint.detector.api.LintUtils.isImported;
 import static com.android.tools.lint.detector.api.LintUtils.splitPath;
-import static org.easymock.EasyMock.createNiceMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -362,7 +361,13 @@ public class LintUtilsTest extends TestCase {
         return getCompilationUnit(javaSource, new File("test"));
     }
 
+
     public static Node getCompilationUnit(final String javaSource, final File relativePath) {
+        JavaContext context = parse(javaSource, relativePath);
+        return context.getCompilationUnit();
+    }
+
+    public static JavaContext parse(final String javaSource, final File relativePath) {
         File dir = new File("projectDir");
         final File fullPath = new File(dir, relativePath.getPath());
         LintCliClient client = new LintCliClient() {
@@ -399,7 +404,8 @@ public class LintUtilsTest extends TestCase {
         parser.prepareJavaParse(Collections.<JavaContext>singletonList(context));
         Node compilationUnit = parser.parseJava(context);
         assertNotNull(javaSource, compilationUnit);
-        return compilationUnit;
+        context.setCompilationUnit(compilationUnit);
+        return context;
     }
 
     public void testConvertVersion() {
@@ -414,33 +420,29 @@ public class LintUtilsTest extends TestCase {
     }
 
     public void testIsModelOlderThan() throws Exception {
-        AndroidProject project = createNiceMock(AndroidProject.class);
-        expect(project.getModelVersion()).andReturn("0.10.4").anyTimes();
-        replay(project);
+        AndroidProject project = mock(AndroidProject.class);
+        when(project.getModelVersion()).thenReturn("0.10.4");
 
         assertTrue(LintUtils.isModelOlderThan(project, 0, 10, 5));
         assertTrue(LintUtils.isModelOlderThan(project, 0, 11, 0));
         assertTrue(LintUtils.isModelOlderThan(project, 0, 11, 4));
         assertTrue(LintUtils.isModelOlderThan(project, 1, 0, 0));
 
-        project = createNiceMock(AndroidProject.class);
-        expect(project.getModelVersion()).andReturn("0.11.0").anyTimes();
-        replay(project);
+        project = mock(AndroidProject.class);
+        when(project.getModelVersion()).thenReturn("0.11.0");
 
         assertTrue(LintUtils.isModelOlderThan(project, 1, 0, 0));
         assertFalse(LintUtils.isModelOlderThan(project, 0, 11, 0));
         assertFalse(LintUtils.isModelOlderThan(project, 0, 10, 4));
 
-        project = createNiceMock(AndroidProject.class);
-        expect(project.getModelVersion()).andReturn("0.11.5").anyTimes();
-        replay(project);
+        project = mock(AndroidProject.class);
+        when(project.getModelVersion()).thenReturn("0.11.5");
 
         assertTrue(LintUtils.isModelOlderThan(project, 1, 0, 0));
         assertFalse(LintUtils.isModelOlderThan(project, 0, 11, 0));
 
-        project = createNiceMock(AndroidProject.class);
-        expect(project.getModelVersion()).andReturn("1.0.0").anyTimes();
-        replay(project);
+        project = mock(AndroidProject.class);
+        when(project.getModelVersion()).thenReturn("1.0.0");
 
         assertTrue(LintUtils.isModelOlderThan(project, 1, 0, 1));
         assertFalse(LintUtils.isModelOlderThan(project, 1, 0, 0));

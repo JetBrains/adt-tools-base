@@ -282,16 +282,21 @@ final class HandleHeap extends ChunkHandler {
 
         // get the app-level handler for HPROF dump
         IHprofDumpHandler handler = ClientData.getHprofDumpHandler();
-        if (handler != null) {
-            if (result == 0) {
+        if (result == 0) {
+            if (handler != null) {
                 handler.onSuccess(filename, client);
-
-                Log.d("ddm-heap", "Heap dump request has finished");
-            } else {
-                handler.onEndFailure(client, null);
-                Log.w("ddm-heap", "Heap dump request failed (check device log)");
             }
+            client.getClientData().setHprofData(filename);
+            Log.d("ddm-heap", "Heap dump request has finished");
+        } else {
+            if (handler != null) {
+                handler.onEndFailure(client, null);
+            }
+            client.getClientData().clearHprofData();
+            Log.w("ddm-heap", "Heap dump request failed (check device log)");
         }
+        client.update(Client.CHANGE_HPROF);
+        client.getClientData().clearHprofData();
     }
 
     /*
@@ -299,15 +304,17 @@ final class HandleHeap extends ChunkHandler {
      * hprof dump.
      */
     private void handleHPDS(Client client, ByteBuffer data) {
+        byte[] stuff = new byte[data.capacity()];
+        data.get(stuff, 0, stuff.length);
+
+        Log.d("ddm-hprof", "got hprof file, size: " + data.capacity() + " bytes");
+        client.getClientData().setHprofData(stuff);
         IHprofDumpHandler handler = ClientData.getHprofDumpHandler();
         if (handler != null) {
-            byte[] stuff = new byte[data.capacity()];
-            data.get(stuff, 0, stuff.length);
-
-            Log.d("ddm-hprof", "got hprof file, size: " + data.capacity() + " bytes");
-
             handler.onSuccess(stuff, client);
         }
+        client.update(Client.CHANGE_HPROF);
+        client.getClientData().clearHprofData();
     }
 
     /**

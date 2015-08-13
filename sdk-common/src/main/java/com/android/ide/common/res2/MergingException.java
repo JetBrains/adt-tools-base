@@ -18,122 +18,192 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.Message;
+import com.android.ide.common.blame.Message.Kind;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
+import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
+import org.xml.sax.SAXParseException;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.List;
 
-/** Exception for errors during merging */
+/**
+ * Exception for errors during merging.
+ */
 public class MergingException extends Exception {
-    private String mMessage; // Keeping our own copy since parent prepends exception class name
-    private File mFile;
-    private int mLine = -1;
-    private int mColumn = -1;
 
-    public MergingException(@NonNull String message, @Nullable Throwable cause) {
-        super(message, cause);
-        mMessage = message;
+    public static final String MULTIPLE_ERRORS = "Multiple errors:";
+
+    private final List<Message> mMessages;
+
+    /**
+     * For internal use. Creates a new MergingException
+     *
+     * @param cause    the original exception. May be null.
+     * @param messages the messaged. Must contain at least one item.
+     */
+    protected MergingException(@Nullable Throwable cause, @NonNull Message... messages) {
+        super(messages.length == 1 ? messages[0].getText() : MULTIPLE_ERRORS, cause);
+        mMessages = ImmutableList.copyOf(messages);
     }
 
-    public MergingException(@NonNull String message) {
-        this(message, null);
-    }
+    public static class Builder {
 
-    public MergingException(@NonNull Throwable cause) {
-        this(cause.getLocalizedMessage(), cause);
-    }
+        private Throwable mCause = null;
 
-    public MergingException setFile(@NonNull File file) {
-        mFile = file;
-        return this;
-    }
+        private String mMessageText = null;
 
-    public MergingException setCause(@NonNull Throwable cause) {
-        initCause(cause);
-        return this;
-    }
+        private String mOriginalMessageText = null;
 
-    public MergingException setLine(int line) {
-        mLine = line;
-        return this;
-    }
+        private SourceFile mFile = SourceFile.UNKNOWN;
 
-    public MergingException setColumn(int column) {
-        mColumn = column;
-        return this;
-    }
+        private SourcePosition mPosition = SourcePosition.UNKNOWN;
 
-    /** Computes the error message to display for this error */
-    @Override
-    public String getMessage() {
-        StringBuilder sb = new StringBuilder();
-        String path = null;
-        if (mFile != null) {
-            path = mFile.getAbsolutePath();
-            sb.append(path);
-            if (mLine >= 0) {
-                sb.append(':');
-                sb.append(Integer.toString(mLine));
-                if (mColumn >= 0) {
-                    sb.append(':');
-                    sb.append(Integer.toString(mColumn));
+        private Builder() {
+        }
+
+        public Builder wrapException(Throwable cause) {
+            mCause = cause;
+            mOriginalMessageText = Throwables.getStackTraceAsString(cause);
+            return this;
+        }
+
+        public Builder withFile(File file) {
+            mFile = new SourceFile(file);
+            return this;
+        }
+
+        public Builder withFile(SourceFile file) {
+            mFile = file;
+            return this;
+        }
+
+        public Builder withPosition(SourcePosition position) {
+            mPosition = position;
+            return this;
+        }
+
+        public Builder withMessage(String messageText, Object... args) {
+            mMessageText = args.length == 0 ? messageText : String.format(messageText, args);
+            return this;
+        }
+
+        public MergingException build() {
+            if (mCause != null) {
+                if (mMessageText == null) {
+                    mMessageText = mCause.getLocalizedMessage();
+                }
+                if (mPosition == SourcePosition.UNKNOWN && mCause instanceof SAXParseException) {
+                    SAXParseException exception = (SAXParseException) mCause;
+                    int lineNumber = exception.getLineNumber();
+                    if (lineNumber != -1) {
+                        // Convert positions to be 0-based for SourceFilePosition.
+                        mPosition = new SourcePosition(lineNumber - 1,
+                                exception.getColumnNumber() - 1, -1);
+                    }
                 }
             }
+            if (mOriginalMessageText == null) {
+                mOriginalMessageText = mMessageText;
+            }
+            return new MergingException(
+                    mCause,
+                    new Message(
+                            Kind.ERROR,
+                            mMessageText,
+                            mOriginalMessageText,
+                            new SourceFilePosition(mFile, mPosition)));
         }
 
-        if (sb.length() > 0) {
-            sb.append(':').append(' ');
+    }
 
-            // ALWAYS insert the string "Error:" between the path and the message.
-            // This is done to make the error messages more simple to detect
-            // (since a generic path: message pattern can match a lot of output, basically
-            // any labeled output, and we don't want to do file existence checks on any random
-            // string to the left of a colon.)
-            if (!mMessage.startsWith("Error: ")) {
+    public static Builder wrapException(@NonNull Throwable cause) {
+        return new Builder().wrapException(cause);
+    }
+
+    public static Builder withMessage(@Nullable String message, Object... args) {
+        return new Builder().withMessage(message, args);
+    }
+
+
+    public static void throwIfNonEmpty(Collection<Message> messages) throws MergingException {
+        if (!messages.isEmpty()) {
+            throw new MergingException(null, Iterables.toArray(messages, Message.class));
+        }
+    }
+
+    public List<Message> getMessages() {
+        return mMessages;
+    }
+
+    /**
+     * Computes the error message to display for this error
+     */
+    @Override
+    public String getMessage() {
+        List<String> messages = Lists.newArrayListWithCapacity(mMessages.size());
+        for (Message message : mMessages) {
+            StringBuilder sb = new StringBuilder();
+            List<SourceFilePosition> sourceFilePositions = message.getSourceFilePositions();
+            if (sourceFilePositions.size() > 1 || !sourceFilePositions.get(0)
+                    .equals(SourceFilePosition.UNKNOWN)) {
+                sb.append(Joiner.on('\t').join(sourceFilePositions));
+            }
+
+            String text = message.getText();
+            if (sb.length() > 0) {
+                sb.append(':').append(' ');
+
+                // ALWAYS insert the string "Error:" between the path and the message.
+                // This is done to make the error messages more simple to detect
+                // (since a generic path: message pattern can match a lot of output, basically
+                // any labeled output, and we don't want to do file existence checks on any random
+                // string to the left of a colon.)
+                if (!text.startsWith("Error: ")) {
+                    sb.append("Error: ");
+                }
+            } else if (!text.contains("Error: ")) {
                 sb.append("Error: ");
             }
-        } else if (!mMessage.contains("Error: ")) {
-            sb.append("Error: ");
-        }
 
-        String message = mMessage;
-
-        // If the error message already starts with the path, strip it out.
-        // This avoids redundant looking error messages you can end up with
-        // like for example for permission denied errors where the error message
-        // string itself contains the path as a prefix:
-        //    /my/full/path: /my/full/path (Permission denied)
-        if (path != null && message.startsWith(path)) {
-            int stripStart = path.length();
-            if (message.length() > stripStart && message.charAt(stripStart) == ':') {
-                stripStart++;
+            // If the error message already starts with the path, strip it out.
+            // This avoids redundant looking error messages you can end up with
+            // like for example for permission denied errors where the error message
+            // string itself contains the path as a prefix:
+            //    /my/full/path: /my/full/path (Permission denied)
+            if (sourceFilePositions.size() == 1) {
+                File file = sourceFilePositions.get(0).getFile().getSourceFile();
+                if (file != null) {
+                    String path = file.getAbsolutePath();
+                    if (text.startsWith(path)) {
+                        int stripStart = path.length();
+                        if (text.length() > stripStart && text.charAt(stripStart) == ':') {
+                            stripStart++;
+                        }
+                        if (text.length() > stripStart && text.charAt(stripStart) == ' ') {
+                            stripStart++;
+                        }
+                        text = text.substring(stripStart);
+                    }
+                }
             }
-            if (message.length() > stripStart && message.charAt(stripStart) == ' ') {
-                stripStart++;
-            }
-            message = message.substring(stripStart);
-        }
 
-        sb.append(message);
-        return sb.toString();
+            sb.append(text);
+            messages.add(sb.toString());
+        }
+        return Joiner.on('\n').join(messages);
     }
 
     @Override
     public String toString() {
         return getMessage();
-    }
-
-    /** @return the source file where the error occurred, if known */
-    @Nullable
-    public File getFile() {
-        return mFile;
-    }
-
-    /** @return the 0-based line number, if known, otherwise -1 */
-    public int getLine() {
-        return mLine;
-    }
-
-    /** @return the 0-based column number, if known, otherwise -1 */
-    public int getColumn() {
-        return mColumn;
     }
 }

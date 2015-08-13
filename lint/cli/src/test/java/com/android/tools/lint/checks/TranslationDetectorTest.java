@@ -16,9 +16,8 @@
 
 package com.android.tools.lint.checks;
 
-import static org.easymock.EasyMock.createNiceMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -295,6 +294,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
     }
 
     public void testEnglishRegionAndValuesAsEnglish1() throws Exception {
+        TranslationDetector.sCompleteRegions = false;
         // tools:locale=en in base folder
         // Regression test for https://code.google.com/p/android/issues/detail?id=75879
         assertEquals("No warnings.",
@@ -306,6 +306,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
     }
 
     public void testEnglishRegionAndValuesAsEnglish2() throws Exception {
+        TranslationDetector.sCompleteRegions = false;
         // No tools:locale specified in the base folder: *assume* English
         // Regression test for https://code.google.com/p/android/issues/detail?id=75879
         assertEquals(""
@@ -324,6 +325,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
     }
 
     public void testEnglishRegionAndValuesAsEnglish3() throws Exception {
+        TranslationDetector.sCompleteRegions = false;
         // tools:locale=de in base folder
         // Regression test for https://code.google.com/p/android/issues/detail?id=75879
         assertEquals("No warnings.",
@@ -451,69 +453,58 @@ public class TranslationDetectorTest extends AbstractCheckTest {
                                 paid { flavorDimension "pricing" }
                             }
                          */
-                        ProductFlavor flavorFree = createNiceMock(ProductFlavor.class);
-                        expect(flavorFree.getName()).andReturn("free").anyTimes();
-                        expect(flavorFree.getResourceConfigurations())
-                                .andReturn(Collections.<String>emptyList()).anyTimes();
-                        replay(flavorFree);
+                        ProductFlavor flavorFree = mock(ProductFlavor.class);
+                        when(flavorFree.getName()).thenReturn("free");
+                        when(flavorFree.getResourceConfigurations())
+                                .thenReturn(Collections.<String>emptyList());
 
-                        ProductFlavor flavorNormal = createNiceMock(ProductFlavor.class);
-                        expect(flavorNormal.getName()).andReturn("normal").anyTimes();
-                        expect(flavorNormal.getResourceConfigurations())
-                                .andReturn(Collections.<String>emptyList()).anyTimes();
-                        replay(flavorNormal);
+                        ProductFlavor flavorNormal = mock(ProductFlavor.class);
+                        when(flavorNormal.getName()).thenReturn("normal");
+                        when(flavorNormal.getResourceConfigurations())
+                                .thenReturn(Collections.<String>emptyList());
 
-                        ProductFlavor flavorPaid = createNiceMock(ProductFlavor.class);
-                        expect(flavorPaid.getName()).andReturn("paid").anyTimes();
-                        expect(flavorPaid.getResourceConfigurations())
-                                .andReturn(Collections.<String>emptyList()).anyTimes();
-                        replay(flavorPaid);
+                        ProductFlavor flavorPaid = mock(ProductFlavor.class);
+                        when(flavorPaid.getName()).thenReturn("paid");
+                        when(flavorPaid.getResourceConfigurations())
+                                .thenReturn(Collections.<String>emptyList());
 
-                        ProductFlavor flavorBeta = createNiceMock(ProductFlavor.class);
-                        expect(flavorBeta.getName()).andReturn("beta").anyTimes();
+                        ProductFlavor flavorBeta = mock(ProductFlavor.class);
+                        when(flavorBeta.getName()).thenReturn("beta");
                         List<String> resConfigs = Arrays.asList("hdpi", "en", "de", "nodpi");
-                        expect(flavorBeta.getResourceConfigurations()).andReturn(resConfigs).anyTimes();
-                        replay(flavorBeta);
+                        when(flavorBeta.getResourceConfigurations()).thenReturn(resConfigs);
 
-                        ProductFlavor defaultFlavor = createNiceMock(ProductFlavor.class);
-                        expect(defaultFlavor.getName()).andReturn("main").anyTimes();
-                        expect(defaultFlavor.getResourceConfigurations()).andReturn(
-                                Collections.singleton("cs")).anyTimes();
-                        replay(defaultFlavor);
+                        ProductFlavor defaultFlavor = mock(ProductFlavor.class);
+                        when(defaultFlavor.getName()).thenReturn("main");
+                        when(defaultFlavor.getResourceConfigurations()).thenReturn(
+                                Collections.singleton("cs"));
 
                         ProductFlavorContainer containerBeta =
-                                createNiceMock(ProductFlavorContainer.class);
-                        expect(containerBeta.getProductFlavor()).andReturn(flavorBeta).anyTimes();
-                        replay(containerBeta);
+                                mock(ProductFlavorContainer.class);
+                        when(containerBeta.getProductFlavor()).thenReturn(flavorBeta);
 
                         ProductFlavorContainer containerFree =
-                                createNiceMock(ProductFlavorContainer.class);
-                        expect(containerFree.getProductFlavor()).andReturn(flavorFree).anyTimes();
-                        replay(containerFree);
+                                mock(ProductFlavorContainer.class);
+                        when(containerFree.getProductFlavor()).thenReturn(flavorFree);
 
                         ProductFlavorContainer containerPaid =
-                                createNiceMock(ProductFlavorContainer.class);
-                        expect(containerPaid.getProductFlavor()).andReturn(flavorPaid).anyTimes();
-                        replay(containerPaid);
+                                mock(ProductFlavorContainer.class);
+                        when(containerPaid.getProductFlavor()).thenReturn(flavorPaid);
 
                         ProductFlavorContainer containerNormal =
-                                createNiceMock(ProductFlavorContainer.class);
-                        expect(containerNormal.getProductFlavor()).andReturn(flavorNormal).anyTimes();
-                        replay(containerNormal);
+                                mock(ProductFlavorContainer.class);
+                        when(containerNormal.getProductFlavor()).thenReturn(flavorNormal);
 
                         ProductFlavorContainer defaultContainer =
-                                createNiceMock(ProductFlavorContainer.class);
-                        expect(defaultContainer.getProductFlavor()).andReturn(defaultFlavor).anyTimes();
-                        replay(defaultContainer);
+                                mock(ProductFlavorContainer.class);
+                        when(defaultContainer.getProductFlavor()).thenReturn(defaultFlavor);
 
                         List<ProductFlavorContainer> containers = Arrays.asList(
                                 containerPaid, containerFree, containerNormal, containerBeta
                         );
 
-                        AndroidProject project = createNiceMock(AndroidProject.class);
-                        expect(project.getProductFlavors()).andReturn(containers).anyTimes();
-                        expect(project.getDefaultConfig()).andReturn(defaultContainer).anyTimes();
-                        replay(project);
+                        AndroidProject project = mock(AndroidProject.class);
+                        when(project.getProductFlavors()).thenReturn(containers);
+                        when(project.getDefaultConfig()).thenReturn(defaultContainer);
                         return project;
                     }
 
@@ -521,9 +512,8 @@ public class TranslationDetectorTest extends AbstractCheckTest {
                     @Override
                     public Variant getCurrentVariant() {
                         List<String> productFlavorNames = Arrays.asList("free", "beta");
-                        Variant mock = createNiceMock(Variant.class);
-                        expect(mock.getProductFlavors()).andReturn(productFlavorNames).anyTimes();
-                        replay(mock);
+                        Variant mock = mock(Variant.class);
+                        when(mock.getProductFlavors()).thenReturn(productFlavorNames);
                         return mock;
                     }
                 };

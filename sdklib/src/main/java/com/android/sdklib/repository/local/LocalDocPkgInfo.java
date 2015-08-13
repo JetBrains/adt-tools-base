@@ -17,10 +17,7 @@
 package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.internal.repository.packages.DocPackage;
-import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
@@ -45,30 +42,5 @@ public class LocalDocPkgInfo extends LocalPkgInfo {
     @Override
     public IPkgDesc getDesc() {
         return mDesc;
-    }
-
-    @Nullable
-    @Override
-    public Package getPackage() {
-        Package pkg = super.getPackage();
-        if (pkg == null) {
-            try {
-                pkg = DocPackage.create(
-                        null,                       //source
-                        getSourceProperties(),      //properties
-                        0,                          //apiLevel
-                        null,                       //codename
-                        0,                          //revision
-                        null,                       //license
-                        null,                       //description
-                        null,                       //descUrl
-                        getLocalDir().getPath()     //archiveOsPath
-                        );
-                setPackage(pkg);
-            } catch (Exception e) {
-                appendLoadError("Failed to parse package: %1$s", e.toString());
-            }
-        }
-        return pkg;
     }
 }

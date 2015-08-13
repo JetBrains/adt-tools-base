@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 public class RootObj extends Instance {
+    public static final String UNDEFINED_CLASS_NAME = "no class defined!!";
 
     RootType mType = RootType.UNKNOWN;
 
@@ -47,27 +48,22 @@ public class RootObj extends Instance {
         if (mType == RootType.SYSTEM_CLASS) {
             theClass = snapshot.findClass(mId);
         } else {
-            theClass = snapshot.findReference(mId).getClassObj();
+            theClass = snapshot.findInstance(mId).getClassObj();
         }
 
         if (theClass == null) {
-            return "no class defined!!";
+            return UNDEFINED_CLASS_NAME;
         }
 
         return theClass.mClassName;
     }
 
     @Override
-    public final int getSize() {
-        Instance instance = getReferredInstance();
-        return instance != null ? instance.getSize() : 0;
-    }
-
-    @Override
     public final void accept(Visitor visitor) {
+        visitor.visitRootObj(this);
         Instance instance = getReferredInstance();
         if (instance != null) {
-            instance.accept(visitor);
+            visitor.visitLater(null, instance);
         }
     }
 
@@ -80,7 +76,11 @@ public class RootObj extends Instance {
         if (mType == RootType.SYSTEM_CLASS) {
             return mHeap.mSnapshot.findClass(mId);
         } else {
-            return mHeap.mSnapshot.findReference(mId);
+            return mHeap.mSnapshot.findInstance(mId);
         }
+    }
+
+    public RootType getRootType() {
+        return mType;
     }
 }

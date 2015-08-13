@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -27,6 +28,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 /**
  * Tests the handling of test dependency.
  */
+@CompileStatic
 class TestWithSameDepAsApp {
 
     @ClassRule
@@ -38,7 +40,7 @@ class TestWithSameDepAsApp {
     public static void setUp() {
         project.getBuildFile() << """
 dependencies {
-    androidTestCompile 'com.google.guava:guava:18.0'
+    androidTestCompile 'com.google.guava:guava:17.0'
 }
 """
 
@@ -59,6 +61,6 @@ dependencies {
     @Test
     @Category(DeviceTests.class)
     void "run tests on devices"() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

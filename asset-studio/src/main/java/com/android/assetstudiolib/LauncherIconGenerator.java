@@ -47,18 +47,72 @@ public class LauncherIconGenerator extends GraphicGenerator {
         TARGET_RECTS.put(Pair.of(Shape.NONE, Density.MEDIUM), new Rectangle(3, 3, 42, 42));
 
         // Circle, Web
-        TARGET_RECTS.put(Pair.of(Shape.CIRCLE, (Density) null), new Rectangle(32, 43, 448, 448));
+        TARGET_RECTS.put(Pair.of(Shape.CIRCLE, (Density) null), new Rectangle(21, 21, 470, 470));
         // Circle, HDPI
-        TARGET_RECTS.put(Pair.of(Shape.CIRCLE, Density.HIGH), new Rectangle(4, 6, 64, 64));
+        TARGET_RECTS.put(Pair.of(Shape.CIRCLE, Density.HIGH), new Rectangle(3, 3, 66, 66));
         // Circle, MDPI
-        TARGET_RECTS.put(Pair.of(Shape.CIRCLE, Density.MEDIUM), new Rectangle(3, 4, 42, 42));
+        TARGET_RECTS.put(Pair.of(Shape.CIRCLE, Density.MEDIUM), new Rectangle(2, 2, 44, 44));
 
         // Square, Web
-        TARGET_RECTS.put(Pair.of(Shape.SQUARE, (Density) null), new Rectangle(32, 53, 448, 427));
+        TARGET_RECTS.put(Pair.of(Shape.SQUARE, (Density) null), new Rectangle(53, 53, 406, 406));
         // Square, HDPI
-        TARGET_RECTS.put(Pair.of(Shape.SQUARE, Density.HIGH), new Rectangle(4, 8, 64, 60));
+        TARGET_RECTS.put(Pair.of(Shape.SQUARE, Density.HIGH), new Rectangle(7, 7, 57, 57));
         // Square, MDPI
-        TARGET_RECTS.put(Pair.of(Shape.SQUARE, Density.MEDIUM), new Rectangle(3, 5, 42, 40));
+        TARGET_RECTS.put(Pair.of(Shape.SQUARE, Density.MEDIUM), new Rectangle(5, 5, 38, 38));
+
+        // Vertical Rectangle, Web
+        TARGET_RECTS.put(Pair.of(Shape.VRECT, (Density) null), new Rectangle(85, 21, 342, 470));
+        // Vertical Rectangle, HDPI
+        TARGET_RECTS.put(Pair.of(Shape.VRECT, Density.HIGH), new Rectangle(12, 3, 48, 66));
+        // Vertical Rectangle, MDPI
+        TARGET_RECTS.put(Pair.of(Shape.VRECT, Density.MEDIUM), new Rectangle(8, 2, 32, 44));
+
+        // Horizontal Rectangle, Web
+        TARGET_RECTS.put(Pair.of(Shape.HRECT, (Density) null), new Rectangle(21, 85, 470, 342));
+        // Horizontal Rectangle, HDPI
+        TARGET_RECTS.put(Pair.of(Shape.HRECT, Density.HIGH), new Rectangle(3, 12, 66, 48));
+        // Horizontal Rectangle, MDPI
+        TARGET_RECTS.put(Pair.of(Shape.HRECT, Density.MEDIUM), new Rectangle(2, 8, 44, 32));
+
+        // Square Dog-ear, Web
+        TARGET_RECTS.put(Pair.of(Shape.SQUARE_DOG, (Density) null), new Rectangle(53, 149, 406, 312));
+        // Square Dog-ear, HDPI
+        TARGET_RECTS.put(Pair.of(Shape.SQUARE_DOG, Density.HIGH), new Rectangle(7, 21, 57, 43));
+        // Square Dog-ear, MDPI
+        TARGET_RECTS.put(Pair.of(Shape.SQUARE_DOG, Density.MEDIUM), new Rectangle(5, 14, 38, 29));
+
+        // Vertical Rectangle Dog-ear, Web
+        TARGET_RECTS.put(Pair.of(Shape.VRECT_DOG, (Density) null), new Rectangle(85, 117, 342, 374));
+        // Vertical Rectangle Dog-ear, HDPI
+        TARGET_RECTS.put(Pair.of(Shape.VRECT_DOG, Density.HIGH), new Rectangle(12, 17, 48, 52));
+        // Vertical Rectangle Dog-ear, MDPI
+        TARGET_RECTS.put(Pair.of(Shape.VRECT_DOG, Density.MEDIUM), new Rectangle(8, 11, 32, 35));
+
+        // Horizontal Rectangle Dog-ear, Web
+        TARGET_RECTS.put(Pair.of(Shape.HRECT_DOG, (Density) null), new Rectangle(21, 85, 374, 342));
+        // Horizontal Rectangle Dog-ear, HDPI
+        TARGET_RECTS.put(Pair.of(Shape.HRECT_DOG, Density.HIGH), new Rectangle(3, 12, 52, 48));
+        // Horizontal Rectangle Dog-ear, MDPI
+        TARGET_RECTS.put(Pair.of(Shape.HRECT_DOG, Density.MEDIUM), new Rectangle(2, 8, 35, 32));
+    }
+
+    /**
+     * Modifies the value of the option to take into account the dog-ear effect.
+     * This effect only applies to Square, Hrect and Vrect shapes.
+     * @param shape     Shape of the icon before applying dog-ear effect
+     * @return          Shape with dog-ear effect on
+     */
+    private Shape applyDog(Shape shape) {
+        if (shape == Shape.SQUARE) {
+            return Shape.SQUARE_DOG;
+        }
+        else if (shape == Shape.HRECT) {
+            return Shape.HRECT_DOG;
+        } else if (shape == Shape.VRECT) {
+            return Shape.VRECT_DOG;
+        } else {
+            return shape;
+        }
     }
 
     @Override
@@ -72,17 +126,20 @@ public class LauncherIconGenerator extends GraphicGenerator {
             density = launcherOptions.density.getResourceValue();
         }
 
-        BufferedImage backImage = null, foreImage = null, maskImage = null, maskInnerImage = null;
+        if (launcherOptions.isDogEar) {
+            launcherOptions.shape = applyDog(launcherOptions.shape);
+        }
+
+        BufferedImage backImage = null, foreImage = null, maskImage = null;
         if (launcherOptions.shape != Shape.NONE && launcherOptions.shape != null) {
             String shape = launcherOptions.shape.id;
+
             backImage = context.loadImageResource("/images/launcher_stencil/"
                     + shape + "/" + density + "/back.png");
             foreImage = context.loadImageResource("/images/launcher_stencil/"
                     + shape + "/" + density + "/" + launcherOptions.style.id + ".png");
             maskImage = context.loadImageResource("/images/launcher_stencil/"
                     + shape + "/" + density + "/mask.png");
-            maskInnerImage = context.loadImageResource("/images/launcher_stencil/"
-                    + shape + "/" + density + "/mask_inner.png");
         }
 
         Rectangle imageRect = IMAGE_SIZE_WEB;
@@ -115,22 +172,12 @@ public class LauncherIconGenerator extends GraphicGenerator {
             g2.fillRect(0, 0, imageRect.width, imageRect.height);
         }
 
-        BufferedImage tempImage2 = Util.newArgbBufferedImage(imageRect.width, imageRect.height);
-        Graphics2D g3 = (Graphics2D) tempImage2.getGraphics();
-        if (maskInnerImage != null) {
-            g3.drawImage(maskInnerImage, 0, 0, null);
-            g3.setComposite(AlphaComposite.SrcAtop);
-            g3.setPaint(new Color(launcherOptions.backgroundColor));
-            g3.fillRect(0, 0, imageRect.width, imageRect.height);
-        }
-
         if (launcherOptions.crop) {
-            Util.drawCenterCrop(g3, launcherOptions.sourceImage, targetRect);
+            Util.drawCenterCrop(g2, launcherOptions.sourceImage, targetRect);
         } else {
-            Util.drawCenterInside(g3, launcherOptions.sourceImage, targetRect);
+            Util.drawCenterInside(g2, launcherOptions.sourceImage, targetRect);
         }
 
-        g2.drawImage(tempImage2, 0, 0, null);
         g.drawImage(tempImage, 0, 0, null);
         if (foreImage != null) {
             g.drawImage(foreImage, 0, 0, null);
@@ -194,6 +241,9 @@ public class LauncherIconGenerator extends GraphicGenerator {
 
         /** The effects to apply to the foreground */
         public Style style = Style.SIMPLE;
+
+        /** Whether or not to use the Dog-ear effect */
+        public boolean isDogEar = false;
 
         /**
          * Whether a web graphic should be generated (will ignore normal density

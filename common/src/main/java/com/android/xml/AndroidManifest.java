@@ -70,6 +70,8 @@ public final class AndroidManifest {
     public static final String ATTRIBUTE_PACKAGE = "package";
     public static final String ATTRIBUTE_VERSIONCODE = "versionCode";
     public static final String ATTRIBUTE_NAME = "name";
+    public static final String ATTRIBUTE_MIME_TYPE = "mimeType";
+    public static final String ATTRIBUTE_PORT = "port";
     public static final String ATTRIBUTE_REQUIRED = "required";
     public static final String ATTRIBUTE_GLESVERSION = "glEsVersion";
     public static final String ATTRIBUTE_PROCESS = "process";

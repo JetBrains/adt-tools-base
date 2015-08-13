@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<template
+    format="4"
+    revision="1"
+    name="Android Auto Project"
+    description="Creates a new Android Auto project.">
+
+    <category value="Application" />
+    <formfactor value="Car" />
+
+    <thumbs>
+        <thumb>template_new_project.png</thumb>
+    </thumbs>
+
+    <parameter
+        id="makeIgnore"
+        name="Create .gitignore file"
+        type="boolean"
+        default="true" />
+
+    <globals file="globals.xml.ftl" />
+    <execute file="recipe.xml.ftl" />
+
+</template>

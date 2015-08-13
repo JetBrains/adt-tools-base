@@ -30,15 +30,10 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
-import com.android.utils.SdkUtils;
 import com.google.common.base.Splitter;
-import com.google.common.io.Files;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Iterator;
-import java.util.Properties;
 
 /**
  * Check for errors in .property files

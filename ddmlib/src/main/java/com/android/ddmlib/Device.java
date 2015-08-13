@@ -24,6 +24,7 @@ import com.android.ddmlib.log.LogReceiver;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -835,7 +837,8 @@ final class Device implements IDevice {
     }
 
     @Override
-    public String installPackage(String packageFilePath, boolean reinstall, String... extraArgs)
+    public String installPackage(String packageFilePath, boolean reinstall,
+            String... extraArgs)
             throws InstallException {
         try {
             String remoteFilePath = syncPackageToDevice(packageFilePath);
@@ -854,7 +857,7 @@ final class Device implements IDevice {
     }
 
     @Override
-    public void installPackages(List<String> apkFilePaths, int timeOut, boolean reinstall,
+    public void installPackages(List<String> apkFilePaths, int timeOutInMs, boolean reinstall,
             String... extraArgs) throws InstallException {
 
         assert(!apkFilePaths.isEmpty());
@@ -879,9 +882,13 @@ final class Device implements IDevice {
                         getSerialNumber()));
 
         try {
-
             // create a installation session.
-            String sessionId = createMultiInstallSession(apkFilePaths, reinstall);
+
+            List<String> extraArgsList = extraArgs != null
+                    ? ImmutableList.copyOf(extraArgs)
+                    : ImmutableList.<String>of();
+
+            String sessionId = createMultiInstallSession(apkFilePaths, extraArgsList, reinstall);
             if (sessionId == null) {
                 Log.d(mainPackageFilePath, "Failed to establish session, quit installation");
                 throw new InstallException("Failed to establish session");
@@ -900,7 +907,7 @@ final class Device implements IDevice {
                     ? "pm install-commit " + sessionId
                     : "pm install-abandon " + sessionId;
             InstallReceiver receiver = new InstallReceiver();
-            executeShellCommand(command, receiver, timeOut);
+            executeShellCommand(command, receiver, timeOutInMs, TimeUnit.MILLISECONDS);
             String errorMessage = receiver.getErrorMessage();
             if (errorMessage != null) {
                 String message = String.format("Failed to finalize session : %1$s", errorMessage);
@@ -961,7 +968,8 @@ final class Device implements IDevice {
     }
 
     @Nullable
-    private String createMultiInstallSession(List<String> apkFileNames, boolean reinstall)
+    private String createMultiInstallSession(List<String> apkFileNames,
+            @NonNull Collection<String> extraArgs, boolean reinstall)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException {
 
@@ -980,9 +988,14 @@ final class Device implements IDevice {
                 throw new IllegalArgumentException(apkFile.getAbsolutePath() + " is not a file");
             }
         }
+        StringBuilder parameters = new StringBuilder();
+        if (reinstall) {
+            parameters.append(("-r "));
+        }
+        parameters.append(Joiner.on(' ').join(extraArgs));
         MultiInstallReceiver receiver = new MultiInstallReceiver();
         String cmd = String.format("pm install-create %1$s -S %2$d",
-                reinstall ? "-r" : "",
+                parameters.toString(),
                 totalFileSize);
         executeShellCommand(cmd, receiver, DdmPreferences.getTimeOut());
         return receiver.getSessionId();
@@ -1095,9 +1108,8 @@ final class Device implements IDevice {
             if (reinstall) {
                 optionString.append("-r ");
             }
-            for (String arg : extraArgs) {
-                optionString.append(arg);
-                optionString.append(' ');
+            if (extraArgs != null) {
+                optionString.append(Joiner.on(' ').join(extraArgs));
             }
             String cmd = String.format("pm install %1$s \"%2$s\"", optionString.toString(),
                     remoteFilePath);
@@ -1217,15 +1229,19 @@ final class Device implements IDevice {
     public int getDensity() {
         String densityValue = getProperty(IDevice.PROP_DEVICE_DENSITY);
         if (densityValue != null) {
-            return Integer.parseInt(densityValue);
+            try {
+                return Integer.parseInt(densityValue);
+            } catch (NumberFormatException e) {
+                return -1;
+            }
         }
 
-        return 0;
+        return -1;
     }
 
     @Override
     public String getLanguage() {
-        return getProperty(IDevice.PROP_DEVICE_LANGUAGE);
+        return getProperties().get(IDevice.PROP_DEVICE_LANGUAGE);
     }
 
     @Override

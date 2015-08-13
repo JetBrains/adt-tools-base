@@ -16,12 +16,17 @@
 
 package com.android.sdklib.internal.repository.sources;
 
-import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.repository.IDescription;
 
 
 /**
  * The category of a given {@link SdkSource} (which represents a download site).
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public enum SdkSourceCategory implements IDescription {
 
     /**
@@ -55,7 +60,7 @@ public enum SdkSourceCategory implements IDescription {
     private final String mUiName;
     private final boolean mAlwaysDisplay;
 
-    private SdkSourceCategory(String uiName, boolean alwaysDisplay) {
+    SdkSourceCategory(String uiName, boolean alwaysDisplay) {
         mUiName = uiName;
         mAlwaysDisplay = alwaysDisplay;
     }

@@ -22,6 +22,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.JavaLibrary
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -33,6 +34,7 @@ import static org.junit.Assert.assertTrue
 /**
  * Assemble tests for customArtifactDep.
  */
+@CompileStatic
 class CustomArtifactDepTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

@@ -62,7 +62,7 @@ import java.util.List;
  * Class for video playback with media control
  */
 public class PlaybackOverlayFragment extends android.support.v17.leanback.app.PlaybackOverlayFragment {
-    private static final String TAG = "PlaybackControlsFragment";
+    private static final String TAG = "PlaybackControlsFragmnt";
 
     private static Context sContext;
 
@@ -313,7 +313,11 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
         for (Movie movie : mItems) {
             listRowAdapter.add(movie);
         }
-        HeaderItem header = new HeaderItem(0, getString(R.string.related_movies), null);
+        <#if buildApi gte 22>
+            HeaderItem header = new HeaderItem(0, getString(R.string.related_movies));
+        <#else>
+            HeaderItem header = new HeaderItem(0, getString(R.string.related_movies), null);
+        </#if>
         mRowsAdapter.add(new ListRow(header, listRowAdapter));
 
     }

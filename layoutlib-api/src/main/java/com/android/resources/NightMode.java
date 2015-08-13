@@ -28,7 +28,7 @@ public enum NightMode implements ResourceEnum {
     private final String mShortDisplayValue;
     private final String mLongDisplayValue;
 
-    private NightMode(String value, String shortDisplayValue, String longDisplayValue) {
+    NightMode(String value, String shortDisplayValue, String longDisplayValue) {
         mValue = value;
         mShortDisplayValue = shortDisplayValue;
         mLongDisplayValue = longDisplayValue;

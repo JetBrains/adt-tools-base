@@ -32,7 +32,7 @@ class TestLibraryWithDep {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("libTestDep")
+            .fromTestProject("libTestDep")
             .create()
 
     @BeforeClass

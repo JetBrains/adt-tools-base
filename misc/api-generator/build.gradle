@@ -1,15 +1,19 @@
+apply plugin: 'application'
 apply plugin: 'java'
 
+mainClassName = "com.android.apigenerator.Main"
+applicationDefaultJvmArgs = ["-ea", "-Xms1048m", "-Xmx2048m"]
+
+repositories {
+   jcenter()
+}
+
+sourceCompatibility = 1.6
 dependencies {
-    compile project(':base:common')
+    compile 'com.android.tools:common:24.2.3'
     compile 'net.sf.kxml:kxml2:2.3.0'
     compile 'org.ow2.asm:asm:4.0'
     compile 'org.ow2.asm:asm-tree:4.0'
 }
 
-group = 'com.android.tools'
-archivesBaseName = 'api-generator'
-version = rootProject.ext.baseVersion
-
-// configure the manifest of the sdkJar task
-jar.manifest.attributes("Main-Class": "com.android.apigenerator.Main")
+defaultTasks 'installApp'

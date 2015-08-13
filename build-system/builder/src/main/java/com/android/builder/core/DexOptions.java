@@ -16,12 +16,15 @@
 
 package com.android.builder.core;
 
+import com.android.annotations.Nullable;
+
 public interface DexOptions {
 
     boolean getIncremental();
     boolean getPreDexLibraries();
     boolean getJumboMode();
+    @Nullable
     String getJavaMaxHeapSize();
-
-    int getThreadCount();
+    @Nullable
+    Integer getThreadCount();
 }

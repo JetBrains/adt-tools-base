@@ -194,7 +194,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             }
 
             XmlDocument expectedResult = TestUtils.xmlDocumentFromString(
-                    new TestUtils.TestSourceLocation(getClass(), testFiles.getMain().getName()),
+                    TestUtils.sourceFile(getClass(), testFiles.getMain().getName()),
                     testFiles.getExpectedResult());
             Optional<String> comparingMessage =
                     expectedResult.compareTo(actualResult);

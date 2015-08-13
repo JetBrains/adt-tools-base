@@ -56,7 +56,7 @@ public final class DuplicateFileException extends ZipAbortException {
 
         sb.append("Duplicate files copied in APK ").append(mArchivePath).append('\n');
         sb.append("\tFile 1: ").append(mFile1).append('\n');
-        sb.append("\tFile 2: ").append(mFile1).append('\n');
+        sb.append("\tFile 2: ").append(mFile2).append('\n');
 
         return sb.toString();
     }

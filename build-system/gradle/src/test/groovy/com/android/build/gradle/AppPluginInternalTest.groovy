@@ -41,18 +41,18 @@ public class AppPluginInternalTest extends BaseTest {
 
     @Override
     protected void setUp() throws Exception {
-        SdkHandler.testSdkFolder = new File("foo")
+        SdkHandler.testSdkFolder = new File(System.getenv("ANDROID_HOME"))
     }
 
     public void testBasic() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
-
+1
         project.android {
-            compileSdkVersion 15
-            buildToolsVersion "19"
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion BUILD_TOOL_VERSION
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -74,13 +74,13 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testDefaultConfig() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
-            buildToolsVersion "19"
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion BUILD_TOOL_VERSION
 
             signingConfigs {
                 fakeConfig {
@@ -120,13 +120,13 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testBuildTypes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
-            buildToolsVersion "19"
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion BUILD_TOOL_VERSION
             testBuildType "staging"
 
             buildTypes {
@@ -157,13 +157,13 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
-            buildToolsVersion "19"
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion BUILD_TOOL_VERSION
 
             productFlavors {
                 flavor1 {
@@ -194,13 +194,13 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testMultiFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
-            buildToolsVersion "19"
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion BUILD_TOOL_VERSION
 
             flavorDimensions   "dimension1", "dimension2"
 
@@ -259,13 +259,13 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testSigningConfigs() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
-            buildToolsVersion "19"
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion BUILD_TOOL_VERSION
 
             signingConfigs {
                 one {
@@ -360,13 +360,13 @@ public class AppPluginInternalTest extends BaseTest {
      */
     public void testDebugSigningConfig() throws Exception {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
-            buildToolsVersion "19"
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion BUILD_TOOL_VERSION
 
             signingConfigs {
                 debug {
@@ -386,12 +386,12 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testSigningConfigInitWith() throws Exception {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
 
             signingConfigs {
                 foo.initWith(owner.signingConfigs.debug)
@@ -413,14 +413,14 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testPluginDetection() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
         project.apply plugin: 'java'
 
         project.android {
-            compileSdkVersion 15
-            buildToolsVersion "19"
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion BUILD_TOOL_VERSION
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)

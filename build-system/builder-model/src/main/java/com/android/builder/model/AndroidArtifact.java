@@ -75,9 +75,12 @@ public interface AndroidArtifact extends BaseArtifact {
      * Returns all the source folders that are generated. This is typically folders for the R,
      * the aidl classes, and the renderscript classes.
      *
+     * Deprecated, as of 1.2, present in super interface.
+     *
      * @return a list of folders.
      */
     @NonNull
+    @Override
     Collection<File> getGeneratedSourceFolders();
 
     /**
@@ -99,6 +102,12 @@ public interface AndroidArtifact extends BaseArtifact {
     Set<String> getAbiFilters();
 
     /**
+     * Returns the native libraries associated with the artifact.
+     */
+    @Nullable
+    Collection<NativeLibrary> getNativeLibraries();
+
+    /**
      * Map of Build Config Fields where the key is the field name.
      *
      * @return a non-null map of class fields (possibly empty).
@@ -113,5 +122,4 @@ public interface AndroidArtifact extends BaseArtifact {
      */
     @NonNull
     Map<String, ClassField> getResValues();
-
 }

@@ -37,8 +37,8 @@ public class DependencyGraph {
 
     private static final boolean DEBUG = false;
 
-    private static enum DependencyStatus {
-        NONE, NEW_FILE, UPDATED_FILE, MISSING_FILE, ERROR;
+    private enum DependencyStatus {
+        NONE, NEW_FILE, UPDATED_FILE, MISSING_FILE, ERROR
     }
 
     // Files that we know about from the dependency file

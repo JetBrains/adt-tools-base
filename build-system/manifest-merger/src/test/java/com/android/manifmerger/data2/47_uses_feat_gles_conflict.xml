@@ -151,8 +151,8 @@
 
 @errors
 
-ERROR:Attribute uses-feature#0@glEsVersion at ManifestMerger2Test2_lib2.xml:21:9 is not a valid hexadecimal 32 bit value, found 0
-ERROR:Attribute uses-feature#0x0000FFFF@glEsVersion at ManifestMerger2Test2_lib2.xml:27:9 is not a valid hexadecimal value, minimum is 0x00010000, maximum is 0x7FFFFFFF, found 0x0000FFFF
-ERROR:Attribute uses-feature#0xFFFFFFFF@glEsVersion at ManifestMerger2Test2_lib2.xml:34:9 is not a valid hexadecimal value, minimum is 0x00010000, maximum is 0x7FFFFFFF, found 0xFFFFFFFF
-ERROR:Attribute uses-feature#0xFFFFFFFFFFFFFFFF@glEsVersion at ManifestMerger2Test2_lib2.xml:40:9 is not a valid hexadecimal 32 bit value, found 0xFFFFFFFFFFFFFFFF
+ERROR:Attribute uses-feature#0@glEsVersion at ManifestMerger2Test2_lib2.xml:21:9-32 is not a valid hexadecimal 32 bit value, found 0
+ERROR:Attribute uses-feature#0x0000FFFF@glEsVersion at ManifestMerger2Test2_lib2.xml:27:9-41 is not a valid hexadecimal value, minimum is 0x00010000, maximum is 0x7FFFFFFF, found 0x0000FFFF
+ERROR:Attribute uses-feature#0xFFFFFFFF@glEsVersion at ManifestMerger2Test2_lib2.xml:34:9-41 is not a valid hexadecimal value, minimum is 0x00010000, maximum is 0x7FFFFFFF, found 0xFFFFFFFF
+ERROR:Attribute uses-feature#0xFFFFFFFFFFFFFFFF@glEsVersion at ManifestMerger2Test2_lib2.xml:40:9-49 is not a valid hexadecimal 32 bit value, found 0xFFFFFFFFFFFFFFFF
 ERROR:Validation failed, exiting

@@ -207,7 +207,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             "NewerVersionAvailable", //$NON-NLS-1$
             "Newer Library Versions Available",
             "This detector checks with a central repository to see if there are newer versions " +
-            "available for the dependencies used by this project.\n" +
+            "available for the dependencies used by this project. " +
             "This is similar to the `GradleDependency` check, which checks for newer versions " +
             "available in the Android SDK tools and libraries, but this works with any " +
             "MavenCentral dependency, and connects to the library every time, which makes " +
@@ -785,9 +785,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             @NonNull Context context,
             @NonNull GradleCoordinate dependency,
             @NonNull Object cookie) {
-        if ("com.android.support".equals(dependency.getGroupId()) &&
-                ("support-v4".equals(dependency.getArtifactId()) ||
-                        "appcompat-v7".equals(dependency.getArtifactId()))) {
+        if ("com.android.support".equals(dependency.getGroupId())) {
             checkSupportLibraries(context, dependency, cookie);
             if (mMinSdkVersion >= 14 && "appcompat-v7".equals(dependency.getArtifactId())
                   && mCompileSdkVersion >= 1 && mCompileSdkVersion < 21) {
@@ -974,7 +972,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     /** Normally null; used for testing */
     @Nullable
     @VisibleForTesting
-    static Map<String,String> ourMockData;
+    static Map<String,String> sMockData;
 
     @Nullable
     private static String readUrlData(
@@ -982,8 +980,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             @NonNull GradleCoordinate dependency,
             @NonNull String query) {
         // For unit testing: avoid network as well as unexpected new versions
-        if (ourMockData != null) {
-            String value = ourMockData.get(query);
+        if (sMockData != null) {
+            String value = sMockData.get(query);
             assert value != null : query;
             return value;
         }
@@ -1048,6 +1046,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         // See if the support library version is lower than the targetSdkVersion
         if (mTargetSdkVersion > 0 && dependency.getMajorVersion() < mTargetSdkVersion &&
                 dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE &&
+                // The multidex library doesn't follow normal supportlib numbering scheme
+                !dependency.getArtifactId().startsWith("multidex") &&
                 context.isEnabled(COMPATIBILITY)) {
             String message = "This support library should not use a lower version ("
                 + dependency.getMajorVersion() + ") than the `targetSdkVersion` ("

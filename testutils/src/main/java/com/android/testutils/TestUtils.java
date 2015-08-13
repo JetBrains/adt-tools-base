@@ -16,6 +16,10 @@
 
 package com.android.testutils;
 
+import static org.junit.Assert.assertTrue;
+
+import com.google.common.io.Files;
+
 import junit.framework.TestCase;
 
 import java.io.File;
@@ -81,5 +85,30 @@ public class TestUtils {
     public static File getCanonicalRoot(String... names) throws IOException {
         File root = getRoot(names);
         return root.getCanonicalFile();
+    }
+
+    public static void deleteFile(File dir) {
+        if (dir.isDirectory()) {
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    deleteFile(f);
+                }
+            }
+        } else if (dir.isFile()) {
+            assertTrue(dir.getPath(), dir.delete());
+        }
+    }
+
+    public static File createTempDirDeletedOnExit() {
+        final File tempDir = Files.createTempDir();
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                deleteFile(tempDir);
+            }
+        });
+
+        return tempDir;
     }
 }

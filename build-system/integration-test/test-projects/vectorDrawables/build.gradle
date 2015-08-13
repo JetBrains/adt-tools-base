@@ -1,0 +1,22 @@
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+
+apply plugin: 'com.android.application'
+
+apply from: "../commonLocalRepo.gradle"
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion 19
+    }
+
+    preprocessingOptions {
+      preprocessResources = true
+    }
+
+    // Don't modify files when merging.
+    aaptOptions.cruncherEnabled = false
+}

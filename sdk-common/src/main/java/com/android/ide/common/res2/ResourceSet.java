@@ -21,6 +21,7 @@ import static com.android.ide.common.res2.ResourceFile.ATTR_QUALIFIER;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.Message;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceConstants;
@@ -46,8 +47,18 @@ import java.util.Map;
  */
 public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
+    private boolean mNormalizeResources = false;
+
     public ResourceSet(String name) {
-        super(name);
+        this(name, true /*validateEnabled*/);
+    }
+
+    public ResourceSet(String name, boolean validateEnabled) {
+        super(name, validateEnabled);
+    }
+
+    public void setNormalizeResources(boolean normalizeResources) {
+        mNormalizeResources = normalizeResources;
     }
 
     @Override
@@ -69,7 +80,8 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     }
 
     @Override
-    protected ResourceFile createFileAndItems(@NonNull File file, @NonNull Node fileNode) {
+    protected ResourceFile createFileAndItems(@NonNull File file, @NonNull Node fileNode)
+            throws MergingException {
         Attr qualifierAttr = (Attr) fileNode.getAttributes().getNamedItem(ATTR_QUALIFIER);
         String qualifier = qualifierAttr != null ? qualifierAttr.getValue() : "";
 
@@ -116,6 +128,9 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 return null;
             }
 
+            if (getValidateEnabled()) {
+                FileResourceNameValidator.validate(file, type);
+            }
             ResourceItem item = new ResourceItem(nameAttr.getValue(), type, null);
             return new ResourceFile(file, item, qualifier);
         }
@@ -124,17 +139,23 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     @Override
     protected void readSourceFolder(File sourceFolder, ILogger logger)
             throws MergingException {
+        List<Message> errors = Lists.newArrayList();
         File[] folders = sourceFolder.listFiles();
         if (folders != null) {
             for (File folder : folders) {
                 if (folder.isDirectory() && !isIgnored(folder)) {
                     FolderData folderData = getFolderData(folder);
                     if (folderData != null) {
-                        parseFolder(sourceFolder, folder, folderData, logger);
+                        try {
+                            parseFolder(sourceFolder, folder, folderData, logger);
+                        } catch (MergingException e) {
+                            errors.addAll(e.getMessages());
+                        }
                     }
                 }
             }
         }
+        MergingException.throwIfNonEmpty(errors);
     }
 
     @Override
@@ -162,12 +183,10 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         ResourceFile resourceFile = getDataFile(changedFile);
 
         if (resourceFile == null) {
-            String message = String.format(
-                    "In DataSet '%s', no data file for changedFile '%s'. "
+            throw MergingException.withMessage("In DataSet '%s', no data file for changedFile. "
                             + "This is an internal error in the incremental builds code; "
                             + "to work around it, try doing a full clean build.",
-                    getConfigName(), changedFile.getAbsolutePath());
-            throw new MergingException(message).setFile(changedFile);
+                    getConfigName()).withFile(changedFile).build();
         }
 
         //noinspection VariableNotUsedInsideIf
@@ -255,12 +274,12 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         }
     }
 
-    private static ResourceFile createResourceFile(File file, FolderData folderData, ILogger logger)
-            throws MergingException {
+    private static ResourceFile createResourceFile(@NonNull File file,
+            @NonNull FolderData folderData, @NonNull ILogger logger) throws MergingException {
         if (folderData.type != null) {
-            int pos;// get the resource name based on the filename
+            FileResourceNameValidator.validate(file, folderData.type);
             String name = file.getName();
-            pos = name.indexOf('.');
+            int pos = name.indexOf('.'); // get the resource name based on the filename
             if (pos >= 0) {
                 name = name.substring(0, pos);
             }
@@ -276,7 +295,6 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
                 return new ResourceFile(file, items, folderData.qualifiers);
             } catch (MergingException e) {
-                e.setFile(file);
                 logger.error(e, "Failed to parse %s", file.getAbsolutePath());
                 throw e;
             }
@@ -298,7 +316,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
      * @return the FolderData object.
      */
     @Nullable
-    private static FolderData getFolderData(File folder) {
+    private FolderData getFolderData(File folder) throws MergingException {
         FolderData fd = new FolderData();
 
         String folderName = folder.getName();
@@ -311,11 +329,14 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
             FolderConfiguration folderConfiguration = FolderConfiguration.getConfigForFolder(folderName);
             if (folderConfiguration == null) {
-                return null;
+                throw MergingException.withMessage("Invalid resource directory name")
+                        .withFile(folder).build();
             }
 
-            // normalize it
-            folderConfiguration.normalize();
+            if (mNormalizeResources) {
+                // normalize it
+                folderConfiguration.normalize();
+            }
 
             // get the qualifier portion from the folder config.
             // the returned string starts with "-" so we remove that.

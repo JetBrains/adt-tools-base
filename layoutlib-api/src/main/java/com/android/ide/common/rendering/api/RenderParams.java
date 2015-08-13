@@ -16,8 +16,12 @@
 
 package com.android.ide.common.rendering.api;
 
+import com.android.ide.common.rendering.api.SessionParams.Key;
 import com.android.resources.Density;
 import com.android.resources.ScreenSize;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Base class for rendering parameters. This include the generic parameters but not what needs
@@ -30,7 +34,7 @@ public abstract class RenderParams {
     private final Object mProjectKey;
     private final HardwareConfig mHardwareConfig;
     private final RenderResources mRenderResources;
-    private final IProjectCallback mProjectCallback;
+    private final LayoutlibCallback mLayoutlibCallback;
     private final int mMinSdkVersion;
     private final int mTargetSdkVersion;
     private final LayoutLog mLog;
@@ -50,10 +54,16 @@ public abstract class RenderParams {
     private boolean mSupportsRtl;
 
     /**
+     * A flexible map to pass additional flags to LayoutLib. LayoutLib will ignore flags that it
+     * doesn't recognize.
+     */
+    private Map<Key, Object> mFlags;
+
+    /**
      * @param projectKey An Object identifying the project. This is used for the cache mechanism.
      * @param hardwareConfig the {@link HardwareConfig}.
      * @param renderResources a {@link RenderResources} object providing access to the resources.
-     * @param projectCallback The {@link IProjectCallback} object to get information from
+     * @param layoutlibCallback The {@link LayoutlibCallback} object to get information from
      * the project.
      * @param minSdkVersion the minSdkVersion of the project
      * @param targetSdkVersion the targetSdkVersion of the project
@@ -63,13 +73,13 @@ public abstract class RenderParams {
             Object projectKey,
             HardwareConfig hardwareConfig,
             RenderResources renderResources,
-            IProjectCallback projectCallback,
+            LayoutlibCallback layoutlibCallback,
             int minSdkVersion, int targetSdkVersion,
             LayoutLog log) {
         mProjectKey = projectKey;
         mHardwareConfig = hardwareConfig;
         mRenderResources = renderResources;
-        mProjectCallback = projectCallback;
+        mLayoutlibCallback = layoutlibCallback;
         mMinSdkVersion = minSdkVersion;
         mTargetSdkVersion = targetSdkVersion;
         mLog = log;
@@ -85,7 +95,7 @@ public abstract class RenderParams {
         mHardwareConfig = params.mHardwareConfig;
         mRenderResources = params.mRenderResources;
         mAssetRepository = params.mAssetRepository;
-        mProjectCallback = params.mProjectCallback;
+        mLayoutlibCallback = params.mLayoutlibCallback;
         mMinSdkVersion = params.mMinSdkVersion;
         mTargetSdkVersion = params.mTargetSdkVersion;
         mLog = params.mLog;
@@ -99,6 +109,9 @@ public abstract class RenderParams {
         mActivityName = params.mActivityName;
         mForceNoDecor = params.mForceNoDecor;
         mSupportsRtl = params.mSupportsRtl;
+        if (params.mFlags != null) {
+            mFlags = new HashMap<Key, Object>(params.mFlags);
+        }
     }
 
     public void setOverrideBgColor(int color) {
@@ -206,8 +219,14 @@ public abstract class RenderParams {
         return mAssetRepository;
     }
 
+    /** @deprecated use {@link #getLayoutlibCallback()} */
+    @Deprecated
     public IProjectCallback getProjectCallback() {
-        return mProjectCallback;
+        return getLayoutlibCallback();
+    }
+
+    public LayoutlibCallback getLayoutlibCallback() {
+        return mLayoutlibCallback;
     }
 
     public LayoutLog getLog() {
@@ -260,5 +279,20 @@ public abstract class RenderParams {
 
     public boolean isRtlSupported() {
         return mSupportsRtl;
+    }
+
+    public <T> void setFlag(Key<T> key, T value) {
+        if (mFlags == null) {
+            mFlags = new HashMap<Key, Object>();
+        }
+        mFlags.put(key, value);
+    }
+
+    public <T> T getFlag(Key<T> key) {
+
+        // noinspection since the values in the map can be added only by setFlag which ensures that
+        // the types match.
+        //noinspection unchecked
+        return mFlags == null ? null : (T) mFlags.get(key);
     }
 }
