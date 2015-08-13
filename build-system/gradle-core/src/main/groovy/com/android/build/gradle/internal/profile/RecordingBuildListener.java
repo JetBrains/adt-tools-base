@@ -72,8 +72,7 @@ public class RecordingBuildListener implements TaskExecutionListener {
             taskImpl = taskImpl.substring(0, taskImpl.length() - "_Decorated".length());
         }
         String potentialExecutionTypeName = "TASK_" +
-                CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.UPPER_UNDERSCORE).
-                        convert(taskImpl);
+                CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, taskImpl);
         ExecutionType executionType;
         try {
             executionType = ExecutionType.valueOf(potentialExecutionTypeName);

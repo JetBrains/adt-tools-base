@@ -347,6 +347,8 @@ public abstract class BasePlugin {
         // This is will be called for each (android) projects though, so this should support
         // being called 2+ times.
         project.getGradle().addBuildListener(new BuildListener() {
+            private final LibraryCache libraryCache = LibraryCache.getCache();
+
             @Override
             public void buildStarted(Gradle gradle) { }
 
@@ -375,7 +377,7 @@ public abstract class BasePlugin {
                                         new File(project.getRootProject().getBuildDir(),
                                                 FD_INTERMEDIATES + "/jack-cache/cache.xml"),
                                         getLogger());
-                                LibraryCache.getCache().unload();
+                                libraryCache.unload();
                                 return null;
                             }
                         }, new Recorder.Property("project", project.getName()));
