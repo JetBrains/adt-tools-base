@@ -33,6 +33,9 @@ public class InMemoryBuffer implements HprofBuffer {
         mBuffer = ByteBuffer.wrap(data);
     }
 
+    @Override
+    public void dispose() {}
+
     public ByteBuffer getDirectBuffer() {
         return mBuffer;
     }

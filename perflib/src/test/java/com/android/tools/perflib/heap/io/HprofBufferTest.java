@@ -16,7 +16,7 @@
 
 package com.android.tools.perflib.heap.io;
 
-import com.android.tools.perflib.heap.HprofParser;
+import com.android.annotations.NonNull;
 import com.android.tools.perflib.heap.Snapshot;
 
 import junit.framework.TestCase;
@@ -32,21 +32,21 @@ public class HprofBufferTest extends TestCase {
     File file = new File(getClass().getResource("/dialer.android-hprof").getFile());
 
     public void testSimpleMapping() throws Exception {
-        Snapshot snapshot = (new HprofParser(new MemoryMappedFileBuffer(file))).parse();
+        Snapshot snapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(file));
         assertSnapshotCorrect(snapshot);
     }
 
     public void testMultiMapping() throws Exception {
         // Split the file into chunks of 4096 bytes each, leave 128 bytes for padding.
         MemoryMappedFileBuffer shardedBuffer = new MemoryMappedFileBuffer(file, 4096, 128);
-        Snapshot snapshot = (new HprofParser(shardedBuffer)).parse();
+        Snapshot snapshot = Snapshot.createSnapshot(shardedBuffer);
         assertSnapshotCorrect(snapshot);
     }
 
     public void testMultiMappingWrappedRead() throws Exception {
         // Leave just 8 bytes for padding to force wrapped reads.
         MemoryMappedFileBuffer shardedBuffer = new MemoryMappedFileBuffer(file, 9973, 8);
-        Snapshot snapshot = (new HprofParser(shardedBuffer)).parse();
+        Snapshot snapshot = Snapshot.createSnapshot(shardedBuffer);
         assertSnapshotCorrect(snapshot);
     }
 
@@ -57,11 +57,15 @@ public class HprofBufferTest extends TestCase {
 
         long n = 500000000L;
         RandomAccessFile raf = new RandomAccessFile(tmpFile, "rw");
-        raf.setLength(n);
-        raf.write(1);
-        raf.seek(n - 1);
-        raf.write(2);
-        raf.close();
+        try {
+            raf.setLength(n);
+            raf.write(1);
+            raf.seek(n - 1);
+            raf.write(2);
+        }
+        finally {
+            raf.close();
+        }
 
         MemoryMappedFileBuffer buffer = new MemoryMappedFileBuffer(tmpFile);
         assertEquals(1, buffer.readByte());
@@ -122,7 +126,7 @@ public class HprofBufferTest extends TestCase {
         assertEquals(mappedBuffer.position(), 8259 * 4);
     }
 
-    private void assertSnapshotCorrect(Snapshot snapshot) {
+    private static void assertSnapshotCorrect(@NonNull Snapshot snapshot) {
         assertEquals(11182, snapshot.getGCRoots().size());
         assertEquals(38, snapshot.getHeap(65).getClasses().size());
         assertEquals(1406, snapshot.getHeap(65).getInstances().size());
