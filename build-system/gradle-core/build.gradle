@@ -4,6 +4,7 @@ apply plugin: 'clone-artifacts'
 
 configurations {
     provided
+    includeInJar
 }
 
 sourceSets {
@@ -28,10 +29,18 @@ dependencies {
     provided gradleApi()
     testCompile gradleApi()
 
+    includeInJar project(path:":base:fdr", configuration:'classes')
+
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile project(':base:project-test-lib')
     testCompile project(':base:testutils')
+}
+
+jar {
+    into('fdr') {
+        from configurations.includeInJar
+    }
 }
 
 tasks.compileJava.dependsOn ":setupGradleInIde"

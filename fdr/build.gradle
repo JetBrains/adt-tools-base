@@ -1,0 +1,49 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven { url '../../../prebuilts/gradle-plugin' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.4.0-alpha1'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion "22.0.1"
+
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 22
+        versionCode 1
+        versionName "1.0"
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_6
+        targetCompatibility JavaVersion.VERSION_1_6
+    }
+}
+
+repositories {
+    maven { url System.env.CUSTOM_REPO }
+}
+
+dependencies {
+    compile 'com.android.support:support-annotations:22.2.0'
+}
+
+
+configurations {
+    classes
+}
+
+afterEvaluate {
+    artifacts {
+        classes packageReleaseJar
+    }
+}

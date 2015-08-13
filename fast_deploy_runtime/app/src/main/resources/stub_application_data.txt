@@ -1,2 +1,0 @@
-com.android.tools.fd.runtime.testapp
-com.android.tools.fd.runtime.testapp.MyApplication

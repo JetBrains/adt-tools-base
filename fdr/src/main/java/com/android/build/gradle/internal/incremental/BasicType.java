@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.internal.incremental;
 
-import android.support.annotation.Nullable;
-
 /**
  * Boxing/unboxing services for primitive types.
  */
@@ -40,7 +38,6 @@ public enum BasicType {
         return primitiveJavaType;
     }
 
-    @Nullable
     public static BasicType parse(String name) {
         for (BasicType basicType : BasicType.values()) {
             if (basicType.getJavaType().getName().equals(name)) {
