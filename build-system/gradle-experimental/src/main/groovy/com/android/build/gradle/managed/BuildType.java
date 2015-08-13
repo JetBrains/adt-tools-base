@@ -77,15 +77,6 @@ public interface BuildType extends BaseConfig {
     void setRenderscriptOptimLevel(Integer renderscriptOptimLevel);
 
     /**
-     * Returns the application id suffix applied to this build type.
-     * To get the final application id, use {@link AndroidArtifact#getApplicationId()}.
-     *
-     * @return the application id
-     */
-    String getApplicationIdSuffix();
-    void setApplicationIdSuffix(String applicationIdSuffix);
-
-    /**
      * Returns the version name suffix.
      *
      * @return the version name suffix.

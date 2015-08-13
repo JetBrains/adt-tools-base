@@ -33,6 +33,15 @@ public interface BaseConfig {
     String getName();
 
     /**
+     * Returns the application id suffix applied to this base config.
+     * To get the final application id, use {@link AndroidArtifact#getApplicationId()}.
+     *
+     * @return the application id
+     */
+    @Nullable
+    String getApplicationIdSuffix();
+
+    /**
      * Map of Build Config Fields where the key is the field name.
      *
      * @return a non-null map of class fields (possibly empty).

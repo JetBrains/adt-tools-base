@@ -49,6 +49,12 @@ abstract class ReadOnlyBaseConfig implements BaseConfig {
         return baseConfig.getName()
     }
 
+    @Nullable
+    @Override
+    public String getApplicationIdSuffix() {
+        return baseConfig.getApplicationIdSuffix()
+    }
+
     @NonNull
     @Override
     public Map<String, ClassField> getBuildConfigFields() {

@@ -25,6 +25,7 @@ import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -480,6 +481,15 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mVersionName = chooseNotNull(overlay.getVersionName(), base.getVersionName());
 
         flavor.mApplicationId = chooseNotNull(overlay.getApplicationId(), base.getApplicationId());
+
+        if (!Strings.isNullOrEmpty(overlay.getApplicationIdSuffix())) {
+            String baseSuffix = chooseNotNull(base.getApplicationIdSuffix(), "");
+            if (overlay.getApplicationIdSuffix().charAt(0) == '.') {
+                flavor.setApplicationIdSuffix(baseSuffix + overlay.getApplicationIdSuffix());
+            } else {
+                flavor.setApplicationIdSuffix(baseSuffix + '.' + overlay.getApplicationIdSuffix());
+            }
+        }
 
         flavor.mTestApplicationId = chooseNotNull(
                 overlay.getTestApplicationId(),

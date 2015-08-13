@@ -78,12 +78,6 @@ public class BuildTypeAdaptor extends BaseConfigAdaptor implements CoreBuildType
 
     @Nullable
     @Override
-    public String getApplicationIdSuffix() {
-        return buildType.getApplicationIdSuffix();
-    }
-
-    @Nullable
-    @Override
     public String getVersionNameSuffix() {
         return buildType.getVersionNameSuffix();
     }

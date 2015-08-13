@@ -126,6 +126,12 @@ public class BaseConfigAdaptor implements BaseConfig {
         return baseConfig.getMultiDexKeepProguard();
     }
 
+    @Nullable
+    @Override
+    public String getApplicationIdSuffix() {
+        return baseConfig.getApplicationIdSuffix();
+    }
+
     @NonNull
     @Override
     public List<File> getJarJarRuleFiles() {
