@@ -470,7 +470,7 @@ public class ExternalAnnotationRepository {
                 return m.parameterAnnotations.get(parameterIndex);
             }
 
-            return m.annotations;
+            return null;
         }
 
         @Nullable
