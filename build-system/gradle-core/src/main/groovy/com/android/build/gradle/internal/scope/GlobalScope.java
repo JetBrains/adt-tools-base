@@ -46,8 +46,6 @@ public class GlobalScope {
     @NonNull
     private AndroidBuilder androidBuilder;
     @NonNull
-    private String projectBaseName;
-    @NonNull
     private AndroidConfig extension;
     @NonNull
     private SdkHandler sdkHandler;
@@ -68,13 +66,11 @@ public class GlobalScope {
     public GlobalScope(
             @NonNull Project project,
             @NonNull AndroidBuilder androidBuilder,
-            @NonNull String projectBaseName,
             @NonNull AndroidConfig extension,
             @NonNull SdkHandler sdkHandler,
             @NonNull ToolingModelBuilderRegistry toolingRegistry) {
         this.project = project;
         this.androidBuilder = androidBuilder;
-        this.projectBaseName = projectBaseName;
         this.extension = extension;
         this.sdkHandler = sdkHandler;
         this.toolingRegistry = toolingRegistry;
@@ -101,7 +97,7 @@ public class GlobalScope {
 
     @NonNull
     public String getProjectBaseName() {
-        return projectBaseName;
+        return (String) project.property("archivesBaseName");
     }
 
     @NonNull

@@ -64,6 +64,6 @@ android {
                 .getMainOutputFile()
                 .getOutputFile()
 
-        assertThat(outputFile.getName().startsWith("random_apk_name"))
+        assertThat(outputFile.getName()).startsWith("random_apk_name")
     }
 }
