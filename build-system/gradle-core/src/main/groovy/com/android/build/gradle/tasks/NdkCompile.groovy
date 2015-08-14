@@ -198,7 +198,6 @@ class NdkCompile extends NdkTask {
             fullLdlibs.add("log")
             fullLdlibs.add("jnigraphics")
             fullLdlibs.add("RScpp_static")
-            fullLdlibs.add("cutils")
         }
 
         if (!fullLdlibs.isEmpty()) {
