@@ -71,6 +71,20 @@ public class FileUtils {
         }
     }
 
+    public static void delete(File file) throws IOException {
+        boolean result = file.delete();
+        if (!result) {
+            throw new IOException("Failed to delete " + file.getAbsolutePath());
+        }
+    }
+
+    public static void deleteIfExists(File file) throws IOException {
+        boolean result = file.delete();
+        if (!result && file.exists()) {
+            throw new IOException("Failed to delete " + file.getAbsolutePath());
+        }
+    }
+
     public static File join(File dir, String... paths) {
         return new File(dir, Joiner.on(File.separatorChar).join(paths));
     }

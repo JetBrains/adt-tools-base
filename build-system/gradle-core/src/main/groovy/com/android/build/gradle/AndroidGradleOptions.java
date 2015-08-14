@@ -79,6 +79,10 @@ public class AndroidGradleOptions {
         return getString(project, AndroidProject.PROPERTY_APK_LOCATION);
     }
 
+    public static boolean isIntegrationTest() {
+        return Boolean.parseBoolean(System.getenv("INTEGRATION_TEST"));
+    }
+
     @Nullable
     public static SigningOptions getSigningOptions(@NonNull Project project) {
         String signingStoreFile =
