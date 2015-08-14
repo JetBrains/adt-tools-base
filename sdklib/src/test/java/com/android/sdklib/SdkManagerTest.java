@@ -53,61 +53,6 @@ public class SdkManagerTest extends SdkManagerTestCase {
         assertSame(lv, sdkman.getMaxLayoutlibVersion());
     }
 
-    public void testSdkManager_getBuildTools() {
-        SdkManager sdkman = getSdkManager();
-
-        Set<FullRevision> v = sdkman.getBuildTools();
-        // Make sure we get a stable set -- hashmap order isn't stable and can't be used in tests.
-        if (!(v instanceof TreeSet<?>)) {
-            v = Sets.newTreeSet(v);
-        }
-
-        assertEquals("", getLog().toString());  // no errors in the logger
-        assertEquals("[3.0.0, 3.0.1, 18.3.4 rc5]", Arrays.toString(v.toArray()));
-
-        assertEquals(new FullRevision(18, 3, 4, 5),
-                     sdkman.getLatestBuildTool().getRevision());
-
-        // Get infos, first one that doesn't exist returns null.
-        assertNull(sdkman.getBuildTool(new FullRevision(1)));
-
-        // Now some that exist.
-        BuildToolInfo i = sdkman.getBuildTool(new FullRevision(3, 0, 0));
-        assertEquals(
-                "<BuildToolInfo rev=3.0.0, " +
-                "mPath=$SDK/build-tools/3.0.0, " +
-                "mPaths={" +
-                    "AAPT=$SDK/build-tools/3.0.0/aapt, " +
-                    "AIDL=$SDK/build-tools/3.0.0/aidl, " +
-                    "DX=$SDK/build-tools/3.0.0/dx, " +
-                    "DX_JAR=$SDK/build-tools/3.0.0/lib/dx.jar, " +
-                    "LLVM_RS_CC=$SDK/build-tools/3.0.0/llvm-rs-cc, " +
-                    "ANDROID_RS=$SDK/build-tools/3.0.0/renderscript/include/, " +
-                    "ANDROID_RS_CLANG=$SDK/build-tools/3.0.0/renderscript/clang-include/, " +
-                    "DEXDUMP=$SDK/build-tools/3.0.0/dexdump}>",
-                cleanPath(sdkman, i.toString()));
-
-        i = sdkman.getBuildTool(new FullRevision(18, 3, 4, 5));
-        assertEquals(
-                "<BuildToolInfo rev=18.3.4 rc5, " +
-                "mPath=$SDK/build-tools/18.3.4 rc5, " +
-                "mPaths={" +
-                    "AAPT=$SDK/build-tools/18.3.4 rc5/aapt, " +
-                    "AIDL=$SDK/build-tools/18.3.4 rc5/aidl, " +
-                    "DX=$SDK/build-tools/18.3.4 rc5/dx, " +
-                    "DX_JAR=$SDK/build-tools/18.3.4 rc5/lib/dx.jar, " +
-                    "LLVM_RS_CC=$SDK/build-tools/18.3.4 rc5/llvm-rs-cc, " +
-                    "ANDROID_RS=$SDK/build-tools/18.3.4 rc5/renderscript/include/, " +
-                    "ANDROID_RS_CLANG=$SDK/build-tools/18.3.4 rc5/renderscript/clang-include/, " +
-                    "DEXDUMP=$SDK/build-tools/18.3.4 rc5/dexdump, " +
-                    "BCC_COMPAT=$SDK/build-tools/18.3.4 rc5/bcc_compat, " +
-                    "LD_ARM=$SDK/build-tools/18.3.4 rc5/arm-linux-androideabi-ld, " +
-                    "LD_X86=$SDK/build-tools/18.3.4 rc5/i686-linux-android-ld, " +
-                    "LD_MIPS=$SDK/build-tools/18.3.4 rc5/mipsel-linux-android-ld" +
-                    "}>",
-                cleanPath(sdkman, i.toString()));
-    }
-
     public void testSdkManager_BuildTools_canRunOnJvm() throws IOException {
         SdkManager sdkman = getSdkManager();
         BuildToolInfo bt = sdkman.getBuildTool(new FullRevision(18, 3, 4, 5));

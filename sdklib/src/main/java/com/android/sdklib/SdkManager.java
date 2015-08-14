@@ -181,24 +181,6 @@ public class SdkManager {
     }
 
     /**
-     * Returns an unmodifiable set of known build-tools revisions. Can be empty but not null.
-     * Deprecated. I don't think anything uses this.
-     */
-    @Deprecated
-    @NonNull
-    public Set<FullRevision> getBuildTools() {
-        LocalPkgInfo[] pkgs = mLocalSdk.getPkgsInfos(PkgType.PKG_BUILD_TOOLS);
-        TreeSet<FullRevision> bt = new TreeSet<FullRevision>();
-        for (LocalPkgInfo pkg : pkgs) {
-            IPkgDesc d = pkg.getDesc();
-            if (d.hasFullRevision()) {
-                bt.add(d.getFullRevision());
-            }
-        }
-        return Collections.unmodifiableSet(bt);
-    }
-
-    /**
      * Returns the highest build-tool revision known. Can be null.
      *
      * @return The highest build-tool revision known, or null.
