@@ -174,14 +174,11 @@ public class Dex extends BaseTask {
         private final PostCompilationData pcData;
 
         private final String taskName;
-        private final IncrementalBuildType processType;
 
-        public ConfigAction(VariantScope scope, PostCompilationData pcData, String name,
-                IncrementalBuildType processType) {
+        public ConfigAction(VariantScope scope, PostCompilationData pcData, String name) {
             this.scope = scope;
             this.pcData = pcData;
             this.taskName = name;
-            this.processType = processType;
         }
 
         @Override
@@ -212,7 +209,7 @@ public class Dex extends BaseTask {
             ConventionMappingHelper.map(dexTask, "outputFolder", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return scope.getDexOutputFolder(processType);
+                    return scope.getDexOutputFolder();
                 }
             });
             dexTask.setTmpFolder(new File(

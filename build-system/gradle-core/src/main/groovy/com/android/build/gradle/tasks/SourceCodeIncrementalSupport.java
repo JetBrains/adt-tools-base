@@ -177,18 +177,15 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
             ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
             String rootName = inputFile.getName()
                     .substring(0, inputFile.getName().length() - ".class".length());
-            if (isRuntimeLibraryClass(inputFile)) {
-                System.out.println("Skipping runtime library class " + inputFile);
-                classReader.accept(classWriter, ClassReader.EXPAND_FRAMES);
-            } else {
-                ClassNode classNode = new ClassNode();
-                classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
-                // get all type hierarchy.
-                // for now we assume they are co-located which is obviously not always true.
-                List<ClassNode> parentNodes = parseParents(inputFile, classNode);
-                IncrementalChangeVisitor visitor = new IncrementalChangeVisitor(classNode, parentNodes, classWriter);
-                classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
-            }
+
+            ClassNode classNode = new ClassNode();
+            classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
+            // get all type hierarchy.
+            // for now we assume they are co-located which is obviously not always true.
+            List<ClassNode> parentNodes = parseParents(inputFile, classNode);
+            IncrementalChangeVisitor visitor = new IncrementalChangeVisitor(classNode, parentNodes, classWriter);
+            classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
+
             // write the modified class.
             String relativeFilePath = inputFile.getAbsolutePath().substring(
                     getBinaryFolder().getAbsolutePath().length());
@@ -260,15 +257,10 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
             classFileReader = new FileInputStream(inputFile);
             ClassReader classReader = new ClassReader(classFileReader);
             ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
-            if (isRuntimeLibraryClass(inputFile)) {
-                System.out.println("Skipping runtime library class " + inputFile);
-                classReader.accept(classWriter, ClassReader.EXPAND_FRAMES);
-            } else {
-                ClassNode classNode = new ClassNode();
-                IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(classNode, Collections.<ClassNode>emptyList(), classWriter);
-                classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
-                classNode.accept(visitor);
-            }
+            ClassNode classNode = new ClassNode();
+            IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(classNode, Collections.<ClassNode>emptyList(), classWriter);
+            classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
+            classNode.accept(visitor);
 
             // write the modified class.
             String relativeFilePath = inputFile.getAbsolutePath().substring(
@@ -294,29 +286,6 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
                 }
             }
         }
-    }
-
-    // HACKY implementation used to blacklist runtime library classes from BCI.
-    // Longer term we should have just a single runtime package, and we should be performing
-    // this check inside the bytecode visitor such that we can accurately check the
-    // class owner to filter by package rather than doing file path checks like this.
-    private static boolean isRuntimeLibraryClass(File inputFile) {
-        File parentFile = inputFile.getParentFile();
-        if (parentFile != null && parentFile.getName().equals("runtime")) {
-            parentFile = parentFile.getParentFile();
-            if (parentFile != null && parentFile.getName().equals("fd")) {
-                // com.android.tools.fd.runtime
-                return true;
-            }
-        } else if (parentFile != null && parentFile.getName().equals("incremental")) {
-            parentFile = parentFile.getParentFile();
-            if (parentFile != null && parentFile.getName().equals("internal")) {
-                // com.android.build.gradle.internal.incremental
-                return true;
-            }
-
-        }
-        return false;
     }
 
     public static class ConfigAction implements TaskConfigAction<SourceCodeIncrementalSupport> {

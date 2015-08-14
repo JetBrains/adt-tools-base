@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.IncrementalBuildType;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.internal.InstallUtils;
 import com.android.builder.sdk.SdkInfo;
@@ -215,18 +214,14 @@ public class InstallVariantTask extends BaseTask {
     public static class ConfigAction implements TaskConfigAction<InstallVariantTask> {
 
         private final VariantScope scope;
-        private final IncrementalBuildType buildType;
 
-        public ConfigAction(VariantScope scope, IncrementalBuildType buildType) {
+        public ConfigAction(VariantScope scope) {
             this.scope = scope;
-            this.buildType = buildType;
         }
 
         @Override
         public String getName() {
-            return buildType == IncrementalBuildType.FULL
-                ? scope.getTaskName("install")
-                : scope.getTaskName("incrementalInstall");
+            return scope.getTaskName("install");
         }
 
         @Override

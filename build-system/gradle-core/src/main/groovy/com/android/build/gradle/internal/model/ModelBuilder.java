@@ -428,6 +428,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 // in component plugin.
                 scope.getSourceGenTask() == null ? scope.getTaskName("generate", "Sources") : scope.getSourceGenTask().getName(),
                 scope.getCompileTask() == null ? scope.getTaskName("compile", "Sources") : scope.getCompileTask().getName(),
+                scope.getIncrementalDexTask() == null ? scope.getTaskName("incrementalSupportDex") : scope.getIncrementalDexTask().getName(),
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
                 (variantData.javacTask != null) ?

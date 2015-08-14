@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.tasks;
+package com.android.build.gradle;
 
 /**
- * Created by jedo on 8/3/15.
+ * enum describing possible optional compilation steps. This can be used to turn on java byte code
+ * manipulation in order to support instant reloading, or profiling, or anything related to
+ * transforming java compiler .class files before they are processed into .dex files.
  */
-public enum IncrementalBuildType {
-    FULL, INCREMENTAL;
+public enum OptionalCompilationStep {
+
+    /**
+     * presence will turn on the InstantDev (name still tbd) feature.
+     */
+    INSTANT_DEV
 }
