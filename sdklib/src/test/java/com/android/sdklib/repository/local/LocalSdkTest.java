@@ -184,6 +184,8 @@ public class LocalSdkTest extends TestCase {
         mFOp.recordExistingFolder("/sdk/build-tools/17");
         mFOp.recordExistingFolder("/sdk/build-tools/18.1.2");
         mFOp.recordExistingFolder("/sdk/build-tools/12.2.3");
+        mFOp.recordExistingFolder("/sdk/build-tools/19.0.0-preview");
+        mFOp.recordExistingFolder("/sdk/build-tools/19.0.0-preview2");
         mFOp.recordExistingFile("/sdk/build-tools/17/source.properties",
                 "Pkg.License=Terms and Conditions\n" +
                 "Archive.Os=WINDOWS\n" +
@@ -205,6 +207,20 @@ public class LocalSdkTest extends TestCase {
                 "Pkg.LicenseRef=android-sdk-license\n" +
                 "Archive.Arch=ANY\n" +
                 "Pkg.SourceUrl=https\\://example.com/repository-8.xml");
+        mFOp.recordExistingFile("/sdk/build-tools/19.0.0-preview/source.properties",
+                "Pkg.License=Terms and Conditions\n" +
+                "Archive.Os=WINDOWS\n" +
+                "Pkg.Revision=19.0.0 rc1\n" +
+                "Pkg.LicenseRef=android-sdk-license\n" +
+                "Archive.Arch=ANY\n" +
+                "Pkg.SourceUrl=https\\://example.com/repository-8.xml");
+        mFOp.recordExistingFile("/sdk/build-tools/19.0.0-preview2/source.properties",
+                                "Pkg.License=Terms and Conditions\n" +
+                                "Archive.Os=WINDOWS\n" +
+                                "Pkg.Revision=19.0.0 rc2\n" +
+                                "Pkg.LicenseRef=android-sdk-license\n" +
+                                "Archive.Arch=ANY\n" +
+                                "Pkg.SourceUrl=https\\://example.com/repository-8.xml");
 
         // -- get latest build tool 18.1.2
 
@@ -244,8 +260,17 @@ public class LocalSdkTest extends TestCase {
 
         assertEquals("[<LocalBuildToolPkgInfo <PkgDesc Type=build_tools FullRev=12.2.3>>, " +
                       "<LocalBuildToolPkgInfo <PkgDesc Type=build_tools FullRev=17.0.0>>, " +
-                      "<LocalBuildToolPkgInfo <PkgDesc Type=build_tools FullRev=18.1.2>>]",
+                      "<LocalBuildToolPkgInfo <PkgDesc Type=build_tools FullRev=18.1.2>>, " +
+                      "<LocalBuildToolPkgInfo <PkgDesc Type=build_tools FullRev=19.0.0 rc1>>, " +
+                      "<LocalBuildToolPkgInfo <PkgDesc Type=build_tools FullRev=19.0.0 rc2>>]",
                      Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_BUILD_TOOLS)));
+
+        mFOp.deleteFileOrFolder(new File("/sdk/build-tools/17"));
+        mFOp.deleteFileOrFolder(new File("/sdk/build-tools/18.1.2"));
+        mFOp.deleteFileOrFolder(new File("/sdk/build-tools/12.2.3"));
+        mLS.clearLocalPkg(PkgType.PKG_ALL);
+        BuildToolInfo previewInfo = mLS.getLatestBuildTool();
+        assertEquals(new FullRevision(19, 0, 0, 2), previewInfo.getRevision());
     }
 
     public final void testLocalSdkTest_getPkgInfo_Extra() {
