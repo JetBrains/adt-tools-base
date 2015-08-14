@@ -69,8 +69,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
      */
     public static final String COMPONENT_NAME = "android";
 
-    //public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.5.*");
-    public static final String GRADLE_ACCEPTABLE_VERSION = "2.5";
+    public static final String GRADLE_ACCEPTABLE_VERSION = "2.6";
 
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck";

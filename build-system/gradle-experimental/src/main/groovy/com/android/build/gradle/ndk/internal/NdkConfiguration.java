@@ -30,7 +30,6 @@ import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
 
 import org.gradle.api.Action;
-import org.gradle.api.PolymorphicDomainObjectContainer;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
 import org.gradle.language.base.FunctionalSourceSet;
@@ -205,10 +204,9 @@ public class NdkConfiguration {
         FunctionalSourceSet sourceSet = projectSourceSet.findByName(sourceSetName);
         if (sourceSet != null) {
             final LanguageSourceSet jni = sourceSet.getByName("jni");
-            binary.sources(new Action<PolymorphicDomainObjectContainer<LanguageSourceSet>>() {
+            binary.sources(new Action<ModelMap<LanguageSourceSet>>() {
                 @Override
-                public void execute(
-                        PolymorphicDomainObjectContainer<LanguageSourceSet> languageSourceSets) {
+                public void execute(ModelMap<LanguageSourceSet> languageSourceSets) {
                     // Hardcode the acceptable extension until we find a suitable DSL for user to
                     // modify.
                     languageSourceSets.create(
