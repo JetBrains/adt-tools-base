@@ -63,19 +63,19 @@ public class ResourceUsageAnalyzerTest extends TestCase {
         File dir = Files.createTempDir();
 
         File mapping;
-        File classesJar;
+        File classes;
         if (useProguard) {
-            classesJar = createProguardedClasses(dir);
+            classes = createProguardedClasses(dir);
             mapping = createMappingFile(dir);
         } else {
-            classesJar = createUnproguardedClasses(dir);
+            classes = createUnproguardedClasses(dir);
             mapping = null;
         }
         File rDir = createResourceClassFolder(dir);
         File mergedManifest = createMergedManifest(dir);
         File resources = createResourceFolder(dir);
 
-        ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(rDir, classesJar,
+        ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(rDir, classes,
             mergedManifest, mapping, resources);
         analyzer.analyze();
         checkState(analyzer);

@@ -23,6 +23,7 @@ import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_TYPE;
 import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.DOT_GIF;
+import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.DOT_JPEG;
 import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
@@ -212,7 +213,7 @@ public class ResourceUsageAnalyzer {
 
     private final File mResourceClassDir;
     private final File mProguardMapping;
-    private final File mClassesJar;
+    private final File mClasses;
     private final File mMergedManifest;
     private final File mMergedResourceDir;
 
@@ -245,13 +246,13 @@ public class ResourceUsageAnalyzer {
 
     public ResourceUsageAnalyzer(
             @NonNull File rDir,
-            @NonNull File classesJar,
+            @NonNull File classes,
             @NonNull File manifest,
             @Nullable File mapping,
             @NonNull File resources) {
         mResourceClassDir = rDir;
         mProguardMapping = mapping;
-        mClassesJar = classesJar;
+        mClasses = classes;
         mMergedManifest = manifest;
         mMergedResourceDir = resources;
     }
@@ -259,7 +260,7 @@ public class ResourceUsageAnalyzer {
     public void analyze() throws IOException, ParserConfigurationException, SAXException {
         gatherResourceValues(mResourceClassDir);
         recordMapping(mProguardMapping);
-        recordUsages(mClassesJar);
+        recordUsages(mClasses);
         recordManifestUsages(mMergedManifest);
         recordResources(mMergedResourceDir);
         keepPossiblyReferencedResources();
@@ -2104,40 +2105,54 @@ public class ResourceUsageAnalyzer {
         }
     }
 
-    private void recordUsages(File jarFile) throws IOException {
-        if (!jarFile.exists()) {
-            return;
-        }
-        ZipInputStream zis = null;
-        try {
-            FileInputStream fis = new FileInputStream(jarFile);
-            try {
-                zis = new ZipInputStream(fis);
-                ZipEntry entry = zis.getNextEntry();
-                while (entry != null) {
-                    String name = entry.getName();
-                    if (name.endsWith(DOT_CLASS) &&
-                            // Skip resource type classes like R$drawable; they will
-                            // reference the integer id's we're looking for, but these aren't
-                            // actual usages we need to track; if somebody references the
-                            // field elsewhere, we'll catch that
-                            !isResourceClass(name)) {
-                        byte[] bytes = ByteStreams.toByteArray(zis);
-                        if (bytes != null) {
-                            ClassReader classReader = new ClassReader(bytes);
-                            classReader.accept(new UsageVisitor(jarFile, name),
-                                    SKIP_DEBUG | SKIP_FRAMES);
-                        }
-                    }
-
-                    entry = zis.getNextEntry();
+    private void recordUsages(File file) throws IOException {
+        if (file.isDirectory()) {
+            File[] children = file.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    recordUsages(child);
                 }
-            } finally {
-                Closeables.close(fis, true);
             }
-        } finally {
-            Closeables.close(zis, true);
+        } else if (file.isFile()) {
+            if (file.getPath().endsWith(DOT_CLASS)) {
+                byte[] bytes = Files.toByteArray(file);
+                recordUsages(file, file.getName(), bytes);
+            } else if (file.getPath().endsWith(DOT_JAR)) {
+                ZipInputStream zis = null;
+                try {
+                    FileInputStream fis = new FileInputStream(file);
+                    try {
+                        zis = new ZipInputStream(fis);
+                        ZipEntry entry = zis.getNextEntry();
+                        while (entry != null) {
+                            String name = entry.getName();
+                            if (name.endsWith(DOT_CLASS) &&
+                                    // Skip resource type classes like R$drawable; they will
+                                    // reference the integer id's we're looking for, but these aren't
+                                    // actual usages we need to track; if somebody references the
+                                    // field elsewhere, we'll catch that
+                                    !isResourceClass(name)) {
+                                byte[] bytes = ByteStreams.toByteArray(zis);
+                                if (bytes != null) {
+                                    recordUsages(file, name, bytes);
+                                }
+                            }
+
+                            entry = zis.getNextEntry();
+                        }
+                    } finally {
+                        Closeables.close(fis, true);
+                    }
+                } finally {
+                    Closeables.close(zis, true);
+                }
+            }
         }
+    }
+
+    private void recordUsages(File file, String name, byte[] bytes) {
+        ClassReader classReader = new ClassReader(bytes);
+        classReader.accept(new UsageVisitor(file, name), SKIP_DEBUG | SKIP_FRAMES);
     }
 
     /** Returns whether the given class path points to an aapt-generated compiled R class */
