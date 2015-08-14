@@ -35,7 +35,7 @@ public class SdkVersionInfo {
     /**
      * Like {@link #HIGHEST_KNOWN_API} but does not include preview platforms
      */
-    public static final int HIGHEST_KNOWN_STABLE_API = 22;
+    public static final int HIGHEST_KNOWN_STABLE_API = 23;
 
    /**
     * The lowest active API level in the ecosystem. This number will change over time
@@ -90,7 +90,7 @@ public class SdkVersionInfo {
             case 20: return "4.4";
             case 21: return "5.0";
             case 22: return "5.1";
-            case 23: return "5.X";
+            case 23: return "6.0";
             // If you add more versions here, also update #getBuildCodes and
             // #HIGHEST_KNOWN_API
 
@@ -136,7 +136,7 @@ public class SdkVersionInfo {
             case 22:
                 return "Lollipop";
             case 23:
-                return "MNC";
+                return "Marshmallow";
 
             // If you add more versions here, also update #getBuildCodes and
             // #HIGHEST_KNOWN_API
@@ -180,7 +180,7 @@ public class SdkVersionInfo {
             case 20: return "KITKAT_WATCH"; //$NON-NLS-1$
             case 21: return "LOLLIPOP"; //$NON-NLS-1$
             case 22: return "LOLLIPOP_MR1"; //$NON-NLS-1$
-            case 23: return "MNC"; //$NON-NLS-1$
+            case 23: return "MARSHMALLOW"; //$NON-NLS-1$
             // If you add more versions here, also update #getAndroidName and
             // #HIGHEST_KNOWN_API
         }
