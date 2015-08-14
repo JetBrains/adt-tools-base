@@ -17,6 +17,9 @@
 package com.android.resources;
 
 
+import java.util.EnumSet;
+import java.util.Set;
+
 /**
  * Density enum.
  * <p/>This is used in the manifest in the uses-configuration node and in the resource folder names
@@ -131,6 +134,23 @@ public enum Density implements ResourceEnum {
             return values[index];
         }
         return null;
+    }
+
+    /**
+     * Returns all densities which are recommended and valid for a device.
+     *
+     * @see #isRecommended()
+     * @see #isValidValueForDevice()
+     */
+    public static Set<Density> getRecommendedValuesForDevice() {
+        EnumSet<Density> result = EnumSet.allOf(Density.class);
+        for (Density value : values()) {
+            if (!value.isRecommended() || !value.isValidValueForDevice()) {
+                result.remove(value);
+            }
+        }
+
+        return result;
     }
 
     /**

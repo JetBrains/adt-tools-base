@@ -53,6 +53,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     private Boolean mTestHandleProfiling = null;
     private Boolean mTestFunctionalTest = null;
     private Set<String> mResourceConfigurations = null;
+    private Set<String> mGeneratedDensities = null;
 
 
     @NonNull
@@ -91,6 +92,8 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
 
         clonedFlavor.mTestInstrumentationRunnerArguments = Maps.newHashMap(
                 productFlavor.getTestInstrumentationRunnerArguments());
+
+        clonedFlavor.mGeneratedDensities = productFlavor.getGeneratedDensities();
 
         return clonedFlavor;
     }
@@ -197,6 +200,12 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     @Override
     public SigningConfig getSigningConfig() {
         return null;
+    }
+
+    @Nullable
+    @Override
+    public Set<String> getGeneratedDensities() {
+        return mGeneratedDensities;
     }
 
     @Nullable

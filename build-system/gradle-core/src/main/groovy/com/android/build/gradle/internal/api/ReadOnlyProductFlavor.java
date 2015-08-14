@@ -21,11 +21,13 @@ import com.android.annotations.Nullable;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
+import com.google.common.collect.ImmutableSet;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * read-only version of the ProductFlavor wrapping another ProductFlavor.
@@ -150,6 +152,14 @@ public class ReadOnlyProductFlavor extends ReadOnlyBaseConfig implements Product
     @Override
     public SigningConfig getSigningConfig() {
         return readOnlyObjectProvider.getSigningConfig(productFlavor.getSigningConfig());
+    }
+
+    @Nullable
+    @Override
+    public Set<String> getGeneratedDensities() {
+        return productFlavor.getGeneratedDensities() == null
+                ? null
+                : ImmutableSet.copyOf(productFlavor.getGeneratedDensities());
     }
 
     @Nullable

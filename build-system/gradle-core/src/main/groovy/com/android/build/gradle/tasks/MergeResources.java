@@ -38,6 +38,7 @@ import com.android.ide.common.res2.MergingException;
 import com.android.ide.common.res2.ResourceMerger;
 import com.android.ide.common.res2.ResourcePreprocessor;
 import com.android.ide.common.res2.ResourceSet;
+import com.android.resources.Density;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.FileUtils;
@@ -52,6 +53,8 @@ import org.gradle.api.tasks.ParallelizableTask;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -74,6 +77,8 @@ public class MergeResources extends IncrementalTask {
      */
     private File outputDir;
 
+    private File generatedPngsOutputDir;
+
     // ----- PRIVATE TASK API -----
 
     /**
@@ -91,12 +96,12 @@ public class MergeResources extends IncrementalTask {
 
     private boolean normalizeResources;
 
-    private ResourcePreprocessor preprocessor;
-
     // actual inputs
     private List<ResourceSet> inputResourceSets;
 
     private final FileValidity<ResourceSet> fileValidity = new FileValidity<ResourceSet>();
+
+    private Collection<String> generatedDensities;
 
     // fake input to detect changes. Not actually used by the task
     @InputFiles
@@ -132,11 +137,13 @@ public class MergeResources extends IncrementalTask {
             clearIncrementalMarker();
         }
 
+        ResourcePreprocessor preprocessor = getPreprocessor();
+
         // this is full run, clean the previous output
         File destinationDir = getOutputDir();
         FileUtils.emptyFolder(destinationDir);
 
-        List<ResourceSet> resourceSets = getConfiguredResourceSets();
+        List<ResourceSet> resourceSets = getConfiguredResourceSets(preprocessor);
 
         // create a new merger and populate it with the sets.
         ResourceMerger merger = new ResourceMerger();
@@ -170,6 +177,8 @@ public class MergeResources extends IncrementalTask {
             setIncrementalMarker();
         }
 
+        ResourcePreprocessor preprocessor = getPreprocessor();
+
         // create a merger and load the known state.
         ResourceMerger merger = new ResourceMerger();
         try {
@@ -183,7 +192,7 @@ public class MergeResources extends IncrementalTask {
                 resourceSet.setPreprocessor(preprocessor);
             }
 
-            List<ResourceSet> resourceSets = getConfiguredResourceSets();
+            List<ResourceSet> resourceSets = getConfiguredResourceSets(preprocessor);
 
             // compare the known state to the current sets to detect incompatibility.
             // This is in case there's a change that's too hard to do incrementally. In this case
@@ -234,7 +243,19 @@ public class MergeResources extends IncrementalTask {
     }
 
     @NonNull
-    private List<ResourceSet> getConfiguredResourceSets() {
+    private ResourcePreprocessor getPreprocessor() {
+        // Only one pre-processor for now. The code will need slight changes when we add more.
+
+        Collection<Density> densities = Lists.newArrayList();
+        for (String density : getGeneratedDensities()) {
+            densities.add(Density.getEnum(density));
+        }
+
+        return new VectorDrawableRenderer(getGeneratedPngsOutputDir(), densities, getILogger());
+    }
+
+    @NonNull
+    private List<ResourceSet> getConfiguredResourceSets(ResourcePreprocessor preprocessor) {
         List<ResourceSet> resourceSets = Lists.newArrayList(getInputResourceSets());
         List<ResourceSet> generatedSets = Lists.newArrayListWithCapacity(resourceSets.size());
 
@@ -340,20 +361,28 @@ public class MergeResources extends IncrementalTask {
         this.insertSourceMarkers = insertSourceMarkers;
     }
 
+    public File getGeneratedPngsOutputDir() {
+        return generatedPngsOutputDir;
+    }
+
+    public Collection<String> getGeneratedDensities() {
+        return generatedDensities;
+    }
+
     public static class ConfigAction implements TaskConfigAction<MergeResources> {
 
         @NonNull
-        private VariantScope scope;
+        private final VariantScope scope;
 
         @NonNull
-        private String taskNamePrefix;
+        private final String taskNamePrefix;
 
         @Nullable
-        private File outputLocation;
+        private final File outputLocation;
 
-        private boolean includeDependencies;
+        private final boolean includeDependencies;
 
-        private boolean process9Patch;
+        private final boolean process9Patch;
 
         public ConfigAction(
                 @NonNull VariantScope scope,
@@ -366,8 +395,6 @@ public class MergeResources extends IncrementalTask {
             this.outputLocation = outputLocation;
             this.includeDependencies = includeDependencies;
             this.process9Patch = process9Patch;
-
-            scope.setMergeResourceOutputDir(outputLocation);
         }
 
         @Override
@@ -400,11 +427,13 @@ public class MergeResources extends IncrementalTask {
                     extension.getBuildToolsRevision()
                             .compareTo(NORMALIZE_RESOURCES_BUILD_TOOLS) < 0;
 
-            // Only one pre-processor for now. The code will need slight changes when we add more.
-            mergeResourcesTask.preprocessor = new VectorDrawableRenderer(
-                    scope.getGeneratedPngsOutputDir(),
-                    extension.getPreprocessingOptions().getTypedDensities(),
-                    mergeResourcesTask.getILogger());
+            mergeResourcesTask.generatedDensities =
+                    variantData.getVariantConfiguration().getMergedFlavor().getGeneratedDensities();
+
+            if (mergeResourcesTask.generatedDensities == null) {
+                mergeResourcesTask.generatedDensities = Collections.emptySet();
+            }
+
 
             ConventionMappingHelper.map(mergeResourcesTask, "useNewCruncher",
                     new Callable<Boolean>() {
@@ -436,13 +465,13 @@ public class MergeResources extends IncrementalTask {
                                     .getResourceSets(generatedResFolders, includeDependencies);
                         }
                     });
-            ConventionMappingHelper.map(mergeResourcesTask, "outputDir", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return outputLocation != null ? outputLocation
+
+            mergeResourcesTask.outputDir =
+                    outputLocation != null
+                            ? outputLocation
                             : scope.getDefaultMergeResourcesOutputDir();
-                }
-            });
+
+            mergeResourcesTask.generatedPngsOutputDir = scope.getGeneratedPngsOutputDir();
 
             variantData.mergeResourcesTask = mergeResourcesTask;
         }

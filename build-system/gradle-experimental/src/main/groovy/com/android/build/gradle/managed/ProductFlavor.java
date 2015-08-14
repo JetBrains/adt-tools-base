@@ -282,4 +282,9 @@ public interface ProductFlavor extends Named, DimensionAware {
     void setUseJack(Boolean useJack);
 
     NdkOptions getNdk();
+
+    @Unmanaged
+    @Nullable
+    Set<String> getGeneratedDensities();
+    void setGeneratedDensities(@Nullable Set<String> densities);
 }

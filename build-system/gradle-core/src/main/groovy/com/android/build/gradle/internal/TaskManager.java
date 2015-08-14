@@ -500,6 +500,7 @@ public abstract class TaskManager {
         scope.setMergeResourcesTask(mergeResourcesTask);
         scope.setResourceOutputDir(
                 Objects.firstNonNull(outputLocation, scope.getDefaultMergeResourcesOutputDir()));
+        scope.setMergeResourceOutputDir(outputLocation);
         return scope.getMergeResourcesTask();
     }
 

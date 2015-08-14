@@ -37,7 +37,6 @@ import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.dsl.PreprocessingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
 import com.android.build.gradle.managed.BuildType;
@@ -49,7 +48,6 @@ import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
-import com.android.ide.common.rendering.api.ActionBarCallback;
 import com.android.sdklib.repository.FullRevision;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -66,8 +64,6 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-
-import groovy.lang.Closure;
 
 /**
  * An adaptor to convert a managed.AndroidConfig to an model.AndroidConfig.
@@ -152,11 +148,6 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
     @Override
     public boolean getGeneratePureSplits() {
         return model.getGeneratePureSplits();
-    }
-
-    @Override
-    public PreprocessingOptions getPreprocessingOptions() {
-        return model.getPreProcessingOptions();
     }
 
     @Override

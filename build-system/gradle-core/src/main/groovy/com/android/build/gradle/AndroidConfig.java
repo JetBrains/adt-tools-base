@@ -28,7 +28,6 @@ import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.dsl.PreprocessingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
 import com.android.builder.core.LibraryRequest;
@@ -77,9 +76,6 @@ public interface AndroidConfig {
 
     /** Whether to generate pure splits or multi apk */
     boolean getGeneratePureSplits();
-
-    /** Preprocessing Options */
-    PreprocessingOptions getPreprocessingOptions();
 
     @Deprecated
     boolean getEnforceUniquePackageName();
