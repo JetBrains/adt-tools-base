@@ -36,6 +36,18 @@ public class Dynamic implements BinaryObject  {
     Namespace.register(type.getTypeID(), new Klass(type));
   }
 
+  public int getFieldCount() {
+    return mFields.length;
+  }
+
+  public Field getFieldInfo(int index) {
+    return mKlass.mType.getFields()[index];
+  }
+
+  public Object getFieldValue(int index) {
+    return mFields[index];
+  }
+
   @NotNull
   @Override
   public Klass klass() {
