@@ -53,11 +53,21 @@ public class MockableAndroidJarTask extends DefaultTask {
 
     @TaskAction
     public void createMockableJar() throws IOException {
+        File outputFile = getOutputFile();
+        if (outputFile.exists()) {
+            // Modules share the mockable jar, all the "inputs" are reflected in the filename,
+            // e.g. mockable-android-22.default-values.jar. If we ever change the generator logic,
+            // it will be reflected in the name as well.
+            //
+            // This is not how Gradle understands tasks with overlapping outputs - it will run
+            // all instances of this task, because the output was not created by this instance. We
+            // need to return here manually because of that behavior.
+            return;
+        }
         MockableJarGenerator generator = new MockableJarGenerator(getReturnDefaultValues());
-        getOutputFile().delete();
-        getLogger().info(String.format("Creating %s from $s.", getOutputFile().getAbsolutePath(),
+        getLogger().info(String.format("Creating %s from %s.", outputFile.getAbsolutePath(),
                 getAndroidJar().getAbsolutePath()));
-        generator.createMockableJar(getAndroidJar(), getOutputFile());
+        generator.createMockableJar(getAndroidJar(), outputFile);
     }
 
     @Input
