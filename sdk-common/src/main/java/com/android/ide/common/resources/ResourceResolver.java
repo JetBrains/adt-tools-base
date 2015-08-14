@@ -853,7 +853,7 @@ public class ResourceResolver extends RenderResources {
 
         @Override
         public ResourceValue findResValue(String reference, boolean forceFrameworkOnly) {
-            if (!mLookupChain.isEmpty() && reference.startsWith(PREFIX_RESOURCE_REF)) {
+            if (!mLookupChain.isEmpty() && reference != null && reference.startsWith(PREFIX_RESOURCE_REF)) {
                 ResourceValue prev = mLookupChain.get(mLookupChain.size() - 1);
                 if (!reference.equals(prev.getValue())) {
                     ResourceValue next = new ResourceValue(prev.getResourceType(), prev.getName(),
