@@ -51,8 +51,7 @@ public final class Array extends Type {
 
     @Override
     public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
-        // TODO: Customise renderer
-        component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+        renderArray(value, mValueType, component);
     }
 
     //<<<Start:Java.ClassBody:1>>>

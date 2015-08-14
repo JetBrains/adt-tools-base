@@ -31,6 +31,7 @@ import com.android.tools.rpclib.binary.Namespace;
 import java.io.IOException;
 
 public final class Slice extends Type {
+
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
         assert(value instanceof Object[]);
@@ -53,8 +54,7 @@ public final class Slice extends Type {
 
     @Override
     public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
-        // TODO: Customise renderer
-        component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+        renderArray(value, mValueType, component);
     }
 
     //<<<Start:Java.ClassBody:1>>>

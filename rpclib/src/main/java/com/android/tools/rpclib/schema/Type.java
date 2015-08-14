@@ -43,4 +43,22 @@ public abstract class Type implements BinaryObject {
   public abstract Object decodeValue(@NotNull Decoder d) throws IOException;
 
   public abstract void render(@NotNull Object value, @NotNull SimpleColoredComponent component);
+
+  private static final int MAX_DISPLAY = 3;
+
+  public static void renderArray(@NotNull Object value, @NotNull Type valueType, @NotNull SimpleColoredComponent component) {
+    assert (value instanceof Object[]);
+    Object[] array = (Object[])value;
+    int count = Math.min(array.length, MAX_DISPLAY);
+    component.append("[", SimpleTextAttributes.GRAY_ATTRIBUTES);
+    for (int index = 0; index < count; ++index) {
+      if (index > 0) {
+        component.append(",", SimpleTextAttributes.GRAY_ATTRIBUTES);
+      }
+      valueType.render(array[index], component);
+    }
+    if (count < array.length) {
+      component.append("...", SimpleTextAttributes.GRAY_ATTRIBUTES);
+    }
+  }
 }
