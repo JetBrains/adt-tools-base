@@ -639,6 +639,8 @@ public interface IDevice extends IShellEnabledDevice {
 
     /**
      * Returns the API level of the device.
+     *
+     * @return the API level of the device, or -1 if it cannot be determined ().
      */
     int getApiLevel();
 }

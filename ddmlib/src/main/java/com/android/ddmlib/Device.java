@@ -401,17 +401,12 @@ final class Device implements IDevice {
             return mApiLevel;
         }
 
-        String buildApi = getProperty(PROP_BUILD_API_LEVEL);
-        if (buildApi == null) {
-            throw new IllegalStateException("Unexpected error: Device does not have a build API level.");
-        }
-
         try {
-            mApiLevel = Integer.parseInt(buildApi);
+            String buildApi = getProperty(PROP_BUILD_API_LEVEL);
+            mApiLevel = buildApi == null ? -1 : Integer.parseInt(buildApi);
             return mApiLevel;
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalStateException("Unexpected error: Build API level '" + buildApi + "' is not an integer: ");
+        } catch (Exception e) {
+            return -1;
         }
     }
 
@@ -906,6 +901,7 @@ final class Device implements IDevice {
             String... extraArgs) throws InstallException {
 
         assert(!apkFilePaths.isEmpty());
+
         if (getApiLevel() < 21) {
             Log.w("Internal error : installPackages invoked with device < 21 for %s",
                     Joiner.on(",").join(apkFilePaths));
