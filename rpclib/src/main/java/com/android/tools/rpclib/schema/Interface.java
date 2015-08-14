@@ -44,8 +44,8 @@ public final class Interface extends Type {
 
     @Override
     public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
-        // TODO: Customise renderer
-        component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+        component.append("$", SimpleTextAttributes.GRAY_ATTRIBUTES);
+        renderObject(value, component);
     }
 
 
