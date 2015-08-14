@@ -17,6 +17,7 @@
  */
 package com.android.tools.rpclib.schema;
 
+import com.intellij.util.containers.HashMap;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
@@ -29,6 +30,16 @@ import com.android.tools.rpclib.binary.Namespace;
 import java.io.IOException;
 
 public final class ConstantSet implements BinaryObject {
+    private static final HashMap<Type, ConstantSet> mRegistry = new HashMap<Type, ConstantSet>();
+
+    public static void register(ConstantSet set) {
+        mRegistry.put(set.getType(), set);
+    }
+
+    public static ConstantSet lookup(Type type) {
+        return mRegistry.get(type);
+    }
+
     //<<<Start:Java.ClassBody:1>>>
     Type mType;
     Constant[] mEntries;
