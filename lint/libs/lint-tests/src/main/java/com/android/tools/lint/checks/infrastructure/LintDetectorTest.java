@@ -56,6 +56,7 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
@@ -77,10 +78,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -481,7 +479,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
             }
 
             // Use plain ascii in the test golden files for now. (This also ensures
-            // that the markup is wellformed, e.g. if we have a ` without a matching
+            // that the markup is well-formed, e.g. if we have a ` without a matching
             // closing `, the ` would show up in the plain text.)
             message = format.convertTo(message, TextFormat.TEXT);
 
@@ -824,6 +822,11 @@ public abstract class LintDetectorTest extends SdkTestCase {
                     File lint = new File(dir, "lint");  //$NON-NLS-1$
                     if (lint.exists() && new File(lint, "cli").exists()) { //$NON-NLS-1$
                         return dir.getParentFile().getParentFile();
+                    }
+
+                    File tools = new File(dir, "tools");
+                    if (tools.exists() && FileUtils.join(tools, "base", "lint", "cli").exists()) {
+                        return dir;
                     }
                     dir = dir.getParentFile();
                 }
