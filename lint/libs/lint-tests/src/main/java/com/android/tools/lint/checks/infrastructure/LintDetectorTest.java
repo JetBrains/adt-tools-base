@@ -339,7 +339,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
     @Override
     protected InputStream getTestResource(String relativePath, boolean expectExists) {
         String path = "data" + File.separator + relativePath; //$NON-NLS-1$
-        InputStream stream = LintDetectorTest.class.getResourceAsStream(path);
+        InputStream stream = getClass().getResourceAsStream(path);
         if (!expectExists && stream == null) {
             return null;
         }
