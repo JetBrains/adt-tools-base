@@ -18,17 +18,24 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Joiner;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 public class IncrementalVisitor extends ClassVisitor {
+
+    protected static boolean TRACING_ENABLED = Boolean.getBoolean("FDR_TRACING");
 
     protected String visitedClassName;
     protected String visitedSuperName;
@@ -82,5 +89,36 @@ public class IncrementalVisitor extends ClassVisitor {
             }
         }
         return null;
+    }
+
+    protected void trace(GeneratorAdapter mv, String s) {
+        mv.push(s);
+        mv.invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+                Method.getMethod("void trace(String)"));
+    }
+
+    protected void trace(GeneratorAdapter mv, String s1, String s2) {
+        mv.push(s1);
+        mv.push(s2);
+        mv.invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+                Method.getMethod("void trace(String, String)"));
+    }
+
+    protected void trace(GeneratorAdapter mv, String s1, String s2, String s3) {
+        mv.push(s1);
+        mv.push(s2);
+        mv.push(s3);
+        mv.invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+                Method.getMethod("void trace(String, String, String)"));
+    }
+
+    protected void trace(GeneratorAdapter mv, int argsNumber) {
+        StringBuilder methodSignture = new StringBuilder("void trace(String");
+        for (int i=0 ; i < argsNumber-1; i++) {
+            methodSignture.append(", String");
+        }
+        methodSignture.append(")");
+        mv.invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+                Method.getMethod(methodSignture.toString()));
     }
 }

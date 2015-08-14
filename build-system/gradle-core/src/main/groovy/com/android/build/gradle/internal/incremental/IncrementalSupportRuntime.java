@@ -112,4 +112,12 @@ public class IncrementalSupportRuntime {
     public static void trace(String s) {
         System.out.println("Redirectirng " + s);
     }
+
+    public static void trace(String s1, String s2) {
+        System.out.println(s1 + s2);
+    }
+
+    public static void trace(String s1, String s2, String s3) {
+        System.out.println(s1 + s2 + s3);
+    }
 }

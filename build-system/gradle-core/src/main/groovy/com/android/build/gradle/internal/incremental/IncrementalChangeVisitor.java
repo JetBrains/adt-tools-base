@@ -367,9 +367,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
 
-        mv.loadArg(0);
-        mv.invokeStatic(Type.getType(IncrementalSupportRuntime.class),
-                Method.getMethod("void trace(String)"));
+        if (TRACING_ENABLED) {
+            mv.push("Redirecting ");
+            mv.loadArg(0);
+            trace(mv, 2);
+        }
 
         List<MethodNode> methods = classNode.methods;
         List<MethodNode> constructors = new ArrayList<MethodNode>();
@@ -395,6 +397,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     ? methodNode.desc
                     : "(L" + visitedClassName + ";" + methodNode.desc.substring(1);
 
+            if (TRACING_ENABLED) {
+                trace(mv, "M: " + name + " P:" + newDesc);
+            }
             Type[] args = Type.getArgumentTypes(newDesc);
             int argc = 0;
             for (Type t : args) {

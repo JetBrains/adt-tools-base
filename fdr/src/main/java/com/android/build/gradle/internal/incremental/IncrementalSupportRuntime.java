@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import java.lang.System;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -110,6 +111,14 @@ public class IncrementalSupportRuntime {
     }
 
     public static void trace(String s) {
-        System.out.println("Redirecting " + s);
+        System.out.println(s);
+    }
+
+    public static void trace(String s1, String s2) {
+        System.out.println(s1 + s2);
+    }
+
+    public static void trace(String s1, String s2, String s3) {
+        System.out.println(s1 + s2 + s3);
     }
 }

@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import com.sun.org.apache.bcel.internal.generic.ALOAD;
+
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -268,9 +270,19 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             if (methodNode.name.equals("<init>") || methodNode.name.equals("<clinit>")) {
                 continue;
             }
+            if (TRACING_ENABLED) {
+                trace(mv, "testing super for ", methodNode.name);
+            }
             mv.visitVarInsn(Opcodes.ALOAD, 1);
             mv.visitLdcInsn(methodNode.name + "." + methodNode.desc);
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+            if (TRACING_ENABLED) {
+                mv.push(methodNode.name + "." + methodNode.desc);
+                mv.push("==");
+                mv.visitVarInsn(Opcodes.ALOAD, 1);
+                trace(mv, 3);
+            }
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals",
+                    "(Ljava/lang/Object;)Z", false);
             Label l0 = new Label();
             mv.visitJumpInsn(Opcodes.IFEQ, l0);
             mv.visitVarInsn(Opcodes.ALOAD, 0);
@@ -285,9 +297,13 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 argc++;
             }
 
+            if (TRACING_ENABLED) {
+                trace(mv, "super selected ", methodNode.name, methodNode.desc);
+            }
             // Call super on the other object, yup this works cos we are on the right place to call from.
             mv.visitMethodInsn(Opcodes.INVOKESPECIAL, visitedSuperName, methodNode.name,
                     methodNode.desc, false);
+
             Type ret = Type.getReturnType(methodNode.desc);
             if (ret.getSort() == Type.VOID) {
                 mv.visitInsn(Opcodes.ACONST_NULL);
@@ -299,8 +315,34 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         }
 
 
-        mv.visitInsn(Opcodes.ACONST_NULL);
-        mv.visitInsn(Opcodes.ARETURN);
+        // we could not find the method to invoke, prepare an exception to be thrown.
+        mv.newInstance(Type.getType(StringBuilder.class));
+        mv.dup();
+        mv.invokeConstructor(Type.getType(StringBuilder.class), Method.getMethod("void <init>()V"));
+
+        // create a meaningful message
+        mv.push("Method not found ");
+        mv.invokeVirtual(Type.getType(StringBuilder.class),
+                Method.getMethod("StringBuilder append (String)"));
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
+        mv.invokeVirtual(Type.getType(StringBuilder.class),
+                Method.getMethod("StringBuilder append (String)"));
+        mv.push("in " + visitedClassName + "$super implementation");
+        mv.invokeVirtual(Type.getType(StringBuilder.class),
+                Method.getMethod("StringBuilder append (String)"));
+
+        mv.invokeVirtual(Type.getType(StringBuilder.class),
+                Method.getMethod("String toString()"));
+
+        // create the exception with the message
+        mv.newInstance(Type.getType(InstantReloadException.class));
+        mv.dupX1();
+        mv.swap();
+        mv.invokeConstructor(Type.getType(InstantReloadException.class),
+                Method.getMethod("void <init> (String)"));
+        // and throw.
+        mv.throwException();
+
         mv.visitMaxs(0, 0);
         mv.visitEnd();
 

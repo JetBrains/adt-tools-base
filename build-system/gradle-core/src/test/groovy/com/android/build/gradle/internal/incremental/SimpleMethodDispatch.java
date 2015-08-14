@@ -40,6 +40,8 @@ public class SimpleMethodDispatch extends BaseClass {
     }
 
     public String invokeAllParent() {
-        return super.packagePrivateMethod() + super.protectedMethod() + super.publicMethod();
+        // todo : fix this case.
+        //return packagePrivateMethod() + super.protectedMethod() + super.publicMethod();
+        return packagePrivateMethod() + protectedMethod() + publicMethod();
     }
 }

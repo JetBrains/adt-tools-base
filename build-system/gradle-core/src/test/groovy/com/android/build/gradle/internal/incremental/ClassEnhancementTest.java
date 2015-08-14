@@ -46,6 +46,11 @@ import java.util.Map;
 
 public class ClassEnhancementTest {
 
+    @org.junit.BeforeClass
+    public static void setupClass() {
+        IncrementalVisitor.TRACING_ENABLED = true;
+    }
+
     @Test
     public void traceSimpleMethod() throws IOException {
         traceClass(getClass().getClassLoader(),
@@ -136,7 +141,7 @@ public class ClassEnhancementTest {
     }
 
     @Test
-    public void perpareForIncrementalSupportTest() throws Exception {
+    public void prepareForIncrementalSupportTest() throws Exception {
         ClassLoader cl = loadAndPatch(
                 "com.android.build.gradle.internal.incremental.BaseClass",
                 "com.android.build.gradle.internal.incremental.SimpleMethodDispatch");
