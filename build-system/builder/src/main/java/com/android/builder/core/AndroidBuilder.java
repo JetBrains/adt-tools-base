@@ -900,9 +900,7 @@ public class AndroidBuilder {
 
                 if (enforceUniquePackageName && symbols.size() > 1) {
                     String msg = String.format(
-                            "Error: more than one library with package name '%s'\n" +
-                            "You can temporarily disable this error with android.enforceUniquePackageName=false\n" +
-                            "However, this is temporary and will be enforced in 1.0", packageName);
+                            "Error: more than one library with package name '%s'", packageName);
                     throw new RuntimeException(msg);
                 }
 
