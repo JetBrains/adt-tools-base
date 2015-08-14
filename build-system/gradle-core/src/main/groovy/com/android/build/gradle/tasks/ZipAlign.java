@@ -118,7 +118,12 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
             ConventionMappingHelper.map(zipAlign, "inputFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return scope.getPackageApk();
+                    // wire to the output of the package task.
+                    PackageApplication packageApplicationTask = ((ApkVariantOutputData) scope
+                            .getVariantOutputData()).packageApplicationTask;
+                    return packageApplicationTask == null
+                            ? scope.getPackageApk()
+                            : packageApplicationTask.getOutputFile();
                 }
             });
             ConventionMappingHelper.map(zipAlign, "outputFile", new Callable<File>() {
