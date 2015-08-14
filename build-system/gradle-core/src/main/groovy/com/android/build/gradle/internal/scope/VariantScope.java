@@ -175,9 +175,6 @@ public interface VariantScope {
     File getBuildConfigSourceOutputDir();
 
     @NonNull
-    File getGeneratedResourcesDir(String name);
-
-    @NonNull
     File getGeneratedResOutputDir();
 
     @NonNull

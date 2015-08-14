@@ -48,7 +48,6 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.ParallelizableTask;
-import org.gradle.api.tasks.StopExecutionException;
 
 import java.io.File;
 import java.io.IOException;
@@ -153,7 +152,6 @@ public class MergeResources extends IncrementalTask {
 
             // No exception? Write the known state.
             merger.writeBlobTo(getIncrementalFolder(), writer);
-            throw new StopExecutionException("Stop for now.");
         } catch (MergingException e) {
             System.out.println(e.getMessage());
             merger.cleanBlob(getIncrementalFolder());

@@ -459,9 +459,8 @@ public class VariantScopeImpl implements VariantScope {
                 + variantData.getVariantConfiguration().getDirName());
     }
 
-    @Override
     @NonNull
-    public File getGeneratedResourcesDir(String name) {
+    private File getGeneratedResourcesDir(String name) {
         return FileUtils.join(
                 globalScope.getGeneratedDir(),
                 "res",

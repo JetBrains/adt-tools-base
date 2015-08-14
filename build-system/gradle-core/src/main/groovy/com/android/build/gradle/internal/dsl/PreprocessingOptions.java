@@ -29,32 +29,14 @@ import java.util.Set;
  */
 public class PreprocessingOptions {
     private EnumSet<Density> densities;
-    private boolean enabled;
 
     public PreprocessingOptions() {
-        this.enabled = true;
-
-        // TODO: What are the right default values?
-        this.densities = EnumSet.of(
-                Density.MEDIUM,
-                Density.HIGH,
-                Density.XHIGH,
-                Density.XXHIGH);
-    }
-
-    /**
-     * Whether to enable resources pre-processing. This is disabled by default.
-     *
-     * <p>If resources pre-processing is enabled, the build process will create two copies of the
-     * resource tree: one with a merged view of resources for a given variant and one with the
-     * preprocessed files, ready to be packaged. This may slow down your clean builds.
-     */
-    public boolean getEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
+        this.densities = EnumSet.noneOf(Density.class);
+        for (Density density : Density.values()) {
+            if (density.isRecommended()) {
+                this.densities.add(density);
+            }
+        }
     }
 
     /**
