@@ -25,6 +25,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
+import com.android.build.gradle.internal.coverage.JacocoReportTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.MergeJavaResourcesTask;
@@ -136,6 +137,12 @@ public class VariantScopeImpl implements VariantScope {
     // empty anchor compile task to set all compilations tasks as dependents.
     private AndroidTask<Task> compileTask;
     private AndroidTask<JacocoInstrumentTask> jacocoInstrumentTask;
+
+    /**
+     * This is an instance of {@link JacocoReportTask} in android test variants, an umbrella
+     * {@link Task} in app and lib variants and null in unit test variants.
+     */
+    private AndroidTask<?> coverageReportTask;
 
     private FileSupplier mappingFileProviderTask;
     private AndroidTask<BinaryFileProviderTask> binayFileProviderTask;
@@ -898,5 +905,15 @@ public class VariantScopeImpl implements VariantScope {
     public void setObfuscationTask(
             AndroidTask<? extends Task> obfuscationTask) {
         this.obfuscationTask = obfuscationTask;
+    }
+
+    @Override
+    public AndroidTask<?> getCoverageReportTask() {
+        return coverageReportTask;
+    }
+
+    @Override
+    public void setCoverageReportTask(AndroidTask<?> coverageReportTask) {
+        this.coverageReportTask = coverageReportTask;
     }
 }

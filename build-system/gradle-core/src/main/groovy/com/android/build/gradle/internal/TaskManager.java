@@ -1457,52 +1457,77 @@ public abstract class TaskManager {
 
         if (baseVariantData.getVariantConfiguration().getBuildType().isTestCoverageEnabled()
                 && !baseVariantData.getVariantConfiguration().getUseJack()) {
-            final JacocoReportTask reportTask = project.getTasks().create(
+            final AndroidTask<JacocoReportTask> reportTask = androidTasks.create(
+                    tasks,
                     variantScope.getTaskName("create", "CoverageReport"),
-                    JacocoReportTask.class);
-            reportTask.setReportName(baseVariantData.getVariantConfiguration().getFullName());
-            ConventionMappingHelper.map(reportTask, "jacocoClasspath",
-                    new Callable<FileCollection>() {
+                    JacocoReportTask.class,
+                    new Action<JacocoReportTask>() {
                         @Override
-                        public FileCollection call() throws Exception {
-                            return project.getConfigurations().getAt(
-                                    JacocoPlugin.ANT_CONFIGURATION_NAME);
+                        public void execute(JacocoReportTask reportTask) {
+                            reportTask.setDescription("Creates JaCoCo test coverage report from "
+                                    + "data gathered on the device.");
+
+                            reportTask.setReportName(
+                                    baseVariantData.getVariantConfiguration().getFullName());
+
+                            ConventionMappingHelper.map(reportTask, "jacocoClasspath",
+                                    new Callable<FileCollection>() {
+                                        @Override
+                                        public FileCollection call() throws Exception {
+                                            return project.getConfigurations().getAt(
+                                                    JacocoPlugin.ANT_CONFIGURATION_NAME);
+                                        }
+                                    });
+                            ConventionMappingHelper
+                                    .map(reportTask, "coverageFile", new Callable<File>() {
+                                        @Override
+                                        public File call() {
+                                            return new File(
+                                                    ((TestVariantData) testVariantData.getScope()
+                                                            .getVariantData()).connectedTestTask
+                                                            .getCoverageDir(),
+                                                    SimpleTestCallable.FILE_COVERAGE_EC);
+                                        }
+                                    });
+                            ConventionMappingHelper
+                                    .map(reportTask, "classDir", new Callable<File>() {
+                                        @Override
+                                        public File call() {
+                                            return baseVariantData.javacTask.getDestinationDir();
+                                        }
+                                    });
+                            ConventionMappingHelper
+                                    .map(reportTask, "sourceDir", new Callable<List<File>>() {
+                                        @Override
+                                        public List<File> call() {
+                                            return baseVariantData
+                                                    .getJavaSourceFoldersForCoverage();
+                                        }
+                                    });
+
+                            ConventionMappingHelper
+                                    .map(reportTask, "reportDir", new Callable<File>() {
+                                        @Override
+                                        public File call() {
+                                            return new File(
+                                                    variantScope.getGlobalScope().getReportsDir(),
+                                                    "/coverage/" + baseVariantData
+                                                            .getVariantConfiguration()
+                                                            .getDirName());
+                                        }
+                                    });
+
+                            reportTask.dependsOn(connectedTask.getName());
                         }
                     });
-            ConventionMappingHelper.map(reportTask, "coverageFile", new Callable<File>() {
-                @Override
-                public File call() {
-                    return new File(((TestVariantData) testVariantData.getScope()
-                            .getVariantData()).connectedTestTask.getCoverageDir(),
-                            SimpleTestCallable.FILE_COVERAGE_EC);
-                }
-            });
-            ConventionMappingHelper.map(reportTask, "classDir", new Callable<File>() {
-                @Override
-                public File call() {
-                    return baseVariantData.javacTask.getDestinationDir();
-                }
-            });
-            ConventionMappingHelper.map(reportTask, "sourceDir", new Callable<List<File>>() {
-                @Override
-                public List<File> call() {
-                    return baseVariantData.getJavaSourceFoldersForCoverage();
-                }
-            });
 
-            ConventionMappingHelper.map(reportTask, "reportDir", new Callable<File>() {
-                @Override
-                public File call() {
-                    return new File(variantScope.getGlobalScope().getReportsDir(),
-                            "/coverage/" + baseVariantData.getVariantConfiguration().getDirName());
-                }
-            });
+            variantScope.setCoverageReportTask(reportTask);
+            baseVariantData.getScope().getCoverageReportTask().dependsOn(tasks, reportTask);
 
-            reportTask.dependsOn(connectedTask.getName());
             tasks.named(connectedRootName, new Action<Task>() {
                 @Override
                 public void execute(Task it) {
-                    it.dependsOn(reportTask);
+                    it.dependsOn(reportTask.getName());
                 }
             });
         }
@@ -2329,6 +2354,22 @@ public abstract class TaskManager {
                         variantData.assetGenTask = task;
                     }
                 }));
+
+        if (!variantData.getType().isForTesting()
+                && variantData.getVariantConfiguration().getBuildType().isTestCoverageEnabled()) {
+            scope.setCoverageReportTask(androidTasks.create(tasks,
+                    scope.getTaskName("create", "CoverageReport"),
+                    Task.class,
+                    new Action<Task>() {
+                        @Override
+                        public void execute(Task task) {
+                            task.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
+                            task.setDescription(String.format(
+                                    "Creates test coverage reports for the %s variant.",
+                                    variantData.getName()));
+                        }
+                    }));
+        }
 
         // and compile task
         createCompileAnchorTask(tasks, scope);
