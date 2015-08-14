@@ -31,13 +31,42 @@ import java.io.IOException;
 public final class Primitive extends Type {
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
-        // TODO: implement variant encode
+        switch (mMethod) {
+            case ID: e.id((BinaryID)value); break;
+            case Bool: e.bool((Boolean)value); break;
+            case Int8: e.int8((Byte)value); break;
+            case Uint8: e.uint8((Short)value); break;
+            case Int16: e.int16((Short)value); break;
+            case Uint16: e.uint16((Integer)value); break;
+            case Int32: e.int32((Integer)value); break;
+            case Uint32: e.uint32((Long)value); break;
+            case Int64: e.int64((Long)value); break;
+            case Uint64: e.uint64((Long)value); break;
+            case Float32: e.float32((Float)value); break;
+            case Float64: e.float64((Double)value); break;
+            case String: e.string((String)value); break;
+            default: throw new IOException("Invalid primitive method in encode");
+        }
     }
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        // TODO: implement variant decode
-        return null;
+        switch (mMethod) {
+            case ID: return d.id();
+            case Bool: return d.bool();
+            case Int8: return d.int8();
+            case Uint8: return d.uint8();
+            case Int16: return d.int16();
+            case Uint16: return d.uint16();
+            case Int32: return d.int32();
+            case Uint32: return d.uint32();
+            case Int64: return d.int64();
+            case Uint64: return d.uint64();
+            case Float32: return d.float32();
+            case Float64: return d.float64();
+            case String: return d.string();
+            default: throw new IOException("Invalid primitive method in decode");
+        }
     }
 
     //<<<Start:Java.ClassBody:1>>>

@@ -31,13 +31,19 @@ import java.io.IOException;
 public final class Struct extends Type {
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
-        // TODO: implement variant encode
+        assert(value instanceof BinaryObject);
+        e.value((BinaryObject)value);
     }
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        // TODO: implement variant decode
-        return null;
+        BinaryClass klass = Namespace.lookup(mID);
+        if (klass == null) {
+            throw new IOException("Unknown type id: " + mID);
+        }
+        BinaryObject obj = klass.create();
+        klass.decode(d, obj);
+        return obj;
     }
 
     //<<<Start:Java.ClassBody:1>>>

@@ -31,13 +31,13 @@ import java.io.IOException;
 public final class Pointer extends Type {
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
-        // TODO: implement variant encode
+        assert(value instanceof BinaryObject);
+        e.object((BinaryObject)value);
     }
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        // TODO: implement variant decode
-        return null;
+        return d.object();
     }
 
     //<<<Start:Java.ClassBody:1>>>
