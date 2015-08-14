@@ -1164,7 +1164,6 @@ public class ExternalAnnotationRepository {
     /** For test usage only */
     @VisibleForTesting
     static synchronized void set(ExternalAnnotationRepository singleton) {
-        assert singleton == null || sSingleton == null;
         sSingleton = singleton;
     }
 }

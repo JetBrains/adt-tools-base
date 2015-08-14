@@ -1050,6 +1050,7 @@ public class EcjParser extends JavaParser {
                 binding = findSuperMethodBinding(binding);
             }
 
+            all = ensureUnique(all);
             return all;
         }
 
@@ -1085,6 +1086,7 @@ public class EcjParser extends JavaParser {
                 binding = findSuperMethodBinding(binding);
             }
 
+            all = ensureUnique(all);
             return all;
         }
 
@@ -1132,6 +1134,42 @@ public class EcjParser extends JavaParser {
         public int hashCode() {
             return mBinding != null ? mBinding.hashCode() : 0;
         }
+    }
+
+    /**
+     * It is valid (and in fact encouraged by IntelliJ's inspections) to specify the same
+     * annotation on overriding methods and overriding parameters. However, we shouldn't
+     * return all these "duplicates" when you ask for the annotation on a given element.
+     * This method filters out duplicates.
+     */
+    @NonNull
+    private static List<ResolvedAnnotation> ensureUnique(@NonNull List<ResolvedAnnotation> list) {
+        if (list.size() < 2) {
+            return list;
+        }
+
+        // The natural way to deduplicate would be to create a Set of seen names, iterate
+        // through the list and look to see if the current annotation's name is already in the
+        // set (if so, remove this annotation from the list, else add it to the set of seen names)
+        // but this involves creating the set and all the Map entry objects; that's not
+        // necessary here since these lists are always very short 2-5 elements.
+        // Instead we'll just do an O(n^2) iteration comparing each subsequent element with each
+        // previous element and removing if matches, which is fine for these tiny lists.
+        int n = list.size();
+        for (int i = 1; i < n; i++) {
+            ResolvedAnnotation current = list.get(i);
+            String currentName = current.getName();
+            for (int j = 0; j < i; j++) {
+                ResolvedAnnotation earlier = list.get(j);
+                String earlierName = earlier.getName();
+                if (currentName.equals(earlierName)) {
+                    list.remove(i);
+                    n--;
+                }
+            }
+        }
+
+        return list;
     }
 
     private class EcjResolvedClass extends ResolvedClass {
@@ -1337,6 +1375,7 @@ public class EcjParser extends JavaParser {
                 }
             }
 
+            all = ensureUnique(all);
             return all;
         }
 
@@ -1529,6 +1568,7 @@ public class EcjParser extends JavaParser {
                 all.addAll(external);
             }
 
+            all = ensureUnique(all);
             return all;
         }
 
@@ -1726,21 +1766,23 @@ public class EcjParser extends JavaParser {
     }
 
     private class EcjResolvedAnnotation extends ResolvedAnnotation {
-        private AnnotationBinding mBinding;
+        private final AnnotationBinding mBinding;
+        private final String mName;
 
         private EcjResolvedAnnotation(@NonNull final AnnotationBinding binding) {
             mBinding = binding;
+            mName = new String(mBinding.getAnnotationType().readableName());
         }
 
         @NonNull
         @Override
         public String getName() {
-            return new String(mBinding.getAnnotationType().readableName());
+            return mName;
         }
 
         @Override
         public boolean matches(@NonNull String name) {
-            return sameChars(name, mBinding.getAnnotationType().readableName());
+            return name.equals(mName);
         }
 
         @NonNull
@@ -1843,7 +1885,7 @@ public class EcjParser extends JavaParser {
 
         @Override
         public String getSignature() {
-            return new String(mBinding.getAnnotationType().readableName());
+            return mName;
         }
 
         @Override
