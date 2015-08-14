@@ -32,7 +32,7 @@ import java.io.IOException;
 public final class Constant implements BinaryObject {
     //<<<Start:Java.ClassBody:1>>>
     String mName;
-    Box mValue;
+    Object mValue;
 
     // Constructs a default-initialized {@link Constant}.
     public Constant() {}
@@ -47,11 +47,11 @@ public final class Constant implements BinaryObject {
         return this;
     }
 
-    public Box getValue() {
+    public Object getValue() {
         return mValue;
     }
 
-    public Constant setValue(Box v) {
+    public Constant setValue(Object v) {
         mValue = v;
         return this;
     }
@@ -81,14 +81,14 @@ public final class Constant implements BinaryObject {
         public void encode(@NotNull Encoder e, BinaryObject obj) throws IOException {
             Constant o = (Constant)obj;
             e.string(o.mName);
-            e.variant(o.mValue);
+            e.variant(Box.wrap(o.mValue));
         }
 
         @Override
         public void decode(@NotNull Decoder d, BinaryObject obj) throws IOException {
             Constant o = (Constant)obj;
             o.mName = d.string();
-            o.mValue = (Box)d.variant();
+            o.mValue = ((Box)d.variant()).unwrap();
         }
         //<<<End:Java.KlassBody:2>>>
     }
