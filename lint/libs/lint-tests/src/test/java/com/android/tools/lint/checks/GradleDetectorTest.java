@@ -76,6 +76,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -83,8 +84,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * <b>NOTE</b>: Most GradleDetector unit tests are in the Studio plugin, as tests
- * for IntellijGradleDetector
+ * NOTE: Many of these tests are duplicated in the Android Studio plugin to
+ * test the custom GradleDetector subclass, IntellijGradleDetector, which
+ * customizes some behavior to be based on top of PSI rather than the Groovy parser.
  */
 public class GradleDetectorTest extends AbstractCheckTest {
 
@@ -526,7 +528,6 @@ public class GradleDetectorTest extends AbstractCheckTest {
                 lintProject("gradle/PreviewDependencies.gradle=>build.gradle"));
     }
 
-
     public void testDependenciesInVariables() throws Exception {
         mEnabled = Collections.singleton(DEPENDENCY);
         assertEquals(""
@@ -536,6 +537,37 @@ public class GradleDetectorTest extends AbstractCheckTest {
                     + "0 errors, 1 warnings\n",
 
                 lintProject("gradle/DependenciesVariable.gradle=>build.gradle"));
+    }
+
+    public void testPlayServiceConsistency() throws Exception {
+        // Requires custom model mocks
+        mEnabled = Collections.singleton(COMPATIBILITY);
+        assertEquals(""
+                + "build.gradle:4: Error: All com.google.android.gms libraries must use the "
+                + "exact same version specification (mixing versions can lead to runtime "
+                + "crashes). Found versions 7.5.0, 7.3.0. Examples include "
+                + "com.google.android.gms:play-services-wearable:7.5.0 and "
+                + "com.google.android.gms:play-services-location:7.3.0 [GradleCompatible]\n"
+                + "    compile 'com.google.android.gms:play-services-wearable:7.5.0'\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProjectIncrementally("build.gradle",
+                        "gradle/PlayServices2.gradle=>build.gradle"));
+    }
+
+    public void testPlayServiceConsistencyNonIncremental() throws Exception {
+        // Requires custom model mocks
+        mEnabled = Collections.singleton(COMPATIBILITY);
+        assertEquals(""
+                        + "build.gradle: Error: All com.google.android.gms libraries must use "
+                        + "the exact same version specification (mixing versions can lead to "
+                        + "runtime crashes). Found versions 7.5.0, 7.3.0. Examples include "
+                        + "com.google.android.gms:play-services-wearable:7.5.0 and "
+                        + "com.google.android.gms:play-services-location:7.3.0 [GradleCompatible]\n"
+                        + "1 errors, 0 warnings\n",
+
+                lintProject("gradle/PlayServices2.gradle=>build.gradle"));
     }
 
     @Override
@@ -638,11 +670,8 @@ public class GradleDetectorTest extends AbstractCheckTest {
             @NonNull
             @Override
             protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
-                if (!"testDependenciesInVariables".equals(getName())) {
-                    return super.createProject(dir, referenceDir);
-                }
-
-                return new Project(this, dir, referenceDir) {
+                if ("testDependenciesInVariables".equals(getName())) {
+                        return new Project(this, dir, referenceDir) {
                     @Override
                     public boolean isGradleProject() {
                         return true;
@@ -676,7 +705,64 @@ public class GradleDetectorTest extends AbstractCheckTest {
                         when(variant.getMainArtifact()).thenReturn(artifact);
                         return variant;
                     }
-                };
+                        };
+                }
+
+                if ("testPlayServiceConsistency".equals(getName())
+                        || "testPlayServiceConsistencyNonIncremental".equals(getName())) {
+                    return new Project(this, dir, referenceDir) {
+                        @Override
+                        public boolean isGradleProject() {
+                            return true;
+                        }
+
+                        @Nullable
+                        @Override
+                        public Variant getCurrentVariant() {
+                        /*
+                        Simulate variant which has an AndroidLibrary with
+                        resolved coordinates
+
+                        b//22709708
+                        com.google.android.gms:play-services-location:7.3.0
+                        com.google.android.gms:play-services-wearable:7.5.0
+                         */
+                            MavenCoordinates coordinates1 = mock(MavenCoordinates.class);
+                            when(coordinates1.getGroupId()).thenReturn("com.google.android.gms");
+                            when(coordinates1.getArtifactId()).thenReturn("play-services-location");
+                            when(coordinates1.getVersion()).thenReturn("7.3.0");
+                            when(coordinates1.toString()).thenReturn("com.google.android.gms:play-services-location:7.3.0");
+
+                            MavenCoordinates coordinates2 = mock(MavenCoordinates.class);
+                            when(coordinates2.getGroupId()).thenReturn("com.google.android.gms");
+                            when(coordinates2.getArtifactId()).thenReturn("play-services-wearable");
+                            when(coordinates2.getVersion()).thenReturn("7.5.0");
+                            when(coordinates2.toString()).thenReturn("com.google.android.gms:play-services-wearable:7.5.0");
+
+                            AndroidLibrary library1 = mock(AndroidLibrary.class);
+                            when(library1.getResolvedCoordinates()).thenReturn(coordinates1);
+                            when(library1.getLintJar()).thenReturn(new File("lint.jar"));
+
+                            AndroidLibrary library2 = mock(AndroidLibrary.class);
+                            when(library2.getResolvedCoordinates()).thenReturn(coordinates2);
+                            when(library2.getLintJar()).thenReturn(new File("lint.jar"));
+
+                            List<AndroidLibrary> libraries = Arrays.asList(library1, library2);
+
+                            Dependencies dependencies = mock(Dependencies.class);
+                            when(dependencies.getLibraries()).thenReturn(libraries);
+
+                            AndroidArtifact artifact = mock(AndroidArtifact.class);
+                            when(artifact.getDependencies()).thenReturn(dependencies);
+
+                            Variant variant = mock(Variant.class);
+                            when(variant.getMainArtifact()).thenReturn(artifact);
+                            return variant;
+                        }
+                    };
+                }
+
+                return super.createProject(dir, referenceDir);
             }
         };
     }

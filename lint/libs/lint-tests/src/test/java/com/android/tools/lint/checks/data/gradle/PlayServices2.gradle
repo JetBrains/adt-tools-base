@@ -1,0 +1,6 @@
+apply plugin: 'android'
+
+dependencies {
+    compile 'com.google.android.gms:play-services-wearable:7.5.0'
+    compile 'com.google.android.gms:play-services-location:7.3.0'
+}
