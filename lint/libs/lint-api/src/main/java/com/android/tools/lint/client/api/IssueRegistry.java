@@ -297,13 +297,14 @@ public abstract class IssueRegistry {
     public final Issue getIssue(@NonNull String id) {
         if (sIdToIssue == null) {
             List<Issue> issues = getIssues();
-            sIdToIssue = new HashMap<String, Issue>(issues.size());
+            Map<String, Issue> map = new HashMap<String, Issue>(issues.size());
             for (Issue issue : issues) {
-                sIdToIssue.put(issue.getId(), issue);
+                map.put(issue.getId(), issue);
             }
 
-            sIdToIssue.put(PARSER_ERROR.getId(), PARSER_ERROR);
-            sIdToIssue.put(LINT_ERROR.getId(), LINT_ERROR);
+            map.put(PARSER_ERROR.getId(), PARSER_ERROR);
+            map.put(LINT_ERROR.getId(), LINT_ERROR);
+            sIdToIssue = map;
         }
         return sIdToIssue.get(id);
     }
