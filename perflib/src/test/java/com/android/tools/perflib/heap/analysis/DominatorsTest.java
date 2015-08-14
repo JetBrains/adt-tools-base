@@ -22,6 +22,7 @@ import com.android.tools.perflib.heap.io.MemoryMappedFileBuffer;
 import junit.framework.TestCase;
 
 import java.io.File;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -210,7 +211,12 @@ public class DominatorsTest extends TestCase {
     }
 
     public void testSampleHprof() throws Exception {
-        File file = new File(ClassLoader.getSystemResource("dialer.android-hprof").getFile());
+        URL resource = ClassLoader.getSystemResource("dialer.android-hprof");
+
+        if (resource == null) {
+          resource = getClass().getResource("/dialer.android-hprof");
+        }
+        File file = new File(resource.getFile());
         mSnapshot = (new HprofParser(new MemoryMappedFileBuffer(file))).parse();
         mSnapshot.computeDominators();
 
