@@ -14,15 +14,24 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.tasks.fd
+package com.android.build.gradle.tasks.fd;
 
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.util.ASMifier
-import org.objectweb.asm.util.TraceClassVisitor
+import org.junit.Test;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.util.ASMifier;
+import org.objectweb.asm.util.TraceClassVisitor;
 
-class InjectBootstrapApplicationTaskTest extends GroovyTestCase {
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
+public class InjectBootstrapApplicationTaskTest {
+
+    @Test
     public void test() {
-        // TODO
+        // todo
     }
 
     private static String disassemble(File expected) throws IOException {
