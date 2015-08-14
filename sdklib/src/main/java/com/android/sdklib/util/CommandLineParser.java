@@ -518,17 +518,18 @@ public class CommandLineParser {
          * usage should fit in 80 columns
          *   12345678901234567890123456789012345678901234567890123456789012345678901234567890
          */
-        stdout("\n" +
-            "Usage:\n" +
-            "  android [global options] %s [action options]\n" +
-            "\n" +
-            "Global options:",
-            verb == null ? "action" :
-                verb + (directObject == null ? "" : " " + directObject));           //$NON-NLS-1$
+        stdout("");
+        stdout("Usage:\n" +
+                        "  android [global options] %s [action options]\n" +
+                        "\n" +
+                        "Global options:",
+                verb == null ? "action" :
+                        verb + (directObject == null ? "" : " " + directObject));           //$NON-NLS-1$
         listOptions(GLOBAL_FLAG_VERB, NO_VERB_OBJECT);
 
         if (verb == null || directObject == null) {
-            stdout("\nValid actions are composed of a verb and an optional direct object:");
+            stdout("");
+            stdout("Valid actions are composed of a verb and an optional direct object:");
             for (String[] action : mActions) {
                 if (verb == null || verb.equals(action[ACTION_VERB_INDEX])) {
                     stdout("- %1$6s %2$-13s: %3$s",
@@ -544,7 +545,8 @@ public class CommandLineParser {
             for (String[] action : mActions) {
                 if (verb == null || verb.equals(action[ACTION_VERB_INDEX])) {
                     if (directObject == null || directObject.equals(action[ACTION_OBJECT_INDEX])) {
-                        stdout("\nAction \"%1$s %2$s\":",
+                        stdout("");
+                        stdout("Action \"%1$s %2$s\":",
                                 action[ACTION_VERB_INDEX],
                                 action[ACTION_OBJECT_INDEX]);
                         stdout("  %1$s", action[ACTION_DESC_INDEX]);
