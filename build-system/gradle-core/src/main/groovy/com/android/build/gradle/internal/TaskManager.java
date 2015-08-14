@@ -1199,14 +1199,16 @@ public abstract class TaskManager {
             // TODO: Make this task depend on lintCompile too (resolve initialization order first)
             optionalDependsOn(lintReleaseCheck, variantData.javacTask);
             lintReleaseCheck.setLintOptions(getExtension().getLintOptions());
-            lintReleaseCheck.setSdkHome(sdkHandler.getSdkFolder());
+            lintReleaseCheck.setSdkHome(
+                    checkNotNull(sdkHandler.getSdkFolder(), "SDK not set up."));
             lintReleaseCheck.setVariantName(variantName);
             lintReleaseCheck.setToolingRegistry(toolingRegistry);
             lintReleaseCheck.setFatalOnly(true);
             lintReleaseCheck.setDescription(
                     "Runs lint on just the fatal issues in the " + capitalizedVariantName
                             + " build.");
-            //variantData.assembleVariantTask.dependsOn lintReleaseCheck
+
+            variantData.assembleVariantTask.dependsOn(lintReleaseCheck);
 
             // If lint is being run, we do not need to run lint vital.
             // TODO: Find a better way to do this.
