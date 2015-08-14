@@ -62,17 +62,17 @@ public class VectorDrawbleGeneratorTest extends GeneratorTest {
         } else {
             InputStream is = new FileInputStream(pngFile);
             BufferedImage goldenImage = ImageIO.read(is);
-            assertImageSimilar(imageNameWithParent, goldenImage, image, 1.0f);
+            assertImageSimilar(imageNameWithParent, goldenImage, image, 5.0f);
         }
     }
 
-    //public void testControlPoints01() throws Exception {
-    //    checkVectorConversion("test_control_points_01");
-    //}
-    //
-    //public void testControlPoints02() throws Exception {
-    //    checkVectorConversion("test_control_points_02");
-    //}
+    public void testControlPoints01() throws Exception {
+        checkVectorConversion("test_control_points_01");
+    }
+
+    public void testControlPoints02() throws Exception {
+        checkVectorConversion("test_control_points_02");
+    }
 
     public void testControlPoints03() throws Exception {
         checkVectorConversion("test_control_points_03");
