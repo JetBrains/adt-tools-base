@@ -102,6 +102,7 @@ public class Server {
         public void run() {
             boolean requiresRestart = false;
             boolean incrementalCode = false;
+            boolean incrementalResources = false;
             try {
                 DataInputStream input = new DataInputStream(mSocket.getInputStream());
                 try {
@@ -110,15 +111,16 @@ public class Server {
                         return;
                     }
                     FileManager.startUpdate();
-                    boolean wroteResources = false;
                     for (ApplicationPatch change : changes) {
-//                        if (change.forceRestart) {
-//                            requiresRestart = true; // This is hacky at needs to be cleaned up
-//                        }
+                        if (change.forceRestart) {
+                            requiresRestart = true; // This is hacky at needs to be cleaned up
+                        }
                         String path = change.getPath();
                         if (path.endsWith(CLASSES_DEX_SUFFIX)) {
+                            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                                Log.i(LOG_TAG, "Received restart code patch");
+                            }
                             FileManager.writeDexFile(change.getBytes());
-//                            requiresRestart = true;
                         } else if (path.endsWith(CLASSES_DEX_3_SUFFIX)) {
                             if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                                 Log.i(LOG_TAG, "Received incremental code patch");
@@ -135,7 +137,6 @@ public class Server {
                                 String nativeLibraryPath = FileManager.getNativeLibraryFolder().getPath();
                                 DexClassLoader dexClassLoader = new DexClassLoader(dexFile,
                                         mApplication.getCacheDir().getPath(), nativeLibraryPath,
-                                        //getClass().getClassLoader()) {
                                         getClass().getClassLoader()) {
                                     @Override
                                     protected Class<?> findClass(String name) throws ClassNotFoundException {
@@ -173,20 +174,23 @@ public class Server {
                                 };
 
                                 // we should transform this process with an interface/impl
-//                                Class<?> aClass = dexClassLoader.loadClass("com.android.build.Patches");
                                 Class<?> aClass = Class.forName("com.android.build.gradle.internal.incremental.AppPatchesLoaderImpl", true, dexClassLoader);
                                 try {
-                                    Log.i(LOG_TAG, "Got the patcher class " + aClass);
-
-                                    PatchesLoader loader = (PatchesLoader) aClass.newInstance();
-                                    Log.i(LOG_TAG, "Got the patcher instance " + loader);
-                                    String[] getPatchedClasses = (String[]) aClass.getDeclaredMethod("getPatchedClasses").invoke(loader);
-                                    Log.i(LOG_TAG, "Got the list of classes ");
-                                    for (int i=0;i<getPatchedClasses.length;i++) {
-                                        Log.i(LOG_TAG, "class " + getPatchedClasses[i]);
+                                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                                        Log.i(LOG_TAG, "Got the patcher class " + aClass);
                                     }
 
-
+                                    PatchesLoader loader = (PatchesLoader) aClass.newInstance();
+                                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                                        Log.i(LOG_TAG, "Got the patcher instance " + loader);
+                                    }
+                                    String[] getPatchedClasses = (String[]) aClass.getDeclaredMethod("getPatchedClasses").invoke(loader);
+                                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                                        Log.i(LOG_TAG, "Got the list of classes ");
+                                        for (String getPatchedClass : getPatchedClasses) {
+                                            Log.i(LOG_TAG, "class " + getPatchedClass);
+                                        }
+                                    }
                                     requiresRestart = !loader.load();
                                     incrementalCode = true;
                                 } catch (Exception e) {
@@ -198,14 +202,15 @@ public class Server {
                                 Log.e(LOG_TAG, "Couldn't apply code changes", e);
                                 requiresRestart = true;
                             }
-
-
                         } else {
+                            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                                Log.i(LOG_TAG, "Received resource changes (" + path + ")");
+                            }
                             FileManager.writeAaptResources(path, change.getBytes());
-                            wroteResources = true;
+                            incrementalResources = true;
                         }
                     }
-                    FileManager.finishUpdate(wroteResources);
+                    FileManager.finishUpdate(incrementalResources);
                 } finally {
                     try {
                         input.close();
@@ -229,38 +234,50 @@ public class Server {
 
             // Compute activity
             List<Activity> activities = Restarter.getActivities(false);
-            File file = FileManager.getExternalResourceFile();
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "resource file=" + file + ", activities=" + activities);
-            }
+            if (incrementalResources) {
+                // Try to just replace the resources on the fly!
+                File file = FileManager.getExternalResourceFile();
 
-            if (incrementalCode) {
+                Activity activity = Restarter.getForegroundActivity();
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "Applying incremental code!!!!!");
+                    Log.i(LOG_TAG, "About to update resource file=" + file +
+                            ", activities=" + activities);
                 }
-                // TODO: Handle resources
+
+                if (file != null) {
+                    String resources = file.getPath();
+                    MonkeyPatcher.monkeyPatchApplication(null, null, resources);
+                    MonkeyPatcher.monkeyPatchExistingResources(resources, activities);
+
+                    if (activity != null) {
+                        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                            Log.i(LOG_TAG, "Restarting activity only!");
+                        }
+                        Restarter.restartActivityOnUiThread(activity);
+                        return;
+                    }
+
+                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                        Log.i(LOG_TAG, "No activity found, falling through to do a full app restart");
+                    }
+                } else {
+                    Log.e(LOG_TAG, "No resource file found to apply");
+                }
+                // Fall through to full app start
+            } else if (incrementalCode) {
+                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                    Log.i(LOG_TAG, "Applying incremental code without restart");
+                }
                 Activity activity = Restarter.getForegroundActivity();
                 Restarter.restartActivityOnUiThread(activity);
                 return;
             }
-            if (!requiresRestart && file != null) {
-                Activity activity = Restarter.getForegroundActivity();
 
-                // Try to just replace the resources on the fly!
-                String resources = file.getPath();
-                MonkeyPatcher.monkeyPatchApplication(null, null, resources);
-                MonkeyPatcher.monkeyPatchExistingResources(resources, activities);
-                if (activity != null) {
-                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                        Log.i(LOG_TAG, "Restarting activity only!");
-                    }
-                    Restarter.restartActivityOnUiThread(activity);
-                    return;
-                }
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                    Log.i(LOG_TAG, "No activity found, falling through to do a full app restart");
-                }
+            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                Log.i(LOG_TAG, "Performing full app restart to apply code=" + incrementalCode
+                        + " and resources=" + incrementalResources);
             }
+
             Restarter.restartApp(activities);
         }
     }
