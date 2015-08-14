@@ -18,6 +18,8 @@
 package com.android.tools.rpclib.any;
 
 import com.android.tools.rpclib.schema.Type;
+import com.intellij.ui.SimpleColoredComponent;
+import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
@@ -38,6 +40,12 @@ public final class AnyType extends Type {
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
         throw new IOException("implement variant decode");
+    }
+
+    @Override
+    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
+        // TODO: Customise renderer
+        component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
     }
 
     //<<<Start:Java.ClassBody:1>>>

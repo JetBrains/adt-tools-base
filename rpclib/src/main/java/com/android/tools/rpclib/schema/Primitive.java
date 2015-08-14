@@ -17,14 +17,10 @@
  */
 package com.android.tools.rpclib.schema;
 
+import com.android.tools.rpclib.binary.*;
+import com.intellij.ui.SimpleColoredComponent;
+import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
-
-import com.android.tools.rpclib.binary.BinaryClass;
-import com.android.tools.rpclib.binary.BinaryID;
-import com.android.tools.rpclib.binary.BinaryObject;
-import com.android.tools.rpclib.binary.Decoder;
-import com.android.tools.rpclib.binary.Encoder;
-import com.android.tools.rpclib.binary.Namespace;
 
 import java.io.IOException;
 
@@ -91,6 +87,63 @@ public final class Primitive extends Type {
             case Float64: return d.float64();
             case String: return d.string();
             default: throw new IOException("Invalid primitive method in decode");
+        }
+    }
+
+    @Override
+    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
+        ConstantSet constants = ConstantSet.lookup(this);
+        if (constants != null) {
+            for (Constant constant : constants.getEntries()) {
+                if (value.equals(constant.getValue())) {
+                    component.append(constant.getName(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                    return;
+                }
+            }
+        }
+        switch (mMethod) {
+            case ID:
+                component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            case Bool:
+                component.append(String.format("%b", (Boolean)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            case Int8:
+                component.append(String.format("%d", (Byte)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            case Uint8:
+                component.append(String.format("0x%.2X", (Byte)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            case Int16:
+                component.append(String.format("%d", (Short)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            case Uint16:
+                component.append(String.format("0x%.4X", (Short)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            case Int32:
+                component.append(String.format("%d", (Integer)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            case Uint32:
+                component.append(String.format("0x%X", (Integer)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            case Int64:
+                component.append(String.format("%d", (Long)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            case Uint64:
+                component.append(Long.toHexString((Long)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            case Float32:
+                component.append(String.format("%f", (Float)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            case Float64:
+                component.append(String.format("%f", (Double)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            case String:
+                component.append((String)value, SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                return;
+            default:
+                component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
+                break;
         }
     }
 

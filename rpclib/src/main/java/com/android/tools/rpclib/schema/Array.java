@@ -17,6 +17,8 @@
  */
 package com.android.tools.rpclib.schema;
 
+import com.intellij.ui.SimpleColoredComponent;
+import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
@@ -45,6 +47,12 @@ public final class Array extends Type {
             array[i] = mValueType.decodeValue(d);
         }
         return array;
+    }
+
+    @Override
+    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
+        // TODO: Customise renderer
+        component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
     }
 
     //<<<Start:Java.ClassBody:1>>>
