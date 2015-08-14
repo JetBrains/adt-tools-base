@@ -155,10 +155,17 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         project.getPlugins().apply(JavaBasePlugin.class);
         project.getPlugins().apply(JacocoPlugin.class);
 
-        // TODO: Create configurations for build types and flavors, or migrate to new dependency
-        // management if it's ready.
+        // Create default configurations.  ConfigurationContainer is not part of the component
+        // model, making it difficult to define proper rules to create configurations based on
+        // build types and product flavors.  We just create the default configurations for now
+        // which should handle the majority of the use cases.
+        // Users can still use variant specific configurations, they just have to be manually
+        // created.
+        // TODO: Migrate to new dependency management if it's ready.
         ConfigurationContainer configurations = project.getConfigurations();
-        createConfiguration(configurations, "compile", "Classpath for default sources.");
+        createConfiguration(configurations, "compile", "Classpath for compiling the default sources.");
+        createConfiguration(configurations, "testCompile", "Classpath for compiling the test sources.");
+        createConfiguration(configurations, "androidTestCompile", "Classpath for compiling the androidTest sources.");
         createConfiguration(configurations, "default-metadata", "Metadata for published APKs");
         createConfiguration(configurations, "default-mapping", "Metadata for published APKs");
 

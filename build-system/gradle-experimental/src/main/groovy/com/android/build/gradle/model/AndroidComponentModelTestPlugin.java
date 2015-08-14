@@ -18,6 +18,7 @@ package com.android.build.gradle.model;
 
 import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
+import static com.android.builder.core.VariantType.UNIT_TEST;
 
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
@@ -52,14 +53,22 @@ public class AndroidComponentModelTestPlugin extends RuleSource {
             public void execute(AndroidBinary androidBinary) {
                 DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;
 
+                // Create test tasks.
+                BaseVariantData testedVariantData = binary.getVariantData();
+
+                TestVariantData unitTestVariantData = variantManager.createTestVariantData(
+                        testedVariantData,
+                        UNIT_TEST);
+                variantManager.getVariantDataList().add(unitTestVariantData);
+                variantManager.createTasksForVariantData(
+                        new TaskModelMapAdaptor(tasks),
+                        unitTestVariantData);
+
                 // TODO: compare against testBuildType instead of BuilderConstants.DEBUG.
                 if (!binary.getBuildType().getName().equals(BuilderConstants.DEBUG)) {
                     return;
 
                 }
-
-                // Create test tasks.
-                BaseVariantData testedVariantData = binary.getVariantData();
 
                 Preconditions.checkState(testedVariantData != null,
                         "Internal error: tested variant must be created before test variant.");

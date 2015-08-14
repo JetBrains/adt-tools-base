@@ -44,10 +44,6 @@ class LibraryComponentPluginTest {
 """
 apply plugin: "com.android.model.application"
 
-configurations {
-    compile
-}
-
 dependencies {
     compile project(":lib")
 }

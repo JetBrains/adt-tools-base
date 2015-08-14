@@ -54,6 +54,8 @@ import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -299,6 +301,15 @@ public class VariantScope {
     public File getIncrementalSupportJavaOutputDir() {
         return new File(globalScope.getIntermediatesDir(), "/incremental-classes/" +
                 variantData.getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public Iterable<File> getJavaOuptuts() {
+        return Iterables.concat(
+                getJavaClasspath(),
+                ImmutableList.of(
+                        getJavaOutputDir(),
+                        getJavaDependencyCache()));
     }
 
     @NonNull
