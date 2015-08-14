@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
-
 import com.android.SdkConstants
 import com.android.annotations.Nullable
+import com.android.build.gradle.internal.PostCompilationData
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.dsl.DexOptions
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
@@ -28,7 +28,6 @@ import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.ide.common.process.LoggedProcessOutputHandler
 import com.android.utils.FileUtils
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
-import com.android.build.gradle.internal.PostCompilationData
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile

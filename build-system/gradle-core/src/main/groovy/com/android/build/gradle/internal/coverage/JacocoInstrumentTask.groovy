@@ -15,11 +15,10 @@
  */
 
 package com.android.build.gradle.internal.coverage
-
+import com.android.build.gradle.internal.PostCompilationData
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.PostCompilationData
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.InputDirectory
@@ -28,7 +27,6 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
-
 /**
  * Simple Jacoco instrument task that calls the Ant version.
  */
