@@ -23,19 +23,21 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
-import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
+import com.android.utils.FileUtils;
 
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
+import org.gradle.api.tasks.incremental.InputFileDetails;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Task to remove debug symbols from a native library.
@@ -44,12 +46,15 @@ public class StripDebugSymbolTask extends DefaultTask {
 
     private File stripCommand;
 
-    private File inputFile;
+    private File inputFolder;
 
-    private File outputFile;
+    private File outputFolder;
 
     // ----- PUBLIC API -----
 
+    /**
+     * Strip command found in the NDK.
+     */
     @Input
     public File getStripCommand() {
         return stripCommand;
@@ -59,44 +64,70 @@ public class StripDebugSymbolTask extends DefaultTask {
         this.stripCommand = stripCommand;
     }
 
-    @Optional
-    @InputFile
-    public File getInputFile() {
-        // If source set is empty, the file debuggable library is not generated.
-        return inputFile.exists() ? inputFile : null;
+    /**
+     * Directory containing all the files to be stripped.
+     */
+    @SuppressWarnings("unused") // Used by incremental task action.
+    @InputDirectory
+    public File getInputFolder() {
+        return inputFolder;
     }
 
-    public void setInputFile(File inputFile) {
-        this.inputFile = inputFile;
+    public void setInputFolder(File inputFolder) {
+        this.inputFolder = inputFolder;
     }
 
-    @OutputFile
-    public File getOutputFile() {
-        return outputFile;
+    @OutputDirectory
+    public File getOutputFolder() {
+        return outputFolder;
     }
 
-    public void setOutputFile(File outputFile) {
-        this.outputFile = outputFile;
+    public void setOutputFolder(File outputFolder) {
+        this.outputFolder = outputFolder;
     }
 
     // ----- PRIVATE API -----
 
     @TaskAction
-    void taskAction() throws ProcessException {
-        if (getInputFile() == null) {
-            return;
-        }
+    void taskAction(IncrementalTaskInputs inputs) throws IOException {
+        inputs.outOfDate(new Action<InputFileDetails>() {
+            @Override
+            public void execute(InputFileDetails inputFileDetails) {
+                File input = inputFileDetails.getFile();
+                File output = new File(getOutputFolder(), input.getName());
+                stripFile(input, output);
+            }
+        });
+        inputs.removed(new Action<InputFileDetails>() {
+            @Override
+            public void execute(InputFileDetails inputFileDetails) {
+                File input = inputFileDetails.getFile();
+                File output = new File(getOutputFolder(), input.getName());
+                try {
+                    FileUtils.deleteIfExists(output);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+    }
 
-        if (!outputFile.getParentFile().exists()) {
-            outputFile.getParentFile().mkdirs();
+
+    private void stripFile(File input, File output) {
+        if (!getOutputFolder().exists()) {
+            boolean result = getOutputFolder().mkdirs();
+            if (!result) {
+                throw new RuntimeException("Unabled to create directory '"
+                        + getOutputFolder().toString() + "' for native binaries.");
+            }
         }
 
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
-        builder.setExecutable(stripCommand);
+        builder.setExecutable(getStripCommand());
         builder.addArgs("--strip-unneeded");
         builder.addArgs("-o");
-        builder.addArgs(outputFile.toString());
-        builder.addArgs(inputFile.toString());
+        builder.addArgs(output.toString());
+        builder.addArgs(input.toString());
         new GradleProcessExecutor(getProject()).execute(
                 builder.createProcess(),
                 new LoggedProcessOutputHandler(new LoggerWrapper(getLogger())));
@@ -123,12 +154,11 @@ public class StripDebugSymbolTask extends DefaultTask {
 
         @Override
         public void execute(@NonNull StripDebugSymbolTask task) {
-            File debugLib = binary.getSharedLibraryFile();
-            task.setInputFile(debugLib);
-            task.setOutputFile(new File(
+            task.setInputFolder(
+                    new File(buildDir, NdkNamingScheme.getDebugLibraryDirectoryName(binary)));
+            task.setOutputFolder(new File(
                     buildDir,
-                    NdkNamingScheme.getOutputDirectoryName(binary) + "/"
-                            + debugLib.getName()));
+                    NdkNamingScheme.getOutputDirectoryName(binary)));
             task.setStripCommand(handler.getStripCommand(
                     Abi.getByName(binary.getTargetPlatform().getName())));
             task.dependsOn(binary);
