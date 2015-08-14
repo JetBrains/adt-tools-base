@@ -17,15 +17,16 @@ package com.android.tools.rpclib.binary;
 
 import org.jetbrains.annotations.NotNull;
 
-/**
- * An object that can be encoded and decoded using its {@link class}.
- */
-public interface BinaryObject {
-  int NULL_ID = 0;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
-  /**
-   * @return the object's type class.
-   */
-  @NotNull
-  BinaryClass klass();
+/**
+ *
+ */
+public interface BinaryClass {
+  @NotNull BinaryID id();
+  @NotNull BinaryObject create();
+  void decode(@NotNull Decoder d, BinaryObject obj) throws IOException;
+  void encode(@NotNull Encoder e, BinaryObject obj) throws IOException;
 }

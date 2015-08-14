@@ -20,26 +20,17 @@ import junit.framework.TestCase;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-public class ObjectTypeIDTest extends TestCase {
-  static final byte[] idBytes = {
-    0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
-    0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13
-  };
-  static final ObjectTypeID id = new ObjectTypeID(idBytes);
-
+public class BinaryIDTest extends TestCase {
   public void testDecodeObjectTypeID() throws IOException {
-    ByteArrayInputStream input = new ByteArrayInputStream(idBytes);
+    ByteArrayInputStream input = new ByteArrayInputStream(TypeA.ID.getBytes());
     Decoder d = new Decoder(input);
 
-    ObjectTypeID idFromDecoder = new ObjectTypeID(d);
-    assertEquals(id, idFromDecoder);
+    BinaryID idFromDecoder = new BinaryID(d);
+    assertEquals(TypeA.ID, idFromDecoder);
   }
 
   public void testRegisterAndLookupObjectTypeID() {
-    BinaryObjectCreator dummyObjectCreator = new BinaryObjectCreator() {
-      @Override public BinaryObject create() { return null; }
-    };
-    ObjectTypeID.register(id, dummyObjectCreator);
-    assertEquals(ObjectTypeID.lookup(id), dummyObjectCreator);
+    BinaryClass klass = Namespace.lookup(TypeA.ID);
+    assertEquals(klass, TypeA.Klass.INSTANCE);
   }
 }
