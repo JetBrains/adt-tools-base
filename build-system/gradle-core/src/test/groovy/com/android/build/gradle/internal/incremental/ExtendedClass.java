@@ -21,12 +21,18 @@ public class ExtendedClass extends BaseClass {
     public int extendedInt;
 
     public ExtendedClass(int i) {
-        super(i++);
-        extendedInt = i;
+        super(i);
+        extendedInt = i + 1;
     }
 
     @Override
     public int methodA() {
         return super.methodA();
+    }
+
+    public class Inner extends BaseClass {
+        public Inner() {
+           super(20);
+        }
     }
 }

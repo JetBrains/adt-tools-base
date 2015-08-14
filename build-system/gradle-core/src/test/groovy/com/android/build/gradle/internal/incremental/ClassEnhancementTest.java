@@ -121,7 +121,8 @@ public class ClassEnhancementTest {
     public void superTest() throws Exception {
         ClassLoader cl = loadAndPatch(
                 "com.android.build.gradle.internal.incremental.BaseClass",
-                "com.android.build.gradle.internal.incremental.ExtendedClass");
+                "com.android.build.gradle.internal.incremental.ExtendedClass",
+                "com.android.build.gradle.internal.incremental.ExtendedClass$Inner");
         Class<?> aClass = cl
                 .loadClass("com.android.build.gradle.internal.incremental.ExtendedClass");
         Constructor<?> constructor = aClass.getConstructor(int.class);

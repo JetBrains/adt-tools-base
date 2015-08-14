@@ -18,6 +18,4 @@ package com.android.build.gradle.internal.incremental;
 
 public interface IncrementalChange {
     Object access$dispatch(String id, Object... args);
-
-    Object[] access$ctr(String id, Object[] args);
 }
