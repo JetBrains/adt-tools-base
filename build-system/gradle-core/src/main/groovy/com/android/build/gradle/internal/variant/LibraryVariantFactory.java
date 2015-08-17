@@ -124,9 +124,16 @@ public class LibraryVariantFactory implements VariantFactory {
                     "' in default config.");
         }
 
+        if (model.getDefaultConfig().getProductFlavor().getApplicationIdSuffix() != null) {
+            throw new GradleException("Library projects cannot set applicationIdSuffix. " +
+                    "applicationIdSuffix is set to '" +
+                    model.getDefaultConfig().getProductFlavor().getApplicationIdSuffix() +
+                    "' in default config.");
+        }
+
         for (BuildTypeData buildType : model.getBuildTypes().values()) {
             if (buildType.getBuildType().getApplicationIdSuffix() != null) {
-                throw new GradleException("Library projects cannot set applicationId. " +
+                throw new GradleException("Library projects cannot set applicationIdSuffix. " +
                         "applicationIdSuffix is set to '" +
                         buildType.getBuildType().getApplicationIdSuffix() +
                         "' in build type '" + buildType.getBuildType().getName() + "'.");
@@ -138,6 +145,13 @@ public class LibraryVariantFactory implements VariantFactory {
                         "applicationId is set to '" +
                         productFlavor.getProductFlavor().getApplicationId() + "' in flavor '" +
                         productFlavor.getProductFlavor().getName() + "'.");
+            }
+
+            if (productFlavor.getProductFlavor().getApplicationIdSuffix() != null) {
+                throw new GradleException("Library projects cannot set applicationIdSuffix. " +
+                        "applicationIdSuffix is set to '" +
+                        productFlavor.getProductFlavor().getApplicationIdSuffix() +
+                        "' in flavor '" + productFlavor.getProductFlavor().getName() + "'.");
             }
         }
 

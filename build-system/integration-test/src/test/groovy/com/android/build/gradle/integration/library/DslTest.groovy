@@ -89,7 +89,7 @@ android {
             while (cause.getCause() != null) {
                 cause = cause.getCause()
             }
-            String expectedMsg = "Library projects cannot set applicationId. applicationIdSuffix is set to 'foo' in build type 'debug'."
+            String expectedMsg = "Library projects cannot set applicationIdSuffix. applicationIdSuffix is set to 'foo' in build type 'debug'."
             assertEquals(expectedMsg, cause.getMessage())
         }
     }

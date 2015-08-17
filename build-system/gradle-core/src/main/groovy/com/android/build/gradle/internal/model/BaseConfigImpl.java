@@ -36,6 +36,8 @@ import java.util.Map;
 abstract class BaseConfigImpl implements BaseConfig, Serializable {
     private static final long serialVersionUID = 1L;
 
+    @Nullable
+    private String mApplicationIdSuffix;
     @NonNull
     private final Map<String, Object> mManifestPlaceholders;
     @NonNull
@@ -52,6 +54,7 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     private List<File> mJarJarRuleFiles;
 
     protected BaseConfigImpl(@NonNull BaseConfig baseConfig) {
+        mApplicationIdSuffix = baseConfig.getApplicationIdSuffix();
         mManifestPlaceholders = ImmutableMap.copyOf(baseConfig.getManifestPlaceholders());
         mBuildConfigFields = ImmutableMap.copyOf(baseConfig.getBuildConfigFields());
         mResValues = ImmutableMap.copyOf(baseConfig.getResValues());
@@ -59,6 +62,12 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
         mMultiDexKeepFile = baseConfig.getMultiDexKeepFile();
         mMultiDexKeepProguard = baseConfig.getMultiDexKeepProguard();
         mJarJarRuleFiles = baseConfig.getJarJarRuleFiles();
+    }
+
+    @Nullable
+    @Override
+    public String getApplicationIdSuffix() {
+        return mApplicationIdSuffix;
     }
 
     @NonNull
@@ -124,7 +133,8 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     @Override
     public String toString() {
         return "BaseConfigImpl{" +
-                "mManifestPlaceholders=" + mManifestPlaceholders +
+                "applicationIdSuffix='" + mApplicationIdSuffix + '\'' +
+                ", mManifestPlaceholders=" + mManifestPlaceholders +
                 ", mBuildConfigFields=" + mBuildConfigFields +
                 ", mResValues=" + mResValues +
                 ", mMultiDexEnabled=" + mMultiDexEnabled +

@@ -18,6 +18,7 @@ package com.android.build.gradle.managed;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidArtifact;
 
 import org.gradle.api.Named;
 import org.gradle.model.Managed;
@@ -35,6 +36,15 @@ import java.util.Set;
  */
 @Managed
 public interface BaseConfig extends Named {
+
+    /**
+     * Returns the application id suffix applied to this base config.
+     * To get the final application id, use {@link AndroidArtifact#getApplicationId()}.
+     *
+     * @return the application id
+     */
+    String getApplicationIdSuffix();
+    void setApplicationIdSuffix(String applicationIdSuffix);
 
     /**
      * Map of Build Config Fields where the key is the field name.
@@ -122,5 +132,4 @@ public interface BaseConfig extends Named {
     @Unmanaged
     List<File> getJarJarRuleFiles();
     void setJarJarRuleFiles(List<File> jarJarRuleFiles);
-
 }

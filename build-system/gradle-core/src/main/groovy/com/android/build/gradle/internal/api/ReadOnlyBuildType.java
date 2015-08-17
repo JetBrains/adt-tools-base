@@ -85,12 +85,6 @@ public class ReadOnlyBuildType extends ReadOnlyBaseConfig implements BuildType {
 
     @Nullable
     @Override
-    public String getApplicationIdSuffix() {
-        return buildType.getApplicationIdSuffix();
-    }
-
-    @Nullable
-    @Override
     public String getVersionNameSuffix() {
         return buildType.getVersionNameSuffix();
     }

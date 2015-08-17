@@ -35,6 +35,7 @@ import com.android.builder.model.SourceProvider;
 import com.android.ide.common.res2.AssetSet;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.utils.StringHelper;
+import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -807,9 +808,18 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @Nullable
     public String getIdOverride() {
         String idName = mMergedFlavor.getApplicationId();
-        String idSuffix = mBuildType.getApplicationIdSuffix();
+        String idSuffix = Objects.firstNonNull(mMergedFlavor.getApplicationIdSuffix(), "");
 
-        if (idSuffix != null && !idSuffix.isEmpty()) {
+        String buildTypeIdSuffix = mBuildType.getApplicationIdSuffix();
+        if (!Strings.isNullOrEmpty(buildTypeIdSuffix)) {
+            if (buildTypeIdSuffix.charAt(0) == '.') {
+                idSuffix = idSuffix + buildTypeIdSuffix;
+            } else {
+                idSuffix = idSuffix + '.' + buildTypeIdSuffix;
+            }
+        }
+
+        if (!idSuffix.isEmpty()) {
             if (idName == null) {
                 idName = getPackageFromManifest();
             }

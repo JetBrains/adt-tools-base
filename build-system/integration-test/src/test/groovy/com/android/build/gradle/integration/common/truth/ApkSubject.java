@@ -86,6 +86,19 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void hasPackageName(@NonNull String packageName) throws ProcessException {
+        File apk = getSubject();
+
+        ApkInfoParser.ApkInfo apkInfo = getApkInfo(apk);
+
+        String actualPackageName = apkInfo.getPackageName();
+
+        if (!actualPackageName.equals(packageName)) {
+            failWithBadResults("has packageName", packageName, "is", actualPackageName);
+        }
+    }
+
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void hasVersionCode(int versionCode) throws ProcessException {
         File apk = getSubject();
 
