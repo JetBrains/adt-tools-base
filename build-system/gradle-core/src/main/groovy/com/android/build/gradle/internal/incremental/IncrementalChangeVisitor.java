@@ -84,11 +84,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         System.out.println("new Desc is " + newDesc);
 
         String newName = getOverridenName(name);
-        // clear the private/protected bit if present, package private is 0.
-        // change the method visibility to always be public and static.
-        access  = access & ~Opcodes.ACC_PRIVATE;
-        access =  access & ~Opcodes.ACC_PROTECTED;
-        access = access | Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
+        // Do not carry on any access flags from the original method. For example synchronized
+        // on the original method would translate into a static synchronized method here.
+        access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
         MethodVisitor original = super.visitMethod(access, newName, newDesc, signature, exceptions);
         if (name.equals("<init>")) {
             return new ConstructorVisitor(Opcodes.ASM5, original, access, newName, newDesc);
