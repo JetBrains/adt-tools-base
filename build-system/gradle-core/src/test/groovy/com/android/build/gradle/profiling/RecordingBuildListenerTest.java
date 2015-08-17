@@ -14,50 +14,52 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.profiling
+package com.android.build.gradle.profiling;
 
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.build.gradle.internal.profile.RecordingBuildListener
-import com.android.builder.profile.ExecutionRecord
-import com.android.builder.profile.ExecutionType
-import com.android.builder.profile.ProcessRecorder
-import com.android.builder.profile.ProcessRecorderFactory
-import com.android.builder.profile.Recorder
-import com.android.builder.profile.ThreadRecorder
-import com.android.utils.ILogger
-import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.tasks.TaskState
-import org.junit.Before
-import org.junit.Test
-import org.mockito.Mock
-import org.mockito.Mockito
-import org.mockito.MockitoAnnotations
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.profile.RecordingBuildListener;
+import com.android.builder.profile.ExecutionRecord;
+import com.android.builder.profile.ExecutionType;
+import com.android.builder.profile.ProcessRecorder;
+import com.android.builder.profile.ProcessRecorderFactory;
+import com.android.builder.profile.Recorder;
+import com.android.builder.profile.ThreadRecorder;
+import com.android.utils.ILogger;
+import org.gradle.api.Project;
+import org.gradle.api.Task;
+import org.gradle.api.tasks.TaskState;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
-import java.util.logging.Logger
+import java.io.IOException;
+import java.util.List;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.assertNotNull
-import static org.mockito.Mockito.when
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests for {@link RecordingBuildListener}
  */
-class RecordingBuildListenerTest {
+public class RecordingBuildListenerTest {
 
     @Mock
-    Task mTask
+    Task mTask;
 
     @Mock
-    TaskState mTaskState
+    TaskState mTaskState;
 
     @Mock
-    Project mProject
+    Project mProject;
 
     @Mock
     ILogger logger;
@@ -65,201 +67,207 @@ class RecordingBuildListenerTest {
     private static final class TestRecorder implements Recorder {
 
         final AtomicLong recordId = new AtomicLong(0);
-        final List<ExecutionRecord> records = new CopyOnWriteArrayList<>();
+        final List<ExecutionRecord> records = new CopyOnWriteArrayList<ExecutionRecord>();
 
         @Override
-        def <T> T record(@NonNull ExecutionType executionType, @NonNull Recorder.Block<T> block,
+        public <T> T record(@NonNull ExecutionType executionType, @NonNull Recorder.Block<T> block,
                 Recorder.Property... properties) {
-            throw new UnsupportedOperationException("record method was not supposed to be called.")
+            throw new UnsupportedOperationException("record method was not supposed to be called.");
         }
 
         @Override
-        def <T> T record(@NonNull ExecutionType executionType, @NonNull Recorder.Block<T> block,
+        public <T> T record(@NonNull ExecutionType executionType, @NonNull Recorder.Block<T> block,
                 @NonNull List<Recorder.Property> properties) {
-            throw new UnsupportedOperationException("record method was not supposed to be called.")
+            throw new UnsupportedOperationException("record method was not supposed to be called.");
         }
 
         @Override
-        long allocationRecordId() {
-            return recordId.incrementAndGet()
+        public long allocationRecordId() {
+            return recordId.incrementAndGet();
         }
 
         @Override
-        void closeRecord(ExecutionRecord record) {
+        public void closeRecord(ExecutionRecord record) {
             records.add(record);
         }
     }
 
     private static final class TestExecutionRecordWriter implements ProcessRecorder.ExecutionRecordWriter {
 
-        final List<ExecutionRecord> records = new CopyOnWriteArrayList<>()
+        final List<ExecutionRecord> records = new CopyOnWriteArrayList<ExecutionRecord>();
 
         @Override
-        void write(@NonNull ExecutionRecord executionRecord) throws IOException {
-            records.add(executionRecord)
+        public void write(@NonNull ExecutionRecord executionRecord) throws IOException {
+            records.add(executionRecord);
         }
 
         List<ExecutionRecord> getRecords() {
-            return records
+            return records;
         }
 
         @Override
-        void close() throws IOException {
+        public void close() throws IOException {
         }
     }
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        when(mTask.getName()).thenReturn("taskName")
-        when(mTask.getProject()).thenReturn(mProject)
-        when(mProject.getName()).thenReturn("projectName")
+        when(mTask.getName()).thenReturn("taskName");
+        when(mTask.getProject()).thenReturn(mProject);
+        when(mProject.getName()).thenReturn("projectName");
     }
 
     @Test
-    public void "single thread invocation"() {
-        def recorder = new TestRecorder();
+    public void singleThreadInvocation() {
+        TestRecorder recorder = new TestRecorder();
         RecordingBuildListener listener = new RecordingBuildListener(recorder);
 
         listener.beforeExecute(mTask);
-        listener.afterExecute(mTask, mTaskState)
-        assertEquals(1, recorder.records.size())
-        ExecutionRecord record = recorder.records.get(0)
-        assertEquals(1, record.id)
-        assertEquals(0, record.parentId)
-        assertEquals(2, record.attributes.size())
-        ensurePropertyValue(record.attributes, "task", "taskName")
-        ensurePropertyValue(record.attributes, "project", "projectName")
+        listener.afterExecute(mTask, mTaskState);
+        assertEquals(1, recorder.records.size());
+        ExecutionRecord record = recorder.records.get(0);
+        assertEquals(1, record.id);
+        assertEquals(0, record.parentId);
+        assertEquals(2, record.attributes.size());
+        ensurePropertyValue(record.attributes, "task", "taskName");
+        ensurePropertyValue(record.attributes, "project", "projectName");
     }
 
     @Test
-    public void "single thread with multiple spans invocation"() {
+    public void singleThreadWithMultipleSpansInvocation() throws InterruptedException {
 
-        TestExecutionRecordWriter recordWriter = new TestExecutionRecordWriter()
-        ProcessRecorderFactory.initializeForTests(recordWriter)
+        TestExecutionRecordWriter recordWriter = new TestExecutionRecordWriter();
+        ProcessRecorderFactory.initializeForTests(recordWriter);
 
         RecordingBuildListener listener = new RecordingBuildListener(ThreadRecorder.get());
 
         listener.beforeExecute(mTask);
-        ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING) {
-            Logger.getAnonymousLogger().finest("useless block")
+        ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
+                new Recorder.Block<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        Logger.getAnonymousLogger().finest("useless block");
+                        return null;
+                    }
+                }); {
         }
-        listener.afterExecute(mTask, mTaskState)
-        ProcessRecorderFactory.shutdown()
+        listener.afterExecute(mTask, mTaskState);
+        ProcessRecorderFactory.shutdown();
 
-        assertEquals(4, recordWriter.getRecords().size())
-        ExecutionRecord record = getRecordForId(recordWriter.getRecords(), 2)
-        assertEquals(2, record.id)
-        assertEquals(0, record.parentId)
-        assertEquals(2, record.attributes.size())
-        ensurePropertyValue(record.attributes, "task", "taskName")
-        ensurePropertyValue(record.attributes, "project", "projectName")
+        assertEquals(4, recordWriter.getRecords().size());
+        ExecutionRecord record = getRecordForId(recordWriter.getRecords(), 2);
+        assertEquals(2, record.id);
+        assertEquals(0, record.parentId);
+        assertEquals(2, record.attributes.size());
+        ensurePropertyValue(record.attributes, "task", "taskName");
+        ensurePropertyValue(record.attributes, "project", "projectName");
 
-        record = getRecordForId(recordWriter.getRecords(), 3)
+        record = getRecordForId(recordWriter.getRecords(), 3);
         assertNotNull(record);
-        assertEquals(3, record.id)
-        assertEquals(2, record.parentId)
-        assertEquals(0, record.attributes.size())
-        assertEquals(ExecutionType.SOME_RANDOM_PROCESSING, record.type)
+        assertEquals(3, record.id);
+        assertEquals(2, record.parentId);
+        assertEquals(0, record.attributes.size());
+        assertEquals(ExecutionType.SOME_RANDOM_PROCESSING, record.type);
     }
 
     @Test
-    public void "test initial and final records."() {
+    public void testIinitialAndFinalRecords() throws InterruptedException {
 
-        TestExecutionRecordWriter recordWriter = new TestExecutionRecordWriter()
-        ProcessRecorderFactory.initializeForTests(recordWriter)
+        TestExecutionRecordWriter recordWriter = new TestExecutionRecordWriter();
+        ProcessRecorderFactory.initializeForTests(recordWriter);
 
-        ProcessRecorderFactory.shutdown()
+        ProcessRecorderFactory.shutdown();
 
-        assertEquals(2, recordWriter.getRecords().size())
+        assertEquals(2, recordWriter.getRecords().size());
         for (ExecutionRecord record : recordWriter.getRecords()) {
             System.out.println(record);
         }
-        ExecutionRecord record = getRecordForId(recordWriter.getRecords(), 1)
-        assertEquals(1, record.id)
-        assertEquals(0, record.parentId)
-        assertEquals(6, record.attributes.size())
-        assertEquals(ExecutionType.INITIAL_METADATA, record.type)
-        ensurePropertyValue(record.attributes, "os_name", System.getProperty("os.name"))
+        ExecutionRecord record = getRecordForId(recordWriter.getRecords(), 1);
+        assertEquals(1, record.id);
+        assertEquals(0, record.parentId);
+        assertEquals(6, record.attributes.size());
+        assertEquals(ExecutionType.INITIAL_METADATA, record.type);
+        ensurePropertyValue(record.attributes, "os_name", System.getProperty("os.name"));
 
-        record = getRecordForId(recordWriter.getRecords(), 2)
+        record = getRecordForId(recordWriter.getRecords(), 2);
         assertNotNull(record);
-        assertEquals(2, record.id)
-        assertEquals(0, record.parentId)
-        assertEquals(3, record.attributes.size())
-        assertEquals(ExecutionType.FINAL_METADATA, record.type)
+        assertEquals(2, record.id);
+        assertEquals(0, record.parentId);
+        assertEquals(3, record.attributes.size());
+        assertEquals(ExecutionType.FINAL_METADATA, record.type);
     }
 
     @Test
-    public void "multiple threads invocation"() {
-        def recorder = new TestRecorder();
-        RecordingBuildListener listener = new RecordingBuildListener(recorder)
-        Task secondTask = Mockito.mock(Task.class)
-        when(secondTask.getName()).thenReturn("secondTaskName")
-        when(secondTask.getProject()).thenReturn(mProject)
+    public void multipleThreadsInvocation() {
+        TestRecorder recorder = new TestRecorder();
+        RecordingBuildListener listener = new RecordingBuildListener(recorder);
+        Task secondTask = Mockito.mock(Task.class);
+        when(secondTask.getName()).thenReturn("secondTaskName");
+        when(secondTask.getProject()).thenReturn(mProject);
 
         // first thread start
         listener.beforeExecute(mTask);
 
         // now second threads start
-        listener.beforeExecute(secondTask)
+        listener.beforeExecute(secondTask);
 
         // first thread finishes
-        listener.afterExecute(mTask, mTaskState)
+        listener.afterExecute(mTask, mTaskState);
 
         // and second thread finishes
-        listener.afterExecute(secondTask, mTaskState)
+        listener.afterExecute(secondTask, mTaskState);
 
-        assertEquals(2, recorder.records.size())
-        ExecutionRecord record = getRecordForId(recorder.records, 1)
-        assertEquals(1, record.id)
-        assertEquals(0, record.parentId)
-        assertEquals(2, record.attributes.size())
-        ensurePropertyValue(record.attributes, "task", "taskName")
-        ensurePropertyValue(record.attributes, "project", "projectName")
+        assertEquals(2, recorder.records.size());
+        ExecutionRecord record = getRecordForId(recorder.records, 1);
+        assertEquals(1, record.id);
+        assertEquals(0, record.parentId);
+        assertEquals(2, record.attributes.size());
+        ensurePropertyValue(record.attributes, "task", "taskName");
+        ensurePropertyValue(record.attributes, "project", "projectName");
 
-        record = getRecordForId(recorder.records, 2)
-        assertEquals(2, record.id)
-        assertEquals(0, record.parentId)
-        assertEquals(2, record.attributes.size())
-        ensurePropertyValue(record.attributes, "task", "secondTaskName")
-        ensurePropertyValue(record.attributes, "project", "projectName")
+        record = getRecordForId(recorder.records, 2);
+        assertEquals(2, record.id);
+        assertEquals(0, record.parentId);
+        assertEquals(2, record.attributes.size());
+        ensurePropertyValue(record.attributes, "task", "secondTaskName");
+        ensurePropertyValue(record.attributes, "project", "projectName");
     }
 
     @Test
-    public void "multiple threads order invocation"() {
-        def recorder = new TestRecorder();
-        RecordingBuildListener listener = new RecordingBuildListener(recorder)
-        Task secondTask = Mockito.mock(Task.class)
-        when(secondTask.getName()).thenReturn("secondTaskName")
-        when(secondTask.getProject()).thenReturn(mProject)
+    public void multipleThreadsOrderInvocation() {
+        TestRecorder recorder = new TestRecorder();
+        RecordingBuildListener listener = new RecordingBuildListener(recorder);
+        Task secondTask = Mockito.mock(Task.class);
+        when(secondTask.getName()).thenReturn("secondTaskName");
+        when(secondTask.getProject()).thenReturn(mProject);
 
         // first thread start
         listener.beforeExecute(mTask);
 
         // now second threads start
-        listener.beforeExecute(secondTask)
+        listener.beforeExecute(secondTask);
 
         // second thread finishes
-        listener.afterExecute(secondTask, mTaskState)
+        listener.afterExecute(secondTask, mTaskState);
 
         // and first thread finishes
-        listener.afterExecute(mTask, mTaskState)
+        listener.afterExecute(mTask, mTaskState);
 
-        assertEquals(2, recorder.records.size())
-        ExecutionRecord record = getRecordForId(recorder.records, 1)
-        assertEquals(1, record.id)
-        assertEquals(0, record.parentId)
-        assertEquals(2, record.attributes.size())
-        ensurePropertyValue(record.attributes, "task", "taskName")
-        ensurePropertyValue(record.attributes, "project", "projectName")
+        assertEquals(2, recorder.records.size());
+        ExecutionRecord record = getRecordForId(recorder.records, 1);
+        assertEquals(1, record.id);
+        assertEquals(0, record.parentId);
+        assertEquals(2, record.attributes.size());
+        ensurePropertyValue(record.attributes, "task", "taskName");
+        ensurePropertyValue(record.attributes, "project", "projectName");
 
-        record = getRecordForId(recorder.records, 2)
-        assertEquals(2, record.id)
-        assertEquals(0, record.parentId)
-        assertEquals(2, record.attributes.size())
-        ensurePropertyValue(record.attributes, "task", "secondTaskName")
-        ensurePropertyValue(record.attributes, "project", "projectName")
+        record = getRecordForId(recorder.records, 2);
+        assertEquals(2, record.id);
+        assertEquals(0, record.parentId);
+        assertEquals(2, record.attributes.size());
+        ensurePropertyValue(record.attributes, "task", "secondTaskName");
+        ensurePropertyValue(record.attributes, "project", "projectName");
     }
 
     private static void ensurePropertyValue(
@@ -267,7 +275,7 @@ class RecordingBuildListenerTest {
 
         for (Recorder.Property property : properties) {
             if (property.getName().equals(name)){
-                assertEquals(value, property.getValue())
+                assertEquals(value, property.getValue());
             }
         }
     }
@@ -276,7 +284,7 @@ class RecordingBuildListenerTest {
     private static ExecutionRecord getRecordForId(List<ExecutionRecord> records, long recordId) {
         for (ExecutionRecord record : records) {
             if (record.id == recordId) {
-                return record
+                return record;
             }
         }
         return null;
