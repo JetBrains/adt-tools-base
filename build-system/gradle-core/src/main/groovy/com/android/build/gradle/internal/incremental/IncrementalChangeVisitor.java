@@ -76,22 +76,26 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             String[] exceptions) {
 
         System.out.println("Visiting method " + name + " signature " + desc);
-        if (name.equals("<init>") || name.equals("<clinit>")) {
+        if (name.equals("<clinit>")) {
             return null;
         }
         boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
         String newDesc = isStatic ? desc : "(L" + visitedClassName + ";" + desc.substring(1);
         System.out.println("new Desc is " + newDesc);
 
+        String newName = getOverridenName(name);
         // clear the private/protected bit if present, package private is 0.
         // change the method visibility to always be public and static.
         access  = access & ~Opcodes.ACC_PRIVATE;
         access =  access & ~Opcodes.ACC_PROTECTED;
         access = access | Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
-        return new ISVisitor(Opcodes.ASM5,
-                super.visitMethod(access, name, newDesc, signature, exceptions),
-                access,
-                name, newDesc);
+        MethodVisitor original = super.visitMethod(access, newName, newDesc, signature, exceptions);
+        if (name.equals("<init>")) {
+            return new ConstructorVisitor(Opcodes.ASM5, original, access, newName, newDesc);
+        }
+        else {
+            return new ISVisitor(Opcodes.ASM5, original, access, newName, newDesc);
+        }
     }
 
     public static class AdapterVisitor extends MethodVisitor {
@@ -113,82 +117,27 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         }
     }
 
-    public class PreCtrVisitor extends ISVisitor {
+    public class ConstructorVisitor extends ISVisitor {
 
         String desc;
-
         AdapterVisitor adapter;
 
-        public PreCtrVisitor(int api, MethodVisitor mv, int access, String name, String desc) {
+        public ConstructorVisitor(int api, MethodVisitor mv, int access, String name, String desc) {
             super(api, new AdapterVisitor(api, mv), access, name, desc);
             adapter = (AdapterVisitor) this.mv;
+            adapter.setIgnore(true);
             this.desc = desc;
         }
 
         @Override
         public void visitMethodInsn(int opcode, String owner, String name, String desc,
                 boolean itf) {
-            if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && owner
-                    .equals(visitedSuperName)) {
-                // here all the arguments for the super call are in the stack.
-                // Move them to an array and return it.
-                int arr = newLocal(Type.getType("[Ljava/lang.Object;"));
-                Type[] args = Type.getArgumentTypes(desc);
-                push(args.length);
-                visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
-                visitVarInsn(Opcodes.ASTORE, arr);
-                for (int i = args.length - 1; i >= 0; i--) {
-                    visitVarInsn(Opcodes.ALOAD, arr);
-                    swap();
-                    push(i);
-                    swap();
-                    box(args[i]);
-                    visitInsn(Opcodes.AASTORE);
-                }
-                // Here we should have the uninitialized object on the stack, which in this case is
-                // the array of local variables. Update their value.
-                args = Type.getArgumentTypes(this.desc);
-                for (int i = 1; i < args.length; i++) {
-                    dup();
-                    push(i);
-                    visitVarInsn(args[i].getOpcode(Opcodes.ILOAD), i);
-                    box(args[i]);
-                    arrayStore(Type.getType(Object.class));
-                }
-                // pop the array
-                pop();
-
-                visitVarInsn(Opcodes.ALOAD, arr);
-                returnValue();
-                visitMaxs(0, 0);
-                adapter.setIgnore(true);
-            } else {
-                super.visitMethodInsn(opcode, owner, name, desc, itf);
-            }
-        }
-    }
-
-    public class PostCtrVisitor extends ISVisitor {
-
-        AdapterVisitor adapter;
-
-        public PostCtrVisitor(int api, MethodVisitor mv, int access, String name, String desc) {
-            super(api, new AdapterVisitor(api, mv), access, name, desc);
-            adapter = (AdapterVisitor) this.mv;
-            adapter.setIgnore(true);
-        }
-
-        @Override
-        public void visitMethodInsn(int opcode, String owner, String name, String desc,
-                boolean itf) {
-            if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && owner
-                    .equals(visitedSuperName)) {
+            if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && owner.equals(visitedSuperName)) {
                 adapter.setIgnore(false);
-            } else {
-                super.visitMethodInsn(opcode, owner, name, desc, itf);
             }
         }
     }
+
 
     public class ISVisitor extends GeneratorAdapter {
 
@@ -380,12 +329,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 continue;
             }
             String name = methodNode.name;
-            if (name.equals("<init>")) {
-                constructors.add(methodNode);
-                name = "init$override";
-            }
-
-
             mv.visitVarInsn(Opcodes.ALOAD, 1);
             mv.visitLdcInsn(name + "." + methodNode.desc);
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals",
@@ -409,9 +352,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 mv.unbox(t);
                 argc++;
             }
-            // TODO: change the method name as it can now collide with existing static methods with
-            // the same signature.
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override", name, newDesc,
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override", getOverridenName(name), newDesc,
                     false);
             Type ret = Type.getReturnType(methodNode.desc);
             if (ret.getSort() == Type.VOID) {
@@ -427,66 +368,15 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         mv.visitMaxs(0, 0);
         mv.visitEnd();
 
-        m = new Method("access$ctr", "(Ljava/lang/String;[Ljava/lang/Object;)[Ljava/lang/Object;");
-        visitor = super.visitMethod(access,
-                m.getName(),
-                m.getDescriptor(),
-                null, null);
-
-        mv = new GeneratorAdapter(access, m, visitor);
-        for (MethodNode method : constructors) {
-            mv.visitVarInsn(Opcodes.ALOAD, 1);
-            mv.visitLdcInsn(method.desc);
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals",
-                    "(Ljava/lang/Object;)Z", false);
-            Label l0 = new Label();
-            mv.visitJumpInsn(Opcodes.IFEQ, l0);
-            String newDesc = "([Ljava/lang/Object;" + method.desc.substring(1);
-            newDesc = newDesc.replace(")V", ")[Ljava/lang/Object;");
-
-            mv.visitVarInsn(Opcodes.ALOAD, 2); // First argument, local variables
-
-            Type[] args = Type.getArgumentTypes(method.desc);
-            int argc = 0;
-            for (Type t : args) {
-                mv.visitVarInsn(Opcodes.ALOAD, 2);
-                mv.push(argc + 1);
-                mv.visitInsn(Opcodes.AALOAD);
-                mv.unbox(t);
-                argc++;
-            }
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override", "init$before",
-                    newDesc, false);
-            mv.visitInsn(Opcodes.ARETURN);
-            mv.visitLabel(l0);
-        }
-        mv.visitInsn(Opcodes.ACONST_NULL);
-        mv.visitInsn(Opcodes.ARETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-
-        for (MethodNode method : constructors) {
-            String newDesc = "([Ljava/lang/Object;" + method.desc.substring(1);
-            newDesc = newDesc.replace(")V", ")[Ljava/lang/Object;");
-            m = new Method("init$before", newDesc);
-            visitor = super.visitMethod(access + Opcodes.ACC_STATIC,
-                    m.getName(),
-                    m.getDescriptor(),
-                    null, null);
-
-            mv = new PreCtrVisitor(Opcodes.ASM5, visitor, access + Opcodes.ACC_STATIC, m.getName(), newDesc);
-            method.accept(mv);
-
-            newDesc = "(L" + visitedClassName + ";" + method.desc.substring(1);
-            m = new Method("init$override", newDesc);
-            visitor = super.visitMethod(access + Opcodes.ACC_STATIC,
-                    m.getName(),
-                    m.getDescriptor(),
-                    null, null);
-
-            mv = new PostCtrVisitor(Opcodes.ASM5, visitor, access + Opcodes.ACC_STATIC, m.getName(), newDesc);
-            method.accept(mv);
-        }
         super.visitEnd();
+    }
+
+    private String getOverridenName(String methodName) {
+        // TODO: change the method name as it can now collide with existing static methods with
+        // the same signature.
+        if (methodName.equals("<init>")) {
+            return "init$override";
+        }
+        return methodName;
     }
 }
