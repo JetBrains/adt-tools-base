@@ -65,8 +65,8 @@ public class TransformTask extends StreamBasedTask {
     }
 
     @TaskAction
-    void transform(IncrementalTaskInputs incrementalTaskInputs) throws
-            IOException, TransformException {
+    void transform(IncrementalTaskInputs incrementalTaskInputs)
+            throws IOException, TransformException, InterruptedException {
         boolean isIncremental = transform.isIncremental() && incrementalTaskInputs.isIncremental();
 
         if (isIncremental) {
