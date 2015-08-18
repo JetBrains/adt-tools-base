@@ -34,9 +34,6 @@ class SvgLeafNode extends SvgNode {
 
     private String mPathData;
 
-    // Key is the attributes for vector drawable, and the value is the converted from SVG.
-    private HashMap<String, String> mVdAttributesMap = new HashMap<String, String>();
-
     public SvgLeafNode(SvgTree svgTree, Node node, String nodeName) {
         super(svgTree, node, nodeName);
     }
@@ -170,12 +167,6 @@ class SvgLeafNode extends SvgNode {
     }
 
     public void fillPresentationAttributes(String name, String value) {
-        logger.log(Level.FINE, ">>>> PROP " + name + " = " + value);
-        if (value.startsWith("url("))  {
-            getTree().logErrorLine("Unsupported URL value: " + value, getDocumentNode(),
-                                   SvgTree.SvgLogLevel.ERROR);
-            return;
-        }
-        mVdAttributesMap.put(name, value);
+        fillPresentationAttributes(name, value, logger);
     }
 }

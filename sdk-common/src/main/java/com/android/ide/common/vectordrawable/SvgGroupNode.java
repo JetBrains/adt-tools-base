@@ -16,11 +16,14 @@
 
 package com.android.ide.common.vectordrawable;
 
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,10 +37,28 @@ class SvgGroupNode extends SvgNode {
 
     public SvgGroupNode(SvgTree svgTree, Node docNode, String name) {
         super(svgTree, docNode, name);
+        // Parse and generate a presentation map.
+        NamedNodeMap a = docNode.getAttributes();
+        int len = a.getLength();
+
+        for (int itemIndex = 0; itemIndex < len; itemIndex++) {
+            Node n = a.item(itemIndex);
+            String nodeName = n.getNodeName();
+            String nodeValue = n.getNodeValue();
+            // TODO: Handle style here. Refer to Svg2Vector::addStyleToPath().
+            if (Svg2Vector.presentationMap.containsKey(nodeName)) {
+                fillPresentationAttributes(nodeName, nodeValue, logger);
+            }
+        }
+
     }
 
     public void addChild(SvgNode child) {
+        // Pass the presentation map down to the children, who can override the attributes.
         mChildren.add(child);
+        // The child has its own attributes map. But the parents can still fill some attributes
+        // if they don't exists
+        child.fillEmptyAttributes(mVdAttributesMap);
     }
 
     @Override
