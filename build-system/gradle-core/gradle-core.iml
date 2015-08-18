@@ -1204,10 +1204,11 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="sdk-common-base" />
+    <orderEntry type="module" module-name="transform-api" exported="" />
     <orderEntry type="module" module-name="lint-api-base" />
     <orderEntry type="module" module-name="lint-checks-base" />
-    <orderEntry type="library" exported="" name="jacoco" level="project" />
-    <orderEntry type="library" name="mockito" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="jacoco" level="project" />
+    <orderEntry type="library" scope="TEST" name="mockito" level="project" />
     <orderEntry type="library" name="ecj" level="project" />
   </component>
 </module>
