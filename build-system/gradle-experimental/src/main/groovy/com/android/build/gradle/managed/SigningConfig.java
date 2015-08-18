@@ -19,14 +19,16 @@ package com.android.build.gradle.managed;
 import org.gradle.api.Named;
 import org.gradle.model.Managed;
 
+import java.io.File;
+
 /**
  * A Managed SigningConfig.
  */
 @Managed
 public interface SigningConfig extends Named {
 
-    String getStoreFile();
-    void setStoreFile(String storeFile);
+    File getStoreFile();
+    void setStoreFile(File storeFile);
 
     String getStorePassword();
     void setStorePassword(String storePassword);
