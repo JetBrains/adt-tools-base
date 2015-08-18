@@ -86,12 +86,14 @@ class VdTree {
                 }
             }
         }
-        logger.log(Level.FINE, "Rectangle " + bounds);
-        logger.log(Level.FINE, "Port  " + mPortWidth + "," + mPortHeight);
-        double right = mPortWidth - bounds.getMaxX();
-        double bot = mPortHeight - bounds.getMaxY();
-        logger.log(Level.FINE, "x " + bounds.getMinX() + ", " + right);
-        logger.log(Level.FINE, "y " + bounds.getMinY() + ", " + bot);
+        if (bounds != null) {
+            logger.log(Level.FINE, "Rectangle " + bounds);
+            logger.log(Level.FINE, "Port  " + mPortWidth + "," + mPortHeight);
+            double right = mPortWidth - bounds.getMaxX();
+            double bot = mPortHeight - bounds.getMaxY();
+            logger.log(Level.FINE, "x " + bounds.getMinX() + ", " + right);
+            logger.log(Level.FINE, "y " + bounds.getMinY() + ", " + bot);
+        }
     }
 
     private Rectangle drawPath(VdPath path, Graphics canvas, int w, int h, float scale) {

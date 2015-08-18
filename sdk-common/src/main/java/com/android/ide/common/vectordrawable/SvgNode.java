@@ -20,6 +20,10 @@ import org.w3c.dom.Node;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Parent class for a SVG file's node, can be either group or leave element.
@@ -31,6 +35,9 @@ abstract class SvgNode {
     private SvgTree mSvgTree;
     // Use document node to get the line number for error reporting.
     private Node mDocumentNode;
+
+    // Key is the attributes for vector drawable, and the value is the converted from SVG.
+    protected Map<String, String> mVdAttributesMap = new HashMap<String, String>();
 
     public SvgNode(SvgTree svgTree, Node node, String name) {
         mName = name;
@@ -69,4 +76,24 @@ abstract class SvgNode {
      * Transform the current Node with the transformation matrix.
      */
     public abstract void transform(float a, float b, float c, float d, float e, float f);
+
+    protected void fillPresentationAttributes(String name, String value, Logger logger) {
+        logger.log(Level.FINE, ">>>> PROP " + name + " = " + value);
+        if (value.startsWith("url("))  {
+            getTree().logErrorLine("Unsupported URL value: " + value, getDocumentNode(),
+                    SvgTree.SvgLogLevel.ERROR);
+            return;
+        }
+        mVdAttributesMap.put(name, value);
+    }
+
+    public void fillEmptyAttributes(Map<String, String> parentAttributesMap) {
+        // Go through the parents' attributes, if the child misses any, then fill it.
+        for (Map.Entry<String, String> entry : parentAttributesMap.entrySet()) {
+            String key = entry.getKey();
+            if (!mVdAttributesMap.containsKey(key)) {
+                mVdAttributesMap.put(key, entry.getValue());
+            }
+        }
+    }
 }
