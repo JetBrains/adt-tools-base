@@ -32,6 +32,7 @@ import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantConfiguration;
+import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -141,8 +142,11 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 projectId = projectId.getParentIdentifier();
             }
 
-            return new NdkHandler(projectId.getProjectDir(), compileSdkVersion,
-                    ndkConfig.getToolchain(), ndkConfig.getToolchainVersion());
+            return new NdkHandler(
+                    projectId.getProjectDir(),
+                    Objects.firstNonNull(ndkConfig.getPlatformVersion(), compileSdkVersion),
+                    ndkConfig.getToolchain(),
+                    ndkConfig.getToolchainVersion());
         }
 
         @Defaults
