@@ -1076,6 +1076,9 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "3 errors, 0 warnings\n" : ""
 
+                + "src/test/pkg/ActionTest.java:30: Error: Missing permissions required by intent Intent.ACTION_CALL: android.permission.CALL_PHONE [MissingPermission]\n"
+                + "        activity.startActivity(intent);\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "src/test/pkg/ActionTest.java:36: Error: Missing permissions required by intent ActionTest.ACTION_CALL: android.permission.CALL_PHONE [MissingPermission]\n"
                 + "        activity.startActivity(intent);\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
@@ -1133,7 +1136,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/ActionTest.java:88: Error: Missing permissions required to read ActionTest.BOOKMARKS_URI: com.android.browser.permission.READ_HISTORY_BOOKMARKS [MissingPermission]\n"
                 + "        myWriteResolverMethod(BOOKMARKS_URI);\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "19 errors, 0 warnings\n",
+                + "20 errors, 0 warnings\n",
 
                 lintProject(
                         getManifestWithPermissions(14, 23),

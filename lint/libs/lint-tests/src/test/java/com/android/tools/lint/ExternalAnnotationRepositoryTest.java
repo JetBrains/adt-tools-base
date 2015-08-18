@@ -546,9 +546,9 @@ public class ExternalAnnotationRepositoryTest extends SdkTestCase {
             // Can't find it when running from Gradle; ignore for now
             return;
         }
-        ResolvedMethod method = createMethod("android.view.LayoutInflater", "android.view.View",
-                "createView", "java.lang.String, java.lang.String, android.util.AttributeSet");
-        assertNotNull(manager.getAnnotation(method, 2, "android.support.annotation.NonNull"));
+        ResolvedMethod method = createMethod("android.view.View", "void",
+                "dispatchVisibilityChanged", "android.view.View, int");
+        assertNotNull(manager.getAnnotation(method, 0, "android.support.annotation.NonNull"));
     }
 
     private static ResolvedClass createClass(String name) {
