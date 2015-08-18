@@ -27,7 +27,9 @@ import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.Variant;
+import com.android.ide.common.repository.GradleCoordinate;
 import com.android.testutils.TestUtils;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Project;
@@ -50,7 +52,7 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
 
     public void testPrivateInXml() throws Exception {
         assertEquals(""
-                + "res/layout/private.xml:11: Warning: The resource @string/my_private_string is marked as private in the library [PrivateResource]\n"
+                + "res/layout/private.xml:11: Warning: The resource @string/my_private_string is marked as private in com.android.tools:test-library [PrivateResource]\n"
                 + "            android:text=\"@string/my_private_string\" />\n"
                 + "                          ~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
@@ -76,8 +78,7 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
 
     public void testPrivateInJava() throws Exception {
         assertEquals(""
-                + ""
-                + "src/test/pkg/Private.java:3: Warning: The resource @string/my_private_string is marked as private in the library [PrivateResource]\n"
+                + "src/test/pkg/Private.java:3: Warning: The resource @string/my_private_string is marked as private in com.android.tools:test-library [PrivateResource]\n"
                 + "        int x = R.string.my_private_string; // ERROR\n"
                 + "                ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
@@ -93,14 +94,14 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
 
     public void testOverride() throws Exception {
         assertEquals(""
-                + "res/layout/my_private_layout.xml: Warning: Overriding @layout/my_private_layout which is marked as private in the library. If deliberate, use tools:override=\"true\", otherwise pick a different name. [PrivateResource]\n"
-                + "res/values/strings.xml:5: Warning: Overriding @string/my_private_string which is marked as private in the library. If deliberate, use tools:override=\"true\", otherwise pick a different name. [PrivateResource]\n"
+                + "res/layout/my_private_layout.xml: Warning: Overriding @layout/my_private_layout which is marked as private in com.android.tools:test-library. If deliberate, use tools:override=\"true\", otherwise pick a different name. [PrivateResource]\n"
+                + "res/values/strings.xml:5: Warning: Overriding @string/my_private_string which is marked as private in com.android.tools:test-library. If deliberate, use tools:override=\"true\", otherwise pick a different name. [PrivateResource]\n"
                 + "    <string name=\"my_private_string\">String 1</string>\n"
                 + "                  ~~~~~~~~~~~~~~~~~\n"
-                + "res/values/strings.xml:9: Warning: Overriding @string/my_private_string which is marked as private in the library. If deliberate, use tools:override=\"true\", otherwise pick a different name. [PrivateResource]\n"
+                + "res/values/strings.xml:9: Warning: Overriding @string/my_private_string which is marked as private in com.android.tools:test-library. If deliberate, use tools:override=\"true\", otherwise pick a different name. [PrivateResource]\n"
                 + "    <item type=\"string\" name=\"my_private_string\">String 1</item>\n"
                 + "                              ~~~~~~~~~~~~~~~~~\n"
-                + "res/values/strings.xml:12: Warning: Overriding @string/my_private_string which is marked as private in the library. If deliberate, use tools:override=\"true\", otherwise pick a different name. [PrivateResource]\n"
+                + "res/values/strings.xml:12: Warning: Overriding @string/my_private_string which is marked as private in com.android.tools:test-library. If deliberate, use tools:override=\"true\", otherwise pick a different name. [PrivateResource]\n"
                 + "    <string tools:override=\"false\" name=\"my_private_string\">String 2</string>\n"
                 + "                                         ~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 4 warnings\n",
@@ -149,6 +150,7 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
                     public Variant getCurrentVariant() {
                         try {
                             AndroidLibrary library = createMockLibrary(
+                                    "com.android.tools:test-library:1.0.0",
                                     ""
                                             + "int string my_private_string 0x7f040000\n"
                                             + "int string my_public_string 0x7f040001\n"
@@ -192,7 +194,8 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
         return artifact;
     }
 
-    public static AndroidLibrary createMockLibrary(String allResources, String publicResources,
+    public static AndroidLibrary createMockLibrary(String name,
+            String allResources, String publicResources,
             List<AndroidLibrary> dependencies)
             throws IOException {
         final File tempDir = TestUtils.createTempDirDeletedOnExit();
@@ -204,9 +207,18 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
         }
         AndroidLibrary library = mock(AndroidLibrary.class);
         when(library.getPublicResources()).thenReturn(publicTxtFile);
+        GradleCoordinate c = GradleCoordinate.parseCoordinateString(name);
+        assertNotNull(c);
+        MavenCoordinates coordinates = mock(MavenCoordinates.class);
+        when(coordinates.getGroupId()).thenReturn(c.getGroupId());
+        when(coordinates.getArtifactId()).thenReturn(c.getArtifactId());
+        when(coordinates.getVersion()).thenReturn(c.getFullRevision());
+        when(library.getResolvedCoordinates()).thenReturn(coordinates);
+        when(library.getBundle()).thenReturn(new File("intermediates" + File.separator +
+                "exploded-aar" + File.separator + name));
 
         // Work around wildcard capture
-        //when(mock.getLibraryDependencies()).thenReturn(dependencies);
+        //when(library.getLibraryDependencies()).thenReturn(dependencies);
         List libraryDependencies = library.getLibraryDependencies();
         OngoingStubbing<List> setter = when(libraryDependencies);
         setter.thenReturn(dependencies);
