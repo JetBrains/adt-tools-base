@@ -49,7 +49,7 @@ public class SigningConfigAdaptor implements CoreSigningConfig {
     @Override
     @InputFile @Optional
     public File getStoreFile() {
-        return signingConfig.getStoreFile() == null ? null : new File(signingConfig.getStoreFile());
+        return signingConfig.getStoreFile();
     }
 
     @Nullable
