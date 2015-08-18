@@ -576,7 +576,7 @@ public abstract class BasePlugin {
         checkState(extension.getBuildToolsRevision() != null, "buildToolsVersion is not specified.");
         checkState(extension.getCompileSdkVersion() != null, "compileSdkVersion is not specified.");
 
-        ndkHandler.setCompileSdkVersion(extension.getCompileSdkVersion());
+        ndkHandler.setPlatformVersion(extension.getCompileSdkVersion());
 
         // get current plugins and look for the default Java plugin.
         if (project.getPlugins().hasPlugin(JavaPlugin.class)) {

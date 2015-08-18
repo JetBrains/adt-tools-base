@@ -32,6 +32,8 @@ public class NdkConfigImpl implements NdkConfig {
 
     String moduleName;
 
+    String platformVersion;
+
     String toolchain;
 
     String toolchainVersion;
@@ -60,6 +62,16 @@ public class NdkConfigImpl implements NdkConfig {
     @Override
     public void setModuleName(@NonNull String moduleName) {
         this.moduleName = moduleName;
+    }
+
+    @Override
+    public String getPlatformVersion() {
+        return platformVersion;
+    }
+
+    @Override
+    public void setPlatformVersion(@NonNull String platformVersion) {
+        this.platformVersion = platformVersion;
     }
 
     @Override
