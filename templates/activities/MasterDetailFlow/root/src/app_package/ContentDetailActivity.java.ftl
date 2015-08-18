@@ -3,7 +3,15 @@ package ${packageName};
 import ${superClassFqcn};
 import android.content.Intent;
 import android.os.Bundle;
-<#if minApiLevel lt 16>import android.support.v4.app.NavUtils;</#if>
+<#if hasAppBar>
+import android.support.v7.widget.Toolbar;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
+import android.view.View;
+</#if>
+<#if minApiLevel lt 16>
+import android.support.v4.app.NavUtils;
+</#if>
 import android.view.MenuItem;
 <#if applicationPackage??>
 import ${applicationPackage}.R;
@@ -24,6 +32,19 @@ public class ${DetailName}Activity extends ${superClass} {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_${detail_name});
+<#if hasAppBar>
+        Toolbar toolbar = (Toolbar) findViewById(R.id.detail_toolbar);
+        setSupportActionBar(toolbar);
+
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Snackbar.make(view, "Replace with your own detail action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
+</#if>
 
         // Show the Up button in the action bar.
         get${Support}ActionBar().setDisplayHomeAsUpEnabled(true);
