@@ -27,3 +27,7 @@ allprojects {
 </#if>
     }
 }
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
