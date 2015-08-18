@@ -183,18 +183,20 @@ public class ProcessAndroidResources extends IncrementalTask {
             this.generateResourcePackage = generateResourcePackage;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return scope.getTaskName("process", "Resources");
         }
 
+        @NonNull
         @Override
         public Class<ProcessAndroidResources> getType() {
             return ProcessAndroidResources.class;
         }
 
         @Override
-        public void execute(ProcessAndroidResources processResources) {
+        public void execute(@NonNull ProcessAndroidResources processResources) {
             final BaseVariantOutputData variantOutputData = scope.getVariantOutputData();
             final BaseVariantData<? extends BaseVariantOutputData> variantData =
                     scope.getVariantScope().getVariantData();

@@ -397,18 +397,20 @@ public class MergeResources extends IncrementalTask {
             this.process9Patch = process9Patch;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return scope.getTaskName(taskNamePrefix, "Resources");
         }
 
+        @NonNull
         @Override
         public Class<MergeResources> getType() {
             return MergeResources.class;
         }
 
         @Override
-        public void execute(MergeResources mergeResourcesTask) {
+        public void execute(@NonNull MergeResources mergeResourcesTask) {
             final BaseVariantData<? extends BaseVariantOutputData> variantData =
                     scope.getVariantData();
             final AndroidConfig extension = scope.getGlobalScope().getExtension();

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.scope
 
+import com.android.annotations.NonNull
 import org.gradle.api.Task
 
 import java.util.concurrent.Callable
@@ -24,11 +25,11 @@ import java.util.concurrent.Callable
  * Helper class to dynamically access conventionMapping of a task.
  */
 class ConventionMappingHelper {
-    static void map(Task task, String key, Closure<?> value) {
+    static void map(@NonNull Task task, @NonNull String key, @NonNull Closure<?> value) {
         task.conventionMapping.map(key, value);
     }
 
-    static void map(Task task, String key, Callable<?> value) {
+    static void map(@NonNull Task task, @NonNull String key, @NonNull Callable<?> value) {
         task.conventionMapping.map(key, value);
     }
 }

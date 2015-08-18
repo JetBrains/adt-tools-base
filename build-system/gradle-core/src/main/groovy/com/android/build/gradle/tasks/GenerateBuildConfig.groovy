@@ -153,7 +153,7 @@ public class GenerateBuildConfig extends BaseTask {
 
 
         @Override
-        void execute(GenerateBuildConfig generateBuildConfigTask) {
+        void execute(@NonNull GenerateBuildConfig generateBuildConfigTask) {
             BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
 
             variantData.generateBuildConfigTask = generateBuildConfigTask

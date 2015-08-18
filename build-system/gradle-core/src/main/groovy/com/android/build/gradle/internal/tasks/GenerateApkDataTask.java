@@ -169,7 +169,7 @@ public class GenerateApkDataTask extends BaseTask {
         }
 
         @Override
-        public void execute(GenerateApkDataTask task) {
+        public void execute(@NonNull GenerateApkDataTask task) {
             final ApkVariantData variantData = (ApkVariantData) scope.getVariantData();
             variantData.generateApkDataTask = task;
 

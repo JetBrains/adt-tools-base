@@ -162,18 +162,20 @@ public class MergeAssets extends IncrementalTask {
             this.scope = scope
         }
 
+        @NonNull
         @Override
         String getName() {
             return scope.getTaskName("merge", "Assets");
         }
 
+        @NonNull
         @Override
         Class<MergeAssets> getType() {
             return MergeAssets
         }
 
         @Override
-        void execute(MergeAssets mergeAssetsTask) {
+        void execute(@NonNull MergeAssets mergeAssetsTask) {
             BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
             VariantConfiguration variantConfig = variantData.variantConfiguration
             boolean includeDependencies = variantConfig.type != VariantType.LIBRARY

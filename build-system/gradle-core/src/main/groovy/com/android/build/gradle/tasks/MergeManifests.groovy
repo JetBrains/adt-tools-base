@@ -150,18 +150,20 @@ public class MergeManifests extends ManifestProcessorTask {
             this.scope = scope
         }
 
+        @NonNull
         @Override
         String getName() {
             return scope.getTaskName("process", "Manifest")
         }
 
+        @NonNull
         @Override
         Class<MergeManifests> getType() {
             return MergeManifests
         }
 
         @Override
-        void execute(MergeManifests processManifestTask) {
+        void execute(@NonNull MergeManifests processManifestTask) {
             BaseVariantOutputData variantOutputData = scope.variantOutputData
 
             BaseVariantData<? extends BaseVariantOutputData> variantData =

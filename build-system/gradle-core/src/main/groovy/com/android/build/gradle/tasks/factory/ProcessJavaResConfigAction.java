@@ -2,6 +2,7 @@ package com.android.build.gradle.tasks.factory;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -25,18 +26,20 @@ public class ProcessJavaResConfigAction implements TaskConfigAction<Sync> {
         this.scope = scope;
     }
 
+    @NonNull
     @Override
     public String getName() {
         return scope.getTaskName("process", "JavaRes");
     }
 
+    @NonNull
     @Override
     public Class<Sync> getType() {
         return Sync.class;
     }
 
     @Override
-    public void execute(Sync processResources) {
+    public void execute(@NonNull Sync processResources) {
         scope.getVariantData().processJavaResourcesTask = processResources;
         GradleVariantConfiguration variantConfiguration = scope.getVariantConfiguration();
 
