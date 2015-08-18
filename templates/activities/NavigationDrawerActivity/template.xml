@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
     format="3"
-    revision="4"
+    revision="5"
     name="Navigation Drawer Activity"
     minApi="7"
     minBuildApi="14"
@@ -29,15 +29,6 @@
         help="The name of the layout to create for the activity" />
 
     <parameter
-        id="fragmentLayoutName"
-        name="Fragment Layout Name"
-        type="string"
-        constraints="layout|unique|nonempty"
-        suggest="fragment_${classToResource(activityClass)}"
-        default="fragment_main"
-        help="The name of the layout to create for the activity's content fragment"/>
-
-    <parameter
         id="activityTitle"
         name="Title"
         type="string"
@@ -52,6 +43,14 @@
         type="boolean"
         default="false"
         help="If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher" />
+
+    <parameter
+        id="hasAppBarSelected"
+        name="Include App Bar"
+        type="boolean"
+        visibility="appCompatActivity!false"
+        default="true"
+        help="If true, the layout will include a Material Design App Bar." />
 
     <parameter
         id="parentActivityClass"
@@ -72,8 +71,59 @@
         id="navigationDrawerLayout"
         name="Navigation Drawer Fragment Name"
         type="string"
+        visibility="!appCompatActivity"
         constraints="layout|unique"
         default="fragment_navigation_drawer"/>
+
+    <parameter
+        id="fragmentLayoutName"
+        name="Fragment Layout Name"
+        type="string"
+        visibility="!appCompatActivity"
+        constraints="layout|unique|nonempty"
+        suggest="fragment_${classToResource(activityClass)}"
+        default="fragment_main"
+        help="The name of the layout to create for the activity's content fragment"/>
+
+    <parameter
+        id="appBarLayoutName"
+        name="App Bar Layout Name"
+        type="string"
+        constraints="layout|unique"
+        suggest="${layoutName}_app_bar"
+        default="activity_main_app_bar"
+        visibility="false"
+        help="The name of the App Bar layout to create for the activity" />
+
+    <parameter
+        id="navHeaderLayoutName"
+        name="Navigation Header Layout Name"
+        type="string"
+        constraints="layout|unique"
+        suggest="${layoutName}_nav_header"
+        default="activity_main_nav_header"
+        visibility="false"
+        help="The name of the Navigation header layout to create for the activity" />
+
+    <parameter
+        id="drawerMenu"
+        name="Drawer Menu Name"
+        type="string"
+        constraints="layout|unique"
+        suggest="${layoutName}_drawer"
+        default="activity_main_drawer"
+        visibility="false"
+        help="The name of the Drawer menu to create for the activity" />
+
+    <parameter
+        id="navViewLayoutName"
+        name="Navigation View Layout Name"
+        type="string"
+        constraints="layout|unique"
+        suggest="${layoutName}_nav_view"
+        default="activity_main_nav_view"
+        visibility="false"
+        help="The name of the Navigation View layout to create for the activity" />
 
     <!-- 128x128 thumbnails relative to template.xml -->
     <thumbs>

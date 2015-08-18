@@ -79,8 +79,9 @@ public class ${activityClass} extends ${superClass}
         actionBar.setTitle(mTitle);
     }
 
+<#if newProject!false>
     <#include "include_options_menu.java.ftl">
-
+</#if>
     <#include "include_fragment.java.ftl">
 
 }
