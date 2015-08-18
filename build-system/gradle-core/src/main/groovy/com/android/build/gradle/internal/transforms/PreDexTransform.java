@@ -41,6 +41,7 @@ import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
@@ -313,20 +314,28 @@ public class PreDexTransform implements Transform {
      * @param inputFile the library.
      */
     @NonNull
-    static File getDexFileName(@NonNull File outFolder, @NonNull File inputFile) {
-        // get the filename
-        String name = inputFile.getName();
-        // remove the extension
-        int pos = name.lastIndexOf('.');
-        if (pos != -1) {
-            name = name.substring(0, pos);
-        }
+    private File getDexFileName(@NonNull File outFolder, @NonNull File inputFile) {
+        String name = Files.getNameWithoutExtension(inputFile.getName());
 
         // add a hash of the original file path.
         String input = inputFile.getAbsolutePath();
         HashFunction hashFunction = Hashing.sha1();
         HashCode hashCode = hashFunction.hashString(input, Charsets.UTF_16LE);
 
-        return new File(outFolder, name + "-" + hashCode.toString() + SdkConstants.DOT_JAR);
+        // If multidex is enabled, this name will be used for a folder and classes*.dex files will
+        // inside of it.
+        String suffix = multiDex ? "" : SdkConstants.DOT_JAR;
+
+        if (name.equals("classes") && inputFile.getAbsolutePath().contains("exploded-aar")) {
+            // This naming scheme is coming from DependencyManager#computeArtifactPath.
+            File versionDir = inputFile.getParentFile().getParentFile();
+            File artifactDir = versionDir.getParentFile();
+            File groupDir = artifactDir.getParentFile();
+
+            name = Joiner.on('-').join(
+                    groupDir.getName(), artifactDir.getName(), versionDir.getName());
+        }
+
+        return new File(outFolder, name + "_" + hashCode.toString() + suffix);
     }
 }

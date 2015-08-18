@@ -25,7 +25,6 @@ import org.gradle.api.Task;
  * Interface for a container that can create Task.
  */
 public interface TaskFactory {
-
     /**
      * Returns true if this collection contains an item with the given name.
      */

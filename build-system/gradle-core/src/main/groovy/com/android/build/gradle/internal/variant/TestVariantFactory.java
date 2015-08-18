@@ -64,6 +64,7 @@ public class TestVariantFactory extends ApplicationVariantFactory {
                     "targetVariant cannot be null in test project " + project.getName());
         }
 
+        // add the code of the tested app to the provided scope.
         DependencyHandler handler = project.getDependencies();
         handler.add("provided", handler.project(ImmutableMap.of(
                 "path", path,

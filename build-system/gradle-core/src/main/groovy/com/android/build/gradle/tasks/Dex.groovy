@@ -15,19 +15,24 @@
  */
 package com.android.build.gradle.tasks
 import com.android.SdkConstants
+import com.android.annotations.NonNull
 import com.android.annotations.Nullable
-import com.android.build.gradle.internal.PostCompilationData
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.dsl.DexOptions
+import com.android.build.gradle.internal.pipeline.StreamBasedTask
+import com.android.build.gradle.internal.pipeline.TransformManager.StreamFilter
+import com.android.build.gradle.internal.pipeline.TransformStream
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.variant.ApkVariantData
+import com.android.build.transform.api.ScopedContent
 import com.android.ide.common.process.LoggedProcessOutputHandler
 import com.android.utils.FileUtils
+import com.google.common.collect.ImmutableList
+import com.google.common.collect.Iterables
+import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
@@ -41,7 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
-public class Dex extends BaseTask {
+public class Dex extends StreamBasedTask {
 
     // ----- PUBLIC TASK API -----
 
@@ -59,13 +64,17 @@ public class Dex extends BaseTask {
         getBuildTools().getRevision()
     }
 
-    @InputFiles @Optional
-    Collection<File> inputFiles
-    @InputDirectory @Optional
-    File inputDir
+    protected List<TransformStream> preDexStreams;
 
     @InputFiles
-    Collection<File> libraries
+    public List<File> getPreDexStreamInputs() {
+        List<File> inputs = Lists.newArrayList();
+        for (TransformStream stream : preDexStreams) {
+            inputs.addAll(stream.getFiles().get());
+        }
+
+        return inputs;
+    }
 
     @Nested
     DexOptions dexOptions
@@ -87,20 +96,16 @@ public class Dex extends BaseTask {
      */
     @TaskAction
     void taskAction(IncrementalTaskInputs inputs) {
-        Collection<File> _inputFiles = getInputFiles()
-        File _inputDir = getInputDir()
-        if (_inputFiles == null && _inputDir == null) {
-            throw new RuntimeException("Dex task '${getName()}: inputDir and inputFiles cannot both be null");
-        }
+        Collection<File> inputFiles = getAllStreamInputs()
 
         if (!dexOptions.incremental || !enableIncremental) {
-            doTaskAction(_inputFiles, _inputDir, false /*incremental*/)
+            doTaskAction(inputFiles, false /*incremental*/)
             return
         }
 
         if (!inputs.isIncremental()) {
             project.logger.info("Unable to do incremental execution: full task run.")
-            doTaskAction(_inputFiles, _inputDir, false /*incremental*/)
+            doTaskAction(inputFiles, false /*incremental*/)
             return
         }
 
@@ -125,60 +130,84 @@ public class Dex extends BaseTask {
             }
         }
 
-        doTaskAction(_inputFiles, _inputDir, !forceFullRun.get())
+        doTaskAction(inputFiles, !forceFullRun.get())
     }
 
     private void doTaskAction(
             @Nullable Collection<File> inputFiles,
-            @Nullable File inputDir,
             boolean incremental) {
         File outFolder = getOutputFolder()
         if (!incremental) {
             FileUtils.emptyFolder(outFolder)
         }
 
-        File tmpFolder = getTmpFolder()
-        tmpFolder.mkdirs()
-
-        // if some of our .jar input files exist, just reset the inputDir to null
-        for (File inputFile : inputFiles) {
-            if (inputFile.exists()) {
-                inputDir = null;
-            }
-        }
-        if (inputDir != null) {
-            inputFiles = project.files(inputDir).files
-        }
-
         getBuilder().convertByteCode(
                 inputFiles,
-                getLibraries(),
+                project.files(getPreDexStreamInputs()).files,
                 outFolder,
                 getMultiDexEnabled(),
                 getMainDexListFile(),
                 getDexOptions(),
                 getAdditionalParameters(),
-                tmpFolder,
                 incremental,
                 getOptimize(),
                 new LoggedProcessOutputHandler(getILogger()))
     }
 
+    @NonNull
+    public List<File> getAllStreamInputs() {
+        List<File> inputs = Lists.newArrayList();
+        for (TransformStream stream : consumedInputStreams) {
+            Collection<File> files = stream.getFiles().get()
+            switch (stream.getFormat()) {
+                case ScopedContent.Format.SINGLE_FOLDER:
+                case ScopedContent.Format.MULTI_JAR:
+                case ScopedContent.Format.MIXED_FOLDERS_AND_JARS:
+                    inputs.addAll(files)
+                    break;
+                case ScopedContent.Format.MULTI_FOLDER:
+                    for (File folder : files) {
+                        File[] subStreams = folder.listFiles()
+                        if (subStreams != null) {
+                            for (File subStream : subStreams) {
+                                if (subStream.isDirectory()) {
+                                    inputs.add(subStream);
+                                }
+                            }
+                        }
+                    }
+                    break;
+                case ScopedContent.Format.SINGLE_JAR:
+                    inputs.add(Iterables.getOnlyElement(files));
+                    break;
+                default:
+                    throw new RuntimeException("Unsupported ScopedContent.Format value: " + stream.getFormat().name());
+            }
+        }
+
+        return inputs;
+    }
 
     public static class ConfigAction implements TaskConfigAction<Dex> {
+        public static final StreamFilter sFilter = new StreamFilter() {
+            @Override
+            public boolean accept(@NonNull Set<ScopedContent.ContentType> types, @NonNull Set<ScopedContent.Scope> scopes) {
+                return types.contains(ScopedContent.ContentType.CLASSES) &&
+                        !scopes.contains(ScopedContent.Scope.TESTED_CODE) &&
+                        !scopes.contains(ScopedContent.Scope.PROVIDED_ONLY);
+            }
+        }
 
-        private final VariantScope scope;
+        @NonNull
+        private final VariantScope variantScope
 
-        private final PostCompilationData pcData;
-
-        public ConfigAction(VariantScope scope, PostCompilationData pcData) {
-            this.scope = scope;
-            this.pcData = pcData;
+        public ConfigAction(@NonNull VariantScope variantScope) {
+            this.variantScope = variantScope
         }
 
         @Override
         public String getName() {
-            return scope.getTaskName("dex")
+            return variantScope.getTaskName("dex")
         }
 
         @Override
@@ -188,46 +217,47 @@ public class Dex extends BaseTask {
 
         @Override
         public void execute(Dex dexTask) {
-            ApkVariantData variantData = (ApkVariantData) scope.getVariantData();
+            ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
             final GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
             boolean isMultiDexEnabled = config.isMultiDexEnabled()
             boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode();
 
             variantData.dexTask = dexTask;
-            dexTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder())
+            dexTask.setAndroidBuilder(variantScope.getGlobalScope().getAndroidBuilder())
             dexTask.setVariantName(config.getFullName())
             ConventionMappingHelper.map(dexTask, "outputFolder", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    return scope.getDexOutputFolder();
+                    return variantScope.getDexOutputFolder();
                 }
             });
             dexTask.setTmpFolder(new File(
-                    String.valueOf(scope.getGlobalScope().getBuildDir()) + "/" + FD_INTERMEDIATES
+                    String.valueOf(variantScope.getGlobalScope().getBuildDir()) + "/" + FD_INTERMEDIATES
                             + "/tmp/dex/" + config.getDirName()));
-            dexTask.setDexOptions(scope.getGlobalScope().getExtension().getDexOptions());
+            dexTask.setDexOptions(variantScope.getGlobalScope().getExtension().getDexOptions());
 
             dexTask.setMultiDexEnabled(isMultiDexEnabled);
-            // dx doesn't work with receving --no-optimize in debug so we disable it for now.
+            // dx doesn't work with receiving --no-optimize in debug so we disable it for now.
             dexTask.setOptimize(true);//!variantData.variantConfiguration.buildType.debuggable
 
             // inputs
-            if (pcData.getInputDirCallable() != null) {
-                ConventionMappingHelper.map(dexTask, "inputDir", pcData.getInputDirCallable());
-            }
-            ConventionMappingHelper.map(dexTask, "inputFiles", pcData.getInputFilesCallable());
-            ConventionMappingHelper.map(dexTask, "libraries", pcData.getInputLibrariesCallable());
+            dexTask.consumedInputStreams = variantScope.getTransformManager().getStreams(sFilter);
+            dexTask.preDexStreams = variantScope.getTransformManager().getStreamsByContent(ScopedContent.ContentType.DEX)
+            dexTask.referencedInputStreams = ImmutableList.of()
 
             if (isMultiDexEnabled && isLegacyMultiDexMode) {
                 // configure the dex task to receive the generated class list.
                 ConventionMappingHelper.map(dexTask, "mainDexListFile", new Callable<File>() {
                     @Override
                     public File call() throws Exception {
-                        return scope.getMainDexListFile();
+                        return variantScope.getMainDexListFile();
                     }
                 });
             }
+
+            // no output stream for this class.
+            dexTask.outputStreams = ImmutableList.of()
         }
     }
 }

@@ -301,7 +301,7 @@ public class JillTask extends BaseTask {
             ConventionMappingHelper.map(jillTask, "inputLibs", new Callable<Set<File>>() {
                 @Override
                 public Set<File> call() throws Exception {
-                    return androidBuilder.getPackagedJars(variantScope.getVariantConfiguration());
+                    return androidBuilder.getAllPackagedJars(variantScope.getVariantConfiguration());
                 }
             });
 

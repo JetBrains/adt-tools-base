@@ -8,6 +8,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -17,10 +18,12 @@ import com.android.build.gradle.internal.tasks.ValidateSigningTask;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.ScopedContent.ContentType;
+import com.android.build.transform.api.ScopedContent.Scope;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.StringHelper;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 
 import org.codehaus.groovy.runtime.StringGroovyMethods;
@@ -76,16 +79,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         this.dexedLibraries = dexedLibraries;
     }
 
-    @InputDirectory
-    @Optional
-    public File getJavaResourceDir() {
-        return javaResourceDir;
-    }
-
-    public void setJavaResourceDir(File javaResourceDir) {
-        this.javaResourceDir = javaResourceDir;
-    }
-
     public Set<File> getJniFolders() {
         return jniFolders;
     }
@@ -123,13 +116,28 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     // ----- PRIVATE TASK API -----
 
+    @InputDirectory
+    @Optional
+    public File getJavaResourceDir() {
+        return javaResourceDir;
+    }
+
+    @InputFile
+    @Optional
+    public File getJavaResourceJar() {
+        return javaResourceJar;
+    }
+
     private File resourceFile;
 
     private File dexFolder;
 
     private Collection<File> dexedLibraries;
 
+    /** directory for the merged java resources. only valid if the jar below is null  */
     private File javaResourceDir;
+    /** jar for the merged java resources. only valid if the folder above is null  */
+    private File javaResourceJar;
 
     private Set<File> jniFolders;
 
@@ -140,8 +148,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     private Set<String> abiFilters;
 
-    private Set<File> packagedJars;
-
     private boolean jniDebugBuild;
 
     private CoreSigningConfig signingConfig;
@@ -149,15 +155,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
     private PackagingOptions packagingOptions;
 
     private SignedJarBuilder.IZipEntryFilter packagingOptionsFilter;
-
-    @InputFiles
-    public Set<File> getPackagedJars() {
-        return packagedJars;
-    }
-
-    public void setPackagedJars(Set<File> packagedJars) {
-        this.packagedJars = packagedJars;
-    }
 
     @Input
     public boolean getJniDebugBuild() {
@@ -213,11 +210,20 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
     @Override
     protected void doFullTaskAction() {
         try {
-            final File dir = getJavaResourceDir();
-            getBuilder().packageApk(getResourceFile().getAbsolutePath(), getDexFolder(),
-                    getDexedLibraries(), getPackagedJars(),
-                    (dir == null ? null : dir.getAbsolutePath()), getJniFolders(),
-                    getMergingFolder(), getAbiFilters(), getJniDebugBuild(), getSigningConfig(),
+            File resourceLocation = getJavaResourceDir();
+            if (resourceLocation == null) {
+                resourceLocation = getJavaResourceJar();
+            }
+            getBuilder().packageApk(
+                    getResourceFile().getAbsolutePath(),
+                    getDexFolder(),
+                    getDexedLibraries(),
+                    resourceLocation,
+                    getJniFolders(),
+                    getMergingFolder(),
+                    getAbiFilters(),
+                    getJniDebugBuild(),
+                    getSigningConfig(),
                     getPackagingOptions(),
                     getPackagingOptionsFilter(),
                     getOutputFile().getAbsolutePath());
@@ -313,6 +319,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     new Callable<Collection<File>>() {
                         @Override
                         public Collection<File> call() {
+/*
+FIXME
                             if (config.isMultiDexEnabled()
                                     && !config.isLegacyMultiDexMode()
                                     && variantData.preDexTask != null) {
@@ -320,41 +328,42 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                                         .fileTree(variantData.preDexTask.getOutputFolder())
                                         .getFiles();
                             }
-
+*/
                             return Collections.emptyList();
                         }
                     });
-            scope.getVariantScope().getJavaResourcesProvider();
-            ConventionMappingHelper.map(packageApp, "packagedJars", new Callable<Set<File>>() {
-                @Override
-                public Set<File> call() {
-                    ImmutableSet.Builder<File> jarFiles = ImmutableSet.builder();
-                    for (JavaResourcesProvider.JavaResourcesLocation javaResourcesProvider :
-                            scope.getVariantScope().getJavaResourcesProvider().getJavaResourcesLocations()) {
-                        if (javaResourcesProvider.type == JavaResourcesProvider.Type.JAR) {
-                            jarFiles.add(javaResourcesProvider.location);
-                        }
-                    }
-                    return jarFiles.build();
-                }
-            });
+
             ConventionMappingHelper.map(packageApp, "javaResourceDir", new Callable<File>() {
                 @Override
-                public File call() {
-                    ImmutableSet.Builder<File> folders = ImmutableSet.builder();
-                    for (JavaResourcesProvider.JavaResourcesLocation javaResourcesProvider :
-                            scope.getVariantScope().getJavaResourcesProvider()
-                                    .getJavaResourcesLocations()) {
-                        if (javaResourcesProvider.type == JavaResourcesProvider.Type.FOLDER) {
-                            folders.add(javaResourcesProvider.location);
-                        }
-                    }
-                    ImmutableSet<File> resourceFolders = folders.build();
-                    if (resourceFolders.size() > 1) {
-                        throw new RuntimeException("More than one java resources folders : " +
-                                Joiner.on(",").join(resourceFolders));
-                    }
-                    return resourceFolders.isEmpty() ? null : resourceFolders.iterator().next();
+                public File call() throws Exception {
+                    return scope.getVariantScope().getTransformManager().getSinglePipelineOutput(
+                            new TransformManager.StreamFilter() {
+                                @Override
+                                public boolean accept(@NonNull Set<ContentType> types,
+                                        @NonNull Set<Scope> scopes) {
+                                    return types.contains(ContentType.RESOURCES) &&
+                                            !scopes.contains(Scope.PROVIDED_ONLY) &&
+                                            !scopes.contains(Scope.TESTED_CODE);
+                                }
+                            },
+                            ScopedContent.Format.SINGLE_FOLDER);
+                }
+            });
+
+            ConventionMappingHelper.map(packageApp, "javaResourceJar", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return scope.getVariantScope().getTransformManager().getSinglePipelineOutput(
+                            new TransformManager.StreamFilter() {
+                                @Override
+                                public boolean accept(@NonNull Set<ContentType> types,
+                                        @NonNull Set<Scope> scopes) {
+                                    return types.contains(ContentType.RESOURCES) &&
+                                            !scopes.contains(Scope.PROVIDED_ONLY) &&
+                                            !scopes.contains(Scope.TESTED_CODE);
+                                }
+                            },
+                            ScopedContent.Format.SINGLE_JAR);
                 }
             });
 

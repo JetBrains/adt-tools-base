@@ -251,7 +251,7 @@ public class ExtractJavaResourcesTask extends DefaultAndroidTask {
 
                     @Override
                     public Set<File> call() throws Exception {
-                        return scope.getVariantConfiguration().getPackagedJars();
+                        return scope.getVariantConfiguration().getAllPackagedJars();
                     }
                 });
             extractJavaResourcesTask.outputDir = scope.getPackagedJarsJavaResDestinationDir();

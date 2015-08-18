@@ -65,7 +65,7 @@ import java.util.concurrent.Callable;
  */
 @ParallelizableTask
 public class JackTask extends AbstractAndroidCompile
-        implements FileSupplier, BinaryFileProviderTask, JavaResourcesProvider {
+        implements FileSupplier, BinaryFileProviderTask {
 
     public static final FullRevision JACK_MIN_REV = new FullRevision(21, 1, 0);
 
@@ -333,13 +333,6 @@ public class JackTask extends AbstractAndroidCompile
         this.javaResourcesFolder = javaResourcesFolder;
     }
 
-    @NonNull
-    @Override
-    public ImmutableList<JavaResourcesLocation> getJavaResourcesLocations() {
-        return ImmutableList.of(
-                new JavaResourcesLocation(Type.FOLDER, getDestinationDir()));
-    }
-
     @Override
     @NonNull
     public BinaryFileProviderTask.Artifact getArtifact() {
@@ -441,7 +434,6 @@ public class JackTask extends AbstractAndroidCompile
                     "/tmp/jack/" + scope.getVariantConfiguration().getDirName()));
 
             jackTask.setJavaResourcesFolder(scope.getJavaResourcesDestinationDir());
-            scope.setJavaResourcesProvider(jackTask);
 
             if (config.isMinifyEnabled()) {
                 ConventionMappingHelper.map(jackTask, "proguardFiles", new Callable<List<File>>() {

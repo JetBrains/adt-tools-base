@@ -15,23 +15,28 @@
  */
 
 package com.android.build.gradle.tasks
-
+import com.android.annotations.NonNull
+import com.android.build.gradle.internal.pipeline.TransformManager
+import com.android.build.gradle.internal.pipeline.TransformStream
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantOutputScope
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
-import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
+import com.android.build.transform.api.ScopedContent
 import com.android.builder.core.AaptPackageProcessBuilder
 import com.android.ide.common.process.LoggedProcessOutputHandler
+import com.google.common.collect.ImmutableList
+import com.google.common.collect.Iterables
 import org.gradle.api.logging.LogLevel
+import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 
 import java.util.concurrent.Callable
-
 /**
  * Task which strips out unused resources
  * <p>
@@ -61,6 +66,28 @@ public class ShrinkResources extends BaseTask {
      */
     public BaseVariantOutputData variantOutputData
 
+    protected File minifiedOutFolder
+
+    @InputDirectory
+    File getInputFolder() {
+        return minifiedOutFolder;
+    }
+
+    @InputFile
+    File getManifestInput() {
+        return variantOutputData.manifestProcessorTask.manifestOutputFile
+    }
+
+    @InputDirectory
+    File getSourceDir() {
+        return variantOutputData.variantData.generateRClassTask.sourceOutputDir
+    }
+
+    @InputDirectory
+    File getResourceDir() {
+        return variantOutputData.variantData.getScope().getFinalResourcesDir()
+    }
+
     @InputFile
     File uncompressedResources
 
@@ -84,7 +111,7 @@ public class ShrinkResources extends BaseTask {
             // Analyze resources and usages and strip out unused
             def analyzer = new ResourceUsageAnalyzer(
                     sourceDir,
-                    variantData.getScope().getProguardOutputFile(),
+                    minifiedOutFolder,
                     mergedManifest,
                     variantData.getMappingFile(),
                     resourceDir)
@@ -199,11 +226,27 @@ public class ShrinkResources extends BaseTask {
 
         @Override
         void execute(ShrinkResources task) {
-            BaseVariantData<? extends BaseVariantOutputData> variantData =
-                    scope.variantScope.variantData
+            VariantScope variantScope = scope.getVariantScope()
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
-            task.setVariantName(scope.getVariantScope().getVariantConfiguration().getFullName());
+
+            task.setVariantName(variantScope.getVariantConfiguration().getFullName());
             task.variantOutputData = scope.variantOutputData;
+
+            ImmutableList<TransformStream> streams = variantScope.getTransformManager().getStreams(
+                    new TransformManager.StreamFilter() {
+                            @Override
+                            boolean accept(@NonNull Set<ScopedContent.ContentType> types,
+                                    @NonNull Set<ScopedContent.Scope> scopes) {
+                                return types.contains(ScopedContent.ContentType.CLASSES) &&
+                                        !scopes.contains(ScopedContent.Scope.PROVIDED_ONLY) &&
+                                        !scopes.contains(ScopedContent.Scope.TESTED_CODE)
+                            }
+                        })
+            // there should be only one stream if we're running minification
+            TransformStream stream = Iterables.getOnlyElement(streams);
+            // there should be a single folder too since streams downstream from the original
+            // ones are single folders.
+            task.minifiedOutFolder = Iterables.getOnlyElement(stream.getFiles().get())
 
             final String outputBaseName = scope.variantOutputData.getBaseName();
             task.setCompressedResources(scope.getCompressedResourceFile());

@@ -146,7 +146,7 @@ class AndroidTestResourcesTest {
     }
 
 
-    private void checkLayoutInR(GradleTestProject fixture) {
+    private static void checkLayoutInR(GradleTestProject fixture) {
         def rFile = fixture.file(Joiner.on(File.separatorChar).join(
                 "build", AndroidProject.FD_GENERATED, "source", "r",
                 "androidTest", "debug", "com", "example", "helloworld", "test",  "R.java"))

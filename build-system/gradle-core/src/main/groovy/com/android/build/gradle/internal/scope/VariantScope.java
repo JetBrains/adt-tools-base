@@ -20,8 +20,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
-import com.android.build.gradle.internal.tasks.MergeJavaResourcesTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -30,7 +31,6 @@ import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
-import com.android.build.gradle.tasks.JavaResourcesProvider;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
@@ -60,6 +60,9 @@ public interface VariantScope {
 
     @NonNull
     GradleVariantConfiguration getVariantConfiguration();
+
+    @NonNull
+    TransformManager getTransformManager();
 
     @NonNull
     String getTaskName(@NonNull String prefix);
@@ -294,13 +297,9 @@ public interface VariantScope {
 
     SignedJarBuilder.IZipEntryFilter getPackagingOptionsFilter();
 
-    void setMergeJavaResourcesTask(AndroidTask<MergeJavaResourcesTask> mergeJavaResourcesTask);
+    void setMergeJavaResourcesTask(AndroidTask<TransformTask> mergeJavaResourcesTask);
 
-    AndroidTask<MergeJavaResourcesTask> getMergeJavaResourcesTask();
-
-    void setJavaResourcesProvider(JavaResourcesProvider javaResourcesProvider);
-
-    JavaResourcesProvider getJavaResourcesProvider();
+    AndroidTask<TransformTask> getMergeJavaResourcesTask();
 
     @Nullable
     AndroidTask<? extends AbstractCompile> getJavaCompilerTask();

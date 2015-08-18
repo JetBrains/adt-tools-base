@@ -18,15 +18,21 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dsl.DexOptions;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.transform.api.ScopedContent.Scope;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -34,6 +40,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -41,6 +48,13 @@ import java.util.Set;
  * TaskManager for creating tasks in an Android application project.
  */
 public class ApplicationTaskManager extends TaskManager {
+
+    private static final Set<Scope> POSSIBLE_PREDEX_SCOPES = ImmutableSet.of(
+            Scope.PROJECT_LOCAL_DEPS,
+            Scope.SUB_PROJECTS,
+            Scope.SUB_PROJECTS_LOCAL_DEPS,
+            Scope.EXTERNAL_LIBRARIES);
+
 
     public ApplicationTaskManager(
             Project project,
@@ -65,6 +79,9 @@ public class ApplicationTaskManager extends TaskManager {
         createCheckManifestTask(tasks, variantScope);
 
         handleMicroApp(tasks, variantScope);
+
+        // Create all current streams (dependencies mostly at this point)
+        createDependencyStreams(variantScope);
 
         // Add a task to process the manifest(s)
         ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_MANIFEST_TASK,
@@ -220,6 +237,95 @@ public class ApplicationTaskManager extends TaskManager {
                         return null;
                     }
                 });
+    }
+
+    @NonNull
+    @Override
+    protected Set<Scope> computePreDexScopes(@NonNull VariantScope variantScope) {
+        return computePreDexScopes(variantScope, getExtension().getDexOptions());
+    }
+
+    @NonNull
+    static Set<Scope> computePreDexScopes(
+            @NonNull VariantScope variantScope,
+            @NonNull DexOptions dexOptions) {
+        // predexing is only enabled if:
+        // - minify is disabled.
+        // - there's no legacy-predexing.
+
+        final BaseVariantData variantData = variantScope.getVariantData();
+        final GradleVariantConfiguration config = variantData.getVariantConfiguration();
+
+        boolean preDexEnabled = dexOptions.getPreDexLibraries();
+        boolean isMinifyEnabled = config.isMinifyEnabled();
+        //boolean isTestForApp = config.getType().isForTesting() &&
+        //        ((TestVariantData) variantData).getTestedVariantData().getVariantConfiguration()
+        //                .getType().equals(DEFAULT);
+        boolean isLegacyMultiDexMode = config.isMultiDexEnabled() && config.isLegacyMultiDexMode();
+
+        if (preDexEnabled && !isMinifyEnabled && !isLegacyMultiDexMode) {
+            EnumSet<Scope> set = EnumSet.copyOf(POSSIBLE_PREDEX_SCOPES);
+
+            // TODO if we don't want to predex the subprojects, test and don't return it here.
+            /*
+             if (something) {
+               set.remove(ScopedContent.Scope.SUB_PROJECTS);
+             }
+             */
+            return Sets.immutableEnumSet(set);
+        }
+
+        return TransformManager.EMPTY_SCOPES;
+    }
+
+    @NonNull
+    @Override
+    protected Set<Scope> computeExtractResAndJavaFromJarScopes(
+            @NonNull VariantScope variantScope) {
+        return computeExtractResAndJavaFromJarScopes2(variantScope);
+    }
+
+    @NonNull
+    static Set<Scope> computeExtractResAndJavaFromJarScopes2(
+            @NonNull VariantScope variantScope) {
+        // we need to extract classes from jars only when we're running proguard or multi-dex
+        // or some additional processing.
+        final BaseVariantData variantData = variantScope.getVariantData();
+        final GradleVariantConfiguration config = variantData.getVariantConfiguration();
+
+        boolean isMinifyEnabled = config.isMinifyEnabled();
+        boolean isLegacyMultiDexMode = config.isMultiDexEnabled() && config.isLegacyMultiDexMode();
+
+        if (isMinifyEnabled || isLegacyMultiDexMode) {
+            return Sets.immutableEnumSet(POSSIBLE_PREDEX_SCOPES);
+        }
+
+        // TODO: if we want to run jacoco on sub-projects, do it here.
+            /*
+             if (something) {
+               return Sets.immutableEnumSet(ScopedContent.Scope.SUB_PROJECTS);
+             }
+             */
+
+        return TransformManager.EMPTY_SCOPES;
+    }
+
+    @NonNull
+    @Override
+    protected Set<Scope> computeExtractResFromJarScopes(@NonNull VariantScope variantScope) {
+        return computeExtractResFromJarScopes(variantScope, this);
+    }
+
+    @NonNull
+    static Set<Scope> computeExtractResFromJarScopes(
+            @NonNull VariantScope variantScope,
+            @NonNull TaskManager taskManager) {
+        // This should be the exact opposite of computeExtractResAndJavaFromJarScopes(), based
+        // on POSSIBLE_PREDEX_SCOPES being the max list.
+        EnumSet<Scope> sets = EnumSet.copyOf(POSSIBLE_PREDEX_SCOPES);
+        sets.removeAll(taskManager.computeExtractResAndJavaFromJarScopes(variantScope));
+
+        return Sets.immutableEnumSet(sets);
     }
 
     /**

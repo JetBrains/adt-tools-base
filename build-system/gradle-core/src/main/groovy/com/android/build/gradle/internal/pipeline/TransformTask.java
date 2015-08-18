@@ -39,6 +39,7 @@ import com.google.common.collect.Sets;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFiles;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 import org.gradle.api.tasks.incremental.InputFileDetails;
@@ -56,6 +57,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * A task running a transform.
  */
+@ParallelizableTask
 public class TransformTask extends StreamBasedTask {
 
     private Transform transform;
@@ -354,7 +356,7 @@ public class TransformTask extends StreamBasedTask {
 
             TransformOutput output = null;
             if (inputOutput) {
-                output =  findOutputFor(input).asOutput();
+                output = findOutputFor(input).asOutput();
             } else if (combinedOutput != null) {
                 output = combinedOutput;
             }
