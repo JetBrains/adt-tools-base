@@ -206,16 +206,26 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 ServiceRegistry serviceRegistry) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
             AndroidConfigHelper.configure(androidModel, instantiator);
+        }
 
-            androidModel.getSigningConfigs().create(DEBUG, new Action<SigningConfig>() {
+        @Defaults
+        public void initSigningConfigs(
+                @Path("android.signingConfigs") ModelMap<SigningConfig> signingConfigs) {
+            signingConfigs.beforeEach(new Action<SigningConfig>() {
+                @Override
+                public void execute(SigningConfig signingConfig) {
+                    signingConfig.setStoreType(KeyStore.getDefaultType());
+                }
+            });
+            signingConfigs.create(DEBUG, new Action<SigningConfig>() {
                 @Override
                 public void execute(SigningConfig signingConfig) {
                     try {
-                        signingConfig.setStoreFile(KeystoreHelper.defaultDebugKeystoreLocation());
+                        signingConfig.setStoreFile(
+                                new File(KeystoreHelper.defaultDebugKeystoreLocation()));
                         signingConfig.setStorePassword(DefaultSigningConfig.DEFAULT_PASSWORD);
                         signingConfig.setKeyAlias(DefaultSigningConfig.DEFAULT_ALIAS);
                         signingConfig.setKeyPassword(DefaultSigningConfig.DEFAULT_PASSWORD);
-                        signingConfig.setStoreType(KeyStore.getDefaultType());
                     } catch (AndroidLocation.AndroidLocationException e) {
                         throw new RuntimeException(e);
                     }
