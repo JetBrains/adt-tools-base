@@ -26,9 +26,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-import java.util.zip.ZipFile
-
-import static org.junit.Assert.assertNotNull
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static org.junit.Assert.fail
 
 /**
@@ -97,11 +95,18 @@ model {
         if (!stl.equals("invalid")) {
             project.execute("assembleDebug");
 
-            ZipFile apk = new ZipFile(project.getApk("debug"));
-            assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
-            assertNotNull(apk.getEntry("lib/mips/libhello-jni.so"));
-            assertNotNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
-            assertNotNull(apk.getEntry("lib/armeabi-v7a/libhello-jni.so"));
+            File apk = project.getApk("debug");
+            assertThatZip(apk).contains("lib/x86/libhello-jni.so");
+            assertThatZip(apk).contains("lib/mips/libhello-jni.so");
+            assertThatZip(apk).contains("lib/armeabi/libhello-jni.so");
+            assertThatZip(apk).contains("lib/armeabi-v7a/libhello-jni.so");
+
+            if (stl.endsWith("shared")) {
+                assertThatZip(apk).contains("lib/x86/lib" + stl + ".so");
+                assertThatZip(apk).contains("lib/mips/lib" + stl + ".so");
+                assertThatZip(apk).contains("lib/armeabi/lib" + stl + ".so");
+                assertThatZip(apk).contains("lib/armeabi-v7a/lib" + stl + ".so");
+            }
         } else {
             // Fail if it's invalid.
             try {
