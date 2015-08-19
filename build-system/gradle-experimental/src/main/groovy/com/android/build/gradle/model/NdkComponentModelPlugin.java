@@ -65,10 +65,8 @@ import org.gradle.nativeplatform.NativeLibrarySpec;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
 import org.gradle.platform.base.BinaryContainer;
-import org.gradle.platform.base.BinarySpec;
 import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.platform.base.PlatformContainer;
-import org.gradle.platform.base.binary.BaseBinarySpec;
 
 import java.io.File;
 import java.util.Collection;
@@ -342,28 +340,6 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                 nativeBinary.getTargetPlatform().getName())) {
                             binary.getBuildTask().dependsOn(NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
                         }
-                    }
-                }
-            });
-        }
-
-        @Mutate
-        public void removeNativeBinaryFromAssembleTask(ModelMap<AndroidComponentSpec> components) {
-            // Setting each native binary to not buildable to prevent the native tasks to be
-            // automatically added to the "assemble" task.
-            components.afterEach(new Action<AndroidComponentSpec>() {
-                @Override
-                public void execute(AndroidComponentSpec spec) {
-                    NativeLibrarySpec nativeLibrary =
-                            ((DefaultAndroidComponentSpec)spec).getNativeLibrary();
-                    if (nativeLibrary != null) {
-                        nativeLibrary.getBinaries().afterEach(
-                                new Action<BinarySpec>() {
-                                    @Override
-                                    public void execute(BinarySpec binary) {
-                                        ((BaseBinarySpec) binary).setBuildable(false);
-                                    }
-                                });
                     }
                 }
             });
