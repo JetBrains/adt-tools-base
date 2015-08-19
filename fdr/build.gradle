@@ -30,7 +30,11 @@ android {
 }
 
 repositories {
-    maven { url System.env.CUSTOM_REPO }
+    if (System.env.CUSTOM_REPO != null) {
+        maven { url System.env.CUSTOM_REPO }
+    } else if (System.env.USE_EXTERNAL_REPO) {
+        maven { url '../../../out/repo' }
+    }
 }
 
 dependencies {
