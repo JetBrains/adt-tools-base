@@ -1061,8 +1061,16 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         String artifactId = dependency.getArtifactId();
         assert groupId != null && artifactId != null;
 
-        // See if the support library version is lower than the targetSdkVersion
-        if (mTargetSdkVersion > 0 && dependency.getMajorVersion() < mTargetSdkVersion &&
+        if (mCompileSdkVersion >= 18 && dependency.getMajorVersion() != mCompileSdkVersion &&
+                dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE &&
+                // The multidex library doesn't follow normal supportlib numbering scheme
+                !dependency.getArtifactId().startsWith("multidex") &&
+                context.isEnabled(COMPATIBILITY)) {
+            String message = "This support library should not use a different version ("
+                    + dependency.getMajorVersion() + ") than the `compileSdkVersion` ("
+                    + mCompileSdkVersion + ")";
+            report(context, cookie, COMPATIBILITY, message);
+        } else if (mTargetSdkVersion > 0 && dependency.getMajorVersion() < mTargetSdkVersion &&
                 dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE &&
                 // The multidex library doesn't follow normal supportlib numbering scheme
                 !dependency.getArtifactId().startsWith("multidex") &&

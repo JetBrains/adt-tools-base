@@ -222,7 +222,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
     public void test() throws Exception {
         mEnabled = Sets.newHashSet(COMPATIBILITY, DEPRECATED, DEPENDENCY, PLUS);
         assertEquals(""
-            + "build.gradle:25: Error: This support library should not use a lower version (13) than the targetSdkVersion (17) [GradleCompatible]\n"
+            + "build.gradle:25: Error: This support library should not use a different version (13) than the compileSdkVersion (19) [GradleCompatible]\n"
             + "    compile 'com.android.support:appcompat-v7:13.0.0'\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
             + "build.gradle:1: Warning: 'android' is deprecated; use 'com.android.application' instead [GradleDeprecated]\n"
