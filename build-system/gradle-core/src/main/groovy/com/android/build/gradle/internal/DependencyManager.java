@@ -428,7 +428,10 @@ public class DependencyManager {
                                     artifactInfo,
                                     SyncIssue.TYPE_MISMATCH_DEP,
                                     String.format(
-                                            "Conflict with dependency '%s'. Resolved versions for app (%s) and test app (%s) differ.",
+                                            "Conflict with dependency '%s'. Resolved versions for"
+                                                    + " app (%s) and test app (%s) differ. See"
+                                                    + " http://g.co/androidstudio/app-test-app-conflict"
+                                                    + " for details.",
                                             artifactInfo,
                                             testedVersion,
                                             coordinates.getVersion())));

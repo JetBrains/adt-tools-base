@@ -49,7 +49,9 @@ dependencies {
 """
     }
 
-    private final static String ERROR_MSG = 'Conflict with dependency \'com.google.guava:guava\'. Resolved versions for app (17.0) and test app (15.0) differ.'
+    private final static String ERROR_MSG = 'Conflict with dependency \'com.google.guava:guava\'.' +
+            ' Resolved versions for app (17.0) and test app (15.0) differ.' +
+            ' See http://g.co/androidstudio/app-test-app-conflict for details.'
 
     @Test
     public void "Test mismatch dependency error is in model"() {
