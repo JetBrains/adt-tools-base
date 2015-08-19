@@ -21,6 +21,7 @@ import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
 import static com.android.SdkConstants.VALUE_FALSE;
 import static com.android.SdkConstants.VALUE_TRUE;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.CHECK_RESULT_ANNOTATION;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION;
 
 import com.android.annotations.NonNull;
@@ -981,8 +982,10 @@ public class ExternalAnnotationRepository {
             if (valueElements.isEmpty()
                     // Permission annotations are sometimes used as marker annotations (on
                     // parameters) but that shouldn't let us conclude that any future
-                    // permission annotations are
-                    && !name.startsWith(PERMISSION_ANNOTATION)) {
+                    // permission annotations are. Ditto for @CheckResult, where we sometimes
+                    // specify a suggestion.
+                    && !name.startsWith(PERMISSION_ANNOTATION)
+                    && !name.equals(CHECK_RESULT_ANNOTATION)) {
                 mMarkerAnnotations.put(name, annotation);
                 return annotation;
             }
