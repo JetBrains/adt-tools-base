@@ -112,7 +112,8 @@ public class StlConfiguration {
                 @Override
                 public void execute(Copy copy) {
                     copy.from(stlConfig.getStlLib(binary.getTargetPlatform().getName()));
-                    copy.into(new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)));
+                    copy.into(new File(buildDir,
+                            NdkNamingScheme.getDebugLibraryDirectoryName(binary)));
 
                 }
             });
