@@ -217,6 +217,10 @@ final class DeviceMonitor {
 
         for (Device device : newlyOnline) {
             queryAvdName(device);
+
+            // Initiate a property fetch so that future requests can be served out of this cache.
+            // This is necessary for backwards compatibility
+            device.getSystemProperty(IDevice.PROP_BUILD_API_LEVEL);
         }
     }
 
