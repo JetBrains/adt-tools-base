@@ -183,7 +183,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
                 return false;
             }
 
-            return !testRunResult.hasFailedTests();
+            return !testRunResult.hasFailedTests() && !testRunResult.isRunFailure();
         } catch (Exception e) {
             Map<String, String> emptyMetrics = Collections.emptyMap();
 
