@@ -53,7 +53,6 @@ import lombok.ast.ExpressionStatement;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.Identifier;
 import lombok.ast.KeywordModifier;
-import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Modifiers;
 import lombok.ast.Node;
@@ -67,6 +66,10 @@ import lombok.ast.printer.SourceFormatter;
 import lombok.ast.printer.SourcePrinter;
 import lombok.ast.printer.TextFormatter;
 
+// Disable code warnings that are applied to injected languages in ECJ sample code: these
+// are deliberately doing dodgy things to test parser scenarios
+@SuppressWarnings({"ClassNameDiffersFromFileName", "MethodMayBeStatic", "ImplicitArrayToString",
+        "UnnecessaryLocalVariable", "UnnecessarySemicolon"})
 public class EcjParserTest extends AbstractCheckTest {
     public void testTryCatchHang() throws Exception {
         // Ensure that we're really using this parser
@@ -83,6 +86,7 @@ public class EcjParserTest extends AbstractCheckTest {
     }
 
     public void testKitKatLanguageFeatures() throws Exception {
+        @Language("JAVA")
         String testClass = "" +
                 "package test.pkg;\n" +
                 "\n" +
@@ -327,6 +331,7 @@ public class EcjParserTest extends AbstractCheckTest {
     }
 
     public void testResolution() throws Exception {
+        @Language("JAVA")
         String source =
                 "package test.pkg;\n" +
                 "\n" +
@@ -910,6 +915,7 @@ public class EcjParserTest extends AbstractCheckTest {
 
     public static class AstPrettyPrinter implements SourceFormatter {
 
+        @SuppressWarnings("StringBufferField") // Don't care about performance here
         private final StringBuilder mOutput = new StringBuilder(1000);
 
         private final JavaParser mResolver;
@@ -960,10 +966,12 @@ public class EcjParserTest extends AbstractCheckTest {
 
             String typeDescription = "";
             String resolutionDescription = "";
+            @SuppressWarnings("ConstantConditions") // Hack for test pretty printer only
             JavaParser.TypeDescriptor t = mResolver.getType(null, node);
             if (t != null) {
                 typeDescription = ", type: " + t.getName();
             }
+            @SuppressWarnings("ConstantConditions") // Hack for test pretty printer only
             ResolvedNode resolved = mResolver.resolve(null, node);
             if (resolved != null) {
                 String c = "unknown";
