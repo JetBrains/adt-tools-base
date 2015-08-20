@@ -31,5 +31,5 @@
     <global id="menuName" value="${classToResource(activityClass!'')}" />
     <global id="simpleName" value="${activityToLayout(activityClass!'')}" />
     <global id="relativePackage" value="<#if relativePackage?has_content>${relativePackage}<#else>${packageName}</#if>" />
-    <global id="Support" value="${(hasDependency('com.android.support:appcompat-v7'))?string('Support','')}" />
+    <global id="Support" value="${(isNewProject || hasDependency('com.android.support:appcompat-v7'))?string('Support','')}" />
 </globals>
