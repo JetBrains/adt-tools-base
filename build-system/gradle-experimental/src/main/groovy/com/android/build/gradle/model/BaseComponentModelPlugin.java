@@ -463,6 +463,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             VariantManager variantManager = new VariantManager(project, androidBuilder,
                     adaptedModel, variantFactory, taskManager, instantiator);
 
+            variantFactory.validateModel(variantManager);
+
             for (BuildType buildType : buildTypes.values()) {
                 variantManager.addBuildType(new BuildTypeAdaptor(buildType));
             }
