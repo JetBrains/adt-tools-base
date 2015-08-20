@@ -12,6 +12,6 @@
     <orderEntry type="module" module-name="common" />
     <orderEntry type="library" name="kxml2" level="project" />
     <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
-    <orderEntry type="library" name="Mocks" level="project" />
+    <orderEntry type="library" scope="TEST" name="Mocks" level="project" />
   </component>
 </module>
