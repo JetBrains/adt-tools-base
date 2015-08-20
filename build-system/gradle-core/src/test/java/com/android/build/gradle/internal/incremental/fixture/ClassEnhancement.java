@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotNull;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.incremental.IncrementalChangeVisitor;
-import com.android.build.gradle.internal.incremental.IncrementalSupportVisitor;
 import com.android.utils.FileUtils;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -56,8 +55,6 @@ public class ClassEnhancement implements TestRule {
 
     private File mBaseCompileOutputFolder;
 
-    private File mBaseInstrumentedCompileOutputFolder;
-
     private Map<String, File> mCompileOutputFolders;
 
     private Map<String, ClassLoader> mEnhancedClassLoaders;
@@ -69,7 +66,6 @@ public class ClassEnhancement implements TestRule {
         File incrementalTestClasses = new File(classes, "incremental-test");
         mResourceBase = new File(incrementalTestClasses, "patches");
         mBaseCompileOutputFolder = new File(incrementalTestClasses, "base");
-        mBaseInstrumentedCompileOutputFolder = new File(incrementalTestClasses, "baseInstrumented");
     }
 
     public void reset()
@@ -116,22 +112,10 @@ public class ClassEnhancement implements TestRule {
                 final URL[] classLoaderUrls = getClassLoaderUrls();
                 final ClassLoader mainClassLoader = this.getClass().getClassLoader();
 
-                instrumentBaseClasses(mBaseCompileOutputFolder,
-                        mBaseInstrumentedCompileOutputFolder);
-
                 mEnhancedClassLoaders = setUpEnhancedClassLoaders(
                         classLoaderUrls, mainClassLoader, mCompileOutputFolders);
 
-                ClassLoader previousContextClassLoader =
-                        Thread.currentThread().getContextClassLoader();
-
-                Thread.currentThread().setContextClassLoader(newUrlClassLoader(
-                        mBaseInstrumentedCompileOutputFolder, previousContextClassLoader));
-                try {
-                    base.evaluate();
-                } finally {
-                    Thread.currentThread().setContextClassLoader(previousContextClassLoader);
-                }
+                base.evaluate();
 
             }
         };
@@ -251,42 +235,4 @@ public class ClassEnhancement implements TestRule {
             return defineClass(name, changedClassBytes, 0, changedClassBytes.length);
         }
     }
-
-
-    private static void instrumentBaseClasses(File rootLocation, File outLocation)
-            throws IOException {
-
-        Iterable<File> files =
-                Files.fileTreeTraverser().preOrderTraversal(rootLocation).filter(Files.isFile());
-
-        for (File inputFile : files) {
-            File outputFile = new File(outLocation,
-                    FileUtils.relativePath(inputFile, rootLocation));
-
-            byte[] classBytes;
-            classBytes = Files.toByteArray(inputFile);
-            ClassReader classReader = new ClassReader(classBytes);
-            ClassNode classNode = new ClassNode(Opcodes.ASM5);
-            classReader.accept(classNode, 0);
-            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
-            IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(
-                    classNode, Collections.<ClassNode>emptyList(), classWriter);
-            classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
-            byte[] enhancedClassBytes = classWriter.toByteArray();
-            Files.createParentDirs(outputFile);
-            Files.write(enhancedClassBytes, outputFile);
-        }
-    }
-
-    private ClassLoader newUrlClassLoader(File file, ClassLoader parent) throws IOException {
-        URL url;
-        try {
-            url = file.toURI().toURL();
-        } catch (MalformedURLException e) {
-            throw new IOException(e);
-        }
-
-        return URLClassLoader.newInstance(new URL[] {url}, parent);
-    }
-
 }
