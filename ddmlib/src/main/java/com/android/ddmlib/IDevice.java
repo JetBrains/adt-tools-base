@@ -178,7 +178,10 @@ public interface IDevice extends IShellEnabledDevice {
 
     /**
      * Convenience method that attempts to retrieve a property via
-     * {@link #getSystemProperty(String)} with minimal wait time, and swallows exceptions.
+     * {@link #getSystemProperty(String)} with a very short wait time, and swallows exceptions.
+     *
+     * <p><em>Note: Prefer using {@link #getSystemProperty(String)} if you want control over the
+     * timeout.</em>
      *
      * @param name the name of the value to return.
      * @return the value or <code>null</code> if the property value was not immediately available
