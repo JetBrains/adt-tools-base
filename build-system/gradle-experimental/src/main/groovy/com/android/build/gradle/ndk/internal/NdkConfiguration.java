@@ -43,6 +43,7 @@ import org.gradle.nativeplatform.NativeBinarySpec;
 import org.gradle.nativeplatform.NativeLibrarySpec;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 import org.gradle.platform.base.BinarySpec;
+import org.gradle.platform.base.binary.BaseBinarySpec;
 
 import java.io.File;
 
@@ -59,6 +60,16 @@ public class NdkConfiguration {
         for (Abi abi : ndkHandler.getSupportedAbis()) {
             library.targetPlatform(abi.getName());
         }
+
+        // Setting each native binary to not buildable to prevent the native tasks to be
+        // automatically added to the "assemble" task.
+        library.getBinaries().beforeEach(
+                new Action<BinarySpec>() {
+                    @Override
+                    public void execute(BinarySpec binary) {
+                        ((BaseBinarySpec) binary).setBuildable(false);
+                    }
+                });
 
         library.getBinaries()
                 .withType(SharedLibraryBinarySpec.class, new Action<SharedLibraryBinarySpec>() {
