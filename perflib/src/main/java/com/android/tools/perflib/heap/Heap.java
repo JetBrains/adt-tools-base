@@ -33,14 +33,6 @@ public class Heap {
     @NonNull
     private final String mName;
 
-    //  List of individual stack frames
-    @NonNull
-    TLongObjectHashMap<StackFrame> mFrames = new TLongObjectHashMap<StackFrame>();
-
-    //  List stack traces, which are lists of stack frames
-    @NonNull
-    TIntObjectHashMap<StackTrace> mTraces = new TIntObjectHashMap<StackTrace>();
-
     //  Root objects such as interned strings, jni locals, etc
     @NonNull
     ArrayList<RootObj> mRoots = new ArrayList<RootObj>();
@@ -73,33 +65,6 @@ public class Heap {
     @NonNull
     public String getName() {
         return mName;
-    }
-
-    public final void addStackFrame(@NonNull StackFrame theFrame) {
-        mFrames.put(theFrame.mId, theFrame);
-    }
-
-    public final StackFrame getStackFrame(long id) {
-        return mFrames.get(id);
-    }
-
-    public final void addStackTrace(@NonNull StackTrace theTrace) {
-        mTraces.put(theTrace.mSerialNumber, theTrace);
-    }
-
-    public final StackTrace getStackTrace(int traceSerialNumber) {
-        return mTraces.get(traceSerialNumber);
-    }
-
-    public final StackTrace getStackTraceAtDepth(int traceSerialNumber,
-            int depth) {
-        StackTrace trace = mTraces.get(traceSerialNumber);
-
-        if (trace != null) {
-            trace = trace.fromDepth(depth);
-        }
-
-        return trace;
     }
 
     public final void addRoot(@NonNull RootObj root) {

@@ -25,6 +25,8 @@ import com.android.tools.perflib.heap.analysis.TopologicalSort;
 import com.android.tools.perflib.heap.io.HprofBuffer;
 import com.google.common.collect.ImmutableList;
 import gnu.trove.THashSet;
+import gnu.trove.TIntObjectHashMap;
+import gnu.trove.TLongObjectHashMap;
 
 import java.util.*;
 
@@ -52,6 +54,14 @@ public class Snapshot {
 
     @NonNull
     Heap mCurrentHeap;
+
+    //  List stack traces, which are lists of stack frames
+    @NonNull
+    TIntObjectHashMap<StackTrace> mTraces = new TIntObjectHashMap<StackTrace>();
+
+    //  List of individual stack frames
+    @NonNull
+    TLongObjectHashMap<StackFrame> mFrames = new TLongObjectHashMap<StackFrame>();
 
     private ImmutableList<Instance> mTopSort;
 
@@ -144,23 +154,29 @@ public class Snapshot {
     }
 
     public final void addStackFrame(@NonNull StackFrame theFrame) {
-        mCurrentHeap.addStackFrame(theFrame);
+        mFrames.put(theFrame.mId, theFrame);
     }
 
     public final StackFrame getStackFrame(long id) {
-        return mCurrentHeap.getStackFrame(id);
+        return mFrames.get(id);
     }
 
     public final void addStackTrace(@NonNull StackTrace theTrace) {
-        mCurrentHeap.addStackTrace(theTrace);
+        mTraces.put(theTrace.mSerialNumber, theTrace);
     }
 
     public final StackTrace getStackTrace(int traceSerialNumber) {
-        return mCurrentHeap.getStackTrace(traceSerialNumber);
+        return mTraces.get(traceSerialNumber);
     }
 
     public final StackTrace getStackTraceAtDepth(int traceSerialNumber, int depth) {
-        return mCurrentHeap.getStackTraceAtDepth(traceSerialNumber, depth);
+        StackTrace trace = mTraces.get(traceSerialNumber);
+
+        if (trace != null) {
+            trace = trace.fromDepth(depth);
+        }
+
+        return trace;
     }
 
     public final void addRoot(@NonNull RootObj root) {
