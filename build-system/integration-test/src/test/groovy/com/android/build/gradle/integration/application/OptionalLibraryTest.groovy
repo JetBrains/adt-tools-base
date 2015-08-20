@@ -24,7 +24,6 @@ import com.android.sdklib.SdkManager
 import com.android.utils.NullLogger
 import groovy.transform.CompileStatic
 import org.junit.After
-import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 
@@ -48,8 +47,6 @@ class OptionalLibraryTest {
 
     @Test
     void "test unknown useLibrary trigger sync issue"() {
-        Assume.assumeNotNull("Next platform missing", System.getenv("ANDROID_NEXT_PLATFORM"));
-
         project.getBuildFile() << """
             apply plugin: 'com.android.application'
 
@@ -72,8 +69,6 @@ class OptionalLibraryTest {
 
     @Test
     void "test using optional library"() {
-        Assume.assumeNotNull("Next platform missing", System.getenv("ANDROID_NEXT_PLATFORM"));
-
         project.getBuildFile() << """
             apply plugin: 'com.android.application'
 
@@ -104,8 +99,6 @@ class OptionalLibraryTest {
 
     @Test
     void "test not using optional library"() {
-        Assume.assumeNotNull("Next platform missing", System.getenv("ANDROID_NEXT_PLATFORM"));
-
         project.getBuildFile() << """
             apply plugin: 'com.android.application'
 
