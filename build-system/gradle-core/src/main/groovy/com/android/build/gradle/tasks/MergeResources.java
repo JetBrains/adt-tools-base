@@ -62,14 +62,6 @@ import java.util.concurrent.Callable;
 @ParallelizableTask
 public class MergeResources extends IncrementalTask {
 
-    /**
-     * The first version of build tools that normalizes resources when packaging the APK.
-     *
-     * <p>This means that e.g. drawable-hdpi becomes drawable-hdpi-v4 to make it clear it was not
-     * available before API 4.
-     */
-    public static final FullRevision NORMALIZE_RESOURCES_BUILD_TOOLS = new FullRevision(21, 0, 0);
-
     // ----- PUBLIC TASK API -----
 
     /**
@@ -93,8 +85,6 @@ public class MergeResources extends IncrementalTask {
     private boolean useNewCruncher;
 
     private boolean insertSourceMarkers = true;
-
-    private boolean normalizeResources;
 
     // actual inputs
     private List<ResourceSet> inputResourceSets;
@@ -188,7 +178,6 @@ public class MergeResources extends IncrementalTask {
             }
 
             for (ResourceSet resourceSet : merger.getDataSets()) {
-                resourceSet.setNormalizeResources(normalizeResources);
                 resourceSet.setPreprocessor(preprocessor);
             }
 
@@ -260,7 +249,6 @@ public class MergeResources extends IncrementalTask {
         List<ResourceSet> generatedSets = Lists.newArrayListWithCapacity(resourceSets.size());
 
         for (ResourceSet resourceSet : resourceSets) {
-            resourceSet.setNormalizeResources(normalizeResources);
             resourceSet.setPreprocessor(preprocessor);
             ResourceSet generatedSet = new GeneratedResourceSet(resourceSet);
             resourceSet.setGeneratedSet(generatedSet);
@@ -290,15 +278,6 @@ public class MergeResources extends IncrementalTask {
     @Input
     public boolean isInsertSourceMarkers() {
         return insertSourceMarkers;
-    }
-
-    @Input
-    public boolean isNormalizeResources() {
-        return normalizeResources;
-    }
-
-    public void setNormalizeResources(boolean normalizeResources) {
-        this.normalizeResources = normalizeResources;
     }
 
     public List<ResourceSet> getInputResourceSets() {
@@ -423,9 +402,6 @@ public class MergeResources extends IncrementalTask {
             mergeResourcesTask.process9Patch = process9Patch;
             mergeResourcesTask.crunchPng = extension.getAaptOptions()
                     .getCruncherEnabled();
-            mergeResourcesTask.normalizeResources =
-                    extension.getBuildToolsRevision()
-                            .compareTo(NORMALIZE_RESOURCES_BUILD_TOOLS) < 0;
 
             mergeResourcesTask.generatedDensities =
                     variantData.getVariantConfiguration().getMergedFlavor().getGeneratedDensities();
