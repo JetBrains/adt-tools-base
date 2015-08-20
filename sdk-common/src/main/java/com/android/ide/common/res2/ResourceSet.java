@@ -50,7 +50,6 @@ import java.util.Map;
  */
 public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
-    private boolean mNormalizeResources = false;
     private ResourceSet mGeneratedSet;
     private ResourcePreprocessor mPreprocessor;
 
@@ -60,10 +59,6 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
     public ResourceSet(String name, boolean validateEnabled) {
         super(name, validateEnabled);
-    }
-
-    public void setNormalizeResources(boolean normalizeResources) {
-        mNormalizeResources = normalizeResources;
     }
 
     public void setGeneratedSet(ResourceSet generatedSet) {
@@ -505,10 +500,8 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                         .withFile(folder).build();
             }
 
-            if (mNormalizeResources) {
-                // normalize it
-                folderConfiguration.normalize();
-            }
+            // normalize it
+            folderConfiguration.normalize();
 
             // get the qualifier portion from the folder config.
             // the returned string starts with "-" so we remove that.

@@ -69,7 +69,7 @@ class VectorDrawableTest {
                 "build/generated/res/pngs/debug/drawable-hdpi/special_heart.png")
         File pngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/merged/debug/drawable-hdpi/special_heart.png")
+                "build/intermediates/res/merged/debug/drawable-hdpi-v4/special_heart.png")
 
         assertThat(generatedPng).doesNotExist()
         assertWithMessage("Wrong file used.")
@@ -82,7 +82,7 @@ class VectorDrawableTest {
                 "build/generated/res/pngs/debug/drawable-xhdpi/special_heart.png")
         pngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/merged/debug/drawable-xhdpi/special_heart.png")
+                "build/intermediates/res/merged/debug/drawable-xhdpi-v4/special_heart.png")
 
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
@@ -159,7 +159,7 @@ class VectorDrawableTest {
                 "src/main/res/drawable-hdpi/special_heart.png")
         File pngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/merged/debug/drawable-hdpi/special_heart.png")
+                "build/intermediates/res/merged/debug/drawable-hdpi-v4/special_heart.png")
 
         assertThat(generatedPng).doesNotExist()
         assertWithMessage("Wrong file used.")
@@ -185,7 +185,7 @@ class VectorDrawableTest {
                 "build/generated/res/pngs/debug/drawable-xhdpi/special_heart.png")
         File pngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/merged/debug/drawable-xhdpi/special_heart.png")
+                "build/intermediates/res/merged/debug/drawable-xhdpi-v4/special_heart.png")
 
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
@@ -215,7 +215,7 @@ class VectorDrawableTest {
 
         File heartPngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/merged/debug/drawable-hdpi/heart.png")
+                "build/intermediates/res/merged/debug/drawable-hdpi-v4/heart.png")
         File iconPngToUse = new File(
                 project.testDir,
                 "build/intermediates/res/merged/debug/drawable/icon.png")
