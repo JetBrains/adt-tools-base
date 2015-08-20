@@ -16,14 +16,24 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import com.android.annotations.Nullable;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.logging.Logger;
 
 /**
  * Support for registering patched classes.
  */
 public class IncrementalSupportRuntime {
+
+    @Nullable
+    private static Logger logger = null;
+
+    public static void setLogger(Logger logger) {
+        IncrementalSupportRuntime.logger = logger;
+    }
 
     public static Object getPrivateField(Object target, String name) {
         try {
@@ -55,7 +65,9 @@ public class IncrementalSupportRuntime {
 
     public static Object invokeProtectedMethod(Object target, String name, String[] parameterTypes,
             Object[] params) {
-        System.out.println("invoke protected called");
+        if (logger != null) {
+            logger.info("invoke protected called");
+        }
         Class[] paramTypes = new Class[parameterTypes.length];
         for (int i=0; i<parameterTypes.length; i++) {
             BasicType basicType = BasicType.parse(parameterTypes[i]);
@@ -110,14 +122,16 @@ public class IncrementalSupportRuntime {
     }
 
     public static void trace(String s) {
-        System.out.println("Redirectirng " + s);
+        if (logger != null) {
+            logger.info(s);
+        }
     }
 
     public static void trace(String s1, String s2) {
-        System.out.println(s1 + s2);
+        trace(s1 + s2);
     }
 
     public static void trace(String s1, String s2, String s3) {
-        System.out.println(s1 + s2 + s3);
+        trace(s1 + s2 + s3);
     }
 }

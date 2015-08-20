@@ -38,15 +38,20 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collections;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class ClassEnhancement implements TestRule {
 
@@ -61,7 +66,14 @@ public class ClassEnhancement implements TestRule {
 
     private String currentPatchState = null;
 
+    private final boolean tracing;
+
     public ClassEnhancement() {
+        this(false);
+    }
+
+    public ClassEnhancement(boolean tracing) {
+        this.tracing = tracing;
         File classes = new File(ClassEnhancement.class.getResource("/").getFile()).getParentFile();
         File incrementalTestClasses = new File(classes, "incremental-test");
         mResourceBase = new File(incrementalTestClasses, "patches");
@@ -113,7 +125,7 @@ public class ClassEnhancement implements TestRule {
                 final ClassLoader mainClassLoader = this.getClass().getClassLoader();
 
                 mEnhancedClassLoaders = setUpEnhancedClassLoaders(
-                        classLoaderUrls, mainClassLoader, mCompileOutputFolders);
+                        classLoaderUrls, mainClassLoader, mCompileOutputFolders, tracing);
 
                 base.evaluate();
 
@@ -139,12 +151,13 @@ public class ClassEnhancement implements TestRule {
     private static Map<String, ClassLoader> setUpEnhancedClassLoaders(
             final URL[] classLoaderUrls,
             final ClassLoader mainClassLoader,
-            final Map<String, File> compileOutputFolders) {
+            final Map<String, File> compileOutputFolders,
+            final boolean tracing) {
         return Maps.transformValues(compileOutputFolders, new Function<File, ClassLoader>() {
             @Override
             public ClassLoader apply(File compileOutputFolder) {
                 return new IncrementalChangeClassLoader(
-                        classLoaderUrls, mainClassLoader, compileOutputFolder);
+                        classLoaderUrls, mainClassLoader, compileOutputFolder, tracing);
             }
         });
     }
@@ -194,9 +207,12 @@ public class ClassEnhancement implements TestRule {
     private static class IncrementalChangeClassLoader extends URLClassLoader {
 
         private final File mClassLocation;
+        private final boolean tracing;
 
-        public IncrementalChangeClassLoader(URL[] urls, ClassLoader parent, File classLocation) {
+        public IncrementalChangeClassLoader(
+                URL[] urls, ClassLoader parent, File classLocation, boolean tracing) {
             super(urls, parent);
+            this.tracing = tracing;
             mClassLocation = classLocation;
         }
 
@@ -232,7 +248,33 @@ public class ClassEnhancement implements TestRule {
                     classNode, Collections.<ClassNode>emptyList(), classWriter);
             classReader.accept(incrementalChangeVisitor, ClassReader.EXPAND_FRAMES);
             byte[] changedClassBytes = classWriter.toByteArray();
+            if (tracing) {
+                Logger.getLogger(ClassEnhancement.class.getName()).info(
+                        traceClass(changedClassBytes));
+            }
             return defineClass(name, changedClassBytes, 0, changedClassBytes.length);
+        }
+    }
+
+    public static String traceClass(byte[] bytes) {
+        ClassReader classReader = new ClassReader(bytes, 0, bytes.length);
+        StringWriter sw = new StringWriter();
+        TraceClassVisitor traceClassVisitor = new TraceClassVisitor(new PrintWriter(sw));
+        classReader.accept(traceClassVisitor, 0);
+        return sw.toString();
+    }
+
+    public static String traceClass(ClassLoader classLoader, String classNameAsResource) throws IOException {
+        InputStream inputStream = classLoader.getResourceAsStream(classNameAsResource);
+        assertNotNull(inputStream);
+        try {
+            ClassReader classReader = new ClassReader(inputStream);
+            StringWriter sw = new StringWriter();
+            TraceClassVisitor traceClassVisitor = new TraceClassVisitor(new PrintWriter(sw));
+            classReader.accept(traceClassVisitor, 0);
+            return sw.toString();
+        } finally {
+            inputStream.close();
         }
     }
 }

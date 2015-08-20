@@ -46,6 +46,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile 'com.google.truth:truth:0.26'
+    testCompile 'com.google.guava:guava:17.0'
     testCompile project(':base:project-test-lib')
     testCompile project(':base:testutils')
 }
@@ -111,7 +112,7 @@ Task compileIncrementalTestBaseClasses = tasks.create(
         name: "compileIncrementalTestBaseClasses",
         type: org.gradle.api.tasks.compile.JavaCompile) {
     source = new File(project.getProjectDir(), "src/test/incremental-test-classes/base")
-    classpath = project.files()
+    classpath = sourceSets.test.compileClasspath
     destinationDir = baseClasses
 }
 
@@ -138,7 +139,7 @@ for (File f: new File(project.projectDir, "src/test/incremental-test-classes/pat
             name: "compileIncrementalTestPatch${f.getName().capitalize()}",
             type: org.gradle.api.tasks.compile.JavaCompile) {
         source = project.files(f)
-        classpath = project.files(baseClasses)
+        classpath = sourceSets.test.compileClasspath
         destinationDir = new File(incrementalTestOutDir, f.getName())
     }
 

@@ -361,8 +361,37 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             mv.visitInsn(Opcodes.ARETURN);
             mv.visitLabel(l0);
         }
-        mv.visitInsn(Opcodes.ACONST_NULL);
-        mv.visitInsn(Opcodes.ARETURN);
+        // this is an exception, we cannot find the method to dispatch, the verifier should have
+        // flagged this and refused the hotswaping, generate an exception.
+        // we could not find the method to invoke, prepare an exception to be thrown.
+        mv.newInstance(Type.getType(StringBuilder.class));
+        mv.dup();
+        mv.invokeConstructor(Type.getType(StringBuilder.class), Method.getMethod("void <init>()V"));
+
+        // TODO: have a common exception generation function.
+        // create a meaningful message
+        mv.push("Method not found ");
+        mv.invokeVirtual(Type.getType(StringBuilder.class),
+                Method.getMethod("StringBuilder append (String)"));
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
+        mv.invokeVirtual(Type.getType(StringBuilder.class),
+                Method.getMethod("StringBuilder append (String)"));
+        mv.push("in " + visitedClassName + "$dispatch implementation, restart the application");
+        mv.invokeVirtual(Type.getType(StringBuilder.class),
+                Method.getMethod("StringBuilder append (String)"));
+
+        mv.invokeVirtual(Type.getType(StringBuilder.class),
+                Method.getMethod("String toString()"));
+
+        // create the exception with the message
+        mv.newInstance(Type.getType(InstantReloadException.class));
+        mv.dupX1();
+        mv.swap();
+        mv.invokeConstructor(Type.getType(InstantReloadException.class),
+                Method.getMethod("void <init> (String)"));
+        // and throw.
+        mv.throwException();
+
         mv.visitMaxs(0, 0);
         mv.visitEnd();
 

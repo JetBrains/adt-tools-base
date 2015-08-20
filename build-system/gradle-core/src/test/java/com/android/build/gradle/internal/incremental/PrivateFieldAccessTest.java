@@ -16,38 +16,42 @@
 
 package com.android.build.gradle.internal.incremental;
 
-import static com.google.common.truth.Truth.assertWithMessage;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
-import com.example.basic.ExtendedClass;
+import com.example.basic.PrivateFieldAccess;
 
 import org.junit.ClassRule;
 import org.junit.Test;
 
-public class ClassEnhancementTest3 {
+/**
+ * Tests for private fields accesses.
+ */
+public class PrivateFieldAccessTest {
 
     @ClassRule
     public static ClassEnhancement harness = new ClassEnhancement();
 
+    /**
+     * Checks that the initial bytecode changes did not prevent proper access to private fields
+     * and methods.
+     *
+     * @throws Exception
+     */
     @Test
-    public void superTest() throws Exception {
+    public void checkInitialByteCodeChanges() throws Exception {
 
         harness.reset();
-        ExtendedClass extendedClass = new ExtendedClass();
+        PrivateFieldAccess privateFieldAccess = new PrivateFieldAccess();
 
-        assertWithMessage("base: extendedClass.methodA()")
-                .that(extendedClass.methodA()).isEqualTo(42);
+        privateFieldAccess.setPrivateBooleanField(false);
+        assertFalse(privateFieldAccess.getPrivateBooleanField());
 
-        harness.applyPatch("changeBaseClass");
-        assertWithMessage("changeBaseClass: extendedClass.methodA()")
-                .that(extendedClass.methodA()).isEqualTo(43);
+        privateFieldAccess.setPrivateDoubleField(1354.43d);
+        assertEquals(1354.43d, privateFieldAccess.getPrivateDoubleField(), 0d);
+
+        // more to come...
     }
 
-    @Test
-    public void perpareForIncrementalSupportTest() throws Exception {
-        SimpleMethodDispatch simpleMethodDispatch = new SimpleMethodDispatch();
-        assertWithMessage("simpleMethodDispatch.getIntValue(143)")
-                .that(simpleMethodDispatch.getIntValue(143)).isEqualTo(4);
-    }
 }
-
