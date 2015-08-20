@@ -1290,5 +1290,65 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testMultipleProjects() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=182179
+        // 182179: Lint gives erroneous @StringDef errors in androidTests
+        assertEquals(""
+                        + "src/test/zpkg/SomeClassTest.java:10: Error: Must be one of: SomeClass.MY_CONSTANT [WrongConstant]\n"
+                        + "        SomeClass.doSomething(\"error\");\n"
+                        + "                              ~~~~~~~\n"
+                        + "1 errors, 0 warnings\n",
 
+                lintProject(
+                        getManifestWithPermissions(14, 23),
+                        java("src/test/pkg/SomeClass.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.StringDef;\n"
+                                + "import android.util.Log;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Documented;\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "public class SomeClass {\n"
+                                + "\n"
+                                + "    public static final String MY_CONSTANT = \"foo\";\n"
+                                + "\n"
+                                + "    public static void doSomething(@MyTypeDef final String myString) {\n"
+                                + "        Log.v(\"tag\", myString);\n"
+                                + "    }\n"
+                                + "\n"
+                                + "\n"
+                                + "    /**\n"
+                                + "     * Defines the possible values for state type.\n"
+                                + "     */\n"
+                                + "    @StringDef({MY_CONSTANT})\n"
+                                + "    @Documented\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    public @interface MyTypeDef {\n"
+                                + "\n"
+                                + "    }\n"
+                                + "}"),
+                        // test.zpkg: alphabetically after test.pkg: We want to make sure
+                        // that the SomeClass source unit is disposed before we try to
+                        // process SomeClassTest and try to resolve its SomeClass.MY_CONSTANT
+                        // @IntDef reference
+                        java("src/test/zpkg/SomeClassTest.java", ""
+                                + "package test.zpkg;\n"
+                                + "\n"
+                                + "import test.pkg.SomeClass;\n"
+                                + "import junit.framework.TestCase;\n"
+                                + "\n"
+                                + "public class SomeClassTest extends TestCase {\n"
+                                + "\n"
+                                + "    public void testDoSomething() {\n"
+                                + "        SomeClass.doSomething(SomeClass.MY_CONSTANT);\n"
+                                + "        SomeClass.doSomething(\"error\");\n"
+                                + "    }\n"
+                                + "}"),
+                        copy("src/android/support/annotation/StringDef.java.txt",
+                                "src/android/support/annotation/StringDef.java")
+                ));
+    }
 }
