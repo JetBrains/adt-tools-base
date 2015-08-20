@@ -88,6 +88,8 @@ final class Device implements IDevice {
     private static final String UNKNOWN_PACKAGE = "";   //$NON-NLS-1$
 
     private static final long GET_PROP_TIMEOUT_MS = 100;
+    private static final long INITIAL_GET_PROP_TIMEOUT_MS = 250;
+
     private static final long INSTALL_TIMEOUT_MINUTES;
 
     static {
@@ -279,34 +281,24 @@ final class Device implements IDevice {
         mState = state;
     }
 
-
-    /*
-     * (non-Javadoc)
-     * @see com.android.ddmlib.IDevice#getProperties()
-     */
     @Override
     public Map<String, String> getProperties() {
         return Collections.unmodifiableMap(mPropFetcher.getProperties());
     }
 
-    /*
-     * (non-Javadoc)
-     * @see com.android.ddmlib.IDevice#getPropertyCount()
-     */
     @Override
     public int getPropertyCount() {
         return mPropFetcher.getProperties().size();
     }
 
-    /*
-     * (non-Javadoc)
-     * @see com.android.ddmlib.IDevice#getProperty(java.lang.String)
-     */
     @Override
     public String getProperty(String name) {
+        Map<String, String> properties = mPropFetcher.getProperties();
+        long timeout = properties.isEmpty() ? INITIAL_GET_PROP_TIMEOUT_MS : GET_PROP_TIMEOUT_MS;
+
         Future<String> future = mPropFetcher.getProperty(name);
         try {
-            return future.get(GET_PROP_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            return future.get(timeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             // ignore
         } catch (ExecutionException e) {
