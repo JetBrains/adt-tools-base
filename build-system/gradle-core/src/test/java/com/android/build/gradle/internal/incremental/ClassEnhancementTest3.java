@@ -49,6 +49,5 @@ public class ClassEnhancementTest3 {
         assertWithMessage("simpleMethodDispatch.getIntValue(143)")
                 .that(simpleMethodDispatch.getIntValue(143)).isEqualTo(4);
     }
-
 }
 

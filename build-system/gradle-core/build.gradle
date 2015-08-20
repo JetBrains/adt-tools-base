@@ -107,21 +107,28 @@ if (project.has("release")) {
 
 // Incremental update test support
 
-// Compile default
-Task compileIncrementalTestClasses = tasks.create(
-        name: "compileIncrementalTestClasses",
+Task compileIncrementalTestBaseClasses = tasks.create(
+        name: "compileIncrementalTestBaseClasses",
         type: org.gradle.api.tasks.compile.JavaCompile) {
     source = new File(project.getProjectDir(), "src/test/incremental-test-classes/base")
     classpath = project.files()
     destinationDir = baseClasses
 }
 
-compileTestJava.dependsOn compileIncrementalTestClasses
+compileTestJava.dependsOn compileIncrementalTestBaseClasses
 
+Task instrumentIncrementalTestBaseClasses = tasks.create(
+        name: "instrumentIncrementalTestBaseClasses",
+        type: org.gradle.api.tasks.JavaExec) {
+    main = 'com.android.build.gradle.internal.incremental.IncrementalSupportVisitor'
+    classpath = sourceSets.main.runtimeClasspath
+    args baseClasses, baseInstrumentedClasses
+}
 
 // Compile other changesets. They have the default changset on their classpath.
 Task compileIncrementalTestPatches = tasks.create("compileIncrementalTestPatches")
-testClasses.dependsOn compileIncrementalTestPatches
+
+testClasses.dependsOn(compileIncrementalTestPatches, instrumentIncrementalTestBaseClasses)
 
 File incrementalTestOutDir = new File(classesDir, "patches")
 
@@ -135,7 +142,7 @@ for (File f: new File(project.projectDir, "src/test/incremental-test-classes/pat
         destinationDir = new File(incrementalTestOutDir, f.getName())
     }
 
-    t.dependsOn compileIncrementalTestClasses
+    t.dependsOn compileIncrementalTestBaseClasses
     compileIncrementalTestPatches.dependsOn t
 }
 
