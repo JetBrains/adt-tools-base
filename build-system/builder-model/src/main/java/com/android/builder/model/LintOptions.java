@@ -82,6 +82,8 @@ import java.util.Set;
  *          warning 'ResourceAsColor'
  *          // Set the severity of the given issues to ignore (same as disabling the check)
  *          ignore 'TypographyQuotes'
+ *          // Set the severity of the given issues to informational
+ *          informational 'StopShip'
  *     }
  * }
  * </pre>

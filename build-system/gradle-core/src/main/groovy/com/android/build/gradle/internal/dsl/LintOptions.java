@@ -759,6 +759,22 @@ public class LintOptions implements com.android.builder.model.LintOptions, Seria
         }
     }
 
+    /**
+     * Adds a severity override for the given issues.
+     */
+    public void informational(String id) {
+        severities.put(id, INFORMATIONAL);
+    }
+
+    /**
+     * Adds a severity override for the given issues.
+     */
+    public void informational(String... ids) {
+        for (String id : ids) {
+            informational(id);
+        }
+    }
+
     // Without these qualifiers, Groovy compilation will fail with "Apparent variable
     // 'SEVERITY_FATAL' was found in a static scope but doesn't refer to a local variable,
     // static field or class"
