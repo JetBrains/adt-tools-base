@@ -403,7 +403,7 @@ public class LintUtilsTest extends TestCase {
                 new LintCliClient());
         driver.setScope(Scope.JAVA_FILE_SCOPE);
         TestContext context = new TestContext(driver, client, project, javaSource, fullPath);
-        JavaParser parser = new EcjParser(client, project);
+        JavaParser parser = context.getParser();
         parser.prepareJavaParse(Collections.<JavaContext>singletonList(context));
         Node compilationUnit = parser.parseJava(context);
         assertNotNull(javaSource, compilationUnit);
@@ -509,7 +509,7 @@ public class LintUtilsTest extends TestCase {
                 String javaSource, File file) {
             //noinspection ConstantConditions
             super(driver, project,
-                    null, file, client.getJavaParser(null));
+                    null, file, client.getJavaParser(project));
 
             mJavaSource = javaSource;
         }

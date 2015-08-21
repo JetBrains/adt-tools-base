@@ -22,14 +22,11 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.tasks.annotations.ApiDatabase
 import com.android.build.gradle.tasks.annotations.Extractor
 import com.android.tools.lint.EcjParser
-import com.android.utils.Pair
 import com.google.common.collect.Lists
-import com.google.common.collect.Maps
 import org.eclipse.jdt.core.compiler.IProblem
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration
 import org.eclipse.jdt.internal.compiler.batch.CompilationUnit
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
-import org.eclipse.jdt.internal.compiler.env.INameEnvironment
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
 import org.eclipse.jdt.internal.compiler.util.Util
 import org.gradle.api.file.EmptyFileVisitor
@@ -128,9 +125,8 @@ class ExtractAnnotations extends AbstractAndroidCompile {
             encoding = UTF_8
         }
 
-        Pair<Collection<CompilationUnitDeclaration>, INameEnvironment> result = parseSources()
-        def parsedUnits = result.first
-        def environment = result.second
+        def result = parseSources()
+        def parsedUnits = result.getCompilationUnits()
 
         try {
             if (!allowErrors) {
@@ -159,7 +155,6 @@ class ExtractAnnotations extends AbstractAndroidCompile {
                 }
             }
 
-
             def displayInfo = project.logger.isEnabled(LogLevel.INFO)
             def includeClassRetentionAnnotations = false
             def sortAnnotations = false
@@ -175,9 +170,7 @@ class ExtractAnnotations extends AbstractAndroidCompile {
             extractor.export(output, proguard)
             extractor.removeTypedefClasses();
         } finally {
-            if (environment != null) {
-                environment.cleanup()
-            }
+            result.dispose()
         }
     }
 
@@ -187,7 +180,7 @@ class ExtractAnnotations extends AbstractAndroidCompile {
     }
 
     @NonNull
-    private Pair<Collection<CompilationUnitDeclaration>,INameEnvironment> parseSources() {
+    private EcjParser.EcjResult parseSources() {
         List<ICompilationUnit> sourceUnits = Lists.newArrayListWithExpectedSize(100);
 
         source.visit(new EmptyFileVisitor() {
@@ -203,8 +196,6 @@ class ExtractAnnotations extends AbstractAndroidCompile {
             }
         })
 
-        Map<ICompilationUnit, CompilationUnitDeclaration> outputMap = Maps.
-                newHashMapWithExpectedSize(sourceUnits.size())
         List<String> jars = Lists.newArrayList();
         if (bootClasspath != null) {
             jars.addAll(bootClasspath)
@@ -231,9 +222,7 @@ class ExtractAnnotations extends AbstractAndroidCompile {
         options.originalSourceLevel = options.sourceLevel;
         options.inlineJsrBytecode = true; // >= 1.5
 
-        def environment = EcjParser.parse(options, sourceUnits, jars, outputMap, null);
-        Collection<CompilationUnitDeclaration> parsedUnits = outputMap.values()
-        Pair.of(parsedUnits, environment);
+        return EcjParser.parse(options, sourceUnits, jars, null);
     }
 
     private static long getLanguageLevel(String version) {
