@@ -177,7 +177,7 @@ public class ExtractJarsTransform implements Transform {
                                 executor.execute(new Callable<Void>() {
                                     @Override
                                     public Void call() throws Exception {
-                                        delete(outJarFolder);
+                                        emptyFolder(outJarFolder);
                                         extractJar(outJarFolder, fileEntry.getKey(), extractCode);
                                         return null;
                                     }
@@ -208,8 +208,9 @@ public class ExtractJarsTransform implements Transform {
                         executor.execute(new Callable<Void>() {
                             @Override
                             public Void call() throws Exception {
-                                emptyFolder(outFolder);
-                                extractJar(getFolder(outFolder, jarFile), jarFile, extractCode);
+                                File outJarFolder = getFolder(outFolder, jarFile);
+                                emptyFolder(outJarFolder);
+                                extractJar(outJarFolder, jarFile, extractCode);
                                 return null;
                             }
                         });
@@ -231,7 +232,6 @@ public class ExtractJarsTransform implements Transform {
             @NonNull File jarFile,
             boolean extractCode) throws IOException {
         mkdirs(outJarFolder);
-
 
         Closer closer = Closer.create();
         try {

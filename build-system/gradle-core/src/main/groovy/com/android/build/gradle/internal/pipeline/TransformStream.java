@@ -228,7 +228,7 @@ public class TransformStream extends ScopedContentImpl {
      */
     @NonNull
     public TransformOutput asOutput() {
-        if (TransformManager.DISALLOWED_OUTPUT_FORMATS.contains(getFormat())) {
+        if (!getFormat().isAllowedAsOutput()) {
             throw new RuntimeException(
                     "Can't make a TransformOutput from a ScopedContent with format:" + getFormat());
         }

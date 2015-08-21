@@ -75,15 +75,6 @@ public class TransformManager {
     public static final Set<ContentType> CONTENT_RESOURCES = Sets.immutableEnumSet(RESOURCES);
     public static final Set<ContentType> CONTENT_DEX = Sets.immutableEnumSet(DEX);
 
-    /**
-     *  Format that are disallowed as Transforms outputs.
-     *  This is due to the current technical difficulties of having a Transform that outputs
-     *  a unknown list of File (at creation/wiring up time.)
-     */
-    static final Set<Format> DISALLOWED_OUTPUT_FORMATS = EnumSet.of(
-            Format.MIXED_FOLDERS_AND_JARS,
-            Format.MULTI_JAR);
-
     @NonNull
     private final AndroidTaskRegistry taskRegistry;
 
@@ -152,7 +143,7 @@ public class TransformManager {
             @NonNull VariantScope variantScope,
             @NonNull T transform,
             @Nullable TransformTask.ConfigActionCallback<T> callback) {
-        if (DISALLOWED_OUTPUT_FORMATS.contains(transform.getOutputFormat())) {
+        if (!transform.getOutputFormat().isAllowedAsOutput()) {
             throw new RuntimeException(
                     "Cannot add a Transform with OutputFormat: :" + transform.getOutputFormat());
         }
@@ -371,45 +362,9 @@ public class TransformManager {
             @NonNull File buildDir) {
         switch (transform.getTransformType()) {
             case AS_INPUT: {
-                // for each input, create a matching output.
-                // but only create a single output for any combination of contentType/scope.
-                Map<StreamKey, Integer> dupCounter = Maps
-                        .newHashMapWithExpectedSize(inputStreams.size());
-                List<TransformStream> outputStreams = Lists.newArrayListWithExpectedSize(
-                        inputStreams.size());
-                String name = transform.getName();
+                return computeOutputsMatchingInputs(transform, inputStreams, taskName,
+                        variantDirName, buildDir);
 
-                for (TransformStream input : inputStreams) {
-                    // because we need a matching output for each input, but we can be in a case
-                    // where we have 2 similar inputs (same types/scopes), we want to append an
-                    // integer somewhere in the path. So we record each inputs to detect dups.
-                    StreamKey key = new StreamKey(input);
-                    String deDupedName = name;
-                    Integer count = dupCounter.get(key);
-                    if (count == null) {
-                        dupCounter.put(key, 1);
-                    } else {
-                        deDupedName = deDupedName + "-" + count;
-                        dupCounter.put(key, count + 1);
-                    }
-
-                    // copy with new location.
-                    outputStreams.add(TransformStream.builder()
-                            .copyWithRestrictedTypes(input, transform.getOutputTypes())
-                            .setFiles(FileUtils.join(buildDir,
-                                    AndroidProject.FD_INTERMEDIATES,
-                                    FD_TRANSFORMS,
-                                    combineNames(transform.getOutputTypes()),
-                                    combineNames(input.getScopes()),
-                                    deDupedName,
-                                    variantDirName))
-                            .setDependency(taskName)
-                            .setParentStream(input)
-                            .setFormat(transform.getOutputFormat())
-                            .build());
-                }
-
-                return outputStreams;
             }
             case COMBINED: {
                 // create single combined output stream for all types and scopes
@@ -439,10 +394,64 @@ public class TransformManager {
             case NO_OP:
                 // put the input streams back into the pipeline.
                 return inputStreams;
+            case FORK_INPUT:
+                // get both the matching outputs + the original inputs.
+                Collection<TransformStream> newOutputs = computeOutputsMatchingInputs(
+                        transform, inputStreams, taskName, variantDirName, buildDir);
+                List<TransformStream> newList = Lists.newArrayListWithCapacity(
+                        newOutputs.size() + inputStreams.size());
+                newList.addAll(newOutputs);
+                newList.addAll(inputStreams);
+                return newList;
             default:
                 throw new UnsupportedOperationException(
                         "Unsupported transform type: " + transform.getTransformType());
         }
+    }
+
+    @NonNull
+    private static Collection<TransformStream> computeOutputsMatchingInputs(
+            @NonNull Transform transform, @NonNull List<TransformStream> inputStreams,
+            @NonNull String taskName, @NonNull String variantDirName, @NonNull File buildDir) {
+        // for each input, create a matching output.
+        // but only create a single output for any combination of contentType/scope.
+        Map<StreamKey, Integer> dupCounter = Maps
+                .newHashMapWithExpectedSize(inputStreams.size());
+        List<TransformStream> outputStreams = Lists.newArrayListWithExpectedSize(
+                inputStreams.size());
+        String name = transform.getName();
+
+        for (TransformStream input : inputStreams) {
+            // because we need a matching output for each input, but we can be in a case
+            // where we have 2 similar inputs (same types/scopes), we want to append an
+            // integer somewhere in the path. So we record each inputs to detect dups.
+            StreamKey key = new StreamKey(input);
+            String deDupedName = name;
+            Integer count = dupCounter.get(key);
+            if (count == null) {
+                dupCounter.put(key, 1);
+            } else {
+                deDupedName = deDupedName + "-" + count;
+                dupCounter.put(key, count + 1);
+            }
+
+            // copy with new location.
+            outputStreams.add(TransformStream.builder()
+                    .copyWithRestrictedTypes(input, transform.getOutputTypes())
+                    .setFiles(FileUtils.join(buildDir,
+                            AndroidProject.FD_INTERMEDIATES,
+                            FD_TRANSFORMS,
+                            combineNames(transform.getOutputTypes()),
+                            combineNames(input.getScopes()),
+                            deDupedName,
+                            variantDirName))
+                    .setDependency(taskName)
+                    .setParentStream(input)
+                    .setFormat(transform.getOutputFormat())
+                    .build());
+        }
+
+        return outputStreams;
     }
 
     private static String combineNames(Set types) {
@@ -465,7 +474,10 @@ public class TransformManager {
         Set<ContentType> requestedTypes = transform.getInputTypes();
         Set<Scope> requestedScopes = transform.getScopes();
         EnumSet<ContentType> foundTypes = EnumSet.noneOf(ContentType.class);
-        boolean consumesInputs = transform.getTransformType() != Type.NO_OP;
+
+        boolean consumesInputs = transform.getTransformType() != Type.NO_OP &&
+                transform.getTransformType() != Type.FORK_INPUT;
+
         int i = 0;
         while (i < streams.size()) {
             TransformStream stream = streams.get(i);

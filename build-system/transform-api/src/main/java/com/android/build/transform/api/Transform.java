@@ -51,7 +51,10 @@ public interface Transform {
         COMBINED,
         /** A Transform that only reads the input stream. It does not actually consumes them, and
          * let them available for another transform. */
-        NO_OP
+        NO_OP,
+        /** A Transform that does not consume its inputs, like NO_OP, but outputs into
+         * matching new streams like AS_INPUT. */
+        FORK_INPUT
     }
 
     /**
