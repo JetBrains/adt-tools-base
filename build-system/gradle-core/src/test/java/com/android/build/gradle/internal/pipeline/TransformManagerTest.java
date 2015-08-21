@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.AndroidTask;
@@ -39,14 +40,17 @@ import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import org.gradle.api.Action;
+import org.gradle.api.Task;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.Mock;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,20 +64,23 @@ import java.util.Set;
 
 public class TransformManagerTest {
 
-    @Mock
+    private AndroidTaskRegistry taskRegistry;
     private TaskFactory taskFactory;
+    private VariantScope variantScope;
+    private TransformManager transformManager;
 
+    @Rule
+    public final ExpectedException exception = ExpectedException.none();
     @Before
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
+        variantScope = getVariantScope();
+        taskRegistry = new AndroidTaskRegistry();
+        transformManager = new TransformManager(taskRegistry);
+        taskFactory = new MockTaskFactory();
     }
 
     @Test
     public void simpleTransform() {
-        VariantScope variantScope = getVariantScope();
-
-        TransformManager transformManager = new TransformManager(new AndroidTaskRegistry());
-
         // create a stream and add it to the pipeline
         TransformStream projectClass = TransformStream.builder()
                 .addContentType(ContentType.CLASSES)
@@ -85,7 +92,6 @@ public class TransformManagerTest {
         transformManager.addStream(projectClass);
 
         // add a new transform
-
         Transform t = transformBuilder()
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
@@ -116,10 +122,6 @@ public class TransformManagerTest {
 
     @Test
     public void referencedScope() {
-        VariantScope variantScope = getVariantScope();
-
-        TransformManager transformManager = new TransformManager(new AndroidTaskRegistry());
-
         // create streams and add them to the pipeline
         TransformStream projectClass = TransformStream.builder()
                 .addContentType(ContentType.CLASSES)
@@ -167,9 +169,9 @@ public class TransformManagerTest {
 
     @Test
     public void splitStream() throws Exception {
-        VariantScope variantScope = getVariantScope();
-
-        TransformManager transformManager = new TransformManager(new AndroidTaskRegistry());
+        // test the case where the input stream has more types than gets consumed,
+        // and we need to create a new stream with the unused types.
+        // (class+res) -[class]-> (class, transformed) + (res, untouched)
 
         // create streams and add them to the pipeline
         TransformStream projectClassAndResources = TransformStream.builder()
@@ -223,10 +225,6 @@ public class TransformManagerTest {
 
     @Test
     public void combinedScopes() throws Exception {
-        VariantScope variantScope = getVariantScope();
-
-        TransformManager transformManager = new TransformManager(new AndroidTaskRegistry());
-
         // create streams and add them to the pipeline
         TransformStream projectClass = TransformStream.builder()
                 .addContentType(ContentType.CLASSES)
@@ -282,6 +280,124 @@ public class TransformManagerTest {
     @Test
     public void combinedTypes() {
         // TODO
+    }
+
+    @Test
+    public void transformWithMultiJarAsOutput() {
+        // create a stream and add it to the pipeline
+        TransformStream projectClass = TransformStream.builder()
+                .addContentType(ContentType.CLASSES)
+                .addScope(Scope.PROJECT)
+                .setFormat(Format.SINGLE_JAR)
+                .setFiles(new File("my file"))
+                .setDependency("my dependency")
+                .build();
+        transformManager.addStream(projectClass);
+
+        // add a new transform
+        Transform t = transformBuilder()
+                .setInputTypes(ContentType.CLASSES)
+                .setScopes(Scope.PROJECT)
+                .setTransformType(Type.AS_INPUT)
+                .setFormat(Format.MULTI_JAR)
+                .build();
+
+        // add the transform
+        exception.expect(RuntimeException.class);
+        exception.expectMessage("Cannot add a Transform with OutputFormat: :MULTI_JAR");
+        AndroidTask<TransformTask> task = transformManager.addTransform(
+                taskFactory, variantScope, t);
+    }
+
+    @Test
+    public void forkInput() {
+        // test the case where the transform creates an additional stream.
+        // (class) -[class]-> (class, untouched) + (dex, transformed)
+
+        // create streams and add them to the pipeline
+        TransformStream projectClass = TransformStream.builder()
+                .addContentTypes(ContentType.CLASSES)
+                .addScope(Scope.PROJECT)
+                .setFormat(Format.SINGLE_FOLDER)
+                .setFiles(new File("my file"))
+                .setDependency("my dependency")
+                .build();
+        transformManager.addStream(projectClass);
+
+        // add a new transform
+        Transform t = transformBuilder()
+                .setInputTypes(ContentType.CLASSES)
+                .setOutputTypes(ContentType.DEX)
+                .setScopes(Scope.PROJECT)
+                .setTransformType(Type.FORK_INPUT)
+                .build();
+
+        // add the transform
+        AndroidTask<TransformTask> task = transformManager.addTransform(
+                taskFactory, variantScope, t);
+
+        // get the new stream
+        List<TransformStream> streams = transformManager.getStreams();
+        assertEquals(2, streams.size());
+
+        // check the class stream was not consumed.
+        assertTrue(streams.contains(projectClass));
+
+        // check we now have a DEX stream.
+        ImmutableList<TransformStream> dexStreams = transformManager
+                .getStreamsByContent(ContentType.DEX);
+        assertEquals(1, dexStreams.size());
+        TransformStream dexStream = Iterables.getOnlyElement(dexStreams);
+        assertEquals(EnumSet.of(ContentType.DEX), dexStream.getContentTypes());
+
+        // check the task contains the stream
+        // TODO?
+    }
+
+    @Test
+    public void forkInputWithSplitStream() {
+        // test the case where the transform creates an additional stream, and the original
+        // stream has more than the requested type.
+        // (class+res) -[class]-> (class+res, untouched) + (dex, transformed)
+
+        // create streams and add them to the pipeline
+        TransformStream projectClass = TransformStream.builder()
+                .addContentTypes(ContentType.CLASSES, ContentType.RESOURCES)
+                .addScope(Scope.PROJECT)
+                .setFormat(Format.SINGLE_FOLDER)
+                .setFiles(new File("my file"))
+                .setDependency("my dependency")
+                .build();
+        transformManager.addStream(projectClass);
+
+        // add a new transform
+        Transform t = transformBuilder()
+                .setInputTypes(ContentType.CLASSES)
+                .setOutputTypes(ContentType.DEX)
+                .setScopes(Scope.PROJECT)
+                .setTransformType(Type.FORK_INPUT)
+                .build();
+
+        // add the transform
+        AndroidTask<TransformTask> task = transformManager.addTransform(
+                taskFactory, variantScope, t);
+
+        // get the new stream
+        List<TransformStream> streams = transformManager.getStreams();
+        assertEquals(2, streams.size());
+
+        // check the class stream was not consumed.
+        assertTrue(streams.contains(projectClass));
+
+        // check we now have a DEX stream.
+        ImmutableList<TransformStream> dexStreams = transformManager
+                .getStreamsByContent(ContentType.DEX);
+        assertEquals(1, dexStreams.size());
+        TransformStream dexStream = Iterables.getOnlyElement(dexStreams);
+        assertEquals(EnumSet.of(ContentType.DEX), dexStream.getContentTypes());
+
+        // check the task contains the stream
+        // TODO?
     }
 
     @NonNull
@@ -343,6 +459,11 @@ public class TransformManagerTest {
         public Builder setTransformType(
                 Type transformType) {
             this.transformType = transformType;
+            return this;
+        }
+
+        public Builder setFormat(@NonNull Format format) {
+            this.format = format;
             return this;
         }
 
@@ -431,6 +552,60 @@ public class TransformManagerTest {
                         boolean isIncremental) throws IOException, TransformException {
                 }
             };
+        }
+    }
+
+    private static class MockTaskFactory implements TaskFactory {
+
+        private Map<String, Task> tasks = Maps.newHashMap();
+
+        @Override
+        public boolean containsKey(String name) {
+            return tasks.containsKey(name);
+        }
+
+        @Override
+        public void create(String name) {
+            throw new RuntimeException("does not suppoer create(String)");
+        }
+
+        @Override
+        public void create(String name, Action<? super Task> configAction) {
+            throw new RuntimeException("does not suppoer create(String, Action)");
+        }
+
+        @Override
+        public <S extends Task> void create(String name, Class<S> type) {
+            throw new RuntimeException("does not suppoer create(String, Class)");
+        }
+
+        @Override
+        public <S extends Task> void create(String name, Class<S> type,
+                Action<? super S> configAction) {
+            // create an instance of the task.
+            try {
+                //Constructor<S> constructor = type.getConstructor();
+                //S task = constructor.newInstance();
+                //configAction.execute(task);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public void named(String name, Action<? super Task> configAction) {
+            Task task = tasks.get(name);
+            //if (task == null) {
+            //    throw new RuntimeException("Cannot find task by name: " + name);
+            //}
+
+            //configAction.execute(task);
+        }
+
+        @Nullable
+        @Override
+        public Task named(String name) {
+            return tasks.get(name);
         }
     }
 }
