@@ -39,9 +39,10 @@ import org.intellij.lang.annotations.Language;
 import org.junit.Assert;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import lombok.ast.AnnotationElement;
 import lombok.ast.BinaryExpression;
@@ -812,6 +813,79 @@ public class EcjParserTest extends AbstractCheckTest {
                         "test".toCharArray(),
                         "pk".toCharArray()
                 }));
+    }
+
+    // Regression test for https://code.google.com/p/android/issues/detail?id=172268
+    // This is a reduced version of the in-the-wild occurrence that happened when lint processed
+    // Chromium for Android sources.
+    public void testTypeInformationIsNotClearedAfterCompilation() throws Exception {
+        // We need to generate lots of classes to overflow default Compiler's TypeSystem internal array
+        // of types to trigger ArrayIndexOutOfBoundsException. This array initially has 256 entries.
+        int innerClassesNumber = 256;
+        String innerClassWithFieldTemplate = ""
+                + "  private static class Inner%1$d {}\n"
+                + "  private final HashMap<Inner%1$d, Integer> mMap%1$d;";
+
+        StringBuilder innerClasses = new StringBuilder();
+        for (int i = 0; i < innerClassesNumber; ++i) {
+            innerClasses.append(String.format(Locale.US, innerClassWithFieldTemplate, i));
+            innerClasses.append('\n');
+        }
+
+        String accessorTemplate = ""
+                + "    for (Map.Entry<Inner%1$d, Integer> entry : mMap%1$d.entrySet()) {}";
+        StringBuilder accessors = new StringBuilder();
+        for (int i = 0; i < innerClassesNumber; ++i) {
+            accessors.append(String.format(Locale.US, accessorTemplate, i)).append('\n');
+        }
+        @SuppressWarnings({"OnDemandImport", "ClassNameDiffersFromFileName"})
+        @Language("JAVA")
+        String source = ""
+                + "import java.util.*;\n"
+                + "public class TypeInfoTest {\n"
+                + innerClasses.toString()
+                + "  public void doSomething() {\n"
+                + accessors.toString()
+                + "  }"
+                + "}\n";
+
+        final JavaContext context = LintUtilsTest.parse(source,
+                new File("src/test/pkg/TypeInfoTest.java"));
+        assertNotNull(context);
+
+        Node compilationUnit = context.getCompilationUnit();
+        assertNotNull(compilationUnit);
+
+        // null means OK
+        final AtomicReference<String> result = new AtomicReference<String>();
+
+        compilationUnit.accept(new ForwardingAstVisitor() {
+            @Override
+            public boolean visitMethodInvocation(MethodInvocation call) {
+                // Snapshot of SupportAnnotationDetector
+                try {
+                    ResolvedNode resolved = context.resolve(call);
+                    if (resolved instanceof ResolvedMethod) {
+                        ResolvedMethod method = (ResolvedMethod) resolved;
+                        method.getAnnotations();
+                        method.getContainingClass().getAnnotations();
+                    } else {
+                        // Most likely target SDK isn't supplied (via ANDROID_HOME or by some other
+                        // means). The test is meaningless then.
+                        result.compareAndSet(null,
+                                "Cannot get resolved method, is test setup correct?");
+                    }
+                } catch (RuntimeException e) {
+                    // Exception can be swallowed by some upper-level code so we cannot rely on
+                    // compilationUnit.accept to fail test
+                    result.compareAndSet(null, "Got an exception " + e);
+                }
+                return false;
+            }
+        });
+
+        String failMessage = result.get();
+        assertNull(failMessage, result.get());
     }
 
     @Override
