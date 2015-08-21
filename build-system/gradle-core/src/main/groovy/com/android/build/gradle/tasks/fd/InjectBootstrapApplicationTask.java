@@ -36,6 +36,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -99,7 +100,6 @@ public class InjectBootstrapApplicationTask extends BaseTask {
     @TaskAction
     public void rewrite() throws IOException {
         File outputDir = getOutputDir();
-        extractLibrary(outputDir);
         if (getManifestFile() != null) {
             postProcessManifest(getManifestFile(), outputDir);
         }
@@ -129,7 +129,7 @@ public class InjectBootstrapApplicationTask extends BaseTask {
                     scope.getVariantScope().getVariantData();
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             task.setVariantName(scope.getVariantScope().getVariantConfiguration().getFullName());
-            File dest = variantData.getScope().getJavaOutputDir();
+            File dest = variantData.getScope().getIncrementalSupportJavaOutputDir();
             task.setDestDir(dest);
             BaseVariantOutputData outputData = scope.getVariantOutputData();
             if (outputData.manifestProcessorTask != null) {
@@ -202,45 +202,6 @@ public class InjectBootstrapApplicationTask extends BaseTask {
             } catch (SAXException e) {
                 throw new BuildException("Failed to inject bootstrapping application", e);
             }
-        }
-    }
-
-    static void extractLibrary(@NonNull File destDir) throws IOException {
-        InputStream stream = InjectBootstrapApplicationTask.class.getResourceAsStream("/fdr/classes.jar");
-        if (stream == null) {
-            System.err.println("Couldn't find embedded Fast Deployment runtime library");
-            return;
-        }
-
-        stream = new BufferedInputStream(stream);
-        try {
-            JarInputStream jarInputStream = new JarInputStream(stream);
-            try {
-                ZipEntry entry = jarInputStream.getNextEntry();
-                while (entry != null) {
-                    String name = entry.getName();
-                    if (name.startsWith("META-INF")) {
-                        continue;
-                    }
-                    File dest = new File(destDir, name.replace('/', separatorChar));
-                    if (entry.isDirectory()) {
-                        if (!dest.exists()) {
-                            boolean created = dest.mkdirs();
-                            if (!created) {
-                                throw new IOException(dest.getPath());
-                            }
-                        }
-                    } else {
-                        byte[] bytes = ByteStreams.toByteArray(jarInputStream);
-                        Files.write(bytes, dest);
-                    }
-                    entry = jarInputStream.getNextEntry();
-                }
-            } finally {
-                jarInputStream.close();
-            }
-        } finally {
-            stream.close();
         }
     }
 

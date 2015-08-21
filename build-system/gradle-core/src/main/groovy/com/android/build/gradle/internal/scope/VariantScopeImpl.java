@@ -40,7 +40,6 @@ import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
-import com.android.build.gradle.tasks.IncrementalBuildType;
 import com.android.build.gradle.tasks.JackTask;
 import com.android.build.gradle.tasks.JavaResourcesProvider;
 import com.android.build.gradle.tasks.MergeAssets;
@@ -237,14 +236,6 @@ public class VariantScopeImpl implements VariantScope {
         this.ndkDebuggableLibraryFolders.put(abi, searchPath);
     }
 
-    @NonNull
-    @Override
-    public File getDexOutputFolder(IncrementalBuildType processType) {
-        return processType == IncrementalBuildType.FULL
-                ? getDexOutputFolder()
-                : getInitialIncrementalDexOutputFolder();
-    }
-
     @Override
     @NonNull
     public Set<File> getJniFolders() {
@@ -278,14 +269,9 @@ public class VariantScopeImpl implements VariantScope {
     }
 
     @NonNull
-    private File getDexOutputFolder() {
-        return new File(globalScope.getIntermediatesDir(), "/dex/" + getVariantConfiguration().getDirName());
-    }
-
     @Override
-    @NonNull
-    public File getInitialIncrementalDexOutputFolder() {
-        return new File(globalScope.getIntermediatesDir(), "/initial-incremental-dex/" + getVariantConfiguration().getDirName());
+    public File getDexOutputFolder() {
+        return new File(globalScope.getIntermediatesDir(), "/dex/" + getVariantConfiguration().getDirName());
     }
 
     @Override

@@ -138,9 +138,9 @@ public class IncrementalSupportDex extends BaseTask {
     public static class ConfigAction implements TaskConfigAction<IncrementalSupportDex> {
 
         private final VariantScope scope;
-        private final IncrementalBuildType buildType;
+        private final OutputBuildType buildType;
 
-        public ConfigAction(VariantScope scope, IncrementalBuildType buildType) {
+        public ConfigAction(VariantScope scope, OutputBuildType buildType) {
             this.scope = scope;
             this.buildType = buildType;
         }
@@ -162,7 +162,7 @@ public class IncrementalSupportDex extends BaseTask {
                     new Callable<File>() {
                         @Override
                         public File call() throws Exception {
-                            File inputFolder = buildType == IncrementalBuildType.FULL
+                            File inputFolder = buildType == OutputBuildType.COLDSWAP_DEX
                                     ? scope.getInitialIncrementalSupportJavaOutputDir()
                                     : scope.getIncrementalSupportJavaOutputDir();
                             if (!inputFolder.exists()) {
@@ -177,13 +177,13 @@ public class IncrementalSupportDex extends BaseTask {
                         @Override
                         public File call() throws Exception {
                             switch(buildType) {
-                                case FULL:
+                                case COLDSWAP_DEX:
                                     File outputFolder = scope.getRestartDexOutputFolder();
                                     if (!outputFolder.exists()) {
                                         outputFolder.mkdirs();
                                     }
                                     return outputFolder;
-                                case INCREMENTAL:
+                                case HOTSWAP_DEX:
                                     File folder = scope.getReloadDexOutputFolder();
                                     if (!folder.exists()) {
                                         folder.mkdirs();
@@ -195,8 +195,8 @@ public class IncrementalSupportDex extends BaseTask {
                         };
                     });
 
-            incrementalSupportDex.outputFolder = buildType == IncrementalBuildType.FULL
-                    ? scope.getInitialIncrementalDexOutputFolder()
+            incrementalSupportDex.outputFolder = buildType == OutputBuildType.COLDSWAP_DEX
+                    ? scope.getDexOutputFolder()
                     : scope.getReloadDexOutputFolder();
 
             incrementalSupportDex.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
@@ -211,4 +211,17 @@ public class IncrementalSupportDex extends BaseTask {
         }
     }
 
+    /**
+     * Denotes the type of dex output expected from this task.
+     */
+    public enum OutputBuildType {
+        /**
+         * dexing .class files necessary for a cold restart of the application.
+         */
+        COLDSWAP_DEX,
+        /**
+         * dexing .class files that can be hot swapped in running JVM.
+         */
+        HOTSWAP_DEX
+    }
 }

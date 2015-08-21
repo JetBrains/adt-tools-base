@@ -22,7 +22,6 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.tasks.IncrementalBuildType;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceConnector;
@@ -118,18 +117,14 @@ public class UninstallTask extends BaseTask {
     public static class ConfigAction implements TaskConfigAction<UninstallTask> {
 
         private final VariantScope scope;
-        private final IncrementalBuildType buildType;
 
-        public ConfigAction(VariantScope scope, IncrementalBuildType buildType) {
+        public ConfigAction(VariantScope scope) {
             this.scope = scope;
-            this.buildType = buildType;
         }
 
         @Override
         public String getName() {
-            String prefix = buildType == IncrementalBuildType.FULL
-                    ? "uninstall"
-                    : "incrementalUninstall";
+            String prefix = "uninstall";
 
             return prefix + StringHelper.capitalize(scope.getVariantConfiguration().getFullName());
         }

@@ -26,8 +26,6 @@ import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.AidlCompile;
-import com.android.build.gradle.tasks.BinaryFileProviderTask;
-import com.android.build.gradle.tasks.IncrementalBuildType;
 import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
@@ -38,8 +36,6 @@ import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.SourceCodeIncrementalSupport;
-import com.android.builder.core.VariantConfiguration;
-import com.android.builder.core.VariantType;
 import com.android.builder.signing.SignedJarBuilder;
 
 import org.gradle.api.Task;
@@ -93,16 +89,13 @@ public interface VariantScope {
     void addNdkDebuggableLibraryFolders(@NonNull Abi abi, @NonNull File searchPath);
 
     @NonNull
-    File getDexOutputFolder(IncrementalBuildType processType);
+    File getDexOutputFolder();
 
     @NonNull
     Set<File> getJniFolders();
 
     @Nullable
     BaseVariantData getTestedVariantData();
-
-    @NonNull
-    File getInitialIncrementalDexOutputFolder();
 
     @NonNull
     File getReloadDexOutputFolder();

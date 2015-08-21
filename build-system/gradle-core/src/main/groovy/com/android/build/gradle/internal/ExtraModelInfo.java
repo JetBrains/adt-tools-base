@@ -295,8 +295,8 @@ public class ExtraModelInfo extends ErrorReporter {
         }
 
         JavaArtifact artifact = new JavaArtifactImpl(
-                name, assembleTaskName, javaCompileTaskName, ideSetupTaskNames,
-                generatedSourceFolders, classesFolder, javaResourcesFolder, null,
+                name, assembleTaskName, javaCompileTaskName,
+                ideSetupTaskNames, generatedSourceFolders, classesFolder, javaResourcesFolder, null,
                 new ConfigurationDependencies(configuration), sourceProvider, null);
 
         extraJavaArtifacts.put(variant.getName(), artifact);

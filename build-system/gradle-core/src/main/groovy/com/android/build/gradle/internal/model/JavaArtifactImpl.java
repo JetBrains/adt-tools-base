@@ -68,8 +68,8 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
                             @NonNull Dependencies dependencies,
                             @Nullable SourceProvider variantSourceProvider,
                             @Nullable SourceProvider multiFlavorSourceProviders) {
-        super(name, assembleTaskName, compileTaskName, classesFolder, javaResourcesFolder,
-                dependencies,
+        super(name, assembleTaskName, compileTaskName,
+                classesFolder, javaResourcesFolder, dependencies,
                 variantSourceProvider, multiFlavorSourceProviders, generatedSourceFolders);
         this.ideSetupTaskNames = Sets.newHashSet(ideSetupTaskNames);
         this.mockablePlatformJar = mockablePlatformJar;

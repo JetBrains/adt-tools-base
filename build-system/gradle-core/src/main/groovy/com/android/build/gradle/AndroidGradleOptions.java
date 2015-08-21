@@ -22,8 +22,13 @@ import com.android.builder.model.AndroidProject;
 import com.google.common.collect.Maps;
 
 import org.gradle.api.Project;
+import org.gradle.api.internal.tasks.options.Option;
 
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * Determines if various options, triggered from the command line or environment, are set.
@@ -123,6 +128,23 @@ public class AndroidGradleOptions {
         }
 
         return null;
+    }
+
+    @NonNull
+    public static EnumSet<OptionalCompilationStep> getOptionalCompilationSteps(
+            @NonNull Project project) {
+
+        String values = getString(project, AndroidProject.OPTIONAL_COMPILATION_STEPS);
+        if (values != null) {
+            List<OptionalCompilationStep> optionalCompilationSteps =
+                    new ArrayList<OptionalCompilationStep>();
+            StringTokenizer st = new StringTokenizer(values, ",");
+            while(st.hasMoreElements()) {
+                optionalCompilationSteps.add(OptionalCompilationStep.valueOf(st.nextToken()));
+            }
+            return EnumSet.copyOf(optionalCompilationSteps);
+        }
+        return EnumSet.noneOf(OptionalCompilationStep.class);
     }
 
     @Nullable

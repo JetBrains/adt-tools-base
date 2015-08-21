@@ -93,13 +93,10 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
     public static class ConfigAction implements TaskConfigAction<ZipAlign> {
 
         private final VariantOutputScope scope;
-        private final IncrementalBuildType buildType;
 
         @Override
         public String getName() {
-            return buildType == IncrementalBuildType.FULL
-                ? scope.getTaskName("zipalign")
-                : scope.getTaskName("incrementalZipAlign");
+            return scope.getTaskName("zipalign");
         }
 
         @Override
@@ -107,9 +104,8 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
             return ZipAlign.class;
         }
 
-        public ConfigAction(VariantOutputScope scope, IncrementalBuildType buildType) {
+        public ConfigAction(VariantOutputScope scope) {
             this.scope = scope;
-            this.buildType = buildType;
         }
 
         @Override

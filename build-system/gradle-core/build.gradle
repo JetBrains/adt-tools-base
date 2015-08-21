@@ -99,9 +99,9 @@ task javadocJar(type: Jar, dependsOn:groovydoc) {
 
 // Only package JavaDoc if using --init-script=buildSrc/base/release.gradle
 if (project.has("release")) {
-  artifacts {
-    archives javadocJar
-  }
+    artifacts {
+        archives javadocJar
+    }
 }
 
 

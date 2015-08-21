@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.utils.FileUtils;
 import com.google.common.io.Files;
-import com.sun.org.apache.bcel.internal.generic.ALOAD;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;

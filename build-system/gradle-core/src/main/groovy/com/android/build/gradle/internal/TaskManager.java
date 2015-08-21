@@ -34,6 +34,7 @@ import com.android.annotations.Nullable;
 import com.android.build.OutputFile;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
@@ -87,7 +88,6 @@ import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.AndroidJarTask;
 import com.android.build.gradle.tasks.AndroidProGuardTask;
-import com.android.build.gradle.tasks.IncrementalBuildType;
 import com.android.build.gradle.tasks.CompatibleScreensManifest;
 import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
@@ -117,6 +117,7 @@ import com.android.build.gradle.tasks.ZipAlign;
 import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
 import com.android.build.gradle.tasks.factory.ProGuardTaskConfigAction;
 import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
+import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
 import com.android.build.gradle.tasks.fd.InjectBootstrapApplicationTask;
 import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
 import com.android.builder.core.AndroidBuilder;
@@ -1103,7 +1104,7 @@ public abstract class TaskManager {
             createPostCompilationTasks(tasks, variantScope);
         }
 
-        createPackagingTask(tasks, variantScope, false /*publishApk*/, IncrementalBuildType.FULL);
+        createPackagingTask(tasks, variantScope, false /*publishApk*/);
 
         tasks.named(ASSEMBLE_ANDROID_TEST, new Action<Task>() {
             @Override
@@ -1115,14 +1116,33 @@ public abstract class TaskManager {
         createConnectedTestForVariant(tasks, variantScope);
     }
 
-    protected AndroidTask<SourceCodeIncrementalSupport> createIncrementalSupportTasks(
+    @Nullable
+    protected AndroidTask<?> createIncrementalSupportTasks(
             TaskFactory tasks, VariantScope variantScope) {
-        AndroidTask<SourceCodeIncrementalSupport> sourceCodeIncrementalSupportAndroidTask
-                = androidTasks
-                .create(tasks, new SourceCodeIncrementalSupport.ConfigAction(variantScope));
-        variantScope.setInitialIncrementalSupportTask(sourceCodeIncrementalSupportAndroidTask);
-        sourceCodeIncrementalSupportAndroidTask.dependsOn(tasks, variantScope.getJavacTask());
-        return sourceCodeIncrementalSupportAndroidTask;
+        VariantConfiguration config = variantScope.getVariantConfiguration();
+        if (isIncrementalSupportActive(config)) {
+            AndroidTask<SourceCodeIncrementalSupport> sourceCodeIncrementalSupportAndroidTask
+                    = androidTasks.create(tasks,
+                        new SourceCodeIncrementalSupport.ConfigAction(variantScope));
+            variantScope.setInitialIncrementalSupportTask(sourceCodeIncrementalSupportAndroidTask);
+            sourceCodeIncrementalSupportAndroidTask.dependsOn(tasks, variantScope.getJavacTask());
+
+            AndroidTask<FastDeployRuntimeExtractorTask> extractorTask = androidTasks.create(
+                    tasks, new FastDeployRuntimeExtractorTask.ConfigAction(variantScope));
+            extractorTask.dependsOn(tasks, sourceCodeIncrementalSupportAndroidTask);
+            return extractorTask;
+        }
+        return null;
+    }
+
+    /**
+     * Returns true if the incremental support is active for this variant.
+     * @param config the variant's configuration
+     * @return true if incremental support is active, false otherwise.
+     */
+    private boolean isIncrementalSupportActive(VariantConfiguration config) {
+        return config.getBuildType().isDebuggable() && !config.getType().isForTesting()
+                && globalScope.isActive(OptionalCompilationStep.INSTANT_DEV);
     }
 
     // TODO - should compile src/lint/java from src/lint/java and jar it into build/lint/lint.jar
@@ -1612,9 +1632,11 @@ public abstract class TaskManager {
         }
     }
 
-    public static void createJarTasks(@NonNull TaskFactory tasks, @NonNull final VariantScope scope) {
+    public void createJarTasks(@NonNull TaskFactory tasks, @NonNull final VariantScope scope,
+            final AndroidTask<?>... upstreamTasks) {
         final BaseVariantData variantData = scope.getVariantData();
 
+        final boolean isIncremental = isIncrementalSupportActive(scope.getVariantConfiguration());
         final GradleVariantConfiguration config = variantData.getVariantConfiguration();
         tasks.create(
                 scope.getTaskName("jar", "Classes"),
@@ -1626,29 +1648,21 @@ public abstract class TaskManager {
                         jarTask.setDestinationDir(new File(
                                 scope.getGlobalScope().getIntermediatesDir(),
                                 "packaged/" + config.getDirName() + "/"));
-                        jarTask.from(scope.getJavaOutputDir());
-                        jarTask.dependsOn(scope.getJavacTask().getName());
+                        jarTask.from(isIncremental
+                                    ? scope.getInitialIncrementalSupportJavaOutputDir()
+                                    : scope.getJavaOutputDir());
+                        jarTask.dependsOn(isIncremental
+                                ? scope.getInitialIncrementalSupportTask()
+                                : scope.getJavacTask().getName());
+                        for (AndroidTask<?> task : upstreamTasks) {
+                            if (task != null) {
+                                jarTask.dependsOn(task.getName());
+                            }
+                        }
                         variantData.binayFileProviderTask = jarTask;
                     }
 
                 });
-        tasks.create(
-                scope.getTaskName("jarInitialIncremental", "Classes"),
-                AndroidJarTask.class,
-                new Action<AndroidJarTask>() {
-                    @Override
-                    public void execute(AndroidJarTask jarTask) {
-                        jarTask.setArchiveName("classes.jar");
-                        jarTask.setDestinationDir(new File(
-                                scope.getGlobalScope().getIntermediatesDir(),
-                                "initialIncrementalPackaged/" + config.getDirName() + "/"));
-                        jarTask.from(scope.getInitialIncrementalSupportJavaOutputDir());
-                        jarTask.dependsOn(scope.getInitialIncrementalSupportTask().getName());
-                        variantData.binayFileProviderTask = jarTask;
-                    }
-
-                });
-
     }
 
     /**
@@ -1658,7 +1672,8 @@ public abstract class TaskManager {
      * proguard and jacoco
      *
      */
-    public void createPostCompilationTasks(TaskFactory tasks, @NonNull final VariantScope scope) {
+    public void createPostCompilationTasks(TaskFactory tasks, @NonNull final VariantScope scope,
+            AndroidTask<?>... upstreamTasks) {
         checkNotNull(scope.getJavacTask());
 
         final ApkVariantData variantData = (ApkVariantData) scope.getVariantData();
@@ -1671,15 +1686,25 @@ public abstract class TaskManager {
         pcData.setLibraryGeneratingTasks(ImmutableList.of(variantData.prepareDependenciesTask,
                 variantData.getVariantDependency().getPackageConfiguration()
                         .getBuildDependencies()));
+
+        // this is pretty awful, waiting for pipeline architecture.
+        final boolean isIncremental = isIncrementalSupportActive(config);
         pcData.setInputFilesCallable(new Callable<List<File>>() {
             @Override
             public List<File> call() {
-                return new ArrayList<File>(
-                        variantData.javacTask.getOutputs().getFiles().getFiles());
+                if (isIncremental) {
+                    ArrayList<File> files = new ArrayList<File>();
+                    files.add(scope.getInitialIncrementalSupportJavaOutputDir());
+                    return files;
+                } else {
+                    return new ArrayList<File>(variantData.javacTask.getOutputs().getFiles().getFiles());
+                }
             }
 
         });
-        pcData.setInputDir(scope.getJavaOutputDir());
+        pcData.setInputDir(isIncremental
+                ? scope.getInitialIncrementalSupportJavaOutputDir()
+                : scope.getJavaOutputDir());
 
         pcData.setJavaResourcesInputDir(scope.getJavaResourcesDestinationDir());
 
@@ -1799,7 +1824,7 @@ public abstract class TaskManager {
         }
 
         AndroidTask<Dex> dexTask = androidTasks.create(tasks,
-                new Dex.ConfigAction(scope, pcData, "dex", IncrementalBuildType.FULL));
+                new Dex.ConfigAction(scope, pcData, "dex"));
         scope.setDexTask(dexTask);
 
         // dependencies, some of these could be null
@@ -1808,64 +1833,35 @@ public abstract class TaskManager {
                 pcData.getLibraryGeneratingTasks(),
                 createMainDexListTask,
                 retraceTask);
+        for (AndroidTask<?> task : upstreamTasks) {
+            if (task!=null) {
+                dexTask.dependsOn(tasks, task);
+            }
+        }
     }
     public void createIncrementalPostCompilationTasks(
             TaskFactory tasks, @NonNull final VariantScope scope) {
 
         final ApkVariantData variantData = (ApkVariantData) scope.getVariantData();
-        final GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
-        checkNotNull(scope.getJavacTask());
-        PostCompilationData pcData = new PostCompilationData();
-        pcData.setClassGeneratingTasks(Collections.singletonList(scope.getJavacTask().getName()));
-        pcData.setLibraryGeneratingTasks(ImmutableList.of(variantData.prepareDependenciesTask,
-                variantData.getVariantDependency().getPackageConfiguration()
-                        .getBuildDependencies()));
-        pcData.setInputFilesCallable(new Callable<List<File>>() {
-            @Override
-            public List<File> call() {
-                return new ArrayList<File>();
-            }
+        if (isIncrementalSupportActive(scope.getVariantConfiguration())) {
+            // create the incremental changes dexing.
+            // first version will create the small dex containing classes.2 versions.
+            AndroidTask<IncrementalSupportDex> initialSupportDex = androidTasks.create(tasks,
+                    new IncrementalSupportDex.ConfigAction(
+                            scope, IncrementalSupportDex.OutputBuildType.COLDSWAP_DEX));
 
-        });
-        pcData.setInputDir(scope.getInitialIncrementalSupportJavaOutputDir());
+            // second version will create the small dex containing classes.3 versions.
+            AndroidTask<IncrementalSupportDex> incrementalSupportDex = androidTasks.create(tasks,
+                    new IncrementalSupportDex.ConfigAction(
+                            scope, IncrementalSupportDex.OutputBuildType.HOTSWAP_DEX));
 
-        pcData.setJavaResourcesInputDir(scope.getJavaResourcesDestinationDir());
+            // version 3 depends on version 2 so we make sure we execute both
+            incrementalSupportDex.dependsOn(tasks, initialSupportDex);
 
-        pcData.setInputLibrariesCallable(new Callable<List<File>>() {
-            @Override
-            public List<File> call() {
-                return new ArrayList<File>(
-                        scope.getGlobalScope().getAndroidBuilder().getPackagedJars(config));
-            }
-
-        });
-        AndroidTask<Dex> dexTask = androidTasks.create(tasks,
-                new Dex.ConfigAction(scope, pcData, "incrementalDex", IncrementalBuildType.INCREMENTAL));
-        scope.setIncrementalDexTask(dexTask);
-
-        // dependencies, some of these could be null
-        dexTask.optionalDependsOn(tasks,
-                pcData.getClassGeneratingTasks(),
-                pcData.getLibraryGeneratingTasks(),
-                scope.getInitialIncrementalSupportTask());
-
-        // create the incremental changes dexing.
-        AndroidTask<IncrementalSupportDex> initialSupportDex = androidTasks.create(tasks,
-                new IncrementalSupportDex.ConfigAction(
-                        scope, IncrementalBuildType.FULL));
-
-        dexTask.dependsOn(tasks, initialSupportDex);
-        initialSupportDex.dependsOn(tasks,
-                scope.getInitialIncrementalSupportTask());
-
-        AndroidTask<IncrementalSupportDex> incrementalSupportDex = androidTasks.create(tasks,
-                new IncrementalSupportDex.ConfigAction(
-                        scope, IncrementalBuildType.INCREMENTAL));
-
-        incrementalSupportDex.dependsOn(tasks,
-                initialSupportDex,
-                scope.getInitialIncrementalSupportTask());
+            incrementalSupportDex.dependsOn(tasks,
+                    scope.getInitialIncrementalSupportTask());
+        }
     }
 
 
@@ -1958,7 +1954,7 @@ public abstract class TaskManager {
      * @param publishApk if true the generated APK gets published.
      */
     public void createPackagingTask(@NonNull TaskFactory tasks, @NonNull VariantScope variantScope,
-            boolean publishApk, IncrementalBuildType buildType) {
+            boolean publishApk) {
         final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
 
         GradleVariantConfiguration config = variantData.getVariantConfiguration();
@@ -1991,7 +1987,7 @@ public abstract class TaskManager {
             }
 
             AndroidTask<PackageApplication> packageApp = androidTasks.create(
-                    tasks, new PackageApplication.ConfigAction(variantOutputScope, buildType));
+                    tasks, new PackageApplication.ConfigAction(variantOutputScope));
 
             packageApp.dependsOn(tasks, variantOutputScope.getProcessResourcesTask(),
                     variantOutputScope.getVariantScope().getMergeJavaResourcesTask(),
@@ -2007,18 +2003,12 @@ public abstract class TaskManager {
                     variantOutputData.packageSplitResourcesTask,
                     variantOutputData.packageSplitAbiTask);
 
-            if (buildType == IncrementalBuildType.INCREMENTAL
-                    || config.getBuildType().getName().equalsIgnoreCase("Debug")) {
-                packageApp.optionalDependsOn(tasks,
-                        variantOutputScope.getVariantScope().getIncrementalDexTask());
-            }
-
             AndroidTask appTask = packageApp;
 
             if (signedApk) {
                 if (variantData.getZipAlignEnabled()) {
                     AndroidTask<ZipAlign> zipAlignTask = androidTasks.create(
-                            tasks, new ZipAlign.ConfigAction(variantOutputScope, buildType));
+                            tasks, new ZipAlign.ConfigAction(variantOutputScope));
                     zipAlignTask.dependsOn(tasks, packageApp);
                     if (variantOutputData.splitZipAlign != null) {
                         zipAlignTask.dependsOn(tasks, variantOutputData.splitZipAlign);
@@ -2043,29 +2033,18 @@ public abstract class TaskManager {
                 variantOutputData.assembleTask = variantData.assembleVariantTask;
             }
 
-            Task assembleTask;
-            if (buildType == IncrementalBuildType.FULL) {
-                assembleTask = variantOutputData.assembleTask;
-            } else {
-                assembleTask = project.getTasks().create(
-                        variantData.getScope().getTaskName("incrementalAssemble"));
-            }
-            assembleTask.dependsOn(appTask.getName());
-
             if (!signedApk && variantOutputData.packageSplitResourcesTask != null) {
                 // in case we are not signing the resulting APKs and we have some pure splits
                 // we should manually copy them from the intermediate location to the final
                 // apk location unmodified.
-                String prefix = buildType == IncrementalBuildType.FULL
-                        ? "copySplit"
-                        : "incrementalCopySplit";
                 Copy copyTask = project.getTasks().create(
-                        variantOutputScope.getTaskName(prefix), Copy.class);
+                        variantOutputScope.getTaskName("copySplit"), Copy.class);
                 copyTask.setDestinationDir(apkLocation);
                 copyTask.from(variantOutputData.packageSplitResourcesTask.getOutputDirectory());
-                assembleTask.dependsOn(copyTask);
+                variantOutputData.assembleTask.dependsOn(copyTask);
                 copyTask.mustRunAfter(appTask.getName());
             }
+            variantOutputData.assembleTask.dependsOn(appTask.getName());
 
             if (publishApk) {
                 final String projectBaseName = globalScope.getProjectBaseName();
@@ -2161,38 +2140,39 @@ public abstract class TaskManager {
                 }
             }
 
-            // create install task for the variant Data. This will deal with finding the
-            // right output if there are more than one.
-            // Add a task to install the application package
-            if (signedApk) {
-                AndroidTask<InstallVariantTask> installTask = androidTasks.create(
-                        tasks, new InstallVariantTask.ConfigAction(variantScope, buildType));
-                installTask.dependsOn(tasks, assembleTask);
-            }
-
-            if (config.getBuildType().isDebuggable() && !config.getType().isForTesting()
-                    && buildType != IncrementalBuildType.INCREMENTAL) {
+            // modify the manifest file and generate the new AppInfo.
+            if (isIncrementalSupportActive(config)) {
                 AndroidTask<InjectBootstrapApplicationTask> rewriteTask = androidTasks.create(
                         tasks, new InjectBootstrapApplicationTask.ConfigAction(variantOutputScope));
-                rewriteTask.dependsOn(tasks, variantScope.getJavaCompilerTask(),
+                rewriteTask.dependsOn(tasks, variantScope.getInitialIncrementalSupportTask(),
                         variantOutputScope.getManifestProcessorTask());
-                if (variantData.classesJarTask != null) {
-                    variantData.classesJarTask.dependsOn(rewriteTask.getName());
+                if (variantScope.getDexTask() != null) {
+                    variantScope.getDexTask().dependsOn(tasks, rewriteTask);
                 }
-                if (variantData.preDexTask != null) {
-                    variantData.preDexTask.dependsOn(rewriteTask.getName());
+                if (variantScope.getIncrementalDexTask() != null) {
+                    variantScope.getIncrementalDexTask().dependsOn(tasks, rewriteTask);
                 }
             }
         }
 
+
+        // create install task for the variant Data. This will deal with finding the
+        // right output if there are more than one.
+        // Add a task to install the application package
+        if (signedApk) {
+            AndroidTask<InstallVariantTask> installTask = androidTasks.create(
+                    tasks, new InstallVariantTask.ConfigAction(variantScope));
+            installTask.dependsOn(tasks, variantData.assembleVariantTask);
+        }
+
         if (getExtension().getLintOptions().isCheckReleaseBuilds()
-                && buildType != IncrementalBuildType.INCREMENTAL) {
+                && !isIncrementalSupportActive(variantScope.getVariantConfiguration())) {
             createLintVitalTask(variantData);
         }
 
         // add an uninstall task
         final AndroidTask<UninstallTask> uninstallTask = androidTasks.create(
-                tasks, new UninstallTask.ConfigAction(variantScope, buildType));
+                tasks, new UninstallTask.ConfigAction(variantScope));
 
         tasks.named(UNINSTALL_ALL, new Action<Task>() {
             @Override
