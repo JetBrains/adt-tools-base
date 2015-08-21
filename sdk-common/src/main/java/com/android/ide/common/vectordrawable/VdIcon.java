@@ -19,21 +19,32 @@ package com.android.ide.common.vectordrawable;
 import com.android.ide.common.util.AssetUtil;
 
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.net.URL;
 
 /**
- * VdIcon wrap every vector drawable from Material Library into an icon.
- * All of them are shown in a table for developer to pick.
+ * VdIcon wrap every vector drawable from Material Library into an icon. All of them are shown in a
+ * table for developer to pick.
  */
 public class VdIcon implements Icon, Comparable<VdIcon> {
+
     private VdTree mVdTree;
+
     private final String mName;
+
     private final URL mUrl;
 
+    private boolean mDrawCheckerBoardBackground;
+
+    private Rectangle myRectangle = new Rectangle();
+
+    private static final Color CHECKER_COLOR = new Color(238, 238, 238);
+
     public VdIcon(URL url) {
-        setDynamicIcon(url);
+        mVdTree = parseVdTree(url);
         mUrl = url;
         String fileName = url.getFile();
         mName = fileName.substring(fileName.lastIndexOf("/") + 1);
@@ -47,25 +58,57 @@ public class VdIcon implements Icon, Comparable<VdIcon> {
         return mUrl;
     }
 
-    public void setDynamicIcon(URL url) {
+    private VdTree parseVdTree(URL url) {
         final VdParser p = new VdParser();
+        VdTree result = null;
         try {
-            mVdTree = p.parse(url.openStream(), null);
-        } catch (Exception e) {
+            result = p.parse(url.openStream(), null);
+        } catch (IOException e) {
             e.printStackTrace();
         }
+        return result;
+    }
+
+    /**
+     * TODO: Merge this code back with GraphicsUtil in idea.
+     * Paints a checkered board style background. Each grid square is {@code cellSize} pixels.
+     */
+    public static void paintCheckeredBackground(Graphics g, Color backgroundColor,
+            Color checkeredColor, Shape clip, int cellSize) {
+        final Shape savedClip = g.getClip();
+        ((Graphics2D)g).clip(clip);
+
+        final Rectangle rect = clip.getBounds();
+        g.setColor(backgroundColor);
+        g.fillRect(rect.x, rect.y, rect.width, rect.height);
+        g.setColor(checkeredColor);
+        for (int dy = 0; dy * cellSize < rect.height; dy++) {
+            for (int dx = dy % 2; dx * cellSize < rect.width; dx += 2) {
+                g.fillRect(rect.x + dx * cellSize, rect.y + dy * cellSize, cellSize, cellSize);
+            }
+        }
+
+        g.setClip(savedClip);
     }
 
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
-        // We knew all the icons from Material library are square shape.
+        // Draw the checker board first, even when the tree is empty.
+        myRectangle.setBounds(0, 0, c.getWidth(), c.getHeight());
+        if (mDrawCheckerBoardBackground) {
+            paintCheckeredBackground(g, Color.LIGHT_GRAY, CHECKER_COLOR, myRectangle, 8);
+        }
+
+        if (mVdTree == null) {
+            return;
+        }
         int minSize = Math.min(c.getWidth(), c.getHeight());
         final BufferedImage image = AssetUtil.newArgbBufferedImage(minSize, minSize);
         mVdTree.drawIntoImage(image);
 
         // Draw in the center of the component.
         Rectangle rect = new Rectangle(0, 0, c.getWidth(), c.getHeight());
-        AssetUtil.drawCenterInside((Graphics2D)g, image, rect);
+        AssetUtil.drawCenterInside((Graphics2D) g, image, rect);
     }
 
     @Override
@@ -81,5 +124,9 @@ public class VdIcon implements Icon, Comparable<VdIcon> {
     @Override
     public int compareTo(VdIcon other) {
         return mName.compareTo(other.mName);
+    }
+
+    public void enableCheckerBoardBackground(boolean enable) {
+        mDrawCheckerBoardBackground = enable;
     }
 }

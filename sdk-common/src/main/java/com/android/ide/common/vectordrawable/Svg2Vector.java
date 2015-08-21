@@ -37,6 +37,7 @@ public class Svg2Vector {
     private static Logger logger = Logger.getLogger(Svg2Vector.class.getSimpleName());
 
     public static final String SVG_POLYGON = "polygon";
+    public static final String SVG_POLYLINE = "polyline";
     public static final String SVG_RECT = "rect";
     public static final String SVG_CIRCLE = "circle";
     public static final String SVG_LINE = "line";
@@ -65,8 +66,8 @@ public class Svg2Vector {
         ImmutableMap.<String, String>builder()
             .put(SVG_STROKE_COLOR, "android:strokeColor")
             .put(SVG_STROKE_OPACITY, "android:strokeAlpha")
-            .put(SVG_STROKE_LINEJOINE, "android:strokeLinejoin")
-            .put(SVG_STROKE_LINECAP, "android:strokeLinecap")
+            .put(SVG_STROKE_LINEJOINE, "android:strokeLineJoin")
+            .put(SVG_STROKE_LINECAP, "android:strokeLineCap")
             .put(SVG_STROKE_WIDTH, "android:strokeWidth")
             .put(SVG_FILL_COLOR, "android:fillColor")
             .put(SVG_FILL_OPACITY, "android:fillAlpha")
@@ -90,7 +91,7 @@ public class Svg2Vector {
         // Gradient elements
         "linearGradient", "radialGradient", "stop",
         // Graphics elements
-        "ellipse", "polyline", "text", "use",
+        "ellipse", "text", "use",
         // Light source elements
         "feDistantLight", "fePointLight", "feSpotLight",
         // Structural elements
@@ -166,10 +167,15 @@ public class Svg2Vector {
         for (int i = 0; i < allChildren.getLength(); i++) {
             Node currentNode = allChildren.item(i);
             String nodeName = currentNode.getNodeName();
+            if (!currentNode.hasChildNodes() && !currentNode.hasAttributes()) {
+                // If there is nothing in this node, just ignore it.
+                continue;
+            }
             if (SVG_PATH.equals(nodeName) ||
                 SVG_RECT.equals(nodeName) ||
                 SVG_CIRCLE.equals(nodeName) ||
                 SVG_POLYGON.equals(nodeName) ||
+                SVG_POLYLINE.equals(nodeName) ||
                 SVG_LINE.equals(nodeName)) {
                 SvgLeafNode child = new SvgLeafNode(svgTree, currentNode, nodeName + i);
 
@@ -315,7 +321,8 @@ public class Svg2Vector {
             extractCircleItem(avg, child, currentGroupNode);
         }
 
-        if (SVG_POLYGON.equals(currentGroupNode.getNodeName())) {
+        if (SVG_POLYGON.equals(currentGroupNode.getNodeName()) ||
+            SVG_POLYLINE.equals(currentGroupNode.getNodeName())) {
             extractPolyItem(avg, child, currentGroupNode);
         }
 
@@ -359,7 +366,7 @@ public class Svg2Vector {
      * Convert polygon element into a path.
      */
     private static void extractPolyItem(SvgTree avg, SvgLeafNode child, Node currentGroupNode) {
-        logger.log(Level.FINE, "Rect found" + currentGroupNode.getTextContent());
+        logger.log(Level.FINE, "Polyline or Polygon found" + currentGroupNode.getTextContent());
         if (currentGroupNode.getNodeType() == Node.ELEMENT_NODE) {
 
             NamedNodeMap a = currentGroupNode.getAttributes();
@@ -386,7 +393,9 @@ public class Svg2Vector {
                         baseX = x;
                         baseY = y;
                     }
-                    builder.relativeClose();
+                    if (SVG_POLYGON.equals(currentGroupNode.getNodeName())) {
+                        builder.relativeClose();
+                    }
                     child.setPathData(builder.toString());
                 }
             }
