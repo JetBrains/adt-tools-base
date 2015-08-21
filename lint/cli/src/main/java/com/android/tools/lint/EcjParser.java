@@ -92,6 +92,7 @@ import org.eclipse.jdt.internal.compiler.lookup.Binding;
 import org.eclipse.jdt.internal.compiler.lookup.ElementValuePair;
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
+import org.eclipse.jdt.internal.compiler.lookup.LookupEnvironment;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.NestedTypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.PackageBinding;
@@ -129,13 +130,21 @@ import lombok.ast.ecj.EcjTreeConverter;
 public class EcjParser extends JavaParser {
     private static final boolean DEBUG_DUMP_PARSE_ERRORS = false;
 
+    /**
+     * Whether we're going to keep the ECJ compiler mLookupEnvironment around between
+     * the parse phase and disposal. The lookup environment is important for type attribution.
+     * We should be able to inline this field to true, but making it optional now to allow
+     * people to revert this behavior in the field immediately if there's an unexpected
+     * problem.
+     */
+    private static final boolean KEEP_LOOKUP_ENVIRONMENT = !Boolean.getBoolean("lint.reset.ecj");
+
     private final LintClient mClient;
     private final Project mProject;
     private Map<File, ICompilationUnit> mSourceUnits;
-    private Map<ICompilationUnit, CompilationUnitDeclaration> mCompiled;
     private Map<String, TypeDeclaration> mTypeUnits;
     private Parser mParser;
-    private INameEnvironment mEnvironment;
+    private EcjResult mEcjResult;
 
     public EcjParser(@NonNull LintCliClient client, @Nullable Project project) {
         mClient = client;
@@ -226,40 +235,108 @@ public class EcjParser extends JavaParser {
             mSourceUnits.put(file, unit);
         }
         List<String> classPath = computeClassPath(contexts);
-        mCompiled = Maps.newHashMapWithExpectedSize(mSourceUnits.size());
         try {
-            mEnvironment = parse(createCompilerOptions(), sources, classPath, mCompiled, mClient);
+            mEcjResult = parse(createCompilerOptions(), sources, classPath, mClient);
+
+            if (DEBUG_DUMP_PARSE_ERRORS) {
+                for (CompilationUnitDeclaration unit : mEcjResult.getCompilationUnits()) {
+                    // so maybe I don't need my map!!
+                    CategorizedProblem[] problems = unit.compilationResult()
+                            .getAllProblems();
+                    if (problems != null) {
+                        for (IProblem problem : problems) {
+                            if (problem == null || !problem.isError()) {
+                                continue;
+                            }
+                            System.out.println(
+                                    new String(problem.getOriginatingFileName()) + ":"
+                                    + (problem.isError() ? "Error" : "Warning") + ": "
+                                    + problem.getSourceLineNumber() + ": " + problem.getMessage());
+                        }
+                    }
+                }
+            }
         } catch (Throwable t) {
             mClient.log(t, "ECJ compiler crashed");
         }
+    }
 
-        if (DEBUG_DUMP_PARSE_ERRORS) {
-            for (CompilationUnitDeclaration unit : mCompiled.values()) {
-                // so maybe I don't need my map!!
-                CategorizedProblem[] problems = unit.compilationResult()
-                        .getAllProblems();
-                if (problems != null) {
-                    for (IProblem problem : problems) {
-                        if (problem == null || !problem.isError()) {
-                            continue;
-                        }
-                        System.out.println(
-                                new String(problem.getOriginatingFileName()) + ":"
-                                + (problem.isError() ? "Error" : "Warning") + ": "
-                                + problem.getSourceLineNumber() + ": " + problem.getMessage());
-                    }
-                }
+    /**
+     * A result from an ECJ compilation. In addition to the {@link #compilationUnits} it also
+     * returns the {@link #mNameEnvironment} and {@link #mLookupEnvironment} which are sometimes
+     * needed after parsing to perform for example type attribution. <b>NOTE</b>: Clients are
+     * expected to dispose of the {@link #mNameEnvironment} when done with the compilation units!
+     */
+    public static class EcjResult {
+        @Nullable private final INameEnvironment mNameEnvironment;
+        @Nullable private final LookupEnvironment mLookupEnvironment;
+        @NonNull  private final Map<ICompilationUnit, CompilationUnitDeclaration> compilationUnits;
+
+        public EcjResult(@Nullable INameEnvironment nameEnvironment,
+                @Nullable LookupEnvironment lookupEnvironment,
+                @NonNull Map<ICompilationUnit, CompilationUnitDeclaration> compilationUnits) {
+            this.mNameEnvironment = nameEnvironment;
+            this.mLookupEnvironment = lookupEnvironment;
+            this.compilationUnits = compilationUnits;
+        }
+
+        /**
+         * Returns the collection of compilation units found by the parse task
+         *
+         * @return a read-only collection of compilation units
+         */
+        @NonNull
+        public Collection<CompilationUnitDeclaration> getCompilationUnits() {
+            return compilationUnits.values();
+        }
+
+        /**
+         * Returns the compilation unit parsed from the given source unit, if any
+         *
+         * @param sourceUnit the original source passed to ECJ
+         * @return the corresponding compilation unit, if created
+         */
+        @Nullable
+        public CompilationUnitDeclaration getCompilationUnit(
+                @NonNull ICompilationUnit sourceUnit) {
+            return compilationUnits.get(sourceUnit);
+        }
+
+        /**
+         * Removes the compilation unit for the given source unit, if any. Used when individual
+         * source units are disposed to allow memory to be freed up.
+         *
+         * @param sourceUnit the source unit
+         */
+        void removeCompilationUnit(@NonNull ICompilationUnit sourceUnit) {
+            compilationUnits.remove(sourceUnit);
+        }
+
+        /**
+         * Disposes this parser result, allowing various ECJ data structures to be freed up even if
+         * the parser instance hangs around.
+         */
+        public void dispose() {
+            if (mNameEnvironment != null) {
+                mNameEnvironment.cleanup();
+            }
+
+            if (mLookupEnvironment != null) {
+                mLookupEnvironment.reset();
             }
         }
     }
 
     /** Parse the given source units and class path and store it into the given output map */
-    public static INameEnvironment parse(
+    @NonNull
+    public static EcjResult parse(
             CompilerOptions options,
             @NonNull List<ICompilationUnit> sourceUnits,
             @NonNull List<String> classPath,
-            @NonNull Map<ICompilationUnit, CompilationUnitDeclaration> outputMap,
             @Nullable LintClient client) {
+        Map<ICompilationUnit, CompilationUnitDeclaration> outputMap =
+                Maps.newHashMapWithExpectedSize(sourceUnits.size());
+
         INameEnvironment environment = new FileSystem(
                 classPath.toArray(new String[classPath.size()]), new String[0],
                 options.defaultEncoding);
@@ -322,7 +399,8 @@ public class EcjParser extends JavaParser {
             environment = null;
         }
 
-        return environment;
+        LookupEnvironment lookupEnvironment = compiler != null ? compiler.lookupEnvironment : null;
+        return new EcjResult(environment, lookupEnvironment, outputMap);
     }
 
     @NonNull
@@ -438,10 +516,10 @@ public class EcjParser extends JavaParser {
             @NonNull JavaContext context,
             @NonNull String code) {
         ICompilationUnit sourceUnit = null;
-        if (mSourceUnits != null && mCompiled != null) {
+        if (mSourceUnits != null && mEcjResult != null) {
             sourceUnit = mSourceUnits.get(context.file);
             if (sourceUnit != null) {
-                CompilationUnitDeclaration unit = mCompiled.get(sourceUnit);
+                CompilationUnitDeclaration unit = mEcjResult.getCompilationUnit(sourceUnit);
                 if (unit != null) {
                     return unit;
                 }
@@ -479,23 +557,27 @@ public class EcjParser extends JavaParser {
     }
 
     @Override
-    public void dispose(@NonNull JavaContext context,
-            @NonNull Node compilationUnit) {
-        if (mSourceUnits != null && mCompiled != null) {
+    public void dispose(@NonNull JavaContext context, @NonNull Node compilationUnit) {
+        if (mSourceUnits != null) {
             ICompilationUnit sourceUnit = mSourceUnits.get(context.file);
             if (sourceUnit != null) {
                 mSourceUnits.remove(context.file);
-                mCompiled.remove(sourceUnit);
+                if (mEcjResult != null) {
+                    mEcjResult.removeCompilationUnit(sourceUnit);
+                }
             }
         }
     }
 
     @Override
     public void dispose() {
-        if (mEnvironment != null) {
-            mEnvironment.cleanup();
-            mEnvironment = null;
+        if (mEcjResult != null) {
+            mEcjResult.dispose();
+            mEcjResult = null;
         }
+
+        mSourceUnits = null;
+        mTypeUnits = null;
     }
 
     @Nullable
@@ -625,8 +707,9 @@ public class EcjParser extends JavaParser {
 
     private TypeDeclaration findTypeDeclaration(@NonNull String signature) {
         if (mTypeUnits == null) {
-            mTypeUnits = Maps.newHashMapWithExpectedSize(mCompiled.size());
-            for (CompilationUnitDeclaration unit : mCompiled.values()) {
+            Collection<CompilationUnitDeclaration> units = mEcjResult.getCompilationUnits();
+            mTypeUnits = Maps.newHashMapWithExpectedSize(units.size());
+            for (CompilationUnitDeclaration unit : units) {
                 if (unit.types != null) {
                     for (TypeDeclaration typeDeclaration : unit.types) {
                         addTypeDeclaration(typeDeclaration);
@@ -852,7 +935,7 @@ public class EcjParser extends JavaParser {
 
         @Nullable
         CompilationUnitDeclaration getCurrentUnit() {
-            // Can't use lookupEnvironment.unitBeingCompleted directly; it gets nulled out
+            // Can't use mLookupEnvironment.unitBeingCompleted directly; it gets nulled out
             // as part of the exception catch handling in the compiler before this method
             // is called from lint -- therefore we stash a copy in our own mCurrentUnit field
             return mCurrentUnit;
@@ -888,6 +971,24 @@ public class EcjParser extends JavaParser {
             unit.finalizeProblems();
             unit.compilationResult.totalUnitsKnown = totalUnits;
             lookupEnvironment.unitBeingCompleted = null;
+        }
+
+        @Override
+        public void reset() {
+            if (KEEP_LOOKUP_ENVIRONMENT) {
+                // Same as super.reset() in ECJ 4.4.2, but omits the following statement:
+                //  this.mLookupEnvironment.reset();
+                // because we need the lookup environment to stick around even after the
+                // parse phase is done: at that point we're going to use the parse trees
+                // from java detectors which may need to resolve types
+                this.parser.scanner.source = null;
+                this.unitsToProcess = null;
+                if (DebugRequestor != null) DebugRequestor.reset();
+                this.problemReporter.reset();
+
+            } else {
+                super.reset();
+            }
         }
     }
 
@@ -1103,6 +1204,7 @@ public class EcjParser extends JavaParser {
         @Override
         public boolean isInPackage(@NonNull String pkgName, boolean includeSubPackages) {
             PackageBinding pkg = mBinding.declaringClass.getPackage();
+            //noinspection SimplifiableIfStatement
             if (pkg != null) {
                 return includeSubPackages ?
                         startsWithCompound(pkgName, pkg.compoundName) :
@@ -1483,6 +1585,7 @@ public class EcjParser extends JavaParser {
         @Override
         public boolean isInPackage(@NonNull String pkgName, boolean includeSubPackages) {
             PackageBinding pkg = mBinding.getPackage();
+            //noinspection SimplifiableIfStatement
             if (pkg != null) {
                 return includeSubPackages ?
                         startsWithCompound(pkgName, pkg.compoundName) :
@@ -1651,6 +1754,7 @@ public class EcjParser extends JavaParser {
         @Override
         public boolean isInPackage(@NonNull String pkgName, boolean includeSubPackages) {
             PackageBinding pkg = mBinding.declaringClass.getPackage();
+            //noinspection SimplifiableIfStatement
             if (pkg != null) {
                 return includeSubPackages ?
                         startsWithCompound(pkgName, pkg.compoundName) :
@@ -2103,6 +2207,7 @@ public class EcjParser extends JavaParser {
         int index = 0;
         for (int i = 0, n = compoundName.length; i < n; i++) {
             char[] o = compoundName[i];
+            //noinspection ForLoopReplaceableByForEach
             for (int j = 0, m = o.length; j < m; j++) {
                 if (index == length) {
                     return false; // Don't allow prefix in a compound name
@@ -2138,6 +2243,7 @@ public class EcjParser extends JavaParser {
         int index = 0;
         for (int i = 0, n = compoundName.length; i < n; i++) {
             char[] o = compoundName[i];
+            //noinspection ForLoopReplaceableByForEach
             for (int j = 0, m = o.length; j < m; j++) {
                 if (index == length) {
                     return false; // Don't allow prefix in a compound name

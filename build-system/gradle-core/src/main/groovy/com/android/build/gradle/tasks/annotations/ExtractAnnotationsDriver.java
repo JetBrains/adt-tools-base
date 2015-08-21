@@ -22,18 +22,15 @@ import static java.io.File.pathSeparatorChar;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.EcjParser;
-import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
 import org.eclipse.jdt.internal.compiler.batch.CompilationUnit;
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
-import org.eclipse.jdt.internal.compiler.env.INameEnvironment;
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
 import org.eclipse.jdt.internal.compiler.util.Util;
 
@@ -42,7 +39,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The extract annotations driver is a command line interface to extracting annotations
@@ -225,10 +221,10 @@ public class ExtractAnnotationsDriver {
                 true);
         extractor.setListIgnored(listFiltered);
 
+        EcjParser.EcjResult result = null;
         try {
-            Pair<Collection<CompilationUnitDeclaration>, INameEnvironment>
-                    pair = parseSources(sources, classpath, encoding, languageLevel);
-            Collection<CompilationUnitDeclaration> units = pair.getFirst();
+            result = parseSources(sources, classpath, encoding, languageLevel);
+            Collection<CompilationUnitDeclaration> units = result.getCompilationUnits();
 
             boolean abort = false;
             int errorCount = 0;
@@ -261,7 +257,6 @@ public class ExtractAnnotationsDriver {
                 abort("Not extracting annotations (compilation problems encountered)");
             }
 
-            INameEnvironment environment = pair.getSecond();
             extractor.extractFromProjectSource(units);
 
             if (mergePaths != null) {
@@ -277,10 +272,12 @@ public class ExtractAnnotationsDriver {
             if (rmTypeDefs != null) {
                 extractor.removeTypedefClasses();
             }
-
-            environment.cleanup();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (result != null) {
+                result.dispose();
+            }
         }
     }
 
@@ -360,7 +357,7 @@ public class ExtractAnnotationsDriver {
     }
 
     @NonNull
-    private static Pair<Collection<CompilationUnitDeclaration>,INameEnvironment> parseSources(
+    private static EcjParser.EcjResult parseSources(
             @NonNull List<File> sourcePaths,
             @NonNull List<String> classpath,
             @NonNull String encoding,
@@ -373,9 +370,6 @@ public class ExtractAnnotationsDriver {
             ICompilationUnit unit = new CompilationUnit(contents, source.getPath(), encoding);
             sourceUnits.add(unit);
         }
-
-        Map<ICompilationUnit, CompilationUnitDeclaration> outputMap = Maps.newHashMapWithExpectedSize(
-                sourceUnits.size());
 
         CompilerOptions options = EcjParser.createCompilerOptions();
         options.docCommentSupport = true; // So I can find @hide
@@ -392,9 +386,6 @@ public class ExtractAnnotationsDriver {
         options.originalSourceLevel = options.sourceLevel;
         options.inlineJsrBytecode = true; // >= 1.5
 
-        INameEnvironment environment = EcjParser.parse(options, sourceUnits, classpath,
-                outputMap, null);
-        Collection<CompilationUnitDeclaration> parsedUnits = outputMap.values();
-        return Pair.of(parsedUnits, environment);
+        return EcjParser.parse(options, sourceUnits, classpath, null);
     }
 }
