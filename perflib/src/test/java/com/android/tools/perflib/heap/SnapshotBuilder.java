@@ -192,8 +192,7 @@ public class SnapshotBuilder {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
             hprof.write(os);
             InMemoryBuffer buffer = new InMemoryBuffer(os.toByteArray());
-            HprofParser parser = new HprofParser(buffer);
-            snapshot =  parser.parse();
+            snapshot = Snapshot.createSnapshot(buffer);
         } catch (IOException e) {
             fail("IOException when writing to byte output stream: " + e);
         }

@@ -238,7 +238,7 @@ public class DominatorsTest extends TestCase {
 
     public void testSampleHprof() throws Exception {
         File file = new File(ClassLoader.getSystemResource("dialer.android-hprof").getFile());
-        mSnapshot = (new HprofParser(new MemoryMappedFileBuffer(file))).parse();
+        mSnapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(file));
         mSnapshot.computeDominators();
 
         Set<Instance> topologicalSet = new HashSet<Instance>(mSnapshot.getTopologicalOrdering());

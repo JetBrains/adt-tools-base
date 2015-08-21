@@ -33,7 +33,7 @@ public class HprofParserTest extends TestCase {
         super.setUp();
 
         File file = new File(getClass().getResource("/dialer.android-hprof").getFile());
-        mSnapshot = (new HprofParser(new MemoryMappedFileBuffer(file))).parse();
+        mSnapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(file));
     }
 
     public void testHierarchy() {
