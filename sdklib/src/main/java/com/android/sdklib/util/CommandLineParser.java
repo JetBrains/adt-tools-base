@@ -523,7 +523,7 @@ public class CommandLineParser {
                         "  android [global options] %s [action options]\n" +
                         "\n" +
                         "Global options:",
-                verb == null ? "action" :
+                verb == null ? (acceptLackOfVerb() ? "[action]" : "action") :
                         verb + (directObject == null ? "" : " " + directObject));           //$NON-NLS-1$
         listOptions(GLOBAL_FLAG_VERB, NO_VERB_OBJECT);
 
@@ -538,6 +538,10 @@ public class CommandLineParser {
                             action[ACTION_DESC_INDEX]);
                 }
             }
+        }
+        if (verb == null && acceptLackOfVerb() && getDefaultVerb() != null) {
+            stdout("");
+            stdout("If a verb is not specified, the default is '%s'", getDefaultVerb());
         }
 
         // Only print details if a verb/object is requested
@@ -558,6 +562,15 @@ public class CommandLineParser {
         }
 
         exit();
+    }
+
+    /**
+      @return The default verb name to show in the help message. Should only return non-null if
+      {@link #acceptLackOfVerb} is true.
+     */
+    @Nullable
+    protected String getDefaultVerb() {
+        return null;
     }
 
     /**
