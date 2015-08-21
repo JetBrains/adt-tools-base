@@ -50,4 +50,8 @@ afterEvaluate {
     artifacts {
         classes packageReleaseJar
     }
+    // disable the lint task as it does not support linting ASM correctly.
+    tasks["lint"].setEnabled(false);
+    // disable the test task for now to avoid creating the mock android.jar
+    tasks["test"].setEnabled(false);
 }
