@@ -985,13 +985,9 @@ public class GradleTestProject implements TestRule {
 
         if (stdout != null) {
             launcher.setStandardOutput(stdout);
-        } else {
-            launcher.setStandardOutput(System.out);
         }
         if (stderr != null) {
             launcher.setStandardError(stderr);
-        } else {
-            launcher.setStandardError(System.err);
         }
         if (expectedBuildResult == ExpectedBuildResult.SUCCESS) {
             launcher.run();
