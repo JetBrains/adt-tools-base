@@ -27,6 +27,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintClient;
+import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
@@ -324,6 +325,8 @@ public class EcjParser extends JavaParser {
             if (mLookupEnvironment != null) {
                 mLookupEnvironment.reset();
             }
+
+            compilationUnits.clear();
         }
     }
 
@@ -563,10 +566,36 @@ public class EcjParser extends JavaParser {
             if (sourceUnit != null) {
                 mSourceUnits.remove(context.file);
                 if (mEcjResult != null) {
-                    mEcjResult.removeCompilationUnit(sourceUnit);
+                    CompilationUnitDeclaration unit = mEcjResult.getCompilationUnit(sourceUnit);
+                    if (unit != null) {
+                        // See if this compilation unit defines any enum types; if so,
+                        // keep those around for the type map (see #findAnnotationDeclaration())
+                        if (unit.types != null) {
+                            for (TypeDeclaration type : unit.types) {
+                                if (isAnnotationType(type)) {
+                                    return;
+                                }
+                                if (type.memberTypes != null) {
+                                    for (TypeDeclaration member : type.memberTypes) {
+                                        if (isAnnotationType(member)) {
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // Compilation unit is not defining an annotation type at the top two
+                        // levels: we can remove it now; findAnnotationDeclaration will not need
+                        // to go looking for it
+                        mEcjResult.removeCompilationUnit(sourceUnit);
+                    }
                 }
             }
         }
+    }
+
+    private static boolean isAnnotationType(@NonNull TypeDeclaration type) {
+        return TypeDeclaration.kind(type.modifiers) == TypeDeclaration.ANNOTATION_TYPE_DECL;
     }
 
     @Override
@@ -705,7 +734,7 @@ public class EcjParser extends JavaParser {
         return null;
     }
 
-    private TypeDeclaration findTypeDeclaration(@NonNull String signature) {
+    private TypeDeclaration findAnnotationDeclaration(@NonNull String signature) {
         if (mTypeUnits == null) {
             Collection<CompilationUnitDeclaration> units = mEcjResult.getCompilationUnits();
             mTypeUnits = Maps.newHashMapWithExpectedSize(units.size());
@@ -806,20 +835,14 @@ public class EcjParser extends JavaParser {
     @Override
     public ResolvedClass findClass(@NonNull JavaContext context,
             @NonNull String fullyQualifiedName) {
-        Node compilationUnit = context.getCompilationUnit();
-        if (compilationUnit == null) {
-            return null;
-        }
-        Object nativeObj = getNativeNode(compilationUnit);
-        if (!(nativeObj instanceof CompilationUnitDeclaration)) {
-            return null;
-        }
-        CompilationUnitDeclaration ecjUnit = (CompilationUnitDeclaration) nativeObj;
+        // Inner classes must use $ as separators. Switch to internal name first
+        // to make it more likely that we handle this correctly:
+        String internal = ClassContext.getInternalName(fullyQualifiedName);
 
-        // Convert "foo.bar.Baz" into char[][] 'foo','bar','Baz' as required for
+        // Convert "foo/bar/Baz" into char[][] 'foo','bar','Baz' as required for
         // ECJ name lookup
         List<char[]> arrays = Lists.newArrayList();
-        for (String segment : Splitter.on('.').split(fullyQualifiedName)) {
+        for (String segment : Splitter.on('/').split(internal)) {
             arrays.add(segment.toCharArray());
         }
         char[][] compoundName = new char[arrays.size()][];
@@ -827,9 +850,12 @@ public class EcjParser extends JavaParser {
             compoundName[i] = arrays.get(i);
         }
 
-        Binding typeOrPackage = ecjUnit.scope.getTypeOrPackage(compoundName);
-        if (typeOrPackage instanceof TypeBinding && !(typeOrPackage instanceof ProblemReferenceBinding)) {
-            return new EcjResolvedClass((TypeBinding)typeOrPackage);
+        LookupEnvironment lookup = mEcjResult.mLookupEnvironment;
+        if (lookup != null) {
+            ReferenceBinding type = lookup.getType(compoundName);
+            if (type != null && !(type instanceof ProblemReferenceBinding)) {
+                return new EcjResolvedClass(type);
+            }
         }
 
         return null;
@@ -1923,7 +1949,8 @@ public class EcjParser extends JavaParser {
                                 char[] readableName = annotation.getAnnotationType().readableName();
                                 if (sameChars(INT_DEF_ANNOTATION, readableName)
                                         || sameChars(STRING_DEF_ANNOTATION, readableName)) {
-                                    TypeDeclaration typeDeclaration = findTypeDeclaration(getName());
+                                    TypeDeclaration typeDeclaration =
+                                            findAnnotationDeclaration(getName());
                                     if (typeDeclaration != null && typeDeclaration.annotations != null) {
                                         Annotation astAnnotation = null;
                                         for (Annotation a : typeDeclaration.annotations) {
@@ -1939,6 +1966,12 @@ public class EcjParser extends JavaParser {
                                             result.add(new EcjAstAnnotation(annotation, astAnnotation));
                                             continue;
                                         }
+                                    } else {
+                                        // Don't record these typedef annotations; without
+                                        // finding the bindings, we'll get the literal values
+                                        // from the ECJ annotation, and that will lead to incorrect
+                                        // typedef warnings.
+                                        continue;
                                     }
                                 }
 
@@ -1950,7 +1983,6 @@ public class EcjParser extends JavaParser {
 
                     return Collections.emptyList();
                 }
-
             };
         }
 
