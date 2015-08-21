@@ -267,7 +267,7 @@ public abstract class Instance {
     }
 
     protected HprofBuffer getBuffer() {
-        return mHeap.mSnapshot.mBuffer;
+        return mHeap.mSnapshot.getBuffer();
     }
 
 

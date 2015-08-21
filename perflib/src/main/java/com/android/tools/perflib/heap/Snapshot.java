@@ -18,6 +18,7 @@ package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.tools.perflib.heap.analysis.Dominators;
 import com.android.tools.perflib.heap.analysis.ShortestDistanceVisitor;
 import com.android.tools.perflib.heap.analysis.TopologicalSort;
@@ -44,7 +45,7 @@ public class Snapshot {
     private static final int DEFAULT_HEAP_ID = 0;
 
     @NonNull
-    final HprofBuffer mBuffer;
+    private final HprofBuffer mBuffer;
 
     @NonNull
     ArrayList<Heap> mHeaps = new ArrayList<Heap>();
@@ -63,9 +64,26 @@ public class Snapshot {
 
     private long mIdSizeMask = 0x00000000ffffffffl;
 
+    @NonNull
+    public static Snapshot createSnapshot(@NonNull HprofBuffer buffer) {
+        Snapshot snapshot = new Snapshot(buffer);
+        HprofParser.parseBuffer(snapshot, buffer);
+        return snapshot;
+    }
+
+    @VisibleForTesting
     public Snapshot(@NonNull HprofBuffer buffer) {
         mBuffer = buffer;
         setToDefaultHeap();
+    }
+
+    public void dispose() {
+        mBuffer.dispose();
+    }
+
+    @NonNull
+    HprofBuffer getBuffer() {
+        return mBuffer;
     }
 
     @NonNull

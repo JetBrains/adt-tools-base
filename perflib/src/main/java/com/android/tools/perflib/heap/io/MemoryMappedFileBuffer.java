@@ -86,6 +86,7 @@ public class MemoryMappedFileBuffer implements HprofBuffer {
      * Attempts to unmap the buffer. It is the caller's responsibility to ensure there are no other
      * accesses to this buffer, otherwise this can result in a crash and kill the JVM.
      */
+    @Override
     public void dispose() {
         try {
             for (int i = 0; i < mByteBuffers.length; i++) {

@@ -20,6 +20,8 @@ import java.nio.ByteOrder;
 public interface HprofBuffer {
     ByteOrder HPROF_BYTE_ORDER = ByteOrder.BIG_ENDIAN;
 
+    void dispose();
+
     byte readByte();
 
     void read(byte[] b);
