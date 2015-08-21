@@ -172,6 +172,14 @@ public abstract class BasePlugin {
             return;
         }
 
+        int retirementAgeInDays =
+                getRetirementAgeInDays(manifest.getMainAttributes().getValue("Plugin-Version"));
+
+        // if this plugin version will never be outdated, return.
+        if (retirementAgeInDays == -1) {
+            return;
+        }
+
         String inceptionDateAttr = manifest.getMainAttributes().getValue("Inception-Date");
         // when running in unit tests, etc... the manifest entries are absent.
         if (inceptionDateAttr == null) {
@@ -181,12 +189,7 @@ public abstract class BasePlugin {
         GregorianCalendar inceptionDate = new GregorianCalendar(Integer.parseInt(items.get(0)),
                 Integer.parseInt(items.get(1)), Integer.parseInt(items.get(2)));
 
-        int retirementAgeInDays =
-                getRetirementAgeInDays(manifest.getMainAttributes().getValue("Plugin-Version"));
 
-        if (retirementAgeInDays == -1) {
-            return;
-        }
         Calendar now = GregorianCalendar.getInstance();
         long nowTimestamp = now.getTimeInMillis();
         long inceptionTimestamp = inceptionDate.getTimeInMillis();
@@ -227,9 +230,15 @@ public abstract class BasePlugin {
         }
     }
 
+    /**
+     * Returns the retirement age for this plugin depending on its version string, or -1 if this
+     * plugin version will never become obsolete
+     * @param version the plugin full version, like 1.3.4-preview5 or 1.0.2 or 1.2.3-beta4
+     * @return the retirement age in days or -1 if no retirement
+     */
     private static int getRetirementAgeInDays(@Nullable String version) {
         if (version == null || version.contains("rc") || version.contains("beta")
-                || version.contains("alpha")) {
+                || version.contains("alpha") || version.contains("preview")) {
             return DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE_IN_DAYS;
         }
         return -1;
