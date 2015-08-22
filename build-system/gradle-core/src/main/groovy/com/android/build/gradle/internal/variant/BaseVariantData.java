@@ -412,6 +412,17 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         return resFoldersOnDisk;
     }
 
+    @NonNull
+    public List<String> discoverListOfResourceConfigsNotDensities() {
+        List<String> resFoldersOnDisk = new ArrayList<String>();
+        List<ResourceSet> resourceSets = variantConfiguration.getResourceSets(
+                getGeneratedResFolders(), false /* no libraries resources */);
+        resFoldersOnDisk.addAll(getAllFilters(
+                resourceSets,
+                DiscoverableFilterType.LANGUAGE.folderPrefix));
+        return resFoldersOnDisk;
+    }
+
     /**
      * Defines the discoverability attributes of filters.
      */
