@@ -216,19 +216,19 @@ public class PrivateFieldAccess {
     }
 
     private int privateIntField(int value) {
-        return privateIntField*value;
+        return privateIntField * value;
     }
 
     private long privateLongField(int value) {
-        return privateLongField*value;
+        return privateLongField * value;
     }
 
     private float privateFloatField(float value) {
-        return privateLongField*value;
+        return privateLongField * value;
     }
 
     private double privateDoubleField(double value) {
-        return privateLongField*value;
+        return privateLongField * value;
     }
 
     private String privateStringField(String value) {
@@ -280,8 +280,6 @@ public class PrivateFieldAccess {
         return builder.build();
     }
 
-    /** this currently generate an faulty BCI enabled code */
-    /**
     public void setAll(boolean booleanValue, int intValue, long longValue, float floatValue,
             double doubleValue, String stringValue) {
 
@@ -292,5 +290,4 @@ public class PrivateFieldAccess {
         privateDoubleField = doubleValue;
         privateStringField = stringValue;
     }
-     */
 }

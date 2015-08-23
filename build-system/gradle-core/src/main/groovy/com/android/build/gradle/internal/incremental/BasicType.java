@@ -18,16 +18,56 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.Nullable;
 
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.Method;
+
 /**
- * Created by jedo on 8/7/15.
+ * Type definitions for intrinsic types, used at runtime when doing reflection based dispatching.
  */
 public enum BasicType {
-    I(Integer.TYPE),
-    J(Long.TYPE),
-    Z(Boolean.TYPE),
-    F(Float.TYPE),
-    D(Double.TYPE),
-    V(Void.TYPE);
+    I(Integer.TYPE) {
+        @Override
+        public void box(GeneratorAdapter mv) {
+            mv.invokeStatic(Type.getType(Integer.class),
+                    Method.getMethod("Integer valueOf(int)"));
+        }
+    },
+    J(Long.TYPE) {
+        @Override
+        public void box(GeneratorAdapter mv) {
+            mv.invokeStatic(Type.getType(Long.class),
+                    Method.getMethod("Long valueOf(long)"));
+        }
+    },
+    Z(Boolean.TYPE) {
+        @Override
+        public void box(GeneratorAdapter mv) {
+            mv.invokeStatic(Type.getType(Boolean.class),
+                    Method.getMethod("Boolean valueOf(boolean)"));
+        }
+    },
+    F(Float.TYPE) {
+        @Override
+        public void box(GeneratorAdapter mv) {
+            mv.invokeStatic(Type.getType(Float.class),
+                    Method.getMethod("Float valueOf(float)"));
+        }
+    },
+    D(Double.TYPE) {
+        @Override
+        public void box(GeneratorAdapter mv) {
+            mv.invokeStatic(Type.getType(Double.class),
+                    Method.getMethod("Double valueOf(double)"));
+        }
+    },
+    V(Void.TYPE) {
+        @Override
+        public void box(GeneratorAdapter mv) {
+        }
+    },;
+
+    public abstract void box(GeneratorAdapter mv);
 
     private final Class<?> primitiveJavaType;
 

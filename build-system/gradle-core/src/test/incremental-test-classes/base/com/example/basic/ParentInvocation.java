@@ -59,4 +59,12 @@ public class ParentInvocation extends AllAccessMethods {
         builder.add(super.publicMethod());
         return builder.build();
     }
+
+    public List<String> invokeDoNoOverrideMethodsDirectly() {
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        builder.add(super.doNotOverridePackagePrivateMethodDispatch());
+        builder.add(super.doNotOverrideProtectedMethodDispatch());
+        builder.add(super.doNotOverridePublicMethodDispatch());
+        return builder.build();
+    }
 }

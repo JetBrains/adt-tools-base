@@ -58,20 +58,30 @@ public class ParentInvocationTest {
                 "patched_package_private_method_child",
                 "patched_public_method_child");
 
-        // bug in generated code, need to be fixed.
-        //assertWithMessage("changeBaseClass: ParentInvocation:invokeAllDispatches())")
-        //        .that(parentInvocation.invokeAllDispatches()).containsExactly(
-        //        "patched_private_method",
-        //        "patched_protected_method_child",
-        //        "patched_package_private_method_child",
-        //        "patched_public_method_child");
-
         assertWithMessage("changeBaseClass: ParentInvocation:invokeAllDispatches())")
+                .that(parentInvocation.invokeAllDispatches()).containsExactly(
+                "patched_private_method",
+                "patched_protected_method_child",
+                "patched_package_private_method_child",
+                "patched_public_method_child");
+
+        assertWithMessage("changeBaseClass: ParentInvocation:invokeAllDoNotOverrideDispatches())")
                 .that(parentInvocation.invokeAllDoNotOverrideDispatches()).containsExactly(
                 "patched_private_method",
                 "patched_protected_method_child",
                 "patched_package_private_method_child",
                 "patched_public_method_child");
+
+        assertWithMessage("changeBaseClass: ParentInvocation:invokeDoNotOverrideMethodsDirectly())")
+                .that(parentInvocation.doNotOverridePublicMethodDispatch()).isEqualTo(
+                "patched_public_method_child");
+
+        assertWithMessage("changeBaseClass: ParentInvocation:invokeDoNoOverrideMethodsDirectly())")
+                .that(parentInvocation.invokeDoNoOverrideMethodsDirectly()).containsExactly(
+                "patched_protected_method_child",
+                "patched_package_private_method_child",
+                "patched_public_method_child");
+
     }
 }
 
