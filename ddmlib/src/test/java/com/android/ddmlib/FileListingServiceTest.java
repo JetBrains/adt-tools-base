@@ -48,4 +48,34 @@ public class FileListingServiceTest extends TestCase {
         assertEquals("system", m.group(2));
         assertEquals("23:01", m.group(6));
     }
+
+    public void test_LS_LD_PATTERN() {
+        Matcher m;
+
+        // adb shell toolbox ls -ld /init
+        m = FileListingService.LS_LD_PATTERN.matcher(
+                "-rwxr-x--- root     root       924136 1970-01-01 00:00 init");
+        assertFalse(m.matches());
+        // adb shell toolbox ls -ld /sdcard
+        m = FileListingService.LS_LD_PATTERN.matcher(
+                "lrwxrwxrwx root     root              2015-08-20 21:57 sdcard -> /storage/emulated/legacy");
+        assertFalse(m.matches());
+        // adb shell toolbox ls -ld /sdcard/
+        m = FileListingService.LS_LD_PATTERN.matcher(
+                "drwxrwx--x root     sdcard_r          2015-07-20 23:01 ");
+        assertTrue(m.matches());
+
+        // adb shell toybox ls -ld /init
+        m = FileListingService.LS_LD_PATTERN.matcher(
+                "-rwxr-x--- 1 root root 924136 1970-01-01 00:00 /init");
+        assertFalse(m.matches());
+        // adb shell toybox ls -ld /sdcard
+        m = FileListingService.LS_LD_PATTERN.matcher(
+                "lrwxrwxrwx 1 root root 24 2015-08-20 21:57 /sdcard -> /storage/emulated/legacy");
+        assertFalse(m.matches());
+        // adb shell toybox ls -ld /sdcard/
+        m = FileListingService.LS_LD_PATTERN.matcher(
+                "drwxrwx--x 12 root sdcard_r 4096 2015-07-20 23:01 /sdcard/");
+        assertTrue(m.matches());
+    }
 }
