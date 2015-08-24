@@ -29,6 +29,7 @@ import org.w3c.dom.Node;
 
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.util.Locale;
 
 /**
  * Generate a Image based on the VectorDrawable's XML content.
@@ -164,7 +165,7 @@ public class VdPreview {
         }
         if (info.needsOverrideOpacity()) {
             Node nodeAttr = attr.getNamedItem(ANDROID_ALPHA);
-            String opacityValue = String.format("%.2f", info.getOpacity() / 100.0f);
+            String opacityValue = String.format((Locale) null, "%.2f", info.getOpacity() / 100.0f);
             if (nodeAttr != null) {
                 nodeAttr.setTextContent(opacityValue);
             }
