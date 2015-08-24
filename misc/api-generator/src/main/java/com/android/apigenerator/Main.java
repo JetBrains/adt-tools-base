@@ -19,6 +19,7 @@ package com.android.apigenerator;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -27,12 +28,14 @@ import java.util.TreeMap;
  * simple text files.
  */
 public class Main {
-
     public static void main(String[] args) {
 
         boolean error = false;
         int minApi = 1;
-        ArrayList<String> patterns = new ArrayList<String>();
+        int currentApi = -1;
+        String currentCodenName = null;
+        File currentJar = null;
+        List<String> patterns = new ArrayList<String>();
         String outPath = null;
 
         for (int i = 0; i < args.length && !error; i++) {
@@ -46,7 +49,39 @@ public class Main {
                     System.err.println("Missing argument after " + arg);
                     error = true;
                 }
-
+            } else if (arg.equals("--current-version")) {
+                i++;
+                if (i < args.length) {
+                    currentApi = Integer.parseInt(args[i]);
+                    if (currentApi <= 22) {
+                        System.err.println("Suspicious currentApi=" + currentApi + ", expected at least 23");
+                        error = true;
+                    }
+                } else {
+                    System.err.println("Missing number >= 1 after " + arg);
+                    error = true;
+                }
+            } else if (arg.equals("--current-codename")) {
+                i++;
+                if (i < args.length) {
+                    currentCodenName = args[i];
+                } else {
+                    System.err.println("Missing codename after " + arg);
+                    error = true;
+                }
+            } else if (arg.equals("--current-jar")) {
+                i++;
+                if (i < args.length) {
+                    if (currentJar != null) {
+                        System.err.println("--current-jar should only be specified once");
+                        error = true;
+                    }
+                    String path = args[i];
+                    currentJar = new File(path);
+                } else {
+                    System.err.println("Missing argument after " + arg);
+                    error = true;
+                }
             } else if (arg.equals("--min-api")) {
                 i++;
                 if (i < args.length) {
@@ -86,12 +121,22 @@ public class Main {
             error = true;
         }
 
+        if (currentJar != null && currentApi == -1 || currentJar == null && currentApi != -1) {
+            System.err.println("You must specify both --current-jar and --current-version (or neither one)");
+            error = true;
+        }
+
+        // The SDK version number
+        if (currentCodenName != null && !"REL".equals(currentCodenName)) {
+            currentApi++;
+        }
+
         if (error) {
             printUsage();
             System.exit(1);
         }
 
-        AndroidJarReader reader = new AndroidJarReader(patterns, minApi);
+        AndroidJarReader reader = new AndroidJarReader(patterns, minApi, currentJar, currentApi);
         Map<String, ApiClass> classes = reader.getClasses();
         if (!createApiFile(new File(outPath), classes)) {
             System.exit(1);
@@ -104,8 +149,11 @@ public class Main {
         System.err.println("\tApiCheck [--min-api=1] OutFile [SdkFolder | --pattern sdk/%/android.jar]+");
         System.err.println("Options:");
         System.err.println("--min-api <int> : The first API level to consider (>=1).");
-        System.err.println("--pattern : Path pattern to find per-API android.jar files, where\n" +
-                           "            '%' is replacedby the API level.");
+        System.err.println("--pattern <pattern>: Path pattern to find per-API android.jar files, where\n" +
+                           "            '%' is replaced by the API level.");
+        System.err.println("--current-jar <path>: Path pattern to find the current android.jar");
+        System.err.println("--current-version <int>: The API level for the current API");
+        System.err.println("--current-codename <name>: REL, if a release, or codename for previews");
         System.err.println("SdkFolder: if given, this adds the pattern\n" +
                            "           '$SdkFolder/platforms/android-%/android.jar'");
         System.err.println("If multiple --pattern are specified, they are tried in the order given.\n");
@@ -120,6 +168,14 @@ public class Main {
 
         PrintStream ps = null;
         try {
+            File parentFile = outFile.getParentFile();
+            if (!parentFile.exists()) {
+                boolean ok = parentFile.mkdirs();
+                if (!ok) {
+                    System.err.println("Could not create directory " + parentFile);
+                    return false;
+                }
+            }
             ps = new PrintStream(outFile, "UTF-8");
             ps.println("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
             ps.println("<api version=\"2\">");
