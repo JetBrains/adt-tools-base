@@ -25,7 +25,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 
 @SuppressWarnings("javadoc")
-public class VectorDrawbleGeneratorTest extends GeneratorTest {
+public class VectorDrawableGeneratorTest extends GeneratorTest {
     private static final String TEST_DATA_REL_PATH =
       "tools/base/sdk-common/src/test/resources/testData/vectordrawable";
 
@@ -112,5 +112,9 @@ public class VectorDrawbleGeneratorTest extends GeneratorTest {
 
     public void testIconPlusSign() throws Exception {
         checkVectorConversion("ic_plus_sign");
+    }
+
+    public void testIconPolylineStrokeWidth() throws Exception {
+        checkVectorConversion("ic_polyline_strokewidth");
     }
 }
