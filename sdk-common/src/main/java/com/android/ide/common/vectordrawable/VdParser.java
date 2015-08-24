@@ -17,6 +17,9 @@
 package com.android.ide.common.vectordrawable;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -113,7 +116,8 @@ class VdParser {
 
     // Note that the incoming file is the VectorDrawable's XML file, not the SVG.
     // TODO: Use Document to parse and make sure no big performance difference.
-    public VdTree parse(InputStream is, StringBuilder vdErrorLog) {
+    @Nullable
+    public VdTree parse(@NonNull InputStream is, @Nullable StringBuilder vdErrorLog) {
         try {
             final VdTree tree = new VdTree();
             SAXParserFactory spf = SAXParserFactory.newInstance();
@@ -178,7 +182,9 @@ class VdParser {
             tree.parseFinish();
             return tree;
         } catch (Exception e) {
-            vdErrorLog.append("Exception while parsing XML file:\n" + e.getMessage());
+            if (vdErrorLog != null) {
+                vdErrorLog.append("Exception while parsing XML file:\n" + e.getMessage());
+            }
             return null;
         }
     }

@@ -131,7 +131,7 @@ class SvgLeafNode extends SvgNode {
 
     @Override
     public void transform(float a, float b, float c, float d, float e, float f) {
-        if ("none".equals(mVdAttributesMap.get("fill")) || (mPathData == null)) {
+        if ((mPathData == null)) {
             // Nothing to draw and transform, early return.
             return;
         }
@@ -160,6 +160,10 @@ class SvgLeafNode extends SvgNode {
         if (!mVdAttributesMap.containsKey(Svg2Vector.SVG_FILL_COLOR)) {
             logger.log(Level.FINE, "ADDING FILL SVG_FILL_COLOR");
             writer.write("        android:fillColor=\"#FF000000\"\n");
+        }
+        if (!emptyStroke && !mVdAttributesMap.containsKey(Svg2Vector.SVG_STROKE_WIDTH)) {
+            logger.log(Level.FINE, "Adding default stroke width");
+            writer.write("        android:strokeWidth=\"1\"\n");
         }
         writer.write("        android:pathData=\"" + mPathData + "\"");
         writer.write(getAttributeValues(Svg2Vector.presentationMap));

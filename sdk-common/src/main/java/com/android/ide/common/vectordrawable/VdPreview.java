@@ -284,8 +284,4 @@ public class VdPreview {
         vdTree.drawIntoImage(image);
         return image;
     }
-
-    public static void main(String[] args) {
-        System.out.println("Hello from sdk-common-lib.");
-    }
 }
