@@ -24,6 +24,10 @@ import static com.android.SdkConstants.TAG_ATTR;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.MergingLog;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.internal.PngCruncher;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
@@ -511,7 +515,13 @@ public class ResourceMergerTest extends BaseTestCase {
                 (int) 0xFF00FF00);
         assertFalse(new File(resFolder, "drawable-ldpi-v4" + File.separator + "removed.png").isFile());
 
-        //TODO: check merge log.
+        // Blame log sanity check
+        MergingLog mergingLog = new MergingLog(mergeLogFolder);
+
+        SourceFile original = mergingLog.find(
+                new SourceFile(new File(resFolder, "drawable" + File.separator + "touched.png")));
+        assertTrue(original.getSourceFile().getAbsolutePath().endsWith(
+                "basicFiles/main/drawable/touched.png".replace('/', File.separatorChar)));
     }
 
     public void testUpdateWithBasicValues() throws Exception {
@@ -610,8 +620,19 @@ public class ResourceMergerTest extends BaseTestCase {
         // copy the current resOut which serves as pre incremental update state.
         File resFolder = getFolderCopy(new File(root, "resOut"));
 
+
+        File mergeLogFolder = Files.createTempDir();
+        mergeLogFolder.deleteOnExit();
+
         // write the content of the resource merger.
-        MergedResourceWriter writer = getConsumer(resFolder);
+        MergedResourceWriter writer = new MergedResourceWriter(
+                resFolder,
+                mPngCruncher,
+                false /*crunchPng*/,
+                false /*process9Patch*/,
+                null /*publicFile*/,
+                mergeLogFolder,
+                mPreprocessor);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -629,6 +650,18 @@ public class ResourceMergerTest extends BaseTestCase {
 
         // deleted values-en/values-en.xml
         assertFalse(new File(resFolder, "values-en" + File.separator + "values-en.xml").isFile());
+
+        // Blame log sanity check.
+        MergingLog mergingLog = new MergingLog(mergeLogFolder);
+
+        SourceFilePosition original = mergingLog.find(new SourceFilePosition(
+                new SourceFile(new File(resFolder, "values" + File.separator + "values.xml")),
+                new SourcePosition(2,5,-1)));
+
+        assertEquals(new SourcePosition(2, 4, 55, 2, 51, 102), original.getPosition());
+        assertTrue(original.getFile().getSourceFile().getAbsolutePath().endsWith(
+                "basicValues/overlay/values/values.xml".replace('/', File.separatorChar)));
+
     }
 
     public void testUpdateWithBasicValues2() throws Exception {
