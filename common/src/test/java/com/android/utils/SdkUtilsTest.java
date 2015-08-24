@@ -344,36 +344,6 @@ public class SdkUtilsTest extends TestCase {
                 urlToFile(new URL(urlString)).getPath());
     }
 
-    public void testCopyXmlWithSourceReference() throws IOException {
-        File source = File.createTempFile("source", SdkConstants.DOT_XML);
-        File dest = File.createTempFile("dest", SdkConstants.DOT_XML);
-        Files.write(""
-                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                + "<resources>\n"
-                + "    <string name=\"description_search\">Search</string>\n"
-                + "    <string name=\"description_map\">Map</string>\n"
-                + "    <string name=\"description_refresh\">Refresh</string>\n"
-                + "    <string name=\"description_share\">Share</string>\n"
-                + "</resources>",
-                source, Charsets.UTF_8);
-        SdkUtils.copyXmlWithSourceReference(source, dest);
-
-        String sourceUrl = SdkUtils.fileToUrlString(source);
-        assertEquals(""
-                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                + "<resources>\n"
-                + "    <string name=\"description_search\">Search</string>\n"
-                + "    <string name=\"description_map\">Map</string>\n"
-                + "    <string name=\"description_refresh\">Refresh</string>\n"
-                + "    <string name=\"description_share\">Share</string>\n"
-                + "</resources><!-- From: " + sourceUrl + " -->",
-                Files.toString(dest, Charsets.UTF_8));
-        boolean deleted = source.delete();
-        assertTrue(deleted);
-        deleted = dest.delete();
-        assertTrue(deleted);
-    }
-
     public void testNameConversionRoutines() {
         assertEquals("xml-name", SdkUtils.constantNameToXmlName("XML_NAME"));
         assertEquals("XML_NAME", SdkUtils.xmlNameToConstantName("xml-name"));

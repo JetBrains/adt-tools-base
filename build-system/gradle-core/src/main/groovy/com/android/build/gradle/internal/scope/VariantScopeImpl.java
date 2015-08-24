@@ -404,6 +404,13 @@ public class VariantScopeImpl implements VariantScope {
         this.mergeResourceOutputDir = mergeResourceOutputDir;
     }
 
+    @NonNull
+    @Override
+    public File getResourceBlameLogDir() {
+        return FileUtils.join(globalScope.getIntermediatesDir(),
+                "blame", "res",  getVariantConfiguration().getDirName());
+    }
+
     @Override
     @NonNull
     public File getMergeAssetsOutputDir() {
