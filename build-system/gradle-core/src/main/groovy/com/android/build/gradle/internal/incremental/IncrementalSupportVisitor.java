@@ -62,7 +62,6 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     @Override
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
-        System.out.println("Visiting " + name);
         visitedClassName = name;
         visitedSuperName = superName;
 
@@ -73,7 +72,6 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
-        System.out.println("Visiting method " + name + " desc " + desc);
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
         if (name.equals("<clinit>")) {
             return defaultVisitor;
@@ -125,20 +123,33 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
             List<Type> args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(desc)));
             boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
+            // if this is not a static, we add a fictional first parameter what will contain the "this"
+            // reference which can be loaded with ILOAD_0 bytecode.
             if (!isStatic) {
                 args.add(0, Type.getType(Object.class));
             }
+
+            // create an array of objects capable of containing all the parameters and optional the "this"
             push(args.size());
             newArray(Type.getType(Object.class));
 
-            for (int index = 0; index < args.size(); index++) {
-                Type arg = args.get(index);
+            // we need to maintain the stack index when loading parameters from, as for long and double
+            // values, it uses 2 stack elements, all others use only 1 stack element.
+            int stackIndex = 0;
+            for (int arrayIndex = 0; arrayIndex < args.size(); arrayIndex++) {
+                Type arg = args.get(arrayIndex);
+                // duplicate the array of objects reference, it will be used to store the value in.
                 dup();
-                push(index);
+                // index in the array of objects to store the boxed parameter.
+                push(arrayIndex);
                 // This will load "this" when it's not static function as the first element
-                visitVarInsn(arg.getOpcode(Opcodes.ILOAD), index);
+                visitVarInsn(arg.getOpcode(Opcodes.ILOAD), stackIndex);
+
+                // potentially box up intrinsic types.
                 box(arg);
                 arrayStore(Type.getType(Object.class));
+                // stack index must progress according to the parameter type we just processed.
+                stackIndex += arg.getSize();
             }
 
             // now invoke the generic dispatch method.
@@ -281,7 +292,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             ClassReader classReader = new ClassReader(classBytes);
             ClassNode classNode = new ClassNode(Opcodes.ASM5);
             classReader.accept(classNode, 0);
-            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
+            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
             IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(
                     classNode, Collections.<ClassNode>emptyList(), classWriter);
             classReader.accept(visitor, ClassReader.EXPAND_FRAMES);

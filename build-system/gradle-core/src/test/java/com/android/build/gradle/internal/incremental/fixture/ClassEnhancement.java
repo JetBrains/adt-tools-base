@@ -243,12 +243,13 @@ public class ClassEnhancement implements TestRule {
             ClassNode classNode = new ClassNode(Opcodes.ASM5);
 
             classReader.accept(classNode, 0);
-            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS);
+            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
             IncrementalChangeVisitor incrementalChangeVisitor = new IncrementalChangeVisitor(
                     classNode, Collections.<ClassNode>emptyList(), classWriter);
             classReader.accept(incrementalChangeVisitor, ClassReader.EXPAND_FRAMES);
             byte[] changedClassBytes = classWriter.toByteArray();
             if (tracing) {
+                Logger.getAnonymousLogger().severe(traceClass(changedClassBytes));
                 Logger.getLogger(ClassEnhancement.class.getName()).info(
                         traceClass(changedClassBytes));
             }

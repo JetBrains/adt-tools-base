@@ -31,13 +31,13 @@ import org.junit.Test;
 public class PrivateFieldAccessTest {
 
     @ClassRule
-    public static ClassEnhancement harness = new ClassEnhancement();
+    public static ClassEnhancement harness = new ClassEnhancement(false);
 
     /**
      * Checks that the initial bytecode changes did not prevent proper access to private fields
      * and methods.
      *
-     * @throws Exception
+     * @throws Exception when Byte code generation failed.
      */
     @Test
     public void checkInitialByteCodeChanges() throws Exception {

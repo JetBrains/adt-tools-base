@@ -55,7 +55,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         super.visit(version, access, name + "$override", signature, "java/lang/Object",
                 new String[]{"com/android/build/gradle/internal/incremental/IncrementalChange"});
 
-        System.out.println("Visiting " + name);
         visitedClassName = name;
         visitedSuperName = superName;
 
@@ -75,13 +74,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
 
-        System.out.println("Visiting method " + name + " signature " + desc);
         if (name.equals("<clinit>")) {
             return null;
         }
         boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
         String newDesc = isStatic ? desc : "(L" + visitedClassName + ";" + desc.substring(1);
-        System.out.println("new Desc is " + newDesc);
 
         String newName = getOverridenName(name);
         // Do not carry on any access flags from the original method. For example synchronized
