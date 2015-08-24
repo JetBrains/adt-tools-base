@@ -395,44 +395,6 @@ public class SdkUtils {
     }
 
     /**
-     * Copies the given XML file to the given new path. It also inserts a comment at
-     * the end of the file which points to the original source location. This is intended
-     * for use with error parsers which can rewrite for example AAPT error messages in
-     * say layout or manifest files, which occur in the merged (copied) output, and present
-     * it as an error pointing to one of the user's original source files.
-     */
-    public static void copyXmlWithSourceReference(@NonNull File from, @NonNull File to)
-            throws IOException {
-        copyXmlWithComment(from, to, createPathComment(from, true));
-    }
-
-    /** Copies a given XML file, and appends a given comment to the end */
-    private static void copyXmlWithComment(@NonNull File from, @NonNull File to,
-            @Nullable String comment) throws IOException {
-        assert endsWithIgnoreCase(from.getPath(), DOT_XML) : from;
-
-        int successfulOps = 0;
-        InputStream in = new FileInputStream(from);
-        try {
-            FileOutputStream out = new FileOutputStream(to, false);
-            try {
-                ByteStreams.copy(in, out);
-                successfulOps++;
-                if (comment != null) {
-                    String commentText = "<!--" + XmlUtils.toXmlTextValue(comment) + "-->";
-                    byte[] suffix = commentText.getBytes(Charsets.UTF_8);
-                    out.write(suffix);
-                }
-            } finally {
-                Closeables.close(out, successfulOps < 1);
-                successfulOps++;
-            }
-        } finally {
-            Closeables.close(in, successfulOps < 2);
-        }
-    }
-
-    /**
      * Translates an XML name (e.g. xml-name) into a Java / C++ constant name (e.g. XML_NAME)
      * @param xmlName the hyphen separated lower case xml name.
      * @return the equivalent constant name.

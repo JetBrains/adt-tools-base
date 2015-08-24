@@ -51,6 +51,7 @@ public interface AndroidProject {
     String ARTIFACT_UNIT_TEST = "_unit_test_";
 
     String FD_INTERMEDIATES = "intermediates";
+    String FD_LOGS = "logs";
     String FD_OUTPUTS = "outputs";
     String FD_GENERATED = "generated";
 

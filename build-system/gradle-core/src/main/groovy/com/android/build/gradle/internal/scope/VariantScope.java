@@ -162,6 +162,9 @@ public interface VariantScope {
     void setMergeResourceOutputDir(@Nullable File mergeResourceOutputDir);
 
     @NonNull
+    File getResourceBlameLogDir();
+
+    @NonNull
     File getMergeAssetsOutputDir();
 
     @NonNull

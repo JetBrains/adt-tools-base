@@ -43,7 +43,11 @@ public final class ValueResourceNameValidator {
         String error = getErrorText(resourceName, resourceType);
         if (error != null) {
             // TODO find location in file.
-            throw MergingException.withMessage( error).withFile(file).build();
+            MergingException.Builder exception = MergingException.withMessage(error);
+            if (file != null) {
+                exception.withFile(file);
+            }
+            throw exception.build();
         }
     }
 

@@ -487,9 +487,15 @@ public class ResourceMergerTest extends BaseTestCase {
         // write and check the result of writeResourceFolder
         // copy the current resOut which serves as pre incremental update state.
         File resFolder = getFolderCopy(new File(root, "resOut"));
+        resFolder.deleteOnExit();
+
+        File mergeLogFolder = Files.createTempDir();
+        mergeLogFolder.deleteOnExit();
 
         // write the content of the resource merger.
-        MergedResourceWriter writer = getConsumer(resFolder);
+        MergedResourceWriter writer = new MergedResourceWriter(resFolder, mPngCruncher,
+                false /*crunchPng*/, false /*process9Patch*/, null /*publicFile*/, mergeLogFolder,
+                mPreprocessor);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -504,6 +510,8 @@ public class ResourceMergerTest extends BaseTestCase {
         checkImageColor(new File(resFolder, "drawable-hdpi-v4" + File.separator + "new_alternate.png"),
                 (int) 0xFF00FF00);
         assertFalse(new File(resFolder, "drawable-ldpi-v4" + File.separator + "removed.png").isFile());
+
+        //TODO: check merge log.
     }
 
     public void testUpdateWithBasicValues() throws Exception {
@@ -1441,36 +1449,6 @@ public class ResourceMergerTest extends BaseTestCase {
         return result;
     }
 
-    public void testAppendedSourceComment() throws Exception {
-        ResourceMerger merger = getResourceMerger();
-        RecordingLogger logger =  new RecordingLogger();
-        File folder = getWrittenResources();
-        ResourceSet writtenSet = new ResourceSet("unused");
-        writtenSet.addSource(folder);
-        writtenSet.loadFromFiles(logger);
-        compareResourceMaps(merger, writtenSet, false /*full compare*/);
-        checkLogger(logger);
-
-        File layout = new File(folder, FD_RES_LAYOUT + File.separator + "main.xml");
-        assertTrue(layout.exists());
-        String layoutXml = Files.toString(layout, Charsets.UTF_8);
-        assertTrue(layoutXml.contains("main.xml")); // in <!-- From: /full/path/to/main.xml -->
-        int index = layoutXml.indexOf("From: ");
-        assertTrue(index != -1);
-        String path = layoutXml.substring(index + 6, layoutXml.indexOf(' ', index + 6));
-        File file = SdkUtils.urlToFile(path);
-        assertTrue(path, file.exists());
-        assertFalse(Arrays.equals(Files.toByteArray(file), Files.toByteArray(layout)));
-
-        // Also make sure .png files were NOT modified
-        File root = TestUtils.getRoot("resources", "baseMerge");
-        assertNotNull(root);
-        File original = new File(root,
-                "overlay/drawable-ldpi/icon.png".replace('/', File.separatorChar));
-        File copied = new File(folder, FD_RES_DRAWABLE + File.separator + "icon.png");
-        assertTrue(Arrays.equals(Files.toByteArray(original), Files.toByteArray(copied)));
-    }
-
     public void testWritePermission() throws Exception {
         ResourceMerger merger = getResourceMerger();
 
@@ -1651,9 +1629,10 @@ public class ResourceMergerTest extends BaseTestCase {
         return new MergedResourceWriter(
                 tempDir,
                 mPngCruncher,
-                false,
-                false,
-                null,
+                false /*crunchPng*/,
+                false /*process9Patch*/,
+                null /*publicFile*/,
+                null /*blameLogFolder*/,
                 mPreprocessor);
     }
 }

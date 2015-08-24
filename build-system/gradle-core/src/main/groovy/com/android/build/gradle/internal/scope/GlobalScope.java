@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.scope;
 
 import static com.android.builder.core.BuilderConstants.FD_REPORTS;
 import static com.android.builder.model.AndroidProject.FD_GENERATED;
+import static com.android.builder.model.AndroidProject.FD_LOGS;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 

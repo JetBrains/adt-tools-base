@@ -18,6 +18,18 @@ package com.android.ide.common.blame;
 
 import com.android.annotations.NonNull;
 
+/**
+ * A message receiver.
+ *
+ * {@link MessageReceiver}s receive build {@link Message}s and either
+ * <ul><li>Output them to a logging system</li>
+ * <li>Output them to a user interface</li>
+ * <li>Transform them, such as mapping from intermediate files back to source files</li></ul>
+ */
 public interface MessageReceiver {
-    void receiveMessage(@NonNull Message m);
+
+    /**
+     * Process the given message.
+     */
+    void receiveMessage(@NonNull Message message);
 }

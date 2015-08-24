@@ -31,6 +31,8 @@ import com.android.builder.core.AaptPackageProcessBuilder;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.LibraryDependency;
+import com.android.ide.common.blame.MergingLog;
+import com.android.ide.common.blame.MergingLogRewriter;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
 import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.blame.parser.aapt.AaptOutputParser;
@@ -95,6 +97,7 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     private AaptOptions aaptOptions;
 
+    private File mergeBlameLogFolder;
 
     @Override
     protected void doFullTaskAction() throws IOException {
@@ -137,9 +140,12 @@ public class ProcessAndroidResources extends IncrementalTask {
 
         @NonNull
         AndroidBuilder builder = getBuilder();
+
+        MergingLog mergingLog = new MergingLog(getMergeBlameLogFolder());
+
         ProcessOutputHandler processOutputHandler = new ParsingProcessOutputHandler(
                 new ToolOutputParser(new AaptOutputParser(), getILogger()),
-                builder.getErrorReporter());
+                new MergingLogRewriter(mergingLog, builder.getErrorReporter()));
         try {
             builder.processResources(
                     aaptPackageCommandBuilder,
@@ -316,6 +322,8 @@ public class ProcessAndroidResources extends IncrementalTask {
                     });
 
 
+            processResources.setMergeBlameLogFolder(
+                    scope.getVariantScope().getResourceBlameLogDir());
         }
 
         @NonNull
@@ -499,5 +507,14 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     public void setAaptOptions(AaptOptions aaptOptions) {
         this.aaptOptions = aaptOptions;
+    }
+
+    @Input
+    public File getMergeBlameLogFolder() {
+        return mergeBlameLogFolder;
+    }
+
+    public void setMergeBlameLogFolder(File mergeBlameLogFolder) {
+        this.mergeBlameLogFolder = mergeBlameLogFolder;
     }
 }
