@@ -16,7 +16,10 @@
 
 package com.android.apigenerator;
 
+import com.android.SdkConstants;
 import com.android.utils.Pair;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Closeables;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
@@ -28,7 +31,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,15 +43,16 @@ import java.util.zip.ZipInputStream;
  *
  */
 public class AndroidJarReader {
-
-    private static final byte[] BUFFER = new byte[65535];
-
     private final int mMinApi;
-    private final ArrayList<String> mPatterns;
+    private final int mCurrentApi;
+    private final File mCurrentJar;
+    private final List<String> mPatterns;
 
-    public AndroidJarReader(ArrayList<String> patterns, int minApi) {
+    public AndroidJarReader(List<String> patterns, int minApi, File currentJar, int currentApi) {
         mPatterns = patterns;
         mMinApi = minApi;
+        mCurrentJar = currentJar;
+        mCurrentApi = currentApi;
     }
 
     public Map<String, ApiClass> getClasses() {
@@ -60,7 +63,13 @@ public class AndroidJarReader {
         while (true) {
             apiLevel++;
             try {
-                File jar = getAndroidJarFile(apiLevel);
+                File jar = null;
+                if (apiLevel == mCurrentApi) {
+                    jar = mCurrentJar;
+                }
+                if (jar == null) {
+                    jar = getAndroidJarFile(apiLevel);
+                }
                 if (jar == null || !jar.isFile()) {
                     System.out.println("Last API level found: " + (apiLevel-1));
                     break;
@@ -73,22 +82,15 @@ public class AndroidJarReader {
                 while (entry != null) {
                     String name = entry.getName();
 
-                    if (name.endsWith(".class")) {
+                    if (name.endsWith(SdkConstants.DOT_CLASS)) {
+                        byte[] bytes = ByteStreams.toByteArray(zis);
+                        if (bytes == null) {
+                            System.err.println("Warning: Couldn't read " + name);
+                            entry = zis.getNextEntry();
+                            continue;
+                        }
 
-                        int index = 0;
-                        do {
-                            int size = zis.read(BUFFER, index, BUFFER.length - index);
-                            if (size >= 0) {
-                                index += size;
-                            } else {
-                                break;
-                            }
-                        } while (true);
-
-                        byte[] b = new byte[index];
-                        System.arraycopy(BUFFER, 0, b, 0, index);
-
-                        ClassReader reader = new ClassReader(b);
+                        ClassReader reader = new ClassReader(bytes);
                         ClassNode classNode = new ClassNode();
                         reader.accept(classNode, 0 /*flags*/);
 
@@ -133,14 +135,13 @@ public class AndroidJarReader {
                     entry = zis.getNextEntry();
                 }
 
+                Closeables.close(fis, true);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-
             }
         }
 
