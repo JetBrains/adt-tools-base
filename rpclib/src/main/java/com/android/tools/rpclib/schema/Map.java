@@ -19,6 +19,7 @@ package com.android.tools.rpclib.schema;
 
 import com.intellij.ui.SimpleColoredComponent;
 import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.util.containers.HashMap;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
@@ -33,12 +34,23 @@ import java.io.IOException;
 public final class Map extends Type {
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
-        throw new IOException("implement variant encode");
+        assert(value instanceof java.util.Map);
+        java.util.Map<?,?> map = (java.util.Map)value;
+        e.uint32(map.size());
+        for (java.util.Map.Entry entry : map.entrySet()) {
+            mKeyType.encodeValue(e, entry.getKey());
+            mValueType.encodeValue(e, entry.getValue());
+        }
     }
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        throw new IOException("implement variant decode");
+        int size = (int)d.uint32();
+        HashMap<Object, Object> map = new HashMap<Object, Object>();
+        for(int i =0; i < size; i++) {
+            map.put(mKeyType.decodeValue(d), mValueType.decodeValue(d));
+        }
+        return map;
     }
 
     @Override
