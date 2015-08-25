@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.tasks;
 import com.android.annotations.NonNull;
 
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -26,6 +27,7 @@ import java.io.File;
 /**
  * Class that checks the presence of the manifest.
  */
+@ParallelizableTask
 public class CheckManifest extends DefaultAndroidTask {
 
     private File manifest;

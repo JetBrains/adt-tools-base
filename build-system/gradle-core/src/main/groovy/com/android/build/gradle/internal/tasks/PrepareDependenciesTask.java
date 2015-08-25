@@ -25,11 +25,13 @@ import com.google.common.collect.Lists;
 
 import org.gradle.api.GradleException;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
 import java.util.List;
 import java.util.Map;
 
+@ParallelizableTask
 public class PrepareDependenciesTask extends BaseTask {
 
     private BaseVariantData variant;

@@ -37,6 +37,7 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -46,6 +47,7 @@ import java.util.concurrent.Callable;
 /**
  * Task to generate micro app data res file.
  */
+@ParallelizableTask
 public class GenerateApkDataTask extends BaseTask {
 
     private File apkFile;

@@ -19,10 +19,12 @@ import com.android.build.gradle.internal.LibraryCache;
 
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 
+@ParallelizableTask
 public class PrepareLibraryTask extends DefaultAndroidTask {
     private File bundle;
     private File explodedDir;

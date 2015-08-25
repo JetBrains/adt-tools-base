@@ -44,6 +44,7 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.util.PatternSet;
 
 import java.io.File;
@@ -56,6 +57,7 @@ import java.util.concurrent.Callable;
 /**
  * Task to compile aidl files. Supports incremental update.
  */
+@ParallelizableTask
 public class AidlCompile extends IncrementalTask {
 
     private static final String DEPENDENCY_STORE = "dependency.store";
