@@ -17,21 +17,27 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.ManifestMerger2.SystemProperty;
+import static com.android.manifmerger.ManifestMergerTestUtil.loadTestData;
+import static com.android.manifmerger.ManifestMergerTestUtil.transformParameters;
 import static com.android.manifmerger.MergingReport.Record;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 import com.android.annotations.Nullable;
 import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -41,10 +47,13 @@ import java.util.regex.Pattern;
 /**
  * Tests for the {@link com.android.manifmerger.ManifestMerger2} class
  */
-public class ManifestMerger2Test extends ManifestMergerTest {
+@RunWith(Parameterized.class)
+public class ManifestMerger2Test {
 
-    // so far, I only support 3 original tests.
-    private static String[] sDataFiles = new String[]{
+    private static final String TEST_DATA_DIRECTORY = "data2";
+
+    @SuppressWarnings("SpellCheckingInspection")
+    private static final String[] DATA_FILES = new String[]{
             "00_noop",
             "03_inject_attributes.xml",
             "05_inject_package.xml",
@@ -104,48 +113,22 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "79_custom_node.xml",
     };
 
-    @Override
-    protected String getTestDataDirectory() {
-        return "data2";
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> getParameters() {
+        return transformParameters(DATA_FILES);
     }
 
-    /**
-     * This overrides the default test suite created by junit. The test suite is a bland TestSuite
-     * with a dedicated name. We inject as many instances of {@link ManifestMergerTest} in the suite
-     * as we have declared data files above.
-     *
-     * @return A new {@link junit.framework.TestSuite}.
-     */
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        // Give a non-generic name to our test suite, for better unit reports.
-        suite.setName("ManifestMergerTestSuite");
+    private final String fileName;
 
-        for (String fileName : sDataFiles) {
-            suite.addTest(TestSuite.createTest(ManifestMerger2Test.class, fileName));
-        }
-
-        return suite;
+    public ManifestMerger2Test(String fileName) {
+        this.fileName = fileName;
     }
 
-    public ManifestMerger2Test(String testName) {
-        super(testName);
-    }
-
-    /**
-     * Processes the data from the given
-     * {@link com.android.manifmerger.ManifestMergerTest.TestFiles} by invoking {@link
-     * ManifestMerger#process(java.io.File, java.io.File, java.io.File[], java.util.Map, String)}:
-     * the given library files are applied consecutively to the main XML document and the output is
-     * generated. <p/> Then the expected and actual outputs are loaded into a DOM, dumped again to a
-     * String using an XML transform and compared. This makes sure only the structure is checked and
-     * that any formatting is ignored in the comparison.
-     *
-     * @param testFiles The test files to process. Must not be null.
-     * @throws Exception when this go wrong.
-     */
-    @Override
-    void processTestFiles(TestFiles testFiles) throws Exception {
+    @Test
+    public void processTestFiles() throws Exception {
+        ManifestMergerTestUtil.TestFiles testFiles =
+                loadTestData(TEST_DATA_DIRECTORY, fileName, getClass().getSimpleName());
 
         StdLogger stdLogger = new StdLogger(StdLogger.Level.VERBOSE);
         ManifestMerger2.Invoker invoker = ManifestMerger2.newMerger(testFiles.getMain(),
@@ -169,7 +152,6 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         }
 
         MergingReport mergeReport = invoker.merge();
-
 
         // this is obviously quite hacky, refine once merge output is better defined.
         boolean notExpectingError = !isExpectingError(testFiles.getExpectedErrors());
@@ -216,44 +198,54 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         }
     }
 
-    private boolean isExpectingError(String expectedOutput) throws IOException {
+    private static boolean isExpectingError(String expectedOutput) throws IOException {
         StringReader stringReader = new StringReader(expectedOutput);
         BufferedReader reader = new BufferedReader(stringReader);
-        String line;
-        while ((line = reader.readLine()) != null) {
-            if (line.startsWith("ERROR")) return true;
+        try {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("ERROR")) {
+                    return true;
+                }
+            }
+            return false;
+        } finally {
+            reader.close();
         }
-        return false;
     }
 
-    private void compareExpectedAndActualErrors(
+    private static void compareExpectedAndActualErrors(
             MergingReport mergeReport,
             String expectedOutput) throws IOException {
 
         StringReader stringReader = new StringReader(expectedOutput);
-        BufferedReader reader = new BufferedReader(stringReader);
-        String line = reader.readLine();
         List<Record> records = new ArrayList<Record>(mergeReport.getLoggingRecords());
-        while (line != null) {
-            if (line.startsWith("WARNING") || line.startsWith("ERROR")) {
-                String message = line;
-                do {
-                    line = reader.readLine();
-                    if (line != null && line.startsWith("    ")) {
-                        message = message + "\n" + line;
+        BufferedReader reader = new BufferedReader(stringReader);
+        try {
+            String line = reader.readLine();
+            while (line != null) {
+                if (line.startsWith("WARNING") || line.startsWith("ERROR")) {
+                    String message = line;
+                    do {
+                        line = reader.readLine();
+                        if (line != null && line.startsWith("    ")) {
+                            message = message + "\n" + line;
+                        }
+                    } while (line != null && line.startsWith("    "));
+
+                    // next might generate an exception which will make the test fail when we
+                    // get unexpected error message.
+                    if (!findLineInRecords(message, records)) {
+
+                        StringBuilder errorMessage = new StringBuilder();
+                        dumpRecords(records, errorMessage);
+                        errorMessage.append("Cannot find expected error : \n").append(message);
+                        fail(errorMessage.toString());
                     }
-                } while (line != null && line.startsWith("    "));
-
-                // next might generate an exception which will make the test fail when we
-                // get unexpected error message.
-                if (!findLineInRecords(message, records)) {
-
-                    StringBuilder errorMessage = new StringBuilder();
-                    dumpRecords(records, errorMessage);
-                    errorMessage.append("Cannot find expected error : \n").append(message);
-                    fail(errorMessage.toString());
                 }
             }
+        } finally {
+            reader.close();
         }
         // check that we do not have any unexpected error messages.
         if (!records.isEmpty()) {
@@ -264,7 +256,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         }
     }
 
-    private boolean findLineInRecords(String errorLine, List<Record> records) {
+    private static boolean findLineInRecords(String errorLine, List<Record> records) {
         String severity = errorLine.substring(0, errorLine.indexOf(':'));
         String message = errorLine.substring(errorLine.indexOf(':') + 1);
         for (Record record : records) {
@@ -283,7 +275,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
     }
 
     @Nullable
-    private SystemProperty getSystemProperty(String name) {
+    private static SystemProperty getSystemProperty(String name) {
         for (SystemProperty systemProperty : SystemProperty.values()) {
             if (systemProperty.toCamelCase().equals(name)) {
                 return systemProperty;
@@ -292,7 +284,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         return null;
     }
 
-    private void dumpRecords(List<Record> records, StringBuilder stringBuilder) {
+    private static void dumpRecords(List<Record> records, StringBuilder stringBuilder) {
         stringBuilder.append("\n------------ Records : \n");
         for (Record record : records) {
             stringBuilder.append(record.toString());
