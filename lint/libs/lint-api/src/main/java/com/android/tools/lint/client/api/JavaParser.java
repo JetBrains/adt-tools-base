@@ -173,6 +173,18 @@ public abstract class JavaParser {
 
         public abstract boolean matchesName(@NonNull String name);
 
+        /**
+         * Returns true if the given TypeDescriptor represents an array
+         * @return true if this type represents an array
+         */
+        public abstract boolean isArray();
+
+        /**
+         * Returns true if the given TypeDescriptor represents a primitive
+         * @return true if this type represents a primitive
+         */
+        public abstract boolean isPrimitive();
+
         public abstract boolean matchesSignature(@NonNull String signature);
 
         @NonNull
@@ -220,6 +232,16 @@ public abstract class JavaParser {
         @Override
         public boolean matchesName(@NonNull String name) {
             return mName.equals(name);
+        }
+
+        @Override
+        public boolean isArray() {
+            return mName.endsWith("[]");
+        }
+
+        @Override
+        public boolean isPrimitive() {
+            return mName.indexOf('.') != -1;
         }
 
         @Override

@@ -1041,6 +1041,16 @@ public class EcjParser extends JavaParser {
             return sameChars(signature, mBinding.readableName());
         }
 
+        @Override
+        public boolean isPrimitive() {
+            return mBinding.isPrimitiveType();
+        }
+
+        @Override
+        public boolean isArray() {
+            return mBinding.isArrayType();
+        }
+
         @NonNull
         @Override
         public String getSignature() {

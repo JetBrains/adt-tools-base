@@ -18,6 +18,7 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.CLASS_CONTEXT;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
@@ -109,7 +110,6 @@ public class CleanupDetector extends Detector implements JavaScanner {
     private static final String CLOSE = "close";                                      //$NON-NLS-1$
 
     private static final String MOTION_EVENT_CLS = "android.view.MotionEvent";        //$NON-NLS-1$
-    private static final String RESOURCES_CLS = "android.content.res.Resources";      //$NON-NLS-1$
     private static final String PARCEL_CLS = "android.os.Parcel";                     //$NON-NLS-1$
     private static final String TYPED_ARRAY_CLS = "android.content.res.TypedArray";   //$NON-NLS-1$
     private static final String VELOCITY_TRACKER_CLS = "android.view.VelocityTracker";//$NON-NLS-1$
@@ -208,7 +208,7 @@ public class CleanupDetector extends Detector implements JavaScanner {
                 || OBTAIN_ATTRIBUTES.equals(name)
                 || OBTAIN_TYPED_ARRAY.equals(name)) &&
                 (containingClass.isSubclassOf(CLASS_CONTEXT, false) ||
-                        containingClass.isSubclassOf(RESOURCES_CLS, false))) {
+                        containingClass.isSubclassOf(SdkConstants.CLASS_RESOURCES, false))) {
             TypeDescriptor returnType = method.getReturnType();
             if (returnType != null && returnType.matchesSignature(TYPED_ARRAY_CLS)) {
                 checkRecycled(context, node, TYPED_ARRAY_CLS, RECYCLE);
