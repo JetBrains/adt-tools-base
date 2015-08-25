@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <template
     format="3"
-    revision="4"
+    revision="5"
     name="Tabbed Activity"
-    minApi="7"
+    minApi="13"
     minBuildApi="14"
     description="Creates a new blank activity, with an action bar and navigational elements such as tabs or horizontal swipe.">
 
@@ -61,6 +61,14 @@
         type="boolean"
         default="false"
         help="If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher" />
+
+    <parameter
+        id="hasAppBarSelected"
+        name="Include App Bar"
+        type="boolean"
+        visibility="appCompatActivity!false"
+        default="true"
+        help="If true, the layout will include a Material Design App Bar." />
 
     <parameter
         id="parentActivityClass"
