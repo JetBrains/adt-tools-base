@@ -12,7 +12,7 @@ public class AppInfo {
      * <p>
      * (Not final: Will be replaced by byte-code manipulation at build time)
      */
-    public static String applicationId = "com.android.tools.fd.runtime.testapp";
+    public static String applicationId = null;
 
     /**
      * The fully qualified name of the real application to run. This is the user's app,
@@ -21,5 +21,5 @@ public class AppInfo {
      * is used.)
      * <p>
      */
-    public static String applicationClass = "com.android.tools.fd.runtime.testapp.MyApplication";
+    public static String applicationClass = null;
 }

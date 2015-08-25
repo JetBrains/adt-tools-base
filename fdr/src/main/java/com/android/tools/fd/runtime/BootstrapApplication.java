@@ -71,7 +71,7 @@ public class BootstrapApplication extends Application {
         externalResourcePath = file != null ? file.getPath() : null;
 
         if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-            Log.i(LOG_TAG, "Resource override is" + externalResourcePath);
+            Log.i(LOG_TAG, "Resource override is " + externalResourcePath);
         }
     }
 
@@ -155,7 +155,9 @@ public class BootstrapApplication extends Application {
                 externalResourcePath);
         MonkeyPatcher.monkeyPatchExistingResources(externalResourcePath, null);
         super.onCreate();
-        Server.create(AppInfo.applicationId, BootstrapApplication.this);
+        if (AppInfo.applicationId != null) {
+            Server.create(AppInfo.applicationId, BootstrapApplication.this);
+        }
         //CrashHandler.startCrashCatcher(this);
 
         if (realApplication != null) {
