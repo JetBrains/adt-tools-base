@@ -41,8 +41,8 @@ public final class ConstantSet implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    Type mType;
-    Constant[] mEntries;
+    private Type mType;
+    private Constant[] mEntries;
 
     // Constructs a default-initialized {@link ConstantSet}.
     public ConstantSet() {}

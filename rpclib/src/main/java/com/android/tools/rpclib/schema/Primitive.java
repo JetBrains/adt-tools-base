@@ -148,8 +148,8 @@ public final class Primitive extends Type {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    String mName;
-    Method mMethod;
+    private String mName;
+    private Method mMethod;
 
     // Constructs a default-initialized {@link Primitive}.
     public Primitive() {}

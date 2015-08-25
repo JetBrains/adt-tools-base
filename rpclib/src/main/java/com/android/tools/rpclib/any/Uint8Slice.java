@@ -35,7 +35,7 @@ final class Uint8Slice extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    byte[] mValue;
+    private byte[] mValue;
 
     // Constructs a default-initialized {@link Uint8Slice}.
     public Uint8Slice() {}

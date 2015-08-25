@@ -35,7 +35,7 @@ final class StringSlice extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    String[] mValue;
+    private String[] mValue;
 
     // Constructs a default-initialized {@link StringSlice}.
     public StringSlice() {}

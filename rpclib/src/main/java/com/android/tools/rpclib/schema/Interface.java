@@ -50,7 +50,7 @@ public final class Interface extends Type {
 
 
     //<<<Start:Java.ClassBody:1>>>
-    String mName;
+    private String mName;
 
     // Constructs a default-initialized {@link Interface}.
     public Interface() {}

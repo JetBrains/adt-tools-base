@@ -35,7 +35,7 @@ final class Int16Slice extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    short[] mValue;
+    private short[] mValue;
 
     // Constructs a default-initialized {@link Int16Slice}.
     public Int16Slice() {}

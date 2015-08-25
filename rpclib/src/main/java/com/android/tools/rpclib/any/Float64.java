@@ -35,7 +35,7 @@ final class Float64 extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    double mValue;
+    private double mValue;
 
     // Constructs a default-initialized {@link Float64}.
     public Float64() {}

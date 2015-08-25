@@ -54,8 +54,8 @@ public final class Struct extends Type {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    String mName;
-    BinaryID mID;
+    private String mName;
+    private BinaryID mID;
 
     // Constructs a default-initialized {@link Struct}.
     public Struct() {}

@@ -31,8 +31,8 @@ import java.io.IOException;
 
 public final class Constant implements BinaryObject {
     //<<<Start:Java.ClassBody:1>>>
-    String mName;
-    Object mValue;
+    private String mName;
+    private Object mValue;
 
     // Constructs a default-initialized {@link Constant}.
     public Constant() {}

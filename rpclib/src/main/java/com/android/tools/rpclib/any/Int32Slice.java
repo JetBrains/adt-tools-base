@@ -35,7 +35,7 @@ final class Int32Slice extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    int[] mValue;
+    private int[] mValue;
 
     // Constructs a default-initialized {@link Int32Slice}.
     public Int32Slice() {}
