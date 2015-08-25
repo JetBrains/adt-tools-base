@@ -52,40 +52,40 @@ public final class Primitive extends Type {
 
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
-        switch (mMethod) {
-            case ID: e.id((BinaryID)value); break;
-            case Bool: e.bool((Boolean)value); break;
-            case Int8: e.int8((Byte)value); break;
-            case Uint8: e.uint8((Short)value); break;
-            case Int16: e.int16((Short)value); break;
-            case Uint16: e.uint16((Integer)value); break;
-            case Int32: e.int32((Integer)value); break;
-            case Uint32: e.uint32((Long)value); break;
-            case Int64: e.int64((Long)value); break;
-            case Uint64: e.uint64((Long)value); break;
-            case Float32: e.float32((Float)value); break;
-            case Float64: e.float64((Double)value); break;
-            case String: e.string((String)value); break;
+        switch (mMethod.value) {
+            case Method.ID: e.id((BinaryID)value); break;
+            case Method.Bool: e.bool((Boolean)value); break;
+            case Method.Int8: e.int8((Byte)value); break;
+            case Method.Uint8: e.uint8((Short)value); break;
+            case Method.Int16: e.int16((Short)value); break;
+            case Method.Uint16: e.uint16((Integer)value); break;
+            case Method.Int32: e.int32((Integer)value); break;
+            case Method.Uint32: e.uint32((Long)value); break;
+            case Method.Int64: e.int64((Long)value); break;
+            case Method.Uint64: e.uint64((Long)value); break;
+            case Method.Float32: e.float32((Float)value); break;
+            case Method.Float64: e.float64((Double)value); break;
+            case Method.String: e.string((String)value); break;
             default: throw new IOException("Invalid primitive method in encode");
         }
     }
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        switch (mMethod) {
-            case ID: return d.id();
-            case Bool: return d.bool();
-            case Int8: return d.int8();
-            case Uint8: return d.uint8();
-            case Int16: return d.int16();
-            case Uint16: return d.uint16();
-            case Int32: return d.int32();
-            case Uint32: return d.uint32();
-            case Int64: return d.int64();
-            case Uint64: return d.uint64();
-            case Float32: return d.float32();
-            case Float64: return d.float64();
-            case String: return d.string();
+        switch (mMethod.value) {
+            case Method.ID: return d.id();
+            case Method.Bool: return d.bool();
+            case Method.Int8: return d.int8();
+            case Method.Uint8: return d.uint8();
+            case Method.Int16: return d.int16();
+            case Method.Uint16: return d.uint16();
+            case Method.Int32: return d.int32();
+            case Method.Uint32: return d.uint32();
+            case Method.Int64: return d.int64();
+            case Method.Uint64: return d.uint64();
+            case Method.Float32: return d.float32();
+            case Method.Float64: return d.float64();
+            case Method.String: return d.string();
             default: throw new IOException("Invalid primitive method in decode");
         }
     }
@@ -101,44 +101,44 @@ public final class Primitive extends Type {
                 }
             }
         }
-        switch (mMethod) {
-            case ID:
+        switch (mMethod.value) {
+            case Method.ID:
                 component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
-            case Bool:
+            case Method.Bool:
                 component.append(String.format("%b", (Boolean)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
-            case Int8:
+            case Method.Int8:
                 component.append(String.format("%d", (Byte)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
-            case Uint8:
+            case Method.Uint8:
                 component.append(String.format("%d", ((Byte)value).intValue() & 0xff), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
-            case Int16:
+            case Method.Int16:
                 component.append(String.format("%d", (Short)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
-            case Uint16:
+            case Method.Uint16:
                 component.append(String.format("%d", ((Short)value).intValue() & 0xffff), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
-            case Int32:
+            case Method.Int32:
                 component.append(String.format("%d", (Integer)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
-            case Uint32:
+            case Method.Uint32:
                 component.append(String.format("%d", ((Integer)value).longValue()&0xffffffffL), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
-            case Int64:
+            case Method.Int64:
                 component.append(String.format("%d", (Long)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
-            case Uint64:
+            case Method.Uint64:
                 component.append(String.format("0x%s", Long.toHexString((Long)value)), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
-            case Float32:
+            case Method.Float32:
                 component.append(String.format("%f", (Float)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
-            case Float64:
+            case Method.Float64:
                 component.append(String.format("%f", (Double)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
-            case String:
+            case Method.String:
                 component.append((String)value, SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
                 return;
             default:
