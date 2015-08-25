@@ -29,6 +29,9 @@ public abstract class Type implements BinaryObject {
   private ConstantSet myConstants;
 
   @NotNull
+  public abstract String getName();
+
+  @NotNull
   public static Type wrap(BinaryObject object) {
     return (Type)object;
   }
@@ -42,35 +45,5 @@ public abstract class Type implements BinaryObject {
 
   public abstract Object decodeValue(@NotNull Decoder d) throws IOException;
 
-  public abstract void render(@NotNull Object value, @NotNull SimpleColoredComponent component);
-
-  private static final int MAX_DISPLAY = 3;
-
-  public static void renderArray(@NotNull Object value, @NotNull Type valueType, @NotNull SimpleColoredComponent component) {
-    assert (value instanceof Object[]);
-    Object[] array = (Object[])value;
-    int count = Math.min(array.length, MAX_DISPLAY);
-    component.append("[", SimpleTextAttributes.GRAY_ATTRIBUTES);
-    for (int index = 0; index < count; ++index) {
-      if (index > 0) {
-        component.append(",", SimpleTextAttributes.GRAY_ATTRIBUTES);
-      }
-      valueType.render(array[index], component);
-    }
-    if (count < array.length) {
-      component.append("...", SimpleTextAttributes.GRAY_ATTRIBUTES);
-    }
-  }
-  public static void renderObject(@NotNull Object value, @NotNull SimpleColoredComponent component) {
-    assert (value instanceof BinaryObject);
-    if (value instanceof Renderable) {
-      ((Renderable)value).render(component);
-    } else {
-      component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-    }
-  }
-
-  public interface Renderable {
-    void render(@NotNull SimpleColoredComponent component);
-  }
+  public abstract void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes);
 }

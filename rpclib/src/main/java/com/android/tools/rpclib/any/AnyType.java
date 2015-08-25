@@ -32,6 +32,12 @@ import com.android.tools.rpclib.binary.Namespace;
 import java.io.IOException;
 
 public final class AnyType extends Type {
+    @NotNull
+    @Override
+    public String getName() {
+        return "any";
+    }
+
     public static Box box(Object value) {
         if (value instanceof BinaryObject) {
             return new ObjectBox().setValue((BinaryObject)value);
@@ -80,7 +86,7 @@ public final class AnyType extends Type {
     }
 
     @Override
-    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
+    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
         // TODO: Customise renderer
         component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
     }

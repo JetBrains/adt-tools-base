@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-public class Dynamic implements BinaryObject, Type.Renderable  {
+public class Dynamic implements BinaryObject, Render.ToComponent  {
   private Klass mKlass;
   private Object[] mFields;
   public Dynamic(Klass klass) {
@@ -51,13 +51,13 @@ public class Dynamic implements BinaryObject, Type.Renderable  {
   }
 
   @Override
-  public void render(@NotNull SimpleColoredComponent component) {
+  public void render(@NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
     component.append("{", SimpleTextAttributes.GRAY_ATTRIBUTES);
     for (int index = 0; index < mFields.length; ++index) {
       if (index > 0) {
         component.append(",", SimpleTextAttributes.GRAY_ATTRIBUTES);
       }
-      mKlass.mType.getFields()[index].getType().render(mFields[index], component);
+      mKlass.mType.getFields()[index].getType().render(mFields[index], component, defaultAttributes);
     }
     component.append("}", SimpleTextAttributes.GRAY_ATTRIBUTES);
   }
