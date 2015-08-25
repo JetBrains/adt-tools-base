@@ -349,7 +349,12 @@ public class SdkUtils {
      * @throws MalformedURLException in very unexpected cases
      */
     public static String fileToUrlString(@NonNull File file) throws MalformedURLException {
-        return fileToUrl(file).toExternalForm();
+        String url = fileToUrl(file).toExternalForm();
+        // Use three slashes, which is the form most widely recognized by terminal emulators.
+        if (!url.startsWith("file:///")) {
+            url = url.replaceFirst("file:/", "file:///");
+        }
+        return url;
     }
 
     /**
