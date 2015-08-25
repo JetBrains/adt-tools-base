@@ -1,4 +1,5 @@
 apply from: "../commonHeader.gradle"
+apply from: "../commonLocalRepo.gradle"
 buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 
 apply plugin: 'com.android.application'
@@ -36,4 +37,8 @@ android {
   lintOptions {
     abortOnError !rootProject.ext.useJack
   }
+}
+
+dependencies {
+    androidTestCompile 'junit:junit:4.12'
 }
