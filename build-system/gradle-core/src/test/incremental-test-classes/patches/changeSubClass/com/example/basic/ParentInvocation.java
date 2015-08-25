@@ -26,7 +26,7 @@ import java.util.List;
 public class ParentInvocation extends AllAccessMethods {
 
     public String childMethod(double a, String b, int c) {
-        return "child_method:" + a + b + c;
+        return "patched_child_method:" + a + b + c;
     }
 
     @Override
@@ -62,9 +62,10 @@ public class ParentInvocation extends AllAccessMethods {
 
     public List<String> invokeDoNoOverrideMethodsDirectly(double a, String b, int c) {
         ImmutableList.Builder<String> builder = ImmutableList.builder();
-        builder.add(super.doNotOverridePackagePrivateMethodDispatch(a, b, c));
-        builder.add(super.doNotOverrideProtectedMethodDispatch(a, b, c));
-        builder.add(super.doNotOverridePublicMethodDispatch(a, b, c));
+        //TODO allow calling supers that don't exist on the child class.
+        //builder.add(super.doNotOverridePackagePrivateMethodDispatch(a, b, c));
+        //builder.add(super.doNotOverrideProtectedMethodDispatch(a, b, c));
+        //builder.add(super.doNotOverridePublicMethodDispatch(a, b, c));
         return builder.build();
     }
 }

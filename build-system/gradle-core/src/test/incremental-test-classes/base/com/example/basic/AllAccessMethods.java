@@ -25,80 +25,80 @@ import java.util.List;
  */
 public class AllAccessMethods {
 
-    private String privateMethod() {
-        return "private_method";
+    private String privateMethod(double a, String b, int c) {
+        return "private_method:" + a + b + c;
     }
 
-    protected String protectedMethod() {
-        return "protected_method";
+    protected String protectedMethod(double a, String b, int c) {
+        return "protected_method:" + a + b + c;
     }
 
-    String packagePrivateMethod() {
-        return "package_private_method";
+    String packagePrivateMethod(double a, String b, int c) {
+        return "package_private_method:" + a + b + c;
     }
 
-    public String publicMethod() {
-        return "public_method";
+    public String publicMethod(double a, String b, int c) {
+        return "public_method:" + a + b + c;
     }
 
-    private String privateMethodDispath() {
-        return privateMethod();
+    private String privateMethodDispath(double a, String b, int c) {
+        return privateMethod(a, b, c);
     }
 
-    protected String protectedMethodDispatch() {
-        return protectedMethod();
+    protected String protectedMethodDispatch(double a, String b, int c) {
+        return protectedMethod(a, b, c);
     }
 
-    String packagePrivateMethodDispatch() {
-        return packagePrivateMethod();
+    String packagePrivateMethodDispatch(double a, String b, int c) {
+        return packagePrivateMethod(a, b, c);
     }
 
-    public String publicMethodDispatch() {
-        return publicMethod();
+    public String publicMethodDispatch(double a, String b, int c) {
+        return publicMethod(a, b, c);
     }
 
     // methods on the super class to check the overriden methods are invoked property from the
     // super class methods.
-    private String doNotOverridePrivateMethodDispath() {
-        return privateMethod();
+    private String doNotOverridePrivateMethodDispath(double a, String b, int c) {
+        return privateMethod(a, b, c);
     }
 
-    protected String doNotOverrideProtectedMethodDispatch() {
-        return protectedMethod();
+    protected String doNotOverrideProtectedMethodDispatch(double a, String b, int c) {
+        return protectedMethod(a, b, c);
     }
 
-    String doNotOverridePackagePrivateMethodDispatch() {
-        return packagePrivateMethod();
+    String doNotOverridePackagePrivateMethodDispatch(double a, String b, int c) {
+        return packagePrivateMethod(a, b, c);
     }
 
-    public String doNotOverridePublicMethodDispatch() {
-        return publicMethod();
+    public String doNotOverridePublicMethodDispatch(double a, String b, int c) {
+        return publicMethod(a, b, c);
     }
 
-    public List<String> invokeAll() {
+    public List<String> invokeAll(double a, String b, int c) {
         ImmutableList.Builder<String> builder = ImmutableList.builder();
-        builder.add(privateMethod());
-        builder.add(protectedMethod());
-        builder.add(packagePrivateMethod());
-        builder.add(publicMethod());
+        builder.add(privateMethod(a, b, c));
+        builder.add(protectedMethod(a, b, c));
+        builder.add(packagePrivateMethod(a, b, c));
+        builder.add(publicMethod(a, b, c));
         return builder.build();
     }
 
-    public List<String> invokeAllDispatches() {
+    public List<String> invokeAllDispatches(double a, String b, int c) {
         ImmutableList.Builder<String> builder = ImmutableList.builder();
-        builder.add(privateMethodDispath());
-        builder.add(protectedMethodDispatch());
-        builder.add(packagePrivateMethodDispatch());
-        builder.add(publicMethodDispatch());
+        builder.add(privateMethodDispath(a, b, c));
+        builder.add(protectedMethodDispatch(a, b, c));
+        builder.add(packagePrivateMethodDispatch(a, b, c));
+        builder.add(publicMethodDispatch(a, b, c));
         return builder.build();
     }
 
-    public List<String> invokeAllDoNotOverrideDispatches() {
+    public List<String> invokeAllDoNotOverrideDispatches(double a, String b, int c) {
         ImmutableList.Builder<String> builder = ImmutableList.builder();
-        builder.add(doNotOverridePrivateMethodDispath());
-        builder.add(doNotOverrideProtectedMethodDispatch());
-        builder.add(doNotOverridePackagePrivateMethodDispatch());
-        builder.add(doNotOverridePublicMethodDispatch());
+        builder.add(doNotOverridePrivateMethodDispath(a, b, c));
+        builder.add(doNotOverrideProtectedMethodDispatch(a, b, c));
+        builder.add(doNotOverridePackagePrivateMethodDispatch(a, b, c));
+        builder.add(doNotOverridePublicMethodDispatch(a, b, c));
         return builder.build();
     }
 }

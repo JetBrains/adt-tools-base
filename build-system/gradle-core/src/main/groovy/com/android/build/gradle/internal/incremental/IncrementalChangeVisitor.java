@@ -206,11 +206,12 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 push(args.length);
                 visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
                 visitVarInsn(Opcodes.ASTORE, arr);
+                // TODO: unify parameter boxing between handleSpecialOpcode and handleVirtualOpcode
                 for (int i = args.length - 1; i >= 0; i--) {
                     visitVarInsn(Opcodes.ALOAD, arr);
-                    swap();
+                    swap(args[i], Type.getType(Object.class));
                     push(i);
-                    swap();
+                    swap(args[i], Type.INT_TYPE);
                     box(args[i]);
                     visitInsn(Opcodes.AASTORE);
                 }

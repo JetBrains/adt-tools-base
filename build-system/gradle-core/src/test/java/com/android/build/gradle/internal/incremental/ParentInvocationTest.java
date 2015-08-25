@@ -40,48 +40,83 @@ public class ParentInvocationTest {
         ParentInvocation parentInvocation = new ParentInvocation();
 
         assertWithMessage("base: ParentInvocation:childMethod()")
-                .that(parentInvocation.childMethod()).isEqualTo("child_method");
+                .that(parentInvocation.childMethod(1.2, ".3.", 4)).isEqualTo("child_method:1.2.3.4");
 
         // change the super class of the parentInvocation instance and check that parent's methods
         // are the new implementations.
         harness.applyPatch("changeBaseClass");
+
+        assertWithMessage("base: ParentInvocation:childMethod()")
+                .that(parentInvocation.childMethod(1.2, ".3.", 4)).isEqualTo("child_method:1.2.3.4");
+
+        // Call methods defined on the base class
+        assertWithMessage("changeBaseClass: AllAccessMethods:invokeAll())")
+                .that(parentInvocation.invokeAll(1.2, ".3.", 4)).containsExactly(
+                "patched_private_method:1.2.3.4",
+                "patched_protected_method:1.2.3.4_child",
+                "patched_package_private_method:1.2.3.4_child",
+                "patched_public_method:1.2.3.4_child");
+
+        assertWithMessage("changeBaseClass: AllAccessMethods:invokeAllDispatches())")
+                .that(parentInvocation.invokeAllDispatches(1.2, ".3.", 4)).containsExactly(
+                "patched_private_method:1.2.3.4",
+                "patched_protected_method:1.2.3.4_child",
+                "patched_package_private_method:1.2.3.4_child",
+                "patched_public_method:1.2.3.4_child");
+
+        assertWithMessage("changeBaseClass: AllAccessMethods:invokeAllDoNotOverrideDispatches())")
+                .that(parentInvocation
+                        .invokeAllDoNotOverrideDispatches(1.2, ".3.", 4)).containsExactly(
+                "patched_private_method:1.2.3.4",
+                "patched_protected_method:1.2.3.4_child",
+                "patched_package_private_method:1.2.3.4_child",
+                "patched_public_method:1.2.3.4_child");
+
+        // Call methods on the sub class
         assertWithMessage("changeBaseClass: ParentInvocation:invokeAllParent())")
-                .that(parentInvocation.invokeAllParent()).containsExactly(
-                "patched_protected_method",
-                "patched_package_private_method",
-                "patched_public_method");
+                .that(parentInvocation.invokeAllParent(1.2, ".3.", 4)).containsExactly(
+                "patched_protected_method:1.2.3.4",
+                "patched_package_private_method:1.2.3.4",
+                "patched_public_method:1.2.3.4");
 
-        assertWithMessage("changeBaseClass: ParentInvocation:invokeAll())")
-                .that(parentInvocation.invokeAll()).containsExactly(
-                "patched_private_method",
-                "patched_protected_method_child",
-                "patched_package_private_method_child",
-                "patched_public_method_child");
-
-        assertWithMessage("changeBaseClass: ParentInvocation:invokeAllDispatches())")
-                .that(parentInvocation.invokeAllDispatches()).containsExactly(
-                "patched_private_method",
-                "patched_protected_method_child",
-                "patched_package_private_method_child",
-                "patched_public_method_child");
-
-        assertWithMessage("changeBaseClass: ParentInvocation:invokeAllDoNotOverrideDispatches())")
-                .that(parentInvocation.invokeAllDoNotOverrideDispatches()).containsExactly(
-                "patched_private_method",
-                "patched_protected_method_child",
-                "patched_package_private_method_child",
-                "patched_public_method_child");
-
-        assertWithMessage("changeBaseClass: ParentInvocation:invokeDoNotOverrideMethodsDirectly())")
-                .that(parentInvocation.doNotOverridePublicMethodDispatch()).isEqualTo(
-                "patched_public_method_child");
+        assertWithMessage("changeBaseClass: ParentInvocation:invokeAllFromSubclass())")
+                .that(parentInvocation.invokeAllFromSubclass(1.2, ".3.", 4)).containsExactly(
+                "patched_package_private_method:1.2.3.4_child",
+                "patched_protected_method:1.2.3.4_child",
+                "patched_public_method:1.2.3.4_child");
 
         assertWithMessage("changeBaseClass: ParentInvocation:invokeDoNoOverrideMethodsDirectly())")
-                .that(parentInvocation.invokeDoNoOverrideMethodsDirectly()).containsExactly(
-                "patched_protected_method_child",
-                "patched_package_private_method_child",
-                "patched_public_method_child");
+                .that(parentInvocation
+                        .invokeDoNoOverrideMethodsDirectly(1.2, ".3.", 4)).containsExactly(
+                "patched_protected_method:1.2.3.4_child",
+                "patched_package_private_method:1.2.3.4_child",
+                "patched_public_method:1.2.3.4_child");
 
+        // Now change the sub class
+        harness.applyPatch("changeSubClass");
+
+        // Call methods on the sub class
+        assertWithMessage("changeBaseClass: ParentInvocation:invokeAllParent())")
+                .that(parentInvocation.invokeAllParent(1.2, ".3.", 4)).containsExactly(
+                "patched_protected_method:1.2.3.4",
+                "patched_package_private_method:1.2.3.4",
+                "patched_public_method:1.2.3.4");
+
+        assertWithMessage("changeBaseClass: ParentInvocation:invokeAllFromSubclass())")
+                .that(parentInvocation.invokeAllFromSubclass(1.2, ".3.", 4)).containsExactly(
+                "patched_package_private_method:1.2.3.4_child",
+                "patched_protected_method:1.2.3.4_child",
+                "patched_public_method:1.2.3.4_child");
+
+        assertWithMessage("base: ParentInvocation:childMethod()")
+                .that(parentInvocation.childMethod(1.2, ".3.", 4)).isEqualTo("patched_child_method:1.2.3.4");
+
+        //assertWithMessage("changeBaseClass: ParentInvocation:invokeDoNoOverrideMethodsDirectly())")
+        //        .that(parentInvocation
+        //                .invokeDoNoOverrideMethodsDirectly(1.2, ".3.", 4)).containsExactly(
+        //        "patched_protected_method:1.2.3.4_child",
+        //        "patched_package_private_method:1.2.3.4_child",
+        //        "patched_public_method:1.2.3.4_child");
     }
 }
 
