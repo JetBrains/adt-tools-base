@@ -568,6 +568,14 @@ public class GradleTestProject implements TestRule {
                 "apk/" + Joiner.on("-").join(dimensionList) + SdkConstants.DOT_ANDROID_PACKAGE);
     }
 
+    public File getTestApk(String ... dimensions) {
+        String[] allDimensions = new String[dimensions.length + 2];
+        System.arraycopy(dimensions, 0, allDimensions, 0, dimensions.length);
+        allDimensions[allDimensions.length - 2] = "androidTest";
+        allDimensions[allDimensions.length - 1] = "unaligned";
+        return getApk(allDimensions);
+    }
+
     /**
      * Return the output aar File from the library plugin for the given dimension.
      *
