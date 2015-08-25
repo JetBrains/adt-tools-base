@@ -211,6 +211,15 @@ public class PrivateResourceDetector extends ResourceXmlDetector implements Java
     }
 
     private static boolean isPrivate(Context context, ResourceType type, String name) {
+        if (type == ResourceType.ID) {
+            // No need to complain about "overriding" id's. There's no harm
+            // in doing so. (This avoids warning about cases like for example
+            // appcompat's (private) @id/title resource, which would otherwise
+            // flag any attempt to create a resource named title in the user's
+            // project.
+            return false;
+        }
+
         if (context.getProject().isGradleProject()) {
             ResourceVisibilityLookup lookup = context.getProject().getResourceVisibility();
             return lookup.isPrivate(type, name);
