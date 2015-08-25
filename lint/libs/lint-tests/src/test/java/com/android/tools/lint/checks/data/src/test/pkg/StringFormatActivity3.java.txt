@@ -12,4 +12,11 @@ public class StringFormatActivity3 extends Activity {
         String.format(getResources().getString(R.string.format_90));
         String.format(getResources().getString(R.string.format_80));
     }
+
+    public static final class R {
+        public static final class string {
+            public static final int format_90 = 0x7f0a000e;
+            public static final int format_80 = 0x7f0a000f;
+        }
+    }
 }

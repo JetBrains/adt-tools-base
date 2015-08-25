@@ -1,7 +1,7 @@
 package test.pkg;
-
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Resources;
 
 public class StringFormat5 extends Activity {
     public final void test(Context context) {
@@ -13,6 +13,13 @@ public class StringFormat5 extends Activity {
     private static class PolarPoint {
         public static int textResourceForIPS() {
             return R.string.app_name;
+        }
+    }
+
+    private static class R {
+        private static class string {
+            public static final int VibrationLevelIs = 1;
+            public static final int app_name = 2;
         }
     }
 }
