@@ -35,7 +35,7 @@ final class ObjectBox extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    BinaryObject mValue;
+    private BinaryObject mValue;
 
     // Constructs a default-initialized {@link ObjectBox}.
     public ObjectBox() {}

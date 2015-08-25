@@ -60,9 +60,9 @@ public final class Map extends Type {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    String mAlias;
-    Type mKeyType;
-    Type mValueType;
+    private String mAlias;
+    private Type mKeyType;
+    private Type mValueType;
 
     // Constructs a default-initialized {@link Map}.
     public Map() {}

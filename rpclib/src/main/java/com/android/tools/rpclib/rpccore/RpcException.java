@@ -24,6 +24,6 @@ public class RpcException extends Exception {
 
   @Override
   public String getMessage() {
-    return mError.mMessage;
+    return mError.getMessage();
   }
 }

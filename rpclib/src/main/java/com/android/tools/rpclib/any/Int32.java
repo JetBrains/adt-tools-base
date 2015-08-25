@@ -35,7 +35,7 @@ final class Int32 extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    int mValue;
+    private int mValue;
 
     // Constructs a default-initialized {@link Int32}.
     public Int32() {}

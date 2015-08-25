@@ -35,7 +35,7 @@ final class Bool extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    boolean mValue;
+    private boolean mValue;
 
     // Constructs a default-initialized {@link Bool}.
     public Bool() {}

@@ -58,8 +58,8 @@ public final class Slice extends Type {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    String mAlias;
-    Type mValueType;
+    private String mAlias;
+    private Type mValueType;
 
     // Constructs a default-initialized {@link Slice}.
     public Slice() {}

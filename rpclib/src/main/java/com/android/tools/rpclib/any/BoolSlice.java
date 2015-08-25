@@ -35,7 +35,7 @@ final class BoolSlice extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    boolean[] mValue;
+    private boolean[] mValue;
 
     // Constructs a default-initialized {@link BoolSlice}.
     public BoolSlice() {}

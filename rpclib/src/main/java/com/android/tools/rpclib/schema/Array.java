@@ -55,9 +55,9 @@ public final class Array extends Type {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    String mAlias;
-    Type mValueType;
-    int mSize;
+    private String mAlias;
+    private Type mValueType;
+    private int mSize;
 
     // Constructs a default-initialized {@link Array}.
     public Array() {}

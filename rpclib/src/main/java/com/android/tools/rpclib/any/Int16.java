@@ -35,7 +35,7 @@ final class Int16 extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    short mValue;
+    private short mValue;
 
     // Constructs a default-initialized {@link Int16}.
     public Int16() {}

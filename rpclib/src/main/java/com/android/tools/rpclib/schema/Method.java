@@ -22,61 +22,78 @@ import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
 import java.io.IOException;
 
-public enum Method {
-    ID(0),
-    Bool(1),
-    Int8(2),
-    Uint8(3),
-    Int16(4),
-    Uint16(5),
-    Int32(6),
-    Uint32(7),
-    Int64(8),
-    Uint64(9),
-    Float32(10),
-    Float64(11),
-    String(12);
+public final class Method {
+    public static final int ID = 0;
+    public static Method id() { return new Method(ID); }
+    public static final int Bool = 1;
+    public static Method bool() { return new Method(Bool); }
+    public static final int Int8 = 2;
+    public static Method int8() { return new Method(Int8); }
+    public static final int Uint8 = 3;
+    public static Method uint8() { return new Method(Uint8); }
+    public static final int Int16 = 4;
+    public static Method int16() { return new Method(Int16); }
+    public static final int Uint16 = 5;
+    public static Method uint16() { return new Method(Uint16); }
+    public static final int Int32 = 6;
+    public static Method int32() { return new Method(Int32); }
+    public static final int Uint32 = 7;
+    public static Method uint32() { return new Method(Uint32); }
+    public static final int Int64 = 8;
+    public static Method int64() { return new Method(Int64); }
+    public static final int Uint64 = 9;
+    public static Method uint64() { return new Method(Uint64); }
+    public static final int Float32 = 10;
+    public static Method float32() { return new Method(Float32); }
+    public static final int Float64 = 11;
+    public static Method float64() { return new Method(Float64); }
+    public static final int String = 12;
+    public static Method string() { return new Method(String); }
 
-    private final int mValue;
-    Method(int value) {
-        mValue = value;
+    public final int value;
+
+    public Method(int value) {
+        this.value = value;
     }
-    public int getValue() { return mValue; }
 
     public void encode(@NotNull Encoder e) throws IOException {
-        e.int32(mValue);
+        e.int32(value);
     }
 
     public static Method decode(@NotNull Decoder d) throws IOException {
         int value = d.int32();
-        switch (value) {
-        case 0:
-            return ID;
-        case 1:
-            return Bool;
-        case 2:
-            return Int8;
-        case 3:
-            return Uint8;
-        case 4:
-            return Int16;
-        case 5:
-            return Uint16;
-        case 6:
-            return Int32;
-        case 7:
-            return Uint32;
-        case 8:
-            return Int64;
-        case 9:
-            return Uint64;
-        case 10:
-            return Float32;
-        case 11:
-            return Float64;
-        case 12:
-            return String;
+        return new Method(value);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof Method)) return false;
+        return value != ((Method)o).value;
+    }
+
+    @Override
+    public int hashCode() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        switch(value) {
+            case ID: return "ID";
+            case Bool: return "Bool";
+            case Int8: return "Int8";
+            case Uint8: return "Uint8";
+            case Int16: return "Int16";
+            case Uint16: return "Uint16";
+            case Int32: return "Int32";
+            case Uint32: return "Uint32";
+            case Int64: return "Int64";
+            case Uint64: return "Uint64";
+            case Float32: return "Float32";
+            case Float64: return "Float64";
+            case String: return "String";
+            default: return "Method(" + value + ")";
         }
-        throw new IOException("Invalid value for Method");
     }
 }

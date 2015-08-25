@@ -30,8 +30,8 @@ import java.io.IOException;
 
 public final class Field implements BinaryObject {
     //<<<Start:Java.ClassBody:1>>>
-    String mDeclared;
-    Type mType;
+    private String mDeclared;
+    private Type mType;
 
     // Constructs a default-initialized {@link Field}.
     public Field() {}

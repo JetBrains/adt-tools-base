@@ -30,12 +30,12 @@ import java.io.IOException;
 
 public final class SchemaClass implements BinaryObject {
     //<<<Start:Java.ClassBody:1>>>
-    BinaryID mTypeID;
-    String mPackage;
-    String mName;
-    boolean mExported;
-    Field[] mFields;
-    BinaryObject[] mMetadata;
+    private BinaryID mTypeID;
+    private String mPackage;
+    private String mName;
+    private boolean mExported;
+    private Field[] mFields;
+    private BinaryObject[] mMetadata;
 
     // Constructs a default-initialized {@link SchemaClass}.
     public SchemaClass() {}
