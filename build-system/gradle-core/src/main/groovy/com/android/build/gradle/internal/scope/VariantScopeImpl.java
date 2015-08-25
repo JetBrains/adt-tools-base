@@ -310,6 +310,13 @@ public class VariantScopeImpl implements VariantScope {
                 variantData.getVariantConfiguration().getDirName());
     }
 
+    @NonNull
+    @Override
+    public File getIncrementalSupportRuntimeDir() {
+        return new File(globalScope.getIntermediatesDir(), "/incremental-runtime-classes/" +
+                variantData.getVariantConfiguration().getDirName());
+    }
+
     @Override
     @NonNull
     public File getIncrementalSupportJavaOutputDir() {

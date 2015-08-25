@@ -124,7 +124,7 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
             // change this to use a special directory and have the classes.jar use that
             // special directory as input, although this may go away with the pipeline architecture.
             fastDeployRuntimeExtractorTask.setOutputDir(
-                    scope.getInitialIncrementalSupportJavaOutputDir());
+                    scope.getIncrementalSupportRuntimeDir());
         }
     }
 }

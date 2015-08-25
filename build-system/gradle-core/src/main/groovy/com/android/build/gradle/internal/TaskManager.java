@@ -1695,6 +1695,7 @@ public abstract class TaskManager {
                 if (isIncremental) {
                     ArrayList<File> files = new ArrayList<File>();
                     files.add(scope.getInitialIncrementalSupportJavaOutputDir());
+                    files.add(scope.getIncrementalSupportRuntimeDir());
                     return files;
                 } else {
                     return new ArrayList<File>(variantData.javacTask.getOutputs().getFiles().getFiles());
@@ -1855,6 +1856,24 @@ public abstract class TaskManager {
             AndroidTask<IncrementalSupportDex> incrementalSupportDex = androidTasks.create(tasks,
                     new IncrementalSupportDex.ConfigAction(
                             scope, IncrementalSupportDex.OutputBuildType.HOTSWAP_DEX));
+
+            AndroidTask<Task> incrementalDexingAnchor = androidTasks
+                    .create(tasks, new TaskConfigAction<Task>() {
+                        @Override
+                        public String getName() {
+                            return scope.getTaskName("incremental", "SupportDex");
+                        }
+
+                        @Override
+                        public Class<Task> getType() {
+                            return Task.class;
+                        }
+
+                        @Override
+                        public void execute(Task task) {
+                        }
+                    });
+            incrementalDexingAnchor.dependsOn(tasks, initialSupportDex, incrementalSupportDex);
 
             // version 3 depends on version 2 so we make sure we execute both
             incrementalSupportDex.dependsOn(tasks, initialSupportDex);

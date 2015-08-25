@@ -113,6 +113,9 @@ public interface VariantScope {
     File getInitialIncrementalSupportJavaOutputDir();
 
     @NonNull
+    File getIncrementalSupportRuntimeDir();
+
+    @NonNull
     File getIncrementalSupportJavaOutputDir();
 
     @NonNull

@@ -195,10 +195,6 @@ public class IncrementalSupportDex extends BaseTask {
                         };
                     });
 
-            incrementalSupportDex.outputFolder = buildType == OutputBuildType.COLDSWAP_DEX
-                    ? scope.getDexOutputFolder()
-                    : scope.getReloadDexOutputFolder();
-
             incrementalSupportDex.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             incrementalSupportDex.setVariantName(
                     scope.getVariantData().getVariantConfiguration().getFullName());
