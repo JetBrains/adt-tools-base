@@ -25,4 +25,10 @@ public class StringFormat3 extends Activity {
     private static class Article {
         String playsCount;
     }
+
+    private static class R {
+        private static class string {
+            public static final int gridview_views_count = 1;
+        }
+    }
 }

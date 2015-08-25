@@ -45,16 +45,12 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
             "                                              ~~~~\n" +
             "    res/values/formatstrings.xml:6: Conflicting argument declaration here\n" +
             "src/test/pkg/StringFormatActivity.java:22: Error: Wrong argument type for formatting argument '#1' in score: conversion is 'd', received boolean (argument #2 in method call) [StringFormatMatches]\n" +
-            "        String output4 = String.format(score, won);   // wrong\n" +
+            "        String output  = String.format(score, won);   // wrong\n" +
             "                                              ~~~\n" +
             "    res/values/formatstrings.xml:6: Conflicting argument declaration here\n" +
             "src/test/pkg/StringFormatActivity.java:24: Error: Wrong argument count, format string hello2 requires 3 but format call supplies 2 [StringFormatMatches]\n" +
             "        String.format(getResources().getString(R.string.hello2), target, \"How are you\");\n" +
             "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "    res/values-es/formatstrings.xml:4: This definition requires 3 arguments\n" +
-            "src/test/pkg/StringFormatActivity.java:25: Error: Wrong argument count, format string hello2 requires 3 but format call supplies 2 [StringFormatMatches]\n" +
-            "        getResources().getString(hello2, target, \"How are you\");\n" +
-            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "    res/values-es/formatstrings.xml:4: This definition requires 3 arguments\n" +
             "src/test/pkg/StringFormatActivity.java:26: Error: Wrong argument count, format string hello2 requires 3 but format call supplies 2 [StringFormatMatches]\n" +
             "        getResources().getString(R.string.hello2, target, \"How are you\");\n" +
@@ -75,7 +71,7 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
             "res/values/formatstrings.xml:5: Warning: Formatting string 'missing' is not referencing numbered arguments [1, 2] [StringFormatCount]\n" +
             "    <string name=\"missing\">Hello %3$s World</string>\n" +
             "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "9 errors, 2 warnings\n",
+            "8 errors, 2 warnings\n",
 
             lintProject(
                     "res/values/formatstrings.xml",
@@ -154,9 +150,47 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
             "No warnings.",
 
             lintProject(
-                    "res/values/formatstrings_ignore.xml=>res/values/formatstrings.xml",
-                    "res/values-es/formatstrings_ignore.xml=>res/values-es/formatstrings.xml",
-                    "src/test/pkg/StringFormatActivity_ignore.java.txt=>src/test/pkg/StringFormatActivity.java"
+                    copy("res/values/formatstrings_ignore.xml", "res/values/formatstrings.xml"),
+                    copy("res/values-es/formatstrings_ignore.xml", "res/values-es/formatstrings.xml"),
+                    java("src/test/pkg/StringFormatActivity_ignore.java.txt", ""
+                            + "package test.pkg;\n"
+                            + "\n"
+                            + "import android.annotation.SuppressLint;\n"
+                            + "import android.app.Activity;\n"
+                            + "import android.os.Bundle;\n"
+                            + "\n"
+                            + "public class StringFormatActivity extends Activity {\n"
+                            + "    /** Called when the activity is first created. */\n"
+                            + "    @SuppressLint(\"all\")\n"
+                            + "    @Override\n"
+                            + "    public void onCreate(Bundle savedInstanceState) {\n"
+                            + "        super.onCreate(savedInstanceState);\n"
+                            + "        String target = \"World\";\n"
+                            + "        String hello = getResources().getString(R.string.hello);\n"
+                            + "        String output1 = String.format(hello, target);\n"
+                            + "        String hello2 = getResources().getString(R.string.hello2);\n"
+                            + "        String output2 = String.format(hello2, target, \"How are you\");\n"
+                            + "        setContentView(R.layout.main);\n"
+                            + "        String score = getResources().getString(R.string.score);\n"
+                            + "        int points = 50;\n"
+                            + "        boolean won = true;\n"
+                            + "        String output3 = String.format(score, points);\n"
+                            + "        String output4 = String.format(score, true);  // wrong\n"
+                            + "        String output  = String.format(score, won);   // wrong\n"
+                            + "        String output5 = String.format(score, 75);\n"
+                            + "    }\n"
+                            + "\n"
+                            + "    private static class R {\n"
+                            + "        private static class string {\n"
+                            + "            public static final int hello = 1;\n"
+                            + "            public static final int hello2 = 2;\n"
+                            + "            public static final int score = 3;\n"
+                            + "        }\n"
+                            + "        private static class layout {\n"
+                            + "            public static final int main = 4;\n"
+                            + "        }\n"
+                            + "    }\n"
+                            + "}\n")
                 ));
     }
 
@@ -226,7 +260,7 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
 
                 lintProject(
                         "res/values/formatstrings6.xml",
-                        "src/test/pkg/StringFormat4.java.txt=>src/test/pkg/StringFormat3.java"));
+                        "src/test/pkg/StringFormat4.java.txt=>src/test/pkg/StringFormat4.java"));
     }
 
     public void testNotLocaleMethod() throws Exception {
@@ -272,16 +306,12 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                 "                                              ~~~~\n" +
                 "    res/values/formatstrings.xml: Conflicting argument declaration here\n" +
                 "src/test/pkg/StringFormatActivity.java:22: Error: Wrong argument type for formatting argument '#1' in score: conversion is 'd', received boolean (argument #2 in method call) [StringFormatMatches]\n" +
-                "        String output4 = String.format(score, won);   // wrong\n" +
+                "        String output  = String.format(score, won);   // wrong\n" +
                 "                                              ~~~\n" +
                 "    res/values/formatstrings.xml: Conflicting argument declaration here\n" +
                 "src/test/pkg/StringFormatActivity.java:24: Error: Wrong argument count, format string hello2 requires 3 but format call supplies 2 [StringFormatMatches]\n" +
                 "        String.format(getResources().getString(R.string.hello2), target, \"How are you\");\n" +
                 "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-                "    res/values-es/formatstrings.xml: This definition requires 3 arguments\n" +
-                "src/test/pkg/StringFormatActivity.java:25: Error: Wrong argument count, format string hello2 requires 3 but format call supplies 2 [StringFormatMatches]\n" +
-                "        getResources().getString(hello2, target, \"How are you\");\n" +
-                "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
                 "    res/values-es/formatstrings.xml: This definition requires 3 arguments\n" +
                 "src/test/pkg/StringFormatActivity.java:26: Error: Wrong argument count, format string hello2 requires 3 but format call supplies 2 [StringFormatMatches]\n" +
                 "        getResources().getString(R.string.hello2, target, \"How are you\");\n" +
@@ -295,7 +325,7 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                 "    res/values-es/formatstrings.xml: Conflicting argument type here\n" +
                 "res/values/formatstrings.xml: Warning: Inconsistent number of arguments in formatting string hello2; found both 3 and 2 [StringFormatCount]\n" +
                 "    res/values-es/formatstrings.xml: Conflicting number of arguments here\n" +
-                "9 errors, 1 warnings\n",
+                "8 errors, 1 warnings\n",
 
         lintProjectIncrementally(
                 "src/test/pkg/StringFormatActivity.java",
@@ -313,7 +343,7 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                 lintProject(
                         "res/values/formatstrings3.xml",//"res/values/formatstrings.xml",
                         "res/values/shared_prefs_keys.xml",
-                        "src/test/pkg/SharedPrefsTest6.java.txt=>src/test/pkg/SharedPrefsTest6.java"));
+                        "src/test/pkg/SharedPrefsTest6.java.txt=>src/test/pkg/SharedPrefsFormat.java"));
     }
 
     public void testNotStringFormatIncrementally() throws Exception {
@@ -321,11 +351,11 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
         assertEquals("No warnings.",
 
                 lintProjectIncrementally(
-                        "src/test/pkg/SharedPrefsTest6.java",
+                        "src/test/pkg/SharedPrefsFormat.java",
 
                         "res/values/formatstrings3.xml",//"res/values/formatstrings.xml",
                         "res/values/shared_prefs_keys.xml",
-                        "src/test/pkg/SharedPrefsTest6.java.txt=>src/test/pkg/SharedPrefsTest6.java"));
+                        "src/test/pkg/SharedPrefsTest6.java.txt=>src/test/pkg/SharedPrefsFormat.java"));
     }
 
     public void testIncrementalNonMatch() throws Exception {
