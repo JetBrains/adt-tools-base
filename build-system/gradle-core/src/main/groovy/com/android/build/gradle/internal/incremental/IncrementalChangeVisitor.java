@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import com.android.annotations.NonNull;
+
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -27,6 +29,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -87,8 +90,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         MethodVisitor original = super.visitMethod(access, newName, newDesc, signature, exceptions);
         if (name.equals("<init>")) {
             return new ConstructorVisitor(Opcodes.ASM5, original, access, newName, newDesc);
-        }
-        else {
+        } else {
             return new ISVisitor(Opcodes.ASM5, original, access, newName, newDesc);
         }
     }
@@ -182,6 +184,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         @Override
         public void visitMethodInsn(int opcode, String owner, String name, String desc,
                 boolean itf) {
+
             boolean opcodeHandled = false;
             if (opcode == Opcodes.INVOKESPECIAL) {
                 opcodeHandled = handleSpecialOpcode(opcode, owner, name, desc, itf);
@@ -259,9 +262,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
                 for (int i = parameterTypes.length - 1; i >= 0; i--) {
                     loadLocal(parameters);
-                    swap();
+                    swap(parameterTypes[i], Type.getType(Object.class));
                     push(i);
-                    swap();
+                    swap(parameterTypes[i], Type.INT_TYPE);
                     box(parameterTypes[i]);
                     arrayStore(Type.getType(Object.class));
                 }
@@ -402,5 +405,29 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             return "init$override";
         }
         return methodName;
+    }
+
+    /**
+     * Command line invocation entry point. Expects 2 parameters, first is the source directory
+     * with .class files as produced by the Java compiler, second is the output directory where to
+     * store the bytecode enhanced version.
+     * @param args the command line arguments.
+     * @throws IOException if some files cannot be read or written.
+     */
+    public static void main(String[] args) throws IOException {
+
+        IncrementalVisitor.main(args, new VisitorBuilder() {
+            @Override
+            public IncrementalVisitor build(@NonNull ClassNode classNode,
+                    List<ClassNode> parentNodes,
+                    ClassVisitor classVisitor) {
+                return new IncrementalChangeVisitor(classNode, parentNodes, classVisitor);
+            }
+
+            @Override
+            public boolean processParents() {
+                return true;
+            }
+        });
     }
 }

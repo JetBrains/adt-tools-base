@@ -16,8 +16,10 @@
 
 package com.android.build.gradle.tasks;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.incremental.IncrementalChangeVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalSupportVisitor;
+import com.android.build.gradle.internal.incremental.IncrementalVisitor;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -33,23 +35,14 @@ import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 import org.gradle.api.tasks.incremental.InputFileDetails;
-import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -93,7 +86,12 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
                 project.delete(getEnhancedFolder().listFiles());
             }
             getEnhancedFolder().mkdirs();
-            processDirectory(getBinaryFolder());
+            try {
+                processDirectory(getBinaryFolder());
+            } catch (IOException e) {
+                throw new RuntimeException("Exception while processing folder "
+                        + getBinaryFolder().getAbsolutePath(), e);
+            }
         }
 
         final ImmutableList.Builder<String> patchFileContents = ImmutableList.builder();
@@ -101,11 +99,22 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
             @Override
             public void execute(InputFileDetails inputFileDetails) {
 
-                processNewFile(inputFileDetails.getFile());
+                try {
+                    processNewFile(inputFileDetails.getFile());
+                } catch (IOException e) {
+                    throw new RuntimeException("Exception while processing "
+                            + inputFileDetails.getFile().getAbsolutePath(), e);
+                }
                 if (inputFileDetails.isModified()) {
                     System.out.println("Incremental support change detected "
                             + inputFileDetails.getFile().getAbsolutePath());
-                    patchFileContents.add(createPatchFile(inputFileDetails.getFile()));
+                    try {
+                        patchFileContents.add(
+                                createPatchFile(inputFileDetails.getFile()));
+                    } catch (IOException e) {
+                        throw new RuntimeException("Exception while processing"
+                            + inputFileDetails.getFile().getAbsolutePath(), e);
+                    }
                 }
             }
         });
@@ -169,80 +178,39 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
         }
     }
 
-    private String createPatchFile(File inputFile) {
-        InputStream classFileReader = null;
-        try {
-            classFileReader = new FileInputStream(inputFile);
-            ClassReader classReader = new ClassReader(classFileReader);
-            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
-            String rootName = inputFile.getName()
-                    .substring(0, inputFile.getName().length() - ".class".length());
+    private String createPatchFile(File inputFile) throws IOException {
 
-            ClassNode classNode = new ClassNode();
-            classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
-            // get all type hierarchy.
-            // for now we assume they are co-located which is obviously not always true.
-            List<ClassNode> parentNodes = parseParents(inputFile, classNode);
-            IncrementalChangeVisitor visitor = new IncrementalChangeVisitor(classNode, parentNodes, classWriter);
-            classReader.accept(visitor, ClassReader.EXPAND_FRAMES);
+        String relativeFilePath = inputFile.getAbsolutePath().substring(
+                getBinaryFolder().getAbsolutePath().length());
+        File outputDirectory = new File(getPatchedFolder(), relativeFilePath).getParentFile();
+        outputDirectory.mkdirs();
+        String rootName = inputFile.getName()
+                .substring(0, inputFile.getName().length() - ".class".length());
+        File outFile = new File(outputDirectory, rootName + "$override.class");
+        IncrementalVisitor.instrumentClass(inputFile, outFile,
+                new IncrementalVisitor.VisitorBuilder() {
+                    @Override
+                    public IncrementalVisitor build(@NonNull ClassNode classNode,
+                            List<ClassNode> parentNodes,
+                            ClassVisitor classVisitor) {
+                        return new IncrementalChangeVisitor(classNode, parentNodes, classVisitor);
+                    }
 
-            // write the modified class.
-            String relativeFilePath = inputFile.getAbsolutePath().substring(
-                    getBinaryFolder().getAbsolutePath().length());
-            File outputDirectory = new File(getPatchedFolder(), relativeFilePath).getParentFile();
-            outputDirectory.mkdirs();
-            File outFile = new File(outputDirectory,
-                    inputFile.getName().substring(0, inputFile.getName().length() - ".class".length())
-                        + "$override.class");
-            FileOutputStream stream = new FileOutputStream(outFile.getAbsolutePath());
-            try {
-                stream.write(classWriter.toByteArray());
-            } finally {
-                stream.close();
-            }
-            return relativeFilePath.substring(1,
-                    relativeFilePath.lastIndexOf('/')).replaceAll("/", ".") + "." + rootName;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } finally {
-            if (classFileReader != null) {
-                try {
-                    classFileReader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+                    @Override
+                    public boolean processParents() {
+                        return true;
+                    }
+                });
+        return relativeFilePath.substring(1,
+                relativeFilePath.lastIndexOf('/')).replaceAll("/", ".") + "." + rootName;
     }
 
-    private List<ClassNode> parseParents(File inputFile, ClassNode classNode) throws IOException {
-        File binaryFolder = new File(inputFile.getAbsolutePath().substring(0,
-                inputFile.getAbsolutePath().length() - (classNode.name.length() + ".class".length())));
-        List<ClassNode> parentNodes = new ArrayList<ClassNode>();
-        String currentParentName = classNode.superName;
-        while (!currentParentName.equals(Type.getType(Object.class).getInternalName())) {
-            File parentFile = new File(binaryFolder, currentParentName + ".class");
-            System.out.println("parsing " + parentFile);
-            if (parentFile.exists()) {
-                InputStream parentFileClassReader = new BufferedInputStream(new FileInputStream(parentFile));
-                ClassReader parentClassReader = new ClassReader(parentFileClassReader);
-                ClassNode parentNode = new ClassNode();
-                parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES);
-                parentNodes.add(parentNode);
-                currentParentName = parentNode.superName;
-            } else {
-                return parentNodes;
-            }
+    private void processDirectory(@NonNull File inputDir) throws IOException {
+        File[] filesToProcess = inputDir.listFiles();
+        if (filesToProcess == null) {
+            return;
         }
-        return parentNodes;
-    }
-
-    private void processDirectory(File inputDir) {
-        for (File inputFile : inputDir.listFiles()) {
+        for (File inputFile : filesToProcess) {
             if (inputFile.isDirectory()) {
                 processDirectory(inputFile);
                 return;
@@ -251,41 +219,25 @@ public class SourceCodeIncrementalSupport extends DefaultTask {
         }
     }
 
-    private void processNewFile(File inputFile) {
-        InputStream classFileReader = null;
-        try {
-            classFileReader = new FileInputStream(inputFile);
-            ClassReader classReader = new ClassReader(classFileReader);
-            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
-            ClassNode classNode = new ClassNode();
-            IncrementalSupportVisitor visitor = new IncrementalSupportVisitor(classNode, Collections.<ClassNode>emptyList(), classWriter);
-            classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
-            classNode.accept(visitor);
+    private void processNewFile(File inputFile) throws IOException {
+        String relativeFilePath = inputFile.getAbsolutePath().substring(
+                getBinaryFolder().getAbsolutePath().length());
+        File outFile = new File(getEnhancedFolder(), relativeFilePath) ;
 
-            // write the modified class.
-            String relativeFilePath = inputFile.getAbsolutePath().substring(
-                    getBinaryFolder().getAbsolutePath().length());
-            File outFile = new File(getEnhancedFolder(), relativeFilePath);
-            outFile.getParentFile().mkdirs();
-            FileOutputStream stream = new FileOutputStream(outFile.getAbsolutePath());
-            try {
-                stream.write(classWriter.toByteArray());
-            } finally {
-                stream.close();
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (classFileReader != null) {
-                try {
-                    classFileReader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+        IncrementalVisitor.instrumentClass(inputFile, outFile,
+                new IncrementalVisitor.VisitorBuilder() {
+                    @Override
+                    public IncrementalVisitor build(@NonNull ClassNode classNode,
+                            List<ClassNode> parentNodes,
+                            ClassVisitor classVisitor) {
+                        return new IncrementalSupportVisitor(classNode, parentNodes, classVisitor);
+                    }
+
+                    @Override
+                    public boolean processParents() {
+                        return false;
+                    }
+                });
     }
 
     public static class ConfigAction implements TaskConfigAction<SourceCodeIncrementalSupport> {

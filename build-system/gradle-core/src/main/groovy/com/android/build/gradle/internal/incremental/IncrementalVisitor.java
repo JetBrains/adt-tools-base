@@ -18,9 +18,12 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.google.common.base.Joiner;
+import com.android.utils.FileUtils;
+import com.google.common.io.Files;
 
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -29,7 +32,16 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -48,6 +60,7 @@ public class IncrementalVisitor extends ClassVisitor {
         super(Opcodes.ASM5, classVisitor);
         this.classNode = classNode;
         this.parentNodes = parentNodes;
+        System.out.println("Visiting " + classNode.name);
     }
 
     @Nullable
@@ -120,5 +133,96 @@ public class IncrementalVisitor extends ClassVisitor {
         methodSignture.append(")");
         mv.invokeStatic(Type.getType(IncrementalSupportRuntime.class),
                 Method.getMethod(methodSignture.toString()));
+    }
+
+    /**
+     * Simple Builder interface for common methods between all byte code visitors.
+     */
+    public interface VisitorBuilder {
+        IncrementalVisitor build(@NonNull ClassNode classNode,
+                List<ClassNode> parentNodes, ClassVisitor classVisitor);
+
+        boolean processParents();
+    }
+
+    protected static void main(String[] args, VisitorBuilder visitorBuilder) throws IOException {
+
+        if (args.length != 2) {
+            throw new IllegalArgumentException("Needs to be given an input and output directory");
+        }
+
+        File srcLocation = new File(args[0]);
+        File baseInstrumentedCompileOutputFolder = new File(args[1]);
+        FileUtils.emptyFolder(baseInstrumentedCompileOutputFolder);
+        instrumentClasses(srcLocation,
+                baseInstrumentedCompileOutputFolder, visitorBuilder);
+    }
+
+    private static void instrumentClasses(File rootLocation, File outLocation, VisitorBuilder visitorBuilder)
+            throws IOException {
+
+        Iterable<File> files =
+                Files.fileTreeTraverser().preOrderTraversal(rootLocation).filter(Files.isFile());
+
+        for (File inputFile : files) {
+            File outputFile = new File(outLocation,
+                    FileUtils.relativePath(inputFile, rootLocation));
+
+            instrumentClass(inputFile, outputFile, visitorBuilder);
+        }
+    }
+
+    public static void instrumentClass(
+            File inputFile, File outputFile, VisitorBuilder visitorBuilder) throws IOException {
+
+        byte[] classBytes;
+        classBytes = Files.toByteArray(inputFile);
+        ClassReader classReader = new ClassReader(classBytes);
+        ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
+
+        ClassNode classNode = new ClassNode();
+        classReader.accept(classNode, ClassReader.SKIP_FRAMES);
+
+        List<ClassNode> parentsNodes;
+        if (visitorBuilder.processParents()) {
+            parentsNodes = parseParents(inputFile, classNode);
+        } else {
+            parentsNodes = Collections.emptyList();
+        }
+
+        IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
+        if (visitorBuilder.processParents()) {
+            // not sure why we need to reparse from the classReader, it does not work to just
+            // reuse classNode.
+            classReader.accept(visitor, ClassReader.SKIP_FRAMES);
+        } else {
+            classNode.accept(visitor);
+        }
+
+        // write the modified class.
+        Files.createParentDirs(outputFile);
+        Files.write(classWriter.toByteArray(), outputFile);
+    }
+
+    private static List<ClassNode> parseParents(File inputFile, ClassNode classNode) throws IOException {
+        File binaryFolder = new File(inputFile.getAbsolutePath().substring(0,
+                inputFile.getAbsolutePath().length() - (classNode.name.length() + ".class".length())));
+        List<ClassNode> parentNodes = new ArrayList<ClassNode>();
+        String currentParentName = classNode.superName;
+        while (!currentParentName.equals(Type.getType(Object.class).getInternalName())) {
+            File parentFile = new File(binaryFolder, currentParentName + ".class");
+            System.out.println("parsing " + parentFile);
+            if (parentFile.exists()) {
+                InputStream parentFileClassReader = new BufferedInputStream(new FileInputStream(parentFile));
+                ClassReader parentClassReader = new ClassReader(parentFileClassReader);
+                ClassNode parentNode = new ClassNode();
+                parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES);
+                parentNodes.add(parentNode);
+                currentParentName = parentNode.superName;
+            } else {
+                return parentNodes;
+            }
+        }
+        return parentNodes;
     }
 }
