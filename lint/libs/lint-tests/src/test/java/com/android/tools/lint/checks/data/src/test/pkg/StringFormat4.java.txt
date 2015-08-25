@@ -11,4 +11,13 @@ public class StringFormat4 extends Activity {
         getString(R.string.error_and_source, "data source");
         String.format(getString(R.string.preferences_about_app_title), getString(R.string.app_name), "");
     }
+
+    private static class R {
+        private static class string {
+            public static final int error_and_source = 1;
+            public static final int data_source = 2;
+            public static final int preferences_about_app_title = 3;
+            public static final int app_name = 4;
+        }
+    }
 }
