@@ -76,6 +76,7 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
                         + "</LinearLayout>\n")));
     }
 
+    @SuppressWarnings("ClassNameDiffersFromFileName")
     public void testPrivateInJava() throws Exception {
         assertEquals(""
                 + "src/test/pkg/Private.java:3: Warning: The resource @string/my_private_string is marked as private in com.android.tools:test-library [PrivateResource]\n"
@@ -83,7 +84,7 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
                 + "                ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
                 lintProject(java("src/test/pkg/Private.java", ""
-                        + "public class PrivateResourceDetectorTest {\n"
+                        + "public class Private {\n"
                         + "    void test() {\n"
                         + "        int x = R.string.my_private_string; // ERROR\n"
                         + "        int y = R.string.my_public_string; // OK\n"
@@ -125,6 +126,26 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
                         xml("res/layout/my_public_layout.xml", "<LinearLayout/>")));
     }
 
+    @SuppressWarnings("ClassNameDiffersFromFileName")
+    public void testIds() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=183851
+        assertEquals("No warnings.",
+                lintProject(
+                        xml("res/layout/private.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "              android:id=\"@+id/title\"\n"
+                                + "              android:orientation=\"vertical\"\n"
+                                + "              android:layout_width=\"match_parent\"\n"
+                                + "              android:layout_height=\"match_parent\"/>\n"),
+                        java("src/test/pkg/Private.java", ""
+                                + "public class Private {\n"
+                                + "    void test() {\n"
+                                + "        int x = R.id.title; // ERROR\n"
+                                + "    }\n"
+                                + "}\n")));
+    }
+
     @Override
     protected TestLintClient createClient() {
         return new TestLintClient() {
@@ -154,7 +175,8 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
                                     ""
                                             + "int string my_private_string 0x7f040000\n"
                                             + "int string my_public_string 0x7f040001\n"
-                                            + "int layout my_private_layout 0x7f040002\n",
+                                            + "int layout my_private_layout 0x7f040002\n"
+                                            + "int id title 0x7f040003\n",
                                     ""
                                             + ""
                                             + "string my_public_string\n",
