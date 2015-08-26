@@ -129,7 +129,7 @@ public class InjectBootstrapApplicationTask extends BaseTask {
                     scope.getVariantScope().getVariantData();
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             task.setVariantName(scope.getVariantScope().getVariantConfiguration().getFullName());
-            File dest = variantData.getScope().getIncrementalSupportJavaOutputDir();
+            File dest = variantData.getScope().getIncrementalSupportRuntimeDir();
             task.setDestDir(dest);
             BaseVariantOutputData outputData = scope.getVariantOutputData();
             if (outputData.manifestProcessorTask != null) {
