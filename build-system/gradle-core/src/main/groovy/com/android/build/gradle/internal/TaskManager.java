@@ -23,7 +23,6 @@ import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS;
 import static com.android.builder.core.BuilderConstants.FD_ANDROID_TESTS;
 import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
-import static com.android.builder.core.VariantType.DEFAULT;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -1725,11 +1724,8 @@ public abstract class TaskManager {
             pcData = createJacocoTask(tasks, scope, pcData);
         }
 
-        boolean isTestForApp = config.getType().isForTesting() &&
-                ((TestVariantData) variantData).getTestedVariantData().getVariantConfiguration()
-                        .getType().equals(DEFAULT);
         boolean isMinifyEnabled = config.isMinifyEnabled();
-        boolean isMultiDexEnabled = config.isMultiDexEnabled() && !isTestForApp;
+        boolean isMultiDexEnabled = config.isMultiDexEnabled();
         boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode();
 
         // ----- Minify next ----

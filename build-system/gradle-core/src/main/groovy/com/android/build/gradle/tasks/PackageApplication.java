@@ -315,8 +315,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                         public Collection<File> call() {
                             if (config.isMultiDexEnabled()
                                     && !config.isLegacyMultiDexMode()
-                                    && variantData.preDexTask != null
-                                    && !config.getType().isForTesting()) {
+                                    && variantData.preDexTask != null) {
                                 return scope.getGlobalScope().getProject()
                                         .fileTree(variantData.preDexTask.getOutputFolder())
                                         .getFiles();

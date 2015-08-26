@@ -24,10 +24,8 @@ import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.variant.ApkVariantData
-import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.ide.common.process.LoggedProcessOutputHandler
 import com.android.utils.FileUtils
-import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
@@ -41,7 +39,6 @@ import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicBoolean
 
-import static com.android.builder.core.VariantType.DEFAULT
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 public class Dex extends BaseTask {
@@ -196,11 +193,7 @@ public class Dex extends BaseTask {
             ApkVariantData variantData = (ApkVariantData) scope.getVariantData();
             final GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
-            boolean isTestForApp = config.getType().isForTesting() && (DefaultGroovyMethods
-                    .asType(variantData, TestVariantData.class)).getTestedVariantData()
-                    .getVariantConfiguration().getType().equals(DEFAULT);
-
-            boolean isMultiDexEnabled = config.isMultiDexEnabled() && !isTestForApp;
+            boolean isMultiDexEnabled = config.isMultiDexEnabled()
             boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode();
 
             variantData.dexTask = dexTask;
@@ -216,6 +209,7 @@ public class Dex extends BaseTask {
                     String.valueOf(scope.getGlobalScope().getBuildDir()) + "/" + FD_INTERMEDIATES
                             + "/tmp/dex/" + config.getDirName()));
             dexTask.setDexOptions(scope.getGlobalScope().getExtension().getDexOptions());
+
             dexTask.setMultiDexEnabled(isMultiDexEnabled);
             // dx doesn't work with receving --no-optimize in debug so we disable it for now.
             dexTask.setOptimize(true);//!variantData.variantConfiguration.buildType.debuggable
