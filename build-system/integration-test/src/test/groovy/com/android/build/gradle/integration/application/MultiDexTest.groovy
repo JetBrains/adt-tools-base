@@ -26,6 +26,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
@@ -42,7 +43,7 @@ class MultiDexTest {
     @BeforeClass
     static void setUp() {
         GradleTestProject.assumeBuildToolsAtLeast(21)
-        project.execute("clean", "assembleDebug")
+        project.execute("clean", "assembleDebug", "assembleAndroidTest")
     }
 
     @AfterClass
@@ -67,11 +68,13 @@ class MultiDexTest {
     }
 
     @Test
-    void "check test APK"() {
-        project.execute("assembleLollipopDebugAndroidTest")
-        File apk = project.getApk("lollipop", "debug", "androidTest", "unaligned")
-
-        assertThatZip(apk).doesNotContain("classes2.dex")
+    void "check test APKs"() {
+        // dexdump only looks at the first classes.dex. ICS variant should have JUnit in the main
+        // dex file, lollipop not.
+        assertThatApk(project.getTestApk("ics", "debug"))
+                .containsClass("Lorg/junit/Assert;")
+        assertThatApk(project.getTestApk("lollipop", "debug"))
+                .doesNotContainClass("Lorg/junit/Assert;")
     }
 
     @Test
