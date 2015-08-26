@@ -79,6 +79,44 @@ model {
     }
 
     @Test
+    void "check targeted ABI"() {
+project.buildFile <<
+"""
+model {
+    android.ndk {
+        abiFilters += "x86"
+        abiFilters += "armeabi-v7a"
+    }
+    android.abis {
+        create("x86") {
+            CFlags += "-DX86"
+        }
+        create("armeabi-v7a") {
+            CFlags += "-DARMEABI_V7A"
+        }
+    }
+}
+"""
+        AndroidProject model = checkModel(
+                debug : [
+                        SdkConstants.ABI_ARMEABI_V7A,
+                        SdkConstants.ABI_INTEL_ATOM
+                        ]);
+        Collection<NativeLibrary> libs =
+                ModelHelper.getVariant(model.getVariants(), "debug").getMainArtifact().getNativeLibraries()
+
+        for (NativeLibrary nativeLibrary : libs) {
+            if (nativeLibrary.getAbi() == "x86") {
+                assertThat(nativeLibrary.getCCompilerFlags()).contains("-DX86")
+                assertThat(nativeLibrary.getCCompilerFlags()).doesNotContain("-DARMEABI_V7A")
+            } else {
+                assertThat(nativeLibrary.getCCompilerFlags()).doesNotContain("-DX86")
+                assertThat(nativeLibrary.getCCompilerFlags()).contains("-DARMEABI_V7A")
+            }
+        }
+    }
+
+    @Test
     void "check native libraries with splits"() {
         project.buildFile <<
 """
@@ -210,7 +248,7 @@ model {
      *
      * @param variantToolchains map of variant name to array of expected toolchains.
      */
-    private void checkModel(Map variantToolchains) {
+    private AndroidProject checkModel(Map variantToolchains) {
 
         AndroidProject model = project.executeAndReturnModel("assembleDebug")
 
@@ -239,6 +277,7 @@ model {
                     collect { it.getToolchainName() }
             assertThat(nativeLibToolchains).containsExactlyElementsIn(expectedToolchainNames)
         }
+        return model
 
     }
 }

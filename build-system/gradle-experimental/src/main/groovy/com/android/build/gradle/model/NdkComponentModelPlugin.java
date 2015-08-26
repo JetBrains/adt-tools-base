@@ -17,6 +17,7 @@
 package com.android.build.gradle.model;
 
 import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
+import static com.android.build.gradle.model.ModelConstants.ABI_OPTIONS;
 
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.NdkOptionsHelper;
@@ -24,6 +25,7 @@ import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.managed.BuildType;
+import com.android.build.gradle.managed.NdkAbiOptions;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.build.gradle.ndk.internal.NdkConfiguration;
@@ -188,9 +190,34 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             ToolchainConfiguration.configurePlatforms(platforms, ndkHandler);
         }
 
+        @Defaults
+        public void initTargetedAbi(
+                @Path(ABI_OPTIONS) ModelMap<NdkAbiOptions> abiConfigs) {
+            abiConfigs.beforeEach(new Action<NdkAbiOptions>() {
+                @Override
+                public void execute(NdkAbiOptions abiOptions) {
+                    NdkOptionsHelper.init(abiOptions);
+                }
+            });
+        }
+
+        @Validate
+        public void validateAbi(@Path("android.abis") ModelMap<NdkAbiOptions> abiConfigs) {
+            abiConfigs.afterEach(new Action<NdkAbiOptions>() {
+                @Override
+                public void execute(NdkAbiOptions abiOptions) {
+                    if (Abi.getByName(abiOptions.getName()) == null) {
+                        throw new InvalidUserDataException("Target ABI '" + abiOptions.getName()
+                                + "' is not supported.");
+                    }
+                }
+            });
+        }
+
         @Mutate
         public void createToolchains(
                 NativeToolChainRegistry toolchainRegistry,
+                @Path("android.abis") ModelMap<NdkAbiOptions> abis,
                 @Path("android.ndk") NdkConfig ndkConfig,
                 NdkHandler ndkHandler) {
             if (!ndkHandler.isNdkDirConfigured()) {
@@ -200,6 +227,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             ToolchainConfiguration.configureToolchain(
                     toolchainRegistry,
                     ndkConfig.getToolchain(),
+                    abis,
                     ndkHandler);
         }
 
