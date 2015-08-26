@@ -8,6 +8,7 @@
             <tr><td>applicationId</td></tr>
             <tr><td>dimension</td></tr>
             <tr><td>flavorDimension</td></tr>
+            <tr><td>generatedDensities</td></tr>
             <tr><td>multiDexEnabled</td></tr>
             <tr><td>signingConfig</td></tr>
             <tr><td>testApplicationId</td></tr>
@@ -17,8 +18,6 @@
             <tr><td>testInstrumentationRunnerArguments</td></tr>
             <tr><td>useJack</td></tr>
             <tr><td>versionCode</td></tr>
-            <tr><td>versionCode</td></tr>
-            <tr><td>versionName</td></tr>
             <tr><td>versionName</td></tr>
         </table>
     </section>
