@@ -313,8 +313,10 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     new Callable<Collection<File>>() {
                         @Override
                         public Collection<File> call() {
-                            if (config.isMultiDexEnabled() && !config.isLegacyMultiDexMode()
-                                    && variantData.preDexTask != null) {
+                            if (config.isMultiDexEnabled()
+                                    && !config.isLegacyMultiDexMode()
+                                    && variantData.preDexTask != null
+                                    && !config.getType().isForTesting()) {
                                 return scope.getGlobalScope().getProject()
                                         .fileTree(variantData.preDexTask.getOutputFolder())
                                         .getFiles();
