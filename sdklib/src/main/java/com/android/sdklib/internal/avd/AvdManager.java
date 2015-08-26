@@ -61,13 +61,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -569,34 +563,41 @@ public class AvdManager {
     /**
      * Returns whether an emulator is currently running the AVD.
      */
-    public boolean isAvdRunning(@NonNull AvdInfo info) {
+    public boolean isAvdRunning(@NonNull AvdInfo info, @NonNull ILogger logger) {
+        String pid;
         try {
-            String pid = getAvdPid(info);
-            if (pid != null) {
-                String command;
-                if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
-                    command = "cmd /c \"tasklist /FI \"PID eq " + pid + "\" | findstr " + pid
-                            + "\"";
-                } else {
-                    command = "kill -0 " + pid;
-                }
-                try {
-                    Process p = Runtime.getRuntime().exec(command);
-                    // If the process ends with non-0 it means the process doesn't exist
-                    return p.waitFor() == 0;
-                } catch (IOException e) {
-                    // To be safe return true
-                    return true;
-                } catch (InterruptedException e) {
-                    // To be safe return true
-                    return true;
-                }
-            }
+            pid = getAvdPid(info);
         }
         catch (IOException e) {
+            logger.error(e, "IOException while getting PID");
             // To be safe return true
             return true;
         }
+        if (pid != null) {
+            String command;
+            if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+                command = "cmd /c \"tasklist /FI \"PID eq " + pid + "\" | findstr " + pid
+                        + "\"";
+            } else {
+                command = "kill -0 " + pid;
+            }
+            try {
+                Process p = Runtime.getRuntime().exec(command);
+                // If the process ends with non-0 it means the process doesn't exist
+                return p.waitFor() == 0;
+            } catch (IOException e) {
+                logger.warning("Got IOException while checking running processes:\n%s",
+                        Arrays.toString(e.getStackTrace()));
+                // To be safe return true
+                return true;
+            } catch (InterruptedException e) {
+                logger.warning("Got InterruptedException while checking running processes:\n%s",
+                        Arrays.toString(e.getStackTrace()));
+                // To be safe return true
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -630,7 +631,7 @@ public class AvdManager {
             f = new File(f, "pid");
         }
         if (f.exists()) {
-            return Files.toString(f, Charsets.UTF_8);
+            return Files.toString(f, Charsets.UTF_8).trim();
         }
         return null;
     }
