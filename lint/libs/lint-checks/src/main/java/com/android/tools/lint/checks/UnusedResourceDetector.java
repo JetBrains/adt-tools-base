@@ -391,6 +391,18 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                     } else if (type.contains("array")) {             //$NON-NLS-1$
                         // <string-array> etc
                         type = RESOURCE_CLZ_ARRAY;
+                    } else if (type.equals("public")) {
+                        // Public resources (and the public definition itself) should
+                        // never be shown as unused: these are deliberately exposed to
+                        // usage outside of this project
+                        if (mReferences != null && context.getPhase() == 1) {
+                            String referencedType = item.getAttribute(ATTR_TYPE);
+                            if (referencedType != null && !referencedType.isEmpty()) {
+                                mReferences.add(R_PREFIX + referencedType + '.' + name);
+                            }
+                            mReferences.add(R_PREFIX + type + '.' + name);
+                        }
+                        continue;
                     }
                     String resource = R_PREFIX + type + '.' + name;
 

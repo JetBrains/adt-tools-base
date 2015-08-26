@@ -362,4 +362,25 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                                 + "</layout>")
                 ));
     }
+
+    public void testPublic() throws Exception {
+        // Resources marked as public should not be listed as potentially unused
+        mEnableIds = false;
+        assertEquals(""
+                + "res/values/resources.xml:4: Warning: The resource R.string.nameFormat appears to be unused [UnusedResources]\n"
+                + "    <item type='string' name='nameFormat'>%1$s %2$s</item>\n"
+                + "                        ~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        xml("res/values/resources.xml", ""
+                                + "<resources>\n"
+                                + "    <item type='dimen' name='largePadding'>20dp</item>\n"
+                                + "    <item type='dimen' name='smallPadding'>15dp</item>\n"
+                                + "    <item type='string' name='nameFormat'>%1$s %2$s</item>\n"
+                                + "    <public type='dimen' name='largePadding' />"
+                                + "    <public type='dimen' name='smallPadding' />"
+                                + "</resources>")
+                ));
+    }
 }
