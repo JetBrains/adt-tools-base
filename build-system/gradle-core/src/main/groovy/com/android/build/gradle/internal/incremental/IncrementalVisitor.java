@@ -183,6 +183,14 @@ public class IncrementalVisitor extends ClassVisitor {
         ClassNode classNode = new ClassNode();
         classReader.accept(classNode, ClassReader.SKIP_FRAMES);
 
+        Files.createParentDirs(outputFile);
+
+        // when dealing with interface, we just copy the inputFile over without any changes.
+        if ((classNode.access & Opcodes.ACC_INTERFACE) != 0) {
+            Files.write(classBytes, outputFile);
+            return;
+        }
+
         List<ClassNode> parentsNodes;
         if (visitorBuilder.processParents()) {
             parentsNodes = parseParents(inputFile, classNode);
@@ -199,8 +207,6 @@ public class IncrementalVisitor extends ClassVisitor {
             classNode.accept(visitor);
         }
 
-        // write the modified class.
-        Files.createParentDirs(outputFile);
         Files.write(classWriter.toByteArray(), outputFile);
     }
 
