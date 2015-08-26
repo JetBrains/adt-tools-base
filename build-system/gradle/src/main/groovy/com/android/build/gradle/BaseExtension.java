@@ -489,19 +489,19 @@ public abstract class BaseExtension implements AndroidConfig {
 
     /** {@inheritDoc} */
     @Override
-    public Collection<? extends ProductFlavor> getProductFlavors() {
+    public Collection<ProductFlavor> getProductFlavors() {
         return productFlavors;
     }
 
     /** {@inheritDoc} */
     @Override
-    public Collection<? extends BuildType> getBuildTypes() {
+    public Collection<BuildType> getBuildTypes() {
         return buildTypes;
     }
 
     /** {@inheritDoc} */
     @Override
-    public Collection<? extends SigningConfig> getSigningConfigs() {
+    public Collection<SigningConfig> getSigningConfigs() {
         return signingConfigs;
     }
 
@@ -558,6 +558,7 @@ public abstract class BaseExtension implements AndroidConfig {
         return variantFilter;
     }
 
+    /** {@inheritDoc} */
     @Override
     public AdbOptions getAdbOptions() {
         return adbOptions;
