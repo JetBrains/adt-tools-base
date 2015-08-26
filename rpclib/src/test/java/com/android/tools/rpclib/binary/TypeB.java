@@ -30,7 +30,7 @@ import java.io.IOException;
 
 public final class TypeB implements BinaryObject {
     //<<<Start:Java.ClassBody:1>>>
-    String mData;
+    private String mData;
 
     // Constructs a default-initialized {@link TypeB}.
     public TypeB() {}

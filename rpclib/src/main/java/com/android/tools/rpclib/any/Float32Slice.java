@@ -35,7 +35,7 @@ final class Float32Slice extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    float[] mValue;
+    private float[] mValue;
 
     // Constructs a default-initialized {@link Float32Slice}.
     public Float32Slice() {}

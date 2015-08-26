@@ -35,7 +35,7 @@ final class Uint16Slice extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    short[] mValue;
+    private short[] mValue;
 
     // Constructs a default-initialized {@link Uint16Slice}.
     public Uint16Slice() {}

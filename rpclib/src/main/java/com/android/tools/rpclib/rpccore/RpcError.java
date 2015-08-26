@@ -30,7 +30,7 @@ import java.io.IOException;
 
 public final class RpcError implements BinaryObject {
     //<<<Start:Java.ClassBody:1>>>
-    String mMessage;
+    private String mMessage;
 
     // Constructs a default-initialized {@link RpcError}.
     public RpcError() {}

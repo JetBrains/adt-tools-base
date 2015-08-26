@@ -49,7 +49,7 @@ public final class Pointer extends Type {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    Type mType;
+    private Type mType;
 
     // Constructs a default-initialized {@link Pointer}.
     public Pointer() {}

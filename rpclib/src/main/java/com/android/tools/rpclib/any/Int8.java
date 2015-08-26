@@ -35,7 +35,7 @@ final class Int8 extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    byte mValue;
+    private byte mValue;
 
     // Constructs a default-initialized {@link Int8}.
     public Int8() {}

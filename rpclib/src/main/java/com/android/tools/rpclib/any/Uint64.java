@@ -35,7 +35,7 @@ final class Uint64 extends Box implements BinaryObject {
     }
 
     //<<<Start:Java.ClassBody:1>>>
-    long mValue;
+    private long mValue;
 
     // Constructs a default-initialized {@link Uint64}.
     public Uint64() {}
