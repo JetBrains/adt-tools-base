@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.dsl;
 
+import static com.android.build.gradle.tasks.NdkCompile.USE_DEPRECATED_NDK;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.LoggingUtil;
@@ -26,12 +28,11 @@ import com.android.builder.core.DefaultProductFlavor;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ClassField;
 import com.google.common.base.Strings;
+
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.logging.Logger;
 import org.gradle.internal.reflect.Instantiator;
-
-import static com.android.build.gradle.tasks.NdkCompile.USE_DEPRECATED_NDK;
 
 import java.util.Collection;
 import java.util.Map;
@@ -163,8 +164,8 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      * <p>Test runner arguments can also be specified from the command line:
      *
      * <p><pre>
-     * INSTRUMENTATION_TEST_RUNNER_ARGS=size=medium,foo=bar ./gradlew connectedAndroidTest
-     * ./gradlew connectedAndroidTest -Pcom.android.tools.instrumentationTestRunnerArgs=size=medium,foo=bar
+     * ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.size=medium
+     * ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.foo=bar
      * </pre>
      */
     public void testInstrumentationRunnerArgument(@NonNull String key, @NonNull String value) {
@@ -179,8 +180,8 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      * <p>Test runner arguments can also be specified from the command line:
      *
      * <p><pre>
-     * INSTRUMENTATION_TEST_RUNNER_ARGS=size=medium,foo=bar ./gradlew connectedAndroidTest
-     * ./gradlew connectedAndroidTest -Pcom.android.tools.instrumentationTestRunnerArgs=size=medium,foo=bar
+     * ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.size=medium
+     * ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.foo=bar
      * </pre>
      */
     public void testInstrumentationRunnerArguments(@NonNull Map<String, String> args) {
