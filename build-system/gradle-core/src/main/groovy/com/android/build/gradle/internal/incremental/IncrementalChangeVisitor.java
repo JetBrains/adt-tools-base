@@ -30,7 +30,6 @@ import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -201,22 +200,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         private boolean handleSpecialOpcode(int opcode, String owner, String name, String desc,
                 boolean itf) {
             if (owner.equals(visitedSuperName)) {
-                int arr = newLocal(Type.getType("[Ljava/lang.Object;"));
-                Type[] args = Type.getArgumentTypes(desc);
-                push(args.length);
-                visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
-                visitVarInsn(Opcodes.ASTORE, arr);
-                // TODO: unify parameter boxing between handleSpecialOpcode and handleVirtualOpcode
-                for (int i = args.length - 1; i >= 0; i--) {
-                    visitVarInsn(Opcodes.ALOAD, arr);
-                    swap(args[i], Type.getType(Object.class));
-                    push(i);
-                    swap(args[i], Type.INT_TYPE);
-                    box(args[i]);
-                    visitInsn(Opcodes.AASTORE);
-                }
+                int arr = boxParametersToNewLocalArray(Type.getArgumentTypes(desc));
                 push(name + "." + desc);
-                visitVarInsn(Opcodes.ALOAD, arr);
+                loadLocal(arr);
                 mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName, "access$super",
                         "(L" + visitedClassName
                                 + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;",
@@ -256,19 +242,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 // reflection.
                 Type[] parameterTypes = Type.getArgumentTypes(desc);
 
-                push(parameterTypes.length);
-                int parameters = newLocal(Type.getType(Object.class));
-                newArray(Type.getType(Object.class));
-                storeLocal(parameters);
-
-                for (int i = parameterTypes.length - 1; i >= 0; i--) {
-                    loadLocal(parameters);
-                    swap(parameterTypes[i], Type.getType(Object.class));
-                    push(i);
-                    swap(parameterTypes[i], Type.INT_TYPE);
-                    box(parameterTypes[i]);
-                    arrayStore(Type.getType(Object.class));
-                }
+                int parameters = boxParametersToNewLocalArray(parameterTypes);
 
                 push(name);
                 push(parameterTypes.length);
@@ -290,6 +264,23 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 return true;
             }
             return false;
+        }
+
+        private int boxParametersToNewLocalArray(Type[] parameterTypes) {
+            int parameters = newLocal(Type.getType("[Ljava/lang.Object;"));
+            push(parameterTypes.length);
+            newArray(Type.getType(Object.class));
+            storeLocal(parameters);
+
+            for (int i = parameterTypes.length - 1; i >= 0; i--) {
+                loadLocal(parameters);
+                swap(parameterTypes[i], Type.getType(Object.class));
+                push(i);
+                swap(parameterTypes[i], Type.INT_TYPE);
+                box(parameterTypes[i]);
+                arrayStore(Type.getType(Object.class));
+            }
+            return parameters;
         }
 
         // we must do something similar as for non static method,
@@ -322,7 +313,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         }
 
         List<MethodNode> methods = classNode.methods;
-        List<MethodNode> constructors = new ArrayList<MethodNode>();
         for (MethodNode methodNode : methods) {
             if (methodNode.name.equals("<clinit>")) {
                 continue;
