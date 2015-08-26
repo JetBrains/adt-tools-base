@@ -28,7 +28,6 @@ import com.google.common.io.Files;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -66,7 +65,9 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
             System.err.println("Couldn't find embedded Fast Deployment runtime library");
             return;
         }
-        InputStream inputStream = fdrJar.openStream();
+        URLConnection urlConnection = fdrJar.openConnection();
+        urlConnection.setUseCaches(false);
+        InputStream inputStream = urlConnection.getInputStream();
         try {
             JarInputStream jarInputStream =
                     new JarInputStream(inputStream);
@@ -74,20 +75,20 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
                 ZipEntry entry = jarInputStream.getNextEntry();
                 while (entry != null) {
                     String name = entry.getName();
-                    if (name.startsWith("META-INF")) {
-                        continue;
-                    }
-                    File dest = new File(destDir, name.replace('/', separatorChar));
-                    if (entry.isDirectory()) {
-                        if (!dest.exists()) {
-                            boolean created = dest.mkdirs();
-                            if (!created) {
-                                throw new IOException(dest.getPath());
+                    // don't extract metadata or classes supposed to be replaced by generated ones.
+                    if (isValidForPackaging(name)) {
+                        File dest = new File(destDir, name.replace('/', separatorChar));
+                        if (entry.isDirectory()) {
+                            if (!dest.exists()) {
+                                boolean created = dest.mkdirs();
+                                if (!created) {
+                                    throw new IOException(dest.getPath());
+                                }
                             }
+                        } else {
+                            byte[] bytes = ByteStreams.toByteArray(jarInputStream);
+                            Files.write(bytes, dest);
                         }
-                    } else {
-                        byte[] bytes = ByteStreams.toByteArray(jarInputStream);
-                        Files.write(bytes, dest);
                     }
                     entry = jarInputStream.getNextEntry();
                 }
@@ -97,6 +98,16 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
         } finally {
             inputStream.close();
         }
+    }
+
+    /**
+     * Returns true if the fast deploy runtime jar entry should be packaged in the user's APK.
+     * @param name the fast deploy runtime jar entry name.
+     * @return true to package it, false otherwise.
+     */
+    private static boolean isValidForPackaging(String name) {
+        // don't extract metadata or classes supposed to be replaced by generated ones.
+        return !name.startsWith("META-INF") && !name.endsWith("AppInfo.class");
     }
 
     public static class ConfigAction implements TaskConfigAction<FastDeployRuntimeExtractorTask> {
