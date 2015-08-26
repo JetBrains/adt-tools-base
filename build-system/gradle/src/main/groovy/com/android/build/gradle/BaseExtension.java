@@ -31,8 +31,6 @@ import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory;
 import com.android.build.gradle.internal.dsl.BuildType;
-import com.android.build.gradle.internal.dsl.CoreBuildType;
-import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
@@ -77,7 +75,7 @@ import java.util.Set;
  *<ul>
  * <li>Plugin <code>com.android.application</code> uses {@link AppExtension}</li>
  * <li>Plugin <code>com.android.library</code> uses {@link LibraryExtension}</li>
- * <li>Plugin <code>com.android.test</code> uses {@link TestedExtension}</li>
+ * <li>Plugin <code>com.android.test</code> uses {@link TestExtension}</li>
  * </ul>
  */
 @SuppressWarnings("UnnecessaryInheritDoc")
@@ -119,7 +117,7 @@ public abstract class BaseExtension implements AndroidConfig {
     final Splits splits;
 
     /** All product flavors used by this project. */
-    final NamedDomainObjectContainer<CoreProductFlavor> productFlavors;
+    final NamedDomainObjectContainer<ProductFlavor> productFlavors;
 
     /** Build types used by this project. */
     final NamedDomainObjectContainer<BuildType> buildTypes;
@@ -353,7 +351,7 @@ public abstract class BaseExtension implements AndroidConfig {
     /**
      * Configures the product flavors.
      */
-    public void productFlavors(Action<? super NamedDomainObjectContainer<CoreProductFlavor>> action) {
+    public void productFlavors(Action<? super NamedDomainObjectContainer<ProductFlavor>> action) {
         checkWritability();
         action.execute(productFlavors);
     }
@@ -491,19 +489,19 @@ public abstract class BaseExtension implements AndroidConfig {
 
     /** {@inheritDoc} */
     @Override
-    public Collection<? extends CoreProductFlavor> getProductFlavors() {
+    public Collection<? extends ProductFlavor> getProductFlavors() {
         return productFlavors;
     }
 
     /** {@inheritDoc} */
     @Override
-    public Collection<? extends CoreBuildType> getBuildTypes() {
+    public Collection<? extends BuildType> getBuildTypes() {
         return buildTypes;
     }
 
     /** {@inheritDoc} */
     @Override
-    public Collection<? extends com.android.builder.model.SigningConfig> getSigningConfigs() {
+    public Collection<? extends SigningConfig> getSigningConfigs() {
         return signingConfigs;
     }
 
@@ -602,7 +600,7 @@ public abstract class BaseExtension implements AndroidConfig {
 
     public void registerProductFlavorSourceProvider(
             @NonNull String name,
-            @NonNull CoreProductFlavor productFlavor,
+            @NonNull ProductFlavor productFlavor,
             @NonNull SourceProvider sourceProvider) {
         extraModelInfo.registerProductFlavorSourceProvider(name, productFlavor, sourceProvider);
     }
@@ -720,7 +718,7 @@ public abstract class BaseExtension implements AndroidConfig {
 
     /** {@inheritDoc} */
     @Override
-    public CoreProductFlavor getDefaultConfig() {
+    public ProductFlavor getDefaultConfig() {
         return defaultConfig;
     }
 
