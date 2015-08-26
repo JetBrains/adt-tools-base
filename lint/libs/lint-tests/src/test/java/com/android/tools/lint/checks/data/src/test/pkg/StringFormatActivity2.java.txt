@@ -17,4 +17,16 @@ public class StringFormatActivity2 extends Activity {
         getResources().getString(R.string.formattest6, "hello");
         getResources().getString(R.string.formattest7, "hello");
     }
+
+    private static class R {
+        private static class string {
+            public static final int formattest1 = 1;
+            public static final int formattest2 = 2;
+            public static final int formattest3 = 3;
+            public static final int formattest4 = 4;
+            public static final int formattest5 = 5;
+            public static final int formattest6 = 6;
+            public static final int formattest7 = 7;
+        }
+    }
 }
