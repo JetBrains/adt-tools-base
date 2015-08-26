@@ -39,6 +39,7 @@ import static com.android.utils.SdkUtils.getResourceFieldName;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -498,9 +499,40 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
         } else if (mReferences != null) {
             if (value.startsWith("@")              //$NON-NLS-1$
                     && !value.startsWith("@android:")) {  //$NON-NLS-1$
-                // Compute R-string, e.g. @string/foo => R.string.foo
-                String r = R_PREFIX + value.substring(1).replace('/', '.');
-                mReferences.add(r);
+                if (!value.startsWith("@{")) {
+                    // Compute R-string, e.g. @string/foo => R.string.foo
+                    String r = R_PREFIX + value.substring(1).replace('/', '.');
+                    mReferences.add(r);
+                } else {
+                    // Data binding expression: there could be multiple references here
+                    int length = value.length();
+                    int index = 2; // skip @{
+                    while (true) {
+                        index = value.indexOf('@', index);
+                        if (index == -1) {
+                            break;
+                        }
+                        // Find end of (potential) resource URL: first non resource URL character
+                        int end = index + 1;
+                        while (end < length) {
+                            char c = value.charAt(end);
+                            if (!(Character.isJavaIdentifierPart(c) ||
+                                    c == '_' ||
+                                    c == '.' ||
+                                    c == '/' ||
+                                    c == '+')) {
+                                break;
+                            }
+                            end++;
+                        }
+                        ResourceUrl url = ResourceUrl.parse(value.substring(index, end));
+                        if (url != null && !url.framework) {
+                            mReferences.add(R_PREFIX + url.type.getName() + '.' + url.name);
+                        }
+
+                        index = end;
+                    }
+                }
             } else if (value.startsWith(ATTR_REF_PREFIX)) {
                 mReferences.add(R_ATTR_PREFIX + value.substring(ATTR_REF_PREFIX.length()));
             }

@@ -33,6 +33,7 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
 
     @Override
     protected boolean isEnabled(Issue issue) {
+        //noinspection SimplifiableIfStatement
         if (issue == UnusedResourceDetector.ISSUE_IDS) {
             return mEnableIds;
         } else {
@@ -324,5 +325,41 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                                 + "    }\n"
                                 + "}\n")
                         ));
+    }
+
+    public void testDataBinding() throws Exception {
+        // Make sure that resources referenced only via a data binding expression
+        // are not counted as unused.
+        // Regression test for https://code.google.com/p/android/issues/detail?id=183934
+        mEnableIds = false;
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("res/values/resources.xml", ""
+                                + "<resources>\n"
+                                + "    <item type='dimen' name='largePadding'>20dp</item>\n"
+                                + "    <item type='dimen' name='smallPadding'>15dp</item>\n"
+                                + "    <item type='string' name='nameFormat'>%1$s %2$s</item>\n"
+                                + "</resources>"),
+
+                        // Add unit test source which references resources which would otherwise
+                        // be marked as unused
+                        xml("res/layout/db.xml", ""
+                                + "<layout xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                                + "   <data>\n"
+                                + "       <variable name=\"user\" type=\"com.example.User\"/>\n"
+                                + "   </data>\n"
+                                + "   <LinearLayout\n"
+                                + "       android:orientation=\"vertical\"\n"
+                                + "       android:layout_width=\"match_parent\"\n"
+                                + "       android:layout_height=\"match_parent\"\n"
+                                // Data binding expressions
+                                + "       android:padding=\"@{large? @dimen/largePadding : @dimen/smallPadding}\"\n"
+                                + "       android:text=\"@{@string/nameFormat(firstName, lastName)}\" />\n"
+                                // bogus recursive include, just here to avoid showing @layout/db
+                                // as unused
+                                + "       <include layout='@layout/db'/>\n"
+                                + "</layout>")
+                ));
     }
 }
