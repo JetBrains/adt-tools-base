@@ -1,0 +1,74 @@
+/*
+ * Copyright (C) 2015 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.build.gradle.internal.pipeline;
+
+import com.android.annotations.NonNull;
+import com.android.annotations.concurrency.Immutable;
+import com.android.build.transform.api.ScopedContent;
+import com.google.common.base.Objects;
+
+import java.util.Set;
+
+/**
+ * Basic implementation of {@link ScopedContent}.
+ */
+@Immutable
+class ScopedContentImpl implements ScopedContent {
+
+    @NonNull
+    private final Set<ContentType> contentTypes;
+    @NonNull
+    private final Set<Scope> scopes;
+    @NonNull
+    private final Format format;
+
+    protected ScopedContentImpl(
+            @NonNull Set<ContentType> contentTypes,
+            @NonNull Set<Scope> scopes,
+            @NonNull Format format) {
+        this.contentTypes = contentTypes;
+        this.scopes = scopes;
+        this.format = format;
+    }
+
+    @NonNull
+    @Override
+    public Set<ContentType> getContentTypes() {
+        return contentTypes;
+    }
+
+    @NonNull
+    @Override
+    public Set<Scope> getScopes() {
+        return scopes;
+    }
+
+    @NonNull
+    @Override
+    public Format getFormat() {
+        return format;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("contentTypes", contentTypes)
+                .add("scopes", scopes)
+                .add("format", format)
+                .toString();
+    }
+}
