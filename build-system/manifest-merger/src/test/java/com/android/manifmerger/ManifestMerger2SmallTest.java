@@ -16,16 +16,26 @@
 
 package com.android.manifmerger;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.android.SdkConstants;
 import com.android.sdklib.mock.MockLog;
+import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Files;
 
-import junit.framework.TestCase;
-
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -38,19 +48,15 @@ import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
 
 /**
- * Tests for the {@link com.android.manifmerger.ManifestMergerTest} class
+ * Tests for the {@link ManifestMergerTestUtil} class
  */
-public class ManifestMerger2SmallTest extends TestCase {
+@RunWith(MockitoJUnitRunner.class)
+public class ManifestMerger2SmallTest {
 
     @Mock
-    ActionRecorder mActionRecorder;
+    private ActionRecorder mActionRecorder;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        MockitoAnnotations.initMocks(this);
-    }
-
+    @Test
     public void testValidationFailure()
             throws ParserConfigurationException, SAXException, IOException,
             ManifestMerger2.MergeFailureException {
@@ -84,6 +90,7 @@ public class ManifestMerger2SmallTest extends TestCase {
         }
     }
 
+    @Test
     public void testToolsAnnotationRemoval()
             throws ParserConfigurationException, SAXException, IOException,
             ManifestMerger2.MergeFailureException {
@@ -124,6 +131,7 @@ public class ManifestMerger2SmallTest extends TestCase {
         }
     }
 
+    @Test
     public void testToolsAnnotationPresence()
             throws ParserConfigurationException, SAXException, IOException,
             ManifestMerger2.MergeFailureException {
@@ -163,6 +171,7 @@ public class ManifestMerger2SmallTest extends TestCase {
     }
 
 
+    @Test
     public void testPackageOverride()
             throws ParserConfigurationException, SAXException, IOException {
         String xml = ""
@@ -176,10 +185,11 @@ public class ManifestMerger2SmallTest extends TestCase {
                 TestUtils.sourceFile(getClass(), "testPackageOverride#xml"), xml);
 
         ManifestMerger2.SystemProperty.PACKAGE.addTo(mActionRecorder, refDocument, "com.bar.new");
-        // verify the package value was overriden.
+        // verify the package value was overridden.
         assertEquals("com.bar.new", refDocument.getRootNode().getXml().getAttribute("package"));
     }
 
+    @Test
     public void testMissingPackageOverride()
             throws ParserConfigurationException, SAXException, IOException {
         String xml = ""
@@ -196,6 +206,7 @@ public class ManifestMerger2SmallTest extends TestCase {
         assertEquals("com.bar.new", refDocument.getRootNode().getXml().getAttribute("package"));
     }
 
+    @Test
     public void testAddingSystemProperties()
             throws ParserConfigurationException, SAXException, IOException {
         String xml = ""
@@ -232,6 +243,7 @@ public class ManifestMerger2SmallTest extends TestCase {
         assertEquals("16", usesSdk.getAttribute("android:maxSdkVersion"));
     }
 
+    @Test
     public void testAddingSystemProperties_withDifferentPrefix()
             throws ParserConfigurationException, SAXException, IOException {
         String xml = ""
@@ -251,6 +263,7 @@ public class ManifestMerger2SmallTest extends TestCase {
                 document.getXml().getDocumentElement().getAttribute("t:versionCode"));
     }
 
+    @Test
     public void testOverridingSystemProperties()
             throws ParserConfigurationException, SAXException, IOException {
         String xml = ""
@@ -291,6 +304,7 @@ public class ManifestMerger2SmallTest extends TestCase {
         assertEquals("14", usesSdk.getAttribute("android:targetSdkVersion"));
     }
 
+    @Test
     public void testPlaceholderSubstitution()
             throws ParserConfigurationException, SAXException, IOException,
             ManifestMerger2.MergeFailureException {
@@ -320,10 +334,12 @@ public class ManifestMerger2SmallTest extends TestCase {
             assertTrue(attribute.isPresent());
             assertEquals("injectedLabelName", attribute.get().getValue());
         } finally {
+            //noinspection ResultOfMethodCallIgnored
             inputFile.delete();
         }
     }
 
+    @Test
     public void testApplicationIdSubstitution()
             throws ManifestMerger2.MergeFailureException, IOException {
         String xml = ""
@@ -348,10 +364,12 @@ public class ManifestMerger2SmallTest extends TestCase {
                     .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, "bar.activityOne");
             assertTrue(activityOne.isPresent());
         } finally {
+            //noinspection ResultOfMethodCallIgnored
             inputFile.delete();
         }
     }
 
+    @Test
     public void testNoApplicationIdValueProvided()
             throws IOException, ManifestMerger2.MergeFailureException {
         String xml = ""
@@ -375,10 +393,12 @@ public class ManifestMerger2SmallTest extends TestCase {
                     .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, "foo.activityOne");
             assertTrue(activityOne.isPresent());
         } finally {
+            //noinspection ResultOfMethodCallIgnored
             inputFile.delete();
         }
     }
 
+    @Test
     public void testNoFqcnsExtraction()
             throws ParserConfigurationException, SAXException, IOException,
             ManifestMerger2.MergeFailureException {
@@ -421,6 +441,7 @@ public class ManifestMerger2SmallTest extends TestCase {
                         .getNodeValue());
     }
 
+    @Test
     public void testFqcnsExtraction()
             throws ParserConfigurationException, SAXException, IOException,
             ManifestMerger2.MergeFailureException {
@@ -464,6 +485,7 @@ public class ManifestMerger2SmallTest extends TestCase {
                         .getNodeValue());
     }
 
+    @Test
     public void testNoPlaceholderReplacement()
             throws IOException, ManifestMerger2.MergeFailureException {
         String xml = ""
@@ -495,13 +517,8 @@ public class ManifestMerger2SmallTest extends TestCase {
      */
     private static File inputAsFile(String testName, String input) throws IOException {
         File tmpFile = File.createTempFile(testName, ".xml");
-        FileWriter fw = null;
-        try {
-            fw = new FileWriter(tmpFile);
-            fw.append(input);
-        } finally {
-            if (fw != null) fw.close();
-        }
+        tmpFile.deleteOnExit();
+        Files.write(input, tmpFile, Charsets.UTF_8);
         return tmpFile;
     }
 
