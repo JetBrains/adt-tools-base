@@ -47,6 +47,11 @@ import java.util.List;
  */
 public class IncrementalChangeVisitor extends IncrementalVisitor {
 
+
+    // todo : find a better way to specify logging and append to a log file.
+    private static final boolean DEBUG = false;
+
+
     public IncrementalChangeVisitor(ClassNode classNode, List<ClassNode> parentNodes, ClassVisitor classVisitor) {
         super(classNode, parentNodes, classVisitor);
     }
@@ -56,6 +61,10 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             String[] interfaces) {
         super.visit(version, access, name + "$override", signature, "java/lang/Object",
                 new String[]{"com/android/build/gradle/internal/incremental/IncrementalChange"});
+
+        if (DEBUG) {
+            System.out.println(">>>>>>>> Processing " + name + "<<<<<<<<<<<<<");
+        }
 
         visitedClassName = name;
         visitedSuperName = superName;
@@ -79,8 +88,22 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         if (name.equals("<clinit>")) {
             return null;
         }
+
+
         boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
         String newDesc = isStatic ? desc : "(L" + visitedClassName + ";" + desc.substring(1);
+
+        if (DEBUG) {
+            System.out.println(">>> Visiting method " + visitedClassName + ":" + name + ":" + desc);
+            if (exceptions != null) {
+                for (String exception : exceptions) {
+                    System.out.println("> Exception thrown : " + exception);
+                }
+            }
+        }
+        if (DEBUG) {
+            System.out.println("New Desc is " + newDesc + ":" + isStatic);
+        }
 
         String newName = getOverridenName(name);
         // Do not carry on any access flags from the original method. For example synchronized
@@ -90,7 +113,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         if (name.equals("<init>")) {
             return new ConstructorVisitor(Opcodes.ASM5, original, access, newName, newDesc);
         } else {
-            return new ISVisitor(Opcodes.ASM5, original, access, newName, newDesc);
+            return new ISVisitor(Opcodes.ASM5, original, access, newName, newDesc, isStatic);
         }
     }
 
@@ -119,7 +142,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         AdapterVisitor adapter;
 
         public ConstructorVisitor(int api, MethodVisitor mv, int access, String name, String desc) {
-            super(api, new AdapterVisitor(api, mv), access, name, desc);
+            super(api, new AdapterVisitor(api, mv), access, name, desc, false);
             adapter = (AdapterVisitor) this.mv;
             adapter.setIgnore(true);
             this.desc = desc;
@@ -137,8 +160,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
     public class ISVisitor extends GeneratorAdapter {
 
-        public ISVisitor(int api, MethodVisitor mv, int access,  String name, String desc) {
+        private final boolean isStatic;
+
+        public ISVisitor(int api, MethodVisitor mv, int access,  String name, String desc, boolean isStatic) {
             super(api, mv, access, name, desc);
+            this.isStatic = isStatic;
         }
 
         @Override
@@ -148,6 +174,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 super.visitFieldInsn(opcode, owner, name, desc);
                 return;
             }
+
+            if (DEBUG) {
+                System.out.println("Visit field access : " + name + ":" + desc + ":" + isStatic);
+            }
+
             // check the field access bits.
             FieldNode fieldNode = getFieldByName(name);
             if (fieldNode == null) {
@@ -157,10 +188,16 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             boolean isPrivate = (fieldNode.access & Opcodes.ACC_PRIVATE) != 0;
             boolean isProtected = (fieldNode.access & Opcodes.ACC_PROTECTED) != 0;
             boolean isPackagePrivate = fieldNode.access == 0;
+            boolean isAccessedFieldStatic = (fieldNode.access & Opcodes.ACC_PRIVATE) != 0;
 
             // we should make this more efficient, have a per field access type method
             // for getting and setting field values.
             if (isPrivate || isProtected || isPackagePrivate) {
+                if (isAccessedFieldStatic) {
+                    // if we are dealing with accessing a static field, there is no "this" or
+                    // object reference on the stack, push null for the first parameter value.
+                    visitInsn(Opcodes.ACONST_NULL);
+                }
                 if (opcode == Opcodes.GETFIELD) {
                     push(name);
                     invokeStatic(Type.getType(IncrementalSupportRuntime.class),
@@ -169,7 +206,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 }
                 if (opcode == Opcodes.PUTFIELD) {
                     push(name);
-                    swap();
+                    swap(Type.getType(desc), Type.getType(String.class));
                     box(Type.getType(desc));
                     invokeStatic(Type.getType(IncrementalSupportRuntime.class),
                             Method.getMethod(
@@ -184,6 +221,10 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         public void visitMethodInsn(int opcode, String owner, String name, String desc,
                 boolean itf) {
 
+            if (DEBUG) {
+                System.out.println("Generic Method dispatch : " + opcode +
+                        ":" + owner + ":" + name + ":" + desc + ":" + itf + ":" + isStatic);
+            }
             boolean opcodeHandled = false;
             if (opcode == Opcodes.INVOKESPECIAL) {
                 opcodeHandled = handleSpecialOpcode(opcode, owner, name, desc, itf);
@@ -192,14 +233,25 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             } else if (opcode == Opcodes.INVOKESTATIC) {
                 opcodeHandled = handleStaticOpcode(opcode, owner, name, desc, itf);
             }
+            if (DEBUG) {
+                System.out.println("Opcode handled ? " + opcodeHandled);
+            }
             if (!opcodeHandled) {
-                super.visitMethodInsn(opcode, owner, name, desc, itf);
+                mv.visitMethodInsn(opcode, owner, name, desc, itf);
+            }
+            if (DEBUG) {
+                System.out.println("Done with generic method dispatch");
             }
         }
 
         private boolean handleSpecialOpcode(int opcode, String owner, String name, String desc,
                 boolean itf) {
             if (owner.equals(visitedSuperName)) {
+                if (DEBUG) {
+                    System.out.println(
+                            "Super Method dispatch : " + name + ":" + desc + ":" + itf + ":"
+                                    + isStatic);
+                }
                 int arr = boxParametersToNewLocalArray(Type.getArgumentTypes(desc));
                 push(name + "." + desc);
                 loadLocal(arr);
@@ -215,6 +267,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 }
                 return true;
             } else if (owner.equals(visitedClassName)) {
+                if (DEBUG) {
+                    System.out.println(
+                            "Private Method dispatch : " + name + ":" + desc + ":" + itf + ":"
+                                    + isStatic);
+                }
                 // private method dispatch, just invoke the $override class static method.
                 String newDesc = "(L" + visitedClassName + ";" + desc.substring(1);
                 super.visitMethodInsn(Opcodes.INVOKESTATIC, owner + "$override", name, newDesc, itf);
@@ -227,6 +284,10 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 boolean itf) {
             if (owner.equals(visitedClassName)) {
 
+                if (DEBUG) {
+                    System.out.println(
+                            "Method dispatch : " + name + ":" + desc + ":" + itf + ":" + isStatic);
+                }
                 MethodNode methodNode = getMethodByName(name, desc);
                 boolean isPublic = methodNode != null
                         && ((methodNode.access & Opcodes.ACC_PUBLIC) != 0);
@@ -260,7 +321,12 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 invokeStatic(Type.getType(IncrementalSupportRuntime.class),
                         Method.getMethod(
                                 "Object invokeProtectedMethod(Object, String, String[], Object[])"));
-                unbox(Type.getReturnType(desc));
+                Type ret = Type.getReturnType(desc);
+                if (ret.getSort() == Type.VOID) {
+                    pop();
+                } else {
+                    unbox(ret);
+                }
                 return true;
             }
             return false;
@@ -292,6 +358,13 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         private boolean handleStaticOpcode(int opcode, String owner, String name, String desc,
                 boolean itf) {
             return false;
+        }
+
+        @Override
+        public void visitEnd() {
+            if (DEBUG) {
+                System.out.println("Method visit end");
+            }
         }
     }
 

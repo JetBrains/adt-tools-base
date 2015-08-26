@@ -181,7 +181,7 @@ public class IncrementalVisitor extends ClassVisitor {
         ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
 
         ClassNode classNode = new ClassNode();
-        classReader.accept(classNode, ClassReader.SKIP_FRAMES);
+        classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
 
         Files.createParentDirs(outputFile);
 
@@ -199,13 +199,7 @@ public class IncrementalVisitor extends ClassVisitor {
         }
 
         IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
-        if (visitorBuilder.processParents()) {
-            // not sure why we need to reparse from the classReader, it does not work to just
-            // reuse classNode.
-            classReader.accept(visitor, ClassReader.SKIP_FRAMES);
-        } else {
-            classNode.accept(visitor);
-        }
+        classNode.accept(visitor);
 
         Files.write(classWriter.toByteArray(), outputFile);
     }
