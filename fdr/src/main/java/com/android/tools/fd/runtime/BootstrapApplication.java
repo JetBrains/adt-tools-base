@@ -22,6 +22,7 @@ import android.util.Log;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.List;
 
 // This is based on the reflection parts of
@@ -66,38 +67,81 @@ public class BootstrapApplication extends Application {
         }
     }
 
-    private void createResources() {
+    private void createResources(long apkModified) {
         File file = FileManager.getExternalResourceFile();
         externalResourcePath = file != null ? file.getPath() : null;
 
         if (Log.isLoggable(LOG_TAG, Log.INFO)) {
             Log.i(LOG_TAG, "Resource override is " + externalResourcePath);
         }
+
+        if (file != null) {
+            try {
+                long resourceModified = file.lastModified();
+                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                    Log.i(LOG_TAG, "Resource patch last modified: " + resourceModified);
+                    Log.i(LOG_TAG, "APK last modified: " + apkModified + " " +
+                            (apkModified > resourceModified ? ">" : "<") + " resource patch");
+                }
+
+                if (apkModified == 0L || resourceModified <= apkModified) {
+                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                        Log.i(LOG_TAG, "Ignoring resource file, older than APK");
+                    }
+                    externalResourcePath = null;
+                }
+            } catch (Throwable t) {
+                Log.e(LOG_TAG, "Failed to check patch timestamps", t);
+            }
+        }
     }
 
-    private void createRealApplication(String codeCacheDir) {
+    private void createRealApplication(String codeCacheDir, long apkModified) {
         List<String> dexList = FileManager.getDexList();
 
         // Make sure class loader finds these
-        Class<Server> server = Server.class;
-        Class<MonkeyPatcher> patcher = MonkeyPatcher.class;
+        @SuppressWarnings("unused") Class<Server> server = Server.class;
+        @SuppressWarnings("unused") Class<MonkeyPatcher> patcher = MonkeyPatcher.class;
 
-        ClassLoader classLoader = BootstrapApplication.class.getClassLoader();
+        if (!dexList.isEmpty()) {
+            try {
+                File lastClass = new File(dexList.get(0));
+                long codeModified = lastClass.lastModified();
+
+                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                    Log.i(LOG_TAG, "Last code patch: " + lastClass);
+                    Log.i(LOG_TAG, "Last patch last modified: " + codeModified);
+                    Log.i(LOG_TAG, "APK last modified: " + apkModified + " " +
+                            (apkModified > codeModified ? ">" : "<") + " code patch");
+                }
+
+                if (apkModified == 0L || codeModified <= apkModified) {
+                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                        Log.i(LOG_TAG, "Ignoring code patches, older than APK");
+                    }
+                    dexList = Collections.emptyList();
+                }
+            } catch (Throwable t) {
+                Log.e(LOG_TAG, "Failed to check patch timestamps", t);
+            }
+        } else {
+            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                Log.i(LOG_TAG, "No override .dex files found");
+            }
+        }
+
         if (!dexList.isEmpty()) {
             if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                 Log.i(LOG_TAG, "Bootstrapping class loader with dex list " + dexList);
             }
 
             String nativeLibraryPath = FileManager.getNativeLibraryFolder().getPath();
+            ClassLoader classLoader = BootstrapApplication.class.getClassLoader();
             IncrementalClassLoader.inject(
                     classLoader,
                     nativeLibraryPath,
                     codeCacheDir,
                     dexList);
-        } else {
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "No override .dex files found");
-            }
         }
 
         if (AppInfo.applicationClass != null) {
@@ -129,8 +173,10 @@ public class BootstrapApplication extends Application {
 
     @Override
     protected void attachBaseContext(Context context) {
-        createResources();
-        createRealApplication(context.getCacheDir().getPath());
+        String apkFile = context.getApplicationInfo().sourceDir;
+        long apkModified = apkFile != null ? new File(apkFile).lastModified() : 0L;
+        createResources(apkModified);
+        createRealApplication(context.getCacheDir().getPath(), apkModified);
 
         // This is called from ActivityThread#handleBindApplication() -> LoadedApk#makeApplication().
         // Application#mApplication is changed right after this call, so we cannot do the monkey
