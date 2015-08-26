@@ -19,8 +19,10 @@ package com.android.build.gradle.ndk.internal;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.Toolchain;
+import com.android.build.gradle.managed.NdkAbiOptions;
 
 import org.gradle.api.Action;
+import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.platform.NativePlatform;
 import org.gradle.nativeplatform.toolchain.Clang;
 import org.gradle.nativeplatform.toolchain.Gcc;
@@ -56,6 +58,7 @@ public class ToolchainConfiguration {
     public static void configureToolchain(
             NativeToolChainRegistry toolchainRegistry,
             final String toolchainName,
+            final ModelMap<NdkAbiOptions> abiConfigs,
             final NdkHandler ndkHandler) {
         final Toolchain ndkToolchain = Toolchain.getByName(toolchainName);
         toolchainRegistry.create("ndk-" + toolchainName,
@@ -65,8 +68,7 @@ public class ToolchainConfiguration {
                     @Override
                     public void execute(GccCompatibleToolChain toolchain) {
                         // Configure each platform.
-                        for (Abi it : ndkHandler.getSupportedAbis()) {
-                            final Abi abi = it;
+                        for (final Abi abi : ndkHandler.getSupportedAbis()) {
                             toolchain.target(abi.getName(), new Action<GccPlatformToolChain>() {
                                 @Override
                                 public void execute(GccPlatformToolChain targetPlatform) {
@@ -93,8 +95,43 @@ public class ToolchainConfiguration {
                                                     args.removeAll(Collections.singleton("-Xlinker"));
                                                 }
                                             });
-                                }
 
+                                    final NdkAbiOptions config = abiConfigs.get(abi.getName());
+
+                                    if (config != null) {
+                                        // Specify ABI specific flags.
+                                        targetPlatform.getcCompiler().withArguments(
+                                                new Action<List<String>>() {
+                                                    @Override
+                                                    public void execute(List<String> args) {
+                                                        for (String flag : config.getCFlags()) {
+                                                            args.add(flag);
+                                                        }
+                                                    }
+                                                });
+                                        targetPlatform.getCppCompiler().withArguments(
+                                                new Action<List<String>>() {
+                                                    @Override
+                                                    public void execute(List<String> args) {
+                                                        for (String flag : config.getCppFlags()) {
+                                                            args.add(flag);
+                                                        }
+                                                    }
+                                                });
+                                        targetPlatform.getLinker().withArguments(
+                                                new Action<List<String>>() {
+                                                    @Override
+                                                    public void execute(List<String> args) {
+                                                        for (String flag : config.getLdFlags()) {
+                                                            args.add(flag);
+                                                        }
+                                                        for (String lib : config.getLdLibs()) {
+                                                            args.add("-l" + lib);
+                                                        }
+                                                    }
+                                                });
+                                    }
+                                }
                             });
                             toolchain.path(ndkHandler.getCCompiler(abi).getParentFile());
                         }

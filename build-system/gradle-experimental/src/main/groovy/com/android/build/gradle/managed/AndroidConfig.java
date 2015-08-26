@@ -62,6 +62,9 @@ public interface AndroidConfig {
     /** Default config, shared by all flavors. */
     ProductFlavor getDefaultConfig();
 
+    /** NDK config for specific ABI. */
+    ModelMap<NdkAbiOptions> getAbis();
+
     /** List of device providers */
     @Unmanaged
     List<DeviceProvider> getDeviceProviders();

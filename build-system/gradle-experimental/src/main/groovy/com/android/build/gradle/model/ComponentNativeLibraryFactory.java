@@ -25,6 +25,8 @@ import com.android.build.gradle.internal.model.NativeLibraryImpl;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.managed.NdkAbiOptions;
+import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.ndk.internal.BinaryToolHelper;
 import com.android.builder.model.NativeLibrary;
 import com.google.common.base.Optional;
@@ -32,11 +34,14 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
+import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.platform.base.BinaryContainer;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of NativeLibraryFactory from in the component model plugin.
@@ -44,15 +49,20 @@ import java.util.Collections;
  * The library extract information directly from the binaries.
  */
 public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
-
+    @NonNull
     BinaryContainer binaries;
-
+    @NonNull
     NdkHandler ndkHandler;
+    @NonNull
+    ModelMap<NdkAbiOptions> abiOptions;
 
-    public ComponentNativeLibraryFactory(BinaryContainer binaries,
-            NdkHandler ndkHandler) {
+    public ComponentNativeLibraryFactory(
+            @NonNull BinaryContainer binaries,
+            @NonNull NdkHandler ndkHandler,
+            @NonNull ModelMap<NdkAbiOptions> abiOptions) {
         this.binaries = binaries;
         this.ndkHandler = ndkHandler;
+        this.abiOptions = abiOptions;
     }
 
     @NonNull
@@ -86,6 +96,20 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
             return Optional.absent();
         }
 
+        NdkOptions targetOptions = abiOptions.get(abi.getName());
+        List<String> cFlags = BinaryToolHelper.getCCompiler(nativeBinary.get()).getArgs();
+        List<String> cppFlags = BinaryToolHelper.getCppCompiler(nativeBinary.get()).getArgs();
+        if (targetOptions != null) {
+            if (!targetOptions.getCFlags().isEmpty()) {
+                cFlags = ImmutableList.copyOf(Iterables.concat(cFlags, targetOptions.getCFlags()));
+            }
+            if (!targetOptions.getCppFlags().isEmpty()) {
+                cppFlags = ImmutableList.copyOf(
+                        Iterables.concat(cppFlags, targetOptions.getCppFlags()));
+            }
+        }
+
+
         CoreNdkOptions ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
         // The DSL currently do not support all options available in the model such as the
         // include dirs and the defines.  Therefore, just pass an empty collection for now.
@@ -99,8 +123,8 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
                 ndkHandler.getStlIncludes(ndkConfig.getStl(), abi),
                 Collections.<String>emptyList(),  /*cDefines*/
                 Collections.<String>emptyList(),  /*cppDefines*/
-                BinaryToolHelper.getCCompiler(nativeBinary.get()).getArgs(),
-                BinaryToolHelper.getCppCompiler(nativeBinary.get()).getArgs(),
+                cFlags,
+                cppFlags,
                 ImmutableList.of(variantData.getScope().getNdkDebuggableLibraryFolders(abi))));
     }
 }
