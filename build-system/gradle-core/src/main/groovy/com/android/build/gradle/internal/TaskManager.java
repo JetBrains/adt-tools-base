@@ -1945,10 +1945,9 @@ public abstract class TaskManager {
     public void createJacocoTransform(
             @NonNull TaskFactory taskFactory,
             @NonNull final VariantScope variantScope) {
-        final JacocoTransform transform = new JacocoTransform(variantScope);
 
         AndroidTask<?> task = variantScope.getTransformManager().addTransform(taskFactory,
-                variantScope, transform);
+                variantScope, new JacocoTransform(project.getConfigurations()));
 
         Copy agentTask = getJacocoAgentTask();
         task.dependsOn(taskFactory, agentTask);

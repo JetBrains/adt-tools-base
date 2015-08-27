@@ -13,27 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.build.gradle.internal.transforms;
 
-package com.android.build.gradle.internal.transforms
-import com.android.annotations.NonNull
-import com.android.build.gradle.internal.coverage.JacocoPlugin
-import com.android.build.gradle.internal.pipeline.TransformManager
-import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.scope.VariantScopeImpl
-import com.android.build.transform.api.AsInputTransform
-import com.android.build.transform.api.ScopedContent
-import com.android.build.transform.api.Transform
-import com.android.build.transform.api.TransformException
-import com.android.build.transform.api.TransformInput
-import com.android.build.transform.api.TransformOutput
-import com.google.common.base.Supplier
-import com.google.common.base.Suppliers
-import com.google.common.collect.Iterables
-import com.google.common.collect.Sets
-import org.gradle.util.GUtil
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.coverage.JacocoPlugin;
+import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.transform.api.AsInputTransform;
+import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.Transform;
+import com.android.build.transform.api.TransformException;
+import com.android.build.transform.api.TransformInput;
+import com.android.build.transform.api.TransformInput.FileStatus;
+import com.android.build.transform.api.TransformOutput;
+import com.android.utils.FileUtils;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+import com.google.common.io.Closeables;
+import com.google.common.io.Files;
 
-import static com.android.utils.FileUtils.delete
-import static com.android.utils.FileUtils.mkdirs
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.ConfigurationContainer;
+import org.jacoco.core.instr.Instrumenter;
+import org.jacoco.core.runtime.OfflineInstrumentationAccessGenerator;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Jacoco Transform
@@ -41,109 +53,152 @@ import static com.android.utils.FileUtils.mkdirs
 public class JacocoTransform implements AsInputTransform {
 
     @NonNull
-    private final Supplier<Collection<File>> jacocoClasspath
-    @NonNull
-    private final VariantScopeImpl scope
+    private final Supplier<Collection<File>> jacocoClasspath;
 
-    public JacocoTransform(@NonNull VariantScope scope) {
-        this.scope = scope
+    public JacocoTransform(@NonNull  final ConfigurationContainer configurations) {
         this.jacocoClasspath = Suppliers.memoize(new Supplier<Collection<File>>() {
             @Override
-            Collection<File> get() {
-                return scope.getGlobalScope().getProject().getConfigurations()
-                        .getByName(JacocoPlugin.ANT_CONFIGURATION_NAME).getFiles()
+            public Collection<File> get() {
+                return configurations.getByName(JacocoPlugin.AGENT_CONFIGURATION_NAME).getFiles();
             }
-        })
+        });
     }
+
 
     @NonNull
     @Override
     public String getName() {
-        return "jacoco"
+        return "jacoco";
     }
 
     @NonNull
     @Override
     public Set<ScopedContent.ContentType> getInputTypes() {
-        return TransformManager.CONTENT_CLASS
+        return TransformManager.CONTENT_CLASS;
     }
 
     @NonNull
     @Override
     public Set<ScopedContent.ContentType> getOutputTypes() {
-        return TransformManager.CONTENT_CLASS
+        return TransformManager.CONTENT_CLASS;
     }
 
     @NonNull
     @Override
     public Set<ScopedContent.Scope> getScopes() {
         // only run on the project classes
-        return Sets.immutableEnumSet(ScopedContent.Scope.PROJECT)
+        return Sets.immutableEnumSet(ScopedContent.Scope.PROJECT);
     }
 
     @NonNull
     @Override
     public Set<ScopedContent.Scope> getReferencedScopes() {
-        return TransformManager.EMPTY_SCOPES
+        return TransformManager.EMPTY_SCOPES;
     }
 
     @NonNull
     @Override
     public Transform.Type getTransformType() {
         // does not combine multiple input stream.
-        return Transform.Type.AS_INPUT
+        return Transform.Type.AS_INPUT;
     }
 
     @NonNull
     @Override
     public ScopedContent.Format getOutputFormat() {
-        return ScopedContent.Format.SINGLE_FOLDER
+        return ScopedContent.Format.SINGLE_FOLDER;
     }
 
     @NonNull
     @Override
     public Collection<File> getSecondaryFileInputs() {
-        return jacocoClasspath.get()
+        return jacocoClasspath.get();
     }
 
     @NonNull
     @Override
-    Collection<File> getSecondaryFileOutputs() {
+    public Collection<File> getSecondaryFileOutputs() {
         return Collections.emptyList();
     }
 
     @NonNull
     @Override
     public Map<String, Object> getParameterInputs() {
-        return Collections.emptyMap()
+        return Collections.emptyMap();
     }
 
     @Override
-    boolean isIncremental() {
-        return false
+    public boolean isIncremental() {
+        return true;
     }
 
     @Override
-    void transform(
+    public void transform(
             @NonNull Map<TransformInput, TransformOutput> inputOutputs,
             @NonNull Collection<TransformInput> referencedInputs,
-            boolean isIncremental) throws TransformException {
+            boolean isIncremental) throws IOException, TransformException, InterruptedException {
 
-        // this is a as_input transform with single scope, so there's only one entry in the map
-        TransformInput input = Iterables.getOnlyElement(inputOutputs.keySet())
-        TransformOutput output = Iterables.getOnlyElement(inputOutputs.values())
+        TransformInput input = Iterables.getOnlyElement(inputOutputs.keySet());
+        TransformOutput output = Iterables.getOnlyElement(inputOutputs.values());
 
+        File inputDir = Iterables.getOnlyElement(input.getFiles());
         File outputDir = output.getOutFile();
-        delete(outputDir);
-        mkdirs(outputDir);
 
-        AntBuilder antBuilder = scope.globalScope.project.ant
-
-        antBuilder.taskdef(name: 'instrumentWithJacoco',
-                classname: 'org.jacoco.ant.InstrumentTask',
-                classpath: GUtil.asPath(jacocoClasspath.get()))
-        antBuilder.instrumentWithJacoco(destdir: outputDir) {
-            fileset(dir: input.files.first())
+        Instrumenter instrumenter = new Instrumenter(new OfflineInstrumentationAccessGenerator());
+        if (isIncremental) {
+            instrumentFilesIncremental(instrumenter, inputDir, outputDir, input.getChangedFiles());
+        } else {
+            instrumentFilesFullRun(instrumenter, inputDir, outputDir);
         }
     }
+
+    private static void instrumentFilesIncremental(
+            @NonNull Instrumenter instrumenter,
+            @NonNull File inputDir,
+            @NonNull File outputDir,
+            @NonNull Map<File, FileStatus> changedFiles) throws IOException {
+        for (Map.Entry<File, FileStatus> changedInput : changedFiles.entrySet()) {
+            File inputFile = changedInput.getKey();
+            File outputFile = new File(outputDir, FileUtils.relativePath(inputFile, inputDir));
+            switch (changedInput.getValue()) {
+                case REMOVED:
+                    FileUtils.delete(outputFile);
+                    break;
+                case ADDED:
+                    // fall through
+                case CHANGED:
+                    instrumentFile(instrumenter, inputFile, outputFile);
+            }
+        }
+    }
+
+    private static void instrumentFilesFullRun(
+            @NonNull Instrumenter instrumenter,
+            @NonNull File inputDir,
+            @NonNull File outputDir) throws IOException {
+        FileUtils.emptyFolder(outputDir);
+        Iterable<File> files = FileUtils.getAllFiles(inputDir);
+        for (File inputFile : files) {
+            File outputFile = new File(outputDir, FileUtils.relativePath(inputFile, inputDir));
+            instrumentFile(instrumenter, inputFile, outputFile);
+        }
+    }
+
+    private static void instrumentFile(
+            @NonNull Instrumenter instrumenter,
+            @NonNull File inputFile,
+            @NonNull File outputFile) throws IOException {
+        InputStream inputStream = null;
+        try {
+            inputStream = Files.asByteSource(inputFile).openBufferedStream();
+            Files.createParentDirs(outputFile);
+            byte[] instrumented = instrumenter.instrument(
+                    inputStream,
+                    inputFile.toString());
+            Files.write(instrumented, outputFile);
+        } finally {
+            Closeables.closeQuietly(inputStream);
+        }
+    }
+
 }

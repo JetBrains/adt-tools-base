@@ -21,6 +21,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.android.annotations.NonNull;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
@@ -104,6 +106,11 @@ public class FileUtils {
 
     public static String sha1(@NonNull File file) throws IOException {
         return Hashing.sha1().hashBytes(Files.toByteArray(file)).toString();
+    }
+
+    @NonNull
+    public static FluentIterable<File> getAllFiles(@NonNull  File dir) {
+        return Files.fileTreeTraverser().preOrderTraversal(dir).filter(Files.isFile());
     }
 
     public static String getNamesAsCommaSeparatedList(Iterable<File> files) {
