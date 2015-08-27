@@ -160,6 +160,9 @@ public class Svg2Vector {
         return svgTree;
     }
 
+    /**
+     * Traverse the tree in pre-order.
+     */
     private static void traverseSVGAndExtract(SvgTree svgTree, SvgGroupNode currentGroup, Node item) {
         // Recursively traverse all the group and path nodes
         NodeList allChildren = item.getChildNodes();
