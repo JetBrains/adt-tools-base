@@ -43,6 +43,16 @@ public interface ScopedContent {
          */
         CLASSES,
         /**
+         * Bytecode enhanced class files that support being hot swapped at runtime. This can be
+         * in a folder or a jar depending on the {@link Format}
+         */
+        CLASSES_2,
+        /**
+         * Bytecode enhanced class files that be used to hot swap a {@link #CLASSES_2} class file
+         * in a running application.
+         */
+        CLASSES_3,
+        /**
          * This is a dex files.
          */
         DEX,
