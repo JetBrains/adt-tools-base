@@ -69,7 +69,7 @@ public class ClassEnhancement implements TestRule {
     private final boolean tracing;
 
     public ClassEnhancement() {
-        this(false);
+        this(true);
     }
 
     public ClassEnhancement(boolean tracing) {
