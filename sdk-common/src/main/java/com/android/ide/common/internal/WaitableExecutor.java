@@ -77,7 +77,7 @@ public class WaitableExecutor<T> {
 
     /**
      * Waits for all tasks to be executed. If a tasks throws an exception, it will be thrown from
-     * this method inside the ExecutionException, preventing access to the result of the other
+     * this method inside a RuntimeException, preventing access to the result of the other
      * threads.
      *
      * If you want to get the results of all tasks (result and/or exception), use
@@ -88,6 +88,7 @@ public class WaitableExecutor<T> {
      * @return a list of all the return values from the tasks.
      *
      * @throws InterruptedException if this thread was interrupted. Not if the tasks were interrupted.
+     * @throws LoggedErrorException
      */
     public List<T> waitForTasksWithQuickFail(boolean cancelRemaining) throws InterruptedException,
             LoggedErrorException {
@@ -108,7 +109,7 @@ public class WaitableExecutor<T> {
                 cancelAllTasks();
             }
 
-            // get the original exception adn throw that one.
+            // get the original exception and throw that one.
             Throwable cause = e.getCause();
             if (cause instanceof LoggedErrorException) {
                 throw (LoggedErrorException) cause;

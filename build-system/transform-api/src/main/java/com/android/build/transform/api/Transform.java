@@ -170,10 +170,11 @@ public interface Transform {
      * @param referencedInputs the referenced-only inputs
      * @param isIncremental whether the transform is incremental.
      * @throws IOException if an IO error occurs
+     * @throws InterruptedException
      * @throws TransformException Generic exception encapsulating the cause.
      */
     void transform(
             @NonNull Map<TransformInput, TransformOutput> inputs,
             @NonNull List<TransformInput> referencedInputs,
-            boolean isIncremental) throws IOException, TransformException;
+            boolean isIncremental) throws IOException, TransformException, InterruptedException;
 }
