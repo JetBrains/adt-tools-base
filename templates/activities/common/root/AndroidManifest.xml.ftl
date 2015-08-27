@@ -7,6 +7,9 @@
             <#else>
             android:label="@string/title_${activityToLayout(activityClass)}"
             </#if>
+            <#if hasNoActionBar>
+            android:theme="@style/AppTheme.NoActionBar"
+            </#if>
             <#if buildApi gte 16 && parentActivityClass != "">android:parentActivityName="${parentActivityClass}"</#if>>
             <#if parentActivityClass != "">
             <meta-data android:name="android.support.PARENT_ACTIVITY"

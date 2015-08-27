@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <recipe>
 
-    <#if appCompat><dependency mavenUrl="com.android.support:appcompat-v7:${targetApi}.+"/></#if>
+    <dependency mavenUrl="com.android.support:appcompat-v7:${buildApi}.+"/>
 
 <#if !createActivity>
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
@@ -26,6 +26,8 @@
             to="${escapeXmlAttribute(resOut)}/mipmap-xhdpi" />
     <copy from="root/res/mipmap-xxhdpi"
             to="${escapeXmlAttribute(resOut)}/mipmap-xxhdpi" />
+    <copy from="root/res/mipmap-xxxhdpi"
+            to="${escapeXmlAttribute(resOut)}/mipmap-xxxhdpi" />
 </#if>
 <#if makeIgnore>
     <copy from="root/module_ignore"
@@ -38,9 +40,9 @@
 <#if !(isLibraryProject??) || !isLibraryProject>
     <instantiate from="root/res/values/styles.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/styles.xml" />
-<#if buildApi gte 21 && !(appCompat)>
-    <copy from="root/res/values-v21/styles.xml"
-          to="${escapeXmlAttribute(resOut)}/values-v21/styles.xml" />
+<#if buildApi gte 22>
+    <copy from="root/res/values/colors.xml"
+          to="${escapeXmlAttribute(resOut)}/values/colors.xml" />
 </#if>
 </#if>
 
