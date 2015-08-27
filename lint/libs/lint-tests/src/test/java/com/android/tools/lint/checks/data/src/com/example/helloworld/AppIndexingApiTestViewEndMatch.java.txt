@@ -1,0 +1,31 @@
+package com.example.helloworld;
+
+import android.app.Activity;
+import android.net.Uri;
+import android.os.Bundle;
+
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.common.api.GoogleApiClient;
+
+public class AppIndexingApiTest extends Activity {
+  static final Uri APP_URI = Uri.parse("android-app://com.example.helloworld/http/example.com/gizmos");
+  private GoogleApiClient mClient;
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    mClient = new GoogleApiClient.Builder(this).addApi(AppIndex.APP_INDEX_API).build();
+  }
+
+  @Override
+  public void onStart(){
+    super.onStart();
+  }
+
+  @Override
+  public void onStop(){
+    super.onStop();
+    AppIndex.AppIndexApi.viewEnd(mClient, this, APP_URI);
+  }
+}
