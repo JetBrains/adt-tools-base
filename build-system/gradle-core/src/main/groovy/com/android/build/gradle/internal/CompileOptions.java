@@ -9,7 +9,7 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either excodess or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -45,12 +45,6 @@ public class CompileOptions {
 
     /**
      * Language level of the source code.
-     *
-     * <p>Formats supported are :
-     *      "1.6"
-     *      1.6
-     *      JavaVersion.Version_1_6
-     *      "Version_1_6"
      */
     public void setSourceCompatibility(@NonNull Object sourceCompatibility) {
         this.sourceCompatibility = convert(sourceCompatibility);
@@ -60,7 +54,13 @@ public class CompileOptions {
      * Language level of the source code.
      *
      * <p>Similar to what <a href="http://www.gradle.org/docs/current/userguide/java_plugin.html">
-     * Gradle Java plugin</a> uses.
+     * Gradle Java plugin</a> uses. Formats supported are:
+     * <ul>
+     *      <li><code>"1.6"</code></li>
+     *      <li><code>1.6</code></li>
+     *      <li><code>JavaVersion.Version_1_6</code></li>
+     *      <li><code>"Version_1_6"</code></li>
+     * </ul>
      */
     @NonNull
     public JavaVersion getSourceCompatibility() {
@@ -69,12 +69,6 @@ public class CompileOptions {
 
     /**
      * Language level of the target code.
-     *
-     * <p>Formats supported are :
-     *      "1.6"
-     *      1.6
-     *      JavaVersion.Version_1_6
-     *      "Version_1_6"
      */
     public void setTargetCompatibility(@NonNull Object targetCompatibility) {
         this.targetCompatibility = convert(targetCompatibility);
@@ -84,7 +78,13 @@ public class CompileOptions {
      * Version of the generated Java bytecode.
      *
      * <p>Similar to what <a href="http://www.gradle.org/docs/current/userguide/java_plugin.html">
-     * Gradle Java plugin</a> uses.
+     * Gradle Java plugin</a> uses. Formats supported are:
+     * <ul>
+     *      <li><code>"1.6"</code></li>
+     *      <li><code>1.6</code></li>
+     *      <li><code>JavaVersion.Version_1_6</code></li>
+     *      <li><code>"Version_1_6"</code></li>
+     * </ul>
      */
     @NonNull
     public JavaVersion getTargetCompatibility() {
@@ -95,6 +95,9 @@ public class CompileOptions {
         this.encoding = encoding;
     }
 
+    /**
+     * Source files encoding.
+     */
     public String getEncoding() {
         return encoding;
     }

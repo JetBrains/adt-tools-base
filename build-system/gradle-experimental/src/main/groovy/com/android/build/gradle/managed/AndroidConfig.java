@@ -18,7 +18,7 @@ package com.android.build.gradle.managed;
 
 import com.android.build.gradle.api.VariantFilter;
 import com.android.build.gradle.internal.CompileOptions;
-import com.android.build.gradle.internal.coverage.JacocoExtension;
+import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.DexOptions;
@@ -133,8 +133,8 @@ public interface AndroidConfig {
 
     /** JaCoCo options. */
     @Unmanaged
-    JacocoExtension getJacoco();
-    void setJacoco(JacocoExtension jacoco);
+    JacocoOptions getJacoco();
+    void setJacoco(JacocoOptions jacoco);
 
     /** Lint options. */
     @Unmanaged

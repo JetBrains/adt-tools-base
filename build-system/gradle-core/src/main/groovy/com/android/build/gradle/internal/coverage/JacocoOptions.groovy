@@ -19,9 +19,9 @@ package com.android.build.gradle.internal.coverage
 /**
  * DSL object for configuring JaCoCo settings.
  */
-class JacocoExtension {
+class JacocoOptions {
     /**
-     * The version of jacoco to use.
+     * The version of jacoco to use. Defaults to 0.7.4.201502262128
      */
     String version = '0.7.4.201502262128'
 }

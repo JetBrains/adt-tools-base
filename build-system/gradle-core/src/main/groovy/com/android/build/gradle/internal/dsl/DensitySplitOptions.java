@@ -106,7 +106,10 @@ public class DensitySplitOptions extends SplitOptions {
 
     /**
      * Sets whether the build system should determine the splits based on the "language-*" folders
-     * in the resources. If the auto mode is set to true, the include list will be ignored.
+     * in the resources.
+     *
+     * <p>If the auto mode is set to true, the include list will be ignored.
+     *
      * @param auto true to automatically set the splits list based on the folders presence, false
      *             to use the include list.
      */
@@ -115,9 +118,10 @@ public class DensitySplitOptions extends SplitOptions {
     }
 
     /**
-     * Returns whether to use the automatic discovery mechanism for supported languages (true) or
-     * the manual include list (false).
-     * @return true for automatic, false for manual mode.
+     * Whether the build system should determine the splits based on the "language-*" folders
+     * in the resources.
+     *
+     * <p>If the auto mode is set to true, the include list will be ignored.
      */
     public boolean isAuto() {
         return auto;

@@ -5,7 +5,6 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
-            <tr><td>ignore</td></tr>
             <tr><td>defaultConfig</td></tr>
             <tr><td>buildType</td></tr>
             <tr><td>flavors</td></tr>
@@ -17,6 +16,7 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
+            <tr><td>setIgnore</td></tr>
         </table>
     </section>
 </section>

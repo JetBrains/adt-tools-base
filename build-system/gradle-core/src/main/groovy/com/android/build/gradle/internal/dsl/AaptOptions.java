@@ -51,6 +51,10 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
         this.ignoreAssetsPattern = ignoreAssetsPattern;
     }
 
+    public void setIgnoreAssets(@Nullable String ignoreAssetsPattern) {
+        setIgnoreAssetsPattern(ignoreAssetsPattern);
+    }
+
     /**
      * Pattern describing assets to be ignore.
      *
@@ -60,6 +64,15 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
     @Optional
     @Input
     public String getIgnoreAssets() {
+        return ignoreAssetsPattern;
+    }
+
+    /**
+     * Pattern describing assets to be ignore.
+     *
+     * <p>See <code>aapt --help</code>
+     */
+    public String getIgnoreAssetsPattern() {
         return ignoreAssetsPattern;
     }
 
@@ -153,10 +166,16 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
         noCompressList = Arrays.asList(noCompress);
     }
 
+    /**
+     * Adds additional parameters to be passed to {@code aapt}.
+     */
     public void additionalParameters(@NonNull String param) {
         additionalParameters = Collections.singletonList(param);
     }
 
+    /**
+     * Adds additional parameters to be passed to {@code aapt}.
+     */
     public void additionalParameters(String... params) {
         additionalParameters = Arrays.asList(params);
     }
@@ -165,6 +184,9 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
         additionalParameters = parameters;
     }
 
+    /**
+     * Returns the list of additional parameters to pass to {@code appt}.
+     */
     @Nullable
     @Override
     @Optional
