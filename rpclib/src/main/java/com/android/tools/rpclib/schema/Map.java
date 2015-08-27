@@ -32,6 +32,12 @@ import com.android.tools.rpclib.binary.Namespace;
 import java.io.IOException;
 
 public final class Map extends Type {
+    @NotNull
+    @Override
+    public String getName() {
+        return "map<" + mKeyType.getName() + "," + mValueType.getName() + ">";
+    }
+
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
         assert(value instanceof java.util.Map);
@@ -54,7 +60,7 @@ public final class Map extends Type {
     }
 
     @Override
-    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
+    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
         // TODO: Customise renderer
         component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
     }

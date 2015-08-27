@@ -32,6 +32,11 @@ import java.io.IOException;
 
 public final class Pointer extends Type {
     @Override
+    public String getName() {
+        return "pointer<" + mType.getName() + ">";
+    }
+
+    @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
         assert(value instanceof BinaryObject);
         e.object((BinaryObject)value);
@@ -43,9 +48,9 @@ public final class Pointer extends Type {
     }
 
     @Override
-    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
+    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
         component.append("*", SimpleTextAttributes.GRAY_ATTRIBUTES);
-        renderObject(value, component);
+        Render.object(value, component, defaultAttributes);
     }
 
     //<<<Start:Java.ClassBody:1>>>

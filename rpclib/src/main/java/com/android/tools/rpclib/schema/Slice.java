@@ -31,6 +31,11 @@ import com.android.tools.rpclib.binary.Namespace;
 import java.io.IOException;
 
 public final class Slice extends Type {
+    @NotNull
+    @Override
+    public String getName() {
+        return "slice<" + mValueType.getName() + ">";
+    }
 
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
@@ -53,8 +58,8 @@ public final class Slice extends Type {
     }
 
     @Override
-    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
-        renderArray(value, mValueType, component);
+    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
+        Render.array(value, mValueType, component, defaultAttributes);
     }
 
     //<<<Start:Java.ClassBody:1>>>
