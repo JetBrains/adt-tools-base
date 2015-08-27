@@ -35,6 +35,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
+import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.ProjectSourceSet;
 import org.gradle.language.base.internal.registry.LanguageRegistration;
 import org.gradle.language.base.internal.registry.LanguageRegistry;
@@ -46,6 +47,7 @@ import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
+import org.gradle.platform.base.BinarySpec;
 import org.gradle.platform.base.BinaryType;
 import org.gradle.platform.base.BinaryTypeBuilder;
 import org.gradle.platform.base.ComponentBinaries;
@@ -106,9 +108,21 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
     public static class Rules extends RuleSource {
 
         @LanguageType
-        public void registerLanguage(LanguageTypeBuilder<AndroidLanguageSourceSet> builder) {
+        public void registerAndroidLanguageSourceSet(LanguageTypeBuilder<AndroidLanguageSourceSet> builder) {
             builder.setLanguageName("android");
             builder.defaultImplementation(AndroidLanguageSourceSet.class);
+        }
+
+        @LanguageType
+        public void registerJniLibsSourceSet(LanguageTypeBuilder<JniLibsSourceSet> builder) {
+            builder.setLanguageName("jniLibs");
+            builder.defaultImplementation(JniLibsSourceSet.class);
+        }
+
+        @LanguageType
+        public void registerNativeSourceSet(LanguageTypeBuilder<NativeSourceSet> builder) {
+            builder.setLanguageName("jni");
+            builder.defaultImplementation(NativeSourceSet.class);
         }
 
         /**
@@ -244,6 +258,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 @Path("android") final AndroidConfig androidConfig,
                 @Path("android.buildTypes") final ModelMap<BuildType> buildTypes,
                 final List<ProductFlavorCombo<ProductFlavor>> flavorCombos,
+                @Path("android.sources") final AndroidComponentModelSourceSet sources,
                 final AndroidComponentSpec spec) {
             if (flavorCombos.isEmpty()) {
                 flavorCombos.add(new ProductFlavorCombo<ProductFlavor>());
@@ -258,9 +273,31 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                                     DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;
                                     binary.setBuildType(buildType);
                                     binary.setProductFlavors(flavorCombo.getFlavorList());
+
+                                    sourceBinary(binary, sources, "main");
+                                    sourceBinary(binary, sources, buildType.getName());
+                                    for (ProductFlavor flavor : flavorCombo.getFlavorList()) {
+                                        sourceBinary(binary, sources, flavor.getName());
+                                    }
+                                    if (flavorCombo.getFlavorList().size() > 1) {
+                                        sourceBinary(binary, sources, flavorCombo.getName());
+                                    }
                                 }
                             });
                 }
+            }
+        }
+
+        /**
+         * Add sources to the specified binary.
+         */
+        private static void sourceBinary(
+                BinarySpec binary,
+                AndroidComponentModelSourceSet projectSourceSet,
+                final String sourceSetName) {
+            FunctionalSourceSet sourceSet = projectSourceSet.findByName(sourceSetName);
+            if (sourceSet != null) {
+                binary.getInputs().addAll(sourceSet);
             }
         }
 
