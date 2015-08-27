@@ -16,7 +16,7 @@ import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
- * 'android' extension for 'com.android.test' project.
+ * {@code android} extension for {@code com.android.test} projects.
  */
 public class TestExtension extends BaseExtension implements TestAndroidConfig {
 

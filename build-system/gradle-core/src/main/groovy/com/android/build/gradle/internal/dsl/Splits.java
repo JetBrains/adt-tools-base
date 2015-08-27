@@ -109,7 +109,7 @@ public class Splits {
     /**
      * Returns the list of language filters used for multi-apk.
      *
-     * <>null value is allowed, indicating the need to generate an apk with all languages.
+     * <p>null value is allowed, indicating the need to generate an apk with all languages.
      *
      * @return a set of language filters.
      */

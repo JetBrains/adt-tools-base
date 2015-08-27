@@ -18,7 +18,7 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.api.AndroidSourceSet;
-import com.android.build.gradle.internal.coverage.JacocoExtension;
+import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory;
@@ -59,7 +59,7 @@ public class AndroidConfigHelper {
         model.setTestOptions(instantiator.newInstance(TestOptions.class));
         model.setCompileOptions(instantiator.newInstance(CompileOptions.class));
         model.setPackagingOptions(instantiator.newInstance(PackagingOptions.class));
-        model.setJacoco(instantiator.newInstance(JacocoExtension.class));
+        model.setJacoco(instantiator.newInstance(JacocoOptions.class));
         model.setAdbOptions(instantiator.newInstance(AdbOptions.class));
         model.setSplits(instantiator.newInstance(Splits.class, instantiator));
         model.setLibraryRequests(Lists.<LibraryRequest>newArrayList());

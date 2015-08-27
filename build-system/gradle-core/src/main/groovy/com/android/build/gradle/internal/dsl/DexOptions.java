@@ -16,9 +16,10 @@
 
 package com.android.build.gradle.internal.dsl;
 
+import com.android.annotations.Nullable;
+
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
-import com.android.annotations.Nullable;
 
 /**
  * DSL object for configuring dx options.
@@ -100,7 +101,7 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     }
 
     /**
-     * Sets the number of threads to use when running dx
+     * Number of threads to use when running dx.
      */
     @Override
     @Nullable

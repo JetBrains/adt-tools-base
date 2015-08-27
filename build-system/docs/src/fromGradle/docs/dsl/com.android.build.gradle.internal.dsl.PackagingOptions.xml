@@ -6,6 +6,7 @@
                 <tr><td>Name</td></tr>
             </thead>
             <tr><td>excludes</td></tr>
+            <tr><td>merges</td></tr>
             <tr><td>pickFirsts</td></tr>
         </table>
     </section>
@@ -16,6 +17,7 @@
                 <tr><td>Name</td></tr>
             </thead>
             <tr><td>exclude</td></tr>
+            <tr><td>merge</td></tr>
             <tr><td>pickFirst</td></tr>
         </table>
     </section>

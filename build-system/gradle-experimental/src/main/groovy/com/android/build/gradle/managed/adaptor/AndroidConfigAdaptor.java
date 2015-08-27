@@ -29,7 +29,7 @@ import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.ProductFlavorData;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
-import com.android.build.gradle.internal.coverage.JacocoExtension;
+import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
@@ -226,7 +226,7 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
     }
 
     @Override
-    public JacocoExtension getJacoco() {
+    public JacocoOptions getJacoco() {
         return model.getJacoco();
     }
 

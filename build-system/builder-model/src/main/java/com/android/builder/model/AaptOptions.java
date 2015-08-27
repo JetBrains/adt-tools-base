@@ -40,7 +40,6 @@ public interface AaptOptions {
 
     /**
      * Returns the list of additional parameters to pass.
-     * @return
      */
     List<String> getAdditionalParameters();
 }

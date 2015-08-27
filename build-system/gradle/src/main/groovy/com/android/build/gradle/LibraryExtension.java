@@ -17,7 +17,7 @@ import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
- * 'android' extension for 'com.android.library' project.
+ * {@code android} extension for {@code com.android.library} projects.
  */
 public class LibraryExtension extends TestedExtension {
 

@@ -26,7 +26,7 @@ import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.LoggingUtil;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.SourceSetSourceProviderWrapper;
-import com.android.build.gradle.internal.coverage.JacocoExtension;
+import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory;
@@ -107,7 +107,7 @@ public abstract class BaseExtension implements AndroidConfig {
     final PackagingOptions packagingOptions;
 
     /** JaCoCo options. */
-    final JacocoExtension jacoco;
+    final JacocoOptions jacoco;
 
     /**
      * APK splits options.
@@ -188,7 +188,7 @@ public abstract class BaseExtension implements AndroidConfig {
         testOptions = instantiator.newInstance(TestOptions.class);
         compileOptions = instantiator.newInstance(CompileOptions.class);
         packagingOptions = instantiator.newInstance(PackagingOptions.class);
-        jacoco = instantiator.newInstance(JacocoExtension.class);
+        jacoco = instantiator.newInstance(JacocoOptions.class);
         adbOptions = instantiator.newInstance(AdbOptions.class);
         splits = instantiator.newInstance(Splits.class, instantiator);
 
@@ -341,7 +341,7 @@ public abstract class BaseExtension implements AndroidConfig {
     }
 
     /**
-     * Configures the build types.
+     * Configures build types.
      */
     public void buildTypes(Action<? super NamedDomainObjectContainer<BuildType>> action) {
         checkWritability();
@@ -349,7 +349,7 @@ public abstract class BaseExtension implements AndroidConfig {
     }
 
     /**
-     * Configures the product flavors.
+     * Configures product flavors.
      */
     public void productFlavors(Action<? super NamedDomainObjectContainer<ProductFlavor>> action) {
         checkWritability();
@@ -357,21 +357,28 @@ public abstract class BaseExtension implements AndroidConfig {
     }
 
     /**
-     * Configures the signing configs.
+     * Configures signing configs.
      */
     public void signingConfigs(Action<? super NamedDomainObjectContainer<SigningConfig>> action) {
         checkWritability();
         action.execute(signingConfigs);
     }
 
+    /**
+     * Specifies names of flavor dimensions.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide#TOC-Multi-flavor-variants">Multi-flavor variants</a>.
+     */
     public void flavorDimensions(String... dimensions) {
         checkWritability();
         flavorDimensionList = Arrays.asList(dimensions);
     }
 
     /**
-     * Configures the source sets. Note that the Android plugin uses its own implementation of
-     * source sets, {@link AndroidSourceSet}.
+     * Configures source sets.
+     *
+     * <p>Note that the Android plugin uses its own implementation of source sets,
+     * {@link AndroidSourceSet}.
      */
     public void sourceSets(Action<NamedDomainObjectContainer<AndroidSourceSet>> action) {
         checkWritability();
@@ -388,7 +395,7 @@ public abstract class BaseExtension implements AndroidConfig {
     }
 
     /**
-     * The default configuration, inherited by all build flavors (if any are defined).
+     * The default configuration, inherited by all product flavors (if any are defined).
      */
     public void defaultConfig(Action<ProductFlavor> action) {
         checkWritability();
@@ -412,14 +419,14 @@ public abstract class BaseExtension implements AndroidConfig {
     }
 
     /**
-     * Configure lint options.
+     * Configures lint options.
      */
     public void lintOptions(Action<LintOptions> action) {
         checkWritability();
         action.execute(lintOptions);
     }
 
-    /** Configures the test options. */
+    /** Configures test options. */
     public void testOptions(Action<TestOptions> action) {
         checkWritability();
         action.execute(testOptions);
@@ -444,7 +451,7 @@ public abstract class BaseExtension implements AndroidConfig {
     /**
      * Configures JaCoCo options.
      */
-    public void jacoco(Action<JacocoExtension> action) {
+    public void jacoco(Action<JacocoOptions> action) {
         checkWritability();
         action.execute(jacoco);
     }
@@ -548,9 +555,10 @@ public abstract class BaseExtension implements AndroidConfig {
     }
 
     /**
-     * A variant filter to control which variants are excluded.
-     * <p>The filter is an {@link Action} which is passed a single object of type
-     * {@link com.android.build.gradle.internal.api.VariantFilter}. It should set the
+     * Callback to control which variants should be excluded.
+     *
+     * <p>The {@link Action} is passed a single object of type
+     * {@link com.android.build.gradle.api.VariantFilter}. It should set the
      * {@link VariantFilter#setIgnore(boolean)} flag to filter out the given variant.
      */
     @Override
@@ -570,11 +578,17 @@ public abstract class BaseExtension implements AndroidConfig {
         return resourcePrefix;
     }
 
+    /**
+     * Returns the names of flavor dimensions.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide#TOC-Multi-flavor-variants">Multi-flavor variants</a>.
+     */
     @Override
     public List<String> getFlavorDimensionList() {
         return flavorDimensionList;
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean getGeneratePureSplits() {
         return generatePureSplits;
@@ -661,10 +675,16 @@ public abstract class BaseExtension implements AndroidConfig {
         return libraryRequests;
     }
 
+    /**
+     * Returns the SDK directory used.
+     */
     public File getSdkDirectory() {
         return sdkHandler.getSdkFolder();
     }
 
+    /**
+     * ReturnS the NDK directory used.
+     */
     public File getNdkDirectory() {
         return sdkHandler.getNdkFolder();
     }
@@ -693,6 +713,10 @@ public abstract class BaseExtension implements AndroidConfig {
     boolean generatePureSplits = false;
 
     public void generatePureSplits(boolean flag) {
+        setGeneratePureSplits(flag);
+    }
+
+    public void setGeneratePureSplits(boolean flag) {
         if (flag) {
             logger.warn("Pure splits are not supported by PlayStore yet.");
         }
@@ -743,7 +767,7 @@ public abstract class BaseExtension implements AndroidConfig {
 
     /** {@inheritDoc} */
     @Override
-    public JacocoExtension getJacoco() {
+    public JacocoOptions getJacoco() {
         return jacoco;
     }
 
