@@ -17,17 +17,9 @@
  */
 package com.android.tools.rpclib.schema;
 
-import com.intellij.ui.SimpleColoredComponent;
-import com.intellij.ui.SimpleTextAttributes;
+import com.android.tools.rpclib.binary.*;
 import com.intellij.util.containers.HashMap;
 import org.jetbrains.annotations.NotNull;
-
-import com.android.tools.rpclib.binary.BinaryClass;
-import com.android.tools.rpclib.binary.BinaryID;
-import com.android.tools.rpclib.binary.BinaryObject;
-import com.android.tools.rpclib.binary.Decoder;
-import com.android.tools.rpclib.binary.Encoder;
-import com.android.tools.rpclib.binary.Namespace;
 
 import java.io.IOException;
 
@@ -57,12 +49,6 @@ public final class Map extends Type {
             map.put(mKeyType.decodeValue(d), mValueType.decodeValue(d));
         }
         return map;
-    }
-
-    @Override
-    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
-        // TODO: Customise renderer
-        component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
     }
 
     //<<<Start:Java.ClassBody:1>>>
