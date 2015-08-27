@@ -42,6 +42,8 @@ public interface TransformInput extends ScopedContent {
 
     /**
      * Returns the changed files. This is only valid if the transform is in incremental mode.
+     * TODO: change this Map<> into a List<ChangedFile> with ChangedFile containing three
+     * basic information (File, FileStatus and Folder containing all the files under consideration
      */
     @NonNull
     Map<File, FileStatus> getChangedFiles();
