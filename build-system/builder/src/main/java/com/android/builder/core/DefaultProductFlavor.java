@@ -323,8 +323,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      * <p>Test runner arguments can also be specified from the command line:
      *
      * <p><pre>
-     * INSTRUMENTATION_TEST_RUNNER_ARGS=size=medium,foo=bar ./gradlew connectedAndroidTest
-     * ./gradlew connectedAndroidTest -Pcom.android.tools.instrumentationTestRunnerArgs=size=medium,foo=bar
+     * ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.size=medium
+     * ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.foo=bar
      * </pre>
      */
     @Override
@@ -381,6 +381,12 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * Densities used when generating PNGs from vector drawables at build time. For the PNGs to be
+     * generated, minimum SDK has to be below 21.
+     *
+     * <p>See <a href="http://developer.android.com/guide/practices/screens_support.html">Supporting Multiple Screens</a>.
+     */
     @Nullable
     @Override
     public Set<String> getGeneratedDensities() {
