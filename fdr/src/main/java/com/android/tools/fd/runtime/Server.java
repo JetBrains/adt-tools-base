@@ -26,7 +26,7 @@ import static com.android.tools.fd.runtime.FileManager.CLASSES_DEX_SUFFIX;
  */
 public class Server {
     private LocalServerSocket mServerSocket;
-    private Application mApplication;
+    private final Application mApplication;
 
     public static void create(@NonNull String packageName, @NonNull Application application) {
         new Server(packageName, application);
@@ -92,7 +92,7 @@ public class Server {
     }
 
     private class SocketServerReplyThread extends Thread {
-        private LocalSocket mSocket;
+        private final LocalSocket mSocket;
 
         SocketServerReplyThread(LocalSocket socket) {
             mSocket = socket;

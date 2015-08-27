@@ -82,7 +82,6 @@ public class Restarter {
                     //        not called Looper.prepare()
                     Toast.makeText(foreground, "Restarting app to show changed resources",
                             Toast.LENGTH_SHORT).show();
-                    ;
                 } catch (Throwable ignore) {
                 }
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
@@ -102,7 +101,7 @@ public class Restarter {
                 }
             } else {
                 Toast.makeText(knownActivities.iterator().next(), "Unable to restart app",
-                        Toast.LENGTH_SHORT).show();;
+                        Toast.LENGTH_SHORT).show();
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                     Log.i(LOG_TAG, "Couldn't find any foreground activities to restart " +
                             "for resource refresh");

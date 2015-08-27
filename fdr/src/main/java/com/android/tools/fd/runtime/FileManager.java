@@ -195,6 +195,7 @@ public class FileManager {
     }
 
     /** Returns the current/active resource file, if it exists */
+    @Nullable
     public static File getExternalResourceFile() {
         File file = getResourceFile(getReadFolder());
         if (!file.exists()) {
@@ -205,7 +206,8 @@ public class FileManager {
         return file;
     }
 
-    /** Returns the list of available .dex files to be loaded, or null if nothing is present */
+    /** Returns the list of available .dex files to be loaded, possibly empty */
+    @NonNull
     public static List<String> getDexList() {
         List<String> list = new ArrayList<String>();
 
