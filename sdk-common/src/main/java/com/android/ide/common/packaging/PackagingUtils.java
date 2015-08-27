@@ -16,6 +16,8 @@
 
 package com.android.ide.common.packaging;
 
+import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -30,7 +32,7 @@ public class PackagingUtils {
      *
      * @return true if the folder is valid for packaging.
      */
-    public static boolean checkFolderForPackaging(String folderName) {
+    public static boolean checkFolderForPackaging(@NonNull String folderName) {
         return !folderName.equalsIgnoreCase("CVS") &&
                 !folderName.equalsIgnoreCase(".svn") &&
                 !folderName.equalsIgnoreCase("SCCS") &&
@@ -40,16 +42,43 @@ public class PackagingUtils {
     /**
      * Checks a file to make sure it should be packaged as standard resources.
      * @param fileName the name of the file (including extension)
+     * @param allowClassFiles whether to allow java class files
      * @return true if the file should be packaged as standard java resources.
      */
-    public static boolean checkFileForPackaging(String fileName) {
+    public static boolean checkFileForPackaging(@NonNull String fileName, boolean allowClassFiles) {
         String[] fileSegments = fileName.split("\\.");
         String fileExt = "";
         if (fileSegments.length > 1) {
             fileExt = fileSegments[fileSegments.length-1];
         }
 
-        return checkFileForPackaging(fileName, fileExt);
+        return checkFileForPackaging(fileName, fileExt, allowClassFiles);
+    }
+
+    /**
+     * Checks a file to make sure it should be packaged as standard resources.
+     * @param fileName the name of the file (including extension)
+     * @return true if the file should be packaged as standard java resources.
+     */
+    public static boolean checkFileForPackaging(@NonNull String fileName) {
+        return checkFileForPackaging(fileName, false);
+    }
+
+    /**
+     * Checks a file to make sure it should be packaged as standard resources.
+     * @param fileName the name of the file (including extension)
+     * @param extension the extension of the file (excluding '.')
+     * @param allowClassFiles whether to allow java class files
+     * @return true if the file should be packaged as standard java resources.
+     */
+    public static boolean checkFileForPackaging(
+            @NonNull String fileName,
+            @NonNull String extension,
+            boolean allowClassFiles) {
+        // ignore hidden files and backup files
+        return !(fileName.charAt(0) == '.' || fileName.charAt(fileName.length() - 1) == '~') &&
+                !isOfNonResourcesExtensions(extension, allowClassFiles) &&
+                !isNotAResourceFile(fileName);
     }
 
     /**
@@ -58,23 +87,28 @@ public class PackagingUtils {
      * @param extension the extension of the file (excluding '.')
      * @return true if the file should be packaged as standard java resources.
      */
-    public static boolean checkFileForPackaging(String fileName, String extension) {
+    public static boolean checkFileForPackaging(
+            @NonNull String fileName,
+            @NonNull String extension) {
         // ignore hidden files and backup files
         return !(fileName.charAt(0) == '.' || fileName.charAt(fileName.length() - 1) == '~') &&
-                !isOfNonResourcesExtensions(extension) &&
+                !isOfNonResourcesExtensions(extension, false) &&
                 !isNotAResourceFile(fileName);
     }
 
-    private static boolean isOfNonResourcesExtensions(String extension) {
+    private static boolean isOfNonResourcesExtensions(
+            @NonNull String extension,
+            boolean allowClassFiles) {
         for (String ext : NON_RESOURCES_EXTENSIONS) {
             if (ext.equalsIgnoreCase(extension)) {
                 return true;
             }
         }
-        return false;
+
+        return !allowClassFiles && SdkConstants.EXT_CLASS.equals(extension);
     }
 
-    private static boolean isNotAResourceFile(String fileName) {
+    private static boolean isNotAResourceFile(@NonNull String fileName) {
         for (String name : NON_RESOURCES_FILENAMES) {
             if (name.equalsIgnoreCase(fileName)) {
                 return true;
@@ -95,7 +129,6 @@ public class PackagingUtils {
                     .add("d")               // Dependency files
                     .add("java")            // Java files
                     .add("scala")           // Scala files
-                    .add("class")           // Java class files
                     .add("so")              // native .so libraries
                     .add("scc")             // VisualSourceSafe
                     .add("swp")             // vi swap file
