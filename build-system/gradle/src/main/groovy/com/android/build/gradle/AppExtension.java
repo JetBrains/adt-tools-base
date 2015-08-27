@@ -10,13 +10,14 @@ import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.builder.core.AndroidBuilder;
 
+import org.gradle.api.DomainObjectSet;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.internal.DefaultDomainObjectSet;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
- * 'android' extension for 'com.android.application' project.
+ * {@code android} extension for {@code com.android.application} projects.
  */
 public class AppExtension extends TestedExtension {
 
@@ -37,7 +38,7 @@ public class AppExtension extends TestedExtension {
      * Returns the list of Application variants. Since the collections is built after evaluation, it
      * should be used with Gradle's <code>all</code> iterator to process future items.
      */
-    public DefaultDomainObjectSet<ApplicationVariant> getApplicationVariants() {
+    public DomainObjectSet<ApplicationVariant> getApplicationVariants() {
         return applicationVariantList;
     }
 

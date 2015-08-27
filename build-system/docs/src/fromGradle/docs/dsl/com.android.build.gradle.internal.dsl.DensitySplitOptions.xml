@@ -6,6 +6,7 @@
                 <tr><td>Name</td></tr>
             </thead>
             <tr><td>compatibleScreens</td></tr>
+            <tr><td>auto</td></tr>
         </table>
     </section>
     <section>

@@ -20,7 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.api.VariantFilter;
 import com.android.build.gradle.internal.CompileOptions;
-import com.android.build.gradle.internal.coverage.JacocoExtension;
+import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
@@ -93,7 +93,7 @@ public interface AndroidConfig {
     DexOptions getDexOptions();
 
     /** JaCoCo options. */
-    JacocoExtension getJacoco();
+    JacocoOptions getJacoco();
 
     /** Lint options. */
     LintOptions getLintOptions();
