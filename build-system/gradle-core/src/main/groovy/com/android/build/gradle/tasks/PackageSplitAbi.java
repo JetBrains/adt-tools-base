@@ -140,7 +140,6 @@ public class PackageSplitAbi extends SplitRelatedTask {
                         file.getAbsolutePath(),
                         null, /* dexFolder */
                         ImmutableList.<File>of(), /* dexedLibraries */
-                        ImmutableList.<File>of(),
                         null, /* getJavaResourceDir */
                         getJniFolders(),
                         getMergingFolder(),

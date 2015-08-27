@@ -81,7 +81,7 @@ public class ProcessJavaResConfigAction implements TaskConfigAction<Sync> {
                 new Callable<File>() {
                     @Override
                     public File call() throws Exception {
-                        return new File(scope.getSourceFoldersJavaResDestinationDir(), "src");
+                        return scope.getSourceFoldersJavaResDestinationDir();
                     }
                 });
     }

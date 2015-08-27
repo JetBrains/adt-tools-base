@@ -15,7 +15,8 @@
  */
 
 package com.android.build.gradle.internal.tasks.multidex
-import com.android.build.gradle.internal.PostCompilationData
+
+import com.android.annotations.NonNull
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
@@ -117,11 +118,9 @@ class CreateManifestKeepList extends DefaultAndroidTask {
     public static class ConfigAction implements TaskConfigAction<CreateManifestKeepList> {
 
         VariantScope scope;
-        PostCompilationData pcData;
 
-        ConfigAction(VariantScope scope, PostCompilationData pcData) {
+        ConfigAction(@NonNull VariantScope scope) {
             this.scope = scope
-            this.pcData = pcData
         }
 
         @Override
@@ -147,9 +146,6 @@ class CreateManifestKeepList extends DefaultAndroidTask {
 
             manifestKeepListTask.proguardFile = scope.variantConfiguration.getMultiDexKeepProguard()
             manifestKeepListTask.outputFile = scope.getManifestKeepListFile();
-
-            //variant.ext.collectMultiDexComponents = manifestKeepListTask
         }
     }
-
 }

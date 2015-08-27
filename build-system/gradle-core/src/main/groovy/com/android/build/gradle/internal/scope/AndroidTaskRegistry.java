@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.scope;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.TaskFactory;
 
 import org.gradle.api.Action;
@@ -33,12 +34,13 @@ import groovy.lang.Closure;
  */
 public class AndroidTaskRegistry {
 
+    @NonNull
     private final Map<String, AndroidTask> tasks = new HashMap<String, AndroidTask>();
 
     public synchronized < T extends Task> AndroidTask<T> create(
-            TaskFactory taskFactory,
-            String taskName,
-            Class<T> taskClass,
+            @NonNull TaskFactory taskFactory,
+            @NonNull String taskName,
+            @NonNull Class<T> taskClass,
             Action<T> configAction) {
 
         taskFactory.create(taskName, taskClass, configAction);

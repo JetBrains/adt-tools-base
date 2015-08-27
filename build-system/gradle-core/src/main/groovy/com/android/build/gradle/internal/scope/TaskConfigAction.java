@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.scope;
 
+import com.android.annotations.NonNull;
+
 import org.gradle.api.Action;
 
 /**
@@ -26,10 +28,12 @@ public interface TaskConfigAction<T> extends Action<T> {
     /**
      * Return the name of the task to be configured.
      */
+    @NonNull
     String getName();
 
     /**
      * Return the class type of the task to be configured.
      */
+    @NonNull
     Class<T> getType();
 }

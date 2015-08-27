@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.tasks;
 
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
-
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
@@ -52,7 +50,6 @@ public class IncrementalSupportDex extends BaseTask {
 
     private File inputFolder;
     private File outputFolder;
-    private File tmpFolder;
 
     @Nested
     DexOptions dexOptions;
@@ -111,7 +108,6 @@ public class IncrementalSupportDex extends BaseTask {
             return;
         }
         inputFiles.add(classesJar);
-        tmpFolder.mkdirs();
 
         getBuilder().convertByteCode(inputFiles.build(),
                 ImmutableList.<File>of() /* inputLibraries */,
@@ -120,7 +116,6 @@ public class IncrementalSupportDex extends BaseTask {
                 null /*getMainDexListFile */,
                 dexOptions,
                 ImmutableList.<String>of() /* getAdditionalParameters */,
-                tmpFolder,
                 false /* incremental */,
                 true /* optimize */,
                 new LoggedProcessOutputHandler(getILogger()));
@@ -200,10 +195,6 @@ public class IncrementalSupportDex extends BaseTask {
                     scope.getVariantData().getVariantConfiguration().getFullName());
 
             incrementalSupportDex.dexOptions = scope.getGlobalScope().getExtension().getDexOptions();
-            incrementalSupportDex.tmpFolder = new File(
-                    String.valueOf(scope.getGlobalScope().getBuildDir()) + "/" + FD_INTERMEDIATES
-                            + "/tmp/dex/"
-                            + scope.getVariantData().getVariantConfiguration().getDirName());
         }
     }
 
