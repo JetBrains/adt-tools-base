@@ -19,40 +19,53 @@ package com.android.build.gradle.integration.component
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestApp
+import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
-import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 
 /**
  * Basic tests for NdkStandalone plugin.
  */
 @CompileStatic
 class NdkStandaloneSoTest {
-    static AndroidTestApp nativeLib = new EmptyAndroidTestApp();
+    static MultiModuleTestProject base = new MultiModuleTestProject(
+            app: new EmptyAndroidTestApp("com.example.app"), lib: new EmptyAndroidTestApp())
+
     static {
-        nativeLib.addFile(new TestSourceFile("src/main/jni/", "hello.c", """
+        AndroidTestApp app = (AndroidTestApp) base.getSubproject("app")
+        app.addFile(new TestSourceFile("", "build.gradle", """
+apply plugin: "com.android.model.application"
+
+model {
+    android {
+        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+    }
+    android.sources {
+        main {
+            jniLibs {
+                dependencies {
+                    project ":lib" buildType "debug"
+                }
+            }
+        }
+    }
+}
+"""))
+
+        AndroidTestApp lib = (AndroidTestApp) base.getSubproject("lib")
+        lib.addFile(new TestSourceFile("src/main/jni/", "hello.c", """
 char* hello() {
     return "hello world!";
 }
 """))
-
-    }
-
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(nativeLib)
-            .forExpermimentalPlugin(true)
-            .create()
-
-
-    @BeforeClass
-    static void setUp() {
-        project.buildFile << """
+        lib.addFile(new TestSourceFile("", "build.gradle", """
 apply plugin: "com.android.model.native"
 
 model {
@@ -60,23 +73,45 @@ model {
         compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
     }
     android.ndk {
-        moduleName = "hello-world"
+        moduleName = "hello-jni"
     }
 }
-"""
-        project.execute("clean", "assembleDebug");
+"""))
     }
+
+    @ClassRule
+    static public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(base)
+            .forExpermimentalPlugin(true)
+            .create()
 
     @AfterClass
     static void cleanUp() {
         project = null
-        nativeLib = null
+        base = null
     }
 
     @Test
-    void "check file is compiled"() {
-        assertThat(project.file("build/outputs/native/debug/lib/x86/libhello-world.so")).exists();
-        assertThat(project.file("build/outputs/native/debug/lib/x86/gdbserver")).exists();
-        assertThat(project.file("build/outputs/native/debug/lib/x86/gdb.setup")).exists();
+    void "check standalone lib properly creates library"() {
+        project.execute("clean", ":lib:assembleDebug");
+
+        GradleTestProject lib = project.getSubproject("lib")
+        assertThat(lib.file("build/outputs/native/debug/lib/x86/libhello-jni.so")).exists();
+        assertThat(lib.file("build/outputs/native/debug/lib/x86/gdbserver")).exists();
+        assertThat(lib.file("build/outputs/native/debug/lib/x86/gdb.setup")).exists();
+    }
+
+    @Test
+    void "check app contains compiled .so"() {
+        project.execute("clean", ":app:assembleRelease");
+
+        GradleTestProject lib = project.getSubproject("lib")
+        assertThat(lib.file("build/intermediates/binaries/debug/lib/x86/libhello-jni.so")).exists();
+
+        // Check that release lib is not compiled.
+        assertThat(lib.file("build/intermediates/binaries/release/lib/x86/libhello-jni.so")).doesNotExist();
+
+        File apk = project.getSubproject("app").getApk("release", "unsigned")
+        assertThatZip(apk).contains("lib/x86/libhello-jni.so");
     }
 }
