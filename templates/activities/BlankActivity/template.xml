@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <template
     format="3"
-    revision="4"
+    revision="5"
     name="Blank Activity"
     minApi="7"
     minBuildApi="14"
-    description="Creates a new blank activity with an action bar.">
+    description="Creates a new blank activity with an app bar.">
 
     <category value="Activity" />
     <formfactor value="Mobile" />
@@ -43,6 +43,7 @@
         type="string"
         constraints="layout|unique|nonempty"
         suggest="menu_${classToResource(activityClass)}"
+        visibility="isNewProject!false"
         default="menu_main"
         help="The name of the resource file to create for the menu items" />
 
@@ -52,6 +53,24 @@
         type="boolean"
         default="false"
         help="If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher" />
+
+    <parameter
+        id="hasAppBarSelected"
+        name="Include App Bar"
+        type="boolean"
+        visibility="appCompatActivity!false"
+        default="true"
+        help="If true, the layout will include a Material Design App Bar." />
+
+    <parameter
+        id="appBarLayoutName"
+        name="App Bar Layout Name"
+        type="string"
+        constraints="layout|unique"
+        suggest="${layoutName}_app_bar"
+        default="activity_main_app_bar"
+        visibility="false"
+        help="The name of the App Bar layout to create for the activity" />
 
     <parameter
         id="parentActivityClass"
