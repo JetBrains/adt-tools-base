@@ -31,6 +31,12 @@ import com.android.tools.rpclib.binary.Namespace;
 import java.io.IOException;
 
 public final class Array extends Type {
+    @NotNull
+    @Override
+    public String getName() {
+        return "array<" + mValueType.getName() + ">";
+    }
+
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
         assert(value instanceof Object[]);
@@ -50,8 +56,8 @@ public final class Array extends Type {
     }
 
     @Override
-    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
-        renderArray(value, mValueType, component);
+    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
+        Render.array(value, mValueType, component, defaultAttributes);
     }
 
     //<<<Start:Java.ClassBody:1>>>

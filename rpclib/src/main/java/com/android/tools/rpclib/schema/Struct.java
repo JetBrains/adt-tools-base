@@ -49,8 +49,8 @@ public final class Struct extends Type {
     }
 
     @Override
-    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
-        renderObject(value, component);
+    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
+        Render.object(value, component, defaultAttributes);
     }
 
     //<<<Start:Java.ClassBody:1>>>
@@ -61,6 +61,8 @@ public final class Struct extends Type {
     public Struct() {}
 
 
+    @NotNull
+    @Override
     public String getName() {
         return mName;
     }

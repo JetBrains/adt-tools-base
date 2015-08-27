@@ -17,6 +17,8 @@
  */
 package com.android.tools.rpclib.schema;
 
+import com.intellij.ui.SimpleColoredComponent;
+import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
@@ -28,7 +30,19 @@ import com.android.tools.rpclib.binary.Namespace;
 
 import java.io.IOException;
 
-public final class Field implements BinaryObject {
+public final class Field implements BinaryObject, Render.ToComponent {
+    @Override
+    public void render(@NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
+        component.append(getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+    }
+
+    public String getName() {
+        if (mDeclared.length() == 0) {
+            return mType.getName();
+        }
+        return mDeclared;
+    }
+
     //<<<Start:Java.ClassBody:1>>>
     private String mDeclared;
     private Type mType;

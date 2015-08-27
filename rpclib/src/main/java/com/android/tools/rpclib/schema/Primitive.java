@@ -91,7 +91,7 @@ public final class Primitive extends Type {
     }
 
     @Override
-    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component) {
+    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
         ConstantSet constants = ConstantSet.lookup(this);
         if (constants != null) {
             for (Constant constant : constants.getEntries()) {
