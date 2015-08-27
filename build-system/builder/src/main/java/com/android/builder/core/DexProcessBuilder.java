@@ -54,6 +54,7 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     private boolean mIncremental = false;
     private boolean mNoOptimize = false;
     private boolean mMultiDex = false;
+    private boolean mNoStrict = false;
     private File mMainDexList = null;
     private Set<File> mInputs = Sets.newHashSet();
     private File mTempInputFolder = null;
@@ -90,6 +91,12 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     @NonNull
     public DexProcessBuilder setMainDexList(File mainDexList) {
         mMainDexList = mainDexList;
+        return this;
+    }
+
+    @NonNull
+    public DexProcessBuilder setNoStrict(boolean noStrict) {
+        mNoStrict = noStrict;
         return this;
     }
 
@@ -169,6 +176,10 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
 
         if (mNoOptimize) {
             builder.addArgs("--no-optimize");
+        }
+
+        if (mNoStrict) {
+            builder.addArgs("--no-strict");
         }
 
         // only change thread count is build tools is 22.0.2+

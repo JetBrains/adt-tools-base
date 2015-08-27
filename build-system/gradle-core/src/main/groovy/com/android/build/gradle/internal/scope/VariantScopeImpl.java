@@ -24,11 +24,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
+import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.FileSupplier;
-import com.android.build.gradle.internal.tasks.MergeJavaResourcesTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -41,7 +41,6 @@ import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
-import com.android.build.gradle.tasks.JavaResourcesProvider;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
@@ -79,7 +78,8 @@ public class VariantScopeImpl implements VariantScope {
     private GlobalScope globalScope;
     @NonNull
     private BaseVariantData<? extends BaseVariantOutputData> variantData;
-
+    @NonNull
+    private TransformManager transformManager;
     @Nullable
     private Collection<Object> ndkBuildable;
     @Nullable
@@ -119,8 +119,7 @@ public class VariantScopeImpl implements VariantScope {
     private AndroidTask jacocoIntrumentTask;
 
     private AndroidTask<Sync> processJavaResourcesTask;
-    private AndroidTask<MergeJavaResourcesTask> mergeJavaResourcesTask;
-    private JavaResourcesProvider javaResourcesProvider;
+    private AndroidTask<TransformTask> mergeJavaResourcesTask;
     private AndroidTask<NdkCompile> ndkCompileTask;
 
     /** @see BaseVariantData#javaCompilerTask */
@@ -135,7 +134,6 @@ public class VariantScopeImpl implements VariantScope {
 
     // empty anchor compile task to set all compilations tasks as dependents.
     private AndroidTask<Task> compileTask;
-    private AndroidTask<JacocoInstrumentTask> jacocoInstrumentTask;
 
     /**
      * This is an instance of {@link JacocoReportTask} in android test variants, an umbrella
@@ -154,8 +152,10 @@ public class VariantScopeImpl implements VariantScope {
 
     public VariantScopeImpl(
             @NonNull GlobalScope globalScope,
+            @NonNull TransformManager transformManager,
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         this.globalScope = globalScope;
+        this.transformManager = transformManager;
         this.variantData = variantData;
     }
 
@@ -175,6 +175,12 @@ public class VariantScopeImpl implements VariantScope {
     @NonNull
     public GradleVariantConfiguration getVariantConfiguration() {
         return variantData.getVariantConfiguration();
+    }
+
+    @NonNull
+    @Override
+    public TransformManager getTransformManager() {
+        return transformManager;
     }
 
     @Override
@@ -807,7 +813,8 @@ public class VariantScopeImpl implements VariantScope {
     }
 
     @Override
-    public void setMergeJavaResourcesTask(AndroidTask<MergeJavaResourcesTask> mergeJavaResourcesTask) {
+    public void setMergeJavaResourcesTask(
+            AndroidTask<TransformTask> mergeJavaResourcesTask) {
         this.mergeJavaResourcesTask = mergeJavaResourcesTask;
     }
 
@@ -817,24 +824,8 @@ public class VariantScopeImpl implements VariantScope {
      * @return the task merging resources.
      */
     @Override
-    public AndroidTask<MergeJavaResourcesTask> getMergeJavaResourcesTask() {
+    public AndroidTask<TransformTask> getMergeJavaResourcesTask() {
         return mergeJavaResourcesTask;
-    }
-
-    @Override
-    public void setJavaResourcesProvider(JavaResourcesProvider javaResourcesProvider) {
-        this.javaResourcesProvider = javaResourcesProvider;
-    }
-
-    /**
-     * Returns the {@link JavaResourcesProvider} responsible for providing final merged and possibly
-     * obfuscated java resources for inclusion in the final APK. The provider might change during
-     * the variant build process.
-     * @return the java resources provider.
-     */
-    @Override
-    public JavaResourcesProvider getJavaResourcesProvider() {
-        return javaResourcesProvider;
     }
 
     @Override

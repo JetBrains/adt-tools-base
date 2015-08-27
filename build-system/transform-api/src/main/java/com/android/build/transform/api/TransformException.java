@@ -27,4 +27,8 @@ public class TransformException extends Exception {
     public TransformException(Throwable throwable) {
         super(throwable);
     }
+
+    public TransformException(String s) {
+        super(s);
+    }
 }

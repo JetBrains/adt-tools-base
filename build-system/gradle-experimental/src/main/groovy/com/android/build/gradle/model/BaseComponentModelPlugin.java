@@ -35,11 +35,13 @@ import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
+import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
 import com.android.build.gradle.internal.tasks.SigningReportTask;
+import com.android.build.gradle.internal.transforms.PreDexTransform;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
@@ -52,7 +54,6 @@ import com.android.build.gradle.managed.adaptor.AndroidConfigAdaptor;
 import com.android.build.gradle.managed.adaptor.BuildTypeAdaptor;
 import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor;
 import com.android.build.gradle.tasks.JillTask;
-import com.android.build.gradle.tasks.PreDex;
 import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.internal.compiler.JackConversionCache;
@@ -285,11 +286,13 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             project.getGradle().getTaskGraph().whenReady(new Closure<Void>(this, this) {
                 public void doCall(TaskExecutionGraph taskGraph) {
                     for (Task task : taskGraph.getAllTasks()) {
-                        if (task instanceof PreDex) {
-                            PreDexCache.getCache().load(project.getRootProject()
-                                    .file(String.valueOf(project.getRootProject().getBuildDir())
-                                            + "/" + FD_INTERMEDIATES + "/dex-cache/cache.xml"));
-                            break;
+                        if (task instanceof TransformTask) {
+                            if (((TransformTask) task).getTransform() instanceof PreDexTransform) {
+                                PreDexCache.getCache().load(project.getRootProject()
+                                        .file(String.valueOf(project.getRootProject().getBuildDir())
+                                                + "/" + FD_INTERMEDIATES + "/dex-cache/cache.xml"));
+                                break;
+                            }
                         } else if (task instanceof JillTask) {
                             JackConversionCache.getCache().load(project.getRootProject()
                                     .file(String.valueOf(project.getRootProject().getBuildDir())

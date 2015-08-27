@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.internal.coverage
+
 import com.android.build.gradle.internal.PostCompilationData
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction

@@ -18,8 +18,10 @@ package com.android.build.gradle.internal;
 
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
 import static com.android.SdkConstants.LIBS_FOLDER;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.android.build.transform.api.ScopedContent.Scope.PROJECT;
+import static com.android.build.transform.api.ScopedContent.Scope.PROJECT_LOCAL_DEPS;
+import static com.android.build.transform.api.ScopedContent.ContentType.CLASSES;
+import static com.android.build.transform.api.ScopedContent.ContentType.RESOURCES;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -27,6 +29,8 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
+import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -38,6 +42,9 @@ import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.VariantHelper;
 import com.android.build.gradle.tasks.ExtractAnnotations;
 import com.android.build.gradle.tasks.MergeResources;
+import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.ScopedContent.ContentType;
+import com.android.build.transform.api.ScopedContent.Scope;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.dependency.LibraryBundle;
@@ -48,6 +55,8 @@ import com.android.builder.model.MavenCoordinates;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
 import org.gradle.api.Project;
@@ -58,14 +67,15 @@ import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.bundling.Zip;
+import org.gradle.api.tasks.bundling.ZipEntryCompression;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.tooling.BuildException;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -93,13 +103,16 @@ public class LibraryTaskManager extends TaskManager {
             @NonNull final BaseVariantData<? extends BaseVariantOutputData> variantData) {
         final LibraryVariantData libVariantData = (LibraryVariantData) variantData;
         final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
-        CoreBuildType buildType = variantConfig.getBuildType();
+        final CoreBuildType buildType = variantConfig.getBuildType();
 
         final VariantScope variantScope = variantData.getScope();
 
         final String dirName = variantConfig.getDirName();
 
         createAnchorTasks(tasks, variantScope);
+
+        // Create all current streams (dependencies mostly at this point)
+        createDependencyStreams(variantScope);
 
         createCheckManifestTask(tasks, variantScope);
 
@@ -333,65 +346,48 @@ public class LibraryTaskManager extends TaskManager {
 
         final boolean instrumented = variantConfig.getBuildType().isTestCoverageEnabled();
 
-        // data holding dependencies and input for the dex. This gets updated as new
-        // post-compilation steps are inserted between the compilation and dx.
-        final PostCompilationData pcDataTemp = new PostCompilationData();
-
-        final PostCompilationData pcData = ThreadRecorder.get().record(
+        ThreadRecorder.get().record(
                 ExecutionType.LIB_TASK_MANAGER_CREATE_POST_COMPILATION_TASK,
-                new Recorder.Block<PostCompilationData>() {
+                new Recorder.Block<Void>() {
                     @Override
-                    public PostCompilationData call() throws Exception {
-                        pcDataTemp.setClassGeneratingTasks(Collections.singletonList(
-                                variantScope.getJavacTask().getName()));
-                        pcDataTemp.setLibraryGeneratingTasks(Collections.singletonList(
-                                variantData.getVariantDependency().getPackageConfiguration()
-                                        .getBuildDependencies()));
-                        pcDataTemp.setInputFilesCallable(new Callable<List<File>>() {
-                            @Override
-                            public List<File> call() throws Exception {
-                                return new ArrayList<File>(
-                                        variantData.javacTask.getOutputs().getFiles().getFiles());
+                    public Void call() throws Exception {
+                        if (instrumented) {
+                            createJacocoTransform(tasks, variantScope);
+                        }
+
+                        Set<Scope> jarScopes;
+
+                        if (buildType.isMinifyEnabled()) {
+                            createProguardTransform(tasks, variantScope, false);
+                            jarScopes = Sets.immutableEnumSet(PROJECT, PROJECT_LOCAL_DEPS);
+
+                        } else {
+                            jarScopes = Sets.immutableEnumSet(PROJECT);
+
+                            Sync packageLocalJar = project.getTasks().create(
+                                    variantScope.getTaskName(
+                                            "package",
+                                            "LocalJar"),
+                                            Sync.class);
+
+                            // get the local dependencies, which will include jacoco if needed.
+                            ImmutableList<TransformStream> localDeps = variantScope.getTransformManager()
+                                    .getStreams(
+                                            new TransformManager.StreamFilter() {
+                                                @Override
+                                                public boolean accept(
+                                                        @NonNull Set<ContentType> types,
+                                                        @NonNull Set<Scope> scopes) {
+                                                    return scopes.contains(PROJECT_LOCAL_DEPS) &&
+                                                            types.contains(CLASSES);
+                                                }
+                                            });
+
+                            for (TransformStream stream : localDeps) {
+                                packageLocalJar.from(stream.getFiles().get());
+                                packageLocalJar.dependsOn(stream.getDependencies());
                             }
 
-                        });
-                        pcDataTemp.setInputDir(variantScope.getJavaOutputDir());
-                        pcDataTemp.setInputLibraries(Collections.<File>emptyList());
-
-                        // if needed, instrument the code
-                        if (instrumented) {
-                            return createJacocoTask(tasks, variantScope, pcDataTemp);
-                        }
-                        return pcDataTemp;
-                    }
-                });
-        checkState(pcData != null);
-
-        if (buildType.isMinifyEnabled()) {
-            // run proguard on output of compile task
-            ThreadRecorder.get().record(
-                    ExecutionType.LIB_TASK_MANAGER_CREATE_PROGUARD_TASK,
-                    new Recorder.Block<Void>() {
-                        @Override
-                        public Void call() throws Exception {
-                            File outFile = maybeCreateProguardTasks(tasks, variantScope,
-                                    pcData);
-                            checkNotNull(outFile);
-                            pcData.setInputFiles(Collections.singletonList(outFile));
-                            pcData.setInputDirCallable(null);
-                            pcData.setInputLibraries(Collections.<File>emptyList());
-                            return null;
-                        }
-                    });
-        } else {
-            // package the local jar in libs/
-            ThreadRecorder.get().record(
-                    ExecutionType.LIB_TASK_MANAGER_CREATE_PACKAGE_LOCAL_JAR,
-                    new Recorder.Block<Void>() {
-                        @Override
-                        public Void call() throws Exception {
-                            Sync packageLocalJar = project.getTasks().create(
-                                    variantScope.getTaskName("package", "LocalJar"), Sync.class);
                             packageLocalJar.from(
                                     DependencyManager
                                             .getPackagedLocalJarFileList(
@@ -400,63 +396,68 @@ public class LibraryTaskManager extends TaskManager {
                             packageLocalJar.into(new File(
                                     variantScope.getGlobalScope().getIntermediatesDir(),
                                     DIR_BUNDLES + "/" + dirName + "/" + LIBS_FOLDER));
-
-                            // add the input libraries. This is only going to be the agent jar if applicable
-                            // due to how inputLibraries is initialized.
-                            // TODO: clean this.
-                            packageLocalJar.from(pcData.getInputLibrariesCallable());
-                            TaskManager.optionalDependsOn(
-                                    packageLocalJar,
-                                    pcData.getLibraryGeneratingTasks());
-                            pcData.setLibraryGeneratingTasks(
-                                    Collections.singletonList(packageLocalJar));
-
-                            // jar the classes.
-                            Jar jar = project.getTasks().create(
-                                    variantScope.getTaskName("package", "Jar"), Jar.class);
-                            jar.dependsOn(variantScope.getMergeJavaResourcesTask().getName());
-
-                            // add the class files (whether they are instrumented or not.
-                            jar.from(pcData.getInputDirCallable());
-                            TaskManager.optionalDependsOn(jar, pcData.getClassGeneratingTasks());
-                            pcData.setClassGeneratingTasks(Collections.singletonList(jar));
-
-                            jar.from(variantScope.getJavaResourcesDestinationDir());
-
-                            jar.setDestinationDir(new File(
-                                    variantScope.getGlobalScope().getIntermediatesDir(),
-                                    DIR_BUNDLES + "/" + dirName));
-                            jar.setArchiveName("classes.jar");
-
-                            String packageName = variantConfig.getPackageFromManifest();
-                            if (packageName == null) {
-                                throw new BuildException("Failed to read manifest", null);
-                            }
-
-                            packageName = packageName.replace(".", "/");
-
-                            jar.exclude(packageName + "/R.class");
-                            jar.exclude(packageName + "/R$*.class");
-                            if (!getExtension().getPackageBuildConfig()) {
-                                jar.exclude(packageName + "/Manifest.class");
-                                jar.exclude(packageName + "/Manifest$*.class");
-                                jar.exclude(packageName + "/BuildConfig.class");
-                            }
-
-                            if (libVariantData.generateAnnotationsTask != null) {
-                                // In case extract annotations strips out private typedef annotation classes
-                                jar.dependsOn(libVariantData.generateAnnotationsTask);
-                            }
-                            return null;
+                            bundle.dependsOn(packageLocalJar);
                         }
-                    });
-        }
+
+                        final Set<Scope> fJarScopes = jarScopes;
+
+                        // jar the compiled code and resources.
+                        ImmutableList<TransformStream> projectClassStreams = variantScope.getTransformManager()
+                                .getStreams(
+                                        new TransformManager.StreamFilter() {
+                                            @Override
+                                            public boolean accept(
+                                                    @NonNull Set<ContentType> types,
+                                                    @NonNull Set<Scope> scopes) {
+                                                return scopes.equals(fJarScopes) &&
+                                                        (types.contains(CLASSES) ||
+                                                                types.contains(RESOURCES));
+                                            }
+                                        });
+
+                        Jar jar = project.getTasks().create(
+                                variantScope.getTaskName("package", "Jar"), Jar.class);
+                        jar.setEntryCompression(ZipEntryCompression.STORED);
+
+                        for (TransformStream stream : projectClassStreams) {
+                            jar.from(stream.getFiles().get());
+                            jar.dependsOn(stream.getDependencies());
+                        }
+
+                        jar.setDestinationDir(new File(
+                                variantScope.getGlobalScope().getIntermediatesDir(),
+                                DIR_BUNDLES + "/" + dirName));
+                        jar.setArchiveName("classes.jar");
+
+                        String packageName = variantConfig.getPackageFromManifest();
+                        if (packageName == null) {
+                            throw new BuildException("Failed to read manifest", null);
+                        }
+
+                        packageName = packageName.replace(".", "/");
+
+                        jar.exclude(packageName + "/R.class");
+                        jar.exclude(packageName + "/R$*.class");
+                        if (!getExtension().getPackageBuildConfig()) {
+                            jar.exclude(packageName + "/Manifest.class");
+                            jar.exclude(packageName + "/Manifest$*.class");
+                            jar.exclude(packageName + "/BuildConfig.class");
+                        }
+
+                        if (libVariantData.generateAnnotationsTask != null) {
+                            // In case extract annotations strips out private typedef annotation classes
+                            jar.dependsOn(libVariantData.generateAnnotationsTask);
+                        }
+
+                        bundle.dependsOn(jar);
+
+                        return null;
+                    }
+                });
 
         bundle.dependsOn(packageRes.getName(), packageRenderscript, lintCopy, packageJniLibs,
                 mergeProGuardFileTask);
         bundle.dependsOn(variantScope.getNdkBuildable());
-        TaskManager.optionalDependsOn(bundle, pcData.getClassGeneratingTasks());
-        TaskManager.optionalDependsOn(bundle, pcData.getLibraryGeneratingTasks());
 
         bundle.setDescription("Assembles a bundle containing the library in " +
                 variantConfig.getFullName() + ".");
@@ -562,6 +563,46 @@ public class LibraryTaskManager extends TaskManager {
                 });
     }
 
+    @NonNull
+    @Override
+    protected Set<Scope> computePreDexScopes(@NonNull VariantScope variantScope) {
+        if (variantScope.getTestedVariantData() != null) {
+            // if it's the test app for a library, behave like an app rather than a library.
+            return ApplicationTaskManager.computePreDexScopes(variantScope, getExtension().getDexOptions());
+        }
+        return Sets.immutableEnumSet(EnumSet.noneOf(Scope.class));
+    }
+
+    @NonNull
+    @Override
+    protected Set<Scope> computeExtractResAndJavaFromJarScopes(
+            @NonNull VariantScope variantScope) {
+        if (variantScope.getTestedVariantData() != null) {
+            // if it's the test app for a library, behave like an app rather than a library.
+            ApplicationTaskManager.computeExtractResAndJavaFromJarScopes2(variantScope);
+        }
+
+        // if the variant is minified then we need to extract both the res and java to
+        // run this through proguard.
+        if (variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
+            return Sets.immutableEnumSet(PROJECT_LOCAL_DEPS);
+        }
+
+        return Sets.immutableEnumSet(EnumSet.noneOf(Scope.class));
+    }
+
+    @NonNull
+    @Override
+    protected Set<Scope> computeExtractResFromJarScopes(@NonNull VariantScope variantScope) {
+        if (variantScope.getTestedVariantData() != null) {
+            // if it's the test app for a library, behave like an app rather than a library.
+            return ApplicationTaskManager.computeExtractResFromJarScopes(variantScope, this);
+        }
+
+        // never need to only extract the res.
+        return Sets.immutableEnumSet(EnumSet.noneOf(Scope.class));
+    }
+
     public ExtractAnnotations createExtractAnnotations(
             final Project project,
             final BaseVariantData variantData) {
@@ -607,7 +648,9 @@ public class LibraryTaskManager extends TaskManager {
         });
 
         return task;
+
     }
+
 
     private Task getAssembleDefault() {
         if (assembleDefault == null) {

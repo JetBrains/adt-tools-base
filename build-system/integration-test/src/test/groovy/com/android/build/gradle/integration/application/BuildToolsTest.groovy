@@ -40,7 +40,7 @@ class BuildToolsTest {
     private static final Pattern UP_TO_DATE_PATTERN = ~/:(\S+)\s+UP-TO-DATE/
 
     private static final Pattern INPUT_CHANGED_PATTERN =
-            ~/Value of input property 'buildToolsVersion' has changed for task ':(\S+)'/
+            ~/Value of input property '.*' has changed for task ':(\S+)'/
 
     private static final String[] COMMON_TASKS = [
             "compileDebugAidl", "compileDebugRenderscript",
@@ -50,7 +50,7 @@ class BuildToolsTest {
     ]
 
     private static final List<String> JAVAC_TASKS = ImmutableList.builder().add(COMMON_TASKS)
-            .add("preDexDebug").add("dexDebug").add("preDexRelease").add("dexRelease").build()
+            .add("transformClassesWithPredexForDebug").add("dexDebug").add("transformClassesWithPredexForRelease").add("dexRelease").build()
     private static final List<String> JACK_TASKS = ImmutableList.builder().add(COMMON_TASKS)
             .add("jillDebugRuntimeLibraries").add("jillDebugPackagedLibraries")
             .add("jillReleaseRuntimeLibraries").add("jillReleasePackagedLibraries").build()

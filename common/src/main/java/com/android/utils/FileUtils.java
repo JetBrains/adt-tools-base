@@ -72,8 +72,7 @@ public class FileUtils {
     }
 
     public static void mkdirs(@NonNull File folder) {
-        if (!folder.exists() &&
-                !folder.mkdirs()) {
+        if (!folder.exists() && !folder.mkdirs()) {
             throw new RuntimeException("Cannot create directory " + folder);
         }
     }

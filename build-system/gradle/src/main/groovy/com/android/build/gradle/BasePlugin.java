@@ -43,13 +43,14 @@ import com.android.build.gradle.internal.dsl.ProductFlavorFactory;
 import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.dsl.SigningConfigFactory;
 import com.android.build.gradle.internal.model.ModelBuilder;
+import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
+import com.android.build.gradle.internal.transforms.PreDexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.tasks.JillTask;
-import com.android.build.gradle.tasks.PreDex;
 import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
@@ -403,11 +404,13 @@ public abstract class BasePlugin {
                     @Override
                     public void graphPopulated(TaskExecutionGraph taskGraph) {
                         for (Task task : taskGraph.getAllTasks()) {
-                            if (task instanceof PreDex) {
-                                PreDexCache.getCache().load(
-                                        new File(project.getRootProject().getBuildDir(),
-                                                FD_INTERMEDIATES + "/dex-cache/cache.xml"));
-                                break;
+                            if (task instanceof TransformTask) {
+                                if (((TransformTask) task).getTransform() instanceof PreDexTransform) {
+                                    PreDexCache.getCache().load(
+                                            new File(project.getRootProject().getBuildDir(),
+                                                    FD_INTERMEDIATES + "/dex-cache/cache.xml"));
+                                    break;
+                                }
                             } else if (task instanceof JillTask) {
                                 JackConversionCache.getCache().load(
                                         new File(project.getRootProject().getBuildDir(),

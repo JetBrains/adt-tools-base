@@ -57,7 +57,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import proguard.ClassPath;
-import proguard.ClassPathEntry;
 import proguard.ParseException;
 
 /**

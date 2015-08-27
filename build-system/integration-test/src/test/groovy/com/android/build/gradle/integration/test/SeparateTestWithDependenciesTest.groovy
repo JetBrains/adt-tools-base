@@ -14,23 +14,14 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.test;
+package com.android.build.gradle.integration.test
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
-
-import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.builder.model.AndroidProject;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import java.io.File;
-import java.util.Map;
-
-import groovy.transform.CompileStatic;
-
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
  * Test separate test module that tests an application with some complicated dependencies :
  *  - the app imports a library importing a jar file itself.
@@ -49,7 +40,7 @@ public class SeparateTestWithDependenciesTest {
         project.execute("clean", "assemble")
     }
     @Test
-    void "check app contains all dependent clases"() {
+    void "check app contains all dependent classes"() {
         project.execute("clean", "assemble")
         File apk = project.getSubproject('app').getApk("debug")
         assertThatApk(apk).containsClass("Lcom/android/tests/jarDep/JarDependencyUtil;")

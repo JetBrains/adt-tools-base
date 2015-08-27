@@ -87,7 +87,7 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
     @Override
     @NonNull
     public Collection<File> getApkLibraries() {
-        return androidBuilder.getPackagedJars(getVariantData().getVariantConfiguration());
+        return androidBuilder.getAllPackagedJars(getVariantData().getVariantConfiguration());
     }
 
     @Override

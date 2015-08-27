@@ -38,6 +38,7 @@ import com.android.utils.FileUtils;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -268,6 +269,40 @@ public class TransformManager {
         }
 
         return streamsByType.build();
+    }
+
+    /**
+     * Returns a single file that is the output of the pipeline for the scope/content indicated
+     * via the {@link StreamFilter}.
+     *
+     * An optional {@link Format} indicate what the format of the output should be like.
+     *
+     * This will throw an exception if there is more than one matching Stream or if
+     * the stream has more than one files.
+     *
+     * @param streamFilter the filter
+     * @param requiredFormat an optional format
+     * @return the file or null if there's no match (no stream or wrong format)
+     */
+    @Nullable
+    public File getSinglePipelineOutput(
+            @NonNull StreamFilter streamFilter,
+            @Nullable Format requiredFormat) {
+
+        ImmutableList<TransformStream> streams = getStreams(streamFilter);
+        if (streams.isEmpty()) {
+            return null;
+        }
+
+        // get the single stream.
+        TransformStream transformStream = Iterables.getOnlyElement(streams);
+
+        if (requiredFormat != null &&
+                requiredFormat != transformStream.getFormat()) {
+            return null;
+        }
+
+        return Iterables.getOnlyElement(transformStream.getFiles().get());
     }
 
     @NonNull
