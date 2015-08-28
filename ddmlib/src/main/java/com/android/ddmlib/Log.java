@@ -16,16 +16,21 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.google.common.collect.Sets;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * Log class that mirrors the API in main Android sources.
  * <p/>Default behavior outputs the log to {@link System#out}. Use
- * {@link #setLogOutput(com.android.ddmlib.Log.ILogOutput)} to redirect the log somewhere else.
+ * {@link #addLogger(ILogOutput)} to redirect the log somewhere else.
  */
 public final class Log {
 
@@ -138,7 +143,11 @@ public final class Log {
 
     private static LogLevel sLevel = DdmPreferences.getLogLevel();
 
+    @Nullable
     private static ILogOutput sLogOutput;
+
+    @NonNull
+    private static final Set<ILogOutput> sOutputLoggers = Sets.newHashSet();
 
     private static final char[] mSpaceLine = new char[72];
     private static final char[] mHexDigit = new char[]
@@ -210,9 +219,15 @@ public final class Log {
      * @param message The message to output.
      */
     public static void logAndDisplay(LogLevel logLevel, String tag, String message) {
+        if (!sOutputLoggers.isEmpty()) {
+            for (ILogOutput logger : sOutputLoggers) {
+                logger.printAndPromptLog(logLevel, tag, message);
+            }
+        }
+
         if (sLogOutput != null) {
             sLogOutput.printAndPromptLog(logLevel, tag, message);
-        } else {
+        } else if (sOutputLoggers.isEmpty()) {
             println(logLevel, tag, message);
         }
     }
@@ -237,12 +252,21 @@ public final class Log {
     }
 
     /**
+     * @deprecated Use {@link #addLogger(ILogOutput)} instead. <p/>
      * Sets the {@link ILogOutput} to use to print the logs. If not set, {@link System#out}
      * will be used.
      * @param logOutput The {@link ILogOutput} to use to print the log.
      */
     public static void setLogOutput(ILogOutput logOutput) {
         sLogOutput = logOutput;
+    }
+
+    public static void addLogger(@NonNull ILogOutput logOutput) {
+        sOutputLoggers.add(logOutput);
+    }
+
+    public static void removeLogger(@NonNull ILogOutput logOutput) {
+        sOutputLoggers.remove(logOutput);
     }
 
     /**
@@ -322,33 +346,28 @@ public final class Log {
         hexDump("ddms", LogLevel.DEBUG, data, 0, data.length);
     }
 
-    /* currently prints to stdout; could write to a log window */
     private static void println(LogLevel logLevel, String tag, String message) {
-        if (logLevel.getPriority() >= sLevel.getPriority()) {
-            if (sLogOutput != null) {
-                sLogOutput.printLog(logLevel, tag, message);
-            } else {
-                printLog(logLevel, tag, message);
+        if (logLevel.getPriority() < sLevel.getPriority()) {
+            return;
+        }
+
+        if (!sOutputLoggers.isEmpty()) {
+            for (ILogOutput logger : sOutputLoggers) {
+                logger.printLog(logLevel, tag, message);
             }
         }
+
+        if (sLogOutput != null) {
+            sLogOutput.printLog(logLevel, tag, message);
+        } else if (sOutputLoggers.isEmpty()) {
+            printLog(logLevel, tag, message);
+        }
     }
-    
-    /**
-     * Prints a log message.
-     * @param logLevel
-     * @param tag
-     * @param message
-     */
+
     public static void printLog(LogLevel logLevel, String tag, String message) {
         System.out.print(getLogFormatString(logLevel, tag, message));
     }
 
-    /**
-     * Formats a log message.
-     * @param logLevel
-     * @param tag
-     * @param message
-     */
     public static String getLogFormatString(LogLevel logLevel, String tag, String message) {
         SimpleDateFormat formatter = new SimpleDateFormat("hh:mm:ss", Locale.getDefault());
         return String.format("%s %c/%s: %s\n", formatter.format(new Date()),
