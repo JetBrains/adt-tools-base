@@ -44,7 +44,7 @@ import java.util.List;
  * Visitor for classes that will eventually be replaceable at runtime.
  *
  * Since classes cannot be replaced in an existing class loader, we use a delegation model to
- * redirect any method implementation to the {@link IncrementalSupportRuntime}.
+ * redirect any method implementation to the AndroidInstantRuntime.
  *
  * This redirection happens only when a new class implementation is available, so far we do a
  * hashtable lookup for updated implementation. In the future, we could generate a static field
@@ -52,9 +52,6 @@ import java.util.List;
  * updated version or not.
  */
 public class IncrementalSupportVisitor extends IncrementalVisitor {
-
-
-    private static final Type CHANGE_TYPE = Type.getType(IncrementalChange.class);
 
     public IncrementalSupportVisitor(ClassNode classNode, List<ClassNode> parentNodes, ClassVisitor classVisitor) {
         super(classNode, parentNodes, classVisitor);
@@ -66,7 +63,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         visitedClassName = name;
         visitedSuperName = superName;
 
-        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "$change", CHANGE_TYPE.getDescriptor(), null, null);
+        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
@@ -115,11 +112,11 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         private void addRedirection() {
             // code to check if a new implementation of the current class is available.
             visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
-                    CHANGE_TYPE.getDescriptor());
+                    getRuntimeTypeName(CHANGE_TYPE));
             Label l0 = new Label();
             super.visitJumpInsn(Opcodes.IFNULL, l0);
             visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
-                    CHANGE_TYPE.getDescriptor());
+                    getRuntimeTypeName(CHANGE_TYPE));
             push(name + "." + desc);
 
             List<Type> args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(desc)));
@@ -250,10 +247,10 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 Method.getMethod("String toString()"));
 
         // create the exception with the message
-        mv.newInstance(Type.getType(InstantReloadException.class));
+        mv.newInstance(INSTANT_RELOAD_EXCEPTION);
         mv.dupX1();
         mv.swap();
-        mv.invokeConstructor(Type.getType(InstantReloadException.class),
+        mv.invokeConstructor(INSTANT_RELOAD_EXCEPTION,
                 Method.getMethod("void <init> (String)"));
         // and throw.
         mv.throwException();

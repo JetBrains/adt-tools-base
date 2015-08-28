@@ -35,19 +35,23 @@ import org.objectweb.asm.tree.MethodNode;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 public class IncrementalVisitor extends ClassVisitor {
 
-    protected static boolean TRACING_ENABLED = Boolean.getBoolean("FDR_TRACING");
+    protected static final String PACKAGE =
+            IncrementalVisitor.class.getPackage().getName().replace('.', '/');
+    protected static final Type CHANGE_TYPE = Type.getType(PACKAGE + "/IncrementalChange");
+    protected static final Type INSTANT_RELOAD_EXCEPTION =
+            Type.getType(PACKAGE + "/InstantReloadException");
+    protected static final Type RUNTIME_TYPE = Type.getType(PACKAGE + "/AndroidInstantRuntime");
+
+    protected static final boolean TRACING_ENABLED = Boolean.getBoolean("FDR_TRACING");
 
     protected String visitedClassName;
     protected String visitedSuperName;
@@ -61,6 +65,10 @@ public class IncrementalVisitor extends ClassVisitor {
         this.classNode = classNode;
         this.parentNodes = parentNodes;
         System.out.println("Visiting " + classNode.name);
+    }
+
+    String getRuntimeTypeName(Type type) {
+        return "L" + type.getInternalName() + ";";
     }
 
     @Nullable
@@ -106,14 +114,14 @@ public class IncrementalVisitor extends ClassVisitor {
 
     protected void trace(GeneratorAdapter mv, String s) {
         mv.push(s);
-        mv.invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+        mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
                 Method.getMethod("void trace(String)"));
     }
 
     protected void trace(GeneratorAdapter mv, String s1, String s2) {
         mv.push(s1);
         mv.push(s2);
-        mv.invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+        mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
                 Method.getMethod("void trace(String, String)"));
     }
 
@@ -121,7 +129,7 @@ public class IncrementalVisitor extends ClassVisitor {
         mv.push(s1);
         mv.push(s2);
         mv.push(s3);
-        mv.invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+        mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
                 Method.getMethod("void trace(String, String, String)"));
     }
 
@@ -131,7 +139,7 @@ public class IncrementalVisitor extends ClassVisitor {
             methodSignture.append(", String");
         }
         methodSignture.append(")");
-        mv.invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+        mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
                 Method.getMethod(methodSignture.toString()));
     }
 

@@ -38,6 +38,8 @@ dependencies {
     compile 'org.ow2.asm:asm-commons:5.0.3'
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
     compile "org.jacoco:org.jacoco.core:0.7.4.201502262128"
+    testCompile project(path:":base:fdr", configuration:'classes')
+
 
     // Add gradleApi to classpath for compilation, but use provided configuration so that groovy is
     // not exposed as a runtime dependency.

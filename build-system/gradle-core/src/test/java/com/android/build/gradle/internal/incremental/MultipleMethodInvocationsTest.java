@@ -36,7 +36,8 @@ public class MultipleMethodInvocationsTest {
     @Test
     public void changeMultipleMethodInvocations() throws Exception {
 
-        IncrementalSupportRuntime.setLogger(Logger.getAnonymousLogger());
+        GenericInstantRuntime.setLogger(Logger.getLogger(
+                MultipleMethodInvocationsTest.class.getName()));
 
         harness.reset();
         MultipleMethodInvocations testTarget = new MultipleMethodInvocations();

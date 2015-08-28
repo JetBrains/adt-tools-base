@@ -16,15 +16,52 @@
 
 package com.android.build.gradle.internal.incremental;
 
-import java.lang.System;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Support for registering patched classes.
+ * Generic Instant Run services. must not depend on Android APIs.
+ *
+ * TODO: transform this static methods into interface/implementation.
  */
-public class IncrementalSupportRuntime {
+public class GenericInstantRuntime {
+
+    protected interface Logging {
+        void log(@NonNull Level level, @NonNull String string);
+
+        boolean isLoggable(@NonNull Level level);
+
+        void log(@NonNull Level level, @NonNull String string, @Nullable Throwable throwable);
+    }
+
+    protected static Logging logging = null;
+
+    public static void setLogger(final Logger logger) {
+
+        logging = new GenericInstantRuntime.Logging() {
+            @Override
+            public void log(@NonNull Level level, @NonNull String string) {
+                logger.log(level, string);
+            }
+
+            @Override
+            public boolean isLoggable(@NonNull Level level) {
+                return logger.isLoggable(level);
+            }
+
+            @Override
+            public void log(@NonNull Level level, @NonNull String string,
+                    @Nullable Throwable throwable) {
+                logger.log(level, string, throwable);
+            }
+        };
+    }
 
     public static Object getPrivateField(Object target, String name) {
         try {
@@ -35,7 +72,9 @@ public class IncrementalSupportRuntime {
             declaredField.setAccessible(true);
             return declaredField.get(target);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            if (logging != null) {
+                logging.log(Level.SEVERE, String.format("Exception during getPrivateField %s", name), e);
+            }
             throw new RuntimeException(e);
         }
     }
@@ -49,16 +88,22 @@ public class IncrementalSupportRuntime {
             declaredField.setAccessible(true);
             declaredField.set(target, value);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            if (logging != null) {
+                logging.log(Level.SEVERE,
+                        String.format("Exception during setPrivateField %s", name), e);
+            }
             throw new RuntimeException(e);
         }
     }
 
     public static Object invokeProtectedMethod(Object target, String name, String[] parameterTypes,
             Object[] params) {
-        System.out.println("invoke protected called");
+
+        if (logging!=null && logging.isLoggable(Level.FINE)) {
+            logging.log(Level.FINE, String.format("protectedMethod:%s on %s", name, target));
+        }
         Class[] paramTypes = new Class[parameterTypes.length];
-        for (int i=0; i<parameterTypes.length; i++) {
+        for (int i = 0; i < parameterTypes.length; i++) {
             BasicType basicType = BasicType.parse(parameterTypes[i]);
             if (basicType != null) {
                 paramTypes[i] = basicType.getJavaType();
@@ -66,7 +111,7 @@ public class IncrementalSupportRuntime {
                 try {
                     paramTypes[i] = target.getClass().getClassLoader().loadClass(parameterTypes[i]);
                 } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
+                    logging.log(Level.SEVERE, String.format("Exception while invoking %s", name), e);
                 }
             }
         }
@@ -78,15 +123,20 @@ public class IncrementalSupportRuntime {
             toDispatchTo.setAccessible(true);
             return toDispatchTo.invoke(target, params);
         } catch (InvocationTargetException e) {
-            e.printStackTrace();
+            logging.log(Level.SEVERE, String.format("Exception while invoking %s", name), e);
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            logging.log(Level.SEVERE, String.format("Exception while invoking %s", name), e);
             throw new RuntimeException(e);
         }
     }
 
     private static Field getFieldByName(Class<?> aClass, String name) {
+
+        if (logging!= null && logging.isLoggable(Level.FINE)) {
+            logging.log(Level.FINE, String.format("getFieldByName:%s in %s", name, aClass.getName()));
+        }
+
         Class<?> currentClass = aClass;
         while (currentClass != null) {
             try {
@@ -99,26 +149,49 @@ public class IncrementalSupportRuntime {
     }
 
     private static Method getMethodByName(Class<?> aClass, String name, Class[] paramTypes) {
+
+        if (logging!=null && logging.isLoggable(Level.FINE)) {
+            StringBuilder builder = new StringBuilder();
+            for (Class parameterType : paramTypes) {
+                builder.append(parameterType.getName());
+                builder.append(",");
+            }
+            builder.deleteCharAt(builder.length()-1);
+            logging.log(Level.FINE, String.format(
+                    "getMethodByName:%s:%s in %s", name, builder.toString(), aClass.getName()));
+        }
+
         Class<?> currentClass = aClass;
         while (currentClass != null) {
             try {
                 return currentClass.getDeclaredMethod(name, paramTypes);
             } catch (NoSuchMethodException e) {
                 currentClass = aClass.getSuperclass();
+                if (logging!=null && logging.isLoggable(Level.FINE)) {
+                    logging.log(Level.FINE, String.format(
+                            "getMethodByName:Looking in %s now", currentClass.getName()));
+                }
             }
         }
         return null;
     }
 
     public static void trace(String s) {
-        System.out.println(s);
+        if (logging != null) {
+            logging.log(Level.FINE, s);
+        }
     }
 
     public static void trace(String s1, String s2) {
-        System.out.println(s1 + s2);
+        if (logging != null) {
+            logging.log(Level.FINE, String.format("%s %s", s1, s2));
+        }
     }
 
     public static void trace(String s1, String s2, String s3) {
-        System.out.println(s1 + s2 + s3);
+        if (logging != null) {
+            logging.log(Level.FINE, String.format("%s %s %s", s1, s2, s3));
+        }
     }
+
 }

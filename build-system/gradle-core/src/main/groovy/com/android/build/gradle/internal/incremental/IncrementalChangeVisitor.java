@@ -47,7 +47,6 @@ import java.util.List;
  */
 public class IncrementalChangeVisitor extends IncrementalVisitor {
 
-
     // todo : find a better way to specify logging and append to a log file.
     private static final boolean DEBUG = false;
 
@@ -60,7 +59,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
         super.visit(version, access, name + "$override", signature, "java/lang/Object",
-                new String[]{"com/android/build/gradle/internal/incremental/IncrementalChange"});
+                new String[]{CHANGE_TYPE.getInternalName()});
 
         if (DEBUG) {
             System.out.println(">>>>>>>> Processing " + name + "<<<<<<<<<<<<<");
@@ -150,7 +149,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         public void visitMethodInsn(int opcode, String owner, String name, String desc,
                 boolean itf) {
             super.visitMethodInsn(opcode, owner, name, desc, itf);
-            if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && owner.equals(visitedSuperName)) {
+            if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>")
+                    && owner.equals(visitedSuperName)) {
                 adapter.stopIgnoring();
             }
         }
@@ -161,7 +161,13 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         private final boolean isStatic;
 
-        public ISVisitor(int api, MethodVisitor mv, int access,  String name, String desc, boolean isStatic) {
+        public ISVisitor(
+                int api,
+                MethodVisitor mv,
+                int access,
+                String name,
+                String desc,
+                boolean isStatic) {
             super(api, mv, access, name, desc);
             this.isStatic = isStatic;
         }
@@ -169,7 +175,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         @Override
         public void visitFieldInsn(int opcode, String owner, String name, String desc) {
             if (DEBUG) {
-                System.out.println("Visit field access : " + owner + ":" + name + ":" + desc + ":" + isStatic);
+                System.out.println(
+                        "Visit field access : " + owner + ":" + name + ":" + desc + ":" + isStatic);
             }
             // if we are access another object's field, nothing needs to be done.
             if (!owner.equals(visitedClassName)) {
@@ -213,7 +220,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                         System.out.println("Get field");
                     }
                     push(name);
-                    invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+                    invokeStatic(RUNTIME_TYPE,
                             Method.getMethod("Object getPrivateField(Object, String)"));
                     unbox(Type.getType(desc));
                 }
@@ -223,7 +230,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     }
                     box(Type.getType(desc));
                     push(name);
-                    invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+                    invokeStatic(RUNTIME_TYPE,
                             Method.getMethod(
                                     "void setPrivateField(Object, Object, String)"));
                 }
@@ -333,7 +340,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
                 loadLocal(parameters);
 
-                invokeStatic(Type.getType(IncrementalSupportRuntime.class),
+                invokeStatic(RUNTIME_TYPE,
                         Method.getMethod(
                                 "Object invokeProtectedMethod(Object, String, String[], Object[])"));
                 Type ret = Type.getReturnType(desc);
@@ -463,10 +470,10 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 Method.getMethod("String toString()"));
 
         // create the exception with the message
-        mv.newInstance(Type.getType(InstantReloadException.class));
+        mv.newInstance(INSTANT_RELOAD_EXCEPTION);
         mv.dupX1();
         mv.swap();
-        mv.invokeConstructor(Type.getType(InstantReloadException.class),
+        mv.invokeConstructor(INSTANT_RELOAD_EXCEPTION,
                 Method.getMethod("void <init> (String)"));
         // and throw.
         mv.throwException();

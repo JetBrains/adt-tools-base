@@ -184,11 +184,11 @@ public class ClassEnhancement implements TestRule {
 
     private static URL[] getClassLoaderUrls() {
         URL resource = ClassEnhancement.class.getClassLoader().getResource(
-                "com/android/build/gradle/internal/incremental/IncrementalSupportRuntime.class");
+                "com/android/build/gradle/internal/incremental/AndroidInstantRuntime.class");
 
         assertNotNull(resource);
         String runtimeURL = resource.toString().substring(0, resource.toString().length() -
-                "com/android/build/gradle/internal/incremental/IncrementalSupportRuntime.class"
+                "com/android/build/gradle/internal/incremental/AndroidInstantRuntime.class"
                         .length());
 
         resource = ClassEnhancement.class.getClassLoader().getResource(
