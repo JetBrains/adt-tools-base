@@ -45,8 +45,8 @@ import java.util.Set;
  */
 @Beta
 public abstract class IssueRegistry {
-    private static List<Category> sCategories;
-    private static Map<String, Issue> sIdToIssue;
+    private static volatile List<Category> sCategories;
+    private static volatile Map<String, Issue> sIdToIssue;
     private static Map<EnumSet<Scope>, List<Issue>> sScopeIssues = Maps.newHashMap();
 
     /**
@@ -274,17 +274,23 @@ public abstract class IssueRegistry {
      */
     @NonNull
     public List<Category> getCategories() {
-        if (sCategories == null) {
-            final Set<Category> categories = new HashSet<Category>();
-            for (Issue issue : getIssues()) {
-                categories.add(issue.getCategory());
+        List<Category> categories = sCategories;
+        if (categories == null) {
+            synchronized (IssueRegistry.class) {
+                categories = sCategories;
+                if (categories == null) {
+                    Set<Category> categorySet = new HashSet<Category>();
+                    for (Issue issue : getIssues()) {
+                        categorySet.add(issue.getCategory());
+                    }
+                    List<Category> sorted = new ArrayList<Category>(categorySet);
+                    Collections.sort(sorted);
+                    sCategories = categories = Collections.unmodifiableList(sorted);
+                }
             }
-            List<Category> sorted = new ArrayList<Category>(categories);
-            Collections.sort(sorted);
-            sCategories = Collections.unmodifiableList(sorted);
         }
 
-        return sCategories;
+        return categories;
     }
 
     /**
@@ -295,18 +301,23 @@ public abstract class IssueRegistry {
      */
     @Nullable
     public final Issue getIssue(@NonNull String id) {
-        if (sIdToIssue == null) {
-            List<Issue> issues = getIssues();
-            Map<String, Issue> map = new HashMap<String, Issue>(issues.size());
-            for (Issue issue : issues) {
-                map.put(issue.getId(), issue);
+        Map<String, Issue> map = sIdToIssue;
+        if (map == null) {
+            synchronized (IssueRegistry.class) {
+                map = sIdToIssue;
+                if (map == null) {
+                    List<Issue> issues = getIssues();
+                    sIdToIssue = map = new HashMap<String, Issue>(issues.size());
+                    for (Issue issue : issues) {
+                        map.put(issue.getId(), issue);
+                    }
+                    map.put(PARSER_ERROR.getId(), PARSER_ERROR);
+                    map.put(LINT_ERROR.getId(), LINT_ERROR);
+                }
             }
-
-            map.put(PARSER_ERROR.getId(), PARSER_ERROR);
-            map.put(LINT_ERROR.getId(), LINT_ERROR);
-            sIdToIssue = map;
         }
-        return sIdToIssue.get(id);
+
+        return map.get(id);
     }
 
     /**
