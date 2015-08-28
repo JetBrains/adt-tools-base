@@ -9,18 +9,28 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import dalvik.system.DexFile;
 
 import static com.android.tools.fd.runtime.AppInfo.applicationId;
 import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
@@ -57,8 +67,11 @@ public class FileManager {
     /** Suffix for classes.dex files */
     public static final String CLASSES_DEX_SUFFIX = ".dex";
 
-    /** Suffix for classes.dex for hotswapping files */
+    /** Suffix for classes.dex for hot-swapping files */
     public static final String CLASSES_DEX_3_SUFFIX = ".dex.3";
+
+    /** Filename suffix for dex index files */
+    private static final String EXT_INDEX_FILE = ".index";
 
     /**
      * The folder where resources and code are located. Within this folder we have two
@@ -81,14 +94,21 @@ public class FileManager {
         return new File(base, USE_EXTRACTED_RESOURCES ? RESOURCE_FOLDER_NAME : RESOURCE_FILE_NAME);
     }
 
+    /**
+     * Returns the folder used for .dex files used during the next app start
+     */
     @NonNull
     private static File getDexFileFolder(File base) {
         return new File(base, "dex");
     }
 
+    /**
+     * Returns the folder used for temporary .dex files (e.g. classes loaded on the fly
+     * and only needing to exist during the current app process
+     */
     @NonNull
     private static File getTempDexFileFolder(File base) {
-        return new File(base, "dex-temp"); // TODO: Clean up occasionally!
+        return new File(base, "dex-temp");
     }
 
     public static File getNativeLibraryFolder() {
@@ -209,11 +229,18 @@ public class FileManager {
     /** Returns the list of available .dex files to be loaded, possibly empty */
     @NonNull
     public static List<String> getDexList() {
+        File dataFolder = getDataFolder();
+
+        // Get rid of reload dex files from previous runs, if any
+        FileManager.purgeTempDexFiles(dataFolder);
+        // Get rid of patches no longer applicable
+        FileManager.purgeMaskedDexFiles(dataFolder);
+
         List<String> list = new ArrayList<String>();
 
         // We don't need "double buffering" for dex files - we never rewrite files, so we
         // can accumulate in the same dir
-        File[] dexFiles = getDexFileFolder(getDataFolder()).listFiles();
+        File[] dexFiles = getDexFileFolder(dataFolder).listFiles();
         if (dexFiles == null) {
             Log.v(LOG_TAG, "Cannot find newer dex classes, not patching them in");
             // TODO: Sort?
@@ -221,7 +248,7 @@ public class FileManager {
         }
 
         for (File dex : dexFiles) {
-            if (dex.getName().endsWith(".dex")) {
+            if (dex.getName().endsWith(CLASSES_DEX_SUFFIX)) {
                 list.add(dex.getPath());
             }
         }
@@ -400,10 +427,38 @@ public class FileManager {
     }
 
     @Nullable
-    public static File writeDexFile(@NonNull byte[] bytes) {
+    public static File writeDexFile(@NonNull byte[] bytes, boolean writeIndex) {
         File file = getNextDexFile();
         if (file != null) {
             writeRawBytes(file, bytes);
+            if (writeIndex) {
+                File indexFile = getIndexFile(file);
+                try {
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
+                            new FileOutputStream(indexFile), getUtf8Charset()));
+                    DexFile dexFile = new DexFile(file);
+                    Enumeration<String> entries = dexFile.entries();
+                    while (entries.hasMoreElements()) {
+                        String nextPath = entries.nextElement();
+
+                        // Skip inner classes: we only care about classes at the
+                        // compilation unit level
+                        if (nextPath.indexOf('$') != -1) {
+                            continue;
+                        }
+
+                        writer.write(nextPath);
+                        writer.write('\n');
+                    }
+                    writer.close();
+
+                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                        Log.i(LOG_TAG, "Wrote restart patch index " + indexFile);
+                    }
+                } catch (IOException ioe) {
+                    Log.e(LOG_TAG, "Failed to write dex index file " + indexFile);
+                }
+            }
         }
 
         return file;
@@ -445,5 +500,126 @@ public class FileManager {
             Log.e(LOG_TAG, "No file to write temp dex content to");
         }
         return null;
+    }
+
+    /** Returns the class index file for the given .dex file */
+    private static File getIndexFile(@NonNull File file) {
+        return new File(file.getPath() + EXT_INDEX_FILE);
+    }
+
+    /** Returns the dex file for the given index file */
+    private static File getDexFile(@NonNull File file) {
+        String path = file.getPath();
+        return new File(path.substring(0, path.length() - EXT_INDEX_FILE.length()));
+    }
+
+    /**
+     * Removes .dex files from the temp dex file folder
+     */
+    public static void purgeTempDexFiles(@NonNull File dataFolder) {
+        File dexFolder = getTempDexFileFolder(dataFolder);
+        if (!dexFolder.isDirectory()) {
+            return;
+        }
+        File[] files = dexFolder.listFiles();
+        if (files == null) {
+            return;
+        }
+
+        for (File file : files) {
+            if (file.getPath().endsWith(CLASSES_DEX_SUFFIX)) {
+                boolean deleted = file.delete();
+                if (!deleted) {
+                    Log.e(LOG_TAG, "Could not delete temp dex file " + file);
+                }
+            }
+        }
+    }
+
+    /**
+     * Removes .dex files that contain only classes seen in later patches (e.g. none
+     * of the classes in the .dex file will be found by the application class loader
+     * because there are newer versions available)
+     */
+    public static void purgeMaskedDexFiles(@NonNull File dataFolder) {
+        File dexFolder = getDexFileFolder(dataFolder);
+        if (!dexFolder.isDirectory()) {
+            return;
+        }
+        File[] files = dexFolder.listFiles();
+        if (files == null || files.length < 2) {
+            return;
+        }
+        Arrays.sort(files);
+
+        // Go back through patches in reverse order, and for any patch that contains a
+        // class not seen in later patches, mark that patch file as relevant
+        Set<String> classes = new HashSet<String>(200);
+
+        Charset utf8 = getUtf8Charset();
+        for (int i = files.length - 1; i >= 0; i--) {
+            File file = files[i];
+            String path = file.getPath();
+            if (path.endsWith(EXT_INDEX_FILE)) {
+                try {
+                    InputStreamReader is = new InputStreamReader(new FileInputStream(file), utf8);
+                    BufferedReader reader = new BufferedReader(is);
+
+                    boolean containsUniqueClasses = false;
+
+                    while (true) {
+                        String line = reader.readLine();
+                        if (line == null) {
+                            break;
+                        }
+                        if (line.isEmpty()) {
+                            continue;
+                        }
+                        if (!classes.contains(line)) {
+                            classes.add(line);
+                            containsUniqueClasses = true;
+                        }
+                    }
+
+                    reader.close();
+
+                    if (!containsUniqueClasses) {
+                        File dexFile = getDexFile(file);
+                        // Nearly always true, unless user has gone in there and deleted
+                        // stuff
+                        if (dexFile.exists()) {
+                            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                                Log.i(LOG_TAG, "Removing dex patch " + dexFile
+                                        + ": All classes in it are hidden by later patches");
+                            }
+                            boolean deleted = dexFile.delete();
+                            if (!deleted) {
+                                Log.e(LOG_TAG, "Could not prune " + dexFile);
+                            }
+                        }
+                        boolean deleted = file.delete();
+                        if (!deleted) {
+                            Log.e(LOG_TAG, "Could not prune " + file);
+                        }
+                    }
+                } catch (IOException ioe) {
+                    Log.e(LOG_TAG, "Could not read dex index file " + file, ioe);
+                }
+            }
+        }
+
+        // TODO: Consider reordering the files here such that we close holes and
+        // stay with lower patch numbers
+    }
+
+    @NonNull
+    private static Charset getUtf8Charset() {
+        Charset utf8;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+            utf8 = StandardCharsets.UTF_8;
+        } else {
+            utf8 = Charset.forName("UTF-8");
+        }
+        return utf8;
     }
 }

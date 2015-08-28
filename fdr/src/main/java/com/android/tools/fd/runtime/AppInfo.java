@@ -12,6 +12,7 @@ public class AppInfo {
      * <p>
      * (Not final: Will be replaced by byte-code manipulation at build time)
      */
+    @SuppressWarnings("CanBeFinal")
     public static String applicationId = null;
 
     /**
@@ -21,5 +22,6 @@ public class AppInfo {
      * is used.)
      * <p>
      */
+    @SuppressWarnings("CanBeFinal")
     public static String applicationClass = null;
 }

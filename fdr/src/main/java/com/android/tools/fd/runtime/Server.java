@@ -122,7 +122,7 @@ public class Server {
                             if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                                 Log.i(LOG_TAG, "Received restart code patch");
                             }
-                            FileManager.writeDexFile(change.getBytes());
+                            FileManager.writeDexFile(change.getBytes(), true);
                         } else if (path.endsWith(CLASSES_DEX_3_SUFFIX)) {
                             if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                                 Log.i(LOG_TAG, "Received incremental code patch");
