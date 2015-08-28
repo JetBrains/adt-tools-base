@@ -10,6 +10,7 @@ import android.util.Log;
 import com.android.build.gradle.internal.incremental.PatchesLoader;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -105,6 +106,7 @@ public class Server {
             boolean incrementalResources = false;
             try {
                 DataInputStream input = new DataInputStream(mSocket.getInputStream());
+                DataOutputStream output = new DataOutputStream(mSocket.getOutputStream());
                 try {
                     List<ApplicationPatch> changes = ApplicationPatch.read(input);
                     if (changes == null) {
@@ -211,9 +213,16 @@ public class Server {
                         }
                     }
                     FileManager.finishUpdate(incrementalResources);
+
+                    // Send an "ack" back to the IDE; this is used for timing purposes only
+                    output.writeBoolean(true);
                 } finally {
                     try {
                         input.close();
+                    } catch (IOException ignore) {
+                    }
+                    try {
+                        output.close();
                     } catch (IOException ignore) {
                     }
                 }
