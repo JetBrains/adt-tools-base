@@ -17,6 +17,7 @@
 package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ddmlib.Log.LogLevel;
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
@@ -298,16 +299,18 @@ public final class AndroidDebugBridge {
 
 
     /**
-     * Creates a new debug bridge from the location of the command line tool.
-     * <p/>
+     * Creates a new debug bridge from the location of the command line tool. <p/>
      * Any existing server will be disconnected, unless the location is the same and
      * <code>forceNewBridge</code> is set to false.
      * @param osLocation the location of the command line tool 'adb'
      * @param forceNewBridge force creation of a new bridge even if one with the same location
      * already exists.
-     * @return a connected bridge.
+     * @return a connected bridge, or null if there were errors while creating or connecting
+     * to the bridge
      */
-    public static AndroidDebugBridge createBridge(String osLocation, boolean forceNewBridge) {
+    @Nullable
+    public static AndroidDebugBridge createBridge(@NonNull String osLocation,
+                                                  boolean forceNewBridge) {
         synchronized (sLock) {
             if (sThis != null) {
                 if (sThis.mAdbOsLocation != null && sThis.mAdbOsLocation.equals(osLocation) &&
@@ -321,7 +324,9 @@ public final class AndroidDebugBridge {
 
             try {
                 sThis = new AndroidDebugBridge(osLocation);
-                sThis.start();
+                if (!sThis.start()) {
+                    return null;
+                }
             } catch (InvalidParameterException e) {
                 sThis = null;
             }
