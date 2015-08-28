@@ -78,6 +78,10 @@ android {
         }
     }
 
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+    }
 }
 """
         model = project.executeAndReturnModel("clean", "assembleDebug")
