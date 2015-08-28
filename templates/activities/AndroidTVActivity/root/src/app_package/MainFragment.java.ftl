@@ -46,8 +46,10 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Target;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
 
 public class ${mainFragment} extends BrowseFragment {
     private static final String TAG = "${truncate(mainFragment,23)}";
@@ -58,15 +60,13 @@ public class ${mainFragment} extends BrowseFragment {
     private static final int NUM_ROWS = 6;
     private static final int NUM_COLS = 15;
 
+    private final Handler mHandler = new Handler();
     private ArrayObjectAdapter mRowsAdapter;
     private Drawable mDefaultBackground;
-    private Target mBackgroundTarget;
     private DisplayMetrics mMetrics;
     private Timer mBackgroundTimer;
-    private final Handler mHandler = new Handler();
     private URI mBackgroundURI;
-    Movie mMovie;
-    CardPresenter mCardPresenter;
+    private BackgroundManager mBackgroundManager;
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
@@ -95,14 +95,14 @@ public class ${mainFragment} extends BrowseFragment {
         List<Movie> list = MovieList.setupMovies();
 
         mRowsAdapter = new ArrayObjectAdapter(new ListRowPresenter());
-        mCardPresenter = new CardPresenter();
+        CardPresenter cardPresenter = new CardPresenter();
 
         int i;
         for (i = 0; i < NUM_ROWS; i++) {
             if (i != 0) {
                 Collections.shuffle(list);
             }
-            ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(mCardPresenter);
+            ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(cardPresenter);
             for (int j = 0; j < NUM_COLS; j++) {
                 listRowAdapter.add(list.get(j % 5));
             }
@@ -133,12 +133,9 @@ public class ${mainFragment} extends BrowseFragment {
 
     private void prepareBackgroundManager() {
 
-        BackgroundManager backgroundManager = BackgroundManager.getInstance(getActivity());
-        backgroundManager.attach(getActivity().getWindow());
-        mBackgroundTarget = new PicassoBackgroundManagerTarget(backgroundManager);
-
+        mBackgroundManager = BackgroundManager.getInstance(getActivity());
+        mBackgroundManager.attach(getActivity().getWindow());
         mDefaultBackground = getResources().getDrawable(R.drawable.default_background);
-
         mMetrics = new DisplayMetrics();
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(mMetrics);
     }
@@ -147,7 +144,7 @@ public class ${mainFragment} extends BrowseFragment {
         // setBadgeDrawable(getActivity().getResources().getDrawable(
         // R.drawable.videos_by_google_banner));
         setTitle(getString(R.string.browse_title)); // Badge, when set, takes precedent
-                                                    // over title
+        // over title
         setHeadersState(HEADERS_ENABLED);
         setHeadersTransitionOnBackEnabled(true);
 
@@ -211,29 +208,22 @@ public class ${mainFragment} extends BrowseFragment {
         }
     }
 
-    protected void setDefaultBackground(Drawable background) {
-        mDefaultBackground = background;
-    }
-
-    protected void setDefaultBackground(int resourceId) {
-        mDefaultBackground = getResources().getDrawable(resourceId);
-    }
-
-    protected void updateBackground(URI uri) {
-        Picasso.with(getActivity())
-                .load(uri.toString())
-                .resize(mMetrics.widthPixels, mMetrics.heightPixels)
+    protected void updateBackground(String uri) {
+        int width = mMetrics.widthPixels;
+        int height = mMetrics.heightPixels;
+        Glide.with(getActivity())
+                .load(uri)
                 .centerCrop()
                 .error(mDefaultBackground)
-                .into(mBackgroundTarget);
-    }
-
-    protected void updateBackground(Drawable drawable) {
-        BackgroundManager.getInstance(getActivity()).setDrawable(drawable);
-    }
-
-    protected void clearBackground() {
-        BackgroundManager.getInstance(getActivity()).setDrawable(mDefaultBackground);
+                .into(new SimpleTarget<GlideDrawable>(width, height) {
+                    @Override
+                    public void onResourceReady(GlideDrawable resource,
+                                                GlideAnimation<? super GlideDrawable>
+                                                        glideAnimation) {
+                        mBackgroundManager.setDrawable(resource);
+                    }
+                });
+        mBackgroundTimer.cancel();
     }
 
     private void startBackgroundTimer() {
@@ -252,7 +242,7 @@ public class ${mainFragment} extends BrowseFragment {
                 @Override
                 public void run() {
                     if (mBackgroundURI != null) {
-                        updateBackground(mBackgroundURI);
+                        updateBackground(mBackgroundURI.toString());
                     }
                 }
             });
