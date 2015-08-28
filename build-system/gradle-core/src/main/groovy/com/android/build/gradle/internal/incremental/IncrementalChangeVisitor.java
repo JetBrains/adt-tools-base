@@ -117,34 +117,32 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         }
     }
 
-    public static class AdapterVisitor extends MethodVisitor {
+    /**
+     * {@link MethodVisitor} implementation that is effectively swallowing all code until
+     * {@link #stopIgnoring()} method is called.
+     */
+    public static class IgnoringMethodVisitorAdapter extends MethodVisitor {
 
-        private MethodVisitor ignored;
+        private MethodVisitor delegateVisitor;
 
-        public AdapterVisitor(int api, MethodVisitor mv) {
-            super(api, mv);
+        public IgnoringMethodVisitorAdapter(int api, MethodVisitor mv) {
+            super(api, null);
+            delegateVisitor = mv;
         }
 
-        public void setIgnore(boolean ignore) {
-            if (ignore) {
-                ignored = this.mv;
-                this.mv = null;
-            } else {
-                this.mv = ignored;
-                ignored = null;
-            }
+        public void stopIgnoring() {
+            super.mv = delegateVisitor;
         }
     }
 
     public class ConstructorVisitor extends ISVisitor {
 
         String desc;
-        AdapterVisitor adapter;
+        IgnoringMethodVisitorAdapter adapter;
 
         public ConstructorVisitor(int api, MethodVisitor mv, int access, String name, String desc) {
-            super(api, new AdapterVisitor(api, mv), access, name, desc, false);
-            adapter = (AdapterVisitor) this.mv;
-            adapter.setIgnore(true);
+            super(api, new IgnoringMethodVisitorAdapter(api, mv), access, name, desc, false);
+            adapter = (IgnoringMethodVisitorAdapter) this.mv;
             this.desc = desc;
         }
 
@@ -153,7 +151,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 boolean itf) {
             super.visitMethodInsn(opcode, owner, name, desc, itf);
             if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && owner.equals(visitedSuperName)) {
-                adapter.setIgnore(false);
+                adapter.stopIgnoring();
             }
         }
     }
@@ -170,14 +168,18 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         @Override
         public void visitFieldInsn(int opcode, String owner, String name, String desc) {
+            if (DEBUG) {
+                System.out.println("Visit field access : " + owner + ":" + name + ":" + desc + ":" + isStatic);
+            }
             // if we are access another object's field, nothing needs to be done.
             if (!owner.equals(visitedClassName)) {
+                if (DEBUG) {
+                    System.out.println("Not ours, unchanged field access");
+                }
+                // this is probably incorrect, what about if we access a package private field
+                // of some other object, we need to go through reflection.
                 super.visitFieldInsn(opcode, owner, name, desc);
                 return;
-            }
-
-            if (DEBUG) {
-                System.out.println("Visit field access : " + name + ":" + desc + ":" + isStatic);
             }
 
             // check the field access bits.
@@ -189,7 +191,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             boolean isPrivate = (fieldNode.access & Opcodes.ACC_PRIVATE) != 0;
             boolean isProtected = (fieldNode.access & Opcodes.ACC_PROTECTED) != 0;
             boolean isPackagePrivate = fieldNode.access == 0;
-            boolean isAccessedFieldStatic = (fieldNode.access & Opcodes.ACC_PRIVATE) != 0;
+            boolean isAccessedFieldStatic = (fieldNode.access & Opcodes.ACC_STATIC) != 0;
 
             // we should make this more efficient, have a per field access type method
             // for getting and setting field values.
@@ -197,21 +199,33 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 if (isAccessedFieldStatic) {
                     // if we are dealing with accessing a static field, there is no "this" or
                     // object reference on the stack, push null for the first parameter value.
+                    // eventually, this will fail at runtime since we use the object reference
+                    // to look up the field which won't work with null, but it satisfies the
+                    // ASM generator for now. We probably should do getClass() and pass that
+                    // to a new method.
+                    if (DEBUG) {
+                        System.out.println("Dealing with a static field");
+                    }
                     visitInsn(Opcodes.ACONST_NULL);
                 }
                 if (opcode == Opcodes.GETFIELD) {
+                    if (DEBUG) {
+                        System.out.println("Get field");
+                    }
                     push(name);
                     invokeStatic(Type.getType(IncrementalSupportRuntime.class),
                             Method.getMethod("Object getPrivateField(Object, String)"));
                     unbox(Type.getType(desc));
                 }
                 if (opcode == Opcodes.PUTFIELD) {
-                    push(name);
-                    swap(Type.getType(desc), Type.getType(String.class));
+                    if (DEBUG) {
+                        System.out.println("Set field");
+                    }
                     box(Type.getType(desc));
+                    push(name);
                     invokeStatic(Type.getType(IncrementalSupportRuntime.class),
                             Method.getMethod(
-                                    "void setPrivateField(Object, String, Object)"));
+                                    "void setPrivateField(Object, Object, String)"));
                 }
             } else {
                 super.visitFieldInsn(opcode, owner, name, desc);

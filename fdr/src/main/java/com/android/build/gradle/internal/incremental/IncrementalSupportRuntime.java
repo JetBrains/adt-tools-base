@@ -40,7 +40,7 @@ public class IncrementalSupportRuntime {
         }
     }
 
-    public static void setPrivateField(Object target, String name, Object value) {
+    public static void setPrivateField(Object target, Object value, String name) {
         try {
             Field declaredField = getFieldByName(target.getClass(), name);
             if (declaredField == null) {
