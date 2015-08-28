@@ -11,13 +11,11 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package ${packageName};
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.media.MediaMetadataRetriever;
 import android.os.Build;
 import android.os.Bundle;
@@ -50,10 +48,11 @@ import android.support.v17.leanback.widget.RowPresenter;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.squareup.picasso.Picasso;
-import com.squareup.picasso.Target;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -95,7 +94,6 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
     private Handler mHandler;
     private Runnable mRunnable;
     private Movie mSelectedMovie;
-    private PicassoPlaybackControlsRowTarget mPlaybackControlsRowTarget;
 
     OnPlayPauseClickedListener mCallback;
 
@@ -106,7 +104,6 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        Log.i(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         sContext = getActivity();
 
@@ -176,17 +173,7 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
         playbackControlsRowPresenter.setOnActionClickedListener(new OnActionClickedListener() {
             public void onActionClicked(Action action) {
                 if (action.getId() == mPlayPauseAction.getId()) {
-                    if (mPlayPauseAction.getIndex() == PlayPauseAction.PLAY) {
-                        startProgressAutomation();
-                        setFadingEnabled(true);
-                        mCallback.onFragmentPlayPause(mItems.get(mCurrentItem),
-                                mPlaybackControlsRow.getCurrentTime(), true);
-                    } else {
-                        stopProgressAutomation();
-                        setFadingEnabled(false);
-                        mCallback.onFragmentPlayPause(mItems.get(mCurrentItem),
-                                mPlaybackControlsRow.getCurrentTime(), false);
-                    }
+                    togglePlayback(mPlayPauseAction.getIndex() == PlayPauseAction.PLAY);
                 } else if (action.getId() == mSkipNextAction.getId()) {
                     next();
                 } else if (action.getId() == mSkipPreviousAction.getId()) {
@@ -212,6 +199,23 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
         addOtherRows();
 
         setAdapter(mRowsAdapter);
+    }
+
+    public void togglePlayback(boolean playPause) {
+        if (playPause) {
+            startProgressAutomation();
+            setFadingEnabled(true);
+            mCallback.onFragmentPlayPause(mItems.get(mCurrentItem),
+                    mPlaybackControlsRow.getCurrentTime(), true);
+            mPlayPauseAction.setIcon(mPlayPauseAction.getDrawable(PlayPauseAction.PAUSE));
+        } else {
+            stopProgressAutomation();
+            setFadingEnabled(false);
+            mCallback.onFragmentPlayPause(mItems.get(mCurrentItem),
+                    mPlaybackControlsRow.getCurrentTime(), false);
+            mPlayPauseAction.setIcon(mPlayPauseAction.getDrawable(PlayPauseAction.PLAY));
+        }
+        notifyChanged(mPlayPauseAction);
     }
 
     private int getDuration() {
@@ -299,8 +303,7 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
             item.setStudio(mItems.get(mCurrentItem).getStudio());
         }
         if (SHOW_IMAGE) {
-            mPlaybackControlsRowTarget = new PicassoPlaybackControlsRowTarget(mPlaybackControlsRow);
-            updateVideoImage(mItems.get(mCurrentItem).getCardImageURI());
+            updateVideoImage(mItems.get(mCurrentItem).getCardImageURI().toString());
         }
         mRowsAdapter.notifyArrayItemRangeChanged(0, 1);
         mPlaybackControlsRow.setTotalTime(getDuration());
@@ -355,8 +358,7 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
 
         if (mPlayPauseAction.getIndex() == PlayPauseAction.PLAY) {
             mCallback.onFragmentPlayPause(mItems.get(mCurrentItem), 0, false);
-        }
-        else {
+        } else {
             mCallback.onFragmentPlayPause(mItems.get(mCurrentItem), 0, true);
         }
         updatePlaybackRow(mCurrentItem);
@@ -368,8 +370,7 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
         }
         if (mPlayPauseAction.getIndex() == PlayPauseAction.PLAY) {
             mCallback.onFragmentPlayPause(mItems.get(mCurrentItem), 0, false);
-        }
-        else {
+        } else {
             mCallback.onFragmentPlayPause(mItems.get(mCurrentItem), 0, true);
         }
         updatePlaybackRow(mCurrentItem);
@@ -395,36 +396,16 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
         }
     }
 
-    public static class PicassoPlaybackControlsRowTarget implements Target {
-        PlaybackControlsRow mPlaybackControlsRow;
-
-        public PicassoPlaybackControlsRowTarget(PlaybackControlsRow playbackControlsRow) {
-            mPlaybackControlsRow = playbackControlsRow;
-        }
-
-        @Override
-        public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom loadedFrom) {
-            Drawable bitmapDrawable = new BitmapDrawable(sContext.getResources(), bitmap);
-            mPlaybackControlsRow.setImageDrawable(bitmapDrawable);
-        }
-
-        @Override
-        public void onBitmapFailed(Drawable drawable) {
-            mPlaybackControlsRow.setImageDrawable(drawable);
-        }
-
-        @Override
-        public void onPrepareLoad(Drawable drawable) {
-            // Do nothing, default_background manager has its own transitions
-        }
+    protected void updateVideoImage(String uri) {
+        Glide.with(sContext)
+                .load(uri)
+                .centerCrop()
+                .into(new SimpleTarget<GlideDrawable>(CARD_WIDTH, CARD_HEIGHT) {
+                    @Override
+                    public void onResourceReady(GlideDrawable resource, GlideAnimation<? super GlideDrawable> glideAnimation) {
+                        mPlaybackControlsRow.setImageDrawable(resource);
+                        mRowsAdapter.notifyArrayItemRangeChanged(0, mRowsAdapter.size());
+                    }
+                });
     }
-
-    protected void updateVideoImage(URI uri) {
-        Picasso.with(sContext)
-                .load(uri.toString())
-                .resize(Utils.convertDpToPixel(sContext, CARD_WIDTH),
-                        Utils.convertDpToPixel(sContext, CARD_HEIGHT))
-                .into(mPlaybackControlsRowTarget);
-    }
-
 }
