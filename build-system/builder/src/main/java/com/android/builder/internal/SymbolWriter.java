@@ -66,7 +66,7 @@ public class SymbolWriter {
         return symbols;
     }
 
-    public void write() throws IOException, ResourceMissingException {
+    public void write() throws IOException {
         Splitter splitter = Splitter.on('.');
         Iterable<String> folders = splitter.split(mPackageName);
         File file = new File(mOutFolder);
@@ -111,9 +111,7 @@ public class SymbolWriter {
                 for (String symbolName : symbolList) {
                     // get the matching SymbolEntry from the values Table.
                     SymbolEntry value = values.get(row, symbolName);
-                    if (value == null) {
-                        throw new ResourceMissingException(symbolName);
-                    } else {
+                    if (value != null) {
                         writer.write("\t\tpublic static final ");
                         writer.write(value.getType());
                         writer.write(" ");
@@ -129,23 +127,9 @@ public class SymbolWriter {
 
             writer.write("}\n");
         } catch (Throwable e) {
-            throw closer.rethrow(e, ResourceMissingException.class);
+            throw closer.rethrow(e);
         } finally {
             closer.close();
-        }
-    }
-
-    public static class ResourceMissingException extends Exception {
-
-        private final String mResourceName;
-
-        private ResourceMissingException(String resourceName) {
-            super("Resource " + resourceName + " is missing");
-            mResourceName = resourceName;
-        }
-
-        public String getResourceName() {
-            return mResourceName;
         }
     }
 }
