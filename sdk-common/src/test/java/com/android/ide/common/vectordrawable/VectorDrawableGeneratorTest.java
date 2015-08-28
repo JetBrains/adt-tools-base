@@ -155,6 +155,10 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         checkSvgConversion("ic_simple_group_info");
     }
 
+    public void testIconContainsError() throws Exception {
+        checkSvgConversion("ic_contains_ignorable_error");
+    }
+
     public void testXmlIconSizeOpacity() throws Exception {
         checkXmlConversion("ic_size_opacity");
     }

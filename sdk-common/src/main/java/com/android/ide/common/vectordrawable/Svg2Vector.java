@@ -185,6 +185,7 @@ public class Svg2Vector {
                 extractAllItemsAs(svgTree, child, currentNode);
 
                 currentGroup.addChild(child);
+                svgTree.setHasLeafNode(true);
             } else if (SVG_GROUP.equals(nodeName)) {
                 SvgGroupNode childGroup = new SvgGroupNode(svgTree, currentNode, "child" + i);
                 currentGroup.addChild(childGroup);
@@ -656,10 +657,7 @@ public class Svg2Vector {
         try {
             SvgTree svgTree = parse(inputSVG);
             errorLog = svgTree.getErrorLog();
-            // When there was anything in the input SVG file that we can't
-            // convert to VectorDrawable, we logged them as errors.
-            // After we logged all the errors, we skipped the XML file generation.
-            if (svgTree.canConvertToVectorDrawable()) {
+            if (svgTree.getHasLeafNode()) {
                 writeFile(outStream, svgTree);
             }
         } catch (Exception e) {

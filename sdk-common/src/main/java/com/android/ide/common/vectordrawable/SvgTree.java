@@ -48,6 +48,12 @@ class SvgTree {
 
     private ArrayList<String> mErrorLines = new ArrayList<String>();
 
+    private boolean mHasLeafNode = false;
+
+    public void setHasLeafNode(boolean hasLeafNode) {
+        mHasLeafNode = hasLeafNode;
+    }
+
     public enum SvgLogLevel {
         ERROR,
         WARNING
@@ -116,10 +122,10 @@ class SvgTree {
     }
 
     /**
-     * @return true when there is no error found when parsing the SVG file.
+     * @return true when there is at least one valid child.
      */
-    public boolean canConvertToVectorDrawable() {
-        return mErrorLines.isEmpty();
+    public boolean getHasLeafNode() {
+        return mHasLeafNode;
     }
 
     private SourcePosition getPosition(Node node) {
