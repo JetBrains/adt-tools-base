@@ -1,6 +1,6 @@
 <resources>
 
-    <style name="FullscreenTheme" parent="android:Theme.Holo">
+   <style name="FullscreenTheme" parent="AppTheme">
         <item name="android:actionBarStyle">@style/FullscreenActionBarStyle</item>
         <item name="android:windowActionBarOverlay">true</item>
         <item name="android:windowBackground">@null</item>
@@ -8,7 +8,7 @@
         <item name="metaButtonBarButtonStyle">?android:attr/buttonBarButtonStyle</item>
     </style>
 
-    <style name="FullscreenActionBarStyle" parent="android:Widget.Holo.ActionBar">
+    <style name="FullscreenActionBarStyle" parent="<#if appCompat>Widget.AppCompat.ActionBar<#else>android:Widget.Holo.ActionBar</#if>">
         <item name="android:background">@color/black_overlay</item>
     </style>
 
