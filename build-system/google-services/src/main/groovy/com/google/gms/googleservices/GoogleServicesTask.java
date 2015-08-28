@@ -17,6 +17,7 @@
 package com.google.gms.googleservices;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -26,6 +27,11 @@ import com.google.gson.JsonPrimitive;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.artifacts.Dependency;
+import org.gradle.api.artifacts.DependencySet;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Optional;
@@ -57,11 +63,18 @@ public class GoogleServicesTask extends DefaultTask {
     @Input
     public String packageName;
 
+    @Input
+    public String moduleGroup;
+
+    @Input
+    public String moduleVersion;
+
     @TaskAction
     public void action() throws IOException {
+        checkVersionConflict();
         if (!quickstartFile.isFile()) {
             getLogger().warn("File " + quickstartFile.getName() + " is missing from module root folder." +
-                    " The Google Quickstart Plugin cannot function without it.");
+                    " The Google Services Plugin cannot function without it.");
 
             // Skip the rest of the actions because it would not make sense if `quickstartFile` is missing.
             return;
@@ -90,6 +103,7 @@ public class GoogleServicesTask extends DefaultTask {
         if (clientObject != null) {
             handleAnalytics(clientObject, resValues);
             handleAdsService(clientObject, resValues);
+            handleGoogleAppId(clientObject, resValues);
         } else {
             getLogger().warn("No matching client found for package name '" + packageName + "'");
         }
@@ -101,6 +115,42 @@ public class GoogleServicesTask extends DefaultTask {
         }
 
         Files.write(getValuesContent(resValues), new File(values, "values.xml"), Charsets.UTF_8);
+    }
+
+    /**
+     * Check if there is any conflict between Play-Services Version
+     */
+    private void checkVersionConflict() {
+        Project project = getProject();
+        ConfigurationContainer configurations = project.getConfigurations();
+        if (configurations == null) {
+            return;
+        }
+        boolean hasConflict = false;
+        for (Configuration configuration : configurations) {
+            if (configuration == null) {
+                continue;
+            }
+            DependencySet dependencies = configuration.getAllDependencies();
+            if (dependencies == null) {
+                continue;
+            }
+            for (Dependency dependency : dependencies) {
+                if (dependency == null || dependency.getGroup() == null || dependency.getVersion() == null) {
+                    continue;
+                }
+                if (dependency.getGroup().equals(moduleGroup)
+                        && !dependency.getVersion().equals(moduleVersion)) {
+                    hasConflict = true;
+                    project.getLogger().warn("Found " + dependency.getGroup() + ":"
+                            + dependency.getName() + ":" + dependency.getVersion() +
+                            ", but version " + moduleVersion + " is needed");
+                }
+            }
+        }
+        if (hasConflict) {
+            throw new GradleException("Please fix the version conflict.");
+        }
     }
 
     /**
@@ -207,6 +257,26 @@ public class GoogleServicesTask extends DefaultTask {
         }
 
         return null;
+    }
+
+    /**
+     * Handle a client object for Google App Id.
+     */
+    private void handleGoogleAppId(JsonObject clientObject, Map<String, String> resValues)
+            throws IOException {
+        JsonObject clientInfo = clientObject.getAsJsonObject("client_info");
+        if (clientInfo == null) {
+            // Should not happen
+            throw new GradleException("Client does not have client info");
+        }
+
+        JsonPrimitive googleAppId = clientInfo.getAsJsonPrimitive("mobilesdk_app_id");
+        if (googleAppId == null) return;
+
+        String googleAppIdStr = googleAppId.getAsString();
+        if (Strings.isNullOrEmpty(googleAppIdStr)) return;
+
+        resValues.put("google_app_id", googleAppIdStr);
     }
 
     /**
