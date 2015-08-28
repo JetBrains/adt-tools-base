@@ -1,8 +1,13 @@
 <?xml version="1.0"?>
 <globals>
-    <global id="manifestOut" value="${manifestDir}" />
-    <global id="srcOut" value="${srcDir}/${slashedPackageName(packageName)}" />
-    <global id="resOut" value="${resDir}" />
+    <globals file="../common/common_globals.xml.ftl" />
+
     <global id="simpleName" value="${activityToLayout(activityClass)}" />
-    <global id="relativePackage" value="<#if relativePackage?has_content>${relativePackage}<#else>${packageName}</#if>" />
+    <global id="isLauncher" type="boolean" value="${isNewProject?string}" />
+    <global id="includeImageDrawables" type="boolean" value="${(minApi?number lt 21)?string}" />
+<#if (isNewProject || hasDependency('com.android.support:appcompat-v7'))>
+    <global id="preferenceSuperClass" type="string" value="AppCompatPreferenceActivity"/>
+<#else>
+    <global id="preferenceSuperClass" type="string" value="PreferenceActivity"/>
+</#if>
 </globals>
