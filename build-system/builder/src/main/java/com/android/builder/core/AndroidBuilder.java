@@ -925,16 +925,7 @@ public class AndroidBuilder {
                 for (SymbolLoader symbolLoader : symbols) {
                     writer.addSymbolsToWrite(symbolLoader);
                 }
-                try {
-                    writer.write();
-                } catch (SymbolWriter.ResourceMissingException e) {
-                    String msg = String.format(
-                            "Error: Library with package name '%1$s' defines resource '%2$s', "
-                                    + "but a resource override in project with package name '%3$s' "
-                                    + "has removed it.",
-                            packageName, e.getResourceName(), appPackageName);
-                    throw new RuntimeException(msg);
-                }
+                writer.write();
             }
         }
     }
