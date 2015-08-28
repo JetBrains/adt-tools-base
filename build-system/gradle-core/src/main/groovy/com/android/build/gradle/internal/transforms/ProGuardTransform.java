@@ -30,10 +30,10 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.tasks.SimpleWorkQueue;
+import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
-import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
@@ -41,7 +41,6 @@ import com.android.builder.tasks.Job;
 import com.android.builder.tasks.JobContext;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -62,7 +61,7 @@ import proguard.ParseException;
 /**
  * ProGuard support as a transform
  */
-public class ProGuardTransform extends BaseProguardAction implements Transform {
+public class ProGuardTransform extends BaseProguardAction implements CombinedTransform {
 
     private final VariantScope variantScope;
     private final boolean asJar;
@@ -229,8 +228,9 @@ public class ProGuardTransform extends BaseProguardAction implements Transform {
 
     @Override
     public void transform(
-            @NonNull final Map<TransformInput, TransformOutput> inputOutputs,
-            @NonNull final List<TransformInput> referencedInputs,
+            @NonNull final Collection<TransformInput> inputs,
+            @NonNull final Collection<TransformInput> referencedInputs,
+            @NonNull final TransformOutput combinedOutput,
             boolean isIncremental) throws TransformException {
         // only run one minification at a time (across projects)
         final Job<Void> job = new Job<Void>(getName(),
@@ -238,7 +238,7 @@ public class ProGuardTransform extends BaseProguardAction implements Transform {
                     @Override
                     public void run(@NonNull Job<Void> job,
                             @NonNull JobContext<Void> context) throws IOException {
-                        doMinification(inputOutputs, referencedInputs);
+                        doMinification(inputs, referencedInputs, combinedOutput);
                     }
                 });
         try {
@@ -253,12 +253,12 @@ public class ProGuardTransform extends BaseProguardAction implements Transform {
     }
 
     private void doMinification(
-            @NonNull Map<TransformInput, TransformOutput> inputOutputs,
-            @NonNull List<TransformInput> referencedStreams) throws IOException {
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull Collection<TransformInput> referencedInputs,
+            @NonNull TransformOutput combinedOutput) throws IOException {
         // all the output will be the same since the transform type is COMBINED.
-        TransformOutput transformOutput = Iterables.getFirst(inputOutputs.values(), null);
-        checkNotNull(transformOutput, "Found no output in transform with Type=COMBINED");
-        File outFile = transformOutput.getOutFile();
+        checkNotNull(combinedOutput, "Found no output in transform with Type=COMBINED");
+        File outFile = combinedOutput.getOutFile();
 
         try {
             final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope
@@ -274,10 +274,10 @@ public class ProGuardTransform extends BaseProguardAction implements Transform {
 
             // --- InJars / LibraryJars ---
             if (isLibrary) {
-                handleLibraryCase(variantConfig, inputOutputs.keySet(), referencedStreams);
+                handleLibraryCase(variantConfig, inputs, referencedInputs);
             } else {
-                addInputsToConfiguration(inputOutputs.keySet(), false);
-                addInputsToConfiguration(referencedStreams, true);
+                addInputsToConfiguration(inputs, false);
+                addInputsToConfiguration(referencedInputs, true);
             }
 
             // libraryJars: the runtime jars.

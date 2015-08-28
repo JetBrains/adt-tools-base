@@ -93,7 +93,6 @@ public class FileFilterTest {
 
     @Test
     public void testSimpleCopy() throws IOException {
-
         fileFilter = new FileFilter(
                 sPackagedJarExpansionSubStreams,
                 packagingOptions);
@@ -107,7 +106,6 @@ public class FileFilterTest {
 
     @Test
     public void testSimpleExclusion() throws IOException {
-
         when(packagingOptions.getExcludes()).thenReturn(
                 ImmutableSet.of("foo/text.properties"));
         fileFilter = new FileFilter(

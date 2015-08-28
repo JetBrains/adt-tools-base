@@ -20,6 +20,7 @@ import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.scope.VariantScopeImpl
+import com.android.build.transform.api.AsInputTransform
 import com.android.build.transform.api.ScopedContent
 import com.android.build.transform.api.Transform
 import com.android.build.transform.api.TransformException
@@ -37,7 +38,7 @@ import static com.android.utils.FileUtils.mkdirs
 /**
  * Jacoco Transform
  */
-public class JacocoTransform implements Transform {
+public class JacocoTransform implements AsInputTransform {
 
     @NonNull
     private final Supplier<Collection<File>> jacocoClasspath
@@ -125,7 +126,7 @@ public class JacocoTransform implements Transform {
     @Override
     void transform(
             @NonNull Map<TransformInput, TransformOutput> inputOutputs,
-            @NonNull List<TransformInput> referencedInputs,
+            @NonNull Collection<TransformInput> referencedInputs,
             boolean isIncremental) throws TransformException {
 
         // this is a as_input transform with single scope, so there's only one entry in the map
