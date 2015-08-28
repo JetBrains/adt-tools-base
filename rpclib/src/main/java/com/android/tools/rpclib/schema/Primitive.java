@@ -27,20 +27,15 @@ public final class Primitive extends Type {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         Primitive primitive = (Primitive)o;
-
-        if (!mName.equals(primitive.mName)) return false;
-        if (mMethod != primitive.mMethod) return false;
-
+        if (!mName.equals(primitive.mName)) { return false; }
+        assert(mMethod.value == primitive.mMethod.value);
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = mName.hashCode();
-        result = 31 * result + mMethod.hashCode();
-        return result;
+        return mName.hashCode();
     }
 
     @Override

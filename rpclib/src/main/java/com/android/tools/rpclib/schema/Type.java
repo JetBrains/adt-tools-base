@@ -24,8 +24,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 public abstract class Type implements BinaryObject {
-  private ConstantSet myConstants;
-
   @NotNull
   public abstract String getName();
 
