@@ -24,16 +24,14 @@ import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.io.IFileOp;
+import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
-import com.google.common.base.Objects;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -58,7 +56,20 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
       @NonNull  String abi,
       @NonNull  MajorRevision revision) {
         super(localSdk, localDir, sourceProps);
-        mDesc = PkgDesc.Builder.newSysImg(version, tag, abi, revision).create();
+        String listDisplay = sourceProps.getProperty(PkgProps.PKG_LIST_DISPLAY);
+        if (listDisplay == null) {
+            listDisplay = "";
+        }
+        mDesc = PkgDesc.Builder.newSysImg(version, tag, abi, revision)
+                .setDescriptionShort(
+                        createShortDescription(listDisplay,
+                                abi, null, tag, version,
+                                revision, sourceProps.containsKey(PkgProps.PKG_OBSOLETE)))
+                .setListDisplay(
+                        createListDescription(listDisplay,
+                                tag, getAbiDisplayNameInternal(abi),
+                                sourceProps.containsKey(PkgProps.PKG_OBSOLETE)))
+                .create();
     }
 
     @NonNull
@@ -125,11 +136,48 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
         }
 
         return new SystemImage(
-          localDir,
-          ISystemImage.LocationType.IN_SYSTEM_IMAGE,
-          tag,
-          desc.getVendor(),
-          abi,
-          skins);
+                localDir,
+                ISystemImage.LocationType.IN_SYSTEM_IMAGE,
+                tag,
+                desc.getVendor(),
+                abi,
+                skins);
+    }
+
+    public static String createListDescription(String listDisplay, IdDisplay tag, String abiDisplayName, boolean obsolete) {
+        if (!listDisplay.isEmpty()) {
+            return String.format("%1$s%2$s", listDisplay, obsolete ? " (Obsolete)" : "");
+        }
+
+        boolean isDefaultTag = SystemImage.DEFAULT_TAG.equals(tag);
+        return String.format("%1$s%2$s System Image%3$s", isDefaultTag ? "" : (tag.getDisplay() + " "), abiDisplayName,
+                obsolete ? " (Obsolete)" : "");
+    }
+
+    public static String createShortDescription(String listDisplay,
+            String abi,
+            IdDisplay vendor,
+            IdDisplay tag,
+            AndroidVersion version,
+            FullRevision revision,
+            boolean obsolete) {
+        if (!listDisplay.isEmpty()) {
+            return String.format("%1$s, %2$s API %3$s, revision %4$s%5$s", listDisplay, vendor == null ? "Android" : vendor.getDisplay(),
+                    version.getApiString(), revision.toShortString(), obsolete ? " (Obsolete)" : "");
+        }
+
+        boolean isDefaultTag = SystemImage.DEFAULT_TAG.equals(tag);
+        return String.format("%1$s%2$s System Image, %3$s API %4$s, revision %5$s%6$s", isDefaultTag ? "" : (tag.getDisplay() + " "),
+                getAbiDisplayNameInternal(abi), vendor == null ? "Android" : vendor.getDisplay(), version.getApiString(),
+                revision.toShortString(), obsolete ? " (Obsolete)" : "");
+    }
+
+    public static String getAbiDisplayNameInternal(String abi) {
+        return abi.replace("armeabi", "ARM EABI")          //$NON-NLS-1$  //$NON-NLS-2$
+                .replace("arm64", "ARM 64")            //$NON-NLS-1$  //$NON-NLS-2$
+                .replace("x86", "Intel x86 Atom")    //$NON-NLS-1$  //$NON-NLS-2$
+                .replace("x86_64", "Intel x86_64 Atom") //$NON-NLS-1$  //$NON-NLS-2$
+                .replace("mips", "MIPS")              //$NON-NLS-1$  //$NON-NLS-2$
+                .replace("-", " ");                      //$NON-NLS-1$  //$NON-NLS-2$
     }
 }
