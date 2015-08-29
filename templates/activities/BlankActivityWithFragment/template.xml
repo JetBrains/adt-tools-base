@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <template
     format="3"
-    revision="4"
+    revision="5"
     name="Blank Activity with Fragment"
     minApi="7"
     minBuildApi="14"
-    description="Creates a new blank activity, with an action bar and a contained Fragment.">
+    description="Creates a new blank activity, with an action or app bar and a contained Fragment.">
 
     <category value="Activity" />
     <formfactor value="Mobile" />
@@ -63,6 +63,14 @@
         help="If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher" />
 
     <parameter
+        id="hasAppBarSelected"
+        name="Include App Bar"
+        type="boolean"
+        visibility="appCompatActivity!false"
+        default="true"
+        help="If true, the layout will include a Material Design App Bar." />
+
+    <parameter
         id="parentActivityClass"
         name="Hierarchical Parent"
         type="string"
@@ -76,6 +84,16 @@
         type="string"
         constraints="package"
         default="com.mycompany.myapp" />
+
+    <parameter
+            id="appBarLayoutName"
+            name="App Bar Layout Name"
+            type="string"
+            constraints="layout|unique"
+            suggest="${layoutName}_app_bar"
+            default="activity_main_app_bar"
+            visibility="false"
+            help="The name of the App Bar layout to create for the activity" />
 
     <!-- 128x128 thumbnails relative to template.xml -->
     <thumbs>

@@ -1,11 +1,12 @@
 <?xml version="1.0"?>
 <recipe>
 
-    <merge from="root/AndroidManifest.xml.ftl"
-             to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
+    <execute file="../common/recipe_manifest.xml.ftl" />
 
+<#if isNewProject>
     <instantiate from="root/res/menu/main.xml.ftl"
             to="${escapeXmlAttribute(resOut)}/menu/${menuName}.xml" />
+</#if>
 
     <merge from="root/res/values/strings.xml.ftl"
              to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
@@ -14,6 +15,10 @@
              to="${escapeXmlAttribute(resOut)}/values/dimens.xml" />
     <merge from="root/res/values-w820dp/dimens.xml"
              to="${escapeXmlAttribute(resOut)}/values-w820dp/dimens.xml" />
+
+<#if hasAppBar>
+    <execute file="../common/recipe_app_bar.xml.ftl" />
+</#if>
 
     <instantiate from="root/res/layout/activity_fragment_container.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
