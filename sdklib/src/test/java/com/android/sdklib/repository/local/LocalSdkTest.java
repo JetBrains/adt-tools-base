@@ -25,6 +25,7 @@ import com.android.sdklib.io.MockFileOp;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.descriptors.PkgType;
+
 import junit.framework.TestCase;
 
 import java.io.File;
@@ -530,15 +531,39 @@ public class LocalSdkTest extends TestCase {
                 "part {\n" +
                 "}\n");
 
-        assertEquals("[<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 18 Tag=default [Default] Path=armeabi-v7a MajorRev=1>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 18 Tag=default [Default] Path=x86 MajorRev=2>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 Tag=default [Default] Path=armeabi-v7a MajorRev=6>>, " +
-                      // Tag=default Path=armeabi-v7a MajorRev=5 is overriden by the MajorRev=6 above
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 Tag=default [Default] Path=mips MajorRev=4>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 Tag=default [Default] Path=x86 MajorRev=3>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 Tag=tag-1 [My Tag 1] Path=x86 MajorRev=7>>, " +
-                      "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 Tag=tag-2 [My Tag 2] Path=mips MajorRev=8>>]",
-                     Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGE)));
+        assertEquals(
+                "[<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 18 "
+                        + "Tag=default [Default] Path=armeabi-v7a MajorRev=1" +
+                        " ListDisp=ARM EABI v7a System Image "
+                        + "DescShort=ARM EABI v7a System Image, Android API 18, revision 1>>, " +
+                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 18 "
+                        + "Tag=default [Default] Path=x86 MajorRev=2" +
+                        " ListDisp=Intel x86 Atom System Image "
+                        + "DescShort=Intel x86 Atom System Image, Android API 18, revision 2>>, " +
+                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 "
+                        + "Tag=default [Default] Path=armeabi-v7a MajorRev=6" +
+                        " ListDisp=ARM EABI v7a System Image "
+                        + "DescShort=ARM EABI v7a System Image, Android API 42, revision 6>>, " +
+                        // Tag=default Path=armeabi-v7a MajorRev=5 is
+                        // overridden by the MajorRev=6 above
+                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 "
+                        + "Tag=default [Default] Path=mips MajorRev=4" +
+                        " ListDisp=MIPS System Image "
+                        + "DescShort=MIPS System Image, Android API 42, revision 4>>, " +
+                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 "
+                        + "Tag=default [Default] Path=x86 MajorRev=3" +
+                        " ListDisp=Intel x86 Atom System Image "
+                        + "DescShort=Intel x86 Atom System Image, Android API 42, revision 3>>, " +
+                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 "
+                        + "Tag=tag-1 [My Tag 1] Path=x86 MajorRev=7" +
+                        " ListDisp=My Tag 1 Intel x86 Atom System Image "
+                        + "DescShort=My Tag 1 Intel x86 Atom System Image, Android API 42, "
+                        + "revision 7>>, " +
+                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 42 "
+                        + "Tag=tag-2 [My Tag 2] Path=mips MajorRev=8" +
+                        " ListDisp=My Tag 2 MIPS System Image "
+                        + "DescShort=My Tag 2 MIPS System Image, Android API 42, revision 8>>]",
+                Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGE)));
 
         LocalPkgInfo pi = mLS.getPkgsInfos(PkgType.PKG_SYS_IMAGE)[0];
         assertNotNull(pi);
@@ -547,7 +572,7 @@ public class LocalSdkTest extends TestCase {
         assertEquals(null, pi.getLoadError());
         assertEquals(new MajorRevision(1), pi.getDesc().getMajorRevision());
         assertEquals("armeabi-v7a", pi.getDesc().getPath());
-        assertEquals("armeabi-v7a System Image, Android 18", pi.getListDescription());
+        assertEquals("ARM EABI v7a System Image", pi.getListDescription());
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
     }
 
@@ -560,7 +585,8 @@ public class LocalSdkTest extends TestCase {
         recordPlatform18(mFOp);
 
         assertEquals(
-                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>]",
+                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 "
+                        + "Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>]",
                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_PLATFORM)));
 
         LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_PLATFORM, new AndroidVersion(18, null));
@@ -623,11 +649,19 @@ public class LocalSdkTest extends TestCase {
                 "}\n");
 
         assertEquals(
-                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
-                   "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 18 Tag=tag-1 [My Tag 1] Path=x86 MajorRev=7>>, " +
-                   "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 18 Tag=tag-2 [My Tag 2] Path=mips MajorRev=8>>]",
-                 Arrays.toString(
-                      mLS.getPkgsInfos(EnumSet.of(PkgType.PKG_PLATFORM, PkgType.PKG_SYS_IMAGE))));
+                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 "
+                        + "MajorRev=1 MinToolsRev=21.0.0>>, " +
+                        "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 18 "
+                        + "Tag=tag-1 [My Tag 1] Path=x86 MajorRev=7"
+                        + " ListDisp=My Tag 1 Intel x86 Atom System Image"
+                        + " DescShort=My Tag 1 Intel x86 Atom System Image, Android API 18, "
+                        + "revision 7>>, "
+                        + "<LocalSysImgPkgInfo <PkgDesc Type=sys_image Android=API 18 "
+                        + "Tag=tag-2 [My Tag 2] Path=mips MajorRev=8"
+                        + " ListDisp=My Tag 2 MIPS System Image"
+                        + " DescShort=My Tag 2 MIPS System Image, Android API 18, revision 8>>]",
+                Arrays.toString(
+                        mLS.getPkgsInfos(EnumSet.of(PkgType.PKG_PLATFORM, PkgType.PKG_SYS_IMAGE))));
 
         LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_PLATFORM, new AndroidVersion(18, null));
         assertNotNull(pi);
@@ -1055,18 +1089,36 @@ public class LocalSdkTest extends TestCase {
                 "}\n");
 
         assertEquals(
-                "[<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=armeabi-v7a MajorRev=1>>, " +
-                 "<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=x86 MajorRev=1>>]",
+                "[<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 "
+                        + "Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=armeabi-v7a "
+                        + "MajorRev=1 ListDisp=Some Name ARM EABI v7a System Image "
+                        + "DescShort=Some Name ARM EABI v7a System Image, Some Vendor API 18, "
+                        + "revision 1>>, " +
+                        "<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 "
+                        + "Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=x86 MajorRev=1"
+                        + " ListDisp=Some Name Intel x86 Atom System Image DescShort=Some Name "
+                        + "Intel x86 Atom System Image, Some Vendor API 18, revision 1>>]",
                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGE)));
         assertEquals(
                 "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2>>]",
                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
         assertEquals(
-                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 MajorRev=1 MinToolsRev=21.0.0>>, " +
-                 "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2>>, " +
-                 "<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=armeabi-v7a MajorRev=1>>, " +
-                 "<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=x86 MajorRev=1>>]",
-                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ALL)));
+                "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 "
+                        + "MajorRev=1 MinToolsRev=21.0.0>>, " +
+                        "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 "
+                        + "Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 MajorRev=2"
+                        + ">>, " +
+                        "<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 "
+                        + "Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=armeabi-v7a "
+                        + "MajorRev=1 ListDisp=Some Name ARM EABI v7a System Image "
+                        + "DescShort=Some Name ARM EABI v7a System Image, Some Vendor API 18, "
+                        + "revision 1>>, " +
+                        "<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 "
+                        + "Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=x86 MajorRev=1"
+                        + " ListDisp=Some Name Intel x86 Atom System Image "
+                        + "DescShort=Some Name Intel x86 Atom System Image, Some Vendor API 18, "
+                        + "revision 1>>]",
+                Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ALL)));
 
         LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_ADDON, "Some Vendor:Some Name:18");
         assertNotNull(pi);
