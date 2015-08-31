@@ -130,4 +130,44 @@ public class HardcodedValuesDetectorTest extends AbstractCheckTest {
                         + "        android:text=\"New Text\" />\n"
                         + "</LinearLayout>\n")));
     }
+
+    public void testAppRestrictions() throws Exception {
+        // Sample from https://developer.android.com/samples/AppRestrictionSchema/index.html
+        assertEquals(""
+                        + "res/xml/app_restrictions.xml:12: Warning: [I18N] Hardcoded string \"Hardcoded description\", should use @string resource [HardcodedText]\n"
+                        + "        android:description=\"Hardcoded description\"\n"
+                        + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "res/xml/app_restrictions.xml:15: Warning: [I18N] Hardcoded string \"Hardcoded title\", should use @string resource [HardcodedText]\n"
+                        + "        android:title=\"Hardcoded title\"/>\n"
+                        + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "0 errors, 2 warnings\n",
+                lintProject(
+                        xml("res/xml/app_restrictions.xml", ""
+                                + "<restrictions xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                                + " \n"
+                                + "    <restriction\n"
+                                + "        android:defaultValue=\"@bool/default_can_say_hello\"\n"
+                                + "        android:description=\"@string/description_can_say_hello\"\n"
+                                + "        android:key=\"can_say_hello\"\n"
+                                + "        android:restrictionType=\"bool\"\n"
+                                + "        android:title=\"@string/title_can_say_hello\"/>\n"
+                                + " \n"
+                                + "    <restriction\n"
+                                + "        android:defaultValue=\"Hardcoded default value\"\n"
+                                + "        android:description=\"Hardcoded description\"\n"
+                                + "        android:key=\"message\"\n"
+                                + "        android:restrictionType=\"string\"\n"
+                                + "        android:title=\"Hardcoded title\"/>\n"
+                                + " \n"
+                                + "</restrictions>"),
+                        xml("res/xml/random_file.xml", ""
+                                + "<myRoot xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                                + " \n"
+                                + "    <myElement\n"
+                                + "        android:description=\"Hardcoded description\"\n"
+                                + "        android:title=\"Hardcoded title\"/>\n"
+                                + " \n"
+                                + "</myRoot>")
+                ));
+    }
 }
