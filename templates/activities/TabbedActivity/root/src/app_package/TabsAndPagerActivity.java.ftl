@@ -1,28 +1,55 @@
 package ${packageName};
 
+<#if hasViewPager>
 import java.util.Locale;
 
+</#if>
+<#if hasAppBar>
+<#if features == 'tabs'>
+import android.support.design.widget.TabLayout;
+</#if>
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+<#else>  <#-- hasAppBar -->
 import ${superClassFqcn};
 import android.<#if appCompat>support.v7.</#if>app.ActionBar;
-import android.<#if appCompat>support.v4.</#if>app.Fragment;
-import android.<#if appCompat>support.v4.</#if>app.FragmentManager;
 import android.<#if appCompat>support.v4.</#if>app.FragmentTransaction;
+</#if>   <#-- hasAppBar -->
+import android.<#if appCompat>support.v4.</#if>app.Fragment;
+<#if hasViewPager>
+import android.<#if appCompat>support.v4.</#if>app.FragmentManager;
 import android.support.${(appCompat)?string('v4','v13')}.app.FragmentPagerAdapter;
-import android.os.Bundle;
 import android.support.v4.view.ViewPager;
-import android.view.Gravity;
+</#if>
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+<#if features == 'spinner'>
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+import android.content.Context;
+<#if buildApi gte 23>
+import android.support.v7.widget.ThemedSpinnerAdapter;
+import android.content.res.Resources.Theme;
+<#else>
+import android.graphics.Color;
+</#if>
+</#if>  <#-- features == 'spinner' -->
 import android.widget.TextView;
 <#if applicationPackage??>
 import ${applicationPackage}.R;
 </#if>
 
-public class ${activityClass} extends ${superClass}<#if features == 'tabs'> implements ActionBar.TabListener</#if> {
+public class ${activityClass} extends ${superClass}<#if !hasAppBar && features == 'tabs'> implements ActionBar.TabListener</#if> {
 
+    <#if hasViewPager>
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
      * fragments for each of the sections. We use a
@@ -38,25 +65,76 @@ public class ${activityClass} extends ${superClass}<#if features == 'tabs'> impl
      */
     ViewPager mViewPager;
 
+    </#if>
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.${layoutName});
+    <#if hasAppBar>
 
-        <#if features == 'tabs'>
-        // Set up the action bar.
-        final ActionBar actionBar = get${Support}ActionBar();
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);</#if>
-
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+    </#if>
+    <#if parentActivityClass != "">
+        get${Support}ActionBar().setDisplayHomeAsUpEnabled(true);
+    </#if>
+    <#if hasViewPager>
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
         mSectionsPagerAdapter = new SectionsPagerAdapter(get${Support}FragmentManager());
 
         // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.pager);
+        mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
-        <#if features == 'tabs'>
+    </#if>
+    <#if hasAppBar>
+      <#if features == 'tabs'>
+        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
+        tabLayout.setupWithViewPager(mViewPager);
+      <#elseif features == 'spinner'>
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
+
+        // Setup spinner
+        Spinner spinner = (Spinner) findViewById(R.id.spinner);
+        spinner.setAdapter(new MyAdapter(
+                toolbar.getContext(),
+                new String[]{
+                        "Section 1",
+                        "Section 2",
+                        "Section 3",
+                }));
+
+        spinner.setOnItemSelectedListener(new OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // When the given dropdown item is selected, show its contents in the
+                // container view.
+                get${Support}FragmentManager().beginTransaction()
+                        .replace(R.id.container, PlaceholderFragment.newInstance(position + 1))
+                        .commit();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+      </#if>
+
+      FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+      fab.setOnClickListener(new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+              Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                      .setAction("Action", null).show();
+          }
+      });
+    <#else>  <#-- hasAppBar -->
+      <#if features == 'tabs'>
+        // Set up the action bar.
+        final ActionBar actionBar = get${Support}ActionBar();
+        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+
         // When swiping between different sections, select the corresponding
         // tab. We can also use ActionBar.Tab#select() to do this if we have
         // a reference to the Tab.
@@ -78,12 +156,13 @@ public class ${activityClass} extends ${superClass}<#if features == 'tabs'> impl
                             .setText(mSectionsPagerAdapter.getPageTitle(i))
                             .setTabListener(this));
         }
-        </#if>
+      </#if>
+    </#if>  <#-- hasAppBar -->
     }
 
     <#include "include_options_menu.java.ftl">
 
-    <#if features == 'tabs'>@Override
+    <#if !hasAppBar && features == 'tabs'>@Override
     public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
         // When the given tab is selected, switch to the corresponding page in
         // the ViewPager.
@@ -96,8 +175,69 @@ public class ${activityClass} extends ${superClass}<#if features == 'tabs'> impl
 
     @Override
     public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
-    }</#if>
+    }
+    </#if>
 
+    <#if features == 'spinner'>
+    <#if buildApi gte 23>
+    private static class MyAdapter extends ArrayAdapter<String> implements ThemedSpinnerAdapter {
+        private final ThemedSpinnerAdapter.Helper mDropDownHelper;
+
+        public MyAdapter(Context context, String[] objects) {
+            super(context, android.R.layout.simple_list_item_1, objects);
+            mDropDownHelper = new ThemedSpinnerAdapter.Helper(context);
+        }
+
+        @Override
+        public View getDropDownView(int position, View convertView, ViewGroup parent) {
+            View view;
+
+            if (convertView == null) {
+                // Inflate the drop down using the helper's LayoutInflater
+                LayoutInflater inflater = mDropDownHelper.getDropDownViewInflater();
+                view = inflater.inflate(android.R.layout.simple_list_item_1, parent, false);
+            } else {
+                view = convertView;
+            }
+
+            TextView textView = (TextView) view.findViewById(android.R.id.text1);
+            textView.setText(getItem(position));
+
+            return view;
+        }
+
+        @Override
+        public void setDropDownViewTheme(Theme theme) {
+            mDropDownHelper.setDropDownViewTheme(theme);
+        }
+
+        @Override
+        public Theme getDropDownViewTheme() {
+            return mDropDownHelper.getDropDownViewTheme();
+        }
+    }
+
+    <#else>  <#-- buildApi gte 23 -->
+    private static class MyAdapter extends ArrayAdapter<String> {
+
+        public MyAdapter(Context context, String[] objects) {
+            super(context, android.R.layout.simple_list_item_1, android.R.id.text1, objects);
+        }
+
+        @Override
+        public View getDropDownView(int position, View convertView, ViewGroup parent) {
+            View view = super.getView(position, convertView, parent);
+            TextView text = (TextView) view.findViewById(android.R.id.text1);
+            // Hack. Use BuildVersion 23 for a better approach.
+            text.setTextColor(Color.BLACK);
+            text.setBackgroundColor(Color.WHITE);
+            return view;
+        }
+    }
+    </#if>
+    </#if>  <#-- features == 'spinner' -->
+
+    <#if hasViewPager>
     /**
      * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
      * one of the sections/tabs/pages.
@@ -123,19 +263,18 @@ public class ${activityClass} extends ${superClass}<#if features == 'tabs'> impl
 
         @Override
         public CharSequence getPageTitle(int position) {
-            Locale l = Locale.getDefault();
             switch (position) {
                 case 0:
-                    return getString(R.string.title_section1).toUpperCase(l);
+                    return "SECTION 1";
                 case 1:
-                    return getString(R.string.title_section2).toUpperCase(l);
+                    return "SECTION 2";
                 case 2:
-                    return getString(R.string.title_section3).toUpperCase(l);
+                    return "SECTION 3";
             }
             return null;
         }
     }
+    </#if>
 
     <#include "include_fragment.java.ftl">
-
 }
