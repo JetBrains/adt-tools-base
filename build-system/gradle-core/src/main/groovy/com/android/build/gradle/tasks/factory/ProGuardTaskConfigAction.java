@@ -61,8 +61,8 @@ public class ProGuardTaskConfigAction implements TaskConfigAction<ProGuardTask> 
                                     .getLocation(),
                             "lib" + File.separatorChar + "shrinkedAndroid.jar");
 
-                    // TODO remove in 1.0
-                    // STOPSHIP
+                    // For build-tools 21.1.0, shrinkedAndroid.jar is located in the 'multidex'
+                    // folder.
                     if (!shrinkedAndroid.isFile()) {
                         shrinkedAndroid = new File(
                                 scope.getGlobalScope().getAndroidBuilder().getTargetInfo()
