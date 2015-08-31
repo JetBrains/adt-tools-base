@@ -17,16 +17,8 @@
  */
 package com.android.tools.rpclib.schema;
 
-import com.intellij.ui.SimpleColoredComponent;
-import com.intellij.ui.SimpleTextAttributes;
+import com.android.tools.rpclib.binary.*;
 import org.jetbrains.annotations.NotNull;
-
-import com.android.tools.rpclib.binary.BinaryClass;
-import com.android.tools.rpclib.binary.BinaryID;
-import com.android.tools.rpclib.binary.BinaryObject;
-import com.android.tools.rpclib.binary.Decoder;
-import com.android.tools.rpclib.binary.Encoder;
-import com.android.tools.rpclib.binary.Namespace;
 
 import java.io.IOException;
 
@@ -41,13 +33,6 @@ public final class Interface extends Type {
     public Object decodeValue(@NotNull Decoder d) throws IOException {
         return d.object();
     }
-
-    @Override
-    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
-        component.append("$", SimpleTextAttributes.GRAY_ATTRIBUTES);
-        Render.object(value, component, defaultAttributes);
-    }
-
 
     //<<<Start:Java.ClassBody:1>>>
     private String mName;

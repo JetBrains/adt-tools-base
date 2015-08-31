@@ -17,13 +17,11 @@ package com.android.tools.rpclib.schema;
 
 
 import com.android.tools.rpclib.binary.*;
-import com.intellij.ui.SimpleColoredComponent;
-import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-public class Dynamic implements BinaryObject, Render.ToComponent  {
+public class Dynamic implements BinaryObject {
   private Klass mKlass;
   private Object[] mFields;
   public Dynamic(Klass klass) {
@@ -50,19 +48,7 @@ public class Dynamic implements BinaryObject, Render.ToComponent  {
     return mFields[index];
   }
 
-  @Override
-  public void render(@NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
-    component.append("{", SimpleTextAttributes.GRAY_ATTRIBUTES);
-    for (int index = 0; index < mFields.length; ++index) {
-      if (index > 0) {
-        component.append(",", SimpleTextAttributes.GRAY_ATTRIBUTES);
-      }
-      mKlass.mType.getFields()[index].getType().render(mFields[index], component, defaultAttributes);
-    }
-    component.append("}", SimpleTextAttributes.GRAY_ATTRIBUTES);
-  }
-
-    @NotNull
+  @NotNull
   @Override
   public Klass klass() {
     return mKlass;

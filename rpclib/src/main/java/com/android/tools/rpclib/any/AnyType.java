@@ -17,17 +17,9 @@
  */
 package com.android.tools.rpclib.any;
 
+import com.android.tools.rpclib.binary.*;
 import com.android.tools.rpclib.schema.Type;
-import com.intellij.ui.SimpleColoredComponent;
-import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
-
-import com.android.tools.rpclib.binary.BinaryClass;
-import com.android.tools.rpclib.binary.BinaryID;
-import com.android.tools.rpclib.binary.BinaryObject;
-import com.android.tools.rpclib.binary.Decoder;
-import com.android.tools.rpclib.binary.Encoder;
-import com.android.tools.rpclib.binary.Namespace;
 
 import java.io.IOException;
 
@@ -39,36 +31,7 @@ public final class AnyType extends Type {
     }
 
     public static Box box(Object value) {
-        if (value instanceof BinaryObject) {
-            return new ObjectBox().setValue((BinaryObject)value);
-        }
-        if (value instanceof Boolean) {
-            return new Bool().setValue((Boolean)value);
-        }
-        // TODO: signed/unsigned variants are indistinguishable in java
-        if (value instanceof Byte) {
-            return new Uint8().setValue((Byte)value);
-        }
-        if (value instanceof Short) {
-            return new Uint16().setValue((Short)value);
-        }
-        if (value instanceof Integer) {
-            return new Uint32().setValue((Integer)value);
-        }
-        if (value instanceof Long) {
-            return new Uint64().setValue((Long)value);
-        }
-        if (value instanceof Float) {
-            return new Float32().setValue((Float)value);
-        }
-        if (value instanceof Double) {
-            return new Float64().setValue((Double)value);
-        }
-        if (value instanceof String) {
-            return new StringBox().setValue((String)value);
-        }
-        // TODO: slice types
-        return null;
+        return Box.wrap(value);
     }
 
     public static Object unbox(Box value) {
@@ -83,12 +46,6 @@ public final class AnyType extends Type {
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
         return unbox((Box)d.variant());
-    }
-
-    @Override
-    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
-        // TODO: Customise renderer
-        component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
     }
 
     //<<<Start:Java.ClassBody:1>>>
