@@ -234,6 +234,7 @@ public class SystemImage implements ISystemImage {
      */
     @NonNull
     @Override
+    @Deprecated
     public LocationType getLocationType() {
         return mLocationtype;
     }

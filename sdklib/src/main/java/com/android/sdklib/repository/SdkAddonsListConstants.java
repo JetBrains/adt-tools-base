@@ -23,6 +23,7 @@ import java.io.InputStream;
  * Public constants for the sdk-addons-list XML Schema.
  * @deprecated moved to studio
  */
+@Deprecated
 public class SdkAddonsListConstants {
 
     /** The base of our sdk-addons-list XML namespace. */
