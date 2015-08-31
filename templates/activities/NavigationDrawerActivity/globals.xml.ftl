@@ -1,19 +1,15 @@
 <?xml version="1.0"?>
 <globals>
-    <global id="manifestOut" value="${manifestDir}" />
-<#if hasDependency('com.android.support:appcompat-v7')>
-    <global id="appCompat" type="boolean" value="true" />
-    <global id="superClass" type="string" value="<#if buildApi gte 22>AppCompat<#else>ActionBar</#if>Activity"/>
-    <global id="superClassFqcn" type="string" value="android.support.v7.app.<#if buildApi gte 22>AppCompat<#else>ActionBar</#if>Activity"/>
+
+<!-- Override hasNoActionBar before including the common definitions -->
+<#if (isNewProject || hasDependency('com.android.support:appcompat-v7')) && buildApi gte 22>
+    <global id="resIn" type="string" value="res-v22" />
+    <global id="hasNoActionBar" type="boolean" value="true" />
 <#else>
-    <global id="appCompat" type="boolean" value="false" />
-    <global id="superClass" type="string" value="Activity"/>
-    <global id="superClassFqcn" type="string" value="android.app.Activity"/>
+    <global id="resIn" type="string" value="res" />
+    <global id="hasNoActionBar" type="boolean" value="false" />
 </#if>
-    <!-- e.g. getSupportActionBar vs. getActionBar -->
-    <global id="Support" value="${(hasDependency('com.android.support:appcompat-v7'))?string('Support','')}" />
-    <global id="srcOut" value="${srcDir}/${slashedPackageName(packageName)}" />
-    <global id="resOut" value="${resDir}" />
     <global id="menuName" value="${classToResource(activityClass)}" />
-    <global id="relativePackage" value="<#if relativePackage?has_content>${relativePackage}<#else>${packageName}</#if>" />
+
+    <globals file="../common/common_globals.xml.ftl" />
 </globals>
