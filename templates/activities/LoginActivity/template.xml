@@ -52,12 +52,6 @@
         constraints="package"
         default="com.mycompany.myapp" />
 
-    <parameter
-        id="includeGooglePlus"
-        name="Include Google+ sign in"
-        type="boolean"
-        default="true" />
-
     <thumbs>
         <thumb>template_login_activity.png</thumb>
     </thumbs>
