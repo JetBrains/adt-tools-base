@@ -18,8 +18,6 @@
 package com.android.tools.rpclib.schema;
 
 import com.android.tools.rpclib.binary.*;
-import com.intellij.ui.SimpleColoredComponent;
-import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -29,20 +27,15 @@ public final class Primitive extends Type {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         Primitive primitive = (Primitive)o;
-
-        if (!mName.equals(primitive.mName)) return false;
-        if (mMethod != primitive.mMethod) return false;
-
+        if (!mName.equals(primitive.mName)) { return false; }
+        assert(mMethod.value == primitive.mMethod.value);
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = mName.hashCode();
-        result = 31 * result + mMethod.hashCode();
-        return result;
+        return mName.hashCode();
     }
 
     @Override
@@ -87,63 +80,6 @@ public final class Primitive extends Type {
             case Method.Float64: return d.float64();
             case Method.String: return d.string();
             default: throw new IOException("Invalid primitive method in decode");
-        }
-    }
-
-    @Override
-    public void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes) {
-        ConstantSet constants = ConstantSet.lookup(this);
-        if (constants != null) {
-            for (Constant constant : constants.getEntries()) {
-                if (value.equals(constant.getValue())) {
-                    component.append(constant.getName(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                    return;
-                }
-            }
-        }
-        switch (mMethod.value) {
-            case Method.ID:
-                component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            case Method.Bool:
-                component.append(String.format("%b", (Boolean)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            case Method.Int8:
-                component.append(String.format("%d", (Byte)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            case Method.Uint8:
-                component.append(String.format("%d", ((Byte)value).intValue() & 0xff), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            case Method.Int16:
-                component.append(String.format("%d", (Short)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            case Method.Uint16:
-                component.append(String.format("%d", ((Short)value).intValue() & 0xffff), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            case Method.Int32:
-                component.append(String.format("%d", (Integer)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            case Method.Uint32:
-                component.append(String.format("%d", ((Integer)value).longValue()&0xffffffffL), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            case Method.Int64:
-                component.append(String.format("%d", (Long)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            case Method.Uint64:
-                component.append(String.format("0x%s", Long.toHexString((Long)value)), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            case Method.Float32:
-                component.append(String.format("%f", (Float)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            case Method.Float64:
-                component.append(String.format("%f", (Double)value), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            case Method.String:
-                component.append((String)value, SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                return;
-            default:
-                component.append(value.toString(), SimpleTextAttributes.SYNTHETIC_ATTRIBUTES);
-                break;
         }
     }
 

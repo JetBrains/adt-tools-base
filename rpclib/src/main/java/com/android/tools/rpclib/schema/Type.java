@@ -19,15 +19,11 @@ package com.android.tools.rpclib.schema;
 import com.android.tools.rpclib.binary.BinaryObject;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
-import com.intellij.ui.SimpleColoredComponent;
-import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
 public abstract class Type implements BinaryObject {
-  private ConstantSet myConstants;
-
   @NotNull
   public abstract String getName();
 
@@ -44,6 +40,4 @@ public abstract class Type implements BinaryObject {
   public abstract void encodeValue(@NotNull Encoder e, Object value) throws IOException;
 
   public abstract Object decodeValue(@NotNull Decoder d) throws IOException;
-
-  public abstract void render(@NotNull Object value, @NotNull SimpleColoredComponent component, SimpleTextAttributes defaultAttributes);
 }

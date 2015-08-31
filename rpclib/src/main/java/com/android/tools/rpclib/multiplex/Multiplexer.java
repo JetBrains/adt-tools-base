@@ -19,14 +19,14 @@ import com.android.annotations.concurrency.GuardedBy;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
 import com.intellij.openapi.diagnostic.Logger;
-import gnu.trove.TLongObjectHashMap;
-import gnu.trove.TLongObjectIterator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -38,7 +38,7 @@ public class Multiplexer {
   private final Channel.EventHandler mChannelEventHandler;
   private final Sender mSender;
   private final AtomicLong mNextChannelId;
-  @GuardedBy("mChannelMap") private final TLongObjectHashMap<Channel> mChannelMap;
+  @GuardedBy("mChannelMap") private final Map<Long, Channel> mChannelMap;
 
   public Multiplexer(@NotNull InputStream in, @NotNull OutputStream out, int mtu,
                      @NotNull ExecutorService executorService,
@@ -48,7 +48,7 @@ public class Multiplexer {
     mNewChannelListener = newChannelListener;
     mChannelEventHandler = new ChannelEventHandler();
     mSender = new Sender(mtu, executorService);
-    mChannelMap = new TLongObjectHashMap<Channel>();
+    mChannelMap = new HashMap<Long, Channel>();
     mNextChannelId = new AtomicLong(0);
     executorService.execute(new Receiver());
   }
@@ -61,23 +61,25 @@ public class Multiplexer {
   }
 
   private Channel newChannel(final long id) throws IOException {
+    Long key = Long.valueOf(id);
     Channel channel = new Channel(id, mChannelEventHandler);
 
     synchronized (mChannelMap) {
       if (mChannelMap.isEmpty()) {
         mSender.begin(mEncoder);
       }
-      mChannelMap.put(id, channel);
+      mChannelMap.put(key, channel);
     }
 
     return channel;
   }
 
   private void deleteChannel(long id) {
+    Long key = Long.valueOf(id);
     synchronized (mChannelMap) {
-      if (mChannelMap.containsKey(id)) {
+      if (mChannelMap.containsKey(key)) {
         // TODO: Mark channel closed.
-        mChannelMap.remove(id);
+        mChannelMap.remove(key);
         if (mChannelMap.isEmpty()) {
           mSender.end();
         }
@@ -90,24 +92,23 @@ public class Multiplexer {
   }
 
   private Channel getChannel(long id) {
+    Long key = Long.valueOf(id);
     Channel channel;
     synchronized (mChannelMap) {
-      channel = mChannelMap.get(id);
+      channel = mChannelMap.get(key);
     }
     return channel;
   }
 
   private void closeAllChannels() {
     synchronized (mChannelMap) {
-      for (TLongObjectIterator<Channel> it = mChannelMap.iterator(); it.hasNext(); it.advance()) {
-        Channel c = it.value();
+      for (Channel c : mChannelMap.values()) {
         try {
           c.close();
         }
-        catch (IOException e) {
-        }
-        it.remove();
+        catch (IOException ignored) {}
       }
+      mChannelMap.clear();
     }
   }
 
