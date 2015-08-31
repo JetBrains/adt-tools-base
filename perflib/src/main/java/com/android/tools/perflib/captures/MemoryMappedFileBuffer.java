@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.android.tools.perflib.heap.io;
+package com.android.tools.perflib.captures;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
+import com.android.tools.perflib.captures.DataBuffer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,7 +28,7 @@ import java.nio.channels.FileChannel;
 
 import sun.nio.ch.DirectBuffer;
 
-public class MemoryMappedFileBuffer implements HprofBuffer {
+public class MemoryMappedFileBuffer implements DataBuffer {
 
     // Default chunk size is 1 << 30, or 1,073,741,824 bytes.
     private static final int DEFAULT_SIZE = 1 << 30;
@@ -47,7 +48,8 @@ public class MemoryMappedFileBuffer implements HprofBuffer {
     private long mCurrentPosition;
 
     @VisibleForTesting
-    MemoryMappedFileBuffer(@NonNull File f, int bufferSize, int padding) throws IOException {
+    public MemoryMappedFileBuffer(@NonNull File f, int bufferSize,
+            int padding) throws IOException {
         mBufferSize = bufferSize;
         mPadding = padding;
         mLength = f.length();
@@ -102,6 +104,11 @@ public class MemoryMappedFileBuffer implements HprofBuffer {
         byte result = mByteBuffers[getIndex()].get(getOffset());
         mCurrentPosition++;
         return result;
+    }
+
+    @Override
+    public void append(@NonNull byte[] data) {
+        // Do nothing since this is not a streaming data buffer.
     }
 
     @Override
