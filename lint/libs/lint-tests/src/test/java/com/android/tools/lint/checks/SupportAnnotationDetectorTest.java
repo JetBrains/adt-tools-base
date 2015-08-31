@@ -16,6 +16,9 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.TAG_USES_PERMISSION;
+import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_23;
+import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_M;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION;
 
 import com.android.tools.lint.ExternalAnnotationRepository;
@@ -696,7 +699,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "    android:versionCode=\"1\"\n"
                 + "    android:versionName=\"1.0\" >\n"
                 + "\n"
-                + "    <uses-sdk android:minSdkVersion=\"14\" android:targetSdkVersion=\""
+                + "    <uses-sdk android:minSdkVersion=\"" + minSdk + "\" android:targetSdkVersion=\""
                 + targetSdk + "\" />\n"
                 + "\n"
                 + permissionBlock.toString()
@@ -929,6 +932,38 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 "android.permission.ACCESS_FINE_LOCATION",
                                 "android.permission.BLUETOOTH",
                                 "android.permission.READ_SMS"),
+                        mPermissionTest,
+                        mComplexLocationManagerStub,
+                        mRequirePermissionAnnotation));
+    }
+
+    public void testUsesPermissionSdk23() throws Exception {
+        TestFile manifest = getManifestWithPermissions(14,
+                "android.permission.ACCESS_FINE_LOCATION",
+                "android.permission.BLUETOOTH");
+        String contents = manifest.getContents();
+        assertNotNull(contents);
+        String s = contents.replace(TAG_USES_PERMISSION, TAG_USES_PERMISSION_SDK_23);
+        manifest.withSource(s);
+        assertEquals("No warnings.",
+                lintProject(
+                        manifest,
+                        mPermissionTest,
+                        mComplexLocationManagerStub,
+                        mRequirePermissionAnnotation));
+    }
+
+    public void testUsesPermissionSdkM() throws Exception {
+        TestFile manifest = getManifestWithPermissions(14,
+                "android.permission.ACCESS_FINE_LOCATION",
+                "android.permission.BLUETOOTH");
+        String contents = manifest.getContents();
+        assertNotNull(contents);
+        String s = contents.replace(TAG_USES_PERMISSION, TAG_USES_PERMISSION_SDK_M);
+        manifest.withSource(s);
+        assertEquals("No warnings.",
+                lintProject(
+                        manifest,
                         mPermissionTest,
                         mComplexLocationManagerStub,
                         mRequirePermissionAnnotation));

@@ -26,6 +26,8 @@ import static com.android.SdkConstants.STRING_DEF_ANNOTATION;
 import static com.android.SdkConstants.SUPPORT_ANNOTATIONS_PREFIX;
 import static com.android.SdkConstants.TAG_PERMISSION;
 import static com.android.SdkConstants.TAG_USES_PERMISSION;
+import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_23;
+import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_M;
 import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.resources.ResourceType.COLOR;
 import static com.android.resources.ResourceType.DRAWABLE;
@@ -635,7 +637,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 continue;
             }
             String nodeName = item.getNodeName();
-            if (nodeName.equals(TAG_USES_PERMISSION)) {
+            if (nodeName.equals(TAG_USES_PERMISSION)
+                || nodeName.equals(TAG_USES_PERMISSION_SDK_23)
+                || nodeName.equals(TAG_USES_PERMISSION_SDK_M)) {
                 Element element = (Element)item;
                 String name = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
                 if (!name.isEmpty()) {
