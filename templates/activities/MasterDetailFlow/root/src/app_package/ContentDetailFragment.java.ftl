@@ -1,5 +1,9 @@
 package ${packageName};
 
+<#if hasAppBar>
+import android.app.Activity;
+import android.support.design.widget.CollapsingToolbarLayout;
+</#if>
 import android.os.Bundle;
 import android.<#if appCompat>support.v4.</#if>app.Fragment;
 import android.view.LayoutInflater;
@@ -45,6 +49,14 @@ public class ${DetailName}Fragment extends Fragment {
             // arguments. In a real-world scenario, use a Loader
             // to load content from a content provider.
             mItem = DummyContent.ITEM_MAP.get(getArguments().getString(ARG_ITEM_ID));
+<#if hasAppBar>
+
+            Activity activity = this.getActivity();
+            CollapsingToolbarLayout appBarLayout = (CollapsingToolbarLayout) activity.findViewById(R.id.toolbar_layout);
+            if (appBarLayout != null) {
+                appBarLayout.setTitle(mItem.content);
+            }
+</#if>
         }
     }
 
@@ -55,7 +67,7 @@ public class ${DetailName}Fragment extends Fragment {
 
         // Show the dummy content as text in a TextView.
         if (mItem != null) {
-            ((TextView) rootView.findViewById(R.id.${detail_name})).setText(mItem.content);
+            ((TextView) rootView.findViewById(R.id.${detail_name})).setText(mItem.details);
         }
 
         return rootView;
