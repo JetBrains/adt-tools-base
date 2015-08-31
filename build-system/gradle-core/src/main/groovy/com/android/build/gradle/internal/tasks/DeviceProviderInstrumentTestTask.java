@@ -24,6 +24,7 @@ import static com.android.builder.core.BuilderConstants.FD_REPORTS;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -262,28 +263,36 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
 
     public static class ConfigAction implements TaskConfigAction<DeviceProviderInstrumentTestTask> {
 
+        @NonNull
         private final VariantScope scope;
+        @NonNull
         private final DeviceProvider deviceProvider;
+        @NonNull
         private final TestData testData;
 
-        public ConfigAction(VariantScope scope, DeviceProvider deviceProvider, TestData testData) {
+        public ConfigAction(
+                @NonNull VariantScope scope,
+                @NonNull DeviceProvider deviceProvider,
+                @NonNull TestData testData) {
             this.scope = scope;
             this.deviceProvider = deviceProvider;
             this.testData = testData;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return scope.getTaskName(deviceProvider.getName());
         }
 
+        @NonNull
         @Override
         public Class<DeviceProviderInstrumentTestTask> getType() {
             return DeviceProviderInstrumentTestTask.class;
         }
 
         @Override
-        public void execute(DeviceProviderInstrumentTestTask task) {
+        public void execute(@NonNull DeviceProviderInstrumentTestTask task) {
             final boolean connected = deviceProvider instanceof ConnectedDeviceProvider;
             String variantName = scope.getTestedVariantData() != null ?
                     scope.getTestedVariantData().getName() : scope.getVariantData().getName();

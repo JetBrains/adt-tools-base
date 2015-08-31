@@ -36,4 +36,10 @@ public interface TaskConfigAction<T> extends Action<T> {
      */
     @NonNull
     Class<T> getType();
+
+    /**
+     * Configure the given newly-created task object.
+     */
+    @Override
+    void execute(@NonNull T task);
 }

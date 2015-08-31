@@ -3,6 +3,7 @@ package com.android.build.gradle.tasks.factory;
 import static com.android.builder.core.VariantType.LIBRARY;
 import static com.android.builder.core.VariantType.UNIT_TEST;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
@@ -29,18 +30,20 @@ public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
         this.scope = scope;
     }
 
+    @NonNull
     @Override
     public String getName() {
         return scope.getTaskName("compile", "JavaWithJavac");
     }
 
+    @NonNull
     @Override
     public Class<JavaCompile> getType() {
         return JavaCompile.class;
     }
 
     @Override
-    public void execute(final JavaCompile javacTask) {
+    public void execute(@NonNull final JavaCompile javacTask) {
         final BaseVariantData testedVariantData = scope.getTestedVariantData();
         scope.getVariantData().javacTask = javacTask;
 

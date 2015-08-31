@@ -17,6 +17,7 @@ package com.android.build.gradle.internal.tasks;
 
 import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -219,18 +220,20 @@ public class InstallVariantTask extends BaseTask {
             this.scope = scope;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return scope.getTaskName("install");
         }
 
+        @NonNull
         @Override
         public Class<InstallVariantTask> getType() {
             return InstallVariantTask.class;
         }
 
         @Override
-        public void execute(InstallVariantTask installTask) {
+        public void execute(@NonNull InstallVariantTask installTask) {
             installTask.setDescription(
                     "Installs the " + scope.getVariantData().getDescription() + ".");
             installTask.setVariantName(scope.getVariantConfiguration().getFullName());

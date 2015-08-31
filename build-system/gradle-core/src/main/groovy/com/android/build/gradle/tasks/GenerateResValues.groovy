@@ -84,18 +84,20 @@ public class GenerateResValues extends BaseTask {
             this.scope = scope
         }
 
+        @NonNull
         @Override
         String getName() {
             return scope.getTaskName("generate", "ResValues");
         }
 
+        @NonNull
         @Override
         Class getType() {
             return GenerateResValues.class
         }
 
         @Override
-        void execute(GenerateResValues generateResValuesTask) {
+        void execute(@NonNull GenerateResValues generateResValuesTask) {
             scope.variantData.generateResValuesTask = generateResValuesTask
 
             VariantConfiguration variantConfiguration = scope.variantData.variantConfiguration
