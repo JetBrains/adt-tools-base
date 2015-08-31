@@ -283,7 +283,7 @@ public class Lint extends DefaultAndroidTask {
         }
 
         @Override
-        void execute(Lint lint) {
+        void execute(@NonNull Lint lint) {
             lint.setLintOptions(scope.globalScope.getExtension().lintOptions)
             lint.setSdkHome(scope.globalScope.sdkHandler.getSdkFolder())
             lint.setVariantName(scope.variantConfiguration.fullName)

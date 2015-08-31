@@ -94,18 +94,20 @@ class CompatibleScreensManifest extends DefaultAndroidTask {
             this.screenSizes = screenSizes
         }
 
+        @NonNull
         @Override
         String getName() {
             return scope.getTaskName("create", "CompatibleScreenManifest")
         }
 
+        @NonNull
         @Override
         Class<CompatibleScreensManifest> getType() {
             return CompatibleScreensManifest.class
         }
 
         @Override
-        void execute(CompatibleScreensManifest csmTask) {
+        void execute(@NonNull CompatibleScreensManifest csmTask) {
             csmTask.setVariantName(scope.getVariantScope().getVariantConfiguration().getFullName())
 
             csmTask.screenDensity = scope.variantOutputData.getMainOutputFile().getFilter(

@@ -55,18 +55,20 @@ public class UnitTestConfigAction implements TaskConfigAction<Test> {
         this.scope = scope;
     }
 
+    @NonNull
     @Override
     public String getName() {
         return scope.getTaskName(UNIT_TEST.getPrefix());
     }
 
+    @NonNull
     @Override
     public Class<Test> getType() {
         return Test.class;
     }
 
     @Override
-    public void execute(Test runTestsTask) {
+    public void execute(@NonNull Test runTestsTask) {
         final TestVariantData variantData = (TestVariantData)scope.getVariantData();
         final BaseVariantData testedVariantData =
                 (BaseVariantData) variantData.getTestedVariantData();

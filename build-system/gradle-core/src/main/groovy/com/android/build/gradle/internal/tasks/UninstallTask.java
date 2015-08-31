@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.internal.tasks;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -122,6 +123,7 @@ public class UninstallTask extends BaseTask {
             this.scope = scope;
         }
 
+        @NonNull
         @Override
         public String getName() {
             String prefix = "uninstall";
@@ -129,13 +131,14 @@ public class UninstallTask extends BaseTask {
             return prefix + StringHelper.capitalize(scope.getVariantConfiguration().getFullName());
         }
 
+        @NonNull
         @Override
         public Class<UninstallTask> getType() {
             return UninstallTask.class;
         }
 
         @Override
-        public void execute(UninstallTask uninstallTask) {
+        public void execute(@NonNull UninstallTask uninstallTask) {
 
             uninstallTask.setDescription(
                     "Uninstalls the " + scope.getVariantData().getDescription() + ".");

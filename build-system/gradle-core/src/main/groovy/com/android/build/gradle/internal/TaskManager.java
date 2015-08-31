@@ -2590,18 +2590,20 @@ public abstract class TaskManager {
     private void createCompileAnchorTask(@NonNull TaskFactory tasks, @NonNull final VariantScope scope) {
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         scope.setCompileTask(androidTasks.create(tasks, new TaskConfigAction<Task>() {
+            @NonNull
             @Override
             public String getName() {
                 return scope.getTaskName("compile", "Sources");
             }
 
+            @NonNull
             @Override
             public Class<Task> getType() {
                 return Task.class;
             }
 
             @Override
-            public void execute(Task task) {
+            public void execute(@NonNull Task task) {
                 variantData.compileTask = task;
                 variantData.compileTask.setGroup(BUILD_GROUP);
             }

@@ -15,6 +15,8 @@
  */
 
 package com.android.build.gradle.tasks
+
+import com.android.annotations.NonNull
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
@@ -113,18 +115,20 @@ class ProcessManifest extends ManifestProcessorTask {
             this.scope = scope
         }
 
+        @NonNull
         @Override
         String getName() {
             return scope.getTaskName("process", "Manifest")
         }
 
+        @NonNull
         @Override
         Class<ProcessManifest> getType() {
             return ProcessManifest
         }
 
         @Override
-        void execute(ProcessManifest processManifest) {
+        void execute(@NonNull ProcessManifest processManifest) {
             VariantConfiguration config = scope.variantConfiguration
             AndroidBuilder androidBuilder = scope.globalScope.androidBuilder
 
