@@ -44,14 +44,14 @@ public class SdkVersionInfo {
     public static final int LOWEST_ACTIVE_API = 8;
 
     /**
-     * Returns the Android version and code name of the given API level, or null
-     * if not known. The highest number (inclusive) that is supported
+     * Returns the Android version and code name of the given API level
+     * The highest number (inclusive) that is supported
      * is {@link SdkVersionInfo#HIGHEST_KNOWN_API}.
      *
      * @param api the api level
      * @return a suitable version display name
      */
-    @Nullable
+    @NonNull
     public static String getAndroidName(int api) {
         // See http://source.android.com/source/build-numbers.html
         String codeName = getCodeName(api);
