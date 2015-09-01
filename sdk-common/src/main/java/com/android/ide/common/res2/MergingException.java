@@ -43,6 +43,8 @@ public class MergingException extends Exception {
 
     public static final String MULTIPLE_ERRORS = "Multiple errors:";
 
+    public static final String RESOURCE_ASSET_MERGER_TOOL_NAME = "Resource and asset merger";
+
     @NonNull
     private final List<Message> mMessages;
 
@@ -130,6 +132,7 @@ public class MergingException extends Exception {
                             Kind.ERROR,
                             mMessageText,
                             Objects.firstNonNull(mOriginalMessageText, mMessageText),
+                            RESOURCE_ASSET_MERGER_TOOL_NAME,
                             new SourceFilePosition(mFile, mPosition)));
         }
 

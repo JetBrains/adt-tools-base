@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.google.common.base.Objects;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -40,6 +41,9 @@ public final class Message {
     @NonNull
     private final String mRawMessage;
 
+    @NonNull
+    private final Optional<String> mToolName;
+
     /**
      * Create a new message, which has a {@link Kind}, a String which will be shown to the user and
      * at least one {@link SourceFilePosition}.
@@ -58,6 +62,7 @@ public final class Message {
         mRawMessage = text;
         mSourceFilePositions = ImmutableList.<SourceFilePosition>builder()
                 .add(sourceFilePosition).add(sourceFilePositions).build();
+        mToolName = Optional.absent();
     }
 
     /**
@@ -70,17 +75,20 @@ public final class Message {
      * @param kind the message kind.
      * @param text a human-readable string explaining the issue.
      * @param rawMessage the original text of the message, usually from an external tool.
+     * @param toolName the name of the tool that produced the message, e.g. AAPT.
      * @param sourceFilePosition the first source file position.
      * @param sourceFilePositions any additional source file positions, may be empty.
      */
     public Message(@NonNull Kind kind,
             @NonNull String text,
             @NonNull String rawMessage,
+            @Nullable String toolName,
             @NonNull SourceFilePosition sourceFilePosition,
             @NonNull SourceFilePosition... sourceFilePositions) {
         mKind = kind;
         mText = text;
         mRawMessage = rawMessage;
+        mToolName = Optional.fromNullable(toolName);
         mSourceFilePositions = ImmutableList.<SourceFilePosition>builder()
                 .add(sourceFilePosition).add(sourceFilePositions).build();
     }
@@ -88,10 +96,12 @@ public final class Message {
     public Message(@NonNull Kind kind,
             @NonNull String text,
             @NonNull String rawMessage,
+            @NonNull Optional<String> toolName,
             @NonNull ImmutableList<SourceFilePosition> positions) {
         mKind = kind;
         mText = text;
         mRawMessage = rawMessage;
+        mToolName = toolName;
 
         if (positions.isEmpty()) {
             mSourceFilePositions = ImmutableList.of(SourceFilePosition.UNKNOWN);
@@ -121,6 +131,11 @@ public final class Message {
     @NonNull
     public String getRawMessage() {
         return mRawMessage;
+    }
+
+    @NonNull
+    public Optional<String> getToolName() {
+        return mToolName;
     }
 
     @Nullable
@@ -177,6 +192,8 @@ public final class Message {
         Message that = (Message) o;
         return Objects.equal(mKind, that.mKind) &&
                 Objects.equal(mText, that.mText) &&
+                Objects.equal(mRawMessage, that.mRawMessage) &&
+                Objects.equal(mToolName, that.mToolName) &&
                 Objects.equal(mSourceFilePositions, that.mSourceFilePositions);
     }
 
@@ -187,7 +204,15 @@ public final class Message {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).add("kind", mKind).add("text", mText).add("sources",
-                mSourceFilePositions).toString();
+        Objects.ToStringHelper toStringHelper =
+                Objects.toStringHelper(this).add("kind", mKind).add("text", mText)
+                .add("sources", mSourceFilePositions);
+        if (!mText.equals(mRawMessage)) {
+            toStringHelper.add("original message", mRawMessage);
+        }
+        if (mToolName.isPresent()) {
+            toStringHelper.add("tool name", mToolName);
+        }
+        return toStringHelper.toString();
     }
 }

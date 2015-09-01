@@ -21,6 +21,7 @@ import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -53,8 +54,9 @@ public class DuplicateDataException extends MergingException {
             }
             messages.add(new Message(
                     Message.Kind.ERROR,
-                    DUPLICATE_RESOURCES,
-                    DUPLICATE_RESOURCES,
+                    DUPLICATE_RESOURCES /*text*/,
+                    DUPLICATE_RESOURCES /*rawMessage*/,
+                    Optional.of(RESOURCE_ASSET_MERGER_TOOL_NAME) /*toolName*/,
                     positions.build()));
         }
         return Iterables.toArray(messages, Message.class);
