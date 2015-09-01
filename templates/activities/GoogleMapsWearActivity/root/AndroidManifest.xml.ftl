@@ -26,7 +26,7 @@
             android:label="@string/title_${activityToLayout(activityClass)}"
             </#if>
             >
-            <#if isLauncher>
+            <#if isLauncher && !(isLibraryProject!false)>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

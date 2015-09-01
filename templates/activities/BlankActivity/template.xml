@@ -5,6 +5,7 @@
     name="Blank Activity"
     minApi="7"
     minBuildApi="14"
+    requireAppTheme="true"
     description="Creates a new blank activity with an app bar.">
 
     <category value="Activity" />

@@ -12,7 +12,7 @@
             </#if>
             android:theme="@android:style/Theme.DeviceDefault.Light"
             >
-            <#if isLauncher>
+            <#if isLauncher && !(isLibraryProject!false)>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
