@@ -18,6 +18,7 @@ package com.android.ide.common.blame;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -76,6 +77,8 @@ public class MessageJsonSerializerTest {
                             new Message(
                                     Message.Kind.ERROR,
                                     "errorText",
+                                    "",
+                                    null,
                                     new SourceFilePosition(
                                             new File("error/source"),
                                             new SourcePosition(1,2,3,4,5,6))
@@ -140,6 +143,7 @@ public class MessageJsonSerializerTest {
                             Message.Kind.ERROR,
                             "some error text",
                             "original error text",
+                            "tool name",
                             new SourceFilePosition(
                                     new SourceFile(new File("/path/file.java")),
                                     new SourcePosition(1, 3, 5)))

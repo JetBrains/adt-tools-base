@@ -16,6 +16,7 @@
 
 package com.android.ide.common.blame;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.EnumHashBiMap;
 import com.google.common.collect.ImmutableList;
@@ -106,6 +107,8 @@ public class MessageJsonSerializer extends TypeAdapter<Message> {
 
     private static final String RAW_MESSAGE = "original";
 
+    private static final String TOOL_NAME = "tool";
+
     private static final String LEGACY_SOURCE_PATH = "sourcePath";
 
     private static final String LEGACY_POSITION = "position";
@@ -144,6 +147,9 @@ public class MessageJsonSerializer extends TypeAdapter<Message> {
         if (!message.getRawMessage().equals(message.getText())) {
             out.name(RAW_MESSAGE).value(message.getRawMessage());
         }
+        if (message.getToolName().isPresent()) {
+            out.name(TOOL_NAME).value(message.getToolName().get());
+        }
         out.endObject();
     }
 
@@ -153,6 +159,7 @@ public class MessageJsonSerializer extends TypeAdapter<Message> {
         Message.Kind kind = Message.Kind.UNKNOWN;
         String text = "";
         String rawMessage = null;
+        Optional<String> toolName = Optional.absent();
         ImmutableList.Builder<SourceFilePosition> positions =
                 new ImmutableList.Builder<SourceFilePosition>();
         SourceFile legacyFile = SourceFile.UNKNOWN;
@@ -168,6 +175,8 @@ public class MessageJsonSerializer extends TypeAdapter<Message> {
                 text = in.nextString();
             } else if (name.equals(RAW_MESSAGE)) {
                 rawMessage = in.nextString();
+            } else if (name.equals(TOOL_NAME)) {
+                toolName = Optional.of(in.nextString());
             } else if (name.equals(SOURCE_FILE_POSITIONS)) {
                 switch (in.peek()) {
                     case BEGIN_ARRAY:
@@ -202,9 +211,9 @@ public class MessageJsonSerializer extends TypeAdapter<Message> {
         }
         ImmutableList<SourceFilePosition> sourceFilePositions = positions.build();
         if (!sourceFilePositions.isEmpty()) {
-            return new Message(kind, text, rawMessage, sourceFilePositions);
+            return new Message(kind, text, rawMessage, toolName, sourceFilePositions);
         } else {
-            return new Message(kind, text, rawMessage, ImmutableList.of(SourceFilePosition.UNKNOWN));
+            return new Message(kind, text, rawMessage, toolName, ImmutableList.of(SourceFilePosition.UNKNOWN));
         }
     }
 
