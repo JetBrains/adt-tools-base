@@ -25,6 +25,8 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+
 /**
  * Assemble tests for libMinifyLibDep.
  */
@@ -48,6 +50,15 @@ class LibMinifyLibDepTest {
     @Test
     void lint() {
         project.execute("lint")
+    }
+
+    @Test
+    void "check proguard"() {
+        File mapping = project.getSubproject("lib").file("build/outputs/mapping/release/mapping.txt");
+        // Check classes are obfuscated unless it is kept by the proguard configuration.
+        assertThat(mapping).containsAllOf(
+                "com.android.tests.basic.StringGetter -> com.android.tests.basic.StringGetter",
+                "com.android.tests.internal.StringGetterInternal -> com.android.tests.a.a")
     }
 
     @Test

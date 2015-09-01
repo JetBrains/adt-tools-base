@@ -52,6 +52,8 @@ public class HelloWorld extends Activity {
 }
 """))
 
+        testApp.addFile(new TestSourceFile("", "config.pro", "-keeppackagenames"));
+
         // Create simple library jar.
         libraryInJar.addFile(new TestSourceFile(
                 "src/main/java/com/example/libinjar","LibInJar.java", """\
@@ -89,6 +91,7 @@ android {
     buildTypes {
         release {
             minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'config.pro'
         }
     }
 }

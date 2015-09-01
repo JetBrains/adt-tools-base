@@ -381,11 +381,6 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
 
         addInputsToConfiguration(inputStreams, false);
         addInputsToConfiguration(referencedStreams, true);
-
-        // ensure local jars keep their package names
-        if (configuration.keepPackageNames == null) {
-            configuration.keepPackageNames = Lists.newArrayListWithExpectedSize(0);
-        }
     }
 
     private void addInputsToConfiguration(
