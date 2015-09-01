@@ -96,7 +96,9 @@ public interface IDevice extends IShellEnabledDevice {
         OFFLINE("offline"), //$NON-NLS-1$
         ONLINE("device"), //$NON-NLS-1$
         RECOVERY("recovery"), //$NON-NLS-1$
-        UNAUTHORIZED("unauthorized"); //$NON-NLS-1$
+        UNAUTHORIZED("unauthorized"), //$NON-NLS-1$
+        DISCONNECTED("disconnected"), //$NON-NLS-1$
+        ;
 
         private String mState;
 
