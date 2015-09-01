@@ -483,10 +483,9 @@ public interface IDevice extends IShellEnabledDevice {
      * @param reinstall set to <code>true</code> if re-install of app should be performed
      * @param extraArgs optional extra arguments to pass. See 'adb shell pm install --help' for
      *            available options.
-     * @return a {@link String} with an error code, or <code>null</code> if success.
      * @throws InstallException if the installation fails.
      */
-    String installPackage(String packageFilePath, boolean reinstall, String... extraArgs)
+    void installPackage(String packageFilePath, boolean reinstall, String... extraArgs)
             throws InstallException;
 
     /**
@@ -524,7 +523,7 @@ public interface IDevice extends IShellEnabledDevice {
      *            available options.
      * @throws InstallException if the installation fails.
      */
-    String installRemotePackage(String remoteFilePath, boolean reinstall,
+    void installRemotePackage(String remoteFilePath, boolean reinstall,
             String... extraArgs) throws InstallException;
 
     /**
