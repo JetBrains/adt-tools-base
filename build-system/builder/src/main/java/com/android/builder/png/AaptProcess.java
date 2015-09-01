@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.tasks.BooleanLatch;
 import com.android.builder.tasks.Job;
+import com.android.ide.common.internal.AaptCruncher;
 import com.android.utils.GrabProcessOutput;
 import com.android.utils.ILogger;
 import com.google.common.base.Objects;
@@ -44,6 +45,7 @@ public class AaptProcess {
                     ? DEFAULT_SLAVE_APPT_TIMEOUT_IN_SECONDS
                     : Integer.parseInt(System.getenv("SLAVE_AAPT_TIMEOUT"));
 
+    private final String mAaptLocation;
     private final Process mProcess;
     private final ILogger mLogger;
 
@@ -53,8 +55,10 @@ public class AaptProcess {
     private final BooleanLatch mReadyLatch = new BooleanLatch();
     private final OutputStreamWriter mWriter;
 
-    private AaptProcess(@NonNull Process process, @NonNull ILogger iLogger)
+    private AaptProcess(
+            @NonNull String aaptLocation, @NonNull Process process, @NonNull ILogger iLogger)
             throws InterruptedException {
+        mAaptLocation = aaptLocation;
         mProcess = process;
         mLogger = iLogger;
         GrabProcessOutput.grabProcessOutput(process, GrabProcessOutput.Wait.ASYNC,
@@ -101,9 +105,12 @@ public class AaptProcess {
     public void waitForReady() throws InterruptedException {
         if (!mReadyLatch.await(TimeUnit.NANOSECONDS.convert(
                 SLAVE_AAPT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS))) {
-            throw new RuntimeException("Timed out while waiting for slave aapt process, "
-                    + "try setting environment variable SLAVE_AAPT_TIMEOUT to a value bigger than "
-                    + SLAVE_AAPT_TIMEOUT_IN_SECONDS + " seconds");
+            throw new RuntimeException(String.format(
+                    "Timed out while waiting for slave aapt process, make sure "
+                        + "the aapt execute at %1$s can run successfully (some anti-virus may "
+                        + "block it) or try setting environment variable SLAVE_AAPT_TIMEOUT to a "
+                        + "value bigger than %2$d seconds",
+                    mAaptLocation, SLAVE_AAPT_TIMEOUT_IN_SECONDS));
         }
 
         mLogger.info("Slave %1$s is ready", hashCode());
@@ -153,7 +160,7 @@ public class AaptProcess {
             mLogger.verbose("Trying to start %1$s", command[0]);
             Process process = new ProcessBuilder(command).start();
             mLogger.verbose("Started %1$d", process.hashCode());
-            return new AaptProcess(process, mLogger);
+            return new AaptProcess(mAaptLocation, process, mLogger);
         }
     }
 
