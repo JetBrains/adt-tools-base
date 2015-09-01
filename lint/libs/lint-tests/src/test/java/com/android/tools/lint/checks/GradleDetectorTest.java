@@ -386,7 +386,11 @@ public class GradleDetectorTest extends AbstractCheckTest {
                 + "build.gradle:10: Warning: Avoid using + in version numbers; can lead to unpredictable and unrepeatable builds (com.android.support:support-v4:21.0.+) [GradleDynamicVersion]\n"
                 + "    compile group: 'com.android.support', name: 'support-v4', version: '21.0.+'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "0 errors, 2 warnings\n",
+                + "build.gradle:11: Warning: Avoid using + in version numbers; can lead to unpredictable and unrepeatable builds (com.android.support:appcompat-v7:+@aar) [GradleDynamicVersion]\n"
+                + "    compile 'com.android.support:appcompat-v7:+@aar'\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 3 warnings\n",
+
 
                 lintProject("gradle/Plus.gradle=>build.gradle"));
     }

@@ -480,6 +480,11 @@ public class GradleCoordinate {
     }
 
     @Nullable
+    public ArtifactType getArtifactType() {
+        return mArtifactType;
+    }
+
+    @Nullable
     public String getId() {
         if (mGroupId == null || mArtifactId == null) {
             return null;
