@@ -31,7 +31,9 @@ public class GradleCoordinateTest extends BaseTestCase {
     public void testParseCoordinateString() throws Exception {
         GradleCoordinate expected = new GradleCoordinate("a.b.c", "package", 5, 4, 2);
         GradleCoordinate actual = GradleCoordinate.parseCoordinateString("a.b.c:package:5.4.2");
+        assertNotNull(actual);
         assertEquals(expected, actual);
+        assertNull(actual.getArtifactType());
 
         expected = new GradleCoordinate("a.b.c", "package", 5, 4, GradleCoordinate.PLUS_REV_VALUE);
         actual = GradleCoordinate.parseCoordinateString("a.b.c:package:5.4.+");
@@ -55,7 +57,9 @@ public class GradleCoordinateTest extends BaseTestCase {
         expected = new GradleCoordinate("a.b.c", "package", revisionList,
                 GradleCoordinate.ArtifactType.AAR);
         actual = GradleCoordinate.parseCoordinateString("a.b.c:package:+@AAR");
+        assertNotNull(actual);
         assertEquals(expected, actual);
+        assertEquals(GradleCoordinate.ArtifactType.AAR, actual.getArtifactType());
 
         expected = new GradleCoordinate("a.b.c", "package",
                 new GradleCoordinate.StringComponent("v1"),

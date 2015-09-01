@@ -8,4 +8,5 @@ android {
 dependencies {
     compile 'com.android.support:appcompat-v7:+'
     compile group: 'com.android.support', name: 'support-v4', version: '21.0.+'
+    compile 'com.android.support:appcompat-v7:+@aar'
 }
