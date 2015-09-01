@@ -285,6 +285,12 @@ public class JavaVisitor {
                 return;
             }
 
+            if (e.getClass().getSimpleName().equals("IndexNotReadyException")) {
+                // Attempting to access PSI during startup before indices are ready; ignore these.
+                // See http://b.android.com/176644 for an example.
+                return;
+            }
+
             // Work around ECJ bugs; see https://code.google.com/p/android/issues/detail?id=172268
             // Don't allow lint bugs to take down the whole build. TRY to log this as a
             // lint error instead!
