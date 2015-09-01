@@ -55,6 +55,7 @@ public interface MergeConsumer<I extends DataItem> {
                             cause.getLocalizedMessage(),
                             cause.getClass().getCanonicalName()),
                     Throwables.getStackTraceAsString(cause),
+                    RESOURCE_ASSET_MERGER_TOOL_NAME,
                     new SourceFilePosition(file, SourcePosition.UNKNOWN)));
         }
     }

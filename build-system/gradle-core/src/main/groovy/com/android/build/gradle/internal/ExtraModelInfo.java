@@ -165,6 +165,9 @@ public class ExtraModelInfo extends ErrorReporter {
             if (errorStringBuilder.length() > 0) {
                 errorStringBuilder.append(": ");
             }
+            if (message.getToolName().isPresent()) {
+                errorStringBuilder.append(message.getToolName().get()).append(": ");
+            }
             errorStringBuilder.append(message.getText()).append("\n");
 
         } else {

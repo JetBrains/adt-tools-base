@@ -65,6 +65,7 @@ public class MergingLogRewriter implements MessageReceiver {
                         message.getKind(),
                         message.getText(),
                         message.getRawMessage(),
+                        message.getToolName(),
                         ImmutableList.copyOf(positions)));
     }
 }

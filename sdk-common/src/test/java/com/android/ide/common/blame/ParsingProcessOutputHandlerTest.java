@@ -66,7 +66,8 @@ public class ParsingProcessOutputHandlerTest {
         Mockito.verify(sMessageReceiver).receiveMessage(new Message(
                 Message.Kind.ERROR,
                 "errorText",
-                "originalText",
+                "original_text",
+                null,
                 new SourceFilePosition(
                         new SourceFile(FakePatternAwareOutputParser.ERROR_EXAMPLE_FILE),
                         new SourcePosition(1, 2, 3, 4, 5, 6)
@@ -134,6 +135,7 @@ public class ParsingProcessOutputHandlerTest {
                             Message.Kind.WARNING,
                             "two line warning",
                             "two line warning",
+                            null,
                             new SourceFilePosition(
                                     TWO_LINE_ERROR_FILE,
                                     new SourcePosition(1, 2, -1))));
@@ -148,6 +150,7 @@ public class ParsingProcessOutputHandlerTest {
                                 Message.Kind.ERROR,
                                 "errorText",
                                 "original_text",
+                                null,
                                 new SourceFilePosition(
                                         ERROR_EXAMPLE_FILE,
                                         new SourcePosition(1, 2, 3, 4, 5, 6))));
