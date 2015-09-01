@@ -17,6 +17,7 @@ package com.android.testutils;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
@@ -425,6 +426,23 @@ public abstract class SdkTestCase extends TestCase {
             }
 
             return makeTestFile(targetDir, name, relative, stream);
+        }
+
+        @Nullable
+        public String getContents() {
+            if (contents != null) {
+                return contents;
+            } else if (sourceRelativePath != null) {
+                InputStream stream = getTestResource(sourceRelativePath, true);
+                if (stream != null) {
+                    try {
+                        return new String(ByteStreams.toByteArray(stream), Charsets.UTF_8);
+                    } catch (IOException ignore) {
+                        return "<couldn't open test file " + sourceRelativePath + ">";
+                    }
+                }
+            }
+            return null;
         }
     }
 
