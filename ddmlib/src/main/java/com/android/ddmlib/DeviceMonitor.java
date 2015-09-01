@@ -225,6 +225,7 @@ final class DeviceMonitor {
     }
 
     private void removeDevice(@NonNull Device device) {
+        device.setState(DeviceState.DISCONNECTED);
         device.clearClientList();
         mDevices.remove(device);
 
