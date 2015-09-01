@@ -869,14 +869,13 @@ final class Device implements IDevice {
     }
 
     @Override
-    public String installPackage(String packageFilePath, boolean reinstall,
+    public void installPackage(String packageFilePath, boolean reinstall,
             String... extraArgs)
             throws InstallException {
         try {
             String remoteFilePath = syncPackageToDevice(packageFilePath);
-            String result = installRemotePackage(remoteFilePath, reinstall, extraArgs);
+            installRemotePackage(remoteFilePath, reinstall, extraArgs);
             removeRemotePackage(remoteFilePath);
-            return result;
         } catch (IOException e) {
             throw new InstallException(e);
         } catch (AdbCommandRejectedException e) {
@@ -1138,7 +1137,7 @@ final class Device implements IDevice {
     }
 
     @Override
-    public String installRemotePackage(String remoteFilePath, boolean reinstall,
+    public void installRemotePackage(String remoteFilePath, boolean reinstall,
             String... extraArgs) throws InstallException {
         try {
             InstallReceiver receiver = new InstallReceiver();
@@ -1152,7 +1151,10 @@ final class Device implements IDevice {
             String cmd = String.format("pm install %1$s \"%2$s\"", optionString.toString(),
                     remoteFilePath);
             executeShellCommand(cmd, receiver, INSTALL_TIMEOUT_MINUTES, TimeUnit.MINUTES);
-            return receiver.getErrorMessage();
+            String error = receiver.getErrorMessage();
+            if (error != null) {
+                throw new InstallException(error);
+            }
         } catch (TimeoutException e) {
             throw new InstallException(e);
         } catch (AdbCommandRejectedException e) {
