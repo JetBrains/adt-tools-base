@@ -266,11 +266,10 @@ public final class TimelineComponent extends AnimatedComponent
 
     @Override
     protected void draw(Graphics2D g2d) {
-
         Dimension dim = getSize();
 
-        mBottom = dim.height - BOTTOM_MARGIN;
-        mRight = dim.width - RIGHT_MARGIN;
+        mBottom = Math.max(TOP_MARGIN, dim.height - BOTTOM_MARGIN);
+        mRight = Math.max(LEFT_MARGIN, dim.width - RIGHT_MARGIN);
 
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setFont(DEFAULT_FONT);
