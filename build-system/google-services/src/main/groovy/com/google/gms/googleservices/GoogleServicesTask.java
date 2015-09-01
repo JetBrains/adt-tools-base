@@ -60,9 +60,11 @@ public class GoogleServicesTask extends DefaultTask {
     @TaskAction
     public void action() throws IOException {
         if (!quickstartFile.isFile()) {
-            throw new GradleException("File " + quickstartFile.getName() + " is missing from the module root folder." +
-                    " The Google Services Plugin cannot function without it." +
-                    " Please get this file from https://developers.google.com/mobile/add");
+            getLogger().warn("File " + quickstartFile.getName() + " is missing from module root folder." +
+                    " The Google Quickstart Plugin cannot function without it.");
+
+            // Skip the rest of the actions because it would not make sense if `quickstartFile` is missing.
+            return;
         }
 
         // delete content of outputdir.
@@ -89,9 +91,7 @@ public class GoogleServicesTask extends DefaultTask {
             handleAnalytics(clientObject, resValues);
             handleAdsService(clientObject, resValues);
         } else {
-            throw new GradleException("No matching client found for package name '" + packageName + "'." +
-                    " Please regenerate the " + quickstartFile.getName() + " file with the correct package name" +
-                    " at https://developers.google.com/mobile/add");
+            getLogger().warn("No matching client found for package name '" + packageName + "'");
         }
 
         // write the values file.
