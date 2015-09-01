@@ -84,4 +84,40 @@ public class DeprecationDetectorTest extends AbstractCheckTest {
                     "apicheck/minsdk4.xml=>AndroidManifest.xml",
                     "res/layout/deprecation.xml"));
     }
+
+    public void testUsesSdkM() throws Exception {
+        assertEquals(""
+                + "AndroidManifest.xml:8: Warning: uses-permission-sdk-m is deprecated: Use `uses-permission-sdk-23 instead [Deprecated]\n"
+                + "    <uses-permission-sdk-m android:name=\"foo.bar.BAZ\" />\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                        + "    package=\"test.pkg\">\n"
+                                        + "\n"
+                                        + "    <uses-sdk android:minSdkVersion=\"4\" />\n"
+                                        + "    <uses-permission android:name=\"foo.bar.BAZ\" />\n"
+                                        + "    <uses-permission-sdk-23 android:name=\"foo.bar.BAZ\" />\n"
+                                        + "    <uses-permission-sdk-m android:name=\"foo.bar.BAZ\" />\n"
+                                        + "\n"
+                                        + "    <application\n"
+                                        + "        android:icon=\"@drawable/ic_launcher\"\n"
+                                        + "        android:label=\"@string/app_name\" >\n"
+                                        + "        <activity\n"
+                                        + "            android:name=\".BytecodeTestsActivity\"\n"
+                                        + "            android:label=\"@string/app_name\" >\n"
+                                        + "            <intent-filter>\n"
+                                        + "                <action android:name=\"android.intent.action.MAIN\" />\n"
+                                        + "\n"
+                                        + "                <category android:name=\"android.intent.category.LAUNCHER\" />\n"
+                                        + "            </intent-filter>\n"
+                                        + "        </activity>\n"
+                                        + "    </application>\n"
+                                        + "\n"
+                                        + "</manifest>\n"
+                        )
+                ));
+    }
 }

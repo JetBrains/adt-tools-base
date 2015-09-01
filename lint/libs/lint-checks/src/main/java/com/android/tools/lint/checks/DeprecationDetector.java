@@ -28,6 +28,8 @@ import static com.android.SdkConstants.ATTR_PASSWORD;
 import static com.android.SdkConstants.ATTR_PHONE_NUMBER;
 import static com.android.SdkConstants.ATTR_SINGLE_LINE;
 import static com.android.SdkConstants.EDIT_TEXT;
+import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_23;
+import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_M;
 import static com.android.SdkConstants.VALUE_TRUE;
 
 import com.android.annotations.NonNull;
@@ -52,6 +54,7 @@ import java.util.Collections;
  */
 public class DeprecationDetector extends LayoutDetector {
     /** Usage of deprecated views or attributes */
+    @SuppressWarnings("unchecked")
     public static final Issue ISSUE = Issue.create(
             "Deprecated", //$NON-NLS-1$
             "Using deprecated resources",
@@ -62,6 +65,8 @@ public class DeprecationDetector extends LayoutDetector {
             Severity.WARNING,
             new Implementation(
                     DeprecationDetector.class,
+                    Scope.MANIFEST_AND_RESOURCE_SCOPE,
+                    Scope.MANIFEST_SCOPE,
                     Scope.RESOURCE_FILE_SCOPE));
 
     /** Constructs a new {@link DeprecationDetector} */
@@ -76,8 +81,9 @@ public class DeprecationDetector extends LayoutDetector {
 
     @Override
     public Collection<String> getApplicableElements() {
-        return Collections.singletonList(
-                ABSOLUTE_LAYOUT
+        return Arrays.asList(
+                ABSOLUTE_LAYOUT,
+                TAG_USES_PERMISSION_SDK_M
         );
     }
 
@@ -126,8 +132,13 @@ public class DeprecationDetector extends LayoutDetector {
 
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
+        String tagName = element.getTagName();
+        String message = String.format("`%1$s` is deprecated", tagName);
+        if (TAG_USES_PERMISSION_SDK_M.equals(tagName)) {
+            message += ": Use `" + TAG_USES_PERMISSION_SDK_23 + " instead";
+        }
         context.report(ISSUE, element, context.getLocation(element),
-                String.format("`%1$s` is deprecated", element.getTagName()));
+                message);
     }
 
     @Override
