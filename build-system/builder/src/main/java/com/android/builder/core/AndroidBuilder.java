@@ -105,6 +105,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -140,7 +141,7 @@ import java.util.zip.ZipFile;
  * {@link #mergeManifests(File, List, List, String, int, String, String, String, Integer, String, String, ManifestMerger2.MergeType, Map, File)}
  * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, File, List, Map, File, File)}
  * {@link #processResources(AaptPackageProcessBuilder, boolean, ProcessOutputHandler)}
- * {@link #compileAllAidlFiles(List, File, File, List, DependencyFileProcessor, ProcessOutputHandler)}
+ * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
  * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, List, boolean, boolean, ProcessOutputHandler)}
  * {@link #packageApk(String, Map, File, Collection, File, Set, boolean, SigningConfig, PackagingOptions, SignedJarBuilder.IZipEntryFilter, String)}
  *
@@ -1074,6 +1075,9 @@ public class AndroidBuilder {
      *
      * @param sourceFolders all the source folders to find files to compile
      * @param sourceOutputDir the output dir in which to generate the source code
+     * @param packagedOutputDir the output dir for the AIDL files that will be packaged in an aar
+     * @param packageWhiteList a list of AIDL FQCNs that are not parcelable that should also be
+     *                         packaged in an aar
      * @param importFolders import folders
      * @param dependencyFileProcessor the dependencyFileProcessor to record the dependencies
      *                                of the compilation.
@@ -1083,7 +1087,8 @@ public class AndroidBuilder {
      */
     public void compileAllAidlFiles(@NonNull List<File> sourceFolders,
                                     @NonNull File sourceOutputDir,
-                                    @Nullable File parcelableOutputDir,
+                                    @Nullable File packagedOutputDir,
+                                    @Nullable Collection<String> packageWhiteList,
                                     @NonNull List<File> importFolders,
                                     @Nullable DependencyFileProcessor dependencyFileProcessor,
                                     @NonNull ProcessOutputHandler processOutputHandler)
@@ -1112,7 +1117,8 @@ public class AndroidBuilder {
                 target.getPath(IAndroidTarget.ANDROID_AIDL),
                 fullImportList,
                 sourceOutputDir,
-                parcelableOutputDir,
+                packagedOutputDir,
+                packageWhiteList,
                 dependencyFileProcessor != null ?
                         dependencyFileProcessor : sNoOpDependencyFileProcessor,
                 mProcessExecutor,
@@ -1138,7 +1144,8 @@ public class AndroidBuilder {
     public void compileAidlFile(@NonNull File sourceFolder,
                                 @NonNull File aidlFile,
                                 @NonNull File sourceOutputDir,
-                                @Nullable File parcelableOutputDir,
+                                @Nullable File packagedOutputDir,
+                                @Nullable Collection<String> packageWhitelist,
                                 @NonNull List<File> importFolders,
                                 @Nullable DependencyFileProcessor dependencyFileProcessor,
                                 @NonNull ProcessOutputHandler processOutputHandler)
@@ -1162,7 +1169,8 @@ public class AndroidBuilder {
                 target.getPath(IAndroidTarget.ANDROID_AIDL),
                 importFolders,
                 sourceOutputDir,
-                parcelableOutputDir,
+                packagedOutputDir,
+                packageWhitelist,
                 dependencyFileProcessor != null ?
                         dependencyFileProcessor : sNoOpDependencyFileProcessor,
                 mProcessExecutor,

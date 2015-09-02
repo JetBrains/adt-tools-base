@@ -134,5 +134,8 @@ public interface AndroidConfig {
     /** Whether to package build config class file */
     Boolean getPackageBuildConfig();
 
+    /** Aidl files to package in the aar. */
+    Collection<String> getAidlPackageWhiteList();
+
     Collection<LibraryRequest> getLibraryRequests();
 }

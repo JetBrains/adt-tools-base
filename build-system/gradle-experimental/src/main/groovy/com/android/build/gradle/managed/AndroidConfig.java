@@ -159,4 +159,8 @@ public interface AndroidConfig {
     @Unmanaged
     Collection<LibraryRequest> getLibraryRequests();
     void setLibraryRequests(Collection<LibraryRequest> libraryRequests);
+
+    @Unmanaged
+    Collection<String> getAidlPackageWhitelist();
+    void setAidlPackageWhitelist(Collection<String> aidlPackageWhitelist);
 }
