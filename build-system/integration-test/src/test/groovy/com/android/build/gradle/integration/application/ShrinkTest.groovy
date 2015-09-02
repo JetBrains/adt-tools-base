@@ -95,6 +95,7 @@ class ShrinkTest {
         String expectedUnstrippedApk = """\
 AndroidManifest.xml
 classes.dex
+res/drawable/force_remove.xml
 res/raw/keep.xml
 res/layout/l_used_a.xml
 res/layout/l_used_b2.xml
@@ -177,18 +178,23 @@ res/layout/used21.xml"""
         // Check that the uncompressed resources (.ap_) for the release target have everything
         // we expect
         String expectedUncompressed = expectedUnstrippedApk.replace("classes.dex\n", "")
-        assertEquals(expectedUncompressed, dumpZipContents(uncompressed).trim())
+        assertEquals("expectedUncompressed",
+                expectedUncompressed, dumpZipContents(uncompressed).trim())
 
         // The debug target should have everything there in the APK
-        assertEquals(expectedUnstrippedApk, dumpZipContents(apkDebug))
-        assertEquals(expectedUnstrippedApk, dumpZipContents(apkProguardOnly))
+        assertEquals("The debug target should have everything there in the APK",
+                expectedUnstrippedApk, dumpZipContents(apkDebug))
+        assertEquals("The debug target should have everything there in the APK",
+                expectedUnstrippedApk, dumpZipContents(apkProguardOnly))
 
         // Check the compressed .ap_:
         String actualCompressed = dumpZipContents(compressed)
         String expectedCompressed = expectedStrippedApkContents.replace("classes.dex\n", "")
-        assertEquals(expectedCompressed, actualCompressed)
-        assertFalse(expectedCompressed, expectedCompressed.contains("unused"))
-        assertEquals(expectedStrippedApkContents, dumpZipContents(apkRelease))
+        assertEquals("Check the compressed .ap_:", expectedCompressed, actualCompressed)
+        assertFalse("expectedCompressed does not contain unused resources",
+                expectedCompressed.contains("unused"))
+        assertEquals("expectedStrippedApkContents",
+                expectedStrippedApkContents, dumpZipContents(apkRelease))
 
         // Check splits -- just sample one of them
         //noinspection SpellCheckingInspection
