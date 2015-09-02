@@ -15,6 +15,7 @@
         <activity android:name="${packageName}.${activityClass}"
             android:icon="@drawable/app_icon_your_company"
             android:logo="@drawable/app_icon_your_company"
+            android:banner="@drawable/app_icon_your_company"
             android:screenOrientation="landscape"
             <#if isNewProject>
             android:label="@string/app_name"
