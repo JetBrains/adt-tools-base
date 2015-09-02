@@ -20,22 +20,21 @@
         help="The name of the activity class to create" />
 
     <parameter
+        id="generateLayout"
+        name="Generate Layout File"
+        type="boolean"
+        default="true"
+        help="If true, a layout file will be generated" />
+
+    <parameter
         id="layoutName"
         name="Layout Name"
         type="string"
         constraints="layout|unique|nonempty"
         suggest="${activityToLayout(activityClass)}"
         default="activity_main"
+        visibility="generateLayout"
         help="The name of the layout to create for the activity" />
-
-    <parameter
-        id="activityTitle"
-        name="Title"
-        type="string"
-        constraints="nonempty"
-        default="MainActivity"
-        suggest="${activityClass}"
-        help="The name of the activity. For launcher activities, the application title." />
 
     <parameter
         id="isLauncher"

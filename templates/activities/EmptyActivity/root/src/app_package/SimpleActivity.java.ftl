@@ -1,15 +1,15 @@
 package ${packageName};
 
-import android.app.Activity;
+import ${superClassFqcn};
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 
-public class ${activityClass} extends Activity {
+public class ${activityClass} extends ${superClass} {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+<#if generateLayout>
         setContentView(R.layout.${layoutName});
+</#if>
     }
 }

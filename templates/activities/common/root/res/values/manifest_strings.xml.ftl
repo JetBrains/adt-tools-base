@@ -1,6 +1,5 @@
 <resources>
-    <#if !isNewProject>
+<#if !isNewProject && generateActivityTitle!true>
     <string name="title_${activityToLayout(activityClass)}">${escapeXmlString(activityTitle)}</string>
-    </#if>
-    <string name="hello_world">Hello world!</string>
+</#if>
 </resources>
