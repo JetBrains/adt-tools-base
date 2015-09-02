@@ -22,6 +22,7 @@ public class RootActivity extends Activity {
         setContentView(R.layout.used1);
         ResourceReferences.referenceResources(this);
         System.out.println(R.layout.used7);
+        System.out.println(R.drawable.force_remove);
         AnnotationInflation.createView(this, ScreenType1.class, null);
         AnnotationInflation.createView(this, ScreenType2.class, null);
 
