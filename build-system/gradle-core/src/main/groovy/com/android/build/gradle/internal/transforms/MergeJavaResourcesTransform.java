@@ -22,10 +22,10 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
-import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformInput.FileStatus;
@@ -33,7 +33,6 @@ import com.android.build.transform.api.TransformOutput;
 import com.android.builder.model.PackagingOptions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -49,7 +48,7 @@ import java.util.Set;
 /**
  * Transform to merge all the Java resources
  */
-public class MergeJavaResourcesTransform implements Transform {
+public class MergeJavaResourcesTransform implements CombinedTransform {
 
     @NonNull
     private final VariantScope scope;
@@ -169,16 +168,14 @@ public class MergeJavaResourcesTransform implements Transform {
 
     @Override
     public void transform(
-            @NonNull Map<TransformInput, TransformOutput> inputOutputs,
-            @NonNull List<TransformInput> referencedInputs,
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull Collection<TransformInput> referencedInputs,
+            @NonNull TransformOutput combinedOutput,
             boolean isIncremental) throws IOException, TransformException {
 
         // all the output will be the same since the transform type is COMBINED.
-        TransformOutput transformOutput = Iterables.getFirst(inputOutputs.values(), null);
-        checkNotNull(transformOutput, "Found no output in transform with Type=COMBINED");
-        File outFolder = transformOutput.getOutFile();
-
-        Set<TransformInput> inputs = inputOutputs.keySet();
+        checkNotNull(combinedOutput, "Found no output in transform with Type=COMBINED");
+        File outFolder = combinedOutput.getOutFile();
 
         FileFilter packagingOptionsFilter =
                 new FileFilter(getExpandedFolders(inputs), packagingOptions);

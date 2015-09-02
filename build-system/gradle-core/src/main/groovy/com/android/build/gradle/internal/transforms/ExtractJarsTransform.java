@@ -22,10 +22,10 @@ import static com.android.utils.FileUtils.mkdirs;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.transform.api.AsInputTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
-import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformInput.FileStatus;
@@ -44,7 +44,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -62,7 +61,7 @@ import java.util.zip.ZipInputStream;
  * The output format is {@link Format#MULTI_FOLDER} because each input jar has its own sub-folder
  * in the output stream root folder.
  */
-public class ExtractJarsTransform implements Transform {
+public class ExtractJarsTransform implements AsInputTransform {
 
     @NonNull
     private final Set<ContentType> contentTypes;
@@ -144,7 +143,7 @@ public class ExtractJarsTransform implements Transform {
     @Override
     public void transform(
             @NonNull Map<TransformInput, TransformOutput> inputOutputs,
-            @NonNull List<TransformInput> referencedInputs,
+            @NonNull Collection<TransformInput> referencedInputs,
             boolean isIncremental) throws IOException, InterruptedException, TransformException {
 
         // as_input transform and no referenced scopes, all the inputs will in InputOutputStreams.

@@ -24,10 +24,10 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
-import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformInput.FileStatus;
@@ -46,7 +46,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -69,7 +68,7 @@ import java.util.concurrent.Callable;
 /**
  * PreDexing as a transform
  */
-public class PreDexTransform implements Transform {
+public class PreDexTransform implements CombinedTransform {
 
     @NonNull
     private final Set<Scope> preDexedScopes;
@@ -178,26 +177,24 @@ public class PreDexTransform implements Transform {
 
     @Override
     public void transform(
-            @NonNull Map<TransformInput, TransformOutput> inputOutputs,
-            @NonNull List<TransformInput> referencedInputs,
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull Collection<TransformInput> referencedInputs,
+            @NonNull TransformOutput combinedOutput,
             boolean isIncremental) throws TransformException {
         // all the output will be the same since the transform type is COMBINED.
-        TransformOutput transformOutput = Iterables.getFirst(inputOutputs.values(), null);
-        checkNotNull(transformOutput, "Found no output in transform with Type=COMBINED");
-        File outFolder = transformOutput.getOutFile();
+        checkNotNull(combinedOutput, "Found no output in transform with Type=COMBINED");
+        File outFolder = combinedOutput.getOutFile();
 
         try {
             final Set<String> hashs = Sets.newHashSet();
             final List<File> inputFiles = Lists.newArrayList();
-
-            Set<TransformInput> transformInputs = inputOutputs.keySet();
 
             if (!isIncremental) {
                 // first delete the output folder
                 FileUtils.emptyFolder(outFolder);
 
                 // we need to search for all the files.
-                for (TransformInput input : transformInputs) {
+                for (TransformInput input : inputs) {
                     for (File file : input.getFiles()) {
                         if (file.isFile()) {
                             inputFiles.add(file);
@@ -214,7 +211,7 @@ public class PreDexTransform implements Transform {
                     }
                 }
             } else {
-                for (TransformInput input : transformInputs) {
+                for (TransformInput input : inputs) {
                     for (Entry<File, FileStatus> entry : input.getChangedFiles().entrySet()) {
                         File file = entry.getKey();
                         switch (entry.getValue()) {
