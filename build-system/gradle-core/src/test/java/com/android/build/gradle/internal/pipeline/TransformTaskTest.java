@@ -75,7 +75,7 @@ public class TransformTaskTest extends TaskTestUtils {
 
         // add the transform to the manager
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
         // and get the real gradle task object
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
         assertThat(transformTask).isNotNull();
@@ -135,7 +135,7 @@ public class TransformTaskTest extends TaskTestUtils {
 
         // add the transform to the manager
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
         // and get the real gradle task object
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
         assertThat(transformTask).isNotNull();
@@ -180,7 +180,7 @@ public class TransformTaskTest extends TaskTestUtils {
 
         // add the transform to the manager
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
         // and get the real gradle task object
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
         assertThat(transformTask).isNotNull();
@@ -251,7 +251,7 @@ public class TransformTaskTest extends TaskTestUtils {
 
         // add the transform to the manager
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
         // and get the real gradle task object
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
         assertThat(transformTask).isNotNull();
@@ -339,7 +339,7 @@ public class TransformTaskTest extends TaskTestUtils {
 
         // add the transform to the manager
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
         // and get the real gradle task object
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
         assertThat(transformTask).isNotNull();
@@ -419,7 +419,7 @@ public class TransformTaskTest extends TaskTestUtils {
 
         // add the transform to the manager
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
         // and get the real gradle task object
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
         assertThat(transformTask).isNotNull();
@@ -497,7 +497,7 @@ public class TransformTaskTest extends TaskTestUtils {
 
         // add the transform to the manager
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
         // and get the real gradle task object
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
         assertThat(transformTask).isNotNull();
@@ -554,7 +554,7 @@ public class TransformTaskTest extends TaskTestUtils {
 
         // add the transform to the manager
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
         // and get the real gradle task object
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
         assertThat(transformTask).isNotNull();
@@ -611,7 +611,7 @@ public class TransformTaskTest extends TaskTestUtils {
 
         // add the transform to the manager
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
         // and get the real gradle task object
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
         assertThat(transformTask).isNotNull();

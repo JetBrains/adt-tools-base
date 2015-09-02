@@ -564,25 +564,15 @@ public class LibraryTaskManager extends TaskManager {
 
     @NonNull
     @Override
-    protected Set<Scope> computePreDexScopes(@NonNull VariantScope variantScope) {
-        if (variantScope.getTestedVariantData() != null) {
-            // if it's the test app for a library, behave like an app rather than a library.
-            return ApplicationTaskManager.computePreDexScopes(variantScope, getExtension().getDexOptions());
-        }
-        return Sets.immutableEnumSet(EnumSet.noneOf(Scope.class));
-    }
-
-    @NonNull
-    @Override
     protected Set<Scope> computeExtractResAndJavaFromJarScopes(
             @NonNull VariantScope variantScope) {
         if (variantScope.getTestedVariantData() != null) {
             // if it's the test app for a library, behave like an app rather than a library.
-            ApplicationTaskManager.computeExtractResAndJavaFromJarScopes2(variantScope);
+            return ApplicationTaskManager.computeExtractResAndJavaFromJarScopes2(variantScope);
         }
 
-        // if the variant is minified then we need to extract both the res and java to
-        // run this through proguard.
+        // if the variant is minified then we need to extract both the res and java of local jars
+        // to run them through proguard.
         if (variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
             return Sets.immutableEnumSet(PROJECT_LOCAL_DEPS);
         }
@@ -598,7 +588,9 @@ public class LibraryTaskManager extends TaskManager {
             return ApplicationTaskManager.computeExtractResFromJarScopes(variantScope, this);
         }
 
-        // never need to only extract the res.
+        // never need to only extract the res, as we don't merge the resources of local
+        // jars ever
+        // FIXM: should we?
         return Sets.immutableEnumSet(EnumSet.noneOf(Scope.class));
     }
 

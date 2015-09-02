@@ -38,6 +38,7 @@ import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
+import com.android.build.transform.api.Transform;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.LibraryRequest;
@@ -47,6 +48,7 @@ import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.resources.Density;
 import com.android.sdklib.repository.FullRevision;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -144,6 +146,7 @@ public abstract class BaseExtension implements AndroidConfig {
 
     private final List<DeviceProvider> deviceProviderList = Lists.newArrayList();
     private final List<TestServer> testServerList = Lists.newArrayList();
+    private final List<Transform> transforms = Lists.newArrayList();
 
     private final AndroidBuilder androidBuilder;
 
@@ -492,6 +495,16 @@ public abstract class BaseExtension implements AndroidConfig {
     @NonNull
     public List<TestServer> getTestServers() {
         return testServerList;
+    }
+
+    public void registerTransform(@NonNull Transform transform) {
+        transforms.add(transform);
+    }
+
+    @Override
+    @NonNull
+    public List<Transform> getTransforms() {
+        return ImmutableList.copyOf(transforms);
     }
 
     /** {@inheritDoc} */

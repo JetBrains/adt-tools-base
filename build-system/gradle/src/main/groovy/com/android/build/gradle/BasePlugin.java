@@ -47,7 +47,7 @@ import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
-import com.android.build.gradle.internal.transforms.PreDexTransform;
+import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.tasks.JillTask;
@@ -405,7 +405,7 @@ public abstract class BasePlugin {
                     public void graphPopulated(TaskExecutionGraph taskGraph) {
                         for (Task task : taskGraph.getAllTasks()) {
                             if (task instanceof TransformTask) {
-                                if (((TransformTask) task).getTransform() instanceof PreDexTransform) {
+                                if (((TransformTask) task).getTransform() instanceof DexTransform) {
                                     PreDexCache.getCache().load(
                                             new File(project.getRootProject().getBuildDir(),
                                                     FD_INTERMEDIATES + "/dex-cache/cache.xml"));

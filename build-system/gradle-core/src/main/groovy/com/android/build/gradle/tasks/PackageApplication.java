@@ -18,8 +18,8 @@ import com.android.build.gradle.internal.tasks.ValidateSigningTask;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.ScopedContent.ContentType;
+import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.signing.SignedJarBuilder;
@@ -44,11 +44,32 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class PackageApplication extends IncrementalTask implements FileSupplier {
+
+    public static final TransformManager.StreamFilter sDexFilter
+            = new TransformManager.StreamFilter() {
+        @Override
+        public boolean accept(@NonNull Set<ContentType> types,
+                @NonNull Set<Scope> scopes) {
+            return types.contains(ContentType.DEX);
+        }
+    };
+
+    public static final TransformManager.StreamFilter sResFilter
+            = new TransformManager.StreamFilter() {
+        @Override
+        public boolean accept(@NonNull Set<ContentType> types,
+                @NonNull Set<Scope> scopes) {
+            return types.contains(ContentType.RESOURCES) &&
+                    !scopes.contains(Scope.PROVIDED_ONLY) &&
+                    !scopes.contains(Scope.TESTED_CODE);
+        }
+    };
 
     // ----- PUBLIC TASK API -----
 
@@ -61,22 +82,9 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         this.resourceFile = resourceFile;
     }
 
-    @InputDirectory
-    public File getDexFolder() {
-        return dexFolder;
-    }
-
-    public void setDexFolder(File dexFolder) {
-        this.dexFolder = dexFolder;
-    }
-
     @InputFiles
-    public Collection<File> getDexedLibraries() {
-        return dexedLibraries;
-    }
-
-    public void setDexedLibraries(Collection<File> dexedLibraries) {
-        this.dexedLibraries = dexedLibraries;
+    public Collection<File> getDexFolderList() {
+        return getDexFolders().keySet();
     }
 
     public Set<File> getJniFolders() {
@@ -130,9 +138,10 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     private File resourceFile;
 
-    private File dexFolder;
-
-    private Collection<File> dexedLibraries;
+    private Map<File, Format> dexFolders;
+    public Map<File, Format> getDexFolders() {
+        return dexFolders;
+    }
 
     /** directory for the merged java resources. only valid if the jar below is null  */
     private File javaResourceDir;
@@ -216,8 +225,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             }
             getBuilder().packageApk(
                     getResourceFile().getAbsolutePath(),
-                    getDexFolder(),
-                    getDexedLibraries(),
+                    getDexFolders(),
                     resourceLocation,
                     getJniFolders(),
                     getMergingFolder(),
@@ -309,44 +317,19 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 });
             }
 
-            ConventionMappingHelper.map(packageApp, "dexFolder", new Callable<File>() {
+            ConventionMappingHelper.map(packageApp, "dexFolders", new Callable< Map<File, Format>>() {
                 @Override
-                public File call() {
-                    return scope.getVariantScope().getDexOutputFolder();
+                public  Map<File, Format> call() {
+                    return scope.getVariantScope().getTransformManager().getPipelineOuput(
+                            sDexFilter, null);
                 }
             });
-            ConventionMappingHelper.map(packageApp, "dexedLibraries",
-                    new Callable<Collection<File>>() {
-                        @Override
-                        public Collection<File> call() {
-/*
-FIXME
-                            if (config.isMultiDexEnabled()
-                                    && !config.isLegacyMultiDexMode()
-                                    && variantData.preDexTask != null) {
-                                return scope.getGlobalScope().getProject()
-                                        .fileTree(variantData.preDexTask.getOutputFolder())
-                                        .getFiles();
-                            }
-*/
-                            return Collections.emptyList();
-                        }
-                    });
 
             ConventionMappingHelper.map(packageApp, "javaResourceDir", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
                     return scope.getVariantScope().getTransformManager().getSinglePipelineOutput(
-                            new TransformManager.StreamFilter() {
-                                @Override
-                                public boolean accept(@NonNull Set<ContentType> types,
-                                        @NonNull Set<Scope> scopes) {
-                                    return types.contains(ContentType.RESOURCES) &&
-                                            !scopes.contains(Scope.PROVIDED_ONLY) &&
-                                            !scopes.contains(Scope.TESTED_CODE);
-                                }
-                            },
-                            ScopedContent.Format.SINGLE_FOLDER);
+                            sResFilter, Format.SINGLE_FOLDER);
                 }
             });
 
@@ -354,16 +337,7 @@ FIXME
                 @Override
                 public File call() throws Exception {
                     return scope.getVariantScope().getTransformManager().getSinglePipelineOutput(
-                            new TransformManager.StreamFilter() {
-                                @Override
-                                public boolean accept(@NonNull Set<ContentType> types,
-                                        @NonNull Set<Scope> scopes) {
-                                    return types.contains(ContentType.RESOURCES) &&
-                                            !scopes.contains(Scope.PROVIDED_ONLY) &&
-                                            !scopes.contains(Scope.TESTED_CODE);
-                                }
-                            },
-                            ScopedContent.Format.SINGLE_JAR);
+                            sResFilter, Format.SINGLE_JAR);
                 }
             });
 
@@ -445,37 +419,6 @@ FIXME
                     return scope.getPackageApk();
                 }
             });
-        }
-
-        private ShrinkResources createShrinkResourcesTask(
-                final ApkVariantOutputData variantOutputData) {
-            BaseVariantData<?> variantData = (BaseVariantData<?>) variantOutputData.variantData;
-            ShrinkResources task = scope.getGlobalScope().getProject().getTasks()
-                    .create("shrink" + StringGroovyMethods
-                            .capitalize(variantOutputData.getFullName())
-                            + "Resources", ShrinkResources.class);
-            task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
-            task.setVariantName(scope.getVariantScope().getVariantConfiguration().getFullName());
-            task.variantOutputData = variantOutputData;
-
-            final String outputBaseName = variantOutputData.getBaseName();
-            task.setCompressedResources(new File(
-                    scope.getGlobalScope().getBuildDir() + "/" + FD_INTERMEDIATES + "/res/" +
-                            "resources-" + outputBaseName + "-stripped.ap_"));
-
-            ConventionMappingHelper.map(task, "uncompressedResources", new Callable<File>() {
-                @Override
-                public File call() {
-                    return variantOutputData.processResourcesTask.getPackageOutputFile();
-                }
-            });
-
-            task.dependsOn(
-                    scope.getVariantScope().getObfuscationTask().getName(),
-                    scope.getManifestProcessorTask().getName(),
-                    variantOutputData.processResourcesTask);
-
-            return task;
         }
 
         private static File getOptionalDir(File dir) {

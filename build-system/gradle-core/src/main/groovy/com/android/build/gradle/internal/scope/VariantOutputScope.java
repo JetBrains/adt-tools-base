@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.scope;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.CompatibleScreensManifest;
@@ -31,7 +32,7 @@ import java.io.File;
 /**
  * A scope containing data for a specific variant.
  */
-public class VariantOutputScope {
+public class VariantOutputScope implements BaseScope {
 
     @NonNull
     private VariantScope variantScope;
@@ -45,6 +46,8 @@ public class VariantOutputScope {
 
     private AndroidTask<ProcessAndroidResources> processResourcesTask;
 
+    private AndroidTask<?> shrinkResourcesTask;
+
     public VariantOutputScope(
             @NonNull VariantScope variantScope,
             @NonNull BaseVariantOutputData variantOutputData) {
@@ -52,6 +55,7 @@ public class VariantOutputScope {
         this.variantOutputData = variantOutputData;
     }
 
+    @Override
     @NonNull
     public GlobalScope getGlobalScope() {
         return variantScope.getGlobalScope();
@@ -68,10 +72,26 @@ public class VariantOutputScope {
     }
 
     @NonNull
+    @Override
+    public GradleVariantConfiguration getVariantConfiguration() {
+        return variantScope.getVariantConfiguration();
+    }
+
+    @NonNull
+    @Override
+    public String getDirName() {
+        // this is here as a safety net in the Transform manager which handles either VariantScope
+        // or VariantOutputScope. Should this ever be called we'll need to compute this properly.
+        throw new UnsupportedOperationException("dir name per output scope not yet supported");
+    }
+
+    @Override
+    @NonNull
     public String getTaskName(@NonNull String prefix) {
         return getTaskName(prefix, "");
     }
 
+    @Override
     @NonNull
     public String getTaskName(@NonNull String prefix, @NonNull String suffix) {
         return prefix + StringHelper.capitalize(getVariantOutputData().getFullName()) + suffix;
@@ -165,5 +185,14 @@ public class VariantOutputScope {
     public void setProcessResourcesTask(
             AndroidTask<ProcessAndroidResources> processResourcesTask) {
         this.processResourcesTask = processResourcesTask;
+    }
+
+    public AndroidTask<?> getShrinkResourcesTask() {
+        return shrinkResourcesTask;
+    }
+
+    public void setShrinkResourcesTask(
+            AndroidTask<?> shrinkResourcesTask) {
+        this.shrinkResourcesTask = shrinkResourcesTask;
     }
 }

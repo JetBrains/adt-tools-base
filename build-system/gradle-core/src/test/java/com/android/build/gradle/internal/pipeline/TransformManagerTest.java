@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.pipeline;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
@@ -70,7 +69,7 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // add the transform
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
 
         // get the new stream
         List<TransformStream> streams = transformManager.getStreams();
@@ -118,7 +117,7 @@ public class TransformManagerTest extends TaskTestUtils {
         exception.expectMessage(
                 "Unable to add Transform 'transform name' on variant 'null': requested streams not available: [PROJECT]/[RESOURCES]");
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
     }
 
     @Test
@@ -153,7 +152,7 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // add the transform
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
 
         // get the new stream
         List<TransformStream> streams = transformManager.getStreams();
@@ -196,7 +195,7 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // add the transform
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
 
         // get the new streams
         List<TransformStream> streams = transformManager.getStreams();
@@ -255,7 +254,7 @@ public class TransformManagerTest extends TaskTestUtils {
                 .setTransformType(Type.AS_INPUT)
                 .build();
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
 
         // get the new streams
         List<TransformStream> streams = transformManager.getStreams();
@@ -295,15 +294,15 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // add the transform
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
 
         // get the new stream
         List<TransformStream> streams = transformManager.getStreams();
         assertEquals(1, streams.size());
 
         // check the class stream was consumed.
-        assertFalse(streams.contains(projectClass));
-        assertFalse(streams.contains(libClasses));
+        assertThat(streams).doesNotContain(projectClass);
+        assertThat(streams).doesNotContain(libClasses);
 
         // check we now have 1 streams, containing both scopes.
         streamTester()
@@ -318,6 +317,33 @@ public class TransformManagerTest extends TaskTestUtils {
         assertThat(transformTask.consumedInputStreams).containsAllOf(projectClass, libClasses);
         assertThat(transformTask.referencedInputStreams).isEmpty();
         assertThat(transformTask.outputStreams).containsExactlyElementsIn(streams);
+    }
+
+    @Test
+    public void noOpTransform() throws Exception {
+        // create stream and add them to the pipeline
+        TransformStream projectClass = TransformStream.builder()
+                .addContentType(ContentType.CLASSES)
+                .addScope(Scope.PROJECT)
+                .setFormat(Format.SINGLE_FOLDER)
+                .setFiles(new File("my file"))
+                .setDependency("my dependency")
+                .build();
+        transformManager.addStream(projectClass);
+
+        // add a new transform
+        Transform t = TestTransform.builder()
+                .setInputTypes(ContentType.CLASSES)
+                .setScopes(Scope.PROJECT)
+                .setTransformType(Type.NO_OP)
+                .build();
+
+        // add the transform
+        AndroidTask<TransformTask> task = transformManager.addTransform(
+                taskFactory, scope, t);
+
+        // check the class stream was no consumed.
+        assertThat(transformManager.getStreams()).containsExactly(projectClass);
     }
 
     @Test
@@ -350,7 +376,7 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // add the transform
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
 
         // get the new stream
         List<TransformStream> streams = transformManager.getStreams();
@@ -399,7 +425,7 @@ public class TransformManagerTest extends TaskTestUtils {
         exception.expect(RuntimeException.class);
         exception.expectMessage("Cannot add a Transform with OutputFormat: MULTI_JAR");
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
     }
 
     @Test
@@ -461,6 +487,12 @@ public class TransformManagerTest extends TaskTestUtils {
 
             @NonNull
             @Override
+            public Collection<File> getSecondaryFolderOutputs() {
+                return null;
+            }
+
+            @NonNull
+            @Override
             public Map<String, Object> getParameterInputs() {
                 return null;
             }
@@ -481,7 +513,7 @@ public class TransformManagerTest extends TaskTestUtils {
         exception.expectMessage(
                 "Transform with Type FORK_INPUT must be implementation of ForkTransform");
         // add the transform
-        transformManager.addTransform(taskFactory, variantScope, t);
+        transformManager.addTransform(taskFactory, scope, t);
     }
 
     @Test
@@ -499,7 +531,7 @@ public class TransformManagerTest extends TaskTestUtils {
                 "FORK_INPUT mode only works since a single input type. Transform 'transform name' declared with [CLASSES, DEX]");
 
         // add the transform
-        transformManager.addTransform(taskFactory, variantScope, t);
+        transformManager.addTransform(taskFactory, scope, t);
     }
 
     @Test
@@ -527,7 +559,7 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // add the transform
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
 
         // get the new stream
         List<TransformStream> streams = transformManager.getStreams();
@@ -558,6 +590,84 @@ public class TransformManagerTest extends TaskTestUtils {
     }
 
     @Test
+    public void forkInputWithMultiScopes() {
+        // test the case where the transform creates an additional stream.
+        // (class) -[class]-> (class) + (dex)
+
+        // create streams and add them to the pipeline
+        TransformStream projectClass = TransformStream.builder()
+                .addContentTypes(ContentType.CLASSES)
+                .addScope(Scope.PROJECT)
+                .setFormat(Format.SINGLE_FOLDER)
+                .setFiles(new File("my file"))
+                .setDependency("my dependency")
+                .build();
+        transformManager.addStream(projectClass);
+
+        TransformStream libClass = TransformStream.builder()
+                .addContentTypes(ContentType.CLASSES)
+                .addScope(Scope.SUB_PROJECTS)
+                .setFormat(Format.SINGLE_FOLDER)
+                .setFiles(new File("my file"))
+                .setDependency("my dependency")
+                .build();
+        transformManager.addStream(libClass);
+
+        // add a new transform
+        Transform t = TestTransform.builder()
+                .setInputTypes(ContentType.CLASSES)
+                .setOutputTypes(ContentType.CLASSES, ContentType.DEX)
+                .setScopes(Scope.PROJECT, Scope.SUB_PROJECTS)
+                .setTransformType(Type.FORK_INPUT)
+                .build();
+
+        // add the transform
+        AndroidTask<TransformTask> task = transformManager.addTransform(
+                taskFactory, scope, t);
+
+        // get the new stream
+        List<TransformStream> streams = transformManager.getStreams();
+        assertThat(streams).hasSize(4);
+
+        // check the class stream was consumed.
+        assertThat(streams).doesNotContain(projectClass);
+        assertThat(streams).doesNotContain(libClass);
+
+        // check we now have two DEX streams, one in each scope.
+        streamTester()
+                .withContentTypes(ContentType.DEX)
+                .withScopes(Scope.PROJECT)
+                .withDependency(TASK_NAME)
+                .withParentStream(projectClass)
+                .test();
+        streamTester()
+                .withContentTypes(ContentType.DEX)
+                .withScopes(Scope.SUB_PROJECTS)
+                .withDependency(TASK_NAME)
+                .withParentStream(libClass)
+                .test();
+        // and two class streams, one in each scope
+        streamTester()
+                .withContentTypes(ContentType.CLASSES)
+                .withScopes(Scope.PROJECT)
+                .withDependency(TASK_NAME)
+                .withParentStream(projectClass)
+                .test();
+        streamTester()
+                .withContentTypes(ContentType.CLASSES)
+                .withScopes(Scope.SUB_PROJECTS)
+                .withDependency(TASK_NAME)
+                .withParentStream(libClass)
+                .test();
+
+        // check the task contains the streams
+        TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
+        assertThat(transformTask).isNotNull();
+        assertThat(transformTask.consumedInputStreams).containsExactly(projectClass, libClass);
+        assertThat(transformTask.referencedInputStreams).isEmpty();
+        assertThat(transformTask.outputStreams).containsExactlyElementsIn(streams);
+    }
+    @Test
     public void forkInputWithSplitStream() {
         // test the case where the transform creates an additional stream, and the original
         // stream has more than the requested type.
@@ -583,7 +693,7 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // add the transform
         AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, variantScope, t);
+                taskFactory, scope, t);
 
         // get the new stream
         List<TransformStream> streams = transformManager.getStreams();

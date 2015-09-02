@@ -23,6 +23,7 @@ import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.model.FilterDataImpl;
+import com.android.build.transform.api.ScopedContent;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
@@ -31,6 +32,7 @@ import com.android.builder.signing.SignedJarBuilder;
 import com.android.ide.common.signing.KeytoolException;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Callables;
@@ -138,8 +140,7 @@ public class PackageSplitAbi extends SplitRelatedTask {
                 File outFile = new File(getOutputDirectory(), apkName);
                 getBuilder().packageApk(
                         file.getAbsolutePath(),
-                        null, /* dexFolder */
-                        ImmutableList.<File>of(), /* dexedLibraries */
+                        ImmutableMap.<File, ScopedContent.Format>of(), /* dexFolders */
                         null, /* getJavaResourceDir */
                         getJniFolders(),
                         getMergingFolder(),

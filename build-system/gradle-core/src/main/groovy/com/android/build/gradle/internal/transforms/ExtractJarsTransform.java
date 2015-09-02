@@ -21,6 +21,7 @@ import static com.android.utils.FileUtils.emptyFolder;
 import static com.android.utils.FileUtils.mkdirs;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.concurrency.Immutable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.AsInputTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
@@ -126,6 +127,12 @@ public class ExtractJarsTransform implements AsInputTransform {
     @NonNull
     @Override
     public Collection<File> getSecondaryFileOutputs() {
+        return ImmutableList.of();
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getSecondaryFolderOutputs() {
         return ImmutableList.of();
     }
 
@@ -324,6 +331,6 @@ public class ExtractJarsTransform implements AsInputTransform {
     private static File getFolder(
             @NonNull File outFolder,
             @NonNull File jarFile) {
-        return new File(outFolder, jarFile.getName() + jarFile.getPath().hashCode());
+        return new File(outFolder, jarFile.getName() + "-" + jarFile.getPath().hashCode());
     }
 }
