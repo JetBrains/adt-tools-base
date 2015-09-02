@@ -1,3 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@layout/l_used*_c,@layout/l_used_a,@layout/l_used_b*"/>
+    tools:keep="@layout/l_used*_c,@layout/l_used_a,@layout/l_used_b*"
+    tools:discard="@drawable/force_remove"/>
