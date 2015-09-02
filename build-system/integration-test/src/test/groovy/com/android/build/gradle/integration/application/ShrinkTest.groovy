@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.tasks.ResourceUsageAnalyzer
 import com.android.builder.model.AndroidProject
 import com.google.common.base.Joiner
 import com.google.common.collect.Lists
@@ -33,6 +34,8 @@ import java.util.regex.Pattern
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
+import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.REPLACE_DELETED_WITH_EMPTY
 import static java.io.File.separator
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
@@ -166,9 +169,58 @@ res/layout/used18.xml
 res/layout/used19.xml
 res/layout/used20.xml
 res/layout/used21.xml"""
+        if (REPLACE_DELETED_WITH_EMPTY) {
+            // If replacing deleted files with empty files, the file list will include
+            // the "unused" files too, though they will be much smaller. This is checked
+            // later on in the test.
+            expectedStrippedApkContents = """\
+AndroidManifest.xml
+classes.dex
+res/drawable/force_remove.xml
+res/raw/keep.xml
+res/layout/l_used_a.xml
+res/layout/l_used_b2.xml
+res/layout/l_used_c.xml
+res/layout/lib_unused.xml
+res/layout/prefix_3_suffix.xml
+res/layout/prefix_used_1.xml
+res/layout/prefix_used_2.xml
+resources.arsc
+res/layout/unused1.xml
+res/layout/unused2.xml
+res/drawable/unused9.xml
+res/drawable/unused10.xml
+res/drawable/unused11.xml
+res/menu/unused12.xml
+res/layout/unused13.xml
+res/layout/unused14.xml
+res/layout/used1.xml
+res/layout/used2.xml
+res/layout/used3.xml
+res/layout/used4.xml
+res/layout/used5.xml
+res/layout/used6.xml
+res/layout/used7.xml
+res/layout/used8.xml
+res/drawable/used9.xml
+res/drawable/used10.xml
+res/drawable/used11.xml
+res/drawable/used12.xml
+res/menu/used13.xml
+res/layout/used14.xml
+res/drawable/used15.xml
+res/layout/used16.xml
+res/layout/used17.xml
+res/layout/used18.xml
+res/layout/used19.xml
+res/layout/used20.xml
+res/layout/used21.xml"""
+        }
 
         // Should not have any unused resources in the compressed list
-        assertFalse(expectedStrippedApkContents, expectedStrippedApkContents.contains("unused"))
+        if (!REPLACE_DELETED_WITH_EMPTY) {
+            assertFalse(expectedStrippedApkContents, expectedStrippedApkContents.contains("unused"))
+        }
         // Should have *all* the used resources, currently 1-21
         for (int i = 1; i <= 21; i++) {
             assertTrue("Missing used" + i + " in " + expectedStrippedApkContents,
@@ -187,12 +239,20 @@ res/layout/used21.xml"""
         assertEquals("The debug target should have everything there in the APK",
                 expectedUnstrippedApk, dumpZipContents(apkProguardOnly))
 
+        // Make sure force_remove was replaced with a small file if replacing rather than removing
+        if (REPLACE_DELETED_WITH_EMPTY) {
+            assertThatZip(compressed).containsFileWithContent("res/drawable/force_remove.xml",
+                    ResourceUsageAnalyzer.TINY_XML);
+        }
+
         // Check the compressed .ap_:
         String actualCompressed = dumpZipContents(compressed)
         String expectedCompressed = expectedStrippedApkContents.replace("classes.dex\n", "")
         assertEquals("Check the compressed .ap_:", expectedCompressed, actualCompressed)
-        assertFalse("expectedCompressed does not contain unused resources",
-                expectedCompressed.contains("unused"))
+        if (!REPLACE_DELETED_WITH_EMPTY) {
+            assertFalse("expectedCompressed does not contain unused resources",
+                    expectedCompressed.contains("unused"))
+        }
         assertEquals("expectedStrippedApkContents",
                 expectedStrippedApkContents, dumpZipContents(apkRelease))
 
@@ -210,6 +270,7 @@ res/layout/used21.xml"""
         assertEquals(""
                 + "AndroidManifest.xml\n"
                 + "resources.arsc\n"
+                + (REPLACE_DELETED_WITH_EMPTY ? "res/layout/unused.xml\n" : "")
                 + "res/layout/used.xml",
                 dumpZipContents(compressed))
         //noinspection SpellCheckingInspection
@@ -254,8 +315,11 @@ res/layout/used21.xml"""
         //noinspection SpellCheckingInspection
         assertEquals(""
                 + "AndroidManifest.xml\n"
+                + (REPLACE_DELETED_WITH_EMPTY ? "res/xml/my_xml.xml\n" : "")
                 + "resources.arsc\n"
                 + "res/raw/unknown\n"
+                + (REPLACE_DELETED_WITH_EMPTY ? "res/raw/unused_icon.png\n" : "")
+                + (REPLACE_DELETED_WITH_EMPTY ? "res/raw/unused_index.html\n" : "")
                 + "res/drawable/used1.xml\n"
                 + "res/raw/used_icon.png\n"
                 + "res/raw/used_icon2.png\n"
@@ -297,7 +361,10 @@ res/layout/used21.xml"""
         assertEquals(""
                 + "  stored  resources.arsc\n"
                 + "deflated  AndroidManifest.xml\n"
+                + (REPLACE_DELETED_WITH_EMPTY ? "deflated  res/xml/my_xml.xml\n" : "")
                 + "deflated  res/raw/unknown\n"
+                + (REPLACE_DELETED_WITH_EMPTY ? "deflated  res/raw/unused_icon.png\n" : "")
+                + (REPLACE_DELETED_WITH_EMPTY ? "deflated  res/raw/unused_index.html\n" : "")
                 + "deflated  res/drawable/used1.xml\n"
                 + "  stored  res/raw/used_icon.png\n"
                 + "  stored  res/raw/used_icon2.png\n"
@@ -333,7 +400,20 @@ res/layout/used21.xml"""
             if (!entry1.isDirectory()) {
                 byte[] bytes1 = ByteStreams.toByteArray(zis1)
                 byte[] bytes2 = ByteStreams.toByteArray(zis2)
-                assertTrue(name1, Arrays.equals(bytes1, bytes2))
+
+                if (REPLACE_DELETED_WITH_EMPTY) {
+                    if (name1.equals("res/xml/my_xml.xml")) {
+                        assertTrue(name1, Arrays.equals(bytes1, ResourceUsageAnalyzer.TINY_XML))
+                    } else if (name1.equals("res/raw/unused_icon.png")) {
+                        assertTrue(name1, Arrays.equals(bytes1, ResourceUsageAnalyzer.TINY_PNG))
+                    } else if (name1.equals("res/raw/unused_index.html")) {
+                        assertTrue(name1, Arrays.equals(bytes1, new byte[0]))
+                    } else {
+                        assertTrue(name1, Arrays.equals(bytes1, bytes2))
+                    }
+                } else {
+                    assertTrue(name1, Arrays.equals(bytes1, bytes2))
+                }
             } else {
                 assertTrue(entry2.isDirectory())
             }
@@ -365,7 +445,10 @@ res/layout/used21.xml"""
         //noinspection SpellCheckingInspection
         assertEquals(""
                 + "AndroidManifest.xml\n"
+                + (REPLACE_DELETED_WITH_EMPTY ? "res/raw/keep.xml\n" : "")
                 + "resources.arsc\n"
+                + (REPLACE_DELETED_WITH_EMPTY ? "res/layout/unused1.xml\n" : "")
+                + (REPLACE_DELETED_WITH_EMPTY ? "res/layout/unused2.xml\n" : "")
                 + "res/layout/used1.xml",
                 dumpZipContents(compressed))
     }

@@ -21,6 +21,7 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_TYPE;
+import static com.android.SdkConstants.DOT_9PNG;
 import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.DOT_GIF;
 import static com.android.SdkConstants.DOT_JAR;
@@ -148,6 +149,13 @@ import javax.xml.parsers.ParserConfigurationException;
  */
 public class ResourceUsageAnalyzer {
     private static final String ANDROID_RES = "android_res/";
+
+    /**
+     * Whether we should create small/empty dummy files instead of actually
+     * removing file resources. This is to work around crashes on some devices
+     * where the device is traversing resources. See http://b.android.com/79325 for more.
+     */
+    public static final boolean REPLACE_DELETED_WITH_EMPTY = true;
 
     /**
      Whether we support running aapt twice, to regenerate the resources.arsc file
@@ -293,6 +301,61 @@ public class ResourceUsageAnalyzer {
         mDebug = verbose;
     }
 
+    // A 1x1 pixel PNG of type BufferedImage.TYPE_BYTE_GRAY
+    public static final byte[] TINY_PNG = new byte[] {
+            (byte)-119, (byte)  80, (byte)  78, (byte)  71, (byte)  13, (byte)  10,
+            (byte)  26, (byte)  10, (byte)   0, (byte)   0, (byte)   0, (byte)  13,
+            (byte)  73, (byte)  72, (byte)  68, (byte)  82, (byte)   0, (byte)   0,
+            (byte)   0, (byte)   1, (byte)   0, (byte)   0, (byte)   0, (byte)   1,
+            (byte)   8, (byte)   0, (byte)   0, (byte)   0, (byte)   0, (byte)  58,
+            (byte) 126, (byte)-101, (byte)  85, (byte)   0, (byte)   0, (byte)   0,
+            (byte)  10, (byte)  73, (byte)  68, (byte)  65, (byte)  84, (byte) 120,
+            (byte) -38, (byte)  99, (byte)  96, (byte)   0, (byte)   0, (byte)   0,
+            (byte)   2, (byte)   0, (byte)   1, (byte) -27, (byte)  39, (byte) -34,
+            (byte)  -4, (byte)   0, (byte)   0, (byte)   0, (byte)   0, (byte)  73,
+            (byte)  69, (byte)  78, (byte)  68, (byte) -82, (byte)  66, (byte)  96,
+            (byte)-126
+    };
+
+    // A 3x3 pixel PNG of type BufferedImage.TYPE_INT_ARGB with 9-patch markers
+    public static final byte[] TINY_9PNG = new byte[] {
+            (byte)-119, (byte)  80, (byte)  78, (byte)  71, (byte)  13, (byte)  10,
+            (byte)  26, (byte)  10, (byte)   0, (byte)   0, (byte)   0, (byte)  13,
+            (byte)  73, (byte)  72, (byte)  68, (byte)  82, (byte)   0, (byte)   0,
+            (byte)   0, (byte)   3, (byte)   0, (byte)   0, (byte)   0, (byte)   3,
+            (byte)   8, (byte)   6, (byte)   0, (byte)   0, (byte)   0, (byte)  86,
+            (byte)  40, (byte) -75, (byte) -65, (byte)   0, (byte)   0, (byte)   0,
+            (byte)  20, (byte)  73, (byte)  68, (byte)  65, (byte)  84, (byte) 120,
+            (byte) -38, (byte)  99, (byte)  96, (byte)-128, (byte)-128, (byte)  -1,
+            (byte)  12, (byte)  48, (byte)   6, (byte)   8, (byte) -96, (byte)   8,
+            (byte)-128, (byte)   8, (byte)   0, (byte)-107, (byte)-111, (byte)   7,
+            (byte)  -7, (byte) -64, (byte) -82, (byte)   8, (byte)   0, (byte)   0,
+            (byte)   0, (byte)   0, (byte)   0, (byte)  73, (byte)  69, (byte)  78,
+            (byte)  68, (byte) -82, (byte)  66, (byte)  96, (byte)-126
+    };
+
+    // The XML document <x/> as binary-packed with AAPT
+    public static final byte[] TINY_XML = new byte[] {
+            (byte)   3, (byte)   0, (byte)   8, (byte)   0, (byte) 104, (byte)   0,
+            (byte)   0, (byte)   0, (byte)   1, (byte)   0, (byte)  28, (byte)   0,
+            (byte)  36, (byte)   0, (byte)   0, (byte)   0, (byte)   1, (byte)   0,
+            (byte)   0, (byte)   0, (byte)   0, (byte)   0, (byte)   0, (byte)   0,
+            (byte)   0, (byte)   1, (byte)   0, (byte)   0, (byte)  32, (byte)   0,
+            (byte)   0, (byte)   0, (byte)   0, (byte)   0, (byte)   0, (byte)   0,
+            (byte)   0, (byte)   0, (byte)   0, (byte)   0, (byte)   1, (byte)   1,
+            (byte) 120, (byte)   0, (byte)   2, (byte)   1, (byte)  16, (byte)   0,
+            (byte)  36, (byte)   0, (byte)   0, (byte)   0, (byte)   1, (byte)   0,
+            (byte)   0, (byte)   0, (byte)  -1, (byte)  -1, (byte)  -1, (byte)  -1,
+            (byte)  -1, (byte)  -1, (byte)  -1, (byte)  -1, (byte)   0, (byte)   0,
+            (byte)   0, (byte)   0, (byte)  20, (byte)   0, (byte)  20, (byte)   0,
+            (byte)   0, (byte)   0, (byte)   0, (byte)   0, (byte)   0, (byte)   0,
+            (byte)   0, (byte)   0, (byte)   3, (byte)   1, (byte)  16, (byte)   0,
+            (byte)  24, (byte)   0, (byte)   0, (byte)   0, (byte)   1, (byte)   0,
+            (byte)   0, (byte)   0, (byte)  -1, (byte)  -1, (byte)  -1, (byte)  -1,
+            (byte)  -1, (byte)  -1, (byte)  -1, (byte)  -1, (byte)   0, (byte)   0,
+            (byte)   0, (byte)   0
+    };
+
     /**
      * "Removes" resources from an .ap_ file by writing it out while filtering out
      * unused resources. This won't touch the values XML data (resources.arsc) but
@@ -356,6 +419,32 @@ public class ResourceUsageAnalyzer {
                             }
 
                             zos.closeEntry();
+                        } else if (REPLACE_DELETED_WITH_EMPTY && !directory) {
+                            // Create a new entry so that the compressed len is recomputed.
+                            byte[] bytes;
+                            if (name.endsWith(DOT_9PNG)) {
+                                bytes = TINY_9PNG;
+                            } else if (name.endsWith(DOT_PNG)) {
+                                bytes = TINY_PNG;
+                            } else if (name.endsWith(DOT_XML)) {
+                                bytes = TINY_XML;
+                            } else {
+                                bytes = new byte[0];
+                            }
+                            JarEntry outEntry = new JarEntry(name);
+                            if (entry.getTime() != -1L) {
+                                outEntry.setTime(entry.getTime());
+                            }
+                            zos.putNextEntry(outEntry);
+                            zos.write(bytes);
+                            zos.closeEntry();
+
+                            if (isVerbose()) {
+                                System.out.println(
+                                    "Skipped unused resource " + name + ": " + entry.getSize()
+                                            + " bytes (replaced with small dummy file of size "
+                                            + bytes.length + " bytes)");
+                            }
                         } else if (isVerbose()) {
                             System.out.println("Skipped unused resource " + name + ": "
                                     + entry.getSize() + " bytes");
