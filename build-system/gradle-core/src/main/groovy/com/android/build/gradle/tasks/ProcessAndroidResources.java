@@ -308,7 +308,12 @@ public class ProcessAndroidResources extends IncrementalTask {
                             if (resConfigs.size() == 1 &&
                                     Iterators.getOnlyElement(resConfigs.iterator())
                                             .equals("auto")) {
-                                return variantData.discoverListOfResourceConfigs();
+                                if (scope.getGlobalScope().getAndroidBuilder().getTargetInfo()
+                                        .getBuildTools().getRevision().getMajor() >= 21) {
+                                    return variantData.discoverListOfResourceConfigsNotDensities();
+                                } else {
+                                    return variantData.discoverListOfResourceConfigs();
+                                }
                             }
                             return config.getMergedFlavor().getResourceConfigurations();
                         }

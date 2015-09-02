@@ -34,6 +34,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -405,8 +406,13 @@ public class AaptPackageProcessBuilder extends ProcessEnvBuilder<AaptPackageProc
             Joiner joiner = Joiner.on(',');
             builder.addArgs("-c", joiner.join(otherResourceConfigs));
         }
-        for (String densityResourceConfig : densityResourceConfigs) {
-            builder.addArgs("--preferred-density", densityResourceConfig);
+        if (!densityResourceConfigs.isEmpty()) {
+            if (densityResourceConfigs.size() != 1) {
+                throw new RuntimeException("Cannot filter assets for multiple densities using "
+                        + "SDK build tools 21 or later. Consider using apk splits instead.");
+            }
+            builder.addArgs(
+                    "--preferred-density", Iterables.getOnlyElement(densityResourceConfigs));
         }
 
         if (buildToolInfo.getRevision().getMajor() >= 21 && mPreferredDensity != null) {

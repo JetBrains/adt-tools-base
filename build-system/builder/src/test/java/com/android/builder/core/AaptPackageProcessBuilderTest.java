@@ -528,7 +528,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
                 .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList
-                        .of("en", "fr", "es", "de", "it", "mdpi", "hdpi", "xhdpi", "xxhdpi"));
+                        .of("en", "fr", "es", "de", "it", "hdpi"));
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
@@ -554,10 +554,10 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         assertEquals("en,fr,es,de,it",
                 command.get(command.indexOf("-c") + 1));
-        assertTrue("--preferred-density".equals(command.get(command.indexOf("mdpi") - 1)));
-        assertTrue("--preferred-density".equals(command.get(command.indexOf("hdpi") -1 )));
-        assertTrue("--preferred-density".equals(command.get(command.indexOf("xhdpi") -1 )));
-        assertTrue("--preferred-density".equals(command.get(command.indexOf("xxhdpi") -1 )));
+        assertEquals(-1, command.indexOf("mdpi"));
+        assertTrue("--preferred-density".equals(command.get(command.indexOf("hdpi") - 1)));
+        assertEquals(-1, command.indexOf("xhdpi"));
+        assertEquals(-1, command.indexOf("xxhdpi"));
         assertEquals(-1, command.indexOf("xxxhdpi"));
     }
 
@@ -580,8 +580,8 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
                 .setType(VariantType.DEFAULT)
-                .setResourceConfigs(ImmutableList.of( "en", "fr", "es", "de", "it", "mdpi", "hdpi", "xhdpi", "xxhdpi"))
-                .setSplits(ImmutableList.of("mdpi", "hdpi", "xhdpi", "xxhdpi"))
+                .setResourceConfigs(ImmutableList.of( "en", "fr", "es", "de", "it", "hdpi"))
+                .setSplits(ImmutableList.of("hdpi"))
                 .setPreferredDensity("hdpi");
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
@@ -605,7 +605,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
             aaptPackageProcessBuilder.build(buildToolInfo, androidTarget, mLogger);
         } catch (Exception expected) {
             assertEquals("When using splits in tools 21 and above, resConfigs should not contain "
-                    + "any densities. Right now, it contains \"mdpi\",\"hdpi\",\"xhdpi\",\"xxhdpi\"\n"
+                    + "any densities. Right now, it contains \"hdpi\"\n"
                     + "Suggestion: remove these from resConfigs from build.gradle", expected.getMessage());
         }
     }
