@@ -258,9 +258,12 @@ public class MergeManifests extends ManifestProcessorTask {
             List<ManifestDependencyImpl> list = Lists.newArrayListWithCapacity(libraries.size())
 
             for (LibraryDependency lib : libraries) {
-                // get the dependencies
-                List<ManifestDependencyImpl> children = getManifestDependencies(lib.dependencies)
-                list.add(new ManifestDependencyImpl(lib.getName(), lib.manifest, children))
+                if (!lib.isOptional()) {
+                    // get the dependencies
+                    List<ManifestDependencyImpl> children =
+                            getManifestDependencies(lib.dependencies)
+                    list.add(new ManifestDependencyImpl(lib.getName(), lib.manifest, children))
+                }
             }
 
             return list
