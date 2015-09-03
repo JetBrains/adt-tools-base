@@ -17,27 +17,34 @@
 package com.android.build.gradle.tasks;
 
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.NO_MATCH;
+import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.REPLACE_DELETED_WITH_EMPTY;
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.Resource;
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.convertFormatStringToRegexp;
 import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
 import junit.framework.TestCase;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+
+import javax.imageio.ImageIO;
 
 /** TODO: Test Resources#getIdentifier() handling */
 @SuppressWarnings("SpellCheckingInspection")
@@ -233,17 +240,26 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                     + "res/drawable-mdpi/ic_launcher.png\n"
                     + "res/drawable-xxhdpi\n"
                     + "res/drawable-xxhdpi/ic_launcher.png\n"
+                    + (REPLACE_DELETED_WITH_EMPTY ? "res/drawable-xxhdpi/unused.png\n" : "")
                     + "res/layout\n"
                     + "res/layout/activity_main.xml\n"
                     + "res/menu\n"
                     + "res/menu/main.xml\n"
                     + "res/raw\n"
                     + "res/raw/android_wear_micro_apk.apk\n"
+                    + (REPLACE_DELETED_WITH_EMPTY ? "res/raw/index1.html\n" : "")
+                    + (REPLACE_DELETED_WITH_EMPTY ? "res/raw/my_js.js\n" : "")
+                    + (REPLACE_DELETED_WITH_EMPTY ? "res/raw/styles2.css\n" : "")
                     + "res/values\n"
                     + "resources.arsc\n"
                     + "res/xml\n"
                     + "res/xml/android_wear_micro_apk.xml\n",
                     dumpZipContents(compressedFile));
+
+            if (REPLACE_DELETED_WITH_EMPTY) {
+                assertTrue(Arrays.equals(ResourceUsageAnalyzer.TINY_PNG,
+                        getZipContents(compressedFile, "res/drawable-xxhdpi/unused.png")));
+            }
 
             uncompressedFile.delete();
             compressedFile.delete();
@@ -273,6 +289,29 @@ public class ResourceUsageAnalyzerTest extends TestCase {
         }
 
         return sb.toString();
+    }
+
+    @Nullable
+    private static byte[] getZipContents(File zipFile, String name) throws IOException {
+        FileInputStream fis = new FileInputStream(zipFile);
+        try {
+            ZipInputStream zis = new ZipInputStream(fis);
+            try {
+                ZipEntry entry = zis.getNextEntry();
+                while (entry != null) {
+                    if (name.equals(entry.getName())) {
+                        return ByteStreams.toByteArray(zis);
+                    }
+                    entry = zis.getNextEntry();
+                }
+            } finally {
+                zis.close();
+            }
+        } finally {
+            fis.close();
+        }
+
+        return null;
     }
 
     private static void addFiles(File file, List<File> files) {
