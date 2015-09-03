@@ -171,6 +171,19 @@ public class WakelockDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void test10() throws Exception {
+        // Regression test for 43212
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                        "bytecode/.classpath=>.classpath",
+                        "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
+                        "bytecode/WakelockActivity10.java.txt=>src/test/pkg/WakelockActivity10.java",
+                        "bytecode/WakelockActivity10.class.data=>bin/classes/test/pkg/WakelockActivity10.class"
+                ));
+    }
+
     public void testFlags() throws Exception {
         assertEquals(""
                 + "src/test/pkg/PowerManagerFlagTest.java:15: Warning: Should not set both PARTIAL_WAKE_LOCK and ACQUIRE_CAUSES_WAKEUP. If you do not want the screen to turn on, get rid of ACQUIRE_CAUSES_WAKEUP [Wakelock]\n"
