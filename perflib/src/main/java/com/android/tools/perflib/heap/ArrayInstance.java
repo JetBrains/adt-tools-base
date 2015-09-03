@@ -101,6 +101,13 @@ public class ArrayInstance extends Instance {
         }
     }
 
+    /**
+     * Returns the number of elements in the array.
+     */
+    public int getLength() {
+        return mLength;
+    }
+
     public Type getArrayType() {
         return mType;
     }
