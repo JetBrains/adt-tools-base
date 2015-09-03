@@ -5,6 +5,7 @@
     name="Tabbed Activity"
     minApi="13"
     minBuildApi="14"
+    requireAppTheme="true"
     description="Creates a new blank activity, with an action bar and navigational elements such as tabs or horizontal swipe.">
 
     <category value="Activity" />

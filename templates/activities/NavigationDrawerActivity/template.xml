@@ -5,6 +5,7 @@
     name="Navigation Drawer Activity"
     minApi="7"
     minBuildApi="14"
+    requireAppTheme="true"
     description="Creates a new Activity with a Navigation Drawer.">
 
     <category value="Activity" />

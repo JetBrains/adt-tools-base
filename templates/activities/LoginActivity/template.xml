@@ -4,6 +4,7 @@
     revision="5"
     name="Login Activity"
     description="Creates a new login activity, allowing users to optionally sign in with Google+ or enter an email address and password to log in to or register with your application."
+    requireAppTheme="true"
     minApi="8"
     minBuildApi="14">
 

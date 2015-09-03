@@ -24,7 +24,7 @@
             <meta-data android:name="android.support.PARENT_ACTIVITY"
                 android:value="${parentActivityClass}" />
             </#if>
-            <#if isLauncher>
+            <#if isLauncher && !(isLibraryProject!false)>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
