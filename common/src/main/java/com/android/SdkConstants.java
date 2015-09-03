@@ -736,8 +736,12 @@ public final class SdkConstants {
     /** Namespace used for auto-adjusting namespaces */
     public static final String AUTO_URI =
             "http://schemas.android.com/apk/res-auto";                 //$NON-NLS-1$
+    /** Namespace for xliff in string resources. */
+    public static final String XLIFF_URI = "urn:oasis:names:tc:xliff:document:1.2";
     /** Default prefix used for tools attributes */
     public static final String TOOLS_PREFIX = "tools";                 //$NON-NLS-1$
+    /** Default prefix used for xliff tags. */
+    public static final String XLIFF_PREFIX = "xliff";                 //$NON-NLS-1$
     public static final String R_CLASS = "R";                          //$NON-NLS-1$
     public static final String ANDROID_PKG = "android";                //$NON-NLS-1$
 
