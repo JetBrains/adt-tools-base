@@ -50,11 +50,11 @@
                    to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
 
     <instantiate from="root/test/app_package/ApplicationTest.java.ftl"
-                   to="${testOut}/ApplicationTest.java" />
+                   to="${escapeXmlAttribute(testOut)}/ApplicationTest.java" />
 
 <#if unitTestsSupported>
     <instantiate from="root/test/app_package/ExampleUnitTest.java.ftl"
-                   to="${unitTestOut}/ExampleUnitTest.java" />
+                   to="${escapeXmlAttribute(unitTestOut)}/ExampleUnitTest.java" />
 </#if>
 
 </recipe>
