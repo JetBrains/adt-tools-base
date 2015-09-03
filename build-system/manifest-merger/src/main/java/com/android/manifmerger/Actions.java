@@ -24,6 +24,7 @@ import com.android.ide.common.blame.MessageJsonSerializer;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.utils.ILogger;
+import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -123,7 +124,7 @@ public class Actions {
      * Initial dump of the merging tool actions, need to be refined and spec'ed out properly.
      * @param logger logger to log to at INFO level.
      */
-    void log(ILogger logger) {
+    void log(@NonNull ILogger logger) {
         logger.verbose(getLogs());
     }
 
@@ -132,7 +133,7 @@ public class Actions {
      * @param fileWriter the file to write all actions into.
      * @throws IOException
      */
-    void log(FileWriter fileWriter) throws IOException {
+    void log(@NonNull FileWriter fileWriter) throws IOException {
         fileWriter.append(getLogs());
     }
 
@@ -205,19 +206,22 @@ public class Actions {
             mReason = reason;
         }
 
+        @NonNull
         public ActionType getActionType() {
             return mActionType;
         }
 
+        @NonNull
         public SourceFilePosition getActionLocation() {
             return mActionLocation;
         }
 
+        @NonNull
         public XmlNode.NodeKey getTargetId() {
             return mTargetId;
         }
 
-        public void print(StringBuilder stringBuilder) {
+        public void print(@NonNull StringBuilder stringBuilder) {
             stringBuilder.append(mActionType)
                     .append(" from ")
                     .append(mActionLocation);
@@ -233,6 +237,7 @@ public class Actions {
      */
     public static class NodeRecord extends Record {
 
+        @NonNull
         private final NodeOperationType mNodeOperationType;
 
         NodeRecord(@NonNull ActionType actionType,
@@ -244,6 +249,7 @@ public class Actions {
             this.mNodeOperationType = Preconditions.checkNotNull(nodeOperationType);
         }
 
+        @NonNull
         @Override
         public String toString() {
             return "Id=" + mTargetId.toString() + " actionType=" + getActionType()
@@ -259,6 +265,7 @@ public class Actions {
 
         // first in wins which should be fine, the first
         // operation type will be the highest priority one
+        @Nullable
         private final AttributeOperationType mOperationType;
 
         AttributeRecord(
@@ -276,15 +283,19 @@ public class Actions {
             return mOperationType;
         }
 
+        @NonNull
         @Override
         public String toString() {
-            return "Id=" + mTargetId + " actionType=" + getActionType()
-                    + " location=" + getActionLocation()
-                    + " opType=" + getOperationType();
+            return Objects.toStringHelper(this).add("Id", mTargetId)
+                    .add("actionType=",getActionType())
+                    .add("location", getActionLocation())
+                    .add("opType", getOperationType()).toString();
         }
     }
 
+    @NonNull
     public String persist() throws IOException  {
+        //noinspection SpellCheckingInspection
         GsonBuilder gson = new GsonBuilder().setPrettyPrinting();
         gson.enableComplexMapKeySerialization();
         MessageJsonSerializer.registerTypeAdapters(gson);
@@ -292,7 +303,7 @@ public class Actions {
     }
 
     @Nullable
-    public static Actions load(InputStream inputStream) throws IOException {
+    public static Actions load(@NonNull InputStream inputStream) throws IOException {
 
         return getGsonParser().fromJson(new InputStreamReader(inputStream), Actions.class);
     }
@@ -300,8 +311,8 @@ public class Actions {
     private static class NodeNameDeserializer implements JsonDeserializer<XmlNode.NodeName> {
 
         @Override
-        public XmlNode.NodeName deserialize(JsonElement json, Type typeOfT,
-                JsonDeserializationContext context) throws JsonParseException {
+        public XmlNode.NodeName deserialize(@NonNull JsonElement json, Type typeOfT,
+                @NonNull JsonDeserializationContext context) throws JsonParseException {
             if (json.getAsJsonObject().get("mNamespaceURI") != null) {
                 return context.deserialize(json, XmlNode.NamespaceAwareName.class);
             } else {
@@ -311,12 +322,12 @@ public class Actions {
     }
 
     @Nullable
-    @SuppressWarnings("unchecked")
     public static Actions load(String xml) {
-
         return getGsonParser().fromJson(xml, Actions.class);
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
+    @NonNull
     private static Gson getGsonParser() {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.enableComplexMapKeySerialization();
@@ -325,7 +336,7 @@ public class Actions {
         return gsonBuilder.create();
     }
 
-    public ImmutableMultimap<Integer, Record> getResultingSourceMapping(XmlDocument xmlDocument)
+    public ImmutableMultimap<Integer, Record> getResultingSourceMapping(@NonNull XmlDocument xmlDocument)
             throws ParserConfigurationException, SAXException, IOException {
 
         SourceFile inMemory = SourceFile.UNKNOWN;
@@ -345,8 +356,8 @@ public class Actions {
         return mappingBuilder.build();
     }
 
-    private void parse(XmlElement element,
-            ImmutableMultimap.Builder<Integer, Record> mappings) {
+    private void parse(@NonNull XmlElement element,
+            @NonNull ImmutableMultimap.Builder<Integer, Record> mappings) {
         DecisionTreeRecord decisionTreeRecord = mRecords.get(element.getId());
         if (decisionTreeRecord != null) {
             Actions.NodeRecord nodeRecord = findNodeRecord(decisionTreeRecord);
@@ -366,7 +377,8 @@ public class Actions {
         }
     }
 
-    public String blame(XmlDocument xmlDocument)
+    @NonNull
+    public String blame(@NonNull XmlDocument xmlDocument)
             throws IOException, SAXException, ParserConfigurationException {
 
         ImmutableMultimap<Integer, Record> resultingSourceMapping =
@@ -392,7 +404,7 @@ public class Actions {
     }
 
     @Nullable
-    private static Actions.NodeRecord findNodeRecord(DecisionTreeRecord decisionTreeRecord) {
+    private static Actions.NodeRecord findNodeRecord(@NonNull DecisionTreeRecord decisionTreeRecord) {
         for (Actions.NodeRecord nodeRecord : decisionTreeRecord.getNodeRecords()) {
             if (nodeRecord.getActionType() == Actions.ActionType.ADDED) {
                 return nodeRecord;
@@ -403,8 +415,8 @@ public class Actions {
 
     @Nullable
     private static Actions.AttributeRecord findAttributeRecord(
-            DecisionTreeRecord decisionTreeRecord,
-            XmlAttribute xmlAttribute) {
+            @NonNull DecisionTreeRecord decisionTreeRecord,
+            @NonNull XmlAttribute xmlAttribute) {
         for (Actions.AttributeRecord attributeRecord : decisionTreeRecord
                 .getAttributeRecords(xmlAttribute.getName())) {
             if (attributeRecord.getActionType() == Actions.ActionType.ADDED) {
@@ -431,13 +443,16 @@ public class Actions {
         private final List<NodeRecord> mNodeRecords = new ArrayList<NodeRecord>();
 
         // all attributes decisions indexed by attribute name.
+        @NonNull
         final Map<XmlNode.NodeName, List<AttributeRecord>> mAttributeRecords =
                 new HashMap<XmlNode.NodeName, List<AttributeRecord>>();
 
+        @NonNull
         ImmutableList<NodeRecord> getNodeRecords() {
             return ImmutableList.copyOf(mNodeRecords);
         }
 
+        @NonNull
         ImmutableMap<XmlNode.NodeName, List<AttributeRecord>> getAttributesRecords() {
             return ImmutableMap.copyOf(mAttributeRecords);
         }
@@ -445,10 +460,11 @@ public class Actions {
         DecisionTreeRecord() {
         }
 
-        void addNodeRecord(NodeRecord nodeRecord) {
-            mNodeRecords.add(nodeRecord);
+        void addNodeRecord(@NonNull NodeRecord nodeRecord) {
+            mNodeRecords.add(Preconditions.checkNotNull(nodeRecord));
         }
 
+        @NonNull
         ImmutableList<AttributeRecord> getAttributeRecords(XmlNode.NodeName attributeName) {
             List<AttributeRecord> attributeRecords = mAttributeRecords.get(attributeName);
             return attributeRecords == null

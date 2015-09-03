@@ -25,6 +25,7 @@ import com.android.annotations.NonNull;
 import com.android.xml.AndroidManifest;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
@@ -84,8 +85,9 @@ public class PreValidator {
         return validate(mergingReport, xmlDocument.getRootNode());
     }
 
-    private static MergingReport.Result validate(MergingReport.Builder mergingReport,
-            XmlElement xmlElement) {
+    @NonNull
+    private static MergingReport.Result validate(@NonNull MergingReport.Builder mergingReport,
+            @NonNull XmlElement xmlElement) {
 
         validateAttributeInstructions(mergingReport, xmlElement);
 
@@ -131,8 +133,8 @@ public class PreValidator {
      * Validate an xml declaration with 'tools:node="removeAll" annotation. There should not
      * be any other attribute declaration on this element.
      */
-    private static void validateRemoveAllOperation(MergingReport.Builder mergingReport,
-            XmlElement element) {
+    private static void validateRemoveAllOperation(@NonNull MergingReport.Builder mergingReport,
+            @NonNull XmlElement element) {
 
         NamedNodeMap attributes = element.getXml().getAttributes();
         if (attributes.getLength() > 1) {
@@ -155,8 +157,8 @@ public class PreValidator {
         }
     }
 
-    private static void checkSelectorPresence(MergingReport.Builder mergingReport,
-            XmlElement element) {
+    private static void checkSelectorPresence(@NonNull MergingReport.Builder mergingReport,
+            @NonNull XmlElement element) {
 
         Attr selectorAttribute =
                 element.getXml().getAttributeNodeNS(SdkConstants.TOOLS_URI, Selector.SELECTOR_LOCAL_NAME);
@@ -171,7 +173,7 @@ public class PreValidator {
     }
 
     private static void validateManifestAttribute(
-            MergingReport.Builder mergingReport, XmlElement manifest, XmlDocument.Type fileType) {
+            @NonNull MergingReport.Builder mergingReport, @NonNull XmlElement manifest, XmlDocument.Type fileType) {
         Attr attributeNode = manifest.getXml().getAttributeNode(AndroidManifest.ATTRIBUTE_PACKAGE);
         // it's ok for an overlay to not have a package name, it's not ok for a main manifest
         // and it's a warning for a library.
@@ -191,8 +193,8 @@ public class PreValidator {
      * @return true if the element has a valid key or false it does not need one or it is invalid.
      */
     private static boolean checkKeyPresence(
-            MergingReport.Builder mergingReport,
-            XmlElement xmlElement) {
+            @NonNull MergingReport.Builder mergingReport,
+            @NonNull XmlElement xmlElement) {
         ManifestModel.NodeKeyResolver nodeKeyResolver = xmlElement.getType().getNodeKeyResolver();
         ImmutableList<String> keyAttributesNames = nodeKeyResolver.getKeyAttributesNames();
         if (keyAttributesNames.isEmpty()) {
@@ -222,8 +224,8 @@ public class PreValidator {
      * @param mergingReport report to log warnings and errors.
      * @param xmlElement xml element to check its attributes.
      */
-    private static void validateAndroidAttributes(MergingReport.Builder mergingReport,
-            XmlElement xmlElement) {
+    private static void validateAndroidAttributes(@NonNull MergingReport.Builder mergingReport,
+            @NonNull XmlElement xmlElement) {
         for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
             AttributeModel model = xmlAttribute.getModel();
             if (model != null && model.getOnReadValidator() != null) {
@@ -239,8 +241,8 @@ public class PreValidator {
      * @param xmlElement xml element to check its attributes.
      */
     private static void validateAttributeInstructions(
-            MergingReport.Builder mergingReport,
-            XmlElement xmlElement) {
+            @NonNull MergingReport.Builder mergingReport,
+            @NonNull XmlElement xmlElement) {
 
         for (Map.Entry<XmlNode.NodeName, AttributeOperationType> attributeOperationTypeEntry :
                 xmlElement.getAttributeOperations()) {

@@ -77,11 +77,17 @@ public class XmlDocument {
 
     private final Element mRootElement;
     // this is initialized lazily to avoid un-necessary early parsing.
+    @NonNull
     private final AtomicReference<XmlElement> mRootNode = new AtomicReference<XmlElement>(null);
+    @NonNull
     private final SourceFile mSourceFile;
+    @NonNull
     private final KeyResolver<String> mSelectors;
+    @NonNull
     private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
+    @NonNull
     private final Type mType;
+    @NonNull
     private final Optional<String> mMainManifestPackageName;
 
     public XmlDocument(
@@ -99,6 +105,7 @@ public class XmlDocument {
         this.mMainManifestPackageName = mainManifestPackageName;
     }
 
+    @NonNull
     public Type getFileType() {
         return mType;
     }
@@ -106,6 +113,7 @@ public class XmlDocument {
     /**
      * Returns a pretty string representation of this document.
      */
+    @NonNull
     public String prettyPrint() {
         return XmlPrettyPrinter.prettyPrint(
                 getXml(),
@@ -122,9 +130,10 @@ public class XmlDocument {
      * @return a new merged {@link com.android.manifmerger.XmlDocument} or
      * {@link Optional#absent()} if there were errors during the merging activities.
      */
+    @NonNull
     public Optional<XmlDocument> merge(
-            XmlDocument lowerPriorityDocument,
-            MergingReport.Builder mergingReportBuilder) {
+            @NonNull XmlDocument lowerPriorityDocument,
+            @NonNull MergingReport.Builder mergingReportBuilder) {
 
         if (getFileType() == Type.MAIN) {
             mergingReportBuilder.getActionRecorder().recordDefaultNodeAction(getRootNode());
@@ -145,6 +154,7 @@ public class XmlDocument {
      * Forces a re-parsing of the document
      * @return a new {@link com.android.manifmerger.XmlDocument} with up to date information.
      */
+    @NonNull
     public XmlDocument reparse() {
         return new XmlDocument(
                 mSourceFile,
@@ -159,6 +169,7 @@ public class XmlDocument {
      * Returns a {@link com.android.manifmerger.KeyResolver} capable of resolving all selectors
      * types
      */
+    @NonNull
     public KeyResolver<String> getSelectors() {
         return mSelectors;
     }
@@ -167,6 +178,7 @@ public class XmlDocument {
      * Returns the {@link com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver} capable
      * of resolving all injected {@link com.android.manifmerger.ManifestMerger2.SystemProperty}
      */
+    @NonNull
     public KeyBasedValueResolver<SystemProperty> getSystemPropertyResolver() {
         return mSystemPropertyResolver;
     }
@@ -179,7 +191,8 @@ public class XmlDocument {
      * @return  a {@link String} describing the differences between the two XML elements or
      * {@link Optional#absent()} if they are equals.
      */
-    public Optional<String> compareTo(XmlDocument other) {
+    @SuppressWarnings("CovariantCompareTo")
+    public Optional<String> compareTo(@NonNull XmlDocument other) {
         return getRootNode().compareTo(other.getRootNode());
     }
 
@@ -187,7 +200,7 @@ public class XmlDocument {
      * Returns the position of the specified {@link XmlNode}.
      */
     @NonNull
-    static SourcePosition getNodePosition(XmlNode node) {
+    static SourcePosition getNodePosition(@NonNull XmlNode node) {
         return getNodePosition(node.getXml());
     }
 
@@ -195,7 +208,7 @@ public class XmlDocument {
      * Returns the position of the specified {@link org.w3c.dom.Node}.
      */
     @NonNull
-    static SourcePosition getNodePosition(Node xml) {
+    static SourcePosition getNodePosition(@NonNull Node xml) {
         return PositionXmlParser.getPosition(xml);
     }
 
@@ -261,6 +274,7 @@ public class XmlDocument {
      * Returns the minSdk version specified in the uses_sdk element if present or the
      * default value.
      */
+    @NonNull
     private String getRawMinSdkVersion() {
         Optional<XmlElement> usesSdk = getByTypeAndKey(
                 ManifestModel.NodeTypes.USES_SDK, null);
@@ -278,6 +292,7 @@ public class XmlDocument {
      * Returns the minSdk version for this manifest file. It can be injected from the outer
      * build.gradle or can be expressed in the uses_sdk element.
      */
+    @NonNull
     private String getMinSdkVersion() {
         // check for system properties.
         String injectedMinSdk = mSystemPropertyResolver.getValue(SystemProperty.MIN_SDK_VERSION);
@@ -291,6 +306,7 @@ public class XmlDocument {
      * Returns the targetSdk version specified in the uses_sdk element if present or the
      * default value.
      */
+    @NonNull
     private String getRawTargetSdkVersion() {
 
         Optional<XmlElement> usesSdk = getByTypeAndKey(
@@ -309,6 +325,7 @@ public class XmlDocument {
      * Returns the targetSdk version for this manifest file. It can be injected from the outer
      * build.gradle or can be expressed in the uses_sdk element.
      */
+    @NonNull
     private String getTargetSdkVersion() {
 
         // check for system properties.
@@ -325,7 +342,7 @@ public class XmlDocument {
      * @param attributeVersion the sdk version attribute as specified by users.
      * @return the integer representation of the platform level.
      */
-    private static int getApiLevelFromAttribute(String attributeVersion) {
+    private static int getApiLevelFromAttribute(@NonNull String attributeVersion) {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(attributeVersion));
         if (Character.isDigit(attributeVersion.charAt(0))) {
             return Integer.parseInt(attributeVersion);
@@ -338,8 +355,8 @@ public class XmlDocument {
      * required in the target SDK.
      */
     @SuppressWarnings("unchecked") // compiler confused about varargs and generics.
-    private void addImplicitElements(XmlDocument lowerPriorityDocument,
-            MergingReport.Builder mergingReport) {
+    private void addImplicitElements(@NonNull XmlDocument lowerPriorityDocument,
+            @NonNull MergingReport.Builder mergingReport) {
 
         // if this document is an overlay, tolerate the absence of uses-sdk and do not
         // assume implicit minimum versions.
@@ -493,7 +510,7 @@ public class XmlDocument {
      * Returns true if the minSdkVersion of the application and the library are compatible, false
      * otherwise.
      */
-    private boolean checkUsesSdkMinVersion(XmlDocument lowerPriorityDocument,
+    private boolean checkUsesSdkMinVersion(@NonNull XmlDocument lowerPriorityDocument,
             MergingReport.Builder mergingReport) {
 
         int thisMinSdk = getApiLevelFromAttribute(getMinSdkVersion());
@@ -570,6 +587,7 @@ public class XmlDocument {
         return Optional.of(elementNS);
     }
 
+    @NonNull
     private static String permission(String permissionName) {
         return "android.permission." + permissionName;
     }
