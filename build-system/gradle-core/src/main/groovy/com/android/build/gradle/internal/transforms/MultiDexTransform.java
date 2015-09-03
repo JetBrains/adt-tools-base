@@ -22,13 +22,12 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.transform.api.NoOpTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
-import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutput;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -57,7 +56,7 @@ import proguard.ParseException;
  * This does not actually consume anything, rather it only reads streams and extract information
  * from them.
  */
-public class MultiDexTransform extends BaseProguardAction implements Transform {
+public class MultiDexTransform extends BaseProguardAction implements NoOpTransform {
 
     @NonNull
     private final File manifestKeepListFile;
@@ -159,11 +158,11 @@ public class MultiDexTransform extends BaseProguardAction implements Transform {
 
     @Override
     public void transform(
-            @NonNull Map<TransformInput, TransformOutput> inputOutputs,
-            @NonNull List<TransformInput> referencedInputs,
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull Collection<TransformInput> referencedInputs,
             boolean isIncremental) throws IOException, TransformException {
         try {
-            File input = verifyInputs(inputOutputs.keySet());
+            File input = verifyInputs(inputs);
             shrinkWithProguard(input);
             computeList(input);
         } catch (ParseException e) {

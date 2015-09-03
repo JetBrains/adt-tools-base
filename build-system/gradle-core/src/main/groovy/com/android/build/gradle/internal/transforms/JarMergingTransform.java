@@ -21,10 +21,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Scope;
-import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
@@ -40,7 +40,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -51,7 +50,7 @@ import java.util.zip.ZipInputStream;
 /**
  *
  */
-public class JarMergingTransform implements Transform {
+public class JarMergingTransform implements CombinedTransform {
 
     @NonNull
     private final ImmutableSet<Scope> scopes;
@@ -127,16 +126,16 @@ public class JarMergingTransform implements Transform {
 
     @Override
     public void transform(
-            @NonNull Map<TransformInput, TransformOutput> inputOutputs,
-            @NonNull List<TransformInput> referencedStreams,
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull Collection<TransformInput> referencedStreams,
+            @NonNull TransformOutput combinedOutput,
             boolean isIncremental) throws TransformException, IOException {
         Closer closer = Closer.create();
         try {
             // all the output will be the same since the transform type is COMBINED.
             // and format is SINGLE_JAR so output is a jar
-            TransformOutput transformOutput = Iterables.getFirst(inputOutputs.values(), null);
-            checkNotNull(transformOutput, "Found no output in transform with Type=COMBINED");
-            File jarFile = transformOutput.getOutFile();
+            checkNotNull(combinedOutput, "Found no output in transform with Type=COMBINED");
+            File jarFile = combinedOutput.getOutFile();
             deleteIfExists(jarFile);
 
             FileOutputStream fos = closer.register(new FileOutputStream(jarFile));
@@ -144,7 +143,7 @@ public class JarMergingTransform implements Transform {
 
             final byte[] buffer = new byte[8192];
 
-            for (TransformInput input : inputOutputs.keySet()) {
+            for (TransformInput input : inputs) {
                 switch (input.getFormat()) {
                     case SINGLE_FOLDER:
                         for (File inputFile : input.getFiles()) {

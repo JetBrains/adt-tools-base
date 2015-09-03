@@ -23,6 +23,10 @@ import static com.android.build.transform.api.TransformInput.FileStatus.REMOVED;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.transform.api.AsInputTransform;
+import com.android.build.transform.api.CombinedTransform;
+import com.android.build.transform.api.ForkTransform;
+import com.android.build.transform.api.NoOpTransform;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.Transform.Type;
 import com.android.build.transform.api.TransformException;
@@ -69,6 +73,8 @@ public class TransformTask extends StreamBasedTask {
     @TaskAction
     void transform(IncrementalTaskInputs incrementalTaskInputs)
             throws IOException, TransformException, InterruptedException {
+        Map<TransformInput, Object> consumedInputs;
+        List<TransformInput> referencedInputs;
         boolean isIncremental = transform.isIncremental() && incrementalTaskInputs.isIncremental();
 
         if (isIncremental) {
@@ -85,15 +91,43 @@ public class TransformTask extends StreamBasedTask {
                 streamToChangedFiles = null;
             }
 
-            transform.transform(
-                    createConsumedTransformInputs(streamToChangedFiles),
-                    createReferencedTransformInputs(streamToChangedFiles),
-                    isIncremental);
+            consumedInputs = createConsumedTransformInputs(streamToChangedFiles);
+            referencedInputs = createReferencedTransformInputs(streamToChangedFiles);
+
         } else {
-            transform.transform(
-                    createConsumedTransformInputs(null),
-                    createReferencedTransformInputs(null),
-                    false);
+            consumedInputs = createConsumedTransformInputs(null);
+            referencedInputs = createReferencedTransformInputs(null);
+        }
+
+        switch (transform.getTransformType()) {
+            case AS_INPUT:
+                //noinspection unchecked
+                ((AsInputTransform) transform).transform(
+                        (Map<TransformInput, TransformOutput>) (Map<?,?>) consumedInputs,
+                        referencedInputs,
+                        isIncremental);
+                break;
+            case COMBINED:
+                ((CombinedTransform) transform).transform(
+                        consumedInputs.keySet(),
+                        referencedInputs,
+                        Iterables.getOnlyElement(outputStreams).asOutput(),
+                        isIncremental);
+                break;
+            case FORK_INPUT:
+                //noinspection unchecked
+                ((ForkTransform) transform).transform(
+                        (Map<TransformInput, Collection<TransformOutput>>) (Map<?,?>) consumedInputs,
+                        referencedInputs,
+                        isIncremental);
+                break;
+            case NO_OP:
+                ((NoOpTransform) transform).transform(
+                        consumedInputs.keySet(), referencedInputs, isIncremental);
+                break;
+            default:
+            throw new UnsupportedOperationException(
+                    "Unsupported transform type: " + transform.getTransformType());
         }
     }
 
@@ -325,17 +359,14 @@ public class TransformTask extends StreamBasedTask {
      * @return the list of transform inputs.
      */
     @NonNull
-    private Map<TransformInput, TransformOutput> createConsumedTransformInputs(
+    private Map<TransformInput, Object> createConsumedTransformInputs(
             @Nullable ListMultimap<TransformStream, InputFileDetails> streamToChangedFiles) {
-        boolean inputOutput = transform.getTransformType() == Type.AS_INPUT;
+        Type transformType = transform.getTransformType();
+        boolean inputOutput = transformType == Type.AS_INPUT;
+        boolean multiOutput = transformType == Type.FORK_INPUT;
+        inputOutput |= multiOutput;
 
-        TransformOutput combinedOutput = null;
-        if (transform.getTransformType() == Type.COMBINED) {
-            combinedOutput = Iterables.getOnlyElement(outputStreams).asOutput();
-        }
-
-        Map<TransformInput, TransformOutput> results = Maps.newHashMapWithExpectedSize(
-                consumedInputStreams.size());
+        Map<TransformInput, Object> results = Maps.newHashMap();
 
         for (TransformStream input : consumedInputStreams) {
             TransformInputImpl.Builder inputBuilder = TransformInputImpl.builder()
@@ -354,14 +385,13 @@ public class TransformTask extends StreamBasedTask {
                 }
             }
 
-            TransformOutput output = null;
-            if (inputOutput) {
-                output = findOutputFor(input).asOutput();
-            } else if (combinedOutput != null) {
-                output = combinedOutput;
+            if (multiOutput) {
+                results.put(inputBuilder.build(), findOutputsFor(input));
+            } else if (inputOutput) {
+                results.put(inputBuilder.build(), findOutputFor(input));
+            } else {
+                results.put(inputBuilder.build(), null);
             }
-
-            results.put(inputBuilder.build(), output);
         }
 
         // can't use ImmutableMap due to possible null values.
@@ -405,14 +435,27 @@ public class TransformTask extends StreamBasedTask {
     }
 
     @NonNull
-    private TransformStream findOutputFor(@NonNull TransformStream input) {
+    private TransformOutput findOutputFor(@NonNull TransformStream input) {
         for (TransformStream output : outputStreams) {
             if (input == output.getParentStream()) {
-                return output;
+                return output.asOutput();
             }
         }
 
         throw new RuntimeException("No matching output for AS_INPUT transform with input: " + input);
+    }
+
+    @NonNull
+    private Collection<TransformOutput> findOutputsFor(@NonNull TransformStream inputStream) {
+        Collection<TransformOutput> outputs = Lists.newArrayListWithExpectedSize(
+                transform.getOutputTypes().size());
+        for (TransformStream outputStream : outputStreams) {
+            if (inputStream == outputStream.getParentStream()) {
+                outputs.add(outputStream.asOutput());
+            }
+        }
+
+        return outputs;
     }
 
     @InputFiles

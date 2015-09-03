@@ -9,6 +9,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/test/incremental-test-classes/base" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/resources" type="java-test-resource" />
       <sourceFolder url="file://$MODULE_DIR$/src/fromGradle/resources" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src/test/groovy" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/.gradle" />
     </content>
     <orderEntry type="library" name="asm-tools" level="project" />
@@ -1205,13 +1206,76 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="module" module-name="sdk-common-base" />
+    <orderEntry type="module" module-name="sdk-common-base" exported="" />
     <orderEntry type="module" module-name="transform-api" exported="" />
-    <orderEntry type="module" module-name="lint-api-base" />
-    <orderEntry type="module" module-name="lint-checks-base" />
-    <orderEntry type="library" scope="TEST" name="jacoco" level="project" />
+    <orderEntry type="module" module-name="lint-api-base" exported="" />
+    <orderEntry type="module" module-name="lint-checks-base" exported="" />
+    <orderEntry type="library" exported="" scope="TEST" name="jacoco" level="project" />
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
     <orderEntry type="library" scope="TEST" name="truth" level="project" />
-    <orderEntry type="library" name="ecj" level="project" />
+    <orderEntry type="library" exported="" name="ecj" level="project" />
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/dom4j-1.6.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/gradle-launcher-2.2.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/gradle-open-api-2.2.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/gradle-ui-2.2.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/groovy-all-2.3.6.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/jaxen-1.1.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/ivy-2.2.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
