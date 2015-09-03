@@ -30,8 +30,7 @@ import org.junit.Test
 import static com.android.SdkConstants.FN_FRAMEWORK_LIBRARY
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 /**
- * Test for BuildConfig field declared in build type, flavors, and variant and how they
- * override each other
+ * Test for the new useLibrary mechanism
  */
 @CompileStatic
 class OptionalLibraryTest {
@@ -92,9 +91,16 @@ class OptionalLibraryTest {
 
         File targetLocation = new File(target.getLocation())
 
+        // the files that the bootclasspath should contain.
+        File androidJar = new File(targetLocation, FN_FRAMEWORK_LIBRARY)
+        File httpJar = new File(targetLocation, "optional/org.apache.http.legacy.jar")
         assertThat(project.getBootClasspath()).containsExactly(
-                new File(targetLocation, FN_FRAMEWORK_LIBRARY).getAbsolutePath(),
-                new File(targetLocation, "optional/org.apache.http.legacy.jar").getAbsolutePath())
+                androidJar.getAbsolutePath(),
+                httpJar.getAbsolutePath())
+
+        // for safety, let's make sure these files actually exists.
+        assertThat(androidJar).isFile()
+        assertThat(httpJar).isFile()
     }
 
     @Test

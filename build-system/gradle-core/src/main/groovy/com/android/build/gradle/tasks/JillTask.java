@@ -263,7 +263,7 @@ public class JillTask extends BaseTask {
             ConventionMappingHelper.map(jillTask, "inputLibs", new Callable<List<File>>() {
                 @Override
                 public List<File> call() throws Exception {
-                    return androidBuilder.getBootClasspath();
+                    return androidBuilder.getBootClasspath(false);
                 }
             });
 

@@ -134,7 +134,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         Collection<? extends SigningConfig> signingConfigs = config.getSigningConfigs();
 
         // Get the boot classpath. This will ensure the target is configured.
-        List<String> bootClasspath = androidBuilder.getBootClasspathAsStrings();
+        List<String> bootClasspath = androidBuilder.getBootClasspathAsStrings(false);
 
         List<File> frameworkSource = Collections.emptyList();
 
