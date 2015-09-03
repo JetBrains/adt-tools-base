@@ -39,7 +39,7 @@
     <instantiate from="root/res-v22/menu/drawer.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/menu/${drawerMenu}.xml" />
     <instantiate from="root/res-v22/layout/navigation_view.xml.ftl"
-                   to="${escapeXmlAttribute(resOut)}/layout/${navViewLayoutName}.xml" />
+                   to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
     <instantiate from="root/res-v22/layout/navigation_header.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/${navHeaderLayoutName}.xml" />
 
@@ -47,7 +47,7 @@
                    to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 
     <open file="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
-    <open file="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
+    <open file="${escapeXmlAttribute(resOut)}/layout/${contentLayoutName}.xml" />
 <#else>
     <!-- TODO: switch on Holo Dark v. Holo Light -->
     <copy from="root/res/drawable-hdpi"
