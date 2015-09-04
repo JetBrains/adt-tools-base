@@ -3,6 +3,7 @@
     format="4"
     revision="1"
     name="Android Auto Project"
+    minApi="21"
     description="Creates a new Android Auto project.">
 
     <category value="Application" />
