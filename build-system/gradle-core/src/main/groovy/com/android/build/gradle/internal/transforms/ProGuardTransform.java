@@ -245,7 +245,9 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
             SimpleWorkQueue.push(job);
 
             // wait for the task completion.
-            job.await();
+            if (!job.awaitRethrowExceptions()) {
+                throw new RuntimeException("Job failed, see logs for details");
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);

@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.builder.tasks.BooleanLatch;
 import com.android.builder.tasks.Job;
 import com.android.ide.common.internal.AaptCruncher;
+import com.android.ide.common.process.ProcessException;
 import com.android.utils.GrabProcessOutput;
 import com.android.utils.ILogger;
 import com.google.common.base.Objects;
@@ -260,7 +261,7 @@ public class AaptProcess {
                     mJob.finished();
                 } else if (line.equalsIgnoreCase("Error")) {
                     mOwner.reset();
-                    mJob.error();
+                    mJob.error(new ProcessException(line));
                 } else {
                     mLogger.verbose("AAPT(%1$s) discarded: %2$s", mJob, line);
                 }
