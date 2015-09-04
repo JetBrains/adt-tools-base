@@ -21,7 +21,7 @@
 
     <instantiate from="root/src/app_package/SettingsActivity.java.ftl"
                    to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
-<#if appCompat>
+<#if appCompatActivity>
     <instantiate from="root/src/app_package/AppCompatPreferenceActivity.java.ftl"
                    to="${escapeXmlAttribute(srcOut)}/AppCompatPreferenceActivity.java" />
 </#if>
