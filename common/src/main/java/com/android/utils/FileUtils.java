@@ -19,6 +19,7 @@ package com.android.utils;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.android.annotations.NonNull;
+import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
@@ -93,6 +94,19 @@ public class FileUtils {
 
     public static File join(File dir, String... paths) {
         return new File(dir, Joiner.on(File.separatorChar).join(paths));
+    }
+
+    public static String join(String... paths) {
+        return Joiner.on(File.separatorChar).join(paths);
+    }
+
+    /**
+     * Loads a text file forcing the line separator to be of Unix style '\n' rather than being
+     * Windows style '\r\n'.
+     */
+    public static String loadFileWithUnixLineSeparators(File file) throws IOException {
+        return Joiner.on("\n").join(
+            Files.asByteSource(file).asCharSource(Charsets.UTF_8).readLines());
     }
 
     public static String relativePath(@NonNull File file, @NonNull File dir) {

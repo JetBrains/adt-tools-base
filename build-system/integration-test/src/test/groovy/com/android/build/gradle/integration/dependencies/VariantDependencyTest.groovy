@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.dependencies
 
+import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
@@ -31,6 +32,7 @@ import com.android.builder.model.MavenCoordinates
 import com.android.builder.model.Variant
 import com.android.ide.common.process.DefaultProcessExecutor
 import com.android.ide.common.process.ProcessExecutor
+import com.android.utils.FileUtils
 import com.android.utils.StdLogger
 import com.google.common.collect.Sets
 import groovy.transform.CompileStatic
@@ -97,7 +99,8 @@ class VariantDependencyTest {
         project.execute('clean', 'assemble')
         model = project.getSingleModel()
 
-        File aapt = new File(project.getSdkDir(), "build-tools/20.0.0/aapt")
+        File aapt = FileUtils.join(
+                project.getSdkDir(), "build-tools", "20.0.0", SdkConstants.FN_AAPT)
         assertTrue("Test requires build-tools 20.0.0", aapt.isFile())
         ProcessExecutor processExecutor = new DefaultProcessExecutor(
                 new StdLogger(StdLogger.Level.ERROR))

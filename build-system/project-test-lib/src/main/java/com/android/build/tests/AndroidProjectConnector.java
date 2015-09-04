@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.android.io.StreamException;
+import com.android.utils.SdkUtils;
 import com.google.common.collect.Lists;
 
 import org.gradle.tooling.BuildLauncher;
@@ -108,9 +109,9 @@ public class AndroidProjectConnector {
 
     private File createLocalProp(@NonNull File project) throws IOException, StreamException {
         Properties p = new Properties();
-        p.put("sdk.dir", mSdkDir.getAbsolutePath());
+        p.put("sdk.dir", SdkUtils.escapePropertyValue(mSdkDir.getAbsolutePath()))   ;
         if (mNdkDir != null) {
-            p.put("ndk.dir", mNdkDir.getAbsolutePath());
+            p.put("ndk.dir", SdkUtils.escapePropertyValue(mNdkDir.getAbsolutePath()));
         }
 
         File file = new File(project, "local.properties");

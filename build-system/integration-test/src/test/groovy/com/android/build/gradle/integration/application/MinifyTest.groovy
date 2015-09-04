@@ -159,7 +159,8 @@ class MinifyTest {
         }
 
         if (file.isFile()) {
-            results.add(root)
+            // all tests use the *nix way of specifying file paths.
+            results.add(root.replace(File.separator, "/"))
         } else if (file.isDirectory()) {
             File[] children = file.listFiles()
             if (children != null) {

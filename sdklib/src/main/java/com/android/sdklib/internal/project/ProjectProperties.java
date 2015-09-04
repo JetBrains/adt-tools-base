@@ -24,6 +24,7 @@ import com.android.io.IAbstractFile;
 import com.android.io.IAbstractFolder;
 import com.android.io.StreamException;
 import com.android.utils.ILogger;
+import com.android.utils.SdkUtils;
 import com.google.common.io.Closeables;
 
 import java.io.BufferedReader;
@@ -31,6 +32,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -440,7 +442,8 @@ public class ProjectProperties implements IPropertySource {
      * IMPORTANT: This method is now unfortunately used in multiple places to parse random
      * property files. This is NOT a safe practice since there is no corresponding method
      * to write property files unless you use {@link ProjectPropertiesWorkingCopy#save()}.
-     * Code that writes INI or properties without at least using {@link #escape(String)} will
+     * Code that writes INI or properties without at least using
+     * {@link SdkUtils#escapePropertyValue(String)} (String)} will
      * certainly not load back correct data. <br/>
      * Unless there's a strong legacy need to support existing files, new callers should
      * probably just use Java's {@link Properties} which has well defined semantics.
@@ -487,7 +490,8 @@ public class ProjectProperties implements IPropertySource {
      * IMPORTANT: This method is now unfortunately used in multiple places to parse random
      * property files. This is NOT a safe practice since there is no corresponding method
      * to write property files unless you use {@link ProjectPropertiesWorkingCopy#save()}.
-     * Code that writes INI or properties without at least using {@link #escape(String)} will
+     * Code that writes INI or properties without at least using
+     * {@link SdkUtils#escapePropertyValue(String)} (String)} will
      * certainly not load back correct data. <br/>
      * Unless there's a strong legacy need to support existing files, new callers should
      * probably just use Java's {@link Properties} which has well defined semantics.
@@ -573,11 +577,7 @@ public class ProjectProperties implements IPropertySource {
     }
 
     private static String unescape(String value) {
-        return value.replaceAll("\\\\\\\\", "\\\\");
-    }
-
-    protected static String escape(String value) {
-        return value.replaceAll("\\\\", "\\\\\\\\");
+        return value.replaceAll("\\\\\\\\", "\\\\").replace("\\:", ":");
     }
 
     @Override
