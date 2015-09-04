@@ -21,8 +21,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.concurrency.Immutable;
-import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
@@ -109,7 +107,7 @@ public class InstantRunTransformTest {
             @NonNull
             @Override
             public Set<ContentType> getContentTypes() {
-                return ImmutableSet.of(ContentType.CLASSES_3);
+                return ImmutableSet.of(ContentType.CLASSES_ENHANCED);
             }
 
             @NonNull
@@ -227,7 +225,7 @@ public class InstantRunTransformTest {
             @NonNull
             @Override
             public Set<ContentType> getContentTypes() {
-                return ImmutableSet.of(ContentType.CLASSES_3);
+                return ImmutableSet.of(ContentType.CLASSES_ENHANCED);
             }
 
             @NonNull

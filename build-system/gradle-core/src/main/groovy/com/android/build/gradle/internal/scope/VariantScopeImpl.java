@@ -45,7 +45,6 @@ import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.build.gradle.tasks.SourceCodeIncrementalSupport;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.signing.SignedJarBuilder;
@@ -121,8 +120,6 @@ public class VariantScopeImpl implements VariantScope {
     private AndroidTask<JavaCompile> javacTask;
     @Nullable
     private AndroidTask<JackTask> jackTask;
-    @Nullable
-    private AndroidTask<SourceCodeIncrementalSupport> initialIncrementalSupportTask;
 
     // empty anchor compile task to set all compilations tasks as dependents.
     private AndroidTask<Task> compileTask;
@@ -307,23 +304,16 @@ public class VariantScopeImpl implements VariantScope {
                 variantData.getVariantConfiguration().getDirName());
     }
 
-    @Override
-    @NonNull
-    public File getInitialIncrementalSupportJavaOutputDir() {
-        return new File(globalScope.getIntermediatesDir(), "/initial-incremental-classes/" +
-                variantData.getVariantConfiguration().getDirName());
-    }
-
     @NonNull
     @Override
-    public File getIncrementalSupportRuntimeDir() {
+    public File getIncrementalRuntimeSupportJar() {
         return new File(globalScope.getIntermediatesDir(), "/incremental-runtime-classes/" +
-                variantData.getVariantConfiguration().getDirName());
+                variantData.getVariantConfiguration().getDirName() + "/instant-run.jar");
     }
 
     @Override
     @NonNull
-    public File getIncrementalSupportJavaOutputDir() {
+    public File getIncrementalApplicationSupportDir() {
         return new File(globalScope.getIntermediatesDir(), "/incremental-classes/" +
                 variantData.getVariantConfiguration().getDirName());
     }
@@ -832,18 +822,6 @@ public class VariantScopeImpl implements VariantScope {
     public void setJavacTask(
             @Nullable AndroidTask<JavaCompile> javacTask) {
         this.javacTask = javacTask;
-    }
-
-    @Override
-    public void setInitialIncrementalSupportTask(
-            AndroidTask<SourceCodeIncrementalSupport> initialIncrementalSupportTask) {
-        this.initialIncrementalSupportTask = initialIncrementalSupportTask;
-    }
-
-    @Override
-    @Nullable
-    public AndroidTask<SourceCodeIncrementalSupport> getInitialIncrementalSupportTask() {
-        return initialIncrementalSupportTask;
     }
 
     @Override
