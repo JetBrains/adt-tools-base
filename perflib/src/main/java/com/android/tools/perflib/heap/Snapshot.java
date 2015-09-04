@@ -19,10 +19,11 @@ package com.android.tools.perflib.heap;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.tools.perflib.analyzer.Capture;
 import com.android.tools.perflib.heap.analysis.Dominators;
 import com.android.tools.perflib.heap.analysis.ShortestDistanceVisitor;
 import com.android.tools.perflib.heap.analysis.TopologicalSort;
-import com.android.tools.perflib.heap.io.HprofBuffer;
+import com.android.tools.perflib.captures.DataBuffer;
 import com.google.common.collect.ImmutableList;
 import gnu.trove.THashSet;
 import gnu.trove.TIntObjectHashMap;
@@ -37,7 +38,8 @@ import java.util.*;
  * default heap, and they are simply references to objects living in the zygote or the app heap.
  * During parsing of the HPROF file HEAP_DUMP_INFO chunks change which heap is being referenced.
  */
-public class Snapshot {
+public class Snapshot extends Capture {
+    public static final String TYPE_NAME = "hprof";
 
     private static final String JAVA_LANG_CLASS = "java.lang.Class";
 
@@ -47,7 +49,7 @@ public class Snapshot {
     private static final int DEFAULT_HEAP_ID = 0;
 
     @NonNull
-    private final HprofBuffer mBuffer;
+    private final DataBuffer mBuffer;
 
     @NonNull
     ArrayList<Heap> mHeaps = new ArrayList<Heap>();
@@ -75,14 +77,14 @@ public class Snapshot {
     private long mIdSizeMask = 0x00000000ffffffffl;
 
     @NonNull
-    public static Snapshot createSnapshot(@NonNull HprofBuffer buffer) {
+    public static Snapshot createSnapshot(@NonNull DataBuffer buffer) {
         Snapshot snapshot = new Snapshot(buffer);
         HprofParser.parseBuffer(snapshot, buffer);
         return snapshot;
     }
 
     @VisibleForTesting
-    public Snapshot(@NonNull HprofBuffer buffer) {
+    public Snapshot(@NonNull DataBuffer buffer) {
         mBuffer = buffer;
         setToDefaultHeap();
     }
@@ -92,7 +94,7 @@ public class Snapshot {
     }
 
     @NonNull
-    HprofBuffer getBuffer() {
+    DataBuffer getBuffer() {
         return mBuffer;
     }
 
@@ -388,5 +390,20 @@ public class Snapshot {
                     "+------------------ subclasses for heap: " + heap.getName());
             heap.dumpSubclasses();
         }
+    }
+
+    @Nullable
+    @Override
+    public <T> T getRepresentation(Class<T> asClass) {
+        if (asClass.isAssignableFrom(getClass())) {
+            return asClass.cast(this);
+        }
+        return null;
+    }
+
+    @NonNull
+    @Override
+    public String getTypeName() {
+        return TYPE_NAME;
     }
 }

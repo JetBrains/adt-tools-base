@@ -18,6 +18,7 @@ package com.android.tools.perflib.heap.io;
 
 import com.android.annotations.NonNull;
 import com.android.tools.perflib.heap.Snapshot;
+import com.android.tools.perflib.captures.MemoryMappedFileBuffer;
 
 import junit.framework.TestCase;
 import sun.misc.IOUtils;
@@ -27,7 +28,7 @@ import java.io.FileInputStream;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
 
-public class HprofBufferTest extends TestCase {
+public class MemoryMappedFileBufferTest extends TestCase {
 
     File file = new File(getClass().getResource("/dialer.android-hprof").getFile());
 

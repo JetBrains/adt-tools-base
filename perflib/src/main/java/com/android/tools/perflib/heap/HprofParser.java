@@ -17,7 +17,7 @@
 package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
-import com.android.tools.perflib.heap.io.HprofBuffer;
+import com.android.tools.perflib.captures.DataBuffer;
 import com.google.common.primitives.UnsignedBytes;
 import com.google.common.primitives.UnsignedInts;
 
@@ -120,7 +120,7 @@ class HprofParser {
     private static final int ROOT_PRIMITIVE_ARRAY_NODATA = 0xc3;
 
     @NonNull
-    private final HprofBuffer mInput;
+    private final DataBuffer mInput;
 
     int mIdSize;
 
@@ -136,11 +136,11 @@ class HprofParser {
     @NonNull
     TLongObjectHashMap<String> mClassNames = new TLongObjectHashMap<String>();
 
-    static void parseBuffer(@NonNull Snapshot snapshot, @NonNull HprofBuffer buffer) {
+    static void parseBuffer(@NonNull Snapshot snapshot, @NonNull DataBuffer buffer) {
         new HprofParser(snapshot, buffer).parse();
     }
 
-    private HprofParser(@NonNull Snapshot snapshot, @NonNull HprofBuffer buffer) {
+    private HprofParser(@NonNull Snapshot snapshot, @NonNull DataBuffer buffer) {
         mInput = buffer;
         mSnapshot = snapshot;
     }

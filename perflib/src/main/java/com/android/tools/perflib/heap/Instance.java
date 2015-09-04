@@ -18,7 +18,7 @@ package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.perflib.heap.io.HprofBuffer;
+import com.android.tools.perflib.captures.DataBuffer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.UnsignedBytes;
 
@@ -266,7 +266,7 @@ public abstract class Instance {
         return getBuffer().readShort() & 0xffff;
     }
 
-    protected HprofBuffer getBuffer() {
+    protected DataBuffer getBuffer() {
         return mHeap.mSnapshot.getBuffer();
     }
 
