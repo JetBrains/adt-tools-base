@@ -16,10 +16,13 @@
 
 package com.android.build.gradle.integration.common.truth;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Truth support for validating File.
@@ -43,7 +46,7 @@ public class FileSubject extends Subject<FileSubject, File> {
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void isFile() {
-        if (!getSubject().exists()) {
+        if (!getSubject().isFile()) {
             fail("is a file");
         }
     }
@@ -52,6 +55,22 @@ public class FileSubject extends Subject<FileSubject, File> {
     public void isDirectory() {
         if (!getSubject().isDirectory()) {
             fail("is a directory");
+        }
+    }
+
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void containsAllOf(String... expectedContents) {
+        isFile();
+
+        try {
+            String contents = Files.toString(getSubject(), Charsets.UTF_8);
+            for (String expectedContent : expectedContents) {
+                if (!contents.contains(expectedContent)) {
+                    failWithBadResults("contains", expectedContent, "is", contents);
+                }
+            }
+        } catch (IOException e) {
+            failWithRawMessage("Unable to read %s", getSubject());
         }
     }
 

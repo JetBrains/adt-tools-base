@@ -66,9 +66,23 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
      */
     public void testConsumerProguardRules() {
         String className = "com.android.tests.basic.StringGetter";
-        String methodName = "getStringInternal";
+        String methodName = "getString3";
 
         searchMethod(className, methodName, false /*shouldExist*/);
+    }
+
+    /**
+     * use reflection to get a class that should be obfuscated
+     */
+    public void testObfuscatedInternalClass() {
+        // in this case the whole class has been obfuscated.
+        String className = "com.android.tests.internal.StringGetterInternal";
+        try {
+            Class<?> theClass = Class.forName(className);
+            fail("Found " + className);
+        } catch (ClassNotFoundException e) {
+            // expected
+        }
     }
 
     public void testLib2ObfuscatedClass() {
