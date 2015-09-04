@@ -16,7 +16,7 @@
 
 package com.android.tools.perflib.heap;
 
-import com.android.tools.perflib.heap.io.MemoryMappedFileBuffer;
+import com.android.tools.perflib.captures.MemoryMappedFileBuffer;
 
 import junit.framework.TestCase;
 

@@ -13,20 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.perflib.heap.io;
+package com.android.tools.perflib.captures;
+
+import com.android.annotations.NonNull;
+import com.android.tools.perflib.analyzer.Capture;
 
 import java.nio.ByteOrder;
 
-public interface HprofBuffer {
+public interface DataBuffer {
     ByteOrder HPROF_BYTE_ORDER = ByteOrder.BIG_ENDIAN;
 
     void dispose();
 
-    byte readByte();
+    void append(@NonNull byte[] data);
 
-    void read(byte[] b);
+    void read(@NonNull byte[] out);
 
     void readSubSequence(byte[] b, int sourceStart, int sourceEnd);
+
+    byte readByte();
 
     char readChar();
 

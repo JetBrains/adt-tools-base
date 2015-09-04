@@ -18,6 +18,7 @@ package com.android.tools.perflib.heap.analysis;
 
 import com.android.annotations.NonNull;
 import com.android.tools.perflib.heap.*;
+import com.android.tools.perflib.captures.DataBuffer;
 import com.android.tools.perflib.heap.io.InMemoryBuffer;
 import com.google.common.collect.Maps;
 
