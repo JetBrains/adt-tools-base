@@ -19,6 +19,7 @@ package com.android.build.gradle.profiling;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
+import com.android.builder.profile.AsyncRecorder;
 import com.android.builder.profile.ExecutionRecord;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.ProcessRecorder;
@@ -54,6 +55,9 @@ public class RecordingBuildListenerTest {
 
     @Mock
     Task mTask;
+
+    @Mock
+    Task mSecondTask;
 
     @Mock
     TaskState mTaskState;
@@ -116,6 +120,10 @@ public class RecordingBuildListenerTest {
         when(mTask.getName()).thenReturn("taskName");
         when(mTask.getProject()).thenReturn(mProject);
         when(mProject.getName()).thenReturn("projectName");
+
+        when(mSecondTask.getName()).thenReturn("task2Name");
+        when(mSecondTask.getProject()).thenReturn(mProject);
+        when(mProject.getName()).thenReturn("projectName");
     }
 
     @Test
@@ -167,6 +175,52 @@ public class RecordingBuildListenerTest {
         assertNotNull(record);
         assertEquals(3, record.id);
         assertEquals(2, record.parentId);
+        assertEquals(0, record.attributes.size());
+        assertEquals(ExecutionType.SOME_RANDOM_PROCESSING, record.type);
+    }
+
+    @Test
+    public void simulateTasksUnorderedLifecycleEventsDelivery() throws InterruptedException {
+
+        TestExecutionRecordWriter recordWriter = new TestExecutionRecordWriter();
+        ProcessRecorderFactory.initializeForTests(recordWriter);
+
+        RecordingBuildListener listener = new RecordingBuildListener(AsyncRecorder.get());
+
+        listener.beforeExecute(mTask);
+        listener.beforeExecute(mSecondTask);
+        ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
+                new Recorder.Block<Object>() {
+                    @Override
+                    public Object call() throws Exception {
+                        logger.verbose("useless block");
+                        return null;
+                    }
+                });
+        listener.afterExecute(mTask, mTaskState);
+        listener.afterExecute(mSecondTask, mTaskState);
+
+        ProcessRecorderFactory.shutdown();
+
+        assertEquals(5, recordWriter.getRecords().size());
+        ExecutionRecord record = getRecordForId(recordWriter.getRecords(), 2);
+        assertEquals(2, record.id);
+        assertEquals(0, record.parentId);
+        assertEquals(2, record.attributes.size());
+        ensurePropertyValue(record.attributes, "task", "taskName");
+        ensurePropertyValue(record.attributes, "project", "projectName");
+
+        record = getRecordForId(recordWriter.getRecords(), 3);
+        assertEquals(3, record.id);
+        assertEquals(0, record.parentId);
+        assertEquals(2, record.attributes.size());
+        ensurePropertyValue(record.attributes, "task", "task2Name");
+        ensurePropertyValue(record.attributes, "project", "projectName");
+
+        record = getRecordForId(recordWriter.getRecords(), 4);
+        assertNotNull(record);
+        assertEquals(4, record.id);
+        assertEquals(0, record.parentId);
         assertEquals(0, record.attributes.size());
         assertEquals(ExecutionType.SOME_RANDOM_PROCESSING, record.type);
     }
