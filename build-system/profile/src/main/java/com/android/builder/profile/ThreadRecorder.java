@@ -39,7 +39,7 @@ public class ThreadRecorder implements Recorder {
     private static final Logger logger = Logger.getLogger(ThreadRecorder.class.getName());
 
     // Dummy implementation that records nothing but comply to the overall recording contracts.
-    private static final Recorder dummyRecorder = new Recorder() {
+    protected static final Recorder dummyRecorder = new Recorder() {
         @Nullable
         @Override
         public <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
@@ -101,7 +101,7 @@ public class ThreadRecorder implements Recorder {
      * Do not put anything else than JDK classes in the ThreadLocal as it prevents that class
      * and therefore the plugin classloader to be gc'ed leading to OOM or PermGen issues.
      */
-    private static final ThreadLocal<Deque<Long>> recordStacks =
+    protected final ThreadLocal<Deque<Long>> recordStacks =
             new ThreadLocal<Deque<Long>>() {
         @Override
         protected Deque<Long> initialValue() {
