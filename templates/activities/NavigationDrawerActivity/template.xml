@@ -49,7 +49,7 @@
         id="hasAppBarSelected"
         name="Include App Bar"
         type="boolean"
-        visibility="appCompatActivity!false"
+        visibility="false"
         default="true"
         help="If true, the layout will include a Material Design App Bar." />
 
@@ -91,8 +91,8 @@
         name="App Bar Layout Name"
         type="string"
         constraints="layout|unique"
-        suggest="${layoutName}_app_bar"
-        default="activity_main_app_bar"
+        suggest="${activityToLayout(activityClass, 'app_bar')}"
+        default="app_bar_main"
         visibility="false"
         help="The name of the App Bar layout to create for the activity" />
 
@@ -101,8 +101,8 @@
         name="Navigation Header Layout Name"
         type="string"
         constraints="layout|unique"
-        suggest="${layoutName}_nav_header"
-        default="activity_main_nav_header"
+        suggest="${activityToLayout(activityClass, 'nav_header')}"
+        default="nav_header_main"
         visibility="false"
         help="The name of the Navigation header layout to create for the activity" />
 
@@ -117,14 +117,15 @@
         help="The name of the Drawer menu to create for the activity" />
 
     <parameter
-        id="navViewLayoutName"
-        name="Navigation View Layout Name"
+        id="contentLayoutName"
+        name="Content Layout Name"
         type="string"
         constraints="layout|unique"
-        suggest="${layoutName}_nav_view"
-        default="activity_main_nav_view"
+        suggest="${activityToLayout(activityClass, 'content')}"
+        default="content_main"
         visibility="false"
-        help="The name of the Navigation View layout to create for the activity" />
+        help="The name of the content layout to create for the activity" />
+
 
     <!-- 128x128 thumbnails relative to template.xml -->
     <thumbs>

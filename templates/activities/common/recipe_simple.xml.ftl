@@ -6,17 +6,11 @@
 </#if>
 
     <instantiate from="root/res/layout/simple.xml.ftl"
-                 to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
+                 to="${escapeXmlAttribute(resOut)}/layout/${simpleLayoutName}.xml" />
 
 <#if (isNewProject!false) && !(excludeMenu!false)>
-    <instantiate from="root/res/menu/simple_menu.xml.ftl"
-                 to="${escapeXmlAttribute(resOut)}/menu/${menuName}.xml" />
-    <merge from="root/res/values/simple_strings.xml.ftl"
-             to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
+    <execute file="recipe_simple_menu.xml.ftl" />
 </#if>
 
-    <merge from="root/res/values/simple_dimens.xml"
-             to="${escapeXmlAttribute(resOut)}/values/dimens.xml" />
-    <merge from="root/res/values-w820dp/simple_dimens.xml"
-             to="${escapeXmlAttribute(resOut)}/values-w820dp/dimens.xml" />
+    <execute file="recipe_simple_dimens.xml" />
 </recipe>

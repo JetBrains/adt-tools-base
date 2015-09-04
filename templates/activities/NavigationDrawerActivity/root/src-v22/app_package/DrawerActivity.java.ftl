@@ -2,7 +2,6 @@ package ${packageName};
 
 import android.os.Bundle;
 <#if hasAppBar>
-import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.view.View;
@@ -22,12 +21,10 @@ public class ${activityClass} extends ${superClass}
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.${navViewLayoutName});
+        setContentView(R.layout.${layoutName});
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 <#if hasAppBar>
-        CollapsingToolbarLayout appBarLayout = (CollapsingToolbarLayout) findViewById(R.id.toolbar_layout);
-        appBarLayout.setTitle(getTitle());
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -37,9 +34,8 @@ public class ${activityClass} extends ${superClass}
                         .setAction("Action", null).show();
             }
         });
-<#else>
-        toolbar.setTitle(getTitle());
 </#if>
+
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
             this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);

@@ -2,7 +2,7 @@
 <globals>
 
 <!-- Override hasNoActionBar before including the common definitions -->
-<#if (isNewProject || hasDependency('com.android.support:appcompat-v7')) && buildApi gte 22>
+<#if appCompatActivity>
     <global id="resIn" type="string" value="res-v22" />
     <global id="hasNoActionBar" type="boolean" value="true" />
 <#else>
@@ -12,4 +12,5 @@
     <global id="menuName" value="${classToResource(activityClass)}" />
 
     <globals file="../common/common_globals.xml.ftl" />
+    <global id="simpleLayoutName" value="<#if appCompatActivity>${contentLayoutName}<#else>${layoutName}</#if>" />
 </globals>

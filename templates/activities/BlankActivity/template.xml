@@ -56,20 +56,27 @@
         help="If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher" />
 
     <parameter
+        id="useFragment"
+        name="Use a Fragment"
+        type="boolean"
+        default="false"
+        help="If true, the content will be a fragment" />
+
+    <parameter
         id="hasAppBarSelected"
         name="Include App Bar"
         type="boolean"
-        visibility="appCompatActivity!false"
+        visibility="false"
         default="true"
         help="If true, the layout will include a Material Design App Bar." />
 
     <parameter
-        id="appBarLayoutName"
-        name="App Bar Layout Name"
+        id="contentLayoutName"
+        name="Content Layout Name"
         type="string"
         constraints="layout|unique"
-        suggest="${layoutName}_app_bar"
-        default="activity_main_app_bar"
+        suggest="${activityToLayout(activityClass, 'content')}"
+        default="content_main"
         visibility="false"
         help="The name of the App Bar layout to create for the activity" />
 
@@ -82,6 +89,16 @@
         help="The hierarchical parent activity, used to provide a default implementation for the 'Up' button" />
 
     <parameter
+        id="fragmentLayoutName"
+        name="Fragment Layout Name"
+        type="string"
+        constraints="layout|unique|nonempty"
+        suggest="${activityToLayout(activityClass, 'fragment')}"
+        default="fragment_main"
+        visibility="false"
+        help="The name of the layout to create for the activity's content fragment"/>
+
+    <parameter
         id="packageName"
         name="Package name"
         type="string"
@@ -92,6 +109,8 @@
     <thumbs>
         <!-- default thumbnail is required -->
         <thumb>template_blank_activity.png</thumb>
+        <!-- attributes act as selectors based on chosen parameters -->
+        <thumb useFragment="true">template_blank_activity_fragment.png</thumb>
     </thumbs>
 
     <globals file="globals.xml.ftl" />
