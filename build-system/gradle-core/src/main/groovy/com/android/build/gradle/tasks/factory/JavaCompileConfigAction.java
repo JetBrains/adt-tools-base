@@ -101,6 +101,6 @@ public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
 
         javacTask.getOptions().setBootClasspath(
                 Joiner.on(File.pathSeparator).join(
-                        scope.getGlobalScope().getAndroidBuilder().getBootClasspathAsStrings()));
+                        scope.getGlobalScope().getAndroidBuilder().getBootClasspathAsStrings(false)));
     }
 }
