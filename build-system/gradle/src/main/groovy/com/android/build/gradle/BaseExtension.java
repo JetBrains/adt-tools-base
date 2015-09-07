@@ -691,7 +691,7 @@ public abstract class BaseExtension implements AndroidConfig {
 
     public List<File> getBootClasspath() {
         ensureTargetSetup();
-        return androidBuilder.getBootClasspath();
+        return androidBuilder.getBootClasspath(false);
     }
 
     public File getAdbExe() {

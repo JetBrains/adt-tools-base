@@ -19,7 +19,6 @@ package com.android.build.gradle.tasks.factory;
 import static com.android.SdkConstants.FN_FRAMEWORK_LIBRARY;
 import static com.android.builder.core.VariantType.UNIT_TEST;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -88,7 +87,7 @@ public class UnitTestConfigAction implements TaskConfigAction<Test> {
                     @Override
                     public ConfigurableFileCollection call() throws Exception {
                         Iterable<File> filteredBootClasspath = Iterables.filter(
-                                scope.getGlobalScope().getAndroidBuilder().getBootClasspath(),
+                                scope.getGlobalScope().getAndroidBuilder().getBootClasspath(false),
                                 new Predicate<File>() {
                                     @Override
                                     public boolean apply(@Nullable File file) {

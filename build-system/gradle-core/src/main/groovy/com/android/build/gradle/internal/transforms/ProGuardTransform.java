@@ -282,9 +282,9 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
                 addInputsToConfiguration(referencedInputs, true);
             }
 
-            // libraryJars: the runtime jars.
-            for (String runtimeJar : globalScope.getAndroidBuilder().getBootClasspathAsStrings()) {
-                libraryJar(new File(runtimeJar));
+            // libraryJars: the runtime jars, with all optional libraries.
+            for (File runtimeJar : globalScope.getAndroidBuilder().getBootClasspath(true)) {
+                libraryJar(runtimeJar);
             }
 
             // --- Out files ---

@@ -18,10 +18,10 @@ package com.android.build.gradle.internal;
 
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
 import static com.android.SdkConstants.LIBS_FOLDER;
-import static com.android.build.transform.api.ScopedContent.Scope.PROJECT;
-import static com.android.build.transform.api.ScopedContent.Scope.PROJECT_LOCAL_DEPS;
 import static com.android.build.transform.api.ScopedContent.ContentType.CLASSES;
 import static com.android.build.transform.api.ScopedContent.ContentType.RESOURCES;
+import static com.android.build.transform.api.ScopedContent.Scope.PROJECT;
+import static com.android.build.transform.api.ScopedContent.Scope.PROJECT_LOCAL_DEPS;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -42,7 +42,6 @@ import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.VariantHelper;
 import com.android.build.gradle.tasks.ExtractAnnotations;
 import com.android.build.gradle.tasks.MergeResources;
-import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Scope;
 import com.android.builder.core.AndroidBuilder;
@@ -642,7 +641,7 @@ public class LibraryTaskManager extends TaskManager {
             public void execute(Task task) {
                 if (task instanceof ExtractAnnotations) {
                     ExtractAnnotations extractAnnotations = (ExtractAnnotations) task;
-                    extractAnnotations.bootClasspath = androidBuilder.getBootClasspathAsStrings();
+                    extractAnnotations.bootClasspath = androidBuilder.getBootClasspathAsStrings(false);
                 }
             }
         });

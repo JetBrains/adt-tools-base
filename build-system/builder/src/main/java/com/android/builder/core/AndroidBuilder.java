@@ -143,7 +143,7 @@ import java.util.zip.ZipFile;
  * {@link #packageApk(String, File, Collection, Collection, String, Collection, File, Set, boolean, SigningConfig, PackagingOptions, SignedJarBuilder.IZipEntryFilter, String)}
  *
  * Java compilation is not handled but the builder provides the bootclasspath with
- * {@link #getBootClasspath()}.
+ * {@link #getBootClasspath(boolean)}.
  */
 public class AndroidBuilder {
 
@@ -175,7 +175,8 @@ public class AndroidBuilder {
     private SdkInfo mSdkInfo;
     private TargetInfo mTargetInfo;
 
-    private List<File> mBootClasspath;
+    private List<File> mBootClasspathFiltered;
+    private List<File> mBootClasspathAll;
     @NonNull
     private List<LibraryRequest> mLibraryRequests = ImmutableList.of();
 
@@ -291,15 +292,27 @@ public class AndroidBuilder {
 
     /**
      * Helper method to get the boot classpath to be used during compilation.
+     *
+     * @param includeOptionalLibraries if true, optional libraries are included even if not
+     *                                 required by the project setup.
      */
     @NonNull
-    public List<File> getBootClasspath() {
-        if (mBootClasspath == null) {
+    public List<File> getBootClasspath(boolean includeOptionalLibraries) {
+        if (includeOptionalLibraries) {
+            return computeFullBootClasspath();
+        }
+
+        return computeFilteredBootClasspath();
+    }
+
+    private List<File> computeFilteredBootClasspath() {
+        // computes and caches the filtered boot classpath.
+        // Changes here should be applied to #computeFullClasspath()
+
+        if (mBootClasspathFiltered == null) {
             checkState(mTargetInfo != null,
                     "Cannot call getBootClasspath() before setTargetInfo() is called.");
-
             List<File> classpath = Lists.newArrayList();
-
             IAndroidTarget target = mTargetInfo.getTarget();
 
             for (String p : target.getBootClasspath()) {
@@ -348,10 +361,49 @@ public class AndroidBuilder {
                 classpath.add(mSdkInfo.getAnnotationsJar());
             }
 
-            mBootClasspath = ImmutableList.copyOf(classpath);
+            mBootClasspathFiltered = ImmutableList.copyOf(classpath);
         }
 
-        return mBootClasspath;
+        return mBootClasspathFiltered;
+    }
+
+    private List<File> computeFullBootClasspath() {
+        // computes and caches the full boot classpath.
+        // Changes here should be applied to #computeFilteredClasspath()
+
+        if (mBootClasspathAll == null) {
+            checkState(mTargetInfo != null,
+                    "Cannot call getBootClasspath() before setTargetInfo() is called.");
+
+            List<File> classpath = Lists.newArrayList();
+
+            IAndroidTarget target = mTargetInfo.getTarget();
+
+            for (String p : target.getBootClasspath()) {
+                classpath.add(new File(p));
+            }
+
+            // add additional libraries if any
+            List<OptionalLibrary> libs = target.getAdditionalLibraries();
+            for (OptionalLibrary lib : libs) {
+                classpath.add(lib.getJar());
+            }
+
+            // add optional libraries if any
+            List<OptionalLibrary> optionalLibraries = target.getOptionalLibraries();
+            for (OptionalLibrary lib : optionalLibraries) {
+                classpath.add(lib.getJar());
+            }
+
+            // add annotations.jar if needed.
+            if (target.getVersion().getApiLevel() <= 15) {
+                classpath.add(mSdkInfo.getAnnotationsJar());
+            }
+
+            mBootClasspathAll = ImmutableList.copyOf(classpath);
+        }
+
+        return mBootClasspathAll;
     }
 
     @Nullable
@@ -367,10 +419,13 @@ public class AndroidBuilder {
 
     /**
      * Helper method to get the boot classpath to be used during compilation.
+     *
+     * @param includeOptionalLibraries if true, optional libraries are included even if not
+     *                                 required by the project setup.
      */
     @NonNull
-    public List<String> getBootClasspathAsStrings() {
-        List<File> classpath = getBootClasspath();
+    public List<String> getBootClasspathAsStrings(boolean includeOptionalLibraries) {
+        List<File> classpath = getBootClasspath(includeOptionalLibraries);
 
         // convert to Strings.
         List<String> results = Lists.newArrayListWithCapacity(classpath.size());
