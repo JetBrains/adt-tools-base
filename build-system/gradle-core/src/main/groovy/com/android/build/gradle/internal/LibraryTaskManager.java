@@ -577,7 +577,7 @@ public class LibraryTaskManager extends TaskManager {
             return Sets.immutableEnumSet(PROJECT_LOCAL_DEPS);
         }
 
-        return Sets.immutableEnumSet(EnumSet.noneOf(Scope.class));
+        return TransformManager.EMPTY_SCOPES;
     }
 
     @NonNull
@@ -591,7 +591,7 @@ public class LibraryTaskManager extends TaskManager {
         // never need to only extract the res, as we don't merge the resources of local
         // jars ever
         // FIXM: should we?
-        return Sets.immutableEnumSet(EnumSet.noneOf(Scope.class));
+        return TransformManager.EMPTY_SCOPES;
     }
 
     public ExtractAnnotations createExtractAnnotations(

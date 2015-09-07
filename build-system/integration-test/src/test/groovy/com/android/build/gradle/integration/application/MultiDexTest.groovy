@@ -58,7 +58,7 @@ class MultiDexTest {
     }
 
     @Test
-    void "check classes.dex"() {
+    void "check main classes.dex"() {
         // manually inspect the apk to ensure that the classes.dex that was created is the same
         // one in the apk. This tests that the packaging didn't rename the multiple dex files
         // around when we packaged them.
@@ -71,12 +71,11 @@ class MultiDexTest {
 
     @Test
     void "check test APKs"() {
-        // dexdump only looks at the first classes.dex. ICS variant should have JUnit in the main
-        // dex file, lollipop not.
-        assertThatApk(project.getTestApk("ics", "debug"))
-                .containsClass("Lorg/junit/Assert;")
-        assertThatApk(project.getTestApk("lollipop", "debug"))
-                .doesNotContainClass("Lorg/junit/Assert;")
+        // both test apk should contain a class from Junit
+        assertThatApk(project.getTestApk("ics", "debug")).containsClass("Lorg/junit/Assert;")
+        assertThatApk(project.getTestApk("lollipop", "debug")).containsClass("Lorg/junit/Assert;")
+        assertThatApk(project.getTestApk("ics", "debug")).containsClass("Landroid/support/multidex/MultiDexApplication;")
+        assertThatApk(project.getTestApk("lollipop", "debug")).doesNotContain("Landroid/support/multidex/MultiDexApplication;")
     }
 
     @Test

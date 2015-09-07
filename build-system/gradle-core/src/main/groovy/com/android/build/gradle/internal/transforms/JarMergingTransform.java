@@ -16,9 +16,11 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.utils.FileUtils.deleteIfExists;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.CombinedTransform;
@@ -62,7 +64,7 @@ public class JarMergingTransform implements CombinedTransform {
     @NonNull
     @Override
     public String getName() {
-        return "jarmerging";
+        return "jarMerging";
     }
 
     @NonNull
@@ -166,7 +168,9 @@ public class JarMergingTransform implements CombinedTransform {
                             File[] subStreams = file.listFiles();
                             if (subStreams != null) {
                                 for (File subStream : subStreams) {
-                                    processFolder(jos, "", subStream, buffer);
+                                    if (subStream.isDirectory()) {
+                                        processFolder(jos, "", subStream, buffer);
+                                    }
                                 }
                             }
                         }
@@ -199,23 +203,25 @@ public class JarMergingTransform implements CombinedTransform {
         if (files != null) {
             for (File file : files) {
                 if (file.isFile()) {
-                    // new entry
-                    jos.putNextEntry(new JarEntry(path + file.getName()));
+                    if (file.getName().endsWith(DOT_CLASS)) {
+                        // new entry
+                        jos.putNextEntry(new JarEntry(path + file.getName()));
 
-                    // put the file content
-                    Closer closer = Closer.create();
-                    try {
-                        FileInputStream fis = closer.register(new FileInputStream(file));
-                        int count;
-                        while ((count = fis.read(buffer)) != -1) {
-                            jos.write(buffer, 0, count);
+                        // put the file content
+                        Closer closer = Closer.create();
+                        try {
+                            FileInputStream fis = closer.register(new FileInputStream(file));
+                            int count;
+                            while ((count = fis.read(buffer)) != -1) {
+                                jos.write(buffer, 0, count);
+                            }
+                        } finally {
+                            closer.close();
                         }
-                    } finally {
-                        closer.close();
-                    }
 
-                    // close the entry
-                    jos.closeEntry();
+                        // close the entry
+                        jos.closeEntry();
+                    }
                 } else if (file.isDirectory()) {
                     processFolder(jos, path + file.getName() + "/", file, buffer);
                 }
@@ -240,7 +246,7 @@ public class JarMergingTransform implements CombinedTransform {
                 }
 
                 String name = entry.getName();
-                if (!name.endsWith(".class")) {
+                if (!name.endsWith(DOT_CLASS)) {
                     continue;
                 }
 

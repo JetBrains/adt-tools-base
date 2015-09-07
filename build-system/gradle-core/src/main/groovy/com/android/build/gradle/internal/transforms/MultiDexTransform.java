@@ -23,6 +23,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.NoOpTransform;
+import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
@@ -34,6 +35,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -59,6 +61,9 @@ import proguard.ParseException;
 public class MultiDexTransform extends BaseProguardAction implements NoOpTransform {
 
     @NonNull
+    private final Set<Scope> scopes;
+
+    @NonNull
     private final File manifestKeepListFile;
     @NonNull
     private final VariantScope variantScope;
@@ -71,9 +76,11 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
     private final File mainDexListFile;
 
     public MultiDexTransform(
+            @NonNull Set<Scope> scopes,
             @NonNull File manifestKeepListFile,
             @NonNull VariantScope variantScope,
             @Nullable File includeInMainDexJarFile) {
+        this.scopes = scopes;
         this.manifestKeepListFile = manifestKeepListFile;
         this.variantScope = variantScope;
         this.includeInMainDexJarFile = includeInMainDexJarFile;
@@ -98,13 +105,13 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
     @NonNull
     @Override
     public Set<ContentType> getOutputTypes() {
-        return Sets.immutableEnumSet(EnumSet.noneOf(ContentType.class));
+        return ImmutableSet.of();
     }
 
     @NonNull
     @Override
     public Set<Scope> getScopes() {
-        return TransformManager.SCOPE_FULL_PROJECT;
+        return scopes;
     }
 
     @NonNull

@@ -1814,19 +1814,19 @@ public abstract class TaskManager {
      * proguard and jacoco
      *
      */
-    public void createPostCompilationTasks(TaskFactory tasks, @NonNull final VariantScope scope) {
-        checkNotNull(scope.getJavacTask());
+    public void createPostCompilationTasks(TaskFactory tasks, @NonNull final VariantScope variantScope) {
+        checkNotNull(variantScope.getJavacTask());
 
-        final ApkVariantData variantData = (ApkVariantData) scope.getVariantData();
+        final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
         final GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
-        TransformManager transformManager = scope.getTransformManager();
+        TransformManager transformManager = variantScope.getTransformManager();
 
         // ----- Code Coverage first -----
         boolean isTestCoverageEnabled = config.getBuildType().isTestCoverageEnabled() && !config
                 .getType().isForTesting();
         if (isTestCoverageEnabled) {
-            createJacocoTransform(tasks, scope);
+            createJacocoTransform(tasks, variantScope);
         }
 
         boolean isMinifyEnabled = config.isMinifyEnabled();
@@ -1835,33 +1835,46 @@ public abstract class TaskManager {
 
         // ----- External Transforms -----
         // apply all the external transforms.
-        for (Transform transform : scope.getGlobalScope().getExtension().getTransforms()) {
-            transformManager.addTransform(tasks, scope, transform);
+        for (Transform transform : variantScope.getGlobalScope().getExtension().getTransforms()) {
+            transformManager.addTransform(tasks, variantScope, transform);
         }
 
         // ----- Minify next -----
 
         if (isMinifyEnabled) {
-            createProguardTransform(tasks, scope, isMultiDexEnabled && isLegacyMultiDexMode);
+            createProguardTransform(tasks, variantScope, isMultiDexEnabled && isLegacyMultiDexMode);
         }
 
         // ----- Multi-Dex support
 
         AndroidTask<TransformTask> multiDexClassListTask = null;
+        Set<Scope> scopes = TransformManager.SCOPE_FULL_PROJECT;
+        // non Library test are running as native multi-dex
         if (isMultiDexEnabled && isLegacyMultiDexMode) {
             // ----------
             // create a transform to jar the inputs into a single jar.
             if (!isMinifyEnabled) {
-                JarMergingTransform jarMergingTransform = new JarMergingTransform(
-                        TransformManager.SCOPE_FULL_PROJECT);
-                transformManager.addTransform(tasks, scope, jarMergingTransform);
+                // if the variant is a test for a library project, then we exclude the sub-project
+                // local deps as they show up also in the project local deps too?
+                // FIXME: use proper naming in the multi-folder sub streams to properly detect duplicates rather than ommit a scope.
+                if (variantData instanceof TestVariantData &&
+                        ((TestVariantData) variantData).getTestedVariantData() instanceof LibraryVariantData) {
+                    scopes = Sets.immutableEnumSet(
+                            Scope.PROJECT,
+                            Scope.PROJECT_LOCAL_DEPS,
+                            Scope.SUB_PROJECTS,
+                            Scope.EXTERNAL_LIBRARIES);
+                }
+
+                JarMergingTransform jarMergingTransform = new JarMergingTransform(scopes);
+                transformManager.addTransform(tasks, variantScope, jarMergingTransform);
             }
 
             // ----------
             // Create a task to collect the list of manifest entry points which are
             // needed in the primary dex
             AndroidTask<CreateManifestKeepList> manifestKeepListTask = androidTasks.create(tasks,
-                    new CreateManifestKeepList.ConfigAction(scope));
+                    new CreateManifestKeepList.ConfigAction(variantScope));
             manifestKeepListTask.dependsOn(tasks,
                     variantData.getOutputs().get(0).getScope().getManifestProcessorTask());
 
@@ -1869,24 +1882,27 @@ public abstract class TaskManager {
             // create the transform that's going to take the code and the proguard keep list
             // from above and compute the main class list.
             MultiDexTransform multiDexTransform = new MultiDexTransform(
-                    scope.getManifestKeepListFile(),
-                    scope,
+                    scopes,
+                    variantScope.getManifestKeepListFile(),
+                    variantScope,
                     null);
             multiDexClassListTask = transformManager.addTransform(
-                    tasks, scope, multiDexTransform);
+                    tasks, variantScope, multiDexTransform);
             multiDexClassListTask.dependsOn(tasks, manifestKeepListTask);
         }
 
         // create dex transform
         DexTransform dexTransform = new DexTransform(
-                scope.getGlobalScope().getExtension().getDexOptions(),
+                scopes,
+                variantScope.getGlobalScope().getExtension().getDexOptions(),
+                config.getBuildType().isDebuggable(),
                 isMultiDexEnabled,
-                isMultiDexEnabled && isLegacyMultiDexMode ? scope.getMainDexListFile() : null,
-                scope.getPreDexOutputDir(),
-                scope.getGlobalScope().getAndroidBuilder(),
+                isMultiDexEnabled && isLegacyMultiDexMode ? variantScope.getMainDexListFile() : null,
+                variantScope.getPreDexOutputDir(),
+                variantScope.getGlobalScope().getAndroidBuilder(),
                 getLogger());
         AndroidTask<TransformTask> dexTask = transformManager.addTransform(
-                tasks, scope, dexTransform);
+                tasks, variantScope, dexTransform);
         // need to manually make dex task depend on MultiDexTransform since there's no stream
         // consumption making this automatic
         dexTask.optionalDependsOn(tasks, multiDexClassListTask);

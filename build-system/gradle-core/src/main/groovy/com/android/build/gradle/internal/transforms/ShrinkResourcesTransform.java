@@ -34,6 +34,7 @@ import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
@@ -135,7 +136,7 @@ public class ShrinkResourcesTransform implements NoOpTransform {
     @NonNull
     @Override
     public Set<ContentType> getOutputTypes() {
-        return Sets.immutableEnumSet(EnumSet.noneOf(ContentType.class));
+        return ImmutableSet.of();
     }
 
     @NonNull
@@ -147,7 +148,7 @@ public class ShrinkResourcesTransform implements NoOpTransform {
     @NonNull
     @Override
     public Set<Scope> getReferencedScopes() {
-        return Sets.immutableEnumSet(EnumSet.noneOf(Scope.class));
+        return TransformManager.EMPTY_SCOPES;
     }
 
     @NonNull

@@ -525,6 +525,13 @@ public class GradleTestProject implements TestRule {
     /**
      * Return the build.gradle of the test project.
      */
+    public File getSettingsFile() {
+        return new File(testDir, "settings.gradle");
+    }
+
+    /**
+     * Return the build.gradle of the test project.
+     */
     public File getBuildFile() {
         return buildFile;
     }
