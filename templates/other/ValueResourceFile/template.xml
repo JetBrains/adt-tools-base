@@ -12,7 +12,7 @@
         id="fileName"
         name="Values File Name"
         type="string"
-        constraints="unique|nonempty"
+        constraints="unique|nonempty|values"
         default="values"
         help="Name of the values XML file." />
 
