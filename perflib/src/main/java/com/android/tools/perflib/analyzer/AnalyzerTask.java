@@ -17,11 +17,11 @@ package com.android.tools.perflib.analyzer;
 
 import com.android.annotations.NonNull;
 
-public abstract class AnalyzerTask {
+public interface AnalyzerTask {
 
     @NonNull
-    public abstract String getTaskName();
+    String getTaskName();
 
     @NonNull
-    public abstract String getTaskDescription();
+    String getTaskDescription();
 }
