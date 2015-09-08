@@ -41,6 +41,7 @@ import com.android.builder.tasks.Job;
 import com.android.builder.tasks.JobContext;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -141,12 +142,7 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
             return Sets.immutableEnumSet(Scope.PROJECT, Scope.PROJECT_LOCAL_DEPS);
         }
 
-        return Sets.immutableEnumSet(
-                Scope.PROJECT,
-                Scope.PROJECT_LOCAL_DEPS,
-                Scope.SUB_PROJECTS,
-                Scope.SUB_PROJECTS_LOCAL_DEPS,
-                Scope.EXTERNAL_LIBRARIES);
+        return TransformManager.SCOPE_FULL_PROJECT;
     }
 
     @NonNull
@@ -217,8 +213,14 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
 
     @NonNull
     @Override
+    public Collection<File> getSecondaryFolderOutputs() {
+        return ImmutableList.of();
+    }
+
+    @NonNull
+    @Override
     public Map<String, Object> getParameterInputs() {
-        return Collections.emptyMap();
+        return ImmutableMap.of();
     }
 
     @Override

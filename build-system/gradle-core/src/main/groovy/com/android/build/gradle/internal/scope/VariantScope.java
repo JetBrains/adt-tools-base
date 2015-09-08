@@ -27,7 +27,6 @@ import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.AidlCompile;
-import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
@@ -50,25 +49,13 @@ import java.util.Set;
 /**
  * A scope containing data for a specific variant.
  */
-public interface VariantScope {
-
-    @NonNull
-    GlobalScope getGlobalScope();
+public interface VariantScope extends BaseScope {
 
     @NonNull
     BaseVariantData<? extends BaseVariantOutputData> getVariantData();
 
     @NonNull
-    GradleVariantConfiguration getVariantConfiguration();
-
-    @NonNull
     TransformManager getTransformManager();
-
-    @NonNull
-    String getTaskName(@NonNull String prefix);
-
-    @NonNull
-    String getTaskName(@NonNull String prefix, @NonNull String suffix);
 
     @Nullable
     Collection<Object> getNdkBuildable();
@@ -95,9 +82,6 @@ public interface VariantScope {
 
     @Nullable
     BaseVariantData getTestedVariantData();
-
-    @NonNull
-    File getDexOutputFolder();
 
     @NonNull
     FileCollection getJavaClasspath();
@@ -282,11 +266,6 @@ public interface VariantScope {
 
     void setGenerateResValuesTask(
             AndroidTask<GenerateResValues> generateResValuesTask);
-
-    @Nullable
-    AndroidTask<Dex> getDexTask();
-
-    void setDexTask(@Nullable AndroidTask<Dex> dexTask);
 
     AndroidTask<Sync> getProcessJavaResourcesTask();
 

@@ -121,12 +121,28 @@ public interface Transform {
     /**
      * Returns a list of additional (out of streams) file(s) that this Transform creates.
      *
+     * These File instances can only represent files, not folders. For folders, use
+     * {@link #getSecondaryFolderOutputs()}
+     *
      * Changes to files returned in this list will trigger a new execution of the Transform
      * even if the streams haven't been touched.
      * Changes to these output files force a non incremental execution.
      */
     @NonNull
     Collection<File> getSecondaryFileOutputs();
+
+    /**
+     * Returns a list of additional (out of streams) folder(s) that this Transform creates.
+     *
+     * These File instances can only represent folders. For files, use
+     * {@link #getSecondaryFileOutputs()}
+     *
+     * Changes to folders returned in this list will trigger a new execution of the Transform
+     * even if the streams haven't been touched.
+     * Changes to these output folders force a non incremental execution.
+     */
+    @NonNull
+    Collection<File> getSecondaryFolderOutputs();
 
     /**
      * Returns a map of non-file input parameters using a unique identifier as the map key.

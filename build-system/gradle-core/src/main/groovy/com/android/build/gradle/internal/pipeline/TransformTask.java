@@ -42,6 +42,7 @@ import com.google.common.collect.Sets;
 
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.OutputDirectories;
 import org.gradle.api.tasks.OutputFiles;
 import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
@@ -466,6 +467,11 @@ public class TransformTask extends StreamBasedTask {
     @OutputFiles
     public Collection<File> getOtherFileOutputs() {
         return transform.getSecondaryFileOutputs();
+    }
+
+    @OutputDirectories
+    public Collection<File> getOtherFolderOutputs() {
+        return transform.getSecondaryFolderOutputs();
     }
 
     @Input

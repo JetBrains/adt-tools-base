@@ -16,11 +16,13 @@
 
 package com.android.builder.internal.packaging;
 
+import static com.android.SdkConstants.FN_APK_CLASSES_DEX;
 import static com.android.SdkConstants.FN_APK_CLASSES_N_DEX;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.transform.api.ScopedContent.Format;
 import com.android.builder.internal.packaging.JavaResourceProcessor.IArchiveBuilder;
 import com.android.builder.model.PackagingOptions;
 import com.android.builder.packaging.DuplicateFileException;
@@ -31,6 +33,7 @@ import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
+import com.google.common.collect.Iterables;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
@@ -45,7 +48,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -199,31 +201,68 @@ public final class Packager implements IArchiveBuilder {
         }
     }
 
-    public void addDexFiles(@NonNull File mainDexFolder, @NonNull Collection<File> extraDexFiles)
+    public void addDexFiles(@NonNull Map<File, Format> dexFolders)
             throws DuplicateFileException, SealedPackageException, PackagerException {
+        // If there is a single folder that's either no multi-dex or pre-21 multidex (where
+        // dx has merged them all into 2+ dex files).
+        // IF there are 2+ folders then we are directly adding the pre-dexing output.
+        if (dexFolders.size() == 1 && Iterables.getOnlyElement(dexFolders.values()) != Format.MULTI_FOLDER) {
+            File[] dexFiles = Iterables.getOnlyElement(dexFolders.keySet()).listFiles(
+                    new FilenameFilter() {
+                        @Override
+                        public boolean accept(File file, String name) {
+                            return name.endsWith(SdkConstants.DOT_DEX);
+                        }
+                    });
 
-        File[] mainDexFiles = mainDexFolder.listFiles(new FilenameFilter() {
+            if (dexFiles != null) {
+                for (File dexFile : dexFiles) {
+                    addFile(dexFile, dexFile.getName());
+                }
+            }
+        } else {
+            // in 21+ mode we can simply include all the dex files, and rename them as we
+            // go so that their index is contiguous.
+            int dexIndex = 1;
+            for (Map.Entry<File, Format> folderEntry : dexFolders.entrySet()) {
+                if (folderEntry.getValue() == Format.MULTI_FOLDER) {
+                    File[] children = folderEntry.getKey().listFiles();
+                    if (children != null) {
+                        for (File childFolder : children) {
+                            if (childFolder.isDirectory()) {
+                                dexIndex = addContentOfDexFolder(childFolder, dexIndex);
+                            }
+                        }
+                    }
+                } else {
+                    dexIndex = addContentOfDexFolder(folderEntry.getKey(), dexIndex);
+                }
+            }
+        }
+    }
+
+    private int addContentOfDexFolder(@NonNull File dexFolder, int dexIndex)
+            throws PackagerException, SealedPackageException, DuplicateFileException {
+        File[] dexFiles = dexFolder.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File file, String name) {
                 return name.endsWith(SdkConstants.DOT_DEX);
             }
         });
 
-        if (mainDexFiles != null && mainDexFiles.length > 0) {
-            // Never rename the dex files in the main dex folder, in case we are in legacy mode
-            // we requires the main dex files to not be renamed.
-            for (File dexFile : mainDexFiles) {
-                addFile(dexFile, dexFile.getName());
-            }
-
-            // prepare the index for the next files.
-            int dexIndex = mainDexFiles.length + 1;
-
-            for (File dexFile : extraDexFiles) {
-                addFile(dexFile, String.format(FN_APK_CLASSES_N_DEX, dexIndex++));
+        if (dexFiles != null) {
+            for (File dexFile : dexFiles) {
+                addFile(dexFile,
+                        dexIndex == 1 ?
+                                FN_APK_CLASSES_DEX :
+                                String.format(FN_APK_CLASSES_N_DEX, dexIndex));
+                dexIndex++;
             }
         }
+
+        return dexIndex;
     }
+
 
     /**
      * Sets the JNI debug mode. In debug mode, when native libraries are present, the packaging

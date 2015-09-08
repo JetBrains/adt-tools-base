@@ -40,7 +40,7 @@ class BasicNdkComponentTest {
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp(useCppSource: true))
             .forExpermimentalPlugin(true)
-            .withHeap("20148m")
+            .withHeap("2048m")
             .create();
 
     @BeforeClass

@@ -104,12 +104,7 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
     @NonNull
     @Override
     public Set<Scope> getScopes() {
-        return Sets.immutableEnumSet(
-                Scope.PROJECT,
-                Scope.PROJECT_LOCAL_DEPS,
-                Scope.SUB_PROJECTS,
-                Scope.SUB_PROJECTS_LOCAL_DEPS,
-                Scope.EXTERNAL_LIBRARIES);
+        return TransformManager.SCOPE_FULL_PROJECT;
     }
 
     @NonNull
@@ -143,6 +138,12 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
     @Override
     public Collection<File> getSecondaryFileOutputs() {
         return Lists.newArrayList(mainDexListFile, configFileOut);
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getSecondaryFolderOutputs() {
+        return ImmutableList.of();
     }
 
     @NonNull

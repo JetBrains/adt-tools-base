@@ -44,6 +44,7 @@ import com.android.build.gradle.managed.ProductFlavor;
 import com.android.build.gradle.managed.SigningConfig;
 import com.android.build.gradle.model.AndroidComponentModelSourceSet;
 import com.android.build.gradle.managed.AndroidConfig;
+import com.android.build.transform.api.Transform;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.testing.api.DeviceProvider;
@@ -118,6 +119,12 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
     @NonNull
     public List<TestServer> getTestServers() {
         return model.getTestServers();
+    }
+
+    @NonNull
+    @Override
+    public List<Transform> getTransforms() {
+        return ImmutableList.of();
     }
 
     @Override

@@ -30,6 +30,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.transform.api.ScopedContent.Format;
 import com.android.builder.compiling.DependencyFileProcessor;
 import com.android.builder.core.BuildToolsServiceLoader.BuildToolServiceLoader;
 import com.android.builder.dependency.ManifestDependency;
@@ -102,7 +103,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -139,8 +139,8 @@ import java.util.zip.ZipFile;
  * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, File, List, Map, File, File)}
  * {@link #processResources(AaptPackageProcessBuilder, boolean, ProcessOutputHandler)}
  * {@link #compileAllAidlFiles(List, File, File, List, DependencyFileProcessor, ProcessOutputHandler)}
- * {@link #convertByteCode(Collection, Collection, File, boolean, File, DexOptions, List, boolean, boolean, ProcessOutputHandler)}
- * {@link #packageApk(String, File, Collection, Collection, String, Collection, File, Set, boolean, SigningConfig, PackagingOptions, SignedJarBuilder.IZipEntryFilter, String)}
+ * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, List, boolean, boolean, ProcessOutputHandler)}
+ * {@link #packageApk(String, Map, File, Collection, File, Set, boolean, SigningConfig, PackagingOptions, SignedJarBuilder.IZipEntryFilter, String)}
  *
  * Java compilation is not handled but the builder provides the bootclasspath with
  * {@link #getBootClasspath(boolean)}.
@@ -1280,7 +1280,6 @@ public class AndroidBuilder {
      */
     public void convertByteCode(
             @NonNull Collection<File> inputs,
-            @NonNull Collection<File> preDexedLibraries,
             @NonNull File outDexFolder,
                      boolean multidex,
             @Nullable File mainDexList,
@@ -1291,7 +1290,6 @@ public class AndroidBuilder {
             @NonNull ProcessOutputHandler processOutputHandler)
             throws IOException, InterruptedException, ProcessException {
         checkNotNull(inputs, "inputs cannot be null.");
-        checkNotNull(preDexedLibraries, "preDexedLibraries cannot be null.");
         checkNotNull(outDexFolder, "outDexFolder cannot be null.");
         checkNotNull(dexOptions, "dexOptions cannot be null.");
         checkArgument(outDexFolder.isDirectory(), "outDexFolder must be a folder");
@@ -1313,7 +1311,6 @@ public class AndroidBuilder {
                 .setNoOptimize(!optimize)
                 .setMultiDex(multidex)
                 .setMainDexList(mainDexList)
-                .addInputs(preDexedLibraries)
                 .addInputs(verifiedInputs.build());
 
         if (additionalParameters != null) {
@@ -1365,47 +1362,6 @@ public class AndroidBuilder {
         ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
         result.rethrowFailure().assertNormalExitValue();
     }
-
-    /**
-     * Converts the bytecode to Dalvik format
-     * @param inputDir the input directory
-     * @param outDexFolder the location of the output folder
-     * @param dexOptions dex options
-     * @param additionalParameters list of additional parameters to give to dx
-     *
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws ProcessException
-     */
-    public void mergeDexFiles(
-            @NonNull File inputDir,
-            @NonNull File outDexFolder,
-            boolean multidex,
-            @Nullable File mainDexList,
-            @NonNull DexOptions dexOptions,
-            @NonNull ProcessOutputHandler processOutputHandler)
-            throws IOException, InterruptedException, ProcessException {
-        checkNotNull(inputDir, "inputs cannot be null.");
-        checkNotNull(outDexFolder, "outDexFolder cannot be null.");
-        checkNotNull(dexOptions, "dexOptions cannot be null.");
-        checkArgument(outDexFolder.isDirectory(), "outDexFolder must be a folder");
-        checkState(mTargetInfo != null,
-                "Cannot call convertByteCode() before setTargetInfo() is called.");
-
-        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
-        DexProcessBuilder builder = new DexProcessBuilder(outDexFolder);
-
-        builder.setVerbose(mVerboseExec)
-                .setMultiDex(multidex)
-                .setMainDexList(mainDexList)
-                .addInput(inputDir);
-
-        JavaProcessInfo javaProcessInfo = builder.build(buildToolInfo, dexOptions);
-
-        ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
-        result.rethrowFailure().assertNormalExitValue();
-    }
-
 
     public Set<String> createMainDexList(
             @NonNull File allClassesJarFile,
@@ -1498,8 +1454,6 @@ public class AndroidBuilder {
         checkNotNull(outFile, "outFile cannot be null.");
         checkNotNull(dexOptions, "dexOptions cannot be null.");
 
-
-
         try {
             if (!checkLibraryClassesJar(inputFile)) {
                 return ImmutableList.of();
@@ -1554,7 +1508,8 @@ public class AndroidBuilder {
             zipFile = new ZipFile(input);
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while(entries.hasMoreElements()) {
-                if (entries.nextElement().getName().endsWith(DOT_CLASS)) {
+                String name = entries.nextElement().getName();
+                if (name.endsWith(DOT_CLASS) || name.endsWith(DOT_DEX)) {
                     return true;
                 }
             }
@@ -1868,8 +1823,7 @@ public class AndroidBuilder {
      * Packages the apk.
      *
      * @param androidResPkgLocation the location of the packaged resource file
-     * @param dexFolder the folder with the dex file.
-     * @param dexedLibraries optional collection of additional dex files to put in the apk.
+     * @param dexFolders the folder(s) with the dex file(s).
      * @param javaResourcesLocation the processed Java resource folder
      * @param jniLibsFolders the folders containing jni shared libraries
      * @param mergingFolder folder to contain files that are being merged
@@ -1887,8 +1841,7 @@ public class AndroidBuilder {
      */
     public void packageApk(
             @NonNull String androidResPkgLocation,
-            @Nullable File dexFolder,
-            @NonNull Collection<File> dexedLibraries,
+            @NonNull Map<File, Format> dexFolders,
             @Nullable File javaResourcesLocation,
             @Nullable Collection<File> jniLibsFolders,
             @NonNull File mergingFolder,
@@ -1920,11 +1873,8 @@ public class AndroidBuilder {
                     certificateInfo, mCreatedBy, packagingOptions, packagingOptionsFilter, mLogger);
 
             // add dex folder to the apk root.
-            if (dexFolder != null) {
-                if (!dexFolder.isDirectory()) {
-                    throw new IllegalArgumentException("dexFolder must be a directory");
-                }
-                packager.addDexFiles(dexFolder, dexedLibraries);
+            if (!dexFolders.isEmpty()) {
+                packager.addDexFiles(dexFolders);
             }
 
             packager.setJniDebugMode(jniDebugBuild);

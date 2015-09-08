@@ -27,7 +27,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
-import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.scope.BaseScope;
 import com.android.build.transform.api.AsInputTransform;
 import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.ForkTransform;
@@ -42,6 +42,7 @@ import com.android.utils.FileUtils;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -77,6 +78,12 @@ public class TransformManager {
     public static final Set<ContentType> CONTENT_JARS = Sets.immutableEnumSet(CLASSES, RESOURCES);
     public static final Set<ContentType> CONTENT_RESOURCES = Sets.immutableEnumSet(RESOURCES);
     public static final Set<ContentType> CONTENT_DEX = Sets.immutableEnumSet(DEX);
+    public static final Set<Scope> SCOPE_FULL_PROJECT = Sets.immutableEnumSet(
+            Scope.PROJECT,
+            Scope.PROJECT_LOCAL_DEPS,
+            Scope.SUB_PROJECTS,
+            Scope.SUB_PROJECTS_LOCAL_DEPS,
+            Scope.EXTERNAL_LIBRARIES);
 
     @NonNull
     private final AndroidTaskRegistry taskRegistry;
@@ -120,7 +127,7 @@ public class TransformManager {
 
     public <T extends Transform> AndroidTask<TransformTask> addTransform(
             @NonNull TaskFactory taskFactory,
-            @NonNull VariantScope variantScope,
+            @NonNull BaseScope variantScope,
             @NonNull T transform) {
         return addTransform(taskFactory, variantScope, transform, null /*callback*/);
     }
@@ -135,7 +142,7 @@ public class TransformManager {
      * dependencies of the consumed streams.
      *
      * @param taskFactory the task factory
-     * @param variantScope the current variant
+     * @param scope the current scope
      * @param transform the transform to add
      * @param callback a callback that is run when the task is actually configured
      * @param <T> the type of the transform
@@ -143,29 +150,29 @@ public class TransformManager {
      */
     public <T extends Transform> AndroidTask<TransformTask> addTransform(
             @NonNull TaskFactory taskFactory,
-            @NonNull VariantScope variantScope,
+            @NonNull BaseScope scope,
             @NonNull T transform,
             @Nullable TransformTask.ConfigActionCallback<T> callback) {
         validateTransform(transform);
 
         List<TransformStream> inputStreams = Lists.newArrayList();
         List<TransformStream> outputStreams = Lists.newArrayList();
-        String taskName = variantScope.getTaskName(getTaskNamePrefix(transform));
+        String taskName = scope.getTaskName(getTaskNamePrefix(transform));
 
         // find input streams, and compute output streams for the transform.
         findTransformStreams(
                 transform,
+                scope,
                 inputStreams,
                 outputStreams,
                 taskName,
-                variantScope.getVariantConfiguration().getDirName(),
-                variantScope.getGlobalScope().getBuildDir());
+                scope.getGlobalScope().getBuildDir());
 
         if (inputStreams.isEmpty()) {
             // didn't find any match. Means there is a broken order somewhere in the streams.
             throw new RuntimeException(String.format(
                     "Unable to add Transform '%s' on variant '%s': requested streams not available: %s/%s",
-                    transform.getName(), variantScope.getVariantConfiguration().getFullName(),
+                    transform.getName(), scope.getVariantConfiguration().getFullName(),
                     transform.getScopes(), transform.getInputTypes()));
         }
 
@@ -174,7 +181,7 @@ public class TransformManager {
 
         if (DEBUG) {
             System.out.println(
-                    "ADDED TRANSFORM(" + variantScope.getVariantConfiguration().getFullName()
+                    "ADDED TRANSFORM(" + scope.getVariantConfiguration().getFullName()
                             + "):");
             System.out.println("\tName: " + transform.getName());
             System.out.println("\tTask: " + taskName);
@@ -195,7 +202,7 @@ public class TransformManager {
         AndroidTask<TransformTask> task = taskRegistry.create(
                 taskFactory,
                 new TransformTask.ConfigAction<T>(
-                        variantScope.getVariantConfiguration().getFullName(),
+                        scope.getVariantConfiguration().getFullName(),
                         taskName,
                         transform,
                         inputStreams,
@@ -350,6 +357,28 @@ public class TransformManager {
     }
 
     @NonNull
+    public Map<File, Format> getPipelineOuput(
+            @NonNull StreamFilter streamFilter,
+            @Nullable Format requiredFormat) {
+        ImmutableList<TransformStream> streams = getStreams(streamFilter);
+        if (streams.isEmpty()) {
+            return ImmutableMap.of();
+        }
+
+        ImmutableMap.Builder<File, Format> builder = ImmutableMap.builder();
+        for (TransformStream stream : streams) {
+            Format format = stream.getFormat();
+            if (requiredFormat == null || requiredFormat == format) {
+                for (File file : stream.getFiles().get()) {
+                    builder.put(file, format);
+                }
+            }
+        }
+
+        return builder.build();
+    }
+
+    @NonNull
     private static String getTaskNamePrefix(@NonNull Transform transform) {
         StringBuilder sb = new StringBuilder(100);
         sb.append("transform");
@@ -404,14 +433,18 @@ public class TransformManager {
      * stream(s) from the transform.
      *
      * @param transform the transform.
-     * @return the input streams for the transform.
+     * @param scope the scope the transform is applied to.
+     * @param inputStreams the out list of input streams for the transform.
+     * @param outputStreams the out list of output streams for the transform.
+     * @param taskName the name of the task that will run the transform
+     * @param buildDir the build dir of the project.
      */
     private void findTransformStreams(
             @NonNull Transform transform,
+            @NonNull BaseScope scope,
             @NonNull List<TransformStream> inputStreams,
             @NonNull List<TransformStream> outputStreams,
             @NonNull String taskName,
-            @NonNull String variantDirName,
             @NonNull File buildDir) {
 
         Set<ContentType> requestedTypes = transform.getInputTypes();
@@ -428,6 +461,11 @@ public class TransformManager {
 
         boolean consumesInputs = type != Type.NO_OP;
 
+        String variantDirName = null;
+        if (consumesInputs) {
+            variantDirName = scope.getDirName();
+        }
+
         // list to hold the list of unused streams in the manager after everything is done.
         // they'll be put back in the streams collection, along with the new outputs.
         List<TransformStream> oldStreams = Lists.newArrayListWithExpectedSize(streams.size());
@@ -443,26 +481,26 @@ public class TransformManager {
                 inputStreams.add(stream);
 
                 foundTypes.addAll(contentTypes);
-                // if the stream has more types than the requested types, create a copy
-                // ot if with the remaining streams, so that other transforms can still
-                // consume the other types in this scope.
-                // However don't do this if the transform type is no_op since it doesn't
-                // consume its streams anyway.
-                TransformStream replacementStream = null;
-                if (consumesInputs && !requestedTypes.equals(contentTypes)) {
-                    EnumSet<ContentType> diff = EnumSet.copyOf(contentTypes);
-                    diff.removeAll(requestedTypes);
-                    if (!diff.isEmpty()) {
-                        // create a copy of the stream with only the remaining type.
-                        replacementStream = TransformStream.builder()
-                                .copyWithRestrictedTypes(stream, diff)
-                                .build();
+                if (consumesInputs) {
+                    // if the stream has more types than the requested types, create a copy
+                    // ot if with the remaining streams, so that other transforms can still
+                    // consume the other types in this scope.
+                    // However don't do this if the transform type is no_op since it doesn't
+                    // consume its streams anyway.
+                    if (!requestedTypes.equals(contentTypes)) {
+                        EnumSet<ContentType> diff = EnumSet.copyOf(contentTypes);
+                        diff.removeAll(requestedTypes);
+                        if (!diff.isEmpty()) {
+                            // create a copy of the stream with only the remaining type.
+                            oldStreams.add(TransformStream.builder()
+                                    .copyWithRestrictedTypes(stream, diff)
+                                    .build());
 
+                        }
                     }
-                }
-
-                if (replacementStream != null) {
-                    oldStreams.add(replacementStream);
+                } else {
+                    // if stream is not consumed, put it back in the list.
+                    oldStreams.add(stream);
                 }
 
                 // now handle the output.
@@ -517,8 +555,8 @@ public class TransformManager {
             File destinationFile = FileUtils.join(buildDir,
                     AndroidProject.FD_INTERMEDIATES,
                     FD_TRANSFORMS,
-                    combineNames(types),
-                    combineNames(scopes),
+                    combineTypesForName(types),
+                    combineScopesForName(scopes),
                     transform.getName(),
                     variantDirName);
 
@@ -581,8 +619,8 @@ public class TransformManager {
                 .setFiles(FileUtils.join(buildDir,
                         AndroidProject.FD_INTERMEDIATES,
                         FD_TRANSFORMS,
-                        combineNames(types),
-                        combineNames(input.getScopes()),
+                        combineTypesForName(types),
+                        combineScopesForName(input.getScopes()),
                         deDupedName,
                         variantDirName))
                 .setDependency(taskName)
@@ -591,7 +629,15 @@ public class TransformManager {
                 .build();
     }
 
-    private static String combineNames(Set types) {
+    private static String combineTypesForName(@NonNull Set<ContentType> types) {
+        return Joiner.on("_and_").join(types);
+    }
+
+    private static String combineScopesForName(@NonNull Set<Scope> types) {
+        if (SCOPE_FULL_PROJECT.equals(types)) {
+            return "FULL_PROJECT";
+        }
+
         return Joiner.on("_and_").join(types);
     }
 
