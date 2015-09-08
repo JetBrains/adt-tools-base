@@ -29,6 +29,7 @@ import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -122,13 +123,19 @@ public class TestTransform implements Transform {
     @NonNull
     @Override
     public Collection<File> getSecondaryFileOutputs() {
-        return Collections.emptyList();
+        return ImmutableList.of();
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getSecondaryFolderOutputs() {
+        return ImmutableList.of();
     }
 
     @NonNull
     @Override
     public Map<String, Object> getParameterInputs() {
-        return Collections.emptyMap();
+        return ImmutableMap.of();
     }
 
     @Override

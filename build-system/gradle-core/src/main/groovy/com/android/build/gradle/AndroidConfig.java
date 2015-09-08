@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
+import com.android.build.transform.api.Transform;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.testing.api.DeviceProvider;
@@ -114,6 +115,9 @@ public interface AndroidConfig {
     /** List of remote CI servers */
     @NonNull
     List<TestServer> getTestServers();
+
+    @NonNull
+    List<Transform> getTransforms();
 
     /** All product flavors used by this project. */
     Collection<? extends CoreProductFlavor> getProductFlavors();

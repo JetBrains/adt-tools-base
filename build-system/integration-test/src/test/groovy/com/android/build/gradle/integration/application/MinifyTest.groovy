@@ -75,7 +75,7 @@ class MinifyTest {
                         "$AndroidProject.FD_INTERMEDIATES/" +
                         "transforms/" +
                         "CLASSES_and_RESOURCES/" +
-                        "PROJECT_and_PROJECT_LOCAL_DEPS_and_SUB_PROJECTS_and_SUB_PROJECTS_LOCAL_DEPS_and_EXTERNAL_LIBRARIES/" +
+                        "FULL_PROJECT/" +
                         "proguard/" +
                         "minified"))
 
@@ -98,7 +98,7 @@ class MinifyTest {
                         "$AndroidProject.FD_INTERMEDIATES/" +
                         "transforms/" +
                         "CLASSES_and_RESOURCES/" +
-                        "PROJECT_and_PROJECT_LOCAL_DEPS_and_SUB_PROJECTS_and_SUB_PROJECTS_LOCAL_DEPS_and_EXTERNAL_LIBRARIES/" +
+                        "FULL_PROJECT/" +
                         "proguard/" +
                         "androidTest/" +
                         "minified")

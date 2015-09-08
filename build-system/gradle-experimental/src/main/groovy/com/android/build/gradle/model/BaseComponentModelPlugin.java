@@ -41,7 +41,7 @@ import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
 import com.android.build.gradle.internal.tasks.SigningReportTask;
-import com.android.build.gradle.internal.transforms.PreDexTransform;
+import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
@@ -287,7 +287,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 public void doCall(TaskExecutionGraph taskGraph) {
                     for (Task task : taskGraph.getAllTasks()) {
                         if (task instanceof TransformTask) {
-                            if (((TransformTask) task).getTransform() instanceof PreDexTransform) {
+                            if (((TransformTask) task).getTransform() instanceof DexTransform) {
                                 PreDexCache.getCache().load(project.getRootProject()
                                         .file(String.valueOf(project.getRootProject().getBuildDir())
                                                 + "/" + FD_INTERMEDIATES + "/dex-cache/cache.xml"));

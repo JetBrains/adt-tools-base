@@ -16,6 +16,7 @@
 package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.concurrency.Immutable;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.AsInputTransform;
@@ -119,6 +120,12 @@ public class JacocoTransform implements AsInputTransform {
     @Override
     public Collection<File> getSecondaryFileOutputs() {
         return Collections.emptyList();
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getSecondaryFolderOutputs() {
+        return ImmutableList.of();
     }
 
     @NonNull

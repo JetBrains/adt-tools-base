@@ -128,6 +128,12 @@ public class InstantRunTransform implements ForkTransform {
         return ImmutableMap.of();
     }
 
+    @NonNull
+    @Override
+    public Collection<File> getSecondaryFolderOutputs() {
+        return ImmutableList.of();
+    }
+
     @Override
     public boolean isIncremental() {
         return true;

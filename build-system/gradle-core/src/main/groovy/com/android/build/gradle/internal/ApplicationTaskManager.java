@@ -18,9 +18,6 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidConfig;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.dsl.DexOptions;
-import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
@@ -31,7 +28,6 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Project;
@@ -48,13 +44,6 @@ import java.util.Set;
  * TaskManager for creating tasks in an Android application project.
  */
 public class ApplicationTaskManager extends TaskManager {
-
-    private static final Set<Scope> POSSIBLE_PREDEX_SCOPES = ImmutableSet.of(
-            Scope.PROJECT_LOCAL_DEPS,
-            Scope.SUB_PROJECTS,
-            Scope.SUB_PROJECTS_LOCAL_DEPS,
-            Scope.EXTERNAL_LIBRARIES);
-
 
     public ApplicationTaskManager(
             Project project,
@@ -242,44 +231,11 @@ public class ApplicationTaskManager extends TaskManager {
                 });
     }
 
-    @NonNull
-    @Override
-    protected Set<Scope> computePreDexScopes(@NonNull VariantScope variantScope) {
-        return computePreDexScopes(variantScope, getExtension().getDexOptions());
-    }
-
-    @NonNull
-    static Set<Scope> computePreDexScopes(
-            @NonNull VariantScope variantScope,
-            @NonNull DexOptions dexOptions) {
-        // predexing is only enabled if:
-        // - minify is disabled.
-        // - there's no legacy-predexing.
-
-        final BaseVariantData variantData = variantScope.getVariantData();
-        final GradleVariantConfiguration config = variantData.getVariantConfiguration();
-
-        boolean preDexEnabled = dexOptions.getPreDexLibraries();
-        boolean isMinifyEnabled = config.isMinifyEnabled();
-        //boolean isTestForApp = config.getType().isForTesting() &&
-        //        ((TestVariantData) variantData).getTestedVariantData().getVariantConfiguration()
-        //                .getType().equals(DEFAULT);
-        boolean isLegacyMultiDexMode = config.isMultiDexEnabled() && config.isLegacyMultiDexMode();
-
-        if (preDexEnabled && !isMinifyEnabled && !isLegacyMultiDexMode) {
-            EnumSet<Scope> set = EnumSet.copyOf(POSSIBLE_PREDEX_SCOPES);
-
-            // TODO if we don't want to predex the subprojects, test and don't return it here.
-            /*
-             if (something) {
-               set.remove(ScopedContent.Scope.SUB_PROJECTS);
-             }
-             */
-            return Sets.immutableEnumSet(set);
-        }
-
-        return TransformManager.EMPTY_SCOPES;
-    }
+    private static final Set<Scope> PREDEX_SCOPES = Sets.immutableEnumSet(
+            Scope.PROJECT_LOCAL_DEPS,
+            Scope.SUB_PROJECTS,
+            Scope.SUB_PROJECTS_LOCAL_DEPS,
+            Scope.EXTERNAL_LIBRARIES);
 
     @NonNull
     @Override
@@ -291,26 +247,9 @@ public class ApplicationTaskManager extends TaskManager {
     @NonNull
     static Set<Scope> computeExtractResAndJavaFromJarScopes2(
             @NonNull VariantScope variantScope) {
-        // we need to extract classes from jars only when we're running proguard or multi-dex
-        // or some additional processing.
-        final BaseVariantData variantData = variantScope.getVariantData();
-        final GradleVariantConfiguration config = variantData.getVariantConfiguration();
-
-        boolean isMinifyEnabled = config.isMinifyEnabled();
-        boolean isLegacyMultiDexMode = config.isMultiDexEnabled() && config.isLegacyMultiDexMode();
-
-        if (isMinifyEnabled || isLegacyMultiDexMode) {
-            return Sets.immutableEnumSet(POSSIBLE_PREDEX_SCOPES);
-        }
-
-        // TODO: if we want to run jacoco on sub-projects, do it here.
-            /*
-             if (something) {
-               return Sets.immutableEnumSet(ScopedContent.Scope.SUB_PROJECTS);
-             }
-             */
-
-        return TransformManager.EMPTY_SCOPES;
+        // for now return all scopes no matter what.
+        // FIXME: only if we have a transform that impacts these scopes and CLASSES content-type.
+        return PREDEX_SCOPES;
     }
 
     @NonNull
@@ -323,12 +262,9 @@ public class ApplicationTaskManager extends TaskManager {
     static Set<Scope> computeExtractResFromJarScopes(
             @NonNull VariantScope variantScope,
             @NonNull TaskManager taskManager) {
-        // This should be the exact opposite of computeExtractResAndJavaFromJarScopes(), based
-        // on POSSIBLE_PREDEX_SCOPES being the max list.
-        EnumSet<Scope> sets = EnumSet.copyOf(POSSIBLE_PREDEX_SCOPES);
-        sets.removeAll(taskManager.computeExtractResAndJavaFromJarScopes(variantScope));
-
-        return Sets.immutableEnumSet(sets);
+        // for now return no scopes no matter what.
+        // FIXME: only if we have a transform that impacts these scopes and CLASSES content-type.
+        return Sets.immutableEnumSet(EnumSet.noneOf(Scope.class));
     }
 
     /**

@@ -21,7 +21,6 @@ import com.android.build.OutputFile;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.tasks.Dex;
 
 import org.gradle.api.DefaultTask;
 
@@ -32,7 +31,6 @@ import java.util.Collection;
  */
 public abstract class ApkVariantData extends BaseVariantData<ApkVariantOutputData> {
 
-    public Dex dexTask;
     public DefaultTask installTask;
     public DefaultTask uninstallTask;
 

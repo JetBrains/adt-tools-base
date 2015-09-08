@@ -1,0 +1,15 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+
+def env = new Object() {
+    String gradleVersion
+    String experimentalGradleVersion
+};
+
+apply from: "../../commonGradlePluginVersion.gradle", to: env
+apply from: "../../commonLocalRepo.gradle"
+
+dependencies {
+    compile "com.android.tools.build:transform-api:$env.gradleVersion"
+    compile 'com.googlecode.jarjar:jarjar:1.3'
+}

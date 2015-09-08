@@ -64,7 +64,7 @@ class ApiTest {
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
         assertThat(FileUtils.sha1(project.file("app/build.gradle")))
-                .isEqualTo("e20b70879b449c222ce9c0f9f17cb808d6899b06")
+                .isEqualTo("464903cea8fdfafd8fa6c2ed57080221219c57da")
         assertThat(FileUtils.sha1(project.file("lib/build.gradle")))
                 .isEqualTo("fbdd1f6d0d0e190412db885a1c281efee4ab0cac")
     }

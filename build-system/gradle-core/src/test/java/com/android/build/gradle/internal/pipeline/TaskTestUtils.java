@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
+import com.android.build.gradle.internal.scope.BaseScope;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.ScopedContent;
@@ -62,7 +63,7 @@ public class TaskTestUtils {
     protected static final String TASK_NAME = "task name";
 
     protected TaskFactory taskFactory;
-    protected VariantScope variantScope;
+    protected BaseScope scope;
     protected TransformManager transformManager;
 
     @Before
@@ -70,7 +71,7 @@ public class TaskTestUtils {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(getRootDir(), FOLDER_TEST_PROJECTS + "/basic")).build();
 
-        variantScope = getVariantScope();
+        scope = getScope();
         transformManager = new TransformManager(new AndroidTaskRegistry());
         taskFactory = new TaskContainerAdaptor(project.getTasks());
     }
@@ -83,7 +84,7 @@ public class TaskTestUtils {
      * Simple class to test that a stream is present in the list of available streams in the
      * transform manager.
      *
-     * Right now this expects to find ony a single stream based on the content type and/or scopes
+     * Right now this expects to find ony a single stream based on the content types and/or scopes
      * provided.
      *
      * Then it optionally test for additional values, if provided.
@@ -159,31 +160,36 @@ public class TaskTestUtils {
                 assertThat(stream.getDependencies()).containsExactlyElementsIn(dependencies);
             }
 
+            // if a list of files is provided then check this, otherwise just check the
+            // size which must be one for all post-transform streams.
             if (!files.isEmpty()) {
                 assertThat(stream.getFiles().get()).containsExactlyElementsIn(files);
+            } else {
+                assertThat(stream.getFiles().get()).hasSize(1);
             }
 
+            // always check for parentStream, since we cannot make the distinction between
+            // no value set and no parent.
             assertThat(stream.getParentStream()).isSameAs(parentStream);
-
-            assertThat(stream.getFiles().get()).hasSize(1);
 
             return stream;
         }
     }
 
     @NonNull
-    private static VariantScope getVariantScope() {
+    private static BaseScope getScope() {
         GradleVariantConfiguration mockConfig = mock(GradleVariantConfiguration.class);
         when(mockConfig.getDirName()).thenReturn("config dir name");
 
         GlobalScope globalScope = mock(GlobalScope.class);
         when(globalScope.getBuildDir()).thenReturn(new File("build dir"));
 
-        VariantScope variantScope = mock(VariantScope.class);
-        when(variantScope.getVariantConfiguration()).thenReturn(mockConfig);
-        when(variantScope.getGlobalScope()).thenReturn(globalScope);
-        when(variantScope.getTaskName(Mockito.anyString())).thenReturn(TASK_NAME);
-        return variantScope;
+        BaseScope scope = mock(BaseScope.class);
+        when(scope.getDirName()).thenReturn("config dir name");
+        when(scope.getVariantConfiguration()).thenReturn(mockConfig);
+        when(scope.getGlobalScope()).thenReturn(globalScope);
+        when(scope.getTaskName(Mockito.anyString())).thenReturn(TASK_NAME);
+        return scope;
     }
 
     /**

@@ -37,7 +37,6 @@ import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
-import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
@@ -111,13 +110,6 @@ public class VariantScopeImpl implements VariantScope {
     private AndroidTask<GenerateBuildConfig> generateBuildConfigTask;
     private AndroidTask<GenerateResValues> generateResValuesTask;
 
-    @Nullable
-    private AndroidTask<Dex> dexTask;
-    @Nullable
-    private AndroidTask<Dex> incrementalDexTask;
-    @Nullable
-    private AndroidTask jacocoIntrumentTask;
-
     private AndroidTask<Sync> processJavaResourcesTask;
     private AndroidTask<TransformTask> mergeJavaResourcesTask;
     private AndroidTask<NdkCompile> ndkCompileTask;
@@ -175,6 +167,12 @@ public class VariantScopeImpl implements VariantScope {
     @NonNull
     public GradleVariantConfiguration getVariantConfiguration() {
         return variantData.getVariantConfiguration();
+    }
+
+    @NonNull
+    @Override
+    public String getDirName() {
+        return variantData.getVariantConfiguration().getDirName();
     }
 
     @NonNull
@@ -760,28 +758,6 @@ public class VariantScopeImpl implements VariantScope {
     public void setGenerateResValuesTask(
             AndroidTask<GenerateResValues> generateResValuesTask) {
         this.generateResValuesTask = generateResValuesTask;
-    }
-
-    @Override
-    @Nullable
-    public AndroidTask<Dex> getIncrementalDexTask() {
-        return incrementalDexTask;
-    }
-
-    @Override
-    public void setIncrementalDexTask(@Nullable AndroidTask<Dex> dexTask) {
-        this.incrementalDexTask = dexTask;
-    }
-
-    @Override
-    @Nullable
-    public AndroidTask<Dex> getDexTask() {
-        return dexTask;
-    }
-
-    @Override
-    public void setDexTask(@Nullable AndroidTask<Dex> dexTask) {
-        this.dexTask = dexTask;
     }
 
     @Override

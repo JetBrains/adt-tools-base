@@ -123,6 +123,12 @@ public class MergeJavaResourcesTransform implements CombinedTransform {
 
     @NonNull
     @Override
+    public Collection<File> getSecondaryFolderOutputs() {
+        return ImmutableList.of();
+    }
+
+    @NonNull
+    @Override
     public Map<String, Object> getParameterInputs() {
         // TODO the inputs that controls the merge.
         return ImmutableMap.of();
