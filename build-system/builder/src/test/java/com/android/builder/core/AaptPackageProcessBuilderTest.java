@@ -57,7 +57,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
         MockitoAnnotations.initMocks(this);
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        mBuildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        mBuildToolInfo = sdkManager.getLatestBuildTool();
         if (mBuildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -83,7 +83,8 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
+        assertTrue(virtualAndroidManifestFile.getAbsolutePath().equals(
+                command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
         assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
     }
@@ -112,7 +113,8 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
+        assertTrue(virtualAndroidManifestFile.getAbsolutePath().equals(
+                command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
         assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
         assertTrue("/path/to/res/folder".equals(command.get(command.indexOf("-S") + 1)));
@@ -150,7 +152,8 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
+        assertTrue(virtualAndroidManifestFile.getAbsolutePath().equals(
+                command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
         assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
         assertTrue("/path/to/res/folder".equals(command.get(command.indexOf("-S") + 1)));
@@ -188,7 +191,8 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
+        assertTrue(virtualAndroidManifestFile.getAbsolutePath().equals(
+                command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
         assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
         assertTrue("/path/to/res/folder".equals(command.get(command.indexOf("-S") + 1)));
@@ -229,7 +233,8 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
+        assertTrue(virtualAndroidManifestFile.getAbsolutePath().equals(
+                command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
         assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
         assertTrue("/path/to/res/folder".equals(command.get(command.indexOf("-S") + 1)));
@@ -283,7 +288,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
             }
         }
         if (androidTarget == null) {
-            throw new RuntimeException("Test requires pre android-21");
+            throw new RuntimeException("Test requires pre android-20");
         }
 
         ProcessInfo processInfo = aaptPackageProcessBuilder

@@ -98,7 +98,7 @@ public class TemporaryProjectModification {
     public void modifyFile(
             @NonNull String relativePath,
             @NonNull Function<String, String> modification) throws InitializationError {
-        File file = mTestProject.file(relativePath);
+        File file = mTestProject.file(relativePath.replace('/', File.separatorChar));
 
         String currentContent = null;
         try {

@@ -120,6 +120,7 @@ public class AaptProcess {
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
+                .add("location", mAaptLocation)
                 .add("ready", mReady.get())
                 .add("process", mProcess.hashCode())
                 .toString();

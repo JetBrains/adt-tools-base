@@ -131,7 +131,7 @@ public class TypedefCollector extends ASTVisitor {
                                     sb.append(c);
                                 }
                             }
-                            sb.append(File.separatorChar);
+                            sb.append('/');
                             for (char c : declaration.binding.qualifiedSourceName()) {
                                 if (c == '.') {
                                     sb.append('$');

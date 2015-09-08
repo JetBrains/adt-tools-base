@@ -25,9 +25,8 @@ import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ClassField
 import com.android.builder.model.Variant
-import com.google.common.base.Charsets
+import com.android.utils.FileUtils
 import com.google.common.collect.Maps
-import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.junit.Assert
 import org.junit.AfterClass
@@ -35,7 +34,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static org.junit.Assert.assertEquals
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 
@@ -127,8 +126,7 @@ class ResValueTest {
     <!-- Values from default config. -->
     <string name="VALUE_DEFAULT" translatable="false">1</string>
 
-</resources>
-"""
+</resources>"""
         checkBuildConfig(expected, 'flavor1/debug')
     }
 
@@ -159,8 +157,7 @@ class ResValueTest {
     <!-- Values from default config. -->
     <string name="VALUE_DEFAULT" translatable="false">1</string>
 
-</resources>
-"""
+</resources>"""
         checkBuildConfig(expected, 'flavor2/debug')
     }
 
@@ -189,8 +186,7 @@ class ResValueTest {
     <!-- Values from default config. -->
     <string name="VALUE_DEFAULT" translatable="false">1</string>
 
-</resources>
-"""
+</resources>"""
         checkBuildConfig(expected, 'flavor1/release')
     }
 
@@ -219,8 +215,7 @@ class ResValueTest {
     <!-- Values from default config. -->
     <string name="VALUE_DEFAULT" translatable="false">1</string>
 
-</resources>
-"""
+</resources>"""
         checkBuildConfig(expected, 'flavor2/release')
     }
 
@@ -237,8 +232,8 @@ class ResValueTest {
     private static void checkBuildConfig(@NonNull String expected, @NonNull String variantDir) {
         File outputFile = new File(project.getTestDir(),
                 "build/generated/res/resValues/$variantDir/values/generated.xml")
-        Assert.assertTrue("Missing file: " + outputFile, outputFile.isFile())
-        assertEquals(expected, Files.asByteSource(outputFile).asCharSource(Charsets.UTF_8).read())
+        assertThat(outputFile).isFile();
+        assertThat(outputFile).contentWithUnixLineSeparatorsIsExactly(expected);
     }
 
     private static void checkVariant(

@@ -15,12 +15,14 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.Variant
+import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -35,7 +37,7 @@ import static org.junit.Assert.assertTrue
  * Assemble tests for tictactoe.
  */
 @CompileStatic
-class TictactoeTest {
+class  TictactoeTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("tictactoe")
@@ -85,6 +87,6 @@ class TictactoeTest {
 
         // TODO: right now we can only test the folder name efficiently
         String path = androidLibrary.getFolder().getPath()
-        assertTrue(path, path.endsWith("/tictactoe/lib/unspecified"))
+        assertTrue(path, path.endsWith(FileUtils.join("tictactoe", "lib", "unspecified")))
     }
 }

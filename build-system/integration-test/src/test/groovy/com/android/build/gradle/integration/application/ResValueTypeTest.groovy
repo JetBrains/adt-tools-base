@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -127,9 +128,7 @@ android {
 
     <style name="resStyle">foo</style>
 
-</resources>
-""",
-                outputFile.getText("UTF-8"))
+</resources>""", FileUtils.loadFileWithUnixLineSeparators(outputFile))
     }
 
     @Test

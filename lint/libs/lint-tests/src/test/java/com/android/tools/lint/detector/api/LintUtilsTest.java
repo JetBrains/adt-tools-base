@@ -18,12 +18,12 @@ package com.android.tools.lint.detector.api;
 
 import static com.android.tools.lint.detector.api.LintUtils.computeResourceName;
 import static com.android.tools.lint.detector.api.LintUtils.convertVersion;
-import static com.android.tools.lint.detector.api.LintUtils.escapePropertyValue;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
 import static com.android.tools.lint.detector.api.LintUtils.getFormattedParameters;
 import static com.android.tools.lint.detector.api.LintUtils.getLocaleAndRegion;
 import static com.android.tools.lint.detector.api.LintUtils.isImported;
 import static com.android.tools.lint.detector.api.LintUtils.splitPath;
+import static com.android.utils.SdkUtils.escapePropertyValue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -33,7 +33,6 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
-import com.android.tools.lint.EcjParser;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.JavaParser;

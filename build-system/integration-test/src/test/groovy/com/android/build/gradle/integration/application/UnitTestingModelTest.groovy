@@ -19,6 +19,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.JavaArtifact
+import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
 import org.junit.Rule
 import org.junit.Test
@@ -66,10 +67,10 @@ class UnitTestingModelTest {
             assertThat(unitTestArtifact.variantSourceProvider).isNull()
             assertThat(unitTestArtifact.multiFlavorSourceProvider).isNull()
 
-            assertThat(variant.mainArtifact.javaResourcesFolder.path)
-                    .endsWith("intermediates/javaResources/" + variant.name)
-            assertThat(unitTestArtifact.javaResourcesFolder.path)
-                    .endsWith("intermediates/javaResources/test/" + variant.name)
+            assertThat(variant.mainArtifact.javaResourcesFolder.path).endsWith(
+                    FileUtils.join("intermediates", "javaResources", variant.name))
+            assertThat(unitTestArtifact.javaResourcesFolder.path).endsWith(
+                    FileUtils.join("intermediates", "javaResources", "test", variant.name))
         }
 
         def sourceProvider = model.defaultConfig
@@ -78,7 +79,8 @@ class UnitTestingModelTest {
                 .sourceProvider
 
         assertThat(sourceProvider.javaDirectories).hasSize(1)
-        assertThat(sourceProvider.javaDirectories.first().absolutePath).endsWith("test/java")
+        assertThat(sourceProvider.javaDirectories.first().absolutePath).endsWith(
+                FileUtils.join("test", "java"))
     }
 
     @Test
@@ -99,7 +101,8 @@ android {
 
             assertThat(sourceProvider.javaDirectories).hasSize(1)
             assertThat(sourceProvider.javaDirectories.first().absolutePath)
-                    .endsWith("test${flavor.productFlavor.name.capitalize()}/java")
+                    .endsWith("test${flavor.productFlavor.name.capitalize()}" +
+                            "${File.separatorChar}java")
         }
     }
 }

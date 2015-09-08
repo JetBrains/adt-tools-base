@@ -15,6 +15,8 @@
  */
 
 package com.android.build.gradle
+
+import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.api.ApkVariantOutput
@@ -540,8 +542,11 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(false)
 
-        def mockableJarFile = ((MockableAndroidJarTask)project.tasks.mockableAndroidJar).outputFile
-        assertFalse(mockableJarFile.absolutePath.contains(":"))
+        def mockableJarFile = ((MockableAndroidJarTask) project.tasks.mockableAndroidJar).outputFile
+        if (SdkConstants.CURRENT_PLATFORM != SdkConstants.PLATFORM_WINDOWS) {
+            // windows path contain : to identify drives.
+            assertFalse(mockableJarFile.absolutePath.contains(":"))
+        }
         assertEquals("mockable-Google-Inc.-Google-APIs-21.jar", mockableJarFile.name)
     }
 
