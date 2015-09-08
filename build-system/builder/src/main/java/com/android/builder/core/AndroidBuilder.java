@@ -771,10 +771,17 @@ public class AndroidBuilder {
         checkNotNull(libraries, "libraries cannot be null.");
         checkNotNull(outManifest, "outManifestLocation cannot be null.");
 
+        // These tempfiles are only need in the middle of processing manifests; delete
+        // them when they're done. We're not relying on File#deleteOnExit for this
+        // since in the Gradle daemon for example that would leave the files around much
+        // longer than we want.
+        File tempFile1 = null;
+        File tempFile2 = null;
         try {
             tmpDir.mkdirs();
             File generatedTestManifest = libraries.isEmpty() && testManifestFile == null
-                    ? outManifest : File.createTempFile("manifestMerger", ".xml", tmpDir);
+                    ? outManifest
+                    : (tempFile1 = File.createTempFile("manifestMerger", ".xml", tmpDir));
 
             mLogger.verbose("Generating in %1$s", generatedTestManifest.getAbsolutePath());
             generateTestManifest(
@@ -788,7 +795,7 @@ public class AndroidBuilder {
                     generatedTestManifest);
 
             if (testManifestFile != null) {
-                File mergedTestManifest = File.createTempFile("manifestMerger", ".xml", tmpDir);
+                tempFile2 = File.createTempFile("manifestMerger", ".xml", tmpDir);
                 mLogger.verbose("Merging user supplied manifest in %1$s",
                         generatedTestManifest.getAbsolutePath());
                 Invoker invoker = ManifestMerger2.newMerger(
@@ -808,8 +815,8 @@ public class AndroidBuilder {
                 if (libraries.isEmpty()) {
                     handleMergingResult(mergingReport, outManifest);
                 } else {
-                    handleMergingResult(mergingReport, mergedTestManifest);
-                    generatedTestManifest = mergedTestManifest;
+                    handleMergingResult(mergingReport, tempFile2);
+                    generatedTestManifest = tempFile2;
                 }
             }
 
@@ -826,6 +833,13 @@ public class AndroidBuilder {
             }
         } catch(Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            if (tempFile1 != null) {
+                tempFile1.delete();
+            }
+            if (tempFile2 != null) {
+                tempFile2.delete();
+            }
         }
     }
 
