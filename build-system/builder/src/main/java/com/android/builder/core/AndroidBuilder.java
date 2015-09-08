@@ -18,6 +18,7 @@ package com.android.builder.core;
 
 import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.DOT_DEX;
+import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.FD_RES_XML;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR;
@@ -28,6 +29,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.transform.api.ScopedContent.Format;
@@ -1511,9 +1513,8 @@ public class AndroidBuilder {
             return checkFolder(input);
         }
 
-        ZipFile zipFile = null;
+        ZipFile zipFile = new ZipFile(input);
         try {
-            zipFile = new ZipFile(input);
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while(entries.hasMoreElements()) {
                 String name = entries.nextElement().getName();
@@ -1523,9 +1524,7 @@ public class AndroidBuilder {
             }
             return false;
         } finally {
-            if (zipFile != null) {
-                zipFile.close();
-            }
+            zipFile.close();
         }
     }
 
@@ -1536,8 +1535,11 @@ public class AndroidBuilder {
         File[] subFolders = folder.listFiles();
         if (subFolders != null) {
             for (File childFolder : subFolders) {
-                if (childFolder.isFile() && childFolder.getName().endsWith(DOT_CLASS)) {
-                    return true;
+                if (childFolder.isFile()) {
+                    String name = childFolder.getName();
+                    if (name.endsWith(DOT_CLASS) || name.endsWith(DOT_DEX)) {
+                        return true;
+                    }
                 }
                 if (childFolder.isDirectory()) {
                     // if childFolder returns false, continue search otherwise return success.

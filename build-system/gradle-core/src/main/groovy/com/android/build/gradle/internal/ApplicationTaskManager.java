@@ -18,6 +18,7 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
@@ -264,7 +265,7 @@ public class ApplicationTaskManager extends TaskManager {
             @NonNull TaskManager taskManager) {
         // for now return no scopes no matter what.
         // FIXME: only if we have a transform that impacts these scopes and CLASSES content-type.
-        return Sets.immutableEnumSet(EnumSet.noneOf(Scope.class));
+        return TransformManager.EMPTY_SCOPES;
     }
 
     /**

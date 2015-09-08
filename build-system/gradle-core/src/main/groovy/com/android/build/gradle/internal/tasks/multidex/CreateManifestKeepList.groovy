@@ -95,9 +95,11 @@ class CreateManifestKeepList extends DefaultAndroidTask {
 
         @Override
         void startElement(String uri, String localName, String qName, Attributes attr) {
-            String keepSpec = (String)CreateManifestKeepList.KEEP_SPECS[qName]
+            // IJ thinks the qualified reference to KEEP_SPECS is not needed but Groovy needs
+            // it at runtime?!?
+            //noinspection UnnecessaryQualifiedReference
+            String keepSpec = CreateManifestKeepList.KEEP_SPECS[qName]
             if (keepSpec) {
-
                 boolean keepIt = true
                 if (CreateManifestKeepList.this.filter) {
                     // for ease of use, turn 'attr' into a simple map
@@ -109,7 +111,10 @@ class CreateManifestKeepList extends DefaultAndroidTask {
                 }
 
                 if (keepIt) {
-                    out.write((String)"-keep class ${attr.getValue('android:name')} $keepSpec\n")
+                    String nameValue = attr.getValue('android:name')
+                    if (nameValue != null) {
+                        out.write((String) "-keep class ${nameValue} $keepSpec\n")
+                    }
                 }
             }
         }

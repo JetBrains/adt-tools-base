@@ -70,8 +70,12 @@ import java.util.Map;
  */
 public class VariantManager implements VariantModel {
 
+    private static final String MULTIDEX_VERSION = "1.0.1";
+
     protected static final String COM_ANDROID_SUPPORT_MULTIDEX =
-            "com.android.support:multidex:1.0.1";
+            "com.android.support:multidex:" + MULTIDEX_VERSION;
+    protected static final String COM_ANDROID_SUPPORT_MULTIDEX_INSTRUMENTATION =
+            "com.android.support:multidex-instrumentation:" + MULTIDEX_VERSION;
 
     @NonNull
     private final Project project;
@@ -407,6 +411,15 @@ public class VariantManager implements VariantModel {
                             new ConfigurationProvider[testVariantProviders.size()]));
             variantData.setVariantDependency(variantDep);
 
+            if (variantType == VariantType.ANDROID_TEST &&
+                    testVariantConfig.isMultiDexEnabled() &&
+                    testVariantConfig.isLegacyMultiDexMode()) {
+                project.getDependencies().add(
+                        variantDep.getCompileConfiguration().getName(), COM_ANDROID_SUPPORT_MULTIDEX_INSTRUMENTATION);
+                project.getDependencies().add(
+                        variantDep.getPackageConfiguration().getName(), COM_ANDROID_SUPPORT_MULTIDEX_INSTRUMENTATION);
+            }
+
             SpanRecorders.record(project, ExecutionType.RESOLVE_DEPENDENCIES,
                     new Recorder.Block<Void>() {
                         @Override
@@ -661,6 +674,7 @@ public class VariantManager implements VariantModel {
                 buildTypeData.getTestSourceSet(type),
                 type,
                 signingOverride);
+
 
         for (CoreProductFlavor productFlavor : productFlavorList) {
             ProductFlavorData<CoreProductFlavor> data = productFlavors
