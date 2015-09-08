@@ -20,8 +20,12 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 
 import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
+import com.google.common.io.CharStreams;
+import com.google.common.io.Files;
+import com.google.common.io.LineReader;
 import com.google.common.primitives.Bytes;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.IterableSubject;
@@ -30,6 +34,8 @@ import com.google.common.truth.Subject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -133,10 +139,18 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
     protected String extractContentAsString(@NonNull String path) {
         InputStream stream = getInputStream(path);
         try {
-            return new String(ByteStreams.toByteArray(stream), Charsets.UTF_8).trim();
+            // standardize on \n no matter which OS wrote the file.
+            return Joiner.on('\n').join(
+                    CharStreams.readLines(new InputStreamReader(stream, Charsets.UTF_8)))   ;
         } catch (IOException e) {
             failWithRawMessage("IOException when extracting zip: %s", e.toString());
             return null;
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                failWithRawMessage("IOException when extracting zip: %s", e.toString());
+            }
         }
     }
 

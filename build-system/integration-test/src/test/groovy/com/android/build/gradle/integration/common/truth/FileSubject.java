@@ -18,6 +18,10 @@ package com.android.build.gradle.integration.common.truth;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
+import com.android.utils.FileUtils;
+import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
+import com.google.common.io.Files;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
 
@@ -79,5 +83,15 @@ public class FileSubject extends Subject<FileSubject, File> {
             fail("is a directory");
         }
         return new FileSubject(failureStrategy, new File(getSubject(), path));
+    }
+
+    public void contentWithUnixLineSeparatorsIsExactly(String expected) {
+        try {
+            if (!FileUtils.loadFileWithUnixLineSeparators(getSubject()).equals(expected)) {
+                fail("content is not equal");
+            }
+        } catch (IOException e) {
+            fail(e.getMessage(), e);
+        }
     }
 }

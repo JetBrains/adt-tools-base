@@ -29,12 +29,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.List;
+import java.util.Properties;
 
 import static com.android.SdkConstants.DOT_WEBP;
 import static com.android.SdkConstants.DOT_XML;
@@ -474,5 +476,39 @@ public class SdkUtils {
             }
         }
         return false;
+    }
+
+    /**
+     * Escapes the given property file value (right hand side of property assignment)
+     * as required by the property file format (e.g. escapes colons and backslashes)
+     *
+     * @param value the value to be escaped
+     * @return the escaped value
+     */
+    @NonNull
+    public static String escapePropertyValue(@NonNull String value) {
+        // Slow, stupid implementation, but is 100% compatible with Java's property file
+        // implementation
+        Properties properties = new Properties();
+        properties.setProperty("k", value); // key doesn't matter
+        StringWriter writer = new StringWriter();
+        try {
+            properties.store(writer, null);
+            String s = writer.toString();
+            int end = s.length();
+
+            // Writer inserts trailing newline
+            String lineSeparator = SdkUtils.getLineSeparator();
+            if (s.endsWith(lineSeparator)) {
+                end -= lineSeparator.length();
+            }
+
+            int start = s.indexOf('=');
+            assert start != -1 : s;
+            return s.substring(start + 1, end);
+        }
+        catch (IOException e) {
+            return value; // shouldn't happen; we're not going to disk
+        }
     }
 }

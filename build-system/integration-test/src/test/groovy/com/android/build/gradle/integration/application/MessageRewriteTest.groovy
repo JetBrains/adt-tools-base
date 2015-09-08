@@ -18,12 +18,11 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.builder.model.AndroidProject
+import com.android.utils.FileUtils
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.google.common.base.Charsets
-import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -58,7 +57,8 @@ class MessageRewriteTest {
             project.getStderr().reset()
             project.executeExpectingFailure(INVOKED_FROM_IDE_ARGS, 'assembleF1Debug')
             String err = project.getStderr().toString()
-            assertThat(err).contains("src/main/res/layout/main.xml")
+            assertThat(err).contains(FileUtils.join(
+                    "src", "main", "res", "layout", "main.xml"))
         }
 
         project.execute('assembleDebug')

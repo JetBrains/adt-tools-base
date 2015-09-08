@@ -444,7 +444,14 @@ public class GradleTestProject implements TestRule {
 
     @Override
     public Statement apply(final Statement base, Description description) {
-        testDir = new File(outDir, description.getTestClass().getName());
+        // on windows, move the temporary copy as close to root to avoid running into path too
+        // long exceptions.
+
+        testDir = new File(outDir, description.getTestClass().getSimpleName());
+        //testDir = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS
+        //    ? new File(new File(new File(System.getProperty("user.home")), "android-tests"),
+        //        description.getTestClass().getSimpleName())
+        //    : new File(outDir, description.getTestClass().getSimpleName());
 
         // Create separate directory based on test method name if @Rule is used.
         // getMethodName() is null if this rule is used as a @ClassRule.
