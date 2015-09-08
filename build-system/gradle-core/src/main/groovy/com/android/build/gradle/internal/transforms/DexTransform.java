@@ -25,6 +25,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.CombinedTransform;
+import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
@@ -56,8 +57,8 @@ import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logger;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.io.FileFilter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -80,7 +81,12 @@ import java.util.concurrent.Callable;
 public class DexTransform implements CombinedTransform {
 
     @NonNull
+    private final Set<Scope> scopes;
+
+    @NonNull
     private final DexOptions dexOptions;
+
+    private final boolean debugMode;
     private final boolean multiDex;
 
     @NonNull
@@ -94,13 +100,17 @@ public class DexTransform implements CombinedTransform {
     private final ILogger logger;
 
     public DexTransform(
+            @NonNull Set<Scope> scopes,
             @NonNull DexOptions dexOptions,
+            boolean debugMode,
             boolean multiDex,
             @Nullable File mainDexListFile,
             @NonNull File intermediateFolder,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull Logger logger) {
+        this.scopes = scopes;
         this.dexOptions = dexOptions;
+        this.debugMode = debugMode;
         this.multiDex = multiDex;
         this.mainDexListFile = mainDexListFile;
         this.intermediateFolder = intermediateFolder;
@@ -129,7 +139,7 @@ public class DexTransform implements CombinedTransform {
     @NonNull
     @Override
     public Set<Scope> getScopes() {
-        return TransformManager.SCOPE_FULL_PROJECT;
+        return scopes;
     }
 
     @NonNull
@@ -189,6 +199,7 @@ public class DexTransform implements CombinedTransform {
         try {
             Map<String, Object> params = Maps.newHashMapWithExpectedSize(4);
 
+            params.put("debugMode", debugMode);
             params.put("predex", dexOptions.getPreDexLibraries());
             params.put("incremental", dexOptions.getIncremental());
             params.put("jumbo", dexOptions.getJumboMode());
@@ -275,7 +286,7 @@ public class DexTransform implements CombinedTransform {
                         case SINGLE_JAR:
                             // no incremental mode: if something changes in the folder, then
                             // we grab it.
-                            if (!isIncremental || input.getChangedFiles().size() > 1) {
+                            if (!isIncremental || !input.getChangedFiles().isEmpty()) {
                                 // there should really be just a single file in this case anyway...
                                 inputFiles.addAll(input.getFiles());
                             }
@@ -284,7 +295,7 @@ public class DexTransform implements CombinedTransform {
                             // no incremental mode: if something changes in the folder, then
                             // we grab it.
                             // TODO: Fix this!
-                            if (!isIncremental || input.getChangedFiles().size() > 1) {
+                            if (!isIncremental || !input.getChangedFiles().isEmpty()) {
                                 for (File rootFOlder : input.getFiles()) {
                                     File[] children = rootFOlder.listFiles();
                                     if (children != null) {
@@ -319,26 +330,26 @@ public class DexTransform implements CombinedTransform {
                     }
                 }
 
-                boolean newMultidex = multiDex && mainDexListFile == null;
+                // Figure out if we need to do a dx merge.
+                // The ony case we don't need it is in native multi-dex mode when doing debug
+                // builds. This saves build time at the expense of too many dex files which is fine.
+                // FIXME dx cannot receive dex files to merge inside a folder. They have to be in a jar. Need to fix in dx.
+                boolean needMerge = !multiDex || mainDexListFile != null;// || !debugMode;
 
-                // in 21+ multi-dex write each stream's dex folder directly to the output
-                // of the transform.
-                File streamDexFolder = newMultidex ? outFolder : intermediateFolder;
+                // where we write the pre-dex depends on whether we do the merge after.
+                File perStreamDexFolder = needMerge ? intermediateFolder : outFolder;
 
                 WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
                 ProcessOutputHandler outputHandler = new LoggedProcessOutputHandler(logger);
 
-                List<File> outputs = Lists.newArrayListWithExpectedSize(inputFiles.size());
-
-                mkdirs(streamDexFolder);
+                mkdirs(perStreamDexFolder);
 
                 for (File file : inputFiles) {
                     Callable<Void> action = new PreDexTask(
-                            streamDexFolder,
+                            perStreamDexFolder,
                             file,
                             hashs,
-                            outputHandler,
-                            outputs);
+                            outputHandler);
                     executor.execute(action);
                 }
 
@@ -354,11 +365,40 @@ public class DexTransform implements CombinedTransform {
 
                 executor.waitForTasksWithQuickFail(false);
 
-                // if no 21+ multi-dex then do a dx merge.
-                if (!newMultidex) {
+                if (needMerge) {
                     // first delete the output folder where the final dex file(s) will be.
                     FileUtils.emptyFolder(outFolder);
                     mkdirs(outFolder);
+
+                    // find the inputs of the dex merge.
+                    // they are the content of the intermediate folder.
+                    List<File> outputs = null;
+                    if (!multiDex) {
+                        // content of the folder is jar files.
+                        File[] files = intermediateFolder.listFiles(new FilenameFilter() {
+                            @Override
+                            public boolean accept(File file, String name) {
+                                return name.endsWith(SdkConstants.DOT_JAR);
+                            }
+                        });
+                        if (files != null) {
+                            outputs = Arrays.asList(files);
+                        }
+                    } else {
+                        File[] directories = intermediateFolder.listFiles(new FileFilter() {
+                            @Override
+                            public boolean accept(File file) {
+                                return file.isDirectory();
+                            }
+                        });
+                        if (directories != null) {
+                            outputs = Arrays.asList(directories);
+                        }
+                    }
+
+                    if (outputs == null) {
+                        throw new RuntimeException("No dex files to merge!");
+                    }
 
                     androidBuilder.convertByteCode(
                             outputs,
@@ -388,20 +428,16 @@ public class DexTransform implements CombinedTransform {
         private final Set<String> hashs;
         @NonNull
         private final ProcessOutputHandler mOutputHandler;
-        @NonNull
-        private final List<File> outputs;
 
         private PreDexTask(
                 @NonNull File outFolder,
                 @NonNull File file,
                 @NonNull Set<String> hashs,
-                @NonNull ProcessOutputHandler outputHandler,
-                @NonNull List<File> outputs) {
+                @NonNull ProcessOutputHandler outputHandler) {
             this.outFolder = outFolder;
             this.fileToProcess = file;
             this.hashs = hashs;
             this.mOutputHandler = outputHandler;
-            this.outputs = outputs;
         }
 
         @Override
@@ -433,10 +469,6 @@ public class DexTransform implements CombinedTransform {
 
             androidBuilder.preDexLibrary(
                     fileToProcess, preDexedFile, multiDex, dexOptions, mOutputHandler);
-
-            synchronized (outputs) {
-                outputs.add(preDexedFile);
-            }
 
             return null;
         }

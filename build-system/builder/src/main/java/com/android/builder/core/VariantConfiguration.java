@@ -877,6 +877,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     private static final String DEFAULT_TEST_RUNNER = "android.test.InstrumentationTestRunner";
+    private static final String MULTIDEX_TEST_RUNNER = "com.android.test.runner.MultiDexTestRunner";
     private static final Boolean DEFAULT_HANDLE_PROFILING = false;
     private static final Boolean DEFAULT_FUNCTIONAL_TEST = false;
 
@@ -893,7 +894,15 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             checkState(config != null);
         }
         String runner = config.mMergedFlavor.getTestInstrumentationRunner();
-        return runner != null ? runner : DEFAULT_TEST_RUNNER;
+        if (runner != null) {
+            return runner;
+        }
+
+        if (isMultiDexEnabled() && isLegacyMultiDexMode()) {
+            return MULTIDEX_TEST_RUNNER;
+        }
+
+        return DEFAULT_TEST_RUNNER;
     }
 
     /**

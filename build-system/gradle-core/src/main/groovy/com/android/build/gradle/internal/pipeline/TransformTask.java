@@ -210,6 +210,7 @@ public class TransformTask extends StreamBasedTask {
             public void execute(InputFileDetails inputFileDetails) {
                 // check if we're not already not-incremental, in which case nothing needs to be
                 // done.
+                System.out.println("CHANGED: " + inputFileDetails.getFile());
                 if (isIncremental.get()) {
                     isIncremental.set(findMatchingStreamforInputFile(
                             inputFileDetails,
@@ -230,6 +231,7 @@ public class TransformTask extends StreamBasedTask {
             public void execute(InputFileDetails inputFileDetails) {
                 // check if we're not already not-incremental, in which case nothing needs to be
                 // done.
+                System.out.println("REMOVED: " + inputFileDetails.getFile());
                 if (isIncremental.get()) {
                     isIncremental.set(findMatchingStreamforInputFile(
                             inputFileDetails,

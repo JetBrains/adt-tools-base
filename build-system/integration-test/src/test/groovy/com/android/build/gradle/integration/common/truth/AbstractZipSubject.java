@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.truth;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -46,7 +47,7 @@ import java.util.zip.ZipFile;
  * Truth support for zip files.
  */
 public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Subject<T, File> {
-    private ZipFile zip;
+    protected ZipFile zip;
 
     public AbstractZipSubject(@NonNull FailureStrategy failureStrategy, @NonNull File subject) {
         super(failureStrategy, subject);
@@ -173,6 +174,25 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
 
         if (entry.isDirectory()) {
             failWithRawMessage("Unable to compare content, '%s' is a directory.", path);
+        }
+
+        try {
+            return zip.getInputStream(entry);
+        } catch (IOException e) {
+            failWithRawMessage("IOException when extracting zip: %s", e.toString());
+            return null;
+        }
+    }
+
+    @Nullable
+    protected InputStream getInputStreamIfExist(@NonNull String path) {
+        ZipEntry entry = zip.getEntry(path);
+        if (entry == null) {
+            return null;
+        }
+
+        if (entry.isDirectory()) {
+            return null;
         }
 
         try {

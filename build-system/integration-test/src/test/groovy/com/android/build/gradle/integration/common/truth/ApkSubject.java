@@ -16,6 +16,9 @@
 
 package com.android.build.gradle.integration.common.truth;
 
+import static com.android.SdkConstants.FN_APK_CLASSES_DEX;
+import static com.android.SdkConstants.FN_APK_CLASSES_N_DEX;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.integration.common.utils.ApkHelper;
@@ -26,6 +29,8 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.SubjectFactory;
@@ -35,9 +40,11 @@ import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipFile;
 
 /**
  * Truth support for apk files.
@@ -152,15 +159,65 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     protected boolean checkForClass(
             @NonNull String expectedClassName)
             throws ProcessException, IOException {
-        // get the dexdump exec
-        File dexDump = SdkHelper.getDexDump();
+        File apkFile = getSubject();
 
+        // get the dexdump exec
+        File dexDumpExe = SdkHelper.getDexDump();
+
+        // while dexdump supports receiving directly an apk, this doesn't work for multi-dex.
+        // check that we're in multi-dex mode first by checking for a classes2.dex file in the
+        // APK
+        boolean multiDex = zip.getEntry("classes2.dex") != null;
+
+        // if not multi-dex just run the query on the APK itself, dexdump will look at the
+        // classes.dex inside.
+        if (!multiDex) {
+            return checkFileForClassWithDexDump(expectedClassName, apkFile, dexDumpExe);
+        }
+
+        // else, we're going to extract all the classes<N>.dex we find until one of them
+        // contains the class we're searching for.
+        InputStream classDexStream;
+        int index = 1;
+        while ((classDexStream = getInputStream(index == 1 ? FN_APK_CLASSES_DEX :
+                String.format(FN_APK_CLASSES_N_DEX, index))) != null) {
+
+            byte[] content = ByteStreams.toByteArray(classDexStream);
+            // write into tmp file
+            File dexFile = File.createTempFile("dex", "");
+            dexFile.deleteOnExit();
+            Files.write(content, dexFile);
+
+            // run dexDump on it
+            if (checkFileForClassWithDexDump(expectedClassName, dexFile, dexDumpExe)) {
+                return true;
+            }
+
+            // not found? switch to next index.
+            index++;
+        }
+
+        return false;
+    }
+
+    /**
+     * Run dex dump on a file (apk or dex file) to check for the presence of a given class.
+     * @param expectedClassName the name of the class to search for
+     * @param file the file to search
+     * @param dexDumpExe the dex dump exe
+     * @return true if the class was found
+     * @throws ProcessException
+     */
+    private static boolean checkFileForClassWithDexDump(
+            @NonNull String expectedClassName,
+            @NonNull File file,
+            @NonNull File dexDumpExe) throws ProcessException {
         ProcessExecutor executor = new DefaultProcessExecutor(
                 new StdLogger(StdLogger.Level.ERROR));
 
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
-        builder.setExecutable(dexDump);
-        builder.addArgs(getSubject().getAbsolutePath());
+        builder.setExecutable(dexDumpExe);
+        builder.addArgs(file.getAbsolutePath());
 
         List<String> output = ApkHelper.runAndGetOutput(builder.createProcess(), executor);
 
