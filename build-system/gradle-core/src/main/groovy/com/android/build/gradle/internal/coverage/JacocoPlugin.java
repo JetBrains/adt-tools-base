@@ -14,9 +14,20 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.coverage
-import org.gradle.api.Plugin
-import org.gradle.api.Project
+package com.android.build.gradle.internal.coverage;
+import com.google.common.collect.Lists;
+
+import org.gradle.api.Action;
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.ResolvableDependencies;
+import org.gradle.api.artifacts.ResolvedArtifact;
+
+import java.util.List;
+import java.util.Set;
+
 
 /**
  * Jacoco plugin. This is very similar to the built-in support for Jacoco but we dup it in order
@@ -25,61 +36,97 @@ import org.gradle.api.Project
  * This may disappear if we can ever reuse the built-in support.
  *
  */
-class JacocoPlugin implements Plugin<Project> {
-    public static final String ANT_CONFIGURATION_NAME = 'androidJacocoAnt'
-    public static final String AGENT_CONFIGURATION_NAME = 'androidJacocoAgent'
+public class JacocoPlugin implements Plugin<Project> {
+    public static final String ANT_CONFIGURATION_NAME = "androidJacocoAnt";
+    public static final String AGENT_CONFIGURATION_NAME = "androidJacocoAgent";
 
     private Project project;
 
     @Override
-    void apply(Project project) {
-        this.project = project
-
-        addJacocoConfigurations()
-        configureAgentDependencies()
-        configureTaskClasspathDefaults()
+    public void apply(Project project) {
+        this.project = project;
+        String jacocoVersion = getJacocoVersion();
+        addJacocoConfigurations();
+        configureAgentDependencies(jacocoVersion);
+        configureTaskClasspathDefaults(jacocoVersion);
     }
 
     /**
      * Creates the configurations used by plugin.
-     * @param project the project to add the configurations to
      */
     private void addJacocoConfigurations() {
-        this.project.configurations.create(AGENT_CONFIGURATION_NAME).with {
-            visible = false
-            transitive = true
-            description = 'The Jacoco agent to use to get coverage data.'
+        this.project.getConfigurations().create(AGENT_CONFIGURATION_NAME,
+                new Action<Configuration>() {
+                    @Override
+                    public void execute(Configuration files) {
+                        files.setVisible(false);
+                        files.setTransitive(true);
+                        files.setDescription("The Jacoco agent to use to get coverage data.");
+                    }
+                });
+        this.project.getConfigurations().create(ANT_CONFIGURATION_NAME,
+                new Action<Configuration>() {
+                    @Override
+                    public void execute(Configuration files) {
+                        files.setVisible(false);
+                        files.setTransitive(true);
+                        files.setDescription(
+                                "The Jacoco ant tasks to use to get execute Gradle tasks.");
+                    }
+                });
+    }
+
+    private String getJacocoVersion() {
+        Set<ResolvedArtifact> resolvedArtifacts =
+                project.getRootProject().getBuildscript().getConfigurations().getByName("classpath")
+                        .getResolvedConfiguration().getResolvedArtifacts();
+        for (ResolvedArtifact artifact: resolvedArtifacts) {
+            ModuleVersionIdentifier moduleVersion = artifact.getModuleVersion().getId();
+            if ("org.jacoco.core".equals(moduleVersion.getName())) {
+                return moduleVersion.getVersion();
+            }
         }
-        this.project.configurations.create(ANT_CONFIGURATION_NAME).with {
-            visible = false
-            transitive = true
-            description = 'The Jacoco ant tasks to use to get execute Gradle tasks.'
+        if (resolvedArtifacts.isEmpty()) {
+            // DSL test case, dependencies are not loaded.
+            project.getLogger().error(
+                    "No resolved dependencies found when searching for the jacoco version.");
+            return null;
         }
+        throw new IllegalStateException(
+                "Could not find project build script dependency on org.jacoco.core");
     }
 
     /**
      * Configures the agent dependencies using the 'jacocoAnt' configuration.
-     * Uses the version declared in 'toolVersion' of the Jacoco extension if no dependencies are explicitly declared.
+     * Uses the version declared as a build script dependency if no other versions are specified.
      */
-    private void configureAgentDependencies() {
-        def config = project.configurations[AGENT_CONFIGURATION_NAME]
-        config.incoming.beforeResolve {
-            if (config.dependencies.empty) {
-                config.dependencies.add(project.dependencies.create("org.jacoco:org.jacoco.agent:${project.android.jacoco.version}"))
+    private void configureAgentDependencies(final String jacocoVersion) {
+        final Configuration config = project.getConfigurations().getByName(AGENT_CONFIGURATION_NAME);
+        config.getIncoming().beforeResolve(new Action<ResolvableDependencies>() {
+            @Override
+            public void execute(ResolvableDependencies resolvableDependencies) {
+                if (config.getDependencies().isEmpty()) {
+                    config.getDependencies().add(project.getDependencies().create(
+                                    "org.jacoco:org.jacoco.agent:" + jacocoVersion));
+                }
             }
-        }
+        });
     }
 
     /**
      * Configures the classpath for Jacoco tasks using the 'jacocoAnt' configuration.
-     * Uses the version information declared in 'toolVersion' of the Jacoco extension if no dependencies are explicitly declared.
+     * Uses the version declared as a build script dependency if no other versions are specified.
      */
-    private void configureTaskClasspathDefaults() {
-        def config = project.configurations[ANT_CONFIGURATION_NAME]
-        config.incoming.beforeResolve {
-            if (config.dependencies.empty) {
-                config.dependencies.add(project.dependencies.create("org.jacoco:org.jacoco.ant:${project.android.jacoco.version}"))
+    private void configureTaskClasspathDefaults(final String jacocoVersion) {
+        final Configuration config = project.getConfigurations().getByName(ANT_CONFIGURATION_NAME);
+        config.getIncoming().beforeResolve(new Action<ResolvableDependencies>() {
+            @Override
+            public void execute(ResolvableDependencies resolvableDependencies) {
+                if (config.getDependencies().isEmpty()) {
+                    config.getDependencies().add(project.getDependencies().create(
+                            "org.jacoco:org.jacoco.ant:" + jacocoVersion));
+                }
             }
-        }
+        });
     }
 }
