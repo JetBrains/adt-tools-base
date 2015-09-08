@@ -406,7 +406,7 @@ final class Device implements IDevice {
         CountDownLatch latch = new CountDownLatch(1);
         CollectingOutputReceiver receiver = new CollectingOutputReceiver(latch);
         try {
-            executeShellCommand("ls " + path, receiver);
+            executeShellCommand("ls " + path, receiver, LS_TIMEOUT_SEC, TimeUnit.SECONDS);
         } catch (Exception e) {
             return false;
         }
