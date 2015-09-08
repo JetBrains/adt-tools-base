@@ -67,7 +67,7 @@
         id="hasAppBarSelected"
         name="Include App Bar"
         type="boolean"
-        visibility="appCompatActivity!false"
+        visibility="false"
         default="true"
         help="If true, the layout will include a Material Design App Bar." />
 

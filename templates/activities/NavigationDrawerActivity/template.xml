@@ -72,7 +72,8 @@
         id="navigationDrawerLayout"
         name="Navigation Drawer Fragment Name"
         type="string"
-        visibility="!appCompatActivity"
+        visibility="false"
+        suggest="${activityToLayout(activityClass, 'drawer')}"
         constraints="layout|unique"
         default="fragment_navigation_drawer"/>
 
@@ -80,9 +81,9 @@
         id="fragmentLayoutName"
         name="Fragment Layout Name"
         type="string"
-        visibility="!appCompatActivity"
+        visibility="false"
         constraints="layout|unique|nonempty"
-        suggest="fragment_${classToResource(activityClass)}"
+        suggest="${activityToLayout(activityClass, 'fragment')}"
         default="fragment_main"
         help="The name of the layout to create for the activity's content fragment"/>
 
@@ -134,6 +135,7 @@
     </thumbs>
 
     <globals file="globals.xml.ftl" />
+    <globals file="extras.xml.ftl" />
     <execute file="recipe.xml.ftl" />
 
 </template>
