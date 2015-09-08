@@ -18,10 +18,8 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_HOST;
 import static com.android.SdkConstants.ATTR_PATH;
-import static com.android.SdkConstants.ATTR_PATH_PATTERN;
 import static com.android.SdkConstants.ATTR_PATH_PREFIX;
 import static com.android.SdkConstants.ATTR_SCHEME;
-
 import static com.android.xml.AndroidManifest.ATTRIBUTE_MIME_TYPE;
 import static com.android.xml.AndroidManifest.ATTRIBUTE_NAME;
 import static com.android.xml.AndroidManifest.ATTRIBUTE_PORT;
@@ -81,8 +79,7 @@ public class AppIndexingApiDetector extends Detector implements Detector.XmlScan
             Category.USABILITY, 5, Severity.WARNING, IMPLEMENTATION)
             .addMoreInfo("https://g.co/AppIndexing");
 
-    private static final String[] PATH_ATTR_LIST = new String[]{ATTR_PATH_PREFIX, ATTR_PATH,
-            ATTR_PATH_PATTERN};
+    private static final String[] PATH_ATTR_LIST = new String[]{ATTR_PATH_PREFIX, ATTR_PATH};
 
     @Override
     @Nullable
