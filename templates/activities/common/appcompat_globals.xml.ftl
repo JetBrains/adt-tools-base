@@ -9,18 +9,24 @@
     <global id="hasAppBar" type="boolean" value="false" />
     <global id="hasNoActionBar" type="boolean" value="false" />
     <global id="appCompatActivity" type="boolean" value="false" />
+    <global id="Support" value="" />
+    <global id="actionBarClassFqcn" type = "string" value="android.app.ActionBar" />
 <#elseif buildApi gte 22>
     <global id="superClass" type="string" value="AppCompatActivity"/>
     <global id="superClassFqcn" type="string" value="android.support.v7.app.AppCompatActivity"/>
-    <global id="hasAppBar" type="boolean" value="${(hasAppBarSelected!false)?string}" />
-    <global id="hasNoActionBar" type="boolean" value="${(hasAppBarSelected!false)?string}" />
+    <global id="hasAppBar" type="boolean" value="true" />
+    <global id="hasNoActionBar" type="boolean" value="true" />
     <global id="appCompatActivity" type="boolean" value="true" />
+    <global id="Support" value="Support" />
+    <global id="actionBarClassFqcn" type = "string" value="android.support.v7.app.ActionBar" />
 <#else>
     <global id="superClass" type="string" value="ActionBarActivity"/>
     <global id="superClassFqcn" type="string" value="android.support.v7.app.ActionBarActivity"/>
     <global id="hasAppBar" type="boolean" value="false" />
     <global id="hasNoActionBar" type="boolean" value="false" />
     <global id="appCompatActivity" type="boolean" value="false" />
+    <global id="Support" value="Support" />
+    <global id="actionBarClassFqcn" type = "string" value="android.support.v7.app.ActionBar" />
 </#if>
 
     <global id="srcOut" value="${srcDir}/${slashedPackageName(packageName)}" />
@@ -28,5 +34,4 @@
     <global id="menuName" value="${classToResource(activityClass!'')}" />
     <global id="simpleName" value="${activityToLayout(activityClass!'')}" />
     <global id="relativePackage" value="<#if relativePackage?has_content>${relativePackage}<#else>${packageName}</#if>" />
-    <global id="Support" value="${(isNewProject || hasDependency('com.android.support:appcompat-v7'))?string('Support','')}" />
 </globals>
