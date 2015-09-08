@@ -94,16 +94,30 @@ class VdNodeRender {
                 case 'm':
                     cx += val[k + 0];
                     cy += val[k + 1];
-                    path.moveTo(cx, cy);
-                    loopX = cx;
-                    loopY = cy;
+                    if (k > 0) {
+                        // According to the spec, if a moveto is followed by multiple
+                        // pairs of coordinates, the subsequent pairs are treated as
+                        // implicit lineto commands.
+                        path.lineTo(cx, cy);
+                    } else {
+                        path.moveTo(cx, cy);
+                        loopX = cx;
+                        loopY = cy;
+                    }
                     break;
                 case 'M':
                     cx = val[k + 0];
                     cy = val[k + 1];
-                    path.moveTo(cx, cy);
-                    loopX = cx;
-                    loopY = cy;
+                    if (k > 0) {
+                        // According to the spec, if a moveto is followed by multiple
+                        // pairs of coordinates, the subsequent pairs are treated as
+                        // implicit lineto commands.
+                        path.lineTo(cx, cy);
+                    } else {
+                        path.moveTo(cx, cy);
+                        loopX = cx;
+                        loopY = cy;
+                    }
                     break;
                 case 'l':
                     cx += val[k + 0];
