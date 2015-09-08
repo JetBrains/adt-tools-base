@@ -30,7 +30,6 @@ import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
 import com.android.utils.ILogger;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -224,8 +223,7 @@ public class InstantRunTransform implements ForkTransform {
 
             } else {
                 // non incremental mode, we need to traverse the TransformInput#getFiles() folder}
-                for (File file : Files.fileTreeTraverser().breadthFirstTraversal(inputDir)
-                        .toSet()) {
+                for (File file : Files.fileTreeTraverser().breadthFirstTraversal(inputDir)) {
 
                     if (file.isDirectory()) {
                         continue;
@@ -244,7 +242,7 @@ public class InstantRunTransform implements ForkTransform {
                                 + file.getAbsolutePath());
                     }
 
-                };
+                }
             }
             wrapUpOutputs(classesTwoOutput, classesThreeOutput);
         }
@@ -271,7 +269,10 @@ public class InstantRunTransform implements ForkTransform {
      * @throws IOException if the transformation failed.
      */
     protected void transformToClasses2Format(
-            File inputDir, File inputFile, File outputDir, RecordingPolicy recordingPolicy)
+            @NonNull File inputDir,
+            @NonNull File inputFile,
+            @NonNull File outputDir,
+            @NonNull RecordingPolicy recordingPolicy)
             throws IOException {
 
         File outputFile = getOutputFile(inputDir, inputFile, outputDir);

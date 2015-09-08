@@ -106,7 +106,6 @@ public class InstantRunDexClasses extends StreamBasedTask {
         inputFiles.add(classesJar);
 
         getBuilder().convertByteCode(inputFiles.build(),
-                ImmutableList.<File>of() /* inputLibraries */,
                 getOutputFolder(),
                 false /* multiDexEnabled */,
                 null /*getMainDexListFile */,
