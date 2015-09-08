@@ -1477,6 +1477,23 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             }
         }
 
+        for (LibraryDependency libraryDependency : mFlatLibraries) {
+            // only take the external android libraries.
+            if (!libraryDependency.isOptional() && libraryDependency.getProject() == null) {
+                File libJar = libraryDependency.getJarFile();
+                if (libJar.exists()) {
+                    jars.add(libJar);
+                }
+
+                // also grab the local jars
+                for (File jarFile : libraryDependency.getLocalJars()) {
+                    if (jarFile.isFile()) {
+                        jars.add(jarFile);
+                    }
+                }
+            }
+        }
+
         return jars.build();
     }
 
@@ -1509,7 +1526,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         ImmutableSet.Builder<File> jars = ImmutableSet.builder();
 
         for (LibraryDependency libraryDependency : mFlatLibraries) {
-            if (!libraryDependency.isOptional()) {
+            // only take the sub-project android libraries.
+            if (!libraryDependency.isOptional() && libraryDependency.getProject() != null) {
                 File libJar = libraryDependency.getJarFile();
                 if (libJar.exists()) {
                     jars.add(libJar);
@@ -1530,7 +1548,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         ImmutableSet.Builder<File> jars = ImmutableSet.builder();
 
         for (LibraryDependency libraryDependency : mFlatLibraries) {
-            if (!libraryDependency.isOptional()) {
+            // only take the sub-project android libraries.
+            if (!libraryDependency.isOptional() && libraryDependency.getProject() != null) {
                 for (File jarFile : libraryDependency.getLocalJars()) {
                     if (jarFile.isFile()) {
                         jars.add(jarFile);
@@ -1582,6 +1601,47 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
         return Lists.newArrayList(jars);
     }
+
+    @Nullable
+    public String resolveLibraryName(@NonNull File jarFile) {
+
+        for (JarDependency jar : mExternalJars) {
+            if (jarFile.equals(jar.getJarFile())) {
+                if (jar.getResolvedCoordinates() != null) {
+                    return jar.getResolvedCoordinates().toString();
+                }
+
+                return "unresolved-ext-jar-" + jarFile.getName() + "-" + jarFile.getPath().hashCode();
+            }
+        }
+
+        for (JarDependency jar : mLocalJars) {
+            if (jarFile.equals(jar.getJarFile())) {
+                return "local-jar-"  + jarFile.getName() + "-" + jarFile.getPath().hashCode();
+            }
+        }
+
+        for (LibraryDependency libraryDependency : mFlatLibraries) {
+            if (jarFile.equals(libraryDependency.getJarFile())) {
+                if (libraryDependency.getResolvedCoordinates() != null) {
+                    return libraryDependency.getResolvedCoordinates().toString();
+                }
+
+                return "unresolved-lib-"  + jarFile.getName() + "-" + jarFile.getPath().hashCode();
+            }
+
+            for (File localjar : libraryDependency.getLocalJars()) {
+                if (jarFile.equals(localjar)) {
+                    if (libraryDependency.getResolvedCoordinates() != null) {
+                        return libraryDependency.getResolvedCoordinates().toString() + ":" + jarFile.getName();
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
 
     /**
      * Adds a variant-specific BuildConfig field.
@@ -1947,8 +2007,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return false;
     }
 
+    @NonNull
     public Collection<File> getJarJarRuleFiles() {
-
         ImmutableList.Builder<File> jarjarRuleFiles = ImmutableList.builder();
         jarjarRuleFiles.addAll(getMergedFlavor().getJarJarRuleFiles());
         jarjarRuleFiles.addAll(mBuildType.getJarJarRuleFiles());
