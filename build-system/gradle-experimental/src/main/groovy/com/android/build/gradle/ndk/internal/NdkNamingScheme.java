@@ -166,4 +166,8 @@ public class NdkNamingScheme {
     public static String getSharedLibraryFileName(@NonNull String moduleName) {
         return "lib" + moduleName + ".so";
     }
+
+    public static String getStaticLibraryFileName(String moduleName) {
+        return "lib" + moduleName + ".a";
+    }
 }

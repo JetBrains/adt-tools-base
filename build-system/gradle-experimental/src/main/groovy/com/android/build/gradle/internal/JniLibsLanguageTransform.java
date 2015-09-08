@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal;
 
+import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.model.AndroidBinary;
 import com.android.build.gradle.model.DefaultAndroidBinary;
 import com.android.build.gradle.model.JniLibsSourceSet;
@@ -23,6 +24,7 @@ import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.google.common.collect.ImmutableMap;
 
 import org.gradle.api.DefaultTask;
+import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Task;
 import org.gradle.api.file.CopySpec;
 import org.gradle.api.tasks.Copy;
@@ -101,6 +103,10 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
             for (final AndroidNativeDependencySpec dependencySpec :
                     sourceSet.getDependencies().getDependencies()) {
                 dependencySpec.validate();
+                if (dependencySpec.getLinkage() != null) {
+                    throw new InvalidUserDataException(
+                            "Cannot specify linkage for native dependency for jniLibs.");
+                }
             }
             NativeDependencyResolveResult dependencies =
                     new NativeDependencyResolver(
@@ -111,7 +117,8 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
                                     null,
                                     binaryBuildType,
                                     binaryProductFlavor,
-                                    null)).resolve();
+                                    null,
+                                    "shared")).resolve();
             Copy copyTask = (Copy) task;
             for (NativeBinarySpec nativeBinary: dependencies.getNativeBinaries()) {
                 // TODO: Handle transitive dependencies.
@@ -129,6 +136,14 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
                                 }
                             });
                 }
+            }
+            for (final Map.Entry<Abi, File> entry : dependencies.getLibraryFiles().entries()) {
+                copyTask.from(
+                        entry.getValue(), new Closure<Void>(this, this) {
+                            public void doCall(CopySpec copySpec) {
+                                copySpec.into(entry.getKey().getName());
+                            }
+                        });
             }
             copyTask.into(new File(
                     task.getProject().getBuildDir(),

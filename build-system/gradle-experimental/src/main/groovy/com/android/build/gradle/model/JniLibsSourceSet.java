@@ -18,7 +18,11 @@ package com.android.build.gradle.model;
 
 import com.android.build.gradle.internal.AbstractNativeDependentSourceSet;
 
+import org.gradle.api.Action;
+import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.internal.file.DefaultSourceDirectorySet;
 import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.language.nativeplatform.HeaderExportingSourceSet;
 
 /**
  * Implementation of LanguageSourceSet for prebuilt JNI libraries.

@@ -49,6 +49,7 @@ import org.gradle.api.Task;
 import org.gradle.api.internal.project.ProjectIdentifier;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.TaskContainer;
+import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.c.plugins.CPlugin;
 import org.gradle.language.cpp.plugins.CppPlugin;
 import org.gradle.model.Defaults;
@@ -64,7 +65,6 @@ import org.gradle.nativeplatform.FlavorContainer;
 import org.gradle.nativeplatform.NativeBinarySpec;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.nativeplatform.NativeLibrarySpec;
-import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
 import org.gradle.platform.base.BinaryContainer;
 import org.gradle.platform.base.ComponentSpecContainer;
@@ -258,7 +258,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 @Path("android.ndk") final NdkConfig ndkConfig,
                 final NdkHandler ndkHandler,
                 @Path("android.sources") final AndroidComponentModelSourceSet sources,
-                @Path("buildDir") final File buildDir) {
+                @Path("buildDir") final File buildDir,
+                final ServiceRegistry serviceRegistry) {
             if (!ndkHandler.isNdkDirConfigured()) {
                 return;
             }
@@ -275,7 +276,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                         nativeLib,
                                         sources,
                                         buildDir,
-                                        ndkHandler);
+                                        ndkHandler,
+                                        serviceRegistry);
                             }
                         });
                 DefaultAndroidComponentSpec androidSpecs =
@@ -305,7 +307,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                         for (NativeBinarySpec nativeBinary : binary.getNativeBinaries()) {
                             NdkConfiguration.createTasks(
                                     tasks,
-                                    (SharedLibraryBinarySpec) nativeBinary,
+                                    nativeBinary,
                                     buildDir,
                                     binary.getMergedNdkConfig(),
                                     ndkHandler);
@@ -345,12 +347,12 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                             }
 
                             if (library != null) {
-                                Collection<SharedLibraryBinarySpec> nativeBinaries =
+                                Collection<NativeLibraryBinarySpec> nativeBinaries =
                                         getNativeBinaries(
                                                 library,
                                                 binary.getBuildType(),
                                                 binary.getProductFlavors());
-                                for (SharedLibraryBinarySpec nativeBin : nativeBinaries) {
+                                for (NativeLibraryBinarySpec nativeBin : nativeBinaries) {
                                     if (binary.getMergedNdkConfig().getAbiFilters().contains(
                                             nativeBin.getTargetPlatform().getName())) {
                                         NdkConfiguration.configureBinary(
@@ -445,17 +447,17 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
     }
 
 
-    private static Collection<SharedLibraryBinarySpec> getNativeBinaries(
+    private static Collection<NativeLibraryBinarySpec> getNativeBinaries(
             NativeLibrarySpec library,
             final BuildType buildType,
             final List<ProductFlavor> productFlavors) {
         final ProductFlavorCombo<ProductFlavor> flavorGroup =
                 new ProductFlavorCombo<ProductFlavor>(productFlavors);
         return ImmutableList.copyOf(Iterables.filter(
-                library.getBinaries().withType(SharedLibraryBinarySpec.class).values(),
-                new Predicate<SharedLibraryBinarySpec>() {
+                library.getBinaries().withType(NativeLibraryBinarySpec.class).values(),
+                new Predicate<NativeLibraryBinarySpec>() {
                     @Override
-                    public boolean apply(SharedLibraryBinarySpec binary) {
+                    public boolean apply(NativeLibraryBinarySpec binary) {
                         return binary.getBuildType().getName().equals(buildType.getName())
                                 && (binary.getFlavor().getName().equals(flavorGroup.getName())
                                 || (productFlavors.isEmpty()

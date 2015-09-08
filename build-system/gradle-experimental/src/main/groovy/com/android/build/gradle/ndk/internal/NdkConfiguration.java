@@ -20,18 +20,24 @@ import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCCompile
 import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCppCompiler;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.NativeDependencyResolver;
+import com.android.build.gradle.internal.AndroidNativeDependencySpec;
+import com.android.build.gradle.internal.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.model.AndroidComponentModelSourceSet;
+import com.android.build.gradle.model.NativeSourceSet;
 import com.android.build.gradle.tasks.GdbSetupTask;
 import com.android.build.gradle.tasks.StripDebugSymbolTask;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 
 import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
+import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.c.CSourceSet;
@@ -40,12 +46,17 @@ import org.gradle.language.cpp.CppSourceSet;
 import org.gradle.language.cpp.tasks.CppCompile;
 import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.NativeBinarySpec;
+import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.nativeplatform.NativeLibrarySpec;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
+import org.gradle.nativeplatform.StaticLibraryBinarySpec;
+import org.gradle.nativeplatform.internal.NativeBinarySpecInternal;
 import org.gradle.platform.base.BinarySpec;
 import org.gradle.platform.base.binary.BaseBinarySpec;
 
 import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Configure settings used by the native binaries.
@@ -56,7 +67,8 @@ public class NdkConfiguration {
             NativeLibrarySpec library,
             final AndroidComponentModelSourceSet sources,
             final File buildDir,
-            final NdkHandler ndkHandler) {
+            final NdkHandler ndkHandler,
+            final ServiceRegistry serviceRegistry) {
         for (Abi abi : ndkHandler.getSupportedAbis()) {
             library.targetPlatform(abi.getName());
         }
@@ -72,15 +84,17 @@ public class NdkConfiguration {
                 });
 
         library.getBinaries()
-                .withType(SharedLibraryBinarySpec.class, new Action<SharedLibraryBinarySpec>() {
+                .withType(NativeLibraryBinarySpec.class, new Action<NativeLibraryBinarySpec>() {
                     @Override
-                    public void execute(final SharedLibraryBinarySpec binary) {
-                        sourceIfExist(binary, sources, "main");
-                        sourceIfExist(binary, sources, binary.getFlavor().getName());
-                        sourceIfExist(binary, sources, binary.getBuildType().getName());
-                        sourceIfExist(binary, sources,
+                    public void execute(final NativeLibraryBinarySpec binary) {
+                        List<NativeSourceSet> jniSources = Lists.newArrayList();
+                        jniSources.add(sourceIfExist(binary, sources, "main"));
+                        jniSources.add(sourceIfExist(binary, sources, binary.getFlavor().getName()));
+                        jniSources.add(
+                                sourceIfExist(binary, sources, binary.getBuildType().getName()));
+                        jniSources.add(sourceIfExist(binary, sources,
                                 binary.getFlavor().getName()
-                                        + StringHelper.capitalize(binary.getBuildType().getName()));
+                                        + StringHelper.capitalize(binary.getBuildType().getName())));
 
                         getCCompiler(binary).define("ANDROID");
                         getCppCompiler(binary).define("ANDROID");
@@ -121,8 +135,12 @@ public class NdkConfiguration {
                         binary.getLinker().args("--sysroot=" + sysroot);
                         binary.getLinker().args("-Wl,--build-id");
 
+                        for (NativeSourceSet jniSource : jniSources) {
+                            if (jniSource != null) {
+                                resolveDependencies(serviceRegistry, binary, jniSource);
+                            }
+                        }
                     }
-
                 });
     }
 
@@ -130,18 +148,30 @@ public class NdkConfiguration {
      * Configure native binary with variant specific options.
      */
     public static void configureBinary(
-            SharedLibraryBinarySpec binary,
+            NativeLibraryBinarySpec binary,
             final File buildDir,
             final NdkConfig ndkConfig,
             final NdkHandler ndkHandler) {
         // Set output library filename.
-        binary.setSharedLibraryFile(
-                new File(
-                        buildDir,
-                        NdkNamingScheme.getDebugLibraryDirectoryName(binary)
-                                + "/"
-                                + NdkNamingScheme.getSharedLibraryFileName(
-                                ndkConfig.getModuleName())));
+        if (binary instanceof SharedLibraryBinarySpec) {
+            ((SharedLibraryBinarySpec)binary).setSharedLibraryFile(
+                    new File(
+                            buildDir,
+                            NdkNamingScheme.getDebugLibraryDirectoryName(binary)
+                                    + "/"
+                                    + NdkNamingScheme.getSharedLibraryFileName(
+                                    ndkConfig.getModuleName())));
+        } else if (binary instanceof StaticLibraryBinarySpec) {
+            ((StaticLibraryBinarySpec)binary).setStaticLibraryFile(
+                    new File(
+                            buildDir,
+                            NdkNamingScheme.getDebugLibraryDirectoryName(binary)
+                                    + "/"
+                                    + NdkNamingScheme.getStaticLibraryFileName(
+                                    ndkConfig.getModuleName())));
+        } else {
+            throw new AssertionError("Should be unreachable");
+        }
 
         String sysroot = ndkHandler.getSysroot(
                 Abi.getByName(binary.getTargetPlatform().getName()));
@@ -186,35 +216,80 @@ public class NdkConfiguration {
         }
     }
 
+    private static void resolveDependencies(
+            ServiceRegistry serviceRegistry,
+            NativeBinarySpec binary,
+            NativeSourceSet sourceSet) {
+
+        NativeDependencyResolveResult dependencies =
+                new NativeDependencyResolver(
+                        serviceRegistry,
+                        sourceSet.getDependencies(),
+                        new AndroidNativeDependencySpec(
+                                null,
+                                null,
+                                binary.getBuildType().getName(),
+                                binary.getFlavor().getName(),
+                                binary.getTargetPlatform().getName(),
+                                "static")).resolve();
+        for (final NativeLibraryBinarySpec nativeBinary: dependencies.getNativeBinaries()) {
+            // TODO: Handle transitive dependencies.
+            final String abi = nativeBinary.getTargetPlatform().getName();
+            if (binary.getTargetPlatform().getName().equals(abi)) {
+                binary.getTasks().all(
+                        new Action<Task>() {
+                            @Override
+                            public void execute(Task task) {
+                                task.dependsOn(nativeBinary);
+                            }
+                        });
+                binary.getLinker().args(
+                        ((NativeBinarySpecInternal) nativeBinary).getPrimaryOutput().getPath());
+                // TODO: Add dependency exported headers as include path.
+            }
+        }
+        for (final Map.Entry<Abi, File> entry : dependencies.getLibraryFiles().entries()) {
+            if (entry.getKey().getName().equals(binary.getTargetPlatform().getName())) {
+                binary.getLinker().args(entry.getValue().getPath());
+            }
+        }
+    }
+
     public static void createTasks(
             @NonNull ModelMap<Task> tasks,
-            @NonNull SharedLibraryBinarySpec binary,
+            @NonNull NativeBinarySpec binary,
             @NonNull File buildDir,
             @NonNull NdkConfig ndkConfig,
             @NonNull NdkHandler ndkHandler) {
         String compileNdkTaskName = NdkNamingScheme.getNdkBuildTaskName(binary);
         tasks.create(compileNdkTaskName);
 
-        StlConfiguration.createStlCopyTask(tasks, binary, buildDir, ndkHandler,
-                ndkConfig.getStl(), compileNdkTaskName);
+        if (binary instanceof SharedLibraryBinarySpec) {
 
-        if (Boolean.TRUE.equals(ndkConfig.getDebuggable())) {
-            // TODO: Use AndroidTaskRegistry and scopes to create tasks in experimental plugin.
-            setupNdkGdbDebug(tasks, binary, buildDir, ndkConfig, ndkHandler, compileNdkTaskName);
+            StlConfiguration.createStlCopyTask(tasks, binary, buildDir, ndkHandler,
+                    ndkConfig.getStl(), compileNdkTaskName);
+
+            if (Boolean.TRUE.equals(ndkConfig.getDebuggable())) {
+                // TODO: Use AndroidTaskRegistry and scopes to create tasks in experimental plugin.
+                setupNdkGdbDebug(tasks, binary, buildDir, ndkConfig, ndkHandler,
+                        compileNdkTaskName);
+            }
+            createStripDebugTask(tasks, (SharedLibraryBinarySpec) binary, buildDir, ndkHandler,
+                    compileNdkTaskName);
         }
-        createStripDebugTask(tasks, binary, buildDir, ndkHandler, compileNdkTaskName);
     }
 
     /**
      * Add the sourceSet with the specified name to the binary if such sourceSet is defined.
+     * Returns the JNI source set found.
      */
-    private static void sourceIfExist(
+    private static NativeSourceSet sourceIfExist(
             BinarySpec binary,
             AndroidComponentModelSourceSet projectSourceSet,
             final String sourceSetName) {
         FunctionalSourceSet sourceSet = projectSourceSet.findByName(sourceSetName);
         if (sourceSet != null) {
-            final LanguageSourceSet jni = sourceSet.getByName("jni");
+            final NativeSourceSet jni = sourceSet.withType(NativeSourceSet.class).getByName("jni");
             binary.sources(new Action<ModelMap<LanguageSourceSet>>() {
                 @Override
                 public void execute(ModelMap<LanguageSourceSet> languageSourceSets) {
@@ -250,7 +325,9 @@ public class NdkConfiguration {
                             });
                 }
             });
+            return jni;
         }
+        return null;
     }
 
     /**

@@ -73,11 +73,20 @@ public class NativeDependencyResolver {
             if (dependency.getProjectPath() != null) {
                 result.getNativeBinaries().addAll(resolveForNativeBinaries(dependency));
             } else if (dependency.getLibraryPath() != null) {
-                throw new UnsupportedOperationException("Not yet implemented");
+                Preconditions.checkState(dependency.getAbi() != null);
+                result.getLibraryFiles().put(
+                        Abi.getByName(dependency.getAbi()),
+                        resolveForFiles(dependency));
             }
         }
 
         return result;
+    }
+
+    @NonNull
+    private File resolveForFiles(AndroidNativeDependencySpec dependency) {
+        FileResolver fileResolver = serviceRegistry.get(FileResolver.class);
+        return fileResolver.resolve(dependency.getLibraryPath());
     }
 
     @NonNull
@@ -91,6 +100,9 @@ public class NativeDependencyResolver {
         String productFlavor = Objects.firstNonNull(
                 dependency.getProductFlavor(),
                 defaultDependencySpec.getProductFlavor());
+        String linkage = Objects.firstNonNull(
+                dependency.getLinkage(),
+                defaultDependencySpec.getLinkage());
 
         ModelRegistry projectModel = projectModelResolver.resolveProjectModel(project);
         ComponentSpecContainer components = projectModel.find(
@@ -121,8 +133,12 @@ public class NativeDependencyResolver {
                     && productFlavor.equals(
                     ProductFlavorCombo.getFlavorComboName(androidBinary.getProductFlavors()))) {
                 ImmutableList.Builder<NativeLibraryBinarySpec> match = ImmutableList.builder();
-                for (NativeLibraryBinarySpec nativeBinary : androidBinary.getNativeBinaries()) {
-                    match.add(nativeBinary);
+                for (NativeLibraryBinarySpec nativeBinary : ((DefaultAndroidBinary) b).getNativeBinaries()) {
+                    if ((linkage.equals("static") && nativeBinary instanceof StaticLibraryBinarySpec)
+                            || (linkage.equals("shared")
+                                    && nativeBinary instanceof SharedLibraryBinarySpec)) {
+                        match.add(nativeBinary);
+                    }
                 }
                 return match.build();
             }

@@ -18,11 +18,38 @@ package com.android.build.gradle.model;
 
 import com.android.build.gradle.internal.AbstractNativeDependentSourceSet;
 
+import org.gradle.api.Action;
+import org.gradle.api.file.SourceDirectorySet;
+import org.gradle.api.internal.file.DefaultSourceDirectorySet;
 import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.language.nativeplatform.HeaderExportingSourceSet;
 
 /**
  * Implementation of LanguageSourceSet for native sources.
  */
-public class NativeSourceSet extends AbstractNativeDependentSourceSet implements LanguageSourceSet {
+public class NativeSourceSet extends AbstractNativeDependentSourceSet implements LanguageSourceSet,
+        HeaderExportingSourceSet {
 
+    private final DefaultSourceDirectorySet exportedHeaders;
+    private final DefaultSourceDirectorySet implicitHeaders;
+
+    public NativeSourceSet() {
+        this.exportedHeaders = new DefaultSourceDirectorySet("exported headers", fileResolver);
+        this.implicitHeaders = new DefaultSourceDirectorySet("implicit headers", fileResolver);
+    }
+
+    @Override
+    public SourceDirectorySet getExportedHeaders() {
+        return exportedHeaders;
+    }
+
+    @Override
+    public void exportedHeaders(Action<? super SourceDirectorySet> config) {
+        config.execute(getExportedHeaders());
+    }
+
+    @Override
+    public SourceDirectorySet getImplicitHeaders() {
+        return implicitHeaders;
+    }
 }
