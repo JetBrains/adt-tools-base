@@ -166,10 +166,9 @@ public class ApplicationTaskManager extends TaskManager {
                             createJackTask(tasks, variantScope);
                         } else {
                             setJavaCompilerTask(javacTask, tasks, variantScope);
-                            AndroidTask<?> incrementalSupportTasks =
-                                    createIncrementalSupportTasks(tasks, variantScope);
-                            createJarTasks(tasks, variantScope, incrementalSupportTasks);
-                            createPostCompilationTasks(tasks, variantScope, incrementalSupportTasks);
+                            createIncrementalSupportTasks(tasks, variantScope);
+                            createJarTasks(tasks, variantScope);
+                            createPostCompilationTasks(tasks, variantScope);
                             createIncrementalPostCompilationTasks(tasks, variantScope);
                         }
                         return null;

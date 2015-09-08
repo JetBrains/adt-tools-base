@@ -62,6 +62,7 @@ public class InstantRunTransform implements ForkTransform {
     protected static final ILogger LOGGER =
             new LoggerWrapper(Logging.getLogger(InstantRunTransform.class));
     private final ImmutableList.Builder<String> generatedClasses2Files = ImmutableList.builder();
+    private final ImmutableList.Builder<String> generatedClasses3Names = ImmutableList.builder();
     private final ImmutableList.Builder<String> generatedClasses3Files = ImmutableList.builder();
 
     enum RecordingPolicy {RECORD, DO_NOT_RECORD}
@@ -83,7 +84,7 @@ public class InstantRunTransform implements ForkTransform {
     @Override
     public Set<ScopedContent.ContentType> getOutputTypes() {
         return Sets.immutableEnumSet(ScopedContent.ContentType.CLASSES,
-                ScopedContent.ContentType.CLASSES_3);
+                ScopedContent.ContentType.CLASSES_ENHANCED);
     }
 
     @NonNull
@@ -165,10 +166,10 @@ public class InstantRunTransform implements ForkTransform {
                         "Cannot find TransformOutput for " + ScopedContent.ContentType.CLASSES);
             }
             final TransformOutput classesThreeOutput = getTransformOutput(entry.getValue(),
-                    ScopedContent.ContentType.CLASSES_3);
+                    ScopedContent.ContentType.CLASSES_ENHANCED);
             if (classesThreeOutput == null) {
                 throw new RuntimeException(
-                        "Cannot find TransformOutput for " + ScopedContent.ContentType.CLASSES_3);
+                        "Cannot find TransformOutput for " + ScopedContent.ContentType.CLASSES_ENHANCED);
             }
 
             if (isIncremental) {
@@ -223,26 +224,27 @@ public class InstantRunTransform implements ForkTransform {
 
             } else {
                 // non incremental mode, we need to traverse the TransformInput#getFiles() folder}
-                Files.fileTreeTraverser().breadthFirstTraversal(inputDir).transform(
-                        new Function<File, Object>() {
+                for (File file : Files.fileTreeTraverser().breadthFirstTraversal(inputDir)
+                        .toSet()) {
 
-                    @Override
-                    public Object apply(File file) {
-                        try {
-                            // do not record the changes, everything should be packaged in the
-                            // main APK.
-                            transformToClasses2Format(
-                                    inputDir,
-                                    file,
-                                    classesTwoOutput.getOutFile(),
-                                    RecordingPolicy.DO_NOT_RECORD);
-                        } catch (IOException e) {
-                            throw new RuntimeException("Exception while preparing "
-                                    + file.getAbsolutePath());
-                        }
-                        return null;
+                    if (file.isDirectory()) {
+                        continue;
                     }
-                });
+
+                    try {
+                        // do not record the changes, everything should be packaged in the
+                        // main APK.
+                        transformToClasses2Format(
+                                inputDir,
+                                file,
+                                classesTwoOutput.getOutFile(),
+                                RecordingPolicy.DO_NOT_RECORD);
+                    } catch (IOException e) {
+                        throw new RuntimeException("Exception while preparing "
+                                + file.getAbsolutePath());
+                    }
+
+                };
             }
             wrapUpOutputs(classesTwoOutput, classesThreeOutput);
         }
@@ -251,19 +253,25 @@ public class InstantRunTransform implements ForkTransform {
     protected void wrapUpOutputs(TransformOutput classes2Output, TransformOutput classes3Output)
             throws IOException {
 
-        writeClasses2Changes(generatedClasses2Files.build(), classes2Output.getOutFile());
-        writePatchFileContents(generatedClasses3Files.build(), classes3Output.getOutFile());
+        // generate the patch file and add to the list of files to process next.
+        File patchFile = writePatchFileContents(generatedClasses3Names.build(),
+                classes3Output.getOutFile());
+        generatedClasses3Files.add(patchFile.getAbsolutePath());
+
+        writeIncrementalChanges(generatedClasses2Files.build(), classes2Output.getOutFile());
+        writeIncrementalChanges(generatedClasses3Files.build(), classes3Output.getOutFile());
     }
 
     /**
-     * Transform a single file into a {@link ScopedContent.ContentType#CLASSES_2} format
+     * Transform a single file into a format supporting class hot swap.
      *
      * @param inputDir the input directory containing the input file.
      * @param inputFile the input file within the input directory to transform.
      * @param outputDir the output directory where to place the transformed file.
      * @throws IOException if the transformation failed.
      */
-    protected void transformToClasses2Format(File inputDir, File inputFile, File outputDir, RecordingPolicy recordingPolicy)
+    protected void transformToClasses2Format(
+            File inputDir, File inputFile, File outputDir, RecordingPolicy recordingPolicy)
             throws IOException {
 
         File outputFile = getOutputFile(inputDir, inputFile, outputDir);
@@ -286,12 +294,11 @@ public class InstantRunTransform implements ForkTransform {
 
         if (recordingPolicy == RecordingPolicy.RECORD) {
             generatedClasses2Files.add(outputFile.getAbsolutePath());
-
         }
     }
 
     /**
-     * Transform a single file into a {@link ScopedContent.ContentType#CLASSES_3} format
+     * Transform a single file into a {@link ScopedContent.ContentType#CLASSES_ENHANCED} format
      *
      * @param inputDir the input directory containing the input file.
      * @param inputFile the input file within the input directory to transform.
@@ -319,9 +326,12 @@ public class InstantRunTransform implements ForkTransform {
                     }
                 });
 
-        generatedClasses3Files.add(inputFile.getAbsolutePath().substring(
-                inputDir.getAbsolutePath().length()).replace('/', '.')
-                + Files.getNameWithoutExtension(inputFile.getName()));
+        generatedClasses3Names.add(
+                inputFile.getAbsolutePath().substring(
+                    inputDir.getAbsolutePath().length() + 1,
+                    inputFile.getAbsolutePath().length() - ".class".length())
+                        .replace('/', '.'));
+        generatedClasses3Files.add(outputFile.getAbsolutePath());
     }
 
     /**
@@ -335,8 +345,10 @@ public class InstantRunTransform implements ForkTransform {
      *
      * @param patchFileContents list of patched class names.
      * @param outputDir output directory where to generate the .class file in.
+     * @return the generated .class files
      */
-    private static void writePatchFileContents(ImmutableList<String> patchFileContents, File outputDir) {
+    private static File writePatchFileContents(
+            ImmutableList<String> patchFileContents, File outputDir) {
 
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
@@ -381,13 +393,15 @@ public class InstantRunTransform implements ForkTransform {
         try {
             Files.createParentDirs(outputFile);
             Files.write(classBytes, outputFile);
+            // add the files to the list of files to be processed by subsequent tasks.
+            return outputFile;
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
 
-    private static void writeClasses2Changes(List<String> changes, File outputDir) throws IOException {
+    private static void writeIncrementalChanges(List<String> changes, File outputDir) throws IOException {
 
         FileWriter fileWriter = new FileWriter(new File(outputDir, "incrementalChanges.txt"));
         try {
@@ -422,7 +436,7 @@ public class InstantRunTransform implements ForkTransform {
      * Return the expected output {@link File} for an input file located in the transform input
      * directory. The output file will have a similar relative path than the input file (to the
      * input dir) inside the output directory and will be formed to be consistent with the
-     * {@link ScopedContent.ContentType#CLASSES_3} format
+     * {@link ScopedContent.ContentType#CLASSES_ENHANCED} format
      *
      * @param inputDir the input directory containing the input file
      * @param inputFile the input file within the input directory

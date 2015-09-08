@@ -77,6 +77,7 @@ import com.android.build.gradle.internal.test.TestDataImpl;
 import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
+import com.android.build.gradle.internal.transforms.InstantRunTransform;
 import com.android.build.gradle.internal.transforms.JacocoTransform;
 import com.android.build.gradle.internal.transforms.JarMergingTransform;
 import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
@@ -96,7 +97,7 @@ import com.android.build.gradle.tasks.CompatibleScreensManifest;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.GenerateSplitAbiRes;
-import com.android.build.gradle.tasks.IncrementalSupportDex;
+import com.android.build.gradle.tasks.InstantRunDexClasses;
 import com.android.build.gradle.tasks.JackTask;
 import com.android.build.gradle.tasks.JillTask;
 import com.android.build.gradle.tasks.Lint;
@@ -111,7 +112,6 @@ import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ProcessManifest;
 import com.android.build.gradle.tasks.ProcessTestManifest;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.build.gradle.tasks.SourceCodeIncrementalSupport;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
 import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
@@ -1300,22 +1300,28 @@ public abstract class TaskManager {
     }
 
     @Nullable
-    protected AndroidTask<?> createIncrementalSupportTasks(
-            TaskFactory tasks, VariantScope variantScope) {
-        VariantConfiguration config = variantScope.getVariantConfiguration();
-        if (isIncrementalSupportActive(config)) {
-            AndroidTask<SourceCodeIncrementalSupport> sourceCodeIncrementalSupportAndroidTask
-                    = androidTasks.create(tasks,
-                        new SourceCodeIncrementalSupport.ConfigAction(variantScope));
-            variantScope.setInitialIncrementalSupportTask(sourceCodeIncrementalSupportAndroidTask);
-            sourceCodeIncrementalSupportAndroidTask.dependsOn(tasks, variantScope.getJavacTask());
+    protected void createIncrementalSupportTasks(TaskFactory tasks, VariantScope variantScope) {
+
+        if (isIncrementalSupportActive(variantScope.getVariantConfiguration())) {
+
+            TransformManager transformManager = variantScope.getTransformManager();
+            InstantRunTransform instantRunTransform = new InstantRunTransform();
+            AndroidTask<TransformTask> instantRunTask = transformManager.addTransform(
+                    tasks, variantScope, instantRunTransform);
 
             AndroidTask<FastDeployRuntimeExtractorTask> extractorTask = androidTasks.create(
                     tasks, new FastDeployRuntimeExtractorTask.ConfigAction(variantScope));
-            extractorTask.dependsOn(tasks, sourceCodeIncrementalSupportAndroidTask);
-            return extractorTask;
+
+            // also add a new stream for the extractor task output.
+            variantScope.getTransformManager().addStream(TransformStream.builder()
+                    .addContentTypes(TransformManager.CONTENT_CLASS)
+                    .addScope(Scope.EXTERNAL_LIBRARIES)
+                    .setFiles(variantScope.getIncrementalRuntimeSupportJar())
+                    .setDependency(extractorTask.get(tasks))
+                    .setFormat(Format.SINGLE_JAR)
+                    .build());
+
         }
-        return null;
     }
 
     /**
@@ -1815,8 +1821,7 @@ public abstract class TaskManager {
         }
     }
 
-    public void createJarTasks(@NonNull TaskFactory tasks, @NonNull final VariantScope scope,
-            final AndroidTask<?>... upstreamTasks) {
+    public void createJarTasks(@NonNull TaskFactory tasks, @NonNull final VariantScope scope) {
         final BaseVariantData variantData = scope.getVariantData();
 
         final boolean isIncremental = isIncrementalSupportActive(scope.getVariantConfiguration());
@@ -1831,17 +1836,8 @@ public abstract class TaskManager {
                         jarTask.setDestinationDir(new File(
                                 scope.getGlobalScope().getIntermediatesDir(),
                                 "packaged/" + config.getDirName() + "/"));
-                        jarTask.from(isIncremental
-                                    ? scope.getInitialIncrementalSupportJavaOutputDir()
-                                    : scope.getJavaOutputDir());
-                        jarTask.dependsOn(isIncremental
-                                ? scope.getInitialIncrementalSupportTask()
-                                : scope.getJavacTask().getName());
-                        for (AndroidTask<?> task : upstreamTasks) {
-                            if (task != null) {
-                                jarTask.dependsOn(task.getName());
-                            }
-                        }
+                        jarTask.from(scope.getJavaOutputDir());
+                        jarTask.dependsOn(scope.getJavacTask().getName());
                         variantData.binayFileProviderTask = jarTask;
                     }
 
@@ -1855,8 +1851,9 @@ public abstract class TaskManager {
      * proguard and jacoco
      *
      */
-    public void createPostCompilationTasks(TaskFactory tasks, @NonNull final VariantScope variantScope,
-            AndroidTask<?>... upstreamTasks) {
+    public void createPostCompilationTasks(TaskFactory tasks,
+            @NonNull final VariantScope variantScope) {
+
         checkNotNull(variantScope.getJavacTask());
 
         final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
@@ -1953,44 +1950,60 @@ public abstract class TaskManager {
     public void createIncrementalPostCompilationTasks(
             TaskFactory tasks, @NonNull final VariantScope scope) {
 
-        final ApkVariantData variantData = (ApkVariantData) scope.getVariantData();
-
         if (isIncrementalSupportActive(scope.getVariantConfiguration())) {
-            // create the incremental changes dexing.
-            // first version will create the small dex containing classes.2 versions.
-            AndroidTask<IncrementalSupportDex> initialSupportDex = androidTasks.create(tasks,
-                    new IncrementalSupportDex.ConfigAction(
-                            scope, IncrementalSupportDex.OutputBuildType.COLDSWAP_DEX));
 
-            // second version will create the small dex containing classes.3 versions.
-            AndroidTask<IncrementalSupportDex> incrementalSupportDex = androidTasks.create(tasks,
-                    new IncrementalSupportDex.ConfigAction(
-                            scope, IncrementalSupportDex.OutputBuildType.HOTSWAP_DEX));
+            // create the transform and the task.
+            AndroidTask<InstantRunDexClasses> transformTwoTask = createInstantRunDexTask(tasks, scope,
+                    InstantRunDexClasses.ConfigAction.BuildType.RESTART);
 
-            AndroidTask<Task> incrementalDexingAnchor = androidTasks
-                    .create(tasks, new TaskConfigAction<Task>() {
+            AndroidTask<InstantRunDexClasses> transformThreeTask = createInstantRunDexTask(tasks, scope,
+                    InstantRunDexClasses.ConfigAction.BuildType.RELOAD);
+
+            // create the anchor task, no other tasks depend on this, it must be invoked by
+            // the user directly.
+            AndroidTask<Task> instantRunAnchor = androidTasks.create(tasks,
+                    new TaskConfigAction<Task>() {
+                        @NonNull
                         @Override
                         public String getName() {
                             return scope.getTaskName("incremental", "SupportDex");
                         }
 
+                        @NonNull
                         @Override
                         public Class<Task> getType() {
                             return Task.class;
                         }
 
                         @Override
-                        public void execute(Task task) {
+                        public void execute(@NonNull Task task) {
                         }
                     });
-            incrementalDexingAnchor.dependsOn(tasks, initialSupportDex, incrementalSupportDex);
 
-            // version 3 depends on version 2 so we make sure we execute both
-            incrementalSupportDex.dependsOn(tasks, initialSupportDex);
-
-            incrementalSupportDex.dependsOn(tasks,
-                    scope.getInitialIncrementalSupportTask());
+            instantRunAnchor.dependsOn(tasks, transformTwoTask, transformThreeTask);
         }
+    }
+
+    /**
+     * Creates an instance of the {@link InstantRunDexClasses} task that consumes pipeline streams
+     * according to the expected {@link InstantRunDexClasses.ConfigAction.BuildType} output.
+     */
+    private AndroidTask<InstantRunDexClasses> createInstantRunDexTask(
+            TaskFactory tasks,
+            @NonNull final VariantScope scope,
+            InstantRunDexClasses.ConfigAction.BuildType buildType) {
+
+        InstantRunDexClasses.ConfigAction config =
+                new InstantRunDexClasses.ConfigAction(scope, buildType);
+        AndroidTask<InstantRunDexClasses> instantRunDex =
+                androidTasks.create(tasks, config);
+
+        for (TransformStream stream : scope.getTransformManager().getStreams(
+                config.getStreamFilter())) {
+            // TODO Optimize to avoid creating too many actions
+            instantRunDex.dependsOn(tasks, stream.getDependencies());
+        }
+        return instantRunDex;
     }
 
     protected void handleJacocoDependencies(@NonNull VariantScope variantScope) {
@@ -2252,8 +2265,7 @@ public abstract class TaskManager {
             if (isIncrementalSupportActive(config)) {
                 AndroidTask<InjectBootstrapApplicationTask> rewriteTask = androidTasks.create(
                         tasks, new InjectBootstrapApplicationTask.ConfigAction(variantOutputScope));
-                rewriteTask.dependsOn(tasks, variantScope.getInitialIncrementalSupportTask(),
-                        variantOutputScope.getManifestProcessorTask());
+                rewriteTask.dependsOn(tasks, variantOutputScope.getManifestProcessorTask());
             }
         }
 

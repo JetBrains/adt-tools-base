@@ -34,7 +34,6 @@ import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.build.gradle.tasks.SourceCodeIncrementalSupport;
 import com.android.builder.signing.SignedJarBuilder;
 
 import org.gradle.api.Task;
@@ -100,13 +99,10 @@ public interface VariantScope extends BaseScope {
     File getJavaOutputDir();
 
     @NonNull
-    File getInitialIncrementalSupportJavaOutputDir();
+    File getIncrementalRuntimeSupportJar();
 
     @NonNull
-    File getIncrementalSupportRuntimeDir();
-
-    @NonNull
-    File getIncrementalSupportJavaOutputDir();
+    File getIncrementalApplicationSupportDir();
 
     @NonNull
     Iterable<File> getJavaOuptuts();
@@ -308,12 +304,6 @@ public interface VariantScope extends BaseScope {
 
     @Nullable
     AndroidTask<JavaCompile> getJavacTask();
-
-    void setInitialIncrementalSupportTask(
-            AndroidTask<SourceCodeIncrementalSupport> initialIncrementalSupportTask);
-
-    @Nullable
-    AndroidTask<SourceCodeIncrementalSupport> getInitialIncrementalSupportTask();
 
     void setJavacTask(@Nullable AndroidTask<JavaCompile> javacTask);
 

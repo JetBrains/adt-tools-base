@@ -36,14 +36,12 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.AndroidBuilder;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
-import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
 import org.gradle.api.tasks.InputFile;
@@ -60,14 +58,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.jar.JarInputStream;
-import java.util.zip.ZipEntry;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -129,7 +121,7 @@ public class InjectBootstrapApplicationTask extends BaseTask {
                     scope.getVariantScope().getVariantData();
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             task.setVariantName(scope.getVariantScope().getVariantConfiguration().getFullName());
-            File dest = variantData.getScope().getIncrementalSupportRuntimeDir();
+            File dest = variantData.getScope().getIncrementalApplicationSupportDir();
             task.setDestDir(dest);
             BaseVariantOutputData outputData = scope.getVariantOutputData();
             if (outputData.manifestProcessorTask != null) {

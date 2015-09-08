@@ -16,24 +16,25 @@
 
 package com.android.build.gradle.tasks.fd;
 
-import static java.io.File.separatorChar;
-
-import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
-import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
+import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
 /**
@@ -42,31 +43,33 @@ import java.util.zip.ZipEntry;
  */
 public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
 
-    private File outputDir;
+    private File outputFile;
 
-    @OutputDirectory
-    public File getOutputDir() {
-        return outputDir;
+    @OutputFile
+    public File getOutputFile() {
+        return outputFile;
     }
 
-    public void setOutputDir(File destDir) {
-        this.outputDir = destDir;
+    public void setOutputFile(File file) {
+        this.outputFile = file;
     }
 
 
+    // we could just extract the instant-runtime jar and place it as a stream once we
+    // don't have to deal with AppInfo replacement.
     @TaskAction
     public void extract() throws IOException {
-        extractLibrary(getOutputDir());
-    }
-
-    static void extractLibrary(@NonNull File destDir) throws IOException {
         URL fdrJar = FastDeployRuntimeExtractorTask.class.getResource("/fdr/classes.jar");
         if (fdrJar == null) {
-            System.err.println("Couldn't find embedded Fast Deployment runtime library");
+            System.err.println("Couldn't find embedded Instant-Run runtime library");
             return;
         }
         URLConnection urlConnection = fdrJar.openConnection();
         urlConnection.setUseCaches(false);
+        Files.createParentDirs(getOutputFile());
+        JarOutputStream jarOutputStream = new JarOutputStream(
+                new BufferedOutputStream(new FileOutputStream(getOutputFile())));
+
         InputStream inputStream = urlConnection.getInputStream();
         try {
             JarInputStream jarInputStream =
@@ -77,31 +80,27 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
                     String name = entry.getName();
                     // don't extract metadata or classes supposed to be replaced by generated ones.
                     if (isValidForPackaging(name)) {
-                        File dest = new File(destDir, name.replace('/', separatorChar));
-                        if (entry.isDirectory()) {
-                            if (!dest.exists()) {
-                                boolean created = dest.mkdirs();
-                                if (!created) {
-                                    throw new IOException(dest.getPath());
-                                }
-                            }
-                        } else {
-                            byte[] bytes = ByteStreams.toByteArray(jarInputStream);
-                            Files.write(bytes, dest);
-                        }
+                        jarOutputStream.putNextEntry(new ZipEntry(entry.getName()));
+                        ByteStreams.copy(jarInputStream, jarOutputStream);
+                        jarOutputStream.closeEntry();
                     }
                     entry = jarInputStream.getNextEntry();
                 }
             } finally {
                 jarInputStream.close();
+                jarOutputStream.close();
             }
         } finally {
-            inputStream.close();
+            if (inputStream != null) {
+                inputStream.close();
+            }
+
         }
     }
 
     /**
      * Returns true if the fast deploy runtime jar entry should be packaged in the user's APK.
+     *
      * @param name the fast deploy runtime jar entry name.
      * @return true to package it, false otherwise.
      */
@@ -134,8 +133,8 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
                     scope.getVariantConfiguration().getFullName());
             // change this to use a special directory and have the classes.jar use that
             // special directory as input, although this may go away with the pipeline architecture.
-            fastDeployRuntimeExtractorTask.setOutputDir(
-                    scope.getIncrementalSupportRuntimeDir());
+            fastDeployRuntimeExtractorTask.setOutputFile(
+                    scope.getIncrementalRuntimeSupportJar());
         }
     }
 }
