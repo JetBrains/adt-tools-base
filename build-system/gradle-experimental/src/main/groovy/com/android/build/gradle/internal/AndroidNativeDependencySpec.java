@@ -19,6 +19,7 @@ package com.android.build.gradle.internal;
 import com.android.annotations.Nullable;
 
 import org.gradle.api.InvalidUserDataException;
+import org.gradle.platform.base.DependencySpecBuilder;
 
 import java.io.File;
 
@@ -50,18 +51,22 @@ public class AndroidNativeDependencySpec {
     private final String productFlavor;
     @Nullable
     private final String abi;
+    @Nullable
+    private final String linkage;
 
     public AndroidNativeDependencySpec(
             @Nullable String projectPath,
             @Nullable File libraryPath,
             @Nullable String buildType,
             @Nullable String productFlavor,
-            @Nullable String abi) {
+            @Nullable String abi,
+            @Nullable String linkage) {
         this.projectPath = projectPath;
         this.libraryPath = libraryPath;
         this.buildType = buildType;
         this.productFlavor = productFlavor;
         this.abi = abi;
+        this.linkage = linkage;
     }
 
     @Nullable
@@ -89,6 +94,11 @@ public class AndroidNativeDependencySpec {
         return abi;
     }
 
+    @Nullable
+    public String getLinkage() {
+        return linkage;
+    }
+
     public void validate() {
         if (projectPath == null && libraryPath == null) {
             throw new InvalidUserDataException(
@@ -110,13 +120,15 @@ public class AndroidNativeDependencySpec {
         @Nullable
         private String projectPath;
         @Nullable
-        private File libraryName;
+        private File libraryPath;
         @Nullable
         private String buildType;
         @Nullable
         private String productFlavor;
         @Nullable
         private String abi;
+        @Nullable
+        String linkage;
 
         public Builder project(String value) {
             projectPath = value;
@@ -124,7 +136,7 @@ public class AndroidNativeDependencySpec {
         }
 
         public Builder library(File value) {
-            libraryName = value;
+            libraryPath = value;
             return this;
         }
 
@@ -143,13 +155,19 @@ public class AndroidNativeDependencySpec {
             return this;
         }
 
+        public Builder linkage(String value) {
+            linkage = value;
+            return this;
+        }
+
         public AndroidNativeDependencySpec build() {
             return new AndroidNativeDependencySpec(
                     projectPath,
-                    libraryName,
+                    libraryPath,
                     buildType,
                     productFlavor,
-                    abi);
+                    abi,
+                    linkage);
         }
     }
 }
