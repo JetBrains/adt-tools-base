@@ -55,6 +55,14 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
         return getApkVariantData().getVariantConfiguration().getVersionCode();
     }
 
+    @Nullable
+    @Override
+    public Object getDex() {
+        throw new RuntimeException("Access to the dex task is now impossible, starting with 1.4.0\n"
+                + "1.4.0 introduces a new Transform API allowing manipulation of the .class files.\n"
+                + "See more information: http://tools.android.com/tech-docs/new-build-system/transform-api");
+    }
+
     @Override
     public DefaultTask getUninstall() {
         return getApkVariantData().uninstallTask;
