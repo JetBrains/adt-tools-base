@@ -169,7 +169,6 @@ public class ApplicationTaskManager extends TaskManager {
                             createIncrementalSupportTasks(tasks, variantScope);
                             createJarTasks(tasks, variantScope);
                             createPostCompilationTasks(tasks, variantScope);
-                            createIncrementalPostCompilationTasks(tasks, variantScope);
                         }
                         return null;
                     }

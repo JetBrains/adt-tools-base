@@ -139,13 +139,6 @@ public class MergeManifests extends ManifestProcessorTask {
                 ManifestMerger2.MergeType.APPLICATION,
                 variantConfiguration.getManifestPlaceholders(),
                 getReportFile())
-
-        // Temporary hack for fast deployment; longer term this should be
-        // part of the manifest merger and/or tied to the active target
-        if (variantConfiguration.buildType.isDebuggable()) {
-            // Fast Deploy applies
-            InjectBootstrapApplicationTask.injectApplication(getManifestOutputFile())
-        }
     }
 
     // ----- ConfigAction -----
