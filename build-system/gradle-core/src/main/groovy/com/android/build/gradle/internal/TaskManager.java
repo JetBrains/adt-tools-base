@@ -77,6 +77,7 @@ import com.android.build.gradle.internal.test.TestDataImpl;
 import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
+import com.android.build.gradle.internal.transforms.InstantRunDex;
 import com.android.build.gradle.internal.transforms.InstantRunTransform;
 import com.android.build.gradle.internal.transforms.JacocoTransform;
 import com.android.build.gradle.internal.transforms.JarMergingTransform;
@@ -97,7 +98,6 @@ import com.android.build.gradle.tasks.CompatibleScreensManifest;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.GenerateSplitAbiRes;
-import com.android.build.gradle.tasks.InstantRunDexClasses;
 import com.android.build.gradle.tasks.JackTask;
 import com.android.build.gradle.tasks.JillTask;
 import com.android.build.gradle.tasks.Lint;
@@ -117,6 +117,7 @@ import com.android.build.gradle.tasks.ZipAlign;
 import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
 import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
 import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
+import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
 import com.android.build.gradle.tasks.fd.InjectBootstrapApplicationTask;
 import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
 import com.android.build.transform.api.ScopedContent.ContentType;
@@ -1299,6 +1300,9 @@ public abstract class TaskManager {
         createConnectedTestForVariant(tasks, variantScope);
     }
 
+    /**
+     * Create InstantRun related tasks that should be ran right after the java compilation task.
+     */
     @Nullable
     protected void createIncrementalSupportTasks(TaskFactory tasks, VariantScope variantScope) {
 
@@ -1306,8 +1310,7 @@ public abstract class TaskManager {
 
             TransformManager transformManager = variantScope.getTransformManager();
             InstantRunTransform instantRunTransform = new InstantRunTransform();
-            AndroidTask<TransformTask> instantRunTask = transformManager.addTransform(
-                    tasks, variantScope, instantRunTransform);
+            transformManager.addTransform(tasks, variantScope, instantRunTransform);
 
             AndroidTask<FastDeployRuntimeExtractorTask> extractorTask = androidTasks.create(
                     tasks, new FastDeployRuntimeExtractorTask.ConfigAction(variantScope));
@@ -1318,6 +1321,20 @@ public abstract class TaskManager {
                     .addScope(Scope.EXTERNAL_LIBRARIES)
                     .setFiles(variantScope.getIncrementalRuntimeSupportJar())
                     .setDependency(extractorTask.get(tasks))
+                    .setFormat(Format.SINGLE_JAR)
+                    .build());
+
+            // create the AppInfo.class for this variant.
+            GenerateInstantRunAppInfoTask generateInstantRunAppInfoTask
+                    = androidTasks.create(tasks, new GenerateInstantRunAppInfoTask.ConfigAction(
+                            variantScope)).get(tasks);
+
+            // also add a new stream for the injector task output.
+            variantScope.getTransformManager().addStream(TransformStream.builder()
+                    .addContentTypes(TransformManager.CONTENT_CLASS)
+                    .addScope(Scope.EXTERNAL_LIBRARIES)
+                    .setFiles(generateInstantRunAppInfoTask.getOutputFile())
+                    .setDependency(generateInstantRunAppInfoTask)
                     .setFormat(Format.SINGLE_JAR)
                     .build());
 
@@ -1917,6 +1934,8 @@ public abstract class TaskManager {
             multiDexClassListTask.dependsOn(tasks, manifestKeepListTask);
         }
 
+        createIncrementalPostCompilationTasks(tasks, variantScope);
+
         // create dex transform
         DexTransform dexTransform = new DexTransform(
                 variantScope.getGlobalScope().getExtension().getDexOptions(),
@@ -1933,17 +1952,35 @@ public abstract class TaskManager {
         dexTask.optionalDependsOn(tasks, multiDexClassListTask);
     }
 
+    /**
+     * Creates all InstantRun related transforms after compilation.
+     * @param tasks
+     * @param scope
+     */
     public void createIncrementalPostCompilationTasks(
             TaskFactory tasks, @NonNull final VariantScope scope) {
 
         if (isIncrementalSupportActive(scope.getVariantConfiguration())) {
 
-            // create the transform and the task.
-            AndroidTask<InstantRunDexClasses> transformTwoTask = createInstantRunDexTask(tasks, scope,
-                    InstantRunDexClasses.ConfigAction.BuildType.RESTART);
+            InstantRunDex classesTwoTransform = new InstantRunDex(
+                    InstantRunDex.BuildType.RESTART,
+                    scope.getRestartDexOutputFolder(),
+                    androidBuilder,
+                    scope.getGlobalScope().getExtension().getDexOptions(), getLogger(),
+                    Sets.immutableEnumSet(ContentType.CLASSES));
 
-            AndroidTask<InstantRunDexClasses> transformThreeTask = createInstantRunDexTask(tasks, scope,
-                    InstantRunDexClasses.ConfigAction.BuildType.RELOAD);
+            AndroidTask<TransformTask> transformTwoTask = scope.getTransformManager()
+                    .addTransform(tasks, scope, classesTwoTransform);
+
+            InstantRunDex classesThreeTransform = new InstantRunDex(
+                    InstantRunDex.BuildType.RELOAD,
+                    scope.getReloadDexOutputFolder(),
+                    androidBuilder,
+                    scope.getGlobalScope().getExtension().getDexOptions(), getLogger(),
+                    Sets.immutableEnumSet(ContentType.CLASSES_ENHANCED));
+
+            AndroidTask<TransformTask> transformThreeTask = scope.getTransformManager()
+                    .addTransform(tasks, scope, classesThreeTransform);
 
             // create the anchor task, no other tasks depend on this, it must be invoked by
             // the user directly.
@@ -1968,28 +2005,6 @@ public abstract class TaskManager {
 
             instantRunAnchor.dependsOn(tasks, transformTwoTask, transformThreeTask);
         }
-    }
-
-    /**
-     * Creates an instance of the {@link InstantRunDexClasses} task that consumes pipeline streams
-     * according to the expected {@link InstantRunDexClasses.ConfigAction.BuildType} output.
-     */
-    private AndroidTask<InstantRunDexClasses> createInstantRunDexTask(
-            TaskFactory tasks,
-            @NonNull final VariantScope scope,
-            InstantRunDexClasses.ConfigAction.BuildType buildType) {
-
-        InstantRunDexClasses.ConfigAction config =
-                new InstantRunDexClasses.ConfigAction(scope, buildType);
-        AndroidTask<InstantRunDexClasses> instantRunDex =
-                androidTasks.create(tasks, config);
-
-        for (TransformStream stream : scope.getTransformManager().getStreams(
-                config.getStreamFilter())) {
-            // TODO Optimize to avoid creating too many actions
-            instantRunDex.dependsOn(tasks, stream.getDependencies());
-        }
-        return instantRunDex;
     }
 
     protected void handleJacocoDependencies(@NonNull VariantScope variantScope) {
@@ -2258,6 +2273,7 @@ public abstract class TaskManager {
                 AndroidTask<InjectBootstrapApplicationTask> rewriteTask = androidTasks.create(
                         tasks, new InjectBootstrapApplicationTask.ConfigAction(variantOutputScope));
                 rewriteTask.dependsOn(tasks, variantOutputScope.getManifestProcessorTask());
+                variantScope.getSourceGenTask().dependsOn(tasks, rewriteTask);
             }
         }
 

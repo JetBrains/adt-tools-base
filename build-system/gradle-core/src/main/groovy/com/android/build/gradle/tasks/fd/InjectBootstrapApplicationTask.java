@@ -18,64 +18,40 @@ package com.android.build.gradle.tasks.fd;
 
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
-import static com.android.SdkConstants.ATTR_PACKAGE;
-import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.TAG_APPLICATION;
-import static java.io.File.separatorChar;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ACC_STATIC;
-import static org.objectweb.asm.Opcodes.ACC_SUPER;
-import static org.objectweb.asm.Opcodes.ACONST_NULL;
-import static org.objectweb.asm.Opcodes.ALOAD;
-import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
-import static org.objectweb.asm.Opcodes.PUTSTATIC;
-import static org.objectweb.asm.Opcodes.RETURN;
-import static org.objectweb.asm.Opcodes.V1_6;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
-import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.AndroidBuilder;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.tooling.BuildException;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 /**
  * Task which injects the bootstrapping application for incremental class and resource
- * deployment
+ * deployment.
  */
 public class InjectBootstrapApplicationTask extends BaseTask {
     private File manifestFile;
-    private File destDir;
 
-    @OutputDirectory
-    public File getOutputDir() {
-        return destDir;
-    }
-
+    /**
+     * Right now, it's rewriting the manifest file in place, without even declaring it as an
+     * output, we should rework this asap.
+     */
     @InputFile
     public File getManifestFile() {
         return manifestFile;
@@ -85,15 +61,10 @@ public class InjectBootstrapApplicationTask extends BaseTask {
         this.manifestFile = manifestFile;
     }
 
-    public void setDestDir(File destDir) {
-        this.destDir = destDir;
-    }
-
     @TaskAction
     public void rewrite() throws IOException {
-        File outputDir = getOutputDir();
         if (getManifestFile() != null) {
-            postProcessManifest(getManifestFile(), outputDir);
+            injectApplication(getManifestFile());
         }
     }
 
@@ -105,152 +76,28 @@ public class InjectBootstrapApplicationTask extends BaseTask {
             this.scope = scope;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return scope.getTaskName("inject", "Bootstrap");
         }
 
+        @NonNull
         @Override
         public Class<InjectBootstrapApplicationTask> getType() {
             return InjectBootstrapApplicationTask.class;
         }
 
         @Override
-        public void execute(InjectBootstrapApplicationTask task) {
-            BaseVariantData<? extends BaseVariantOutputData> variantData =
-                    scope.getVariantScope().getVariantData();
+        public void execute(@NonNull InjectBootstrapApplicationTask task) {
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             task.setVariantName(scope.getVariantScope().getVariantConfiguration().getFullName());
-            File dest = variantData.getScope().getIncrementalApplicationSupportDir();
-            task.setDestDir(dest);
             BaseVariantOutputData outputData = scope.getVariantOutputData();
             if (outputData.manifestProcessorTask != null) {
                 File manifest = outputData.manifestProcessorTask.getManifestOutputFile();
                 task.setManifestFile(manifest);
             }
         }
-    }
-
-    /**
-     * Processes the given merged manifest file; reads out the application class,
-     * rewrites the manifest to reference the bootstrapping application, and creates an
-     * AppInfo class listing the applicationId and application classes (if any).
-     *
-     * @param mergedManifest the merged manifest file
-     * @param classDir the root class folder to write the application info class to
-     * @throws IOException if there's a problem reading/writing the manifest or class files
-     */
-    public static void postProcessManifest(@NonNull File mergedManifest, @NonNull File classDir)
-            throws IOException {
-        // Grab the application id and application class stashes away in the Android
-        // manifest (not in the Android namespace) and generate an AppInfo class.
-        // (Earlier, I did all the processing here - read the manifest, rewrite it by
-        // generating the AppInfo class and rewriting the manifest on the fly to have
-        // the new bootstrapping application, but we
-        //  (1) need for this task to be done after manifest merging, and
-        //  (2) need for it to be done before packaging
-        // but when combined with the current task dependencies (e.g. compilation
-        // depending on resource merging, such that R classes exist) this led to
-        // circular task dependencies. So for now, this is split into two parts:
-        // In manifest merging we stash away and replace the application id/class, and
-        // here in a packaging task we inject runtime libraries.
-        if (mergedManifest.exists()) {
-            try {
-                Document document = XmlUtils.parseUtfXmlFile(mergedManifest, true);
-                Element root = document.getDocumentElement();
-                if (root != null) {
-                    String applicationId = root.getAttribute(ATTR_PACKAGE);
-                    String applicationClass = null;
-                    NodeList children = root.getChildNodes();
-                    for (int i = 0; i < children.getLength(); i++) {
-                        Node node = children.item(i);
-                        if (node.getNodeType() == Node.ELEMENT_NODE &&
-                                node.getNodeName().equals(TAG_APPLICATION)) {
-                            String applicationClass1 = null;
-
-                            Element element = (Element) node;
-                            if (element.hasAttribute(ATTR_NAME)) {
-                                String name = element.getAttribute(ATTR_NAME);
-                                assert !name.startsWith(".") : name;
-                                if (!name.isEmpty()) {
-                                    applicationClass1 = name;
-                                }
-                            }
-
-                            applicationClass = applicationClass1;
-                            break;
-                        }
-                    }
-
-                    if (!applicationId.isEmpty()) {
-                        // Must be *after* extractLibrary() to replace dummy version
-                        writeAppInfoClass(applicationId, applicationClass, classDir);
-                    }
-                }
-            } catch (ParserConfigurationException e) {
-                throw new BuildException("Failed to inject bootstrapping application", e);
-            } catch (IOException e) {
-                throw new BuildException("Failed to inject bootstrapping application", e);
-            } catch (SAXException e) {
-                throw new BuildException("Failed to inject bootstrapping application", e);
-            }
-        }
-    }
-
-    static void writeAppInfoClass(
-            @NonNull String applicationId,
-            @Nullable String applicationClass,
-            @NonNull File classDir)
-            throws IOException {
-        ClassWriter cw = new ClassWriter(0);
-        FieldVisitor fv;
-        MethodVisitor mv;
-
-        String appInfoOwner = "com/android/tools/fd/runtime/AppInfo";
-        cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, appInfoOwner, null, "java/lang/Object", null);
-
-        fv = cw.visitField(ACC_PUBLIC + ACC_STATIC, "applicationId", "Ljava/lang/String;", null, null);
-        fv.visitEnd();
-        fv = cw.visitField(ACC_PUBLIC + ACC_STATIC, "applicationClass", "Ljava/lang/String;", null, null);
-        fv.visitEnd();
-        mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-        mv.visitCode();
-        Label l0 = new Label();
-        mv.visitLabel(l0);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-        mv.visitInsn(RETURN);
-        Label l1 = new Label();
-        mv.visitLabel(l1);
-        mv.visitLocalVariable("this", "L" + appInfoOwner + ";", null, l0, l1, 0);
-        mv.visitMaxs(1, 1);
-        mv.visitEnd();
-        mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
-        mv.visitCode();
-        mv.visitLdcInsn(applicationId);
-        mv.visitFieldInsn(PUTSTATIC, appInfoOwner, "applicationId", "Ljava/lang/String;");
-        if (applicationClass != null) {
-            mv.visitLdcInsn(applicationClass);
-        } else {
-            mv.visitInsn(ACONST_NULL);
-        }
-        mv.visitFieldInsn(PUTSTATIC, appInfoOwner, "applicationClass", "Ljava/lang/String;");
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(1, 0);
-        mv.visitEnd();
-        cw.visitEnd();
-
-        byte[] bytes = cw.toByteArray();
-
-        File dest = new File(classDir, appInfoOwner.replace('/', separatorChar) + DOT_CLASS);
-        File parent = dest.getParentFile();
-        if (parent != null && !parent.exists()) {
-            boolean created = parent.mkdirs();
-            if (!created) {
-                throw new IOException(parent.getPath());
-            }
-        }
-        Files.write(bytes, dest);
     }
 
     public static void injectApplication(@NonNull File merged) throws IOException {
@@ -300,15 +147,8 @@ public class InjectBootstrapApplicationTask extends BaseTask {
 
                     Files.write(xml, merged, Charsets.UTF_8);
                 }
-            } catch (ParserConfigurationException e) {
-                // TODO: Handle properly!
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO: Handle properly!
-                e.printStackTrace();
-            } catch (SAXException e) {
-                // TODO: Handle properly!
-                e.printStackTrace();
+            } catch (Exception e) {
+                throw new GradleException("Exception while patching manifest for InstantRun", e);
             }
         }
     }
