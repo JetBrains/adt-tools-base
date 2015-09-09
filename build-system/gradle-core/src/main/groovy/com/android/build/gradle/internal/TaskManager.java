@@ -1848,25 +1848,13 @@ public abstract class TaskManager {
         // ----- Multi-Dex support
 
         AndroidTask<TransformTask> multiDexClassListTask = null;
-        Set<Scope> scopes = TransformManager.SCOPE_FULL_PROJECT;
         // non Library test are running as native multi-dex
         if (isMultiDexEnabled && isLegacyMultiDexMode) {
             // ----------
             // create a transform to jar the inputs into a single jar.
             if (!isMinifyEnabled) {
-                // if the variant is a test for a library project, then we exclude the sub-project
-                // local deps as they show up also in the project local deps too?
-                // FIXME: use proper naming in the multi-folder sub streams to properly detect duplicates rather than ommit a scope.
-                if (variantData instanceof TestVariantData &&
-                        ((TestVariantData) variantData).getTestedVariantData() instanceof LibraryVariantData) {
-                    scopes = Sets.immutableEnumSet(
-                            Scope.PROJECT,
-                            Scope.PROJECT_LOCAL_DEPS,
-                            Scope.SUB_PROJECTS,
-                            Scope.EXTERNAL_LIBRARIES);
-                }
-
-                JarMergingTransform jarMergingTransform = new JarMergingTransform(scopes);
+                JarMergingTransform jarMergingTransform = new JarMergingTransform(
+                        TransformManager.SCOPE_FULL_PROJECT);
                 transformManager.addTransform(tasks, variantScope, jarMergingTransform);
             }
 
@@ -1882,7 +1870,6 @@ public abstract class TaskManager {
             // create the transform that's going to take the code and the proguard keep list
             // from above and compute the main class list.
             MultiDexTransform multiDexTransform = new MultiDexTransform(
-                    scopes,
                     variantScope.getManifestKeepListFile(),
                     variantScope,
                     null);
@@ -1893,7 +1880,6 @@ public abstract class TaskManager {
 
         // create dex transform
         DexTransform dexTransform = new DexTransform(
-                scopes,
                 variantScope.getGlobalScope().getExtension().getDexOptions(),
                 config.getBuildType().isDebuggable(),
                 isMultiDexEnabled,
@@ -1910,8 +1896,14 @@ public abstract class TaskManager {
 
     protected void handleJacocoDependencies(@NonNull VariantScope variantScope) {
         GradleVariantConfiguration config = variantScope.getVariantConfiguration();
-        boolean isTestCoverageEnabled = config.getBuildType().isTestCoverageEnabled() && !config
-                .getType().isForTesting();
+        // we add the jacoco jar if coverage is enabled, but we don't add it
+        // for test apps as it's already part of the tested app.
+        // For library project, since we cannot use the local jars of the library,
+        // we add it as well.
+        boolean isTestCoverageEnabled = config.getBuildType().isTestCoverageEnabled() &&
+                (!config.getType().isForTesting() ||
+                        (config.getTestedConfig() != null &&
+                                config.getTestedConfig().getType() == VariantType.LIBRARY));
         if (isTestCoverageEnabled) {
             Copy agentTask = getJacocoAgentTask();
 
