@@ -25,7 +25,6 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.CombinedTransform;
-import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
@@ -46,7 +45,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -57,8 +55,10 @@ import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logger;
 
-import java.io.*;
+import java.io.File;
 import java.io.FileFilter;
+import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -81,9 +81,6 @@ import java.util.concurrent.Callable;
 public class DexTransform implements CombinedTransform {
 
     @NonNull
-    private final Set<Scope> scopes;
-
-    @NonNull
     private final DexOptions dexOptions;
 
     private final boolean debugMode;
@@ -100,7 +97,6 @@ public class DexTransform implements CombinedTransform {
     private final ILogger logger;
 
     public DexTransform(
-            @NonNull Set<Scope> scopes,
             @NonNull DexOptions dexOptions,
             boolean debugMode,
             boolean multiDex,
@@ -108,7 +104,6 @@ public class DexTransform implements CombinedTransform {
             @NonNull File intermediateFolder,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull Logger logger) {
-        this.scopes = scopes;
         this.dexOptions = dexOptions;
         this.debugMode = debugMode;
         this.multiDex = multiDex;
@@ -139,7 +134,7 @@ public class DexTransform implements CombinedTransform {
     @NonNull
     @Override
     public Set<Scope> getScopes() {
-        return scopes;
+        return TransformManager.SCOPE_FULL_PROJECT;
     }
 
     @NonNull
