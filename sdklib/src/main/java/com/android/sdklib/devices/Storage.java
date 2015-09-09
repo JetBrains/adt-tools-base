@@ -78,7 +78,7 @@ public class Storage {
         KiB("KiB", "KB", 1024),
         MiB("MiB", "MB", 1024 * 1024),
         GiB("GiB", "GB", 1024 * 1024 * 1024),
-        TiB("TiB", "TB", 1024l * 1024l * 1024l * 1024l);
+        TiB("TiB", "TB", 1024L * 1024L * 1024L * 1024L);
 
         @NonNull
         private String mValue;

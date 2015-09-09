@@ -127,7 +127,7 @@ public class XmlElement extends OrphanXmlElement {
                             throw new RuntimeException(MergingException.wrapException(e)
                                     .withMessage(errorMessage)
                                     .withFile(mDocument.getSourceFile())
-                                    .withPosition(mDocument.getNodePosition(xml)).build());
+                                    .withPosition(XmlDocument.getNodePosition(xml)).build());
                         }
                     }
                     for (String attributeName : Splitter.on(',').trimResults()
@@ -224,7 +224,7 @@ public class XmlElement extends OrphanXmlElement {
     @NonNull
     @Override
     public SourcePosition getPosition() {
-        return mDocument.getNodePosition(this);
+        return XmlDocument.getNodePosition(this);
     }
 
     @NonNull

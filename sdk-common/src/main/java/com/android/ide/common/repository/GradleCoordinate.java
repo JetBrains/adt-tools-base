@@ -168,6 +168,11 @@ public class GradleCoordinate {
             return o instanceof PaddedNumberComponent
                     && ((PaddedNumberComponent) o).mString.equals(mString);
         }
+
+        @Override
+        public int hashCode() {
+            return mString.hashCode();
+        }
     }
 
     public static class StringComponent extends RevisionComponent {
