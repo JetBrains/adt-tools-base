@@ -23,6 +23,7 @@ import java.io.InputStream;
  * Public constants for the sdk-stats XML Schema.
  * @deprecated moved to studio
  */
+@Deprecated
 public class SdkStatsConstants {
 
     /** The canonical URL filename for addons-list XML files. */

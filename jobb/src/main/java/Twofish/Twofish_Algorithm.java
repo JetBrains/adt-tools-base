@@ -13,6 +13,7 @@ package Twofish;
 
 import java.io.PrintWriter;
 import java.security.InvalidKeyException;
+import java.util.Arrays;
 
 //...........................................................................
 /**
@@ -355,7 +356,7 @@ System.out.println();
     */
    public static synchronized Object makeKey (byte[] k)
    throws InvalidKeyException {
-if (DEBUG) trace(IN, "makeKey("+k+")");
+if (DEBUG) trace(IN, "makeKey("+ Arrays.toString(k) +")");
       if (k == null)
          throw new InvalidKeyException("Empty key");
       int length = k.length;
@@ -472,7 +473,7 @@ if (DEBUG) trace(OUT, "makeKey()");
     */
    public static byte[]
    blockEncrypt (byte[] in, int inOffset, Object sessionKey) {
-if (DEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+")");
+if (DEBUG) trace(IN, "blockEncrypt("+Arrays.toString(in)+", "+inOffset+", "+sessionKey+")");
       Object[] sk = (Object[]) sessionKey; // extract S-box and session key
       int[] sBox = (int[]) sk[0];
       int[] sKey = (int[]) sk[1];
@@ -552,7 +553,7 @@ if (DEBUG) trace(OUT, "blockEncrypt()");
     */
    public static byte[]
    blockDecrypt (byte[] in, int inOffset, Object sessionKey) {
-if (DEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+")");
+if (DEBUG) trace(IN, "blockDecrypt("+Arrays.toString(in)+", "+inOffset+", "+sessionKey+")");
       Object[] sk = (Object[]) sessionKey; // extract S-box and session key
       int[] sBox = (int[]) sk[0];
       int[] sKey = (int[]) sk[1];

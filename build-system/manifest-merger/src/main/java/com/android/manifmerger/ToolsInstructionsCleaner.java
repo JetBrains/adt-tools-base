@@ -61,8 +61,8 @@ public class ToolsInstructionsCleaner {
             @NonNull XmlDocument document,
             @NonNull ILogger logger) {
 
-        document = Preconditions.checkNotNull(document);
-        logger = Preconditions.checkNotNull(logger);
+        Preconditions.checkNotNull(document);
+        Preconditions.checkNotNull(logger);
         MergingReport.Result result = cleanToolsReferences(document.getRootNode().getXml(),
                 logger);
         return result == MergingReport.Result.SUCCESS

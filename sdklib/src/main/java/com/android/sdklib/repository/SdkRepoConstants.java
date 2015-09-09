@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
  * Public constants for the sdk-repository XML Schema.
  * @deprecated moved to studio
  */
+@Deprecated
 public class SdkRepoConstants extends RepoConstants {
 
     /**

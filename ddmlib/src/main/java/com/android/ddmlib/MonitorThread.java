@@ -53,13 +53,15 @@ final class MonitorThread extends Thread {
     private volatile boolean mQuit = false;
 
     // List of clients we're paying attention to
-    private ArrayList<Client> mClientList;
+    // Used for locking so final.
+    final private ArrayList<Client> mClientList;
 
     // The almighty mux
     private Selector mSelector;
 
     // Map chunk types to handlers
-    private HashMap<Integer, ChunkHandler> mHandlerMap;
+    // Used for locking so final.
+    final private HashMap<Integer, ChunkHandler> mHandlerMap;
 
     // port for "debug selected"
     private ServerSocketChannel mDebugSelectedChan;

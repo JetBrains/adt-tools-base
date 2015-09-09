@@ -80,7 +80,8 @@ public class Client {
     private int mDebuggerListenPort;
 
     // list of IDs for requests we have sent to the client
-    private HashMap<Integer,ChunkHandler> mOutstandingReqs;
+    // Used for locking so final.
+    final private HashMap<Integer,ChunkHandler> mOutstandingReqs;
 
     // chunk handlers stash state data in here
     private ClientData mClientData;
@@ -257,6 +258,7 @@ public class Client {
      * {@link #startSamplingProfiler(int, java.util.concurrent.TimeUnit)} or
      * {@link #stopSamplingProfiler()} instead.
      */
+    @Deprecated
     public void toggleMethodProfiling() {
         try {
             switch (mClientData.getMethodProfilingStatus()) {
