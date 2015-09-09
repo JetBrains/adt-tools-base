@@ -57,6 +57,17 @@ public interface ApkVariant extends BaseVariant {
     boolean isSigningReady();
 
     /**
+     * Returns the Dex task.
+     *
+     * This method will actually throw an exception with a clear message.
+     *
+     * @deprecated  With the new transform mechanism, there is no direct access to the task anymore.
+     */
+    @Deprecated
+    @Nullable
+    Object getDex();
+
+    /**
      * Returns the list of jar files that are on the compile classpath. This does not include
      * the runtime.
      */
