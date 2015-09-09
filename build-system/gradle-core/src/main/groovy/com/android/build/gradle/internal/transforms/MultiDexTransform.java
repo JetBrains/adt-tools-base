@@ -23,7 +23,6 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.NoOpTransform;
-import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
@@ -45,7 +44,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,9 +59,6 @@ import proguard.ParseException;
 public class MultiDexTransform extends BaseProguardAction implements NoOpTransform {
 
     @NonNull
-    private final Set<Scope> scopes;
-
-    @NonNull
     private final File manifestKeepListFile;
     @NonNull
     private final VariantScope variantScope;
@@ -76,11 +71,9 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
     private final File mainDexListFile;
 
     public MultiDexTransform(
-            @NonNull Set<Scope> scopes,
             @NonNull File manifestKeepListFile,
             @NonNull VariantScope variantScope,
             @Nullable File includeInMainDexJarFile) {
-        this.scopes = scopes;
         this.manifestKeepListFile = manifestKeepListFile;
         this.variantScope = variantScope;
         this.includeInMainDexJarFile = includeInMainDexJarFile;
@@ -111,7 +104,7 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
     @NonNull
     @Override
     public Set<Scope> getScopes() {
-        return scopes;
+        return TransformManager.SCOPE_FULL_PROJECT;
     }
 
     @NonNull

@@ -46,6 +46,7 @@ import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Scope;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
+import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryBundle;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.dependency.ManifestDependency;
@@ -72,7 +73,6 @@ import org.gradle.tooling.BuildException;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -550,6 +550,23 @@ public class LibraryTaskManager extends TaskManager {
                 return false;
             }
 
+            @NonNull
+            @Override
+            public List<JarDependency> getLocalDependencies() {
+                // because the test artifact already directly depends on the local jars
+                // we make this fake AndroidLibrary not include them, otherwise
+                // they'll be there twice.
+                return ImmutableList.of();
+            }
+
+            @NonNull
+            @Override
+            public List<File> getLocalJars() {
+                // because the test artifact already directly depends on the local jars
+                // we make this fake AndroidLibrary not include them, otherwise
+                // they'll be there twice.
+                return ImmutableList.of();
+            }
         });
 
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_LINT_TASK,
