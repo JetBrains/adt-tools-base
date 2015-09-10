@@ -30,13 +30,16 @@ public interface NoOpTransform extends Transform {
     /**
      * Perform the Transform.
      *
+     * <p/>
      * There is no {@link TransformOutput} since the transform is a no-op.
      *
+     * <p/>
      * The Transform can require a non-incremental changes, either because {@link #isIncremental()}
      * returns false, or because there is a change in secondary files
      * (as returned by {@link #getSecondaryFileInputs()}), or a change to non input file parameters
      * (as returned by {@link #getParameterInputs()}), or an output was clobbered by something.
      *
+     * <p/>
      * If this happens then <var>isIncremental</var> will be false, and
      * {@link TransformInput#getChangedFiles()} will return an empty map. In that case, the
      * transform should look directly at {@link TransformInput#getFiles()} to find the files. This
