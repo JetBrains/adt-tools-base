@@ -50,7 +50,6 @@ class SeparateTestWithMinificationButNoObfuscationTest {
     @Test
     @Category(DeviceTests)
     void "connected check"() {
-        AssumeUtil.assumeLocalDevice()
-        project.execute(":test:connectedAndroidTest");
+        project.execute(":test:deviceAndroidTest");
     }
 }

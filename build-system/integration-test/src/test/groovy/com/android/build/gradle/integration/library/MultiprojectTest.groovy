@@ -17,12 +17,14 @@
 package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.category.DeviceTests
+import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.AssumeUtil
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
@@ -35,6 +37,9 @@ class MultiprojectTest {
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("multiproject")
             .create()
+
+    @Rule
+    public Adb adb = new Adb();
 
     @BeforeClass
     static void setUp() {
@@ -54,9 +59,9 @@ class MultiprojectTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheckAndReport() {
-        project.executeConnectedCheck()
+        adb.exclusiveAccess();
+        project.execute("connectedCheck")
         // android-reporting plugin currently executes connected tasks.
-        AssumeUtil.assumeLocalDevice();
         project.execute("mergeAndroidReports")
     }
 }

@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
+import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.utils.DexInProcessHelper
@@ -50,6 +51,9 @@ class MultiDexTest {
             .fromTestProject("multiDex")
             .withHeap("2048M")
             .create()
+
+    @Rule
+    public Adb adb = new Adb();
 
     @Parameterized.Parameters(name = "dexInProcess = {0}")
     public static Collection<Object[]> data() {
@@ -202,6 +206,8 @@ class MultiDexTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.executeConnectedCheck()
+        //project.execute("assemble")
+        //adb.exclusiveAccess();
+        //project.execute("connectedCheck");
     }
 }

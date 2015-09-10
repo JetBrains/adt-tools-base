@@ -40,9 +40,11 @@ import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
 import com.android.resources.Density;
 import com.android.sdklib.AndroidVersion;
+import com.android.tools.fd.client.AppState;
 import com.android.tools.fd.client.InstantRunArtifact;
 import com.android.tools.fd.client.InstantRunArtifactType;
 import com.android.tools.fd.client.InstantRunBuildInfo;
+import com.android.tools.fd.client.InstantRunClient;
 import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -54,8 +56,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public final class InstantRunTestUtils {
+
+    private static final int SLEEP_TIME_MSEC = 200;
 
     @NonNull
     public static InstantRunBuildInfo loadContext(@NonNull InstantRun instantRunModel)
@@ -219,6 +224,21 @@ public final class InstantRunTestUtils {
         } catch (IOException e) {
             System.err.println("Unable to print build info xml file: \n" +
                     Throwables.getStackTraceAsString(e));
+        }
+    }
+
+    static void waitForAppStart(
+            @NonNull InstantRunClient client, @NonNull IDevice device)
+            throws InterruptedException {
+        AppState appState = null;
+        int times = 0;
+        while (appState != AppState.FOREGROUND) {
+            if (times > TimeUnit.SECONDS.toMillis(15)) {
+                throw new AssertionError("App did not start");
+            }
+            Thread.sleep(SLEEP_TIME_MSEC);
+            times += SLEEP_TIME_MSEC;
+            appState = client.getAppState(device);
         }
     }
 }

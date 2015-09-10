@@ -67,7 +67,7 @@ public class ConnectedColdSwapTest {
             .fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create();
 
     @Rule
-    public Adb adb = Adb.create();
+    public Adb adb = new Adb();
 
     @Rule
     public Expect expect = Expect.create();
@@ -178,7 +178,7 @@ public class ConnectedColdSwapTest {
 
         // Check the app is running
         afterMessageListener.await();
-        assertThat(client.getAppState(device)).isEqualTo(AppState.FOREGROUND);
+        InstantRunTestUtils.waitForAppStart(client, device);
 
         device.uninstallPackage("com.example.helloworld");
     }

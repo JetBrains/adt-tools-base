@@ -1,0 +1,24 @@
+apply plugin: 'java'
+apply plugin: 'maven'
+
+
+configurations {
+    provided
+}
+
+sourceSets {
+    main { compileClasspath += configurations.provided }
+}
+
+
+dependencies {
+    provided project(":base:builder")
+    provided project(":base:builder-test-api")
+    provided project(":base:gradle-core")
+    provided project(":base:gradle-experimental")
+    provided 'com.google.guava:guava:17.0'
+}
+
+group = 'com.android.tools.internal.build.test'
+archivesBaseName = 'devicepool'
+version = '0.1'

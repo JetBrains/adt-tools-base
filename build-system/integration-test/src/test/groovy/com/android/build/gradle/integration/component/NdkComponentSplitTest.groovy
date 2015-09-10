@@ -16,18 +16,23 @@
 
 package com.android.build.gradle.integration.component
 import com.android.build.gradle.integration.common.category.DeviceTests
+import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.utils.AssumeUtil
+import com.android.ddmlib.IDevice
+import com.google.common.collect.ImmutableList
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
+import static com.android.build.gradle.integration.common.utils.AndroidVersionMatcher.thatUsesArt
 
 /**
  * Integration test of the native plugin with multiple variants.
@@ -40,6 +45,9 @@ class NdkComponentSplitTest {
             .fromTestApp(new HelloWorldJniApp())
             .useExperimentalGradleVersion(true)
             .create()
+
+    @Rule
+    public Adb adb = new Adb();
 
     @BeforeClass
     public static void setUp() {
@@ -113,6 +121,9 @@ model {
     @Test
     @Category(DeviceTests.class)
     public void connectedAndroidTest() {
-        project.executeConnectedCheck();
+        project.execute("assembleDebug", "assembleDebugAndroidTest");
+        IDevice device = adb.getDevice(thatUsesArt());
+        project.executeConnectedCheck(
+                ImmutableList.of(Adb.getInjectToDeviceProviderProperty(device)));
     }
 }

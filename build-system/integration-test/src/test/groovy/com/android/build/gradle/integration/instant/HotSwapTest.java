@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.category.DeviceTests;
+import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.Logcat;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
@@ -54,6 +55,9 @@ import java.io.IOException;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class HotSwapTest {
+
+    @Rule
+    public final Adb adb = new Adb();
 
     private static final ColdswapMode COLDSWAP_MODE = ColdswapMode.MULTIDEX;
 
@@ -133,6 +137,7 @@ public class HotSwapTest {
                 "com.example.helloworld",
                 "HelloWorld",
                 LOG_TAG,
+                adb,
                 logcat,
                 new HotSwapTester.Steps() {
                     @Override
@@ -157,7 +162,7 @@ public class HotSwapTest {
                         assertThat(logcat).doesNotContainMessageWithText("HOT SWAP!");
 
                         client.restartActivity(device);
-                        Thread.sleep(500); // TODO: blocking logcat assertions with timeouts.
+                        InstantRunTestUtils.waitForAppStart(client, device);
 
                         assertThat(logcat).doesNotContainMessageWithText("Original");
                         assertThat(logcat).containsMessageWithText("HOT SWAP!");
