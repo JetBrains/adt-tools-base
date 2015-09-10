@@ -402,33 +402,6 @@ public class TransformManagerTest extends TaskTestUtils {
     }
 
     @Test
-    public void transformWithMultiJarAsOutput() {
-        // create a stream and add it to the pipeline
-        TransformStream projectClass = TransformStream.builder()
-                .addContentType(ContentType.CLASSES)
-                .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_JAR)
-                .setFiles(new File("my file"))
-                .setDependency("my dependency")
-                .build();
-        transformManager.addStream(projectClass);
-
-        // add a new transform
-        Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES)
-                .setScopes(Scope.PROJECT)
-                .setTransformType(Type.AS_INPUT)
-                .setFormat(Format.MULTI_JAR)
-                .build();
-
-        // add the transform
-        exception.expect(RuntimeException.class);
-        exception.expectMessage("Cannot add a Transform with OutputFormat: MULTI_JAR");
-        AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, scope, t);
-    }
-
-    @Test
     public void forkTypeWithWrongImplementation() {
         Transform t = new AsInputTransform() {
             @NonNull

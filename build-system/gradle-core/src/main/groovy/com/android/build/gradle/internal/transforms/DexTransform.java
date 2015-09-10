@@ -240,9 +240,8 @@ public class DexTransform implements CombinedTransform {
                 final List<File> inputFiles = Lists.newArrayList();
                 for (TransformInput input : inputs) {
                     switch (input.getFormat()) {
-                        case MULTI_JAR:
+                        case JAR:
                         case SINGLE_FOLDER:
-                        case SINGLE_JAR:
                             inputFiles.addAll(input.getFiles());
                             break;
                         case MULTI_FOLDER:
@@ -278,7 +277,6 @@ public class DexTransform implements CombinedTransform {
                 for (TransformInput input : inputs) {
                     switch (input.getFormat()) {
                         case SINGLE_FOLDER:
-                        case SINGLE_JAR:
                             // no incremental mode: if something changes in the folder, then
                             // we grab it.
                             if (!isIncremental || !input.getChangedFiles().isEmpty()) {
@@ -299,7 +297,7 @@ public class DexTransform implements CombinedTransform {
                                 }
                             }
                             break;
-                        case MULTI_JAR:
+                        case JAR:
                             if (isIncremental) {
                                 for (Entry<File, FileStatus> entry : input.getChangedFiles()
                                         .entrySet()) {

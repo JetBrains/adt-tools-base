@@ -50,7 +50,6 @@ import org.gradle.tooling.BuildException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -174,7 +173,7 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
     @Override
     public Format getOutputFormat() {
         if (asJar) {
-            return Format.SINGLE_JAR;
+            return Format.JAR;
         }
 
         return Format.SINGLE_FOLDER;
@@ -413,9 +412,7 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
 
             switch (transformInput.getFormat()) {
                 case SINGLE_FOLDER:
-                case MULTI_JAR:
-                case MIXED_FOLDERS_AND_JARS:
-                case SINGLE_JAR:
+                case JAR:
                     for (File file : transformInput.getFiles()) {
                         inputJar(classPath, file, filter);
                     }

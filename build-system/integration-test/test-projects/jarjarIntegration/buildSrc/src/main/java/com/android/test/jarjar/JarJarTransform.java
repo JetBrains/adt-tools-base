@@ -58,7 +58,7 @@ public class JarJarTransform implements CombinedTransform {
 
     @Override
     public ScopedContent.Format getOutputFormat() {
-        return ScopedContent.Format.SINGLE_JAR;
+        return ScopedContent.Format.JAR;
     }
 
     @Override
@@ -161,8 +161,10 @@ public class JarJarTransform implements CombinedTransform {
                         }
 
                         break;
-                    case SINGLE_JAR:
-                        processJarFile(jos, Iterables.getOnlyElement(input.getFiles()), buffer);
+                    case JAR:
+                        for (File f : input.getFiles()) {
+                            processJarFile(jos, f, buffer);
+                        }
                         break;
                     default:
                         throw new RuntimeException("Unsupported ScopedContent.Format value: " + input.getFormat().name());

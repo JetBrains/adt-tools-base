@@ -228,11 +228,6 @@ public class TransformStream extends ScopedContentImpl {
      */
     @NonNull
     public TransformOutput asOutput() {
-        if (!getFormat().isAllowedAsOutput()) {
-            throw new RuntimeException(
-                    "Can't make a TransformOutput from a ScopedContent with format:" + getFormat());
-        }
-
         return new TransformOutput() {
             @NonNull
             @Override
