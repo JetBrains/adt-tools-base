@@ -24,9 +24,11 @@ import java.util.Set;
 /**
  * Represent content manipulated during the build.
  *
+ * <p/>
  * The content has a type (classes, dex, resources), a format (jar(s), folder(s)), and a scope
  * (project, external library, sub-project, etc...).
  *
+ * <p/>
  * This interface does not actually represent the content itself. This is provided by children
  * interfaces.
  */
@@ -60,6 +62,7 @@ public interface ScopedContent {
         /**
          * The content is directly under the root folder(s).
          *
+         * <p/>
          * This means that in the case of java class files, the files should be in folders
          * matching their package names, directly under the root folder(s).
          */
@@ -67,6 +70,7 @@ public interface ScopedContent {
         /**
          * This means that there is an extra level of folders under the root folder(s).
          *
+         * <p/>
          * There can only be a single level of additional folders.
          * There can be no content directly under the root folder(s).
          */
@@ -74,6 +78,7 @@ public interface ScopedContent {
         /**
          * The content is jar(s).
          *
+         * <p/>
          * As Input, there can be one or more jar files.
          * As output, a transform can only write a single jar files.
          */
@@ -83,6 +88,7 @@ public interface ScopedContent {
     /**
      * The scope of the content.
      *
+     * <p/>
      * This indicates what the content represents, so that Transforms can apply to only part(s)
      * of the classes or resources that the build manipulates.
      */
@@ -107,6 +113,7 @@ public interface ScopedContent {
     /**
      * Returns the type of content that the stream represents.
      *
+     * <p/>
      * It's never null nor empty, but can contain several types.
      */
     @NonNull
@@ -115,6 +122,7 @@ public interface ScopedContent {
     /**
      * Returns the scope of the stream.
      *
+     * <p/>
      * It's never null nor empty, but can contain several scopes.
      */
     @NonNull

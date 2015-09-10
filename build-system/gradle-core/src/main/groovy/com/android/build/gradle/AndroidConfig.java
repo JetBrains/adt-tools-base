@@ -118,6 +118,8 @@ public interface AndroidConfig {
 
     @NonNull
     List<Transform> getTransforms();
+    @NonNull
+    List<List<Object>> getTransformsDependencies();
 
     /** All product flavors used by this project. */
     Collection<? extends CoreProductFlavor> getProductFlavors();
