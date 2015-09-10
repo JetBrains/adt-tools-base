@@ -127,6 +127,12 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
         return ImmutableList.of();
     }
 
+    @NonNull
+    @Override
+    public List<List<Object>> getTransformsDependencies() {
+        return ImmutableList.of();
+    }
+
     @Override
     public String getDefaultPublishConfig() {
         return model.getDefaultPublishConfig();

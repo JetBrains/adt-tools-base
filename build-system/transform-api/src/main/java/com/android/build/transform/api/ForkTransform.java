@@ -32,14 +32,17 @@ public interface ForkTransform extends Transform {
     /**
      * Perform the Transform.
      *
+     * <p/>
      * The inputs/outputs are provided as a Map with the keys being the {@link TransformInput}
      * which are associated with corresponding collection of {@link TransformOutput}.
      *
+     * <p/>
      * The Transform can require a non-incremental changes, either because {@link #isIncremental()}
      * returns false, or because there is a change in secondary files
      * (as returned by {@link #getSecondaryFileInputs()}), or a change to non input file parameters
      * (as returned by {@link #getParameterInputs()}), or an output was clobbered by something.
      *
+     * <p/>
      * If this happens then <var>isIncremental</var> will be false, and
      * {@link TransformInput#getChangedFiles()} will return an empty map. In that case, the
      * transform should look directly at {@link TransformInput#getFiles()} to find the files. This
