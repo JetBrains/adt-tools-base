@@ -206,9 +206,9 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     /** Not explicitly defining allowBackup */
     public static final Issue ALLOW_BACKUP = Issue.create(
             "AllowBackup", //$NON-NLS-1$
-            "Missing `allowBackup` attribute",
+            "AllowBackup/FullBackupContent Problems",
 
-            "The allowBackup attribute determines if an application's data can be backed up " +
+            "The `allowBackup` attribute determines if an application's data can be backed up " +
             "and restored. It is documented at " +
             "http://developer.android.com/reference/android/R.attr.html#allowBackup\n" +
             "\n" +
@@ -228,7 +228,10 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             "restore.\n" +
             "\n" +
             "To fix this warning, decide whether your application should support backup, " +
-            "and explicitly set `android:allowBackup=(true|false)\"`",
+            "and explicitly set `android:allowBackup=(true|false)\"`.\n" +
+            "\n" +
+            "If not set to false, and if targeting API 23 or later, lint will also warn " +
+            "that you should set `android:fullBackupContent` to configure auto backup.",
 
             Category.SECURITY,
             3,
