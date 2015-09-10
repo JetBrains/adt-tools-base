@@ -63,7 +63,7 @@ public class Job<T> {
     }
 
     @Nullable
-    public Exception getException() {
+    public Exception getFailureReason() {
         return mException.get();
     }
 
@@ -88,10 +88,10 @@ public class Job<T> {
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-                .add("title", mJobTitle)
-                .add("task", mTask)
-                .add("latch", mBooleanLatch)
-                .add("result", mResult.get())
+                .add("\ntitle", mJobTitle)
+                .add("\ntask", mTask)
+                .add("\nlatch", mBooleanLatch)
+                .add("\nresult", mResult.get())
                 .toString();
     }
 }
