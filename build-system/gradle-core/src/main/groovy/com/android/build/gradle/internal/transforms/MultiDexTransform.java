@@ -190,8 +190,8 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
                         }
                     }
                     break;
-                case SINGLE_JAR:
-                    inputFiles.add(Iterables.getOnlyElement(transformInput.getFiles()));
+                case JAR:
+                    inputFiles.addAll(transformInput.getFiles());
                     break;
                 default:
                     throw new RuntimeException("Unsupported ScopedContent.Format value: " + transformInput.getFormat().name());

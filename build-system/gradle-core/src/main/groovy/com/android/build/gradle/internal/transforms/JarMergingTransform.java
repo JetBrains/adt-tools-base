@@ -20,7 +20,6 @@ import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.utils.FileUtils.deleteIfExists;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.CombinedTransform;
@@ -33,7 +32,6 @@ import com.android.build.transform.api.TransformOutput;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.io.Closer;
 
 import java.io.File;
@@ -100,7 +98,7 @@ public class JarMergingTransform implements CombinedTransform {
     @NonNull
     @Override
     public ScopedContent.Format getOutputFormat() {
-        return ScopedContent.Format.SINGLE_JAR;
+        return ScopedContent.Format.JAR;
     }
 
     @NonNull
@@ -176,8 +174,10 @@ public class JarMergingTransform implements CombinedTransform {
                         }
 
                         break;
-                    case SINGLE_JAR:
-                        processJarFile(jos, Iterables.getOnlyElement(input.getFiles()), buffer);
+                    case JAR:
+                        for (File f : input.getFiles()) {
+                            processJarFile(jos, f, buffer);
+                        }
                         break;
                     default:
                         throw new RuntimeException("Unsupported ScopedContent.Format value: " + input.getFormat().name());

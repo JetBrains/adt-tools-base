@@ -28,7 +28,7 @@ import java.io.File;
 public interface TransformOutput extends ScopedContent {
 
     /**
-     * The file or folder to write the output to.
+     * The file or folder to write the output to. There is only a single possible output file.
      */
     @NonNull
     File getOutFile();
