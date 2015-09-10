@@ -1897,10 +1897,21 @@ public abstract class TaskManager {
         boolean isMultiDexEnabled = config.isMultiDexEnabled();
         boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode();
 
+        AndroidConfig extension = variantScope.getGlobalScope().getExtension();
+
         // ----- External Transforms -----
         // apply all the external transforms.
-        for (Transform transform : variantScope.getGlobalScope().getExtension().getTransforms()) {
-            transformManager.addTransform(tasks, variantScope, transform);
+        List<Transform> customTransforms = extension.getTransforms();
+        List<List<Object>> customTransformsDependencies = extension.getTransformsDependencies();
+
+        for (int i = 0, count = customTransforms.size() ; i < count ; i++) {
+            Transform transform = customTransforms.get(i);
+            AndroidTask<TransformTask> task = transformManager
+                    .addTransform(tasks, variantScope, transform);
+            List<Object> deps = customTransformsDependencies.get(i);
+            if (!deps.isEmpty()) {
+                task.dependsOn(tasks, deps);
+            }
         }
 
         // ----- Minify next -----
@@ -1946,7 +1957,7 @@ public abstract class TaskManager {
 
         // create dex transform
         DexTransform dexTransform = new DexTransform(
-                variantScope.getGlobalScope().getExtension().getDexOptions(),
+                extension.getDexOptions(),
                 config.getBuildType().isDebuggable(),
                 isMultiDexEnabled,
                 isMultiDexEnabled && isLegacyMultiDexMode ? variantScope.getMainDexListFile() : null,

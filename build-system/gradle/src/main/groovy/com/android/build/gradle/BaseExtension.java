@@ -147,6 +147,8 @@ public abstract class BaseExtension implements AndroidConfig {
     private final List<DeviceProvider> deviceProviderList = Lists.newArrayList();
     private final List<TestServer> testServerList = Lists.newArrayList();
     private final List<Transform> transforms = Lists.newArrayList();
+    // secondary dependencies for the custom transform.
+    private final List<List<Object>> transformDependencies = Lists.newArrayList();
 
     private final AndroidBuilder androidBuilder;
 
@@ -497,14 +499,21 @@ public abstract class BaseExtension implements AndroidConfig {
         return testServerList;
     }
 
-    public void registerTransform(@NonNull Transform transform) {
+    public void registerTransform(@NonNull Transform transform, Object... dependencies) {
         transforms.add(transform);
+        transformDependencies.add(Arrays.asList(dependencies));
     }
 
     @Override
     @NonNull
     public List<Transform> getTransforms() {
         return ImmutableList.copyOf(transforms);
+    }
+
+    @Override
+    @NonNull
+    public List<List<Object>> getTransformsDependencies() {
+        return ImmutableList.copyOf(transformDependencies);
     }
 
     /** {@inheritDoc} */
