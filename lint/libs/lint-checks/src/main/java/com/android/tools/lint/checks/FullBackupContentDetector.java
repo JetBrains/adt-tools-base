@@ -61,7 +61,8 @@ public class FullBackupContentDetector extends ResourceXmlDetector implements Ja
             Severity.FATAL,
             new Implementation(
                     FullBackupContentDetector.class,
-                    Scope.RESOURCE_FILE_SCOPE));
+                    Scope.RESOURCE_FILE_SCOPE))
+            .addMoreInfo("http://android-developers.blogspot.com/2015/07/auto-backup-for-apps-made-simple.html");
 
     @SuppressWarnings("SpellCheckingInspection")
     private static final String DOMAIN_SHARED_PREF = "sharedpref";
