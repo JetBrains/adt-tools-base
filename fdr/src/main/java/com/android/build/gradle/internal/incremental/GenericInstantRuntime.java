@@ -22,6 +22,10 @@ import android.support.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -142,23 +146,17 @@ public class GenericInstantRuntime {
             try {
                 return currentClass.getDeclaredField(name);
             } catch (NoSuchFieldException e) {
-                currentClass = currentClass.getSuperclass();
+                // ignored.
             }
+            currentClass = currentClass.getSuperclass();
         }
         return null;
     }
 
     private static Method getMethodByName(Class<?> aClass, String name, Class[] paramTypes) {
 
-        if (logging!=null && logging.isLoggable(Level.FINE)) {
-            StringBuilder builder = new StringBuilder();
-            for (Class parameterType : paramTypes) {
-                builder.append(parameterType.getName());
-                builder.append(",");
-            }
-            builder.deleteCharAt(builder.length()-1);
-            logging.log(Level.FINE, String.format(
-                    "getMethodByName:%s:%s in %s", name, builder.toString(), aClass.getName()));
+        if (aClass == null) {
+            return null;
         }
 
         Class<?> currentClass = aClass;
@@ -166,12 +164,14 @@ public class GenericInstantRuntime {
             try {
                 return currentClass.getDeclaredMethod(name, paramTypes);
             } catch (NoSuchMethodException e) {
-                currentClass = aClass.getSuperclass();
-                if (logging!=null && logging.isLoggable(Level.FINE)) {
-                    logging.log(Level.FINE, String.format(
-                            "getMethodByName:Looking in %s now", currentClass.getName()));
-                }
+                // ignored.
             }
+            currentClass = currentClass.getSuperclass();
+            if (currentClass!= null && logging!=null && logging.isLoggable(Level.FINE)) {
+                logging.log(Level.FINE, String.format(
+                        "getMethodByName:Looking in %s now", currentClass.getName()));
+            }
+
         }
         return null;
     }
