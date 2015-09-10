@@ -221,11 +221,6 @@ public class TransformManager {
     }
 
     private static <T extends Transform> void validateTransform(T transform) {
-        if (!transform.getOutputFormat().isAllowedAsOutput()) {
-            throw new RuntimeException(
-                    "Cannot add a Transform with OutputFormat: " + transform.getOutputFormat());
-        }
-
         switch (transform.getTransformType()) {
             case AS_INPUT:
                 if (!(transform instanceof AsInputTransform)) {
@@ -560,7 +555,7 @@ public class TransformManager {
                     transform.getName(),
                     variantDirName);
 
-            if (transform.getOutputFormat() == Format.SINGLE_JAR) {
+            if (transform.getOutputFormat() == Format.JAR) {
                 destinationFile = new File(destinationFile, SdkConstants.FN_CLASSES_JAR);
             }
 
