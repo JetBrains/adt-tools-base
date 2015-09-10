@@ -1329,7 +1329,7 @@ public abstract class TaskManager {
                     .addScope(Scope.EXTERNAL_LIBRARIES)
                     .setFiles(variantScope.getIncrementalRuntimeSupportJar())
                     .setDependency(extractorTask.get(tasks))
-                    .setFormat(Format.SINGLE_JAR)
+                    .setFormat(Format.JAR)
                     .build());
 
             // create the AppInfo.class for this variant.
@@ -1343,7 +1343,7 @@ public abstract class TaskManager {
                     .addScope(Scope.EXTERNAL_LIBRARIES)
                     .setFiles(generateInstantRunAppInfoTask.getOutputFile())
                     .setDependency(generateInstantRunAppInfoTask)
-                    .setFormat(Format.SINGLE_JAR)
+                    .setFormat(Format.JAR)
                     .build());
 
         }
