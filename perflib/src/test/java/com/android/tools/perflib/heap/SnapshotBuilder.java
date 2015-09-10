@@ -19,6 +19,9 @@ package com.android.tools.perflib.heap;
 import com.android.tools.perflib.heap.io.InMemoryBuffer;
 import com.android.tools.perflib.heap.hprof.*;
 
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -147,10 +150,10 @@ public class SnapshotBuilder {
         // Regular nodes and their classes
         for (int i = 1; i <= mNumNodes; i++) {
             HprofInstanceField[] fields = new HprofInstanceField[mReferences[i].size()];
-            HprofValuesBuilder values = new HprofValuesBuilder(2);
+            ByteArrayDataOutput values = ByteStreams.newDataOutput();
             for (int j = 0; j < fields.length; j++) {
                 fields[j] = new HprofInstanceField(strings.get("field" + j), objType);
-                values.addObject(mReferences[i].get(j));
+                values.writeShort(mReferences[i].get(j));
             }
 
             // Use same name classes on different loaders to extend test coverage
@@ -158,24 +161,24 @@ public class SnapshotBuilder {
             dump.add(new HprofClassDump(100+i, 0, 0, i%2, 0, 0, 0, 0, i,
                         new HprofConstant[0], new HprofStaticField[0], fields));
 
-            dump.add(new HprofInstanceDump(i, 0, 100+i, values.build()));
+            dump.add(new HprofInstanceDump(i, 0, 100+i, values.toByteArray()));
         }
 
         // Soft reference nodes.
         for (int i = mNumNodes + 1; i <= mNumNodes + mNumSoftNodes; ++i) {
             assertEquals(1, mReferences[i].size());
-            HprofValuesBuilder values = new HprofValuesBuilder(2);
-            values.addObject(mReferences[i].get(0));
-            dump.add(new HprofInstanceDump(i, 0, SOFT_REFERENCE_ID, values.build()));
+            ByteArrayDataOutput values = ByteStreams.newDataOutput();
+            values.writeShort(mReferences[i].get(0));
+            dump.add(new HprofInstanceDump(i, 0, SOFT_REFERENCE_ID, values.toByteArray()));
         }
 
         // Soft and hard reference nodes.
         for (int i = mNumNodes + mNumSoftNodes + 1; i <= mMaxTotalNodes; ++i) {
             assertEquals(2, mReferences[i].size());
-            HprofValuesBuilder values = new HprofValuesBuilder(2);
-            values.addObject(mReferences[i].get(0));
-            values.addObject(mReferences[i].get(1));
-            dump.add(new HprofInstanceDump(i, 0, SOFT_AND_HARD_REFERENCE_ID, values.build()));
+            ByteArrayDataOutput values = ByteStreams.newDataOutput();
+            values.writeShort(mReferences[i].get(0));
+            values.writeShort(mReferences[i].get(1));
+            dump.add(new HprofInstanceDump(i, 0, SOFT_AND_HARD_REFERENCE_ID, values.toByteArray()));
         }
 
         records.add(new HprofHeapDump(0, dump.toArray(new HprofDumpRecord[0])));
