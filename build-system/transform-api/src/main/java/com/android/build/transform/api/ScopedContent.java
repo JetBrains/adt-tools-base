@@ -69,65 +69,21 @@ public interface ScopedContent {
          * This means that in the case of java class files, the files should be in folders
          * matching their package names, directly under the root folder(s).
          */
-        SINGLE_FOLDER {
-            @Override
-            public boolean isAllowedAsOutput() {
-                return true;
-            }
-        },
+        SINGLE_FOLDER,
         /**
          * This means that there is an extra level of folders under the root folder(s).
          *
          * There can only be a single level of additional folders.
          * There can be no content directly under the root folder(s).
          */
-        MULTI_FOLDER {
-            @Override
-            public boolean isAllowedAsOutput() {
-                return true;
-            }
-        },
+        MULTI_FOLDER,
         /**
-         * The content is a single jar file. Even though the API of the content may return a
-         * collection of files, there is only one and it's a jar file.
-         */
-        SINGLE_JAR {
-            @Override
-            public boolean isAllowedAsOutput() {
-                return true;
-            }
-        },
-        /**
-         * The content is a set of Jars
+         * The content is jar(s).
          *
-         * This is not allowed as an an output of a Transform. This is only valid for built-in
-         * content objects.
+         * As Input, there can be one or more jar files.
+         * As output, a transform can only write a single jar files.
          */
-        MULTI_JAR {
-            @Override
-            public boolean isAllowedAsOutput() {
-                return false;
-            }
-        },
-        /**
-         * Each file of the content is either a SINGLE_FOLDER or a JAR.
-         *
-         * This is not allowed as an an output of a Transform. This is only valid for built-in
-         * content objects.
-         */
-        MIXED_FOLDERS_AND_JARS {
-            @Override
-            public boolean isAllowedAsOutput() {
-                return false;
-            }
-        };
-
-        /**
-         * Returns whether it's allowed to have a Transform return this as output format.
-         *
-         * @see Transform#getOutputFormat()
-         */
-        public abstract boolean isAllowedAsOutput();
+        JAR
     }
 
     /**

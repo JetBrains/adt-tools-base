@@ -162,8 +162,8 @@ public class MergeJavaResourcesTransform implements CombinedTransform {
                         }
                     }
                     break;
-                case SINGLE_JAR:
-                    throw new RuntimeException("Merge Java Res Transform does not support SINGLE_JAR stream types as inputs");
+                case JAR:
+                    throw new RuntimeException("Merge Java Res Transform does not support JAR stream types as inputs");
                 default:
                     throw new RuntimeException("Unsupported ScopedContent.Format value: " + stream.getFormat().name());
             }

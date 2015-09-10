@@ -1,7 +1,5 @@
 package com.android.build.gradle.tasks;
 
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
-
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.annotations.ApkFile;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -26,7 +24,6 @@ import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableSet;
 
-import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.gradle.api.Task;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.logging.Logger;
@@ -337,7 +334,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 @Override
                 public File call() throws Exception {
                     return scope.getVariantScope().getTransformManager().getSinglePipelineOutput(
-                            sResFilter, Format.SINGLE_JAR);
+                            sResFilter, Format.JAR);
                 }
             });
 

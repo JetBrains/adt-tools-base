@@ -63,16 +63,8 @@ public class StreamBasedTask extends BaseTask {
                 case MULTI_FOLDER:
                     outputs.addAll(s.getFiles().get());
                     break;
-                case SINGLE_JAR:
-                case MULTI_JAR:
-                    break;
-                case MIXED_FOLDERS_AND_JARS:
-                    Collection<File> files = s.getFiles().get();
-                    for (File file : files) {
-                        if (file.isDirectory()) {
-                            outputs.add(file);
-                        }
-                    }
+                case JAR:
+                    // do nothing
                     break;
                 default:
                     throw new RuntimeException("Unsupported ScopedContent.Format value: " + s.getFormat().name());
@@ -90,18 +82,10 @@ public class StreamBasedTask extends BaseTask {
             switch (s.getFormat()) {
                 case SINGLE_FOLDER:
                 case MULTI_FOLDER:
+                    // do nothing
                     break;
-                case SINGLE_JAR:
-                case MULTI_JAR:
+                case JAR:
                     outputs.addAll(s.getFiles().get());
-                    break;
-                case MIXED_FOLDERS_AND_JARS:
-                    Collection<File> files = s.getFiles().get();
-                    for (File file : files) {
-                        if (file.isFile()) {
-                            outputs.add(file);
-                        }
-                    }
                     break;
                 default:
                     throw new RuntimeException("Unsupported ScopedContent.Format value: " + s.getFormat().name());

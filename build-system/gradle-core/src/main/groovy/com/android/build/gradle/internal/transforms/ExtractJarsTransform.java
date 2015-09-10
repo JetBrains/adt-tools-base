@@ -163,8 +163,7 @@ public class ExtractJarsTransform implements AsInputTransform {
                 TransformInput input = entry.getKey();
 
                 Format format = input.getFormat();
-                if (format != Format.SINGLE_JAR &&
-                        format != Format.MULTI_JAR) {
+                if (format != Format.JAR) {
                     throw new RuntimeException(
                             String.format(
                                     "%s only supports SINGLE_JAR or MULTI_JAR streams. Current stream format: %s:\n\t%s",

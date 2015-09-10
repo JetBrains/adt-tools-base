@@ -138,6 +138,7 @@ import com.android.utils.StringHelper;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -431,7 +432,7 @@ public abstract class TaskManager {
                     }
 
                 })
-                .setFormat(Format.MULTI_JAR)
+                .setFormat(Format.JAR)
                 .build());
 
         ImmutableList<Object> dependencies = ImmutableList.of(variantData.prepareDependenciesTask,
@@ -456,7 +457,7 @@ public abstract class TaskManager {
                         return files;
                     }
                 })
-                .setFormat(Format.MULTI_JAR)
+                .setFormat(Format.JAR)
                 .setDependencies(dependencies)
                 .build());
 
@@ -470,7 +471,7 @@ public abstract class TaskManager {
                     }
 
                 })
-                .setFormat(Format.MULTI_JAR)
+                .setFormat(Format.JAR)
                 .setDependencies(dependencies)
                 .build());
 
@@ -484,7 +485,7 @@ public abstract class TaskManager {
                     }
 
                 })
-                .setFormat(Format.MULTI_JAR)
+                .setFormat(Format.JAR)
                 .setDependencies(dependencies)
                 .build());
 
@@ -499,31 +500,38 @@ public abstract class TaskManager {
                     }
 
                 })
-                .setFormat(Format.MULTI_JAR)
+                .setFormat(Format.JAR)
                 .build());
-
 
         if (variantScope.getTestedVariantData() != null) {
             final BaseVariantData testedVariantData = variantScope.getTestedVariantData();
 
             VariantScope testedVariantScope = testedVariantData.getScope();
 
+            // create two streams of different types.
             transformManager.addStream(TransformStream.builder()
                     .addContentTypes(ContentType.CLASSES)
                     .addScopes(Scope.TESTED_CODE)
-                    .setFiles(new Supplier<Collection<File>>() {
-                        @Override
-                        public Collection<File> get() {
-                            ImmutableList.Builder<File> builder = ImmutableList.builder();
-                            return builder.add(testedVariantData.javacTask.getDestinationDir())
-                                    .addAll(variantScope.getGlobalScope().getAndroidBuilder()
-                                            .getAllPackagedJars(
-                                                    testedVariantData.getVariantConfiguration()))
-                                    .build();
-                        }
-                    })
+                    .setFiles(
+                            Suppliers.ofInstance(
+                                    (Collection<File>) ImmutableList.of(
+                                            testedVariantScope.getJavaOutputDir())))
                     .setDependency(testedVariantScope.getJavacTask().getName())
-                    .setFormat(Format.MIXED_FOLDERS_AND_JARS)
+                    .setFormat(Format.SINGLE_FOLDER)
+                    .build());
+
+            transformManager.addStream(TransformStream.builder()
+                    .addContentTypes(ContentType.CLASSES)
+                    .addScopes(Scope.TESTED_CODE)
+                    .setFiles(Suppliers.ofInstance(
+                            (Collection<File>) variantScope.getGlobalScope().getAndroidBuilder()
+                                    .getAllPackagedJars(
+                                            testedVariantData.getVariantConfiguration())))
+                    .setDependency(ImmutableList.of(
+                            testedVariantData.prepareDependenciesTask,
+                            testedVariantData.getVariantDependency().getPackageConfiguration()
+                                    .getBuildDependencies()))
+                    .setFormat(Format.JAR)
                     .build());
         }
 
@@ -2033,7 +2041,7 @@ public abstract class TaskManager {
                     .addScope(scope)
                     .setFiles(new File(agentTask.getDestinationDir(), FILE_JACOCO_AGENT))
                     .setDependency(agentTask)
-                    .setFormat(Format.SINGLE_JAR)
+                    .setFormat(Format.JAR)
                     .build());
         }
     }
