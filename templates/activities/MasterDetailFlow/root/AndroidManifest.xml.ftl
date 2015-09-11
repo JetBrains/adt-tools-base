@@ -9,7 +9,7 @@
             android:label="@string/title_${collection_name}"
             </#if>
             <#if hasAppBar>
-            android:theme="@style/AppTheme.NoActionBar"
+            android:theme="@style/${themeNameNoActionBar}"
             </#if>
             <#if buildApi gte 16 && parentActivityClass != "">android:parentActivityName="${parentActivityClass}"</#if>>
             <#if parentActivityClass != "">
@@ -27,7 +27,7 @@
         <activity android:name="${relativePackage}.${DetailName}Activity"
             android:label="@string/title_${detail_name}"
             <#if hasAppBar>
-            android:theme="@style/AppTheme.NoActionBar"
+            android:theme="@style/${themeNameNoActionBar}"
             </#if>
             <#if buildApi gte 16>android:parentActivityName="${relativePackage}.${CollectionName}Activity"</#if>>
             <meta-data android:name="android.support.PARENT_ACTIVITY"
