@@ -69,7 +69,7 @@ public final class Method {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof Method)) return false;
-        return value != ((Method)o).value;
+        return value == ((Method)o).value;
     }
 
     @Override
