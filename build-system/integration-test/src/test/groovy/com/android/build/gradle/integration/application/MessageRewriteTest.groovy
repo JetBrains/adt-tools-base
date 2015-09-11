@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.builder.model.AndroidProject
 import com.android.utils.FileUtils
+import com.android.utils.SdkUtils
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 
@@ -57,8 +58,8 @@ class MessageRewriteTest {
             project.getStderr().reset()
             project.executeExpectingFailure(INVOKED_FROM_IDE_ARGS, 'assembleF1Debug')
             String err = project.getStderr().toString()
-            assertThat(err).contains(FileUtils.join(
-                    "src", "main", "res", "layout", "main.xml"))
+            assertThat(err).contains(SdkUtils.escapePropertyValue(FileUtils.join(
+                    "src", "main", "res", "layout", "main.xml")))
         }
 
         project.execute('assembleDebug')
