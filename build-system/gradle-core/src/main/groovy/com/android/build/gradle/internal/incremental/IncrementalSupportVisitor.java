@@ -17,12 +17,8 @@
 package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
-import com.android.utils.FileUtils;
-import com.google.common.io.Files;
 
-import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -32,12 +28,12 @@ import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -177,8 +173,15 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
 
-        List<MethodNode> methods = classNode.methods;
-        for (MethodNode methodNode : methods) {
+        // Gather all methods from itself and its superclasses to generate a giant access$super
+        // implementation.
+        // This will work fine as long as we don't support adding methods to a class.
+        Map<String, MethodNode> uniqueMethods = new HashMap<String, MethodNode>();
+        addAllNewMethods(uniqueMethods, classNode);
+        for (ClassNode parentNode : parentNodes) {
+            addAllNewMethods(uniqueMethods, parentNode);
+        }
+        for (MethodNode methodNode : uniqueMethods.values()) {
             if (methodNode.name.equals("<init>") || methodNode.name.equals("<clinit>")) {
                 continue;
             }
@@ -262,6 +265,20 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     }
 
     /**
+     * Add all unseen methods from the passed ClassNode's methods. {@see ClassNode#methods}
+     * @param methods the methods already encountered in the ClassNode hierarchy
+     * @param classNode the class to save all new methods from.
+     */
+    private static void addAllNewMethods(Map<String, MethodNode> methods, ClassNode classNode) {
+        //noinspection unchecked
+        for (MethodNode method : (List<MethodNode>) classNode.methods) {
+            if (!methods.containsKey(method.name + method.desc)) {
+                methods.put(method.name + method.desc, method);
+            }
+        }
+    }
+
+    /**
      * Command line invocation entry point. Expects 2 parameters, first is the source directory
      * with .class files as produced by the Java compiler, second is the output directory where to
      * store the bytecode enhanced version.
@@ -280,7 +297,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
             @Override
             public boolean processParents() {
-                return false;
+                return true;
             }
         });
     }
