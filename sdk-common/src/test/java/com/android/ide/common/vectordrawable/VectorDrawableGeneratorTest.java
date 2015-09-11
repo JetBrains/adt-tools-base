@@ -163,6 +163,10 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         checkSvgConversion("test_lineto_moveto");
     }
 
+    public void testIconLineToMoveTo2() throws Exception {
+        checkSvgConversion("test_lineto_moveto2");
+    }
+
     public void testXmlIconSizeOpacity() throws Exception {
         checkXmlConversion("ic_size_opacity");
     }
