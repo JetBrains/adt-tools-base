@@ -17,6 +17,7 @@ import android.preference.PreferenceActivity;
 <#if includeSimple>
 import android.preference.PreferenceCategory;
 </#if>
+import ${PreferenceActionBarClassFqcn};
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
@@ -61,11 +62,11 @@ public class ${activityClass} extends ${preferenceSuperClass} {
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
      */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private void setupActionBar() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+        ActionBar actionBar = get${PreferenceSupport}ActionBar();
+        if (actionBar != null) {
             // Show the Up button in the action bar.
-            get${Support}ActionBar().setDisplayHomeAsUpEnabled(true);
+            actionBar.setDisplayHomeAsUpEnabled(true);
         }
     }
 
