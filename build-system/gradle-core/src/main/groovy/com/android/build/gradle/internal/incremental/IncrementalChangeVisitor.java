@@ -88,7 +88,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             return null;
         }
 
-
         boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
         String newDesc = isStatic ? desc : "(L" + visitedClassName + ";" + desc.substring(1);
 
@@ -156,6 +155,32 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         }
     }
 
+    /**
+     * Enumeration describing a method of field access rights.
+     */
+    private enum AccessRight {
+        PRIVATE, PACKAGE_PRIVATE, PROTECTED, PUBLIC;
+
+        static AccessRight fromNodeAccess(int nodeAccess) {
+            if ((nodeAccess & Opcodes.ACC_PRIVATE) != 0) return PRIVATE;
+            if ((nodeAccess & Opcodes.ACC_PROTECTED) != 0) return PROTECTED;
+            if ((nodeAccess & Opcodes.ACC_PUBLIC) != 0) return PUBLIC;
+            return PACKAGE_PRIVATE;
+        }
+    }
+
+    /**
+     * Enumeration describing whether a method or field is static or not.
+     */
+    private enum AccessType {
+        STATIC, INSTANCE;
+
+        static AccessType fromNodeAccess(int nodeAccess) {
+            return (nodeAccess & Opcodes.ACC_STATIC) != 0
+                    ? STATIC
+                    : INSTANCE;
+        }
+    }
 
     public class ISVisitor extends GeneratorAdapter {
 
@@ -195,48 +220,145 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 // this is an error, we should know of the fields we are visiting.
                 throw new RuntimeException("Unknown field access " + name);
             }
-            boolean isPrivate = (fieldNode.access & Opcodes.ACC_PRIVATE) != 0;
-            boolean isProtected = (fieldNode.access & Opcodes.ACC_PROTECTED) != 0;
-            boolean isPackagePrivate = fieldNode.access == 0;
-            boolean isAccessedFieldStatic = (fieldNode.access & Opcodes.ACC_STATIC) != 0;
+
+            AccessType accessType = AccessType.fromNodeAccess(fieldNode.access);
+            AccessRight accessRight = AccessRight.fromNodeAccess(fieldNode.access);
+
+            boolean handled = false;
+            switch(opcode) {
+                case Opcodes.PUTSTATIC:
+                case Opcodes.GETSTATIC:
+                    assert accessType == AccessType.STATIC;
+                    handled = visitStaticFieldAccess(opcode, owner, name, desc, accessRight);
+                    break;
+                case Opcodes.PUTFIELD:
+                case Opcodes.GETFIELD:
+                    assert accessType == AccessType.INSTANCE;
+                    handled = visitFieldAccess(opcode, name, desc, accessRight);
+                    break;
+                default:
+                    System.out.println("Unhandled field opcode " + opcode);
+            }
+            if (!handled) {
+                super.visitFieldInsn(opcode, owner, name, desc);
+            }
+        }
+
+        /**
+         * Visits an instance field access. The field could be of the visited class or it could be
+         * an accessible field from the class being visited (unless it's private).
+         * @param opcode the field access opcode, can only be {@link Opcodes#PUTFIELD} or
+         *               {@link Opcodes#GETFIELD}
+         * @param name the field name
+         * @param desc the field type
+         * @param accessRight the {@link AccessRight} for the field.
+         * @return true if the field access was handled or false otherwise.
+         */
+        private boolean visitFieldAccess(
+                int opcode, String name, String desc, AccessRight accessRight) {
 
             // we should make this more efficient, have a per field access type method
             // for getting and setting field values.
-            if (isPrivate || isProtected || isPackagePrivate) {
-                if (isAccessedFieldStatic) {
-                    // if we are dealing with accessing a static field, there is no "this" or
-                    // object reference on the stack, push null for the first parameter value.
-                    // eventually, this will fail at runtime since we use the object reference
-                    // to look up the field which won't work with null, but it satisfies the
-                    // ASM generator for now. We probably should do getClass() and pass that
-                    // to a new method.
-                    if (DEBUG) {
-                        System.out.println("Dealing with a static field");
-                    }
-                    visitInsn(Opcodes.ACONST_NULL);
+            if (accessRight != AccessRight.PUBLIC) {
+                switch (opcode) {
+                    case Opcodes.GETFIELD:
+                        if (DEBUG) {
+                            System.out.println("Get field");
+                        }
+                        // the instance of the owner class we are getting the field value from
+                        // is on top of the stack. It could be "this"
+                        push(name);
+                        // Stack :  <receiver>
+                        //          <field_name>
+                        invokeStatic(RUNTIME_TYPE,
+                                Method.getMethod("Object getPrivateField(Object, String)"));
+                        // Stack : <field_value>
+                        unbox(Type.getType(desc));
+                        break;
+                    case Opcodes.PUTFIELD:
+                        if (DEBUG) {
+                            System.out.println("Set field");
+                        }
+                        // the instance of the owner class we are getting the field value from
+                        // is second on the stack. It could be "this"
+                        // top of the stack is the new value we are trying to set, box it.
+                        box(Type.getType(desc));
+                        // push the field name.
+                        push(name);
+                        // Stack :  <receiver>
+                        //          <boxed_field_value>
+                        //          <field_name>
+                        invokeStatic(RUNTIME_TYPE,
+                                Method.getMethod(
+                                        "void setPrivateField(Object, Object, String)"));
+                        break;
+                    default:
+                        throw new RuntimeException(
+                                "VisitFieldAccess called with wrong opcode " + opcode);
                 }
-                if (opcode == Opcodes.GETFIELD) {
-                    if (DEBUG) {
-                        System.out.println("Get field");
-                    }
-                    push(name);
-                    invokeStatic(RUNTIME_TYPE,
-                            Method.getMethod("Object getPrivateField(Object, String)"));
-                    unbox(Type.getType(desc));
-                }
-                if (opcode == Opcodes.PUTFIELD) {
-                    if (DEBUG) {
-                        System.out.println("Set field");
-                    }
-                    box(Type.getType(desc));
-                    push(name);
-                    invokeStatic(RUNTIME_TYPE,
-                            Method.getMethod(
-                                    "void setPrivateField(Object, Object, String)"));
-                }
-            } else {
-                super.visitFieldInsn(opcode, owner, name, desc);
+                return true;
             }
+            // if this is a public field, no need to change anything we can access it from the
+            // $override class.
+            return false;
+        }
+
+        /**
+         * Static field access visit.
+         * So far we do not support class initializer "clinit" that would reset the static field
+         * value in the class newer versions. Think about the case, where a static initializer
+         * resets a static field value, we don't know if the current field value was set through
+         * the initial class initializer or some code path, should we change the field value to the
+         * new one ?
+         *
+         * @param opcode the field access opcode, can only be {@link Opcodes#PUTSTATIC} or
+         *               {@link Opcodes#GETSTATIC}
+         * @param name the field name
+         * @param desc the field type
+         * @param accessRight the {@link AccessRight} for the field.
+         * @return true if the field access was handled or false
+         */
+        private boolean visitStaticFieldAccess(
+                int opcode, String owner, String name, String desc, AccessRight accessRight) {
+
+            if (accessRight != AccessRight.PUBLIC) {
+                switch (opcode) {
+                    case Opcodes.GETSTATIC:
+                        if (DEBUG) {
+                            System.out.println("Get static field " + name);
+                        }
+                        // nothing of interest is on the stack.
+                        visitLdcInsn(Type.getType("L" + owner + ";"));
+                        push(name);
+                        // Stack : <target_class>
+                        //         <field_name>
+                        invokeStatic(RUNTIME_TYPE,
+                                Method.getMethod("Object getStaticPrivateField(Class, String)"));
+                        // Stack : <field_value>
+                        unbox(Type.getType(desc));
+                        return true;
+                    case Opcodes.PUTSTATIC:
+                        if (DEBUG) {
+                            System.out.println("Set static field " + name);
+                        }
+                        // the new field value is on top of the stack.
+                        // box it into an Object.
+                        box(Type.getType(desc));
+                        visitLdcInsn(Type.getType("L" + owner + ";"));
+                        push(name);
+                        // Stack :  <boxed_field_value>
+                        //          <target_class>
+                        //          <field_name>
+                        invokeStatic(RUNTIME_TYPE,
+                                Method.getMethod(
+                                        "void setStaticPrivateField(Object, Class, String)"));
+                        return true;
+                    default:
+                        throw new RuntimeException(
+                                "VisitStaticFieldAccess called with wrong opcode " + opcode);
+                }
+            }
+            return false;
         }
 
         @Override
@@ -249,11 +371,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             }
             boolean opcodeHandled = false;
             if (opcode == Opcodes.INVOKESPECIAL) {
-                opcodeHandled = handleSpecialOpcode(opcode, owner, name, desc, itf);
+                opcodeHandled = handleSpecialOpcode(owner, name, desc, itf);
             } else if (opcode == Opcodes.INVOKEVIRTUAL) {
-                opcodeHandled = handleVirtualOpcode(opcode, owner, name, desc, itf);
+                opcodeHandled = handleVirtualOpcode(owner, name, desc, itf);
             } else if (opcode == Opcodes.INVOKESTATIC) {
-                opcodeHandled = handleStaticOpcode(opcode, owner, name, desc, itf);
+                opcodeHandled = handleStaticOpcode(owner, name, desc, itf);
             }
             if (DEBUG) {
                 System.out.println("Opcode handled ? " + opcodeHandled);
@@ -266,7 +388,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             }
         }
 
-        private boolean handleSpecialOpcode(int opcode, String owner, String name, String desc,
+        private boolean handleSpecialOpcode(String owner, String name, String desc,
                 boolean itf) {
             if (owner.equals(visitedSuperName)) {
                 if (DEBUG) {
@@ -302,7 +424,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             return false;
         }
 
-        private boolean handleVirtualOpcode(int opcode, String owner, String name, String desc,
+        private boolean handleVirtualOpcode(String owner, String name, String desc,
                 boolean itf) {
             if (owner.equals(visitedClassName)) {
 
@@ -377,7 +499,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         // I thought for a while we could bypass and call directly the $override method
         // but we can't because the static method could be of the super class and we don't
         // necessarily have an enhanced class to call directly.
-        private boolean handleStaticOpcode(int opcode, String owner, String name, String desc,
+        private boolean handleStaticOpcode(String owner, String name, String desc,
                 boolean itf) {
             return false;
         }
@@ -484,7 +606,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         super.visitEnd();
     }
 
-    private String getOverridenName(String methodName) {
+    private static String getOverridenName(String methodName) {
         // TODO: change the method name as it can now collide with existing static methods with
         // the same signature.
         if (methodName.equals("<init>")) {

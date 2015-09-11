@@ -22,10 +22,7 @@ import android.support.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,6 +31,7 @@ import java.util.logging.Logger;
  *
  * TODO: transform this static methods into interface/implementation.
  */
+@SuppressWarnings("unused")
 public class GenericInstantRuntime {
 
     protected interface Logging {
@@ -67,37 +65,70 @@ public class GenericInstantRuntime {
         };
     }
 
-    public static Object getPrivateField(Object target, String name) {
+    @Nullable
+    public static Object getPrivateField(Object targetObject, String fieldName) {
+        return getFieldValue(targetObject.getClass(), targetObject, fieldName);
+    }
+
+    @Nullable
+    public static void setPrivateField(@NonNull Object targetObject, @NonNull Object value, @NonNull  String fieldName) {
+        setFieldValue(targetObject.getClass(), targetObject, value, fieldName);
+    }
+
+    @Nullable
+    public static Object getStaticPrivateField(Class targetClass, String fieldName) {
+        return getFieldValue(targetClass, null /* targetObject */, fieldName);
+    }
+
+    @Nullable
+    public static void setStaticPrivateField(
+            @NonNull Object value, @NonNull Class targetClass, @NonNull  String fieldName) {
+        setFieldValue(targetClass, null /* targetObject */, value, fieldName);
+    }
+
+    @Nullable
+    private static void setFieldValue(
+            @NonNull Class targetClass, @Nullable Object targetObject, @Nullable  Object value, @NonNull  String fieldName) {
         try {
-            Field declaredField = getFieldByName(target.getClass(), name);
-            if (declaredField == null) {
-                throw new RuntimeException(new NoSuchFieldException(name));
-            }
-            declaredField.setAccessible(true);
-            return declaredField.get(target);
+            Field declaredField = getField(targetClass, fieldName);
+            declaredField.set(targetObject, value);
         } catch (IllegalAccessException e) {
             if (logging != null) {
-                logging.log(Level.SEVERE, String.format("Exception during getPrivateField %s", name), e);
+                logging.log(Level.SEVERE,
+                        String.format("Exception during setPrivateField %s", fieldName), e);
             }
             throw new RuntimeException(e);
         }
     }
 
-    public static void setPrivateField(Object target, Object value, String name) {
+    @Nullable
+    private static Object getFieldValue(
+            @NonNull Class targetClass,
+            @Nullable Object targetObject,
+            @NonNull  String fieldName) {
         try {
-            Field declaredField = getFieldByName(target.getClass(), name);
-            if (declaredField == null) {
-                throw new RuntimeException(new NoSuchFieldException(name));
-            }
-            declaredField.setAccessible(true);
-            declaredField.set(target, value);
+            Field declaredField = getField(targetClass, fieldName);
+            return declaredField.get(targetObject);
         } catch (IllegalAccessException e) {
             if (logging != null) {
                 logging.log(Level.SEVERE,
-                        String.format("Exception during setPrivateField %s", name), e);
+                        String.format("Exception during%1$s getField %2$s",
+                                targetObject == null ? " static" : "",
+                                fieldName), e);
             }
             throw new RuntimeException(e);
         }
+    }
+
+
+    @NonNull
+    private static Field getField(Class target, String name) {
+        Field declareField = getFieldByName(target, name);
+        if (declareField == null) {
+            throw new RuntimeException(new NoSuchElementException(name));
+        }
+        declareField.setAccessible(true);
+        return declareField;
     }
 
     public static Object invokeProtectedMethod(Object target, String name, String[] parameterTypes,

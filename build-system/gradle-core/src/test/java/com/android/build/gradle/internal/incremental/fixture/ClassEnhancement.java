@@ -89,7 +89,9 @@ public class ClassEnhancement implements TestRule {
     public void applyPatch(@Nullable String patch)
             throws ClassNotFoundException, NoSuchFieldException, InstantiationException,
             IllegalAccessException {
-        if (!Objects.equal(patch, currentPatchState)) {
+        // if requested level is null, always reset no matter what state we think we are in since
+        // we share the same class loader among all ClassEnhancement instances.
+        if (patch == null || !Objects.equal(patch, currentPatchState)) {
 
             final File outputFolder =
                     patch == null ? mBaseCompileOutputFolder : mCompileOutputFolders.get(patch);
