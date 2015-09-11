@@ -1,7 +1,7 @@
 package ${packageName};
 
 import android.annotation.SuppressLint;
-import android.support.v7.app.ActionBar;
+import ${actionBarClassFqcn};
 import ${superClassFqcn};
 import android.os.Bundle;
 import android.os.Handler;
@@ -48,7 +48,10 @@ public class ${activityClass} extends ${superClass} {
 
         setContentView(R.layout.${layoutName});
         <#if parentActivityClass != "">
-            get${Support}ActionBar().setDisplayHomeAsUpEnabled(true);
+            ActionBar actionBar = get${Support}ActionBar();
+            if (actionBar != null) {
+                actionBar.setDisplayHomeAsUpEnabled(true);
+            }
         </#if>
 
         mVisible = true;

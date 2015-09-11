@@ -64,14 +64,6 @@
         help="If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher" />
 
     <parameter
-        id="hasAppBarSelected"
-        name="Include App Bar"
-        type="boolean"
-        visibility="false"
-        default="true"
-        help="If true, the layout will include a Material Design App Bar." />
-
-    <parameter
         id="parentActivityClass"
         name="Hierarchical Parent"
         type="string"
