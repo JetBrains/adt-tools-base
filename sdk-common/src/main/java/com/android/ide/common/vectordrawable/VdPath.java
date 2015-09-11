@@ -72,9 +72,18 @@ class VdPath extends VdElement{
                 Node n = nodes[i];
                 s += n.type;
                 int len = n.params.length;
+                boolean implicitLineTo = false;
+                char lineToType = ' ';
+                if ((n.type == 'm' || n.type == 'M') && len > 2) {
+                    implicitLineTo = true;
+                    lineToType = n.type == 'm' ? 'l' : 'L';
+                }
                 for (int j = 0; j < len; j++) {
                     if (j > 0) {
                         s += ((j & 1) == 1) ? "," : " ";
+                    }
+                    if (implicitLineTo && j == 2) {
+                        s += lineToType;
                     }
                     // To avoid trailing zeros like 17.0, use this trick
                     float value = n.params[j];
