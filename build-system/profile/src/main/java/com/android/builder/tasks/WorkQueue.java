@@ -225,13 +225,16 @@ public class WorkQueue<T> implements Runnable {
                 try {
                     mQueueThreadContext.runTask(job);
                 } catch (Exception e) {
-                    Logger.getAnonymousLogger().log(Level.WARNING, "Exception while processing task ", e);
+                    Logger.getAnonymousLogger().log(
+                            Level.WARNING, "Exception while processing task ", e);
                     job.error(e);
                     return;
                 }
                 // wait for the job completion.
-                job.await();
-                verbose("Thread(%1$s): job %2$s finished", threadName, job.getJobTitle());
+                boolean result = job.await();
+                verbose("Thread(%1$s): job %2$s finished, result=%3$b",
+                        threadName, job.getJobTitle(), result);
+
                 // we could potentially reduce the workforce at this point if we have little
                 // queuing comparatively to the number of worker threads but at this point, the
                 // overall process (gradle activity) is fairly short lived so skipping at this

@@ -40,7 +40,6 @@ import com.android.ide.common.res2.ResourcePreprocessor;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.resources.Density;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repository.FullRevision;
 import com.android.utils.FileUtils;
 import com.google.common.collect.Lists;
 
