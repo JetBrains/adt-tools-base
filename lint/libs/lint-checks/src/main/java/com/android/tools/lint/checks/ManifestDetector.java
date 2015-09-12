@@ -846,6 +846,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                             "Missing `<full-backup-content>` resource");
                 }
             } else if (fullBackupNode == null && !VALUE_FALSE.equals(allowBackup)
+                    && !context.getProject().isLibrary()
                     && context.getMainProject().getTargetSdk() >= 23) {
                 if (hasGcmReceiver(element)) {
                     Location location = context.getLocation(element);
