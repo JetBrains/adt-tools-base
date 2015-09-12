@@ -585,6 +585,28 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         + "</manifest>\n")));
     }
 
+    public void testFullBackupContentMissingInLibrary() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals("No warnings.",
+
+                lintProjectIncrementally(
+                        "AndroidManifest.xml",
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:allowBackup=\"true\"\n"
+                                + "        android:fullBackupContent=\"@xml/backup\"\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n"),
+                        copy("multiproject/library.properties", "project.properties")));
+    }
+
     public void testFullBackupContentOk() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
         assertEquals("No warnings.",
