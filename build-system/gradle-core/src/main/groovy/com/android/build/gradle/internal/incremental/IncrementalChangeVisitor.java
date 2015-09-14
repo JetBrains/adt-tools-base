@@ -203,37 +203,35 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 System.out.println(
                         "Visit field access : " + owner + ":" + name + ":" + desc + ":" + isStatic);
             }
-            // if we are access another object's field, nothing needs to be done.
+            AccessRight accessRight;
             if (!owner.equals(visitedClassName)) {
                 if (DEBUG) {
-                    System.out.println("Not ours, unchanged field access");
+                    System.out.println(owner + ":" + name + " field access");
                 }
-                // this is probably incorrect, what about if we access a package private field
-                // of some other object, we need to go through reflection.
-                super.visitFieldInsn(opcode, owner, name, desc);
-                return;
-            }
+                // we are accessing another object field, and at this point the visitor is not smart
+                // enough to know if has seen this class before or not so we must assume the field
+                // is *not* accessible from the $override class which lives in a different
+                // hierarchy and package.
+                accessRight = AccessRight.PACKAGE_PRIVATE;
+            } else {
+                // check the field access bits.
+                FieldNode fieldNode = getFieldByName(name);
+                if (fieldNode == null) {
+                    // this is an error, we should know of the fields we are visiting.
+                    throw new RuntimeException("Unknown field access " + name);
+                }
 
-            // check the field access bits.
-            FieldNode fieldNode = getFieldByName(name);
-            if (fieldNode == null) {
-                // this is an error, we should know of the fields we are visiting.
-                throw new RuntimeException("Unknown field access " + name);
+                accessRight = AccessRight.fromNodeAccess(fieldNode.access);
             }
-
-            AccessType accessType = AccessType.fromNodeAccess(fieldNode.access);
-            AccessRight accessRight = AccessRight.fromNodeAccess(fieldNode.access);
 
             boolean handled = false;
             switch(opcode) {
                 case Opcodes.PUTSTATIC:
                 case Opcodes.GETSTATIC:
-                    assert accessType == AccessType.STATIC;
                     handled = visitStaticFieldAccess(opcode, owner, name, desc, accessRight);
                     break;
                 case Opcodes.PUTFIELD:
                 case Opcodes.GETFIELD:
-                    assert accessType == AccessType.INSTANCE;
                     handled = visitFieldAccess(opcode, name, desc, accessRight);
                     break;
                 default:

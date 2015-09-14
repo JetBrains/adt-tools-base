@@ -2,6 +2,8 @@ package com.android.build.gradle.internal.incremental;
 
 import android.util.Log;
 
+import java.lang.reflect.Field;
+
 /**
  * Created by jedo on 8/5/15.
  */
@@ -17,13 +19,16 @@ public abstract class AbstractPatchesLoaderImpl implements PatchesLoader {
                 Class<?> aClass = cl.loadClass(className + "$override");
                 Object o = aClass.newInstance();
                 Class<?> originalClass = cl.loadClass(className);
-                originalClass.getDeclaredField("$change").set(null, o);
-                System.out.println(String.format("patched %s", className));
-                //Log.i("fd", String.format("patched %s", className));
+                Field changeField = originalClass.getDeclaredField("$change");
+                // force the field accessibility as the class might not be "visible"
+                // from this package.
+                changeField.setAccessible(true);
+                changeField.set(null, o);
+
+                Log.i("fd", String.format("patched %s", className));
             }
         } catch (Exception e) {
-            //Log.e("fd", String.format("Exception while patching %s", "foo.bar"), e);
-            e.printStackTrace();
+            Log.e("fd", String.format("Exception while patching %s", "foo.bar"), e);
             return false;
         }
         return true;
