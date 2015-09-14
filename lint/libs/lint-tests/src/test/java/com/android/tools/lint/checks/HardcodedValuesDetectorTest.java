@@ -79,4 +79,55 @@ public class HardcodedValuesDetectorTest  extends AbstractCheckTest {
 
                 lintFiles("res/layout/ignores2.xml"));
     }
+
+    public void testSkippingPlaceHolders() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        xml("res/layout/test.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    android:layout_width=\"match_parent\"\n"
+                        + "    android:layout_height=\"match_parent\">\n"
+                        + "\n"
+                        + "    <TextView\n"
+                        + "        android:id=\"@+id/textView\"\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\"\n"
+                        + "        android:text=\"Hello World!\" />\n"
+                        + "\n"
+                        + "    <Button\n"
+                        + "        android:id=\"@+id/button\"\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\"\n"
+                        + "        android:text=\"New Button\" />\n"
+                        + "\n"
+                        + "    <TextView\n"
+                        + "        android:id=\"@+id/textView2\"\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\"\n"
+                        + "        android:text=\"Large Text\"\n"
+                        + "        android:textAppearance=\"?android:attr/textAppearanceLarge\" />\n"
+                        + "\n"
+                        + "    <Button\n"
+                        + "        android:id=\"@+id/button2\"\n"
+                        + "        style=\"?android:attr/buttonStyleSmall\"\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\"\n"
+                        + "        android:text=\"New Button\" />\n"
+                        + "\n"
+                        + "    <CheckBox\n"
+                        + "        android:id=\"@+id/checkBox\"\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\"\n"
+                        + "        android:text=\"New CheckBox\" />\n"
+                        + "\n"
+                        + "    <TextView\n"
+                        + "        android:id=\"@+id/textView3\"\n"
+                        + "        android:layout_width=\"wrap_content\"\n"
+                        + "        android:layout_height=\"wrap_content\"\n"
+                        + "        android:text=\"New Text\" />\n"
+                        + "</LinearLayout>\n")));
+    }
 }
