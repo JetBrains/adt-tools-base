@@ -109,6 +109,24 @@ public class HardcodedValuesDetector extends LayoutDetector {
                 return;
             }
 
+            // Filter out a few special cases:
+
+            if (value.equals("Hello World!")) {
+                // This is the default text in new templates. Users are unlikely to
+                // leave this in, so let's not add warnings in the editor as their
+                // welcome to Android development greeting.
+                return;
+            }
+            if (value.equals("Large Text") || value.equals("Medium Text") ||
+                    value.equals("Small Text") || value.startsWith("New ") &&
+                    (value.equals("New Text")
+                            || value.equals("New " + attribute.getOwnerElement().getTagName()))) {
+                // The layout editor initially places the label "New Button", "New TextView",
+                // etc on widgets dropped on the layout editor. Again, users are unlikely
+                // to leave it that way, so let's not flag it until they change it.
+                return;
+            }
+
             context.report(ISSUE, attribute, context.getLocation(attribute),
                 String.format("[I18N] Hardcoded string \"%1$s\", should use `@string` resource",
                               value));
