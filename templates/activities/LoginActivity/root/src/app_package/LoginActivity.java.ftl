@@ -3,9 +3,14 @@ package ${packageName};
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+<#if includePermissionCheck>
+import android.content.pm.PackageManager;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
+</#if>
 import ${superClassFqcn};
 import android.app.LoaderManager.LoaderCallbacks;
-import android.content.ContentResolver;
+<#if minApiLevel lt 14>import android.content.ContentResolver;</#if>
 import android.content.CursorLoader;
 import android.content.Loader;
 import android.database.Cursor;
@@ -31,11 +36,22 @@ import java.util.List;
 import ${applicationPackage}.R;
 </#if>
 
+<#if includePermissionCheck>
+import static android.Manifest.permission.READ_CONTACTS;
+</#if>
+
 /**
  * A login screen that offers login via email/password.
  */
 public class ${activityClass} extends ${superClass} implements LoaderCallbacks<Cursor> {
 
+<#if includePermissionCheck>
+    /**
+     * Id to identity READ_CONTACTS permission request.
+     */
+    private static final int REQUEST_READ_CONTACTS = 0;
+
+</#if>
     /**
      * A dummy authentication store containing known user names and passwords.
      * TODO: remove after connecting to a real authentication system.
@@ -90,6 +106,12 @@ public class ${activityClass} extends ${superClass} implements LoaderCallbacks<C
     }
 
     private void populateAutoComplete() {
+<#if includePermissionCheck>
+        if (!mayRequestContacts()) {
+            return;
+        }
+
+</#if>
 <#if minApiLevel gte 14>
         getLoaderManager().initLoader(0, null, this);
 <#else>
@@ -103,6 +125,43 @@ public class ${activityClass} extends ${superClass} implements LoaderCallbacks<C
 </#if>
     }
 
+<#if includePermissionCheck>
+    private boolean mayRequestContacts() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return true;
+        }
+        if (checkSelfPermission(READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        }
+        if (shouldShowRequestPermissionRationale(READ_CONTACTS)) {
+            Snackbar.make(mEmailView, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE)
+                    .setAction(android.R.string.ok, new View.OnClickListener() {
+                        @Override
+                        @TargetApi(Build.VERSION_CODES.M)
+                        public void onClick(View v) {
+                            requestPermissions(new String[]{READ_CONTACTS}, REQUEST_READ_CONTACTS);
+                        }
+                    });
+        } else {
+            requestPermissions(new String[]{READ_CONTACTS}, REQUEST_READ_CONTACTS);
+        }
+        return false;
+    }
+
+    /**
+     * Callback received when a permissions request has been completed.
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        if (requestCode == REQUEST_READ_CONTACTS) {
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                populateAutoComplete();
+            }
+        }
+    }
+
+</#if>
     <#if parentActivityClass != "">
     /**
      * Set up the {@link android.app.ActionBar}, if the API is available.
@@ -121,7 +180,7 @@ public class ${activityClass} extends ${superClass} implements LoaderCallbacks<C
      * If there are form errors (invalid email, missing fields, etc.), the
      * errors are presented and no actual login attempt is made.
      */
-    public void attemptLogin() {
+    private void attemptLogin() {
         if (mAuthTask != null) {
             return;
         }
@@ -181,7 +240,7 @@ public class ${activityClass} extends ${superClass} implements LoaderCallbacks<C
      * Shows the progress UI and hides the login form.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-    public void showProgress(final boolean show) {
+    private void showProgress(final boolean show) {
         // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
         // for very easy animations. If available, use these APIs to fade-in
         // the progress spinner.
@@ -212,6 +271,7 @@ public class ${activityClass} extends ${superClass} implements LoaderCallbacks<C
             mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
         }
     }
+
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
         return new CursorLoader(this,
@@ -231,7 +291,7 @@ public class ${activityClass} extends ${superClass} implements LoaderCallbacks<C
 
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
-        List<String> emails = new ArrayList<String>();
+        List<String> emails = new ArrayList<${GenericStringArgument}>();
         cursor.moveToFirst();
         while (!cursor.isAfterLast()) {
             emails.add(cursor.getString(ProfileQuery.ADDRESS));
@@ -265,7 +325,7 @@ public class ${activityClass} extends ${superClass} implements LoaderCallbacks<C
 
         @Override
         protected List<String> doInBackground(Void... voids) {
-            ArrayList<String> emailAddressCollection = new ArrayList<String>();
+            ArrayList<String> emailAddressCollection = new ArrayList<${GenericStringArgument}>();
 
             // Get all emails from the user's contacts and copy them to a list.
             ContentResolver cr = getContentResolver();
@@ -291,7 +351,7 @@ public class ${activityClass} extends ${superClass} implements LoaderCallbacks<C
     private void addEmailsToAutoComplete(List<String> emailAddressCollection) {
         //Create adapter to tell the AutoCompleteTextView what to show in its dropdown list.
         ArrayAdapter<String> adapter =
-                new ArrayAdapter<String>(${activityClass}.this,
+                new ArrayAdapter<${GenericStringArgument}>(${activityClass}.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
 
         mEmailView.setAdapter(adapter);
