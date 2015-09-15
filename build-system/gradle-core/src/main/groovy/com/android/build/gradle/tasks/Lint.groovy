@@ -15,14 +15,13 @@
  */
 
 package com.android.build.gradle.tasks
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.internal.LintGradleClient
 import com.android.build.gradle.internal.dsl.LintOptions
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.tasks.BaseTask
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
 import com.android.tools.lint.LintCliFlags
@@ -43,7 +42,7 @@ import org.gradle.tooling.provider.model.ToolingModelBuilder
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 @ParallelizableTask
-public class Lint extends BaseTask {
+public class Lint extends DefaultAndroidTask {
     @NonNull private LintOptions mLintOptions
     @Nullable private File mSdkHome
     private boolean mFatalOnly
@@ -118,7 +117,7 @@ public class Lint extends BaseTask {
         IssueRegistry registry = new BuiltinIssueRegistry()
         LintCliFlags flags = new LintCliFlags()
         LintGradleClient client = new LintGradleClient(registry, flags, project, modelProject,
-                mSdkHome, null, getBuildTools())
+                mSdkHome, null)
         syncOptions(mLintOptions, client, flags, null, project, true, mFatalOnly)
 
         for (Reporter reporter : flags.getReporters()) {
@@ -179,10 +178,10 @@ public class Lint extends BaseTask {
         IssueRegistry registry = createIssueRegistry()
         LintCliFlags flags = new LintCliFlags()
         LintGradleClient client = new LintGradleClient(registry, flags, project, modelProject,
-                mSdkHome, variantName, getBuildTools())
+                mSdkHome, variantName)
         if (mFatalOnly) {
             if (!mLintOptions.isCheckReleaseBuilds()) {
-                return Collections.emptyList()
+                return
             }
             flags.setFatalOnly(true)
         }

@@ -50,7 +50,6 @@ import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.tools.lint.client.api.CircularDependencyException;
@@ -642,16 +641,6 @@ public class Project {
      */
     public int getBuildSdk() {
         return mBuildSdk;
-    }
-
-    /**
-     * Returns the specific version of the build tools being used, if known
-     *
-     * @return the build tools version in use, or null if not known
-     */
-    @Nullable
-    public BuildToolInfo getBuildTools() {
-        return mClient.getBuildTools(this);
     }
 
     /**

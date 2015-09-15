@@ -26,9 +26,7 @@ import static org.mockito.Mockito.when;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
-import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.sdklib.repository.FullRevision;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
@@ -1212,32 +1210,6 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
-    public void testPaddingStartWithOldBuildTools() throws Exception {
-        assertEquals(""
-                        + "res/layout/padding_start.xml:14: Error: Upgrade buildToolsVersion from 22.2.1 to at least 23.0.1; if not, attribute paddingStart referenced here can result in a crash on some specific devices older than API 17 (current min is 4) [NewApi]\n"
-                        + "            android:paddingStart=\"20dp\"\n"
-                        + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "res/layout/padding_start.xml:21: Error: Upgrade buildToolsVersion from 22.2.1 to at least 23.0.1; if not, attribute paddingStart referenced here can result in a crash on some specific devices older than API 17 (current min is 4) [NewApi]\n"
-                        + "            android:paddingStart=\"20dp\"\n"
-                        + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "res/layout/padding_start.xml:28: Error: Upgrade buildToolsVersion from 22.2.1 to at least 23.0.1; if not, attribute paddingStart referenced here can result in a crash on some specific devices older than API 17 (current min is 4) [NewApi]\n"
-                        + "            android:paddingStart=\"20dp\"\n"
-                        + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "3 errors, 0 warnings\n",
-                lintProject(
-                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
-                        "apicheck/padding_start.xml=>res/layout/padding_start.xml"
-                ));
-    }
-
-    public void testPaddingStartWithNewBuildTools() throws Exception {
-        assertEquals("No warnings.",
-                lintProject(
-                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
-                        "apicheck/padding_start.xml=>res/layout/padding_start.xml"
-                ));
-    }
-
     public void testSwitch() throws Exception {
         assertEquals("No warnings.",
             lintProject(
@@ -1802,36 +1774,6 @@ public class ApiDetectorTest extends AbstractCheckTest {
                     Project fromSuper = super.createProject(dir, referenceDir);
                     Project spy = spy(fromSuper);
                     when(spy.getGradleProjectModel()).thenReturn(model);
-                    return spy;
-                }
-            };
-        }
-        if (getName().equals("testPaddingStartWithOldBuildTools")) {
-            return new TestLintClient() {
-                @NonNull
-                @Override
-                protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
-                    FullRevision revision = new FullRevision(22, 2, 1);
-                    BuildToolInfo info = new BuildToolInfo(revision, dir);
-
-                    Project fromSuper = super.createProject(dir, referenceDir);
-                    Project spy = spy(fromSuper);
-                    when(spy.getBuildTools()).thenReturn(info);
-                    return spy;
-                }
-            };
-        }
-        if (getName().equals("testPaddingStartWithNewBuildTools")) {
-            return new TestLintClient() {
-                @NonNull
-                @Override
-                protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
-                    FullRevision revision = new FullRevision(23, 0, 2);
-                    BuildToolInfo info = new BuildToolInfo(revision, dir);
-
-                    Project fromSuper = super.createProject(dir, referenceDir);
-                    Project spy = spy(fromSuper);
-                    when(spy.getBuildTools()).thenReturn(info);
                     return spy;
                 }
             };
