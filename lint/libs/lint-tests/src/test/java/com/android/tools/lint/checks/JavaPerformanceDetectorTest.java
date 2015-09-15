@@ -25,6 +25,13 @@ public class JavaPerformanceDetectorTest extends AbstractCheckTest {
         return new JavaPerformanceDetector();
     }
 
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
     public void test() throws Exception {
         assertEquals(
             "src/test/pkg/JavaPerformanceTest.java:28: Warning: Avoid object allocations during draw/layout operations (preallocate and reuse instead) [DrawAllocation]\n" +

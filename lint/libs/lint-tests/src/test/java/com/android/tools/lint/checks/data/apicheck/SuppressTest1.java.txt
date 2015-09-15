@@ -5,7 +5,7 @@ import org.w3c.dom.DOMErrorHandler;
 import org.w3c.dom.DOMLocator;
 
 import android.view.ViewGroup.LayoutParams;
-import android.annotations.tools.SuppressLint;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ApplicationErrorReport;
 import android.app.ApplicationErrorReport.BatteryInfo;

@@ -1,6 +1,6 @@
 package test.pkg;
 
-import android.annotations.tools.SuppressLint;
+import android.annotation.SuppressLint;
 
 @SuppressWarnings("unused")
 public class SuppressTest5 {

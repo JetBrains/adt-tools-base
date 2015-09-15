@@ -145,7 +145,7 @@ public class EcjParser extends JavaParser {
     private Map<File, ICompilationUnit> mSourceUnits;
     private Map<String, TypeDeclaration> mTypeUnits;
     private Parser mParser;
-    private EcjResult mEcjResult;
+    protected EcjResult mEcjResult;
 
     public EcjParser(@NonNull LintCliClient client, @Nullable Project project) {
         mClient = client;

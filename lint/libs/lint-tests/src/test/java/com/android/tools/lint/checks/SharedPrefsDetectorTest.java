@@ -25,6 +25,13 @@ public class SharedPrefsDetectorTest extends AbstractCheckTest {
         return new SharedPrefsDetector();
     }
 
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
     public void test() throws Exception {
         assertEquals(
             "src/test/pkg/SharedPrefsTest.java:54: Warning: SharedPreferences.edit() without a corresponding commit() or apply() call [CommitPrefEdits]\n" +

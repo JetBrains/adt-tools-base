@@ -50,6 +50,13 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
         return new PrivateResourceDetector();
     }
 
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
     public void testPrivateInXml() throws Exception {
         assertEquals(""
                 + "res/layout/private.xml:11: Warning: The resource @string/my_private_string is marked as private in com.android.tools:test-library [PrivateResource]\n"

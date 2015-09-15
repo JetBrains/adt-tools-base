@@ -91,4 +91,11 @@ public class WarningTest extends AbstractCheckTest {
             prev = warning;
         }
     }
+
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
 }

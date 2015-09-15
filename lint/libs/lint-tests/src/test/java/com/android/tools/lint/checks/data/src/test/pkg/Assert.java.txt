@@ -1,6 +1,6 @@
 package test.pkg;
 
-import android.annotations.tools.SuppressLint;
+import android.annotation.SuppressLint;
 
 public class Assert {
     public Assert(int param, Object param2, Object param3) {

@@ -25,6 +25,13 @@ public class SecurityDetectorTest extends AbstractCheckTest {
         return new SecurityDetector();
     }
 
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
     public void testBroken() throws Exception {
         assertEquals(
             "AndroidManifest.xml:12: Warning: Exported service does not require permission [ExportedService]\n" +

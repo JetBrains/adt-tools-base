@@ -4,7 +4,7 @@ import android.annotation.SuppressLint;
 import android.view.View;
 
 public class WrongAnnotation {
-    @Override
+
     @SuppressLint("NewApi") // Valid: class-file check on method
     public static void foobar(View view, @SuppressLint("NewApi") int foo) { // Invalid: class-file check
         @SuppressLint("NewApi") // Invalid

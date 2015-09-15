@@ -3,7 +3,7 @@ package test.pkg;
 import android.database.sqlite.SQLiteDatabase;
 
 @SuppressWarnings({"unused", "SpellCheckingInspection"})
-public class SqliteTest {
+public class SQLiteTest {
     public interface Tables {
         interface AppKeys {
             String NAME = "appkeys";
