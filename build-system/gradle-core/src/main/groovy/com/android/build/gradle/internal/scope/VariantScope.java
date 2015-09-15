@@ -187,7 +187,7 @@ public interface VariantScope extends BaseScope {
     File getAidlIncrementalDir();
 
     @NonNull
-    File getAidlParcelableDir();
+    File getPackagedAidlDir();
 
     @NonNull
     File getJackIncrementalDir();

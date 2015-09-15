@@ -17,11 +17,14 @@
 package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.truth.AarSubject
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 
 /**
  * Assemble tests for aidl.
@@ -46,5 +49,13 @@ class AidlTest {
     @Test
     void lint() {
         project.execute("lint")
+    }
+
+    @Test
+    void "check parcelable and whitelisted files are packaged"() {
+        AarSubject aar = assertThatAar(project.getAar("debug"))
+        aar.contains("aidl/com/android/tests/basicprojectwithaidl/Rect.aidl")
+        aar.contains("aidl/com/android/tests/basicprojectwithaidl/WhiteListed.aidl")
+        aar.doesNotContain("aidl/com/android/tests/basicprojectwithaidl/ITest.aidl")
     }
 }

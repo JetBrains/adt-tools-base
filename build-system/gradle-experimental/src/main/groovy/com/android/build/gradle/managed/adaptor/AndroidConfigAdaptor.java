@@ -269,6 +269,11 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
         return model.getLibraryRequests();
     }
 
+    @Override
+    public Collection<String> getAidlPackageWhiteList() {
+        return model.getAidlPackageWhitelist();
+    }
+
     private void applyProjectSourceSet() {
         for (FunctionalSourceSet source : getSources()) {
             String name = source.getName();

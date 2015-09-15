@@ -35,6 +35,7 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.res2.FileStatus;
 import com.android.utils.FileUtils;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
@@ -62,7 +63,10 @@ public class AidlCompile extends IncrementalTask {
 
     // ----- PUBLIC TASK API -----
     private File sourceOutputDir;
-    private File aidlParcelableDir;
+    @Nullable
+    private File packagedDir;
+    @Nullable
+    private Collection<String> packageWhitelist;
 
     // ----- PRIVATE TASK API -----
     @Input
@@ -124,7 +128,8 @@ public class AidlCompile extends IncrementalTask {
         getBuilder().compileAllAidlFiles(
                 getSourceDirs(),
                 getSourceOutputDir(),
-                getAidlParcelableDir(),
+                getPackagedDir(),
+                getPackageWhitelist(),
                 getImportDirs(),
                 dependencyFileProcessor,
                 new LoggedProcessOutputHandler(getILogger()));
@@ -160,8 +165,9 @@ public class AidlCompile extends IncrementalTask {
                 sourceFolder,
                 file,
                 getSourceOutputDir(),
-                getAidlParcelableDir(),
-                importFolders,
+                getPackagedDir(),
+                getPackageWhitelist(),
+                Preconditions.checkNotNull(importFolders),
                 dependencyFileProcessor,
                 processOutputHandler);
     }
@@ -170,7 +176,7 @@ public class AidlCompile extends IncrementalTask {
     protected void doFullTaskAction() throws IOException {
         // this is full run, clean the previous output
         File destinationDir = getSourceOutputDir();
-        File parcelableDir = getAidlParcelableDir();
+        File parcelableDir = getPackagedDir();
         FileUtils.emptyFolder(destinationDir);
         if (parcelableDir != null) {
             FileUtils.emptyFolder(parcelableDir);
@@ -205,7 +211,7 @@ public class AidlCompile extends IncrementalTask {
         try {
             inputMap = store.loadFrom(incrementalData);
         } catch (Exception ignored) {
-            incrementalData.delete();
+            FileUtils.delete(incrementalData);
             getProject().getLogger().info(
                     "Failed to read dependency store: full task run!");
             doFullTaskAction();
@@ -273,7 +279,7 @@ public class AidlCompile extends IncrementalTask {
         try {
             executor.waitForTasksWithQuickFail(true /*cancelRemaining*/);
         } catch (Throwable t) {
-            incrementalData.delete();
+            FileUtils.delete(incrementalData);
             throw new RuntimeException(t);
         }
 
@@ -300,12 +306,13 @@ public class AidlCompile extends IncrementalTask {
         throw new IllegalArgumentException(String.format("File '%s' is not in a source dir", file));
     }
 
-    private static void cleanUpOutputFrom(@NonNull DependencyData dependencyData) {
+    private static void cleanUpOutputFrom(@NonNull DependencyData dependencyData)
+            throws IOException {
         for (String output : dependencyData.getOutputFiles()) {
-            new File(output).delete();
+            FileUtils.delete(new File(output));
         }
         for (String output : dependencyData.getSecondaryOutputFiles()) {
-            new File(output).delete();
+            FileUtils.delete(new File(output));
         }
     }
 
@@ -318,13 +325,22 @@ public class AidlCompile extends IncrementalTask {
         this.sourceOutputDir = sourceOutputDir;
     }
 
-    @OutputDirectory @Optional
-    public File getAidlParcelableDir() {
-        return aidlParcelableDir;
+    @OutputDirectory @Optional @Nullable
+    public File getPackagedDir() {
+        return packagedDir;
     }
 
-    public void setAidlParcelableDir(File aidlParcelableDir) {
-        this.aidlParcelableDir = aidlParcelableDir;
+    public void setPackagedDir(@Nullable File packagedDir) {
+        this.packagedDir = packagedDir;
+    }
+
+    @Input @Optional @Nullable
+    public Collection<String> getPackageWhitelist() {
+        return packageWhitelist;
+    }
+
+    public void setPackageWhitelist(@Nullable Collection<String> packageWhitelist) {
+        this.packageWhitelist = packageWhitelist;
     }
 
     public List<File> getSourceDirs() {
@@ -388,15 +404,12 @@ public class AidlCompile extends IncrementalTask {
                 }
             });
 
-            ConventionMappingHelper.map(compileTask, "sourceOutputDir", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return scope.getAidlSourceOutputDir();
-                }
-            });
+            compileTask.setSourceOutputDir(scope.getAidlSourceOutputDir());
 
             if (variantConfiguration.getType() == VariantType.LIBRARY) {
-                compileTask.setAidlParcelableDir(scope.getAidlParcelableDir());
+                compileTask.setPackagedDir(scope.getPackagedAidlDir());
+                compileTask.setPackageWhitelist(
+                        scope.getGlobalScope().getExtension().getAidlPackageWhiteList());
             }
         }
     }

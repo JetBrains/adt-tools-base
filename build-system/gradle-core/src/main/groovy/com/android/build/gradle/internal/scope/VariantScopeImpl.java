@@ -531,7 +531,7 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     @NonNull
-    public File getAidlParcelableDir() {
+    public File getPackagedAidlDir() {
         return new File(globalScope.getIntermediatesDir(),
                 DIR_BUNDLES + "/" + getVariantConfiguration().getDirName() + "/aidl");
     }
