@@ -180,7 +180,7 @@ public class SdkVersionInfo {
             case 20: return "KITKAT_WATCH"; //$NON-NLS-1$
             case 21: return "LOLLIPOP"; //$NON-NLS-1$
             case 22: return "LOLLIPOP_MR1"; //$NON-NLS-1$
-            case 23: return "MARSHMALLOW"; //$NON-NLS-1$
+            case 23: return "M"; //$NON-NLS-1$
             // If you add more versions here, also update #getAndroidName and
             // #HIGHEST_KNOWN_API
         }
