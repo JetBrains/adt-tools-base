@@ -52,11 +52,11 @@
         android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical|left"
+        android:layout_gravity="center_vertical|start"
         android:layout_margin="@dimen/fab_margin"
         android:src="@android:drawable/stat_notify_chat"
         app:layout_anchor="@+id/${detail_name}_container"
-        app:layout_anchorGravity="top|right" />
+        app:layout_anchorGravity="top|end" />
 
 </android.support.design.widget.CoordinatorLayout>
 </#if>
