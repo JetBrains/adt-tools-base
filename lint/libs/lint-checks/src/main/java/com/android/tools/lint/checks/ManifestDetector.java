@@ -19,6 +19,7 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_ALLOW_BACKUP;
+import static com.android.SdkConstants.ATTR_FULL_BACKUP_CONTENT;
 import static com.android.SdkConstants.ATTR_ICON;
 import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_NAME;
@@ -828,7 +829,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                     (mApplicationTagHandle == null || isMainManifest(context, context.file))) {
                 mApplicationTagHandle = context.createLocationHandle(element);
             }
-            Attr fullBackupNode = element.getAttributeNodeNS(ANDROID_URI, "fullBackupContent");
+            Attr fullBackupNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_FULL_BACKUP_CONTENT);
             if (fullBackupNode != null &&
                     fullBackupNode.getValue().startsWith(PREFIX_RESOURCE_REF) &&
                     context.getClient().supportsProjectResources()) {

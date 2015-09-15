@@ -147,6 +147,36 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testRtlManifestAttribute() throws Exception {
+        // Treat the manifest RTL attribute in the same was as the layout start/end attributes:
+        // these are known to be benign on older platforms, so don't flag it.
+        assertEquals("No warnings.",
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"test.bytecode\">\n"
+                                + "\n"
+                                + "    <uses-sdk android:minSdkVersion=\"1\" />\n"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:supportsRtl='true'\n"
+
+                                // Ditto for the fullBackupContent attribute. If you're targeting
+                                // 23, you'll want to use it, but it's not an error that older
+                                // platforms aren't looking at it.
+
+                                + "        android:fullBackupContent='false'\n"
+                                + "        android:icon=\"@drawable/ic_launcher\"\n"
+                                + "        android:label=\"@string/app_name\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")
+
+                )
+        );
+    }
+
     public void testXmlApi() throws Exception {
         assertEquals(""
                 + "res/layout/attribute2.xml:4: Error: ?android:switchTextAppearance requires API level 14 (current min is 11) [NewApi]\n"
