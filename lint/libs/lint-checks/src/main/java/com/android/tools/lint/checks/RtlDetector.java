@@ -195,8 +195,8 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     private static final String GRAVITY_CLASS = "Gravity";                      //$NON-NLS-1$
     private static final String FQCN_GRAVITY = "android.view.Gravity";          //$NON-NLS-1$
     private static final String FQCN_GRAVITY_PREFIX = "android.view.Gravity.";  //$NON-NLS-1$
-    private static final String ATTR_SUPPORTS_RTL = "supportsRtl";              //$NON-NLS-1$
     private static final String ATTR_TEXT_ALIGNMENT = "textAlignment";          //$NON-NLS-1$
+    static final String ATTR_SUPPORTS_RTL = "supportsRtl";                      //$NON-NLS-1$
 
     /** API version in which RTL support was added */
     private static final int RTL_API = 17;
