@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.core.Toolchain;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.repository.PreciseRevision;
+import com.android.utils.FileUtils;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
@@ -429,8 +430,10 @@ public class NdkHandler {
      * Return the executable for removing debug symbols from a shared object.
      */
     public File getStripCommand(Abi abi) {
-        String strip = toolchain == Toolchain.CLANG ? "ndk-strip" : abi.getGccExecutablePrefix() + "-strip";
-        return new File(getToolchainPath(toolchain, toolchainVersion, abi), "bin/" + strip);
+        return FileUtils.join(
+                getDefaultGccToolchainPath(abi),
+                "bin",
+                abi.getGccExecutablePrefix() + "-strip");
     }
 
     /**
