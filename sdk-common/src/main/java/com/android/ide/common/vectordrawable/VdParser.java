@@ -16,7 +16,6 @@
 
 package com.android.ide.common.vectordrawable;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
@@ -31,7 +30,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -106,7 +105,7 @@ class VdParser {
         }
     };
 
-    HashMap<String, ElemParser> tagSwitch = new HashMap<String, ElemParser>();
+    Map<String, ElemParser> tagSwitch = new HashMap<String, ElemParser>();
     {
         tagSwitch.put(SHAPE_VECTOR, mParseSize);
         tagSwitch.put(SHAPE_PATH, mParsePath);
@@ -377,14 +376,7 @@ class VdParser {
     private void parseSize(VdTree vdTree, Attributes attributes) {
 
         Pattern pattern = Pattern.compile("^\\s*(\\d+(\\.\\d+)*)\\s*([a-zA-Z]+)\\s*$");
-        HashMap<String, Integer> m = new HashMap<String, Integer>();
-        m.put(SdkConstants.UNIT_PX, 1);
-        m.put(SdkConstants.UNIT_DIP, 1);
-        m.put(SdkConstants.UNIT_DP, 1);
-        m.put(SdkConstants.UNIT_SP, 1);
-        m.put(SdkConstants.UNIT_PT, 1);
-        m.put(SdkConstants.UNIT_IN, 1);
-        m.put(SdkConstants.UNIT_MM, 1);
+
         int len = attributes.getLength();
 
         for (int i = 0; i < len; i++) {
@@ -394,7 +386,6 @@ class VdParser {
             float size = 0;
             if (matcher.matches()) {
                 float v = Float.parseFloat(matcher.group(1));
-                String unit = matcher.group(3).toLowerCase(Locale.getDefault());
                 size = v;
             }
             // -- Extract dimension units.
@@ -409,10 +400,7 @@ class VdParser {
                 vdTree.mPortHeight = Float.parseFloat(value);
             } else if ("android:alpha".equals(name)) {
                 vdTree.mRootAlpha = Float.parseFloat(value);
-            } else {
-                continue;
             }
-
         }
     }
 
@@ -448,24 +436,12 @@ class VdParser {
             vgPath.mName = value;
         } else if (PATH_FILL.equals(name)) {
             vgPath.mFillColor = calculateColor(value);
-            if (!Float.isNaN(vgPath.mFillOpacity)) {
-                vgPath.mFillColor &= 0x00FFFFFF;
-                vgPath.mFillColor |= ((int) (0xFF * vgPath.mFillOpacity)) << 24;
-            }
         } else if (PATH_STROKE.equals(name)) {
             vgPath.mStrokeColor = calculateColor(value);
-            if (!Float.isNaN(vgPath.mStrokeOpacity)) {
-                vgPath.mStrokeColor &= 0x00FFFFFF;
-                vgPath.mStrokeColor |= ((int) (0xFF * vgPath.mStrokeOpacity)) << 24;
-            }
         } else if (PATH_FILL_OPACTIY.equals(name)) {
             vgPath.mFillOpacity = Float.parseFloat(value);
-            vgPath.mFillColor &= 0x00FFFFFF;
-            vgPath.mFillColor |= ((int) (0xFF * vgPath.mFillOpacity)) << 24;
         } else if (PATH_STROKE_OPACTIY.equals(name)) {
             vgPath.mStrokeOpacity = Float.parseFloat(value);
-            vgPath.mStrokeColor &= 0x00FFFFFF;
-            vgPath.mStrokeColor |= ((int) (0xFF * vgPath.mStrokeOpacity)) << 24;
         } else if (PATH_STROKE_WIDTH.equals(name)) {
             vgPath.mStrokeWidth = Float.parseFloat(value);
         } else if (PATH_ROTATION.equals(name)) {
@@ -512,6 +488,9 @@ class VdParser {
 
     }
 
+    /**
+     * @return color value in #AARRGGBB format.
+     */
     private int calculateColor(String value) {
         int len = value.length();
         int ret;
@@ -534,10 +513,11 @@ class VdParser {
                 break;
             case 5: // #ARGB
                 ret = (int) Long.parseLong(value.substring(1), 16);
-                k |= ((ret >> 16) & 0xF) * 0x11000000;
+                k |= ((ret >> 12) & 0xF) * 0x11000000;
                 k |= ((ret >> 8) & 0xF) * 0x110000;
                 k |= ((ret >> 4) & 0xF) * 0x1100;
                 k |= ((ret) & 0xF) * 0x11;
+                ret = k;
                 break;
             default:
                 return 0xFF000000;
