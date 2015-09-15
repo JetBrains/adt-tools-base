@@ -101,7 +101,7 @@ public class ${activityClass} extends ${superClass} {
      * system UI. This is to prevent the jarring behavior of controls going away
      * while interacting with activity UI.
      */
-    View.OnTouchListener mDelayHideTouchListener = new View.OnTouchListener() {
+    private final View.OnTouchListener mDelayHideTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent motionEvent) {
             if (AUTO_HIDE) {
@@ -133,7 +133,7 @@ public class ${activityClass} extends ${superClass} {
         mHideHandler.postDelayed(mHidePart2Runnable, UI_ANIMATION_DELAY);
     }
 
-    Runnable mHidePart2Runnable = new Runnable() {
+    private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
         @Override
         public void run() {
@@ -163,7 +163,7 @@ public class ${activityClass} extends ${superClass} {
         mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
     }
 
-    Runnable mShowPart2Runnable = new Runnable() {
+    private final Runnable mShowPart2Runnable = new Runnable() {
         @Override
         public void run() {
             // Delayed display of UI elements
@@ -171,13 +171,12 @@ public class ${activityClass} extends ${superClass} {
             if (actionBar != null) {
                 actionBar.show();
             }
-            get${Support}ActionBar().show();
             mControlsView.setVisibility(View.VISIBLE);
         }
     };
 
-    Handler mHideHandler = new Handler();
-    Runnable mHideRunnable = new Runnable() {
+    private final Handler mHideHandler = new Handler();
+    private final Runnable mHideRunnable = new Runnable() {
         @Override
         public void run() {
             hide();
