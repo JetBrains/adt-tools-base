@@ -16,8 +16,6 @@
 package com.android.tools.perflib.analyzer;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.tools.perflib.heap.StackTrace;
 
 public interface AnalysisResultEntry {
 
@@ -27,10 +25,6 @@ public interface AnalysisResultEntry {
     @NonNull
     String getCategory();
 
-    // TODO change this to its own class for flexibility
     @NonNull
-    String getOffender();
-
-    @Nullable
-    StackTrace getStackTrace();
+    Offender getOffender();
 }
