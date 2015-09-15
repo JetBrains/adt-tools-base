@@ -557,6 +557,18 @@ public interface IDevice extends IShellEnabledDevice {
             throws TimeoutException, AdbCommandRejectedException, IOException;
 
     /**
+     * Ask the adb demon to become root on the device.
+     * This may silently fail, and can only succeed on developer builds.
+     * See "adb root" for more information.
+     *
+     * @throws TimeoutException in case of timeout on the connection.
+     * @throws AdbCommandRejectedException if adb rejects the command
+     * @throws IOException
+     */
+    void root()
+      throws TimeoutException, AdbCommandRejectedException, IOException;
+
+    /**
      * Return the device's battery level, from 0 to 100 percent.
      * <p/>
      * The battery level may be cached. Only queries the device for its

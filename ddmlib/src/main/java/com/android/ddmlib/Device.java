@@ -1211,6 +1211,12 @@ final class Device implements IDevice {
     }
 
     @Override
+    public void root()
+      throws TimeoutException, AdbCommandRejectedException, IOException {
+        AdbHelper.root(AndroidDebugBridge.getSocketAddress(), this);
+    }
+
+    @Override
     public Integer getBatteryLevel() throws TimeoutException, AdbCommandRejectedException,
             IOException, ShellCommandUnresponsiveException {
         // use default of 5 minutes

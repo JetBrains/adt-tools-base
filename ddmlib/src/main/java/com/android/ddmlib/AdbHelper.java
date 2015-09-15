@@ -16,6 +16,7 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ddmlib.log.LogReceiver;
 
@@ -891,6 +892,45 @@ final class AdbHelper {
             setDevice(adbChan, device);
 
             write(adbChan, request);
+        } finally {
+            if (adbChan != null) {
+                adbChan.close();
+            }
+        }
+    }
+
+
+    /**
+     * Ask the adb demon to become root on the device.
+     * This may silently fail, and can only succeed on developer builds.
+     * See "adb root" for more information.
+     * If you need to know if succeeded, you can check the result of executeRemoteCommand on 'echo \$USER_ID', if it is 0 then adbd is
+     * running as root.
+     *
+     * @throws TimeoutException in case of timeout on the connection.
+     * @throws AdbCommandRejectedException if adb rejects the command
+     * @throws IOException in case of I/O error on the connection.
+     */
+    public static void root(@NonNull InetSocketAddress adbSockAddr, @NonNull Device device)
+      throws TimeoutException, AdbCommandRejectedException, IOException {
+        byte[] request = formAdbRequest("root:"); //$NON-NLS-1$
+        SocketChannel adbChan = null;
+        try {
+            adbChan = SocketChannel.open(adbSockAddr);
+            adbChan.configureBlocking(false);
+
+            // if the device is not -1, then we first tell adb we're looking to talk
+            // to a specific device
+            setDevice(adbChan, device);
+
+            write(adbChan, request);
+
+            AdbResponse resp = readAdbResponse(adbChan, false /* readDiagString */);
+            if (!resp.okay) {
+                Log.w("root", "Error setting root: " + resp.message);
+                throw new AdbCommandRejectedException(resp.message);
+            }
+
         } finally {
             if (adbChan != null) {
                 adbChan.close();
