@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_PREFIX;
 import static com.android.SdkConstants.ANDROID_THEME_PREFIX;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_CLASS;
+import static com.android.SdkConstants.ATTR_FULL_BACKUP_CONTENT;
 import static com.android.SdkConstants.ATTR_ID;
 import static com.android.SdkConstants.ATTR_LABEL_FOR;
 import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
@@ -42,6 +43,7 @@ import static com.android.SdkConstants.TAG_STYLE;
 import static com.android.SdkConstants.TARGET_API;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VIEW_TAG;
+import static com.android.tools.lint.checks.RtlDetector.ATTR_SUPPORTS_RTL;
 import static com.android.tools.lint.detector.api.ClassContext.getFqcn;
 import static com.android.tools.lint.detector.api.ClassContext.getInternalName;
 import static com.android.tools.lint.detector.api.LintUtils.getNextInstruction;
@@ -364,7 +366,7 @@ public class ApiDetector extends ResourceXmlDetector
                         && attributeApiLevel > getLocalMinSdk(attribute.getOwnerElement())
                         && !isBenignUnusedAttribute(name)
                         && !isAlreadyWarnedDrawableFile(context, attribute, attributeApiLevel)) {
-                    if (RtlDetector.isRtlAttributeName(name)) {
+                    if (RtlDetector.isRtlAttributeName(name) || ATTR_SUPPORTS_RTL.equals(name)) {
                         // No need to warn for example that
                         //  "layout_alignParentEnd will only be used in API level 17 and higher"
                         // since we have a dedicated RTL lint rule dealing with those attributes
@@ -556,8 +558,9 @@ public class ApiDetector extends ResourceXmlDetector
      * on older platforms.
      */
     public static boolean isBenignUnusedAttribute(@NonNull String name) {
-        return ATTR_LABEL_FOR.equals(name) || ATTR_TEXT_IS_SELECTABLE.equals(name);
-
+        return ATTR_LABEL_FOR.equals(name)
+               || ATTR_TEXT_IS_SELECTABLE.equals(name)
+               || ATTR_FULL_BACKUP_CONTENT.equals(name);
     }
 
     @Override
