@@ -131,25 +131,15 @@ public class GenericInstantRuntime {
         return declareField;
     }
 
-    public static Object invokeProtectedMethod(Object target, String name, String[] parameterTypes,
+    public static Object invokeProtectedMethod(Object target,
+            String name,
+            String[] parameterTypes,
             Object[] params) {
 
         if (logging!=null && logging.isLoggable(Level.FINE)) {
             logging.log(Level.FINE, String.format("protectedMethod:%s on %s", name, target));
         }
-        Class[] paramTypes = new Class[parameterTypes.length];
-        for (int i = 0; i < parameterTypes.length; i++) {
-            BasicType basicType = BasicType.parse(parameterTypes[i]);
-            if (basicType != null) {
-                paramTypes[i] = basicType.getJavaType();
-            } else {
-                try {
-                    paramTypes[i] = target.getClass().getClassLoader().loadClass(parameterTypes[i]);
-                } catch (ClassNotFoundException e) {
-                    logging.log(Level.SEVERE, String.format("Exception while invoking %s", name), e);
-                }
-            }
-        }
+        Class[] paramTypes = translateParameterTypes(target.getClass(), parameterTypes);
         try {
             Method toDispatchTo = getMethodByName(target.getClass(), name, paramTypes);
             if (toDispatchTo == null) {
@@ -164,6 +154,56 @@ public class GenericInstantRuntime {
             logging.log(Level.SEVERE, String.format("Exception while invoking %s", name), e);
             throw new RuntimeException(e);
         }
+    }
+
+    public static Object invokeProtectedStaticMethod(Class targetClass,
+            String name,
+            String[] parameterTypes,
+            Object[] params) {
+
+        if (logging!=null && logging.isLoggable(Level.FINE)) {
+            logging.log(Level.FINE,
+                    String.format("protectedStaticMethod:%s on %s", name, targetClass.getName()));
+        }
+        Class[] paramTypes = translateParameterTypes(targetClass, parameterTypes);
+        try {
+            Method toDispatchTo = getMethodByName(targetClass, name, paramTypes);
+            if (toDispatchTo == null) {
+                throw new RuntimeException(new NoSuchMethodException(
+                        name + " in class " + targetClass.getName()));
+            }
+            toDispatchTo.setAccessible(true);
+            return toDispatchTo.invoke(null /* target */, params);
+        } catch (InvocationTargetException e) {
+            logging.log(Level.SEVERE, String.format("Exception while invoking %s", name), e);
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            logging.log(Level.SEVERE, String.format("Exception while invoking %s", name), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Class[] translateParameterTypes(Class targetClass, String[] parameterTypes) {
+        Class[] paramTypes = new Class[parameterTypes.length];
+        for (int i = 0; i < parameterTypes.length; i++) {
+            BasicType basicType = BasicType.parse(parameterTypes[i]);
+            if (basicType != null) {
+                paramTypes[i] = basicType.getJavaType();
+            } else {
+                try {
+                    ClassLoader classLoader = targetClass.getClassLoader() != null
+                            ? targetClass.getClassLoader()
+                            : GenericInstantRuntime.class.getClassLoader();
+
+                    paramTypes[i] = classLoader.loadClass(parameterTypes[i]);
+                } catch (ClassNotFoundException e) {
+                    logging.log(Level.SEVERE,
+                            String.format("Exception while loading parameter %1$s class",
+                                    paramTypes[i]), e);
+                }
+            }
+        }
+        return paramTypes;
     }
 
     private static Field getFieldByName(Class<?> aClass, String name) {

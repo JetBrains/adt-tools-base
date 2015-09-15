@@ -23,6 +23,7 @@ public enum BasicType {
 
     I(Integer.TYPE),
     J(Long.TYPE),
+    C(Character.TYPE),
     Z(Boolean.TYPE),
     F(Float.TYPE),
     D(Double.TYPE),

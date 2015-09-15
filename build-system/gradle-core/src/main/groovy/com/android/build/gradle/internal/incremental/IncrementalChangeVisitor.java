@@ -169,19 +169,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         }
     }
 
-    /**
-     * Enumeration describing whether a method or field is static or not.
-     */
-    private enum AccessType {
-        STATIC, INSTANCE;
-
-        static AccessType fromNodeAccess(int nodeAccess) {
-            return (nodeAccess & Opcodes.ACC_STATIC) != 0
-                    ? STATIC
-                    : INSTANCE;
-        }
-    }
-
     public class ISVisitor extends GeneratorAdapter {
 
         private final boolean isStatic;
@@ -212,7 +199,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 // enough to know if has seen this class before or not so we must assume the field
                 // is *not* accessible from the $override class which lives in a different
                 // hierarchy and package.
-                accessRight = AccessRight.PACKAGE_PRIVATE;
+                accessRight = guessAccessRight(owner);
             } else {
                 // check the field access bits.
                 FieldNode fieldNode = getFieldByName(name);
@@ -401,12 +388,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                         "(L" + visitedClassName
                                 + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;",
                         false);
-                Type ret = Type.getReturnType(desc);
-                if (ret.getSort() == Type.VOID) {
-                    pop();
-                } else {
-                    unbox(ret);
-                }
+                handleReturnType(desc);
+
                 return true;
             } else if (owner.equals(visitedClassName)) {
                 if (DEBUG) {
@@ -424,6 +407,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         private boolean handleVirtualOpcode(String owner, String name, String desc,
                 boolean itf) {
+
+            // handle the case when visiting something else than a "this" method invocation.
             if (owner.equals(visitedClassName)) {
 
                 if (DEBUG) {
@@ -463,15 +448,84 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 invokeStatic(RUNTIME_TYPE,
                         Method.getMethod(
                                 "Object invokeProtectedMethod(Object, String, String[], Object[])"));
-                Type ret = Type.getReturnType(desc);
-                if (ret.getSort() == Type.VOID) {
-                    pop();
-                } else {
-                    unbox(ret);
-                }
+                handleReturnType(desc);
                 return true;
             }
             return false;
+        }
+
+        private boolean handleStaticOpcode(String owner, String name, String desc,
+                boolean itf) {
+
+            if (DEBUG) {
+                System.out.println(
+                        "Method dispatch : " + name + ":" + desc + ":" + itf + ":" + isStatic);
+
+            }
+            AccessRight accessRight;
+            if (owner.equals(visitedClassName)) {
+                MethodNode methodByName = getMethodByName(name, desc);
+                if (methodByName == null) {
+                    throw new RuntimeException(
+                            "Statically invoked method not found " + name);
+                }
+                accessRight = AccessRight.fromNodeAccess(methodByName.access);
+            } else {
+                accessRight = guessAccessRight(owner);
+            }
+            if (accessRight != AccessRight.PUBLIC) {
+                // for anything else, private, protected and package private, we must go through
+                // reflection.
+                Type[] parameterTypes = Type.getArgumentTypes(desc);
+
+                // stack : <parameters values>
+                int parameters = boxParametersToNewLocalArray(parameterTypes);
+                visitLdcInsn(Type.getType("L" + owner + ";"));
+                push(name);
+                push(parameterTypes.length);
+                newArray(Type.getType(String.class));
+
+                for (int i = 0; i < parameterTypes.length; i++) {
+                    dup();
+                    push(i);
+                    push(parameterTypes[i].getClassName());
+                    arrayStore(Type.getType(String.class));
+                }
+
+                loadLocal(parameters);
+
+                // stack : <target class name>
+                //      <target method name>
+                //      <target parameter types>
+                //      <boxed method parameter>
+                invokeStatic(RUNTIME_TYPE,
+                        Method.getMethod(
+                                "Object invokeProtectedStaticMethod(Class, String, String[], Object[])"));
+                // stack : method return value or null if the method was VOID.
+                handleReturnType(desc);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void visitEnd() {
+            if (DEBUG) {
+                System.out.println("Method visit end");
+            }
+        }
+
+        /**
+         * Handle method return logic.
+         * @param desc the method signature
+         */
+        private void handleReturnType(String desc) {
+            Type ret = Type.getReturnType(desc);
+            if (ret.getSort() == Type.VOID) {
+                pop();
+            } else {
+                unbox(ret);
+            }
         }
 
         private int boxParametersToNewLocalArray(Type[] parameterTypes) {
@@ -489,24 +543,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 arrayStore(Type.getType(Object.class));
             }
             return parameters;
-        }
-
-        // we must do something similar as for non static method,
-        // which is to call back the ORIGINAL static method
-        // using reflection when the called method is anything but public.
-        // I thought for a while we could bypass and call directly the $override method
-        // but we can't because the static method could be of the super class and we don't
-        // necessarily have an enhanced class to call directly.
-        private boolean handleStaticOpcode(String owner, String name, String desc,
-                boolean itf) {
-            return false;
-        }
-
-        @Override
-        public void visitEnd() {
-            if (DEBUG) {
-                System.out.println("Method visit end");
-            }
         }
     }
 
@@ -527,7 +563,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             trace(mv, 2);
         }
 
-        List<MethodNode> methods = classNode.methods;
+        @SuppressWarnings("unchecked") List<MethodNode> methods = classNode.methods;
         for (MethodNode methodNode : methods) {
             if (methodNode.name.equals("<clinit>")) {
                 continue;
@@ -635,5 +671,55 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 return true;
             }
         });
+    }
+
+    /**
+     * A method or field in the passed owner class is accessed from the visited class.
+     *
+     * Returns the safest (meaning the most restrictive) {@link AccessRight} this field or method
+     * can have considering the calling class.
+     *
+     * Since it is originally being called from the visited class, it cannot be a private field or
+     * method.
+     *
+     * If the visited class name and the method or field owner class are not in the same package,
+     * the method or field cannot be package private.
+     *
+     * If the method or field owner is not a super class of the visited class name, the method or
+     * field cannot be protected.
+     *
+     * @param owner owner class of a field or method being accessed from the visited class
+     * @return the most restrictive {@link AccessRight} the field or method can have.
+     */
+    private AccessRight guessAccessRight(String owner) {
+        return !isInSamePackage(owner) && !isAnAncestor(owner)
+                ? AccessRight.PUBLIC
+                : AccessRight.PACKAGE_PRIVATE;
+    }
+
+    /**
+     * Returns true if the passed class name is in the same package as the visited class.
+     *
+     * @param className a / separated class name.
+     * @return true if className and visited class are in the same java package.
+     */
+    private boolean isInSamePackage(@NonNull String className) {
+        return visitedClassName.substring(0, visitedClassName.lastIndexOf('/')).equals(
+                className.substring(0, className.lastIndexOf('/')));
+    }
+
+    /**
+     * Returns true if the passed class name is an ancestor of the visited class.
+     *
+     * @param className a / separated class name
+     * @return true if it is an ancestor, false otherwise.
+     */
+    private boolean isAnAncestor(@NonNull String className) {
+        for (ClassNode parentNode : parentNodes) {
+            if (parentNode.name.equals(className)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
