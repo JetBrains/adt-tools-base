@@ -82,7 +82,7 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         } else {
             InputStream is = new FileInputStream(pngFile);
             BufferedImage goldenImage = ImageIO.read(is);
-            assertImageSimilar(imageNameWithParent, goldenImage, image, 5.0f);
+            assertImageSimilar(imageNameWithParent, goldenImage, image, 3.0f);
         }
 
     }
@@ -95,79 +95,91 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         checkVectorConversion(filename, FileType.XML);
     }
 
-    public void testControlPoints01() throws Exception {
+    public void testSvgControlPoints01() throws Exception {
         checkSvgConversion("test_control_points_01");
     }
 
-    public void testControlPoints02() throws Exception {
+    public void testSvgControlPoints02() throws Exception {
         checkSvgConversion("test_control_points_02");
     }
 
-    public void testControlPoints03() throws Exception {
+    public void testSvgControlPoints03() throws Exception {
         checkSvgConversion("test_control_points_03");
     }
 
-    public void testIconContentCut() throws Exception {
+    public void testSvgContentCut() throws Exception {
         checkSvgConversion("ic_content_cut_24px");
     }
 
-    public void testIconInput() throws Exception {
+    public void testSvgInput() throws Exception {
         checkSvgConversion("ic_input_24px");
     }
 
-    public void testIconLiveHelp() throws Exception {
+    public void testSvgLiveHelp() throws Exception {
         checkSvgConversion("ic_live_help_24px");
     }
 
-    public void testIconLocalLibrary() throws Exception {
+    public void testSvgLocalLibrary() throws Exception {
         checkSvgConversion("ic_local_library_24px");
     }
 
-    public void testIconLocalPhone() throws Exception {
+    public void testSvgLocalPhone() throws Exception {
         checkSvgConversion("ic_local_phone_24px");
     }
 
-    public void testIconMicOff() throws Exception {
+    public void testSvgMicOff() throws Exception {
         checkSvgConversion("ic_mic_off_24px");
     }
 
-    public void testShapes() throws Exception {
+    public void testSvgShapes() throws Exception {
         checkSvgConversion("ic_shapes");
     }
 
-    public void testIconTempHigh() throws Exception {
+    public void testSvgTempHigh() throws Exception {
         checkSvgConversion("ic_temp_high");
     }
 
-    public void testIconPlusSign() throws Exception {
+    public void testSvgPlusSign() throws Exception {
         checkSvgConversion("ic_plus_sign");
     }
 
-    public void testIconPolylineStrokeWidth() throws Exception {
+    public void testSvgPolylineStrokeWidth() throws Exception {
         checkSvgConversion("ic_polyline_strokewidth");
     }
 
-    public void testIconEmptyAttributes() throws Exception {
+    public void testSvgEmptyAttributes() throws Exception {
         checkSvgConversion("ic_empty_attributes");
     }
 
-    public void testIconSimpleGroupInfo() throws Exception {
+    public void testSvgSimpleGroupInfo() throws Exception {
         checkSvgConversion("ic_simple_group_info");
     }
 
-    public void testIconContainsError() throws Exception {
+    public void testSvgContainsError() throws Exception {
         checkSvgConversion("ic_contains_ignorable_error");
     }
 
-    public void testIconLineToMoveTo() throws Exception {
+    public void testSvgLineToMoveTo() throws Exception {
         checkSvgConversion("test_lineto_moveto");
     }
 
-    public void testIconLineToMoveTo2() throws Exception {
+    public void testSvgLineToMoveTo2() throws Exception {
         checkSvgConversion("test_lineto_moveto2");
+    }
+
+    public void testSvgColorFormats() throws Exception {
+        checkSvgConversion("test_color_formats");
     }
 
     public void testXmlIconSizeOpacity() throws Exception {
         checkXmlConversion("ic_size_opacity");
+    }
+
+    public void testXmlColorFormats() throws Exception {
+        checkXmlConversion("test_xml_color_formats");
+    }
+
+    public void testXmlColorAlpha() throws Exception {
+        checkXmlConversion("test_fill_stroke_alpha");
     }
 }
