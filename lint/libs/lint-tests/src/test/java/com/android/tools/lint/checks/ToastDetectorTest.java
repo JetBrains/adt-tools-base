@@ -25,6 +25,7 @@ public class ToastDetectorTest extends AbstractCheckTest {
         return new ToastDetector();
     }
 
+
     public void test() throws Exception {
         assertEquals(
             "src/test/pkg/ToastTest.java:31: Warning: Toast created but not shown: did you forget to call show() ? [ShowToast]\n" +

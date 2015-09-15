@@ -25,6 +25,13 @@ public class CutPasteDetectorTest extends AbstractCheckTest {
         return new CutPasteDetector();
     }
 
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
     public void test() throws Exception {
         assertEquals(
             "src/test/pkg/PasteError.java:15: Warning: The id R.id.textView1 has already been looked up in this method; possible cut & paste error? [CutPasteId]\n" +

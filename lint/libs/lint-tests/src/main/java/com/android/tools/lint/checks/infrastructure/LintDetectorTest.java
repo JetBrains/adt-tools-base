@@ -34,6 +34,7 @@ import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.sdklib.IAndroidTarget;
 import com.android.testutils.SdkTestCase;
+import com.android.tools.lint.EcjParser;
 import com.android.tools.lint.ExternalAnnotationRepository;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LintCliFlags;
@@ -44,12 +45,14 @@ import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
@@ -70,6 +73,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
+import org.eclipse.jdt.core.compiler.CategorizedProblem;
+import org.eclipse.jdt.core.compiler.IProblem;
+import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
 import org.intellij.lang.annotations.Language;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -119,6 +125,10 @@ public abstract class LintDetectorTest extends SdkTestCase {
         }
 
         return mDetector;
+    }
+
+    protected boolean allowCompilationErrors() {
+        return false;
     }
 
     protected abstract List<Issue> getIssues();
@@ -464,6 +474,44 @@ public abstract class LintDetectorTest extends SdkTestCase {
 
         public String getErrors() throws Exception {
             return mWriter.toString();
+        }
+
+        @Override
+        public JavaParser getJavaParser(@Nullable Project project) {
+            return new EcjParser(this, project) {
+                @Override
+                public void prepareJavaParse(@NonNull List<JavaContext> contexts) {
+                    super.prepareJavaParse(contexts);
+                    if (!allowCompilationErrors() && mEcjResult != null) {
+                        StringBuilder sb = new StringBuilder();
+                        for (CompilationUnitDeclaration unit : mEcjResult.getCompilationUnits()) {
+                            // so maybe I don't need my map!!
+                            CategorizedProblem[] problems = unit.compilationResult()
+                                    .getAllProblems();
+                            if (problems != null) {
+                                for (IProblem problem : problems) {
+                                    if (problem == null || !problem.isError()) {
+                                        continue;
+                                    }
+                                    String filename = new File(new String(
+                                            problem.getOriginatingFileName())).getName();
+                                    sb.append(filename)
+                                            .append(":")
+                                            .append(problem.isError() ? "Error" : "Warning")
+                                            .append(": ").append(problem.getSourceLineNumber())
+                                            .append(": ").append(problem.getMessage())
+                                            .append('\n');
+                                }
+                            }
+                        }
+                        if (sb.length() > 0) {
+                            fail("Found compilation problems in lint test not overriding "
+                                    + "allowCompilationErrors():\n" + sb);
+                        }
+
+                    }
+                }
+            };
         }
 
         @Override

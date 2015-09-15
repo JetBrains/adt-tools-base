@@ -25,6 +25,13 @@ public class LayoutConsistencyDetectorTest extends AbstractCheckTest {
         return new LayoutConsistencyDetector();
     }
 
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
     public void test() throws Exception {
         assertEquals(""
                 + "res/layout/layout1.xml:11: Warning: The id \"button1\" in layout \"layout1\" is missing from the following layout configurations: layout-xlarge (present in layout) [InconsistentLayout]\n"

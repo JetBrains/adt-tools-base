@@ -1,6 +1,6 @@
 package test.pkg;
 
-import android.annotations.tools.SuppressLint;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ApplicationErrorReport;
 import android.app.ApplicationErrorReport.BatteryInfo;

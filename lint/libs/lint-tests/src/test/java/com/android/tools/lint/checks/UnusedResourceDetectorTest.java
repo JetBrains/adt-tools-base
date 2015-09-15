@@ -32,6 +32,13 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
     }
 
     @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
+    @Override
     protected boolean isEnabled(Issue issue) {
         //noinspection SimplifiableIfStatement
         if (issue == UnusedResourceDetector.ISSUE_IDS) {

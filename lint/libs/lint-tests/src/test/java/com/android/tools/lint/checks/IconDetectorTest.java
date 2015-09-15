@@ -86,6 +86,13 @@ public class IconDetectorTest extends AbstractCheckTest {
     }
 
     @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
+    @Override
     protected TestConfiguration getConfiguration(LintClient client, Project project) {
         return new TestConfiguration(client, project, null) {
             @Override
