@@ -25,6 +25,12 @@ public class MergeRootFrameLayoutDetectorTest extends AbstractCheckTest {
         return new MergeRootFrameLayoutDetector();
     }
 
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
 
     public void testMergeRefFromJava() throws Exception {
         assertEquals(

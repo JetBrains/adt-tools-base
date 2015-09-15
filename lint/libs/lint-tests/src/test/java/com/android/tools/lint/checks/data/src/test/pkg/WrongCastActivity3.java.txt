@@ -8,4 +8,10 @@ public class WrongCastActivity3 extends Activity {
     private void test() {
         final Checkable check = (Checkable) findViewById(R.id.additional);
     }
+
+    public static final class R {
+        public static final class id {
+            public static final int additional = 0x7f0a0000;
+        }
+    }
 }

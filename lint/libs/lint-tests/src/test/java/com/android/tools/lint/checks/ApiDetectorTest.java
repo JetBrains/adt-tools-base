@@ -43,6 +43,13 @@ public class ApiDetectorTest extends AbstractCheckTest {
         return new ApiDetector();
     }
 
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
     public void testXmlApi1() throws Exception {
         assertEquals(
             "res/color/colors.xml:9: Error: @android:color/holo_red_light requires API level 14 (current min is 1) [NewApi]\n" +

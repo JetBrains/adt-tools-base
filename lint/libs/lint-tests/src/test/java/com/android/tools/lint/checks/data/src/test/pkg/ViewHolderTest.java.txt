@@ -152,4 +152,17 @@ public abstract class ViewHolderTest extends BaseAdapter {
             return rootView;
         }
     }
+
+    public static final class R {
+        public static final class layout {
+            public static final int your_layout = 0x7f0a0000;
+            public static final int laptime_item = 0x7f0a0001;
+        }
+        public static final class id {
+            public static final int text = 0x7f0a0000;
+            public static final int laptimes_list_item_holder = 0x7f0a0001;
+            public static final int laptime_text = 0x7f0a0002;
+            public static final int laptime_text2 = 0x7f0a0003;
+        }
+    }
 }

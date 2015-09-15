@@ -2,7 +2,7 @@ package test.pkg;
 
 import org.w3c.dom.DOMLocator;
 
-import android.annotations.tools.SuppressLint;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ApplicationErrorReport;
 import android.widget.Chronometer;

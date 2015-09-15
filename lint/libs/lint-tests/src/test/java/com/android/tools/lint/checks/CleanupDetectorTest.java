@@ -25,6 +25,13 @@ public class CleanupDetectorTest extends AbstractCheckTest {
         return new CleanupDetector();
     }
 
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
     public void testRecycle() throws Exception {
         assertEquals(
             "src/test/pkg/RecycleTest.java:56: Warning: This TypedArray should be recycled after use with #recycle() [Recycle]\n" +
