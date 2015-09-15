@@ -109,9 +109,10 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
     }
 
     @Override
-    protected void createProguardTransform(
+    protected void createMinifyTransform(
             @NonNull TaskFactory taskFactory,
-            @NonNull VariantScope variantScope, boolean createJarFile) {
+            @NonNull VariantScope variantScope,
+            boolean createJarFile) {
 
         DependencyHandler dependencyHandler = project.getDependencies();
         TestAndroidConfig testExtension = (TestAndroidConfig) extension;
@@ -128,6 +129,6 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
             return;
         }
 
-        createProguardTransform(taskFactory, variantScope, testTargetMapping, false);
+        doCreateMinifyTransform(taskFactory, variantScope, testTargetMapping, false);
     }
 }

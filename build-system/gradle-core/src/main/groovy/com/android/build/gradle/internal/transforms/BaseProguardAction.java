@@ -39,12 +39,11 @@ import proguard.util.ListUtil;
 /**
  *
  */
-public class BaseProguardAction {
+public class BaseProguardAction extends ProguardConfigurable {
 
     protected static final List<String> JAR_FILTER = ImmutableList.of("!META-INF/MANIFEST.MF");
 
     protected final Configuration configuration = new Configuration();
-    protected final List<Object> configurationFiles = Lists.newArrayListWithExpectedSize(3);
 
     public BaseProguardAction() {
         configuration.useMixedCaseClassNames = false;
@@ -105,10 +104,6 @@ public class BaseProguardAction {
 
     public void keepattributes() {
         configuration.keepAttributes = Lists.newArrayListWithExpectedSize(0);
-    }
-
-    public void configurationFiles(Object configFiles) {
-        configurationFiles.add(configFiles);
     }
 
     public void dontwarn(@NonNull String dontwarn) {
