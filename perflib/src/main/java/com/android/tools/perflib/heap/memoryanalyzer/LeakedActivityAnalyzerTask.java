@@ -18,13 +18,15 @@ package com.android.tools.perflib.heap.memoryanalyzer;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.perflib.analyzer.AnalysisResultEntry;
+import com.android.tools.perflib.analyzer.Offender;
 import com.android.tools.perflib.heap.ClassInstance;
 import com.android.tools.perflib.heap.ClassObj;
+import com.android.tools.perflib.heap.Heap;
 import com.android.tools.perflib.heap.Instance;
 import com.android.tools.perflib.heap.Snapshot;
-import com.android.tools.perflib.heap.StackTrace;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,12 +38,18 @@ import java.util.List;
 public class LeakedActivityAnalyzerTask extends MemoryAnalyzerTask {
 
     @Override
-    List<AnalysisResultEntry> analyze(@NonNull Snapshot snapshot) {
+    List<AnalysisResultEntry> analyze(@NonNull Configuration configuration,
+            @NonNull Snapshot snapshot) {
         List<Instance> leakingInstances = new ArrayList<Instance>();
 
         List<ClassObj> activityClasses = snapshot.findAllDescendantClasses("android.app.Activity");
         for (ClassObj activityClass : activityClasses) {
-            for (Instance instance : activityClass.getInstancesList()) {
+            List<Instance> instances = new ArrayList<Instance>();
+            for (Heap heap : configuration.mHeaps) {
+                instances.addAll(activityClass.getHeapInstances(heap.getId()));
+            }
+
+            for (Instance instance : instances) {
                 Instance immediateDominator = instance.getImmediateDominator();
                 if (!(instance instanceof ClassInstance) || immediateDominator == null) {
                     continue;
@@ -64,8 +72,8 @@ public class LeakedActivityAnalyzerTask extends MemoryAnalyzerTask {
         List<AnalysisResultEntry> results = new ArrayList<AnalysisResultEntry>(
                 leakingInstances.size());
         for (Instance instance : leakingInstances) {
-            results.add(new MemoryAnalysisEntry(instance.getClassObj().getClassName(),
-                    instance.getStack()));
+            results.add(new LeakedActivityEntry(instance.getClassObj().getClassName(),
+                    instance));
         }
         return results;
     }
@@ -82,17 +90,15 @@ public class LeakedActivityAnalyzerTask extends MemoryAnalyzerTask {
         return "Detects leaked activities in Android applications.";
     }
 
-    private static class MemoryAnalysisEntry implements AnalysisResultEntry {
+    private static class LeakedActivityEntry implements AnalysisResultEntry {
 
         @NonNull
-        private String mOffender;
+        private Offender mOffender;
 
-        @Nullable
-        private StackTrace mStackTrace;
-
-        private MemoryAnalysisEntry(@NonNull String offender, @Nullable StackTrace stackTrace) {
-            mOffender = offender;
-            mStackTrace = stackTrace;
+        private LeakedActivityEntry(@NonNull String offenseDescription,
+                @Nullable Instance offendingInstance) {
+            mOffender = new Offender(offenseDescription,
+                    Collections.singletonList(offendingInstance));
         }
 
         @NonNull
@@ -109,14 +115,8 @@ public class LeakedActivityAnalyzerTask extends MemoryAnalyzerTask {
 
         @NonNull
         @Override
-        public String getOffender() {
+        public Offender getOffender() {
             return mOffender;
-        }
-
-        @Nullable
-        @Override
-        public StackTrace getStackTrace() {
-            return mStackTrace;
         }
     }
 }

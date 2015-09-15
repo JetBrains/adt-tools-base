@@ -13,28 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.perflib.heap.memoryanalyzer;
+package com.android.tools.perflib.analyzer;
 
 import com.android.annotations.NonNull;
-import com.android.tools.perflib.analyzer.AnalysisResultEntry;
-import com.android.tools.perflib.analyzer.AnalyzerTask;
-import com.android.tools.perflib.heap.Heap;
-import com.android.tools.perflib.heap.Snapshot;
+import com.android.tools.perflib.heap.Instance;
 
-import java.util.Collection;
 import java.util.List;
 
-public abstract class MemoryAnalyzerTask implements AnalyzerTask {
+public class Offender {
 
-    public static class Configuration {
+    @NonNull
+    protected List<Instance> mOffendingInstances;
 
-        public Collection<Heap> mHeaps;
+    @NonNull
+    protected String mOffendingDescription;
 
-        public Configuration(@NonNull Collection<Heap> heaps) {
-            mHeaps = heaps;
-        }
+    public Offender(@NonNull String offendingDescription,
+            @NonNull List<Instance> offendingInstances) {
+        mOffendingDescription = offendingDescription;
+        mOffendingInstances = offendingInstances;
     }
 
-    abstract List<AnalysisResultEntry> analyze(@NonNull Configuration configuration,
-            @NonNull Snapshot snapshot);
+    @NonNull
+    public List<Instance> getOffendingInstances() {
+        return mOffendingInstances;
+    }
+
+    @NonNull
+    public String getOffendingDescription() {
+        return mOffendingDescription;
+    }
 }
