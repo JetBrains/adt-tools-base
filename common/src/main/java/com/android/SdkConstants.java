@@ -882,6 +882,7 @@ public final class SdkConstants {
     public static final String ATTR_WRITE_PERMISSION = "writePermission"; //$NON_NLS-1$
     public static final String ATTR_VERSION_CODE = "versionCode";      //$NON_NLS-1$
     public static final String ATTR_VERSION_NAME = "versionName";      //$NON_NLS-1$
+    public static final String ATTR_FULL_BACKUP_CONTENT = "fullBackupContent"; //$NON_NLS-1$
 
     // Attributes: Resources
     public static final String ATTR_NAME = "name";                     //$NON-NLS-1$
