@@ -58,6 +58,7 @@ import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.android.tools.lint.client.api.IssueRegistry;
@@ -374,8 +375,19 @@ public class ApiDetector extends ResourceXmlDetector
                         // when used on TextViews (and subclasses of TextViews), on some
                         // devices, because vendor specific attributes conflict with the
                         // later-added framework resources, and these are apparently read
-                        // by the text views:
+                        // by the text views.
+                        //
+                        // However, as of build tools 23.0.1 aapt works around this by packaging
+                        // the resources differently.
+
+                        BuildToolInfo buildToolInfo = context.getProject().getBuildTools();
+                        FullRevision buildTools = buildToolInfo != null
+                                ? buildToolInfo.getRevision() : null;
+                        boolean isOldBuildTools = buildTools != null &&
+                                (buildTools.getMajor() < 23 || buildTools.getMajor() == 23
+                                 && buildTools.getMinor() == 0 && buildTools.getMicro() == 0);
                         if (name.equals(ATTR_PADDING_START) &&
+                                (buildTools == null || isOldBuildTools) &&
                                 viewMayExtendTextView(attribute.getOwnerElement())) {
                             Location location = context.getLocation(attribute);
                             String message = String.format(
@@ -383,6 +395,14 @@ public class ApiDetector extends ResourceXmlDetector
                                             + "some specific devices older than API %2$d "
                                             + "(current min is %3$d)",
                                     attribute.getLocalName(), attributeApiLevel, minSdk);
+                            //noinspection VariableNotUsedInsideIf
+                            if (buildTools != null) {
+                                message = String.format("Upgrade `buildToolsVersion` from "
+                                        + "`%1$s` to at least `23.0.1`; if not, ",
+                                            buildTools.toShortString())
+                                        + Character.toLowerCase(message.charAt(0))
+                                        + message.substring(1);
+                            }
                             context.report(UNSUPPORTED, attribute, location, message);
                         }
                     } else {
