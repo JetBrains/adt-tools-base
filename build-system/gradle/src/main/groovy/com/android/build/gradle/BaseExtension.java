@@ -834,4 +834,9 @@ public abstract class BaseExtension implements AndroidConfig {
     public Boolean getPackageBuildConfig() {
         throw new GradleException("packageBuildConfig is not supported.");
     }
+
+    @Override
+    public Collection<String> getAidlPackageWhiteList() {
+        throw new GradleException("aidlPackageWhiteList is not supported.");
+    }
 }

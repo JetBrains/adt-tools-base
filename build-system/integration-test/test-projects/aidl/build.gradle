@@ -6,4 +6,5 @@ apply plugin: 'com.android.library'
 android {
     compileSdkVersion 21
     buildToolsVersion rootProject.ext.buildToolsVersion
+    aidlPackageWhiteList = ["com/android/tests/basicprojectwithaidl/WhiteListed.aidl"]
 }
