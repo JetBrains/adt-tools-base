@@ -23,7 +23,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Variant;
-import com.android.sdklib.BuildToolInfo;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LintCliFlags;
 import com.android.tools.lint.Warning;
@@ -47,7 +46,6 @@ public class LintGradleClient extends LintCliClient {
     private final org.gradle.api.Project mGradleProject;
     private List<File> mCustomRules = Lists.newArrayList();
     private File mSdkHome;
-    private final BuildToolInfo mBuildToolInfo;
 
     public LintGradleClient(
             @NonNull IssueRegistry registry,
@@ -55,15 +53,13 @@ public class LintGradleClient extends LintCliClient {
             @NonNull org.gradle.api.Project gradleProject,
             @NonNull AndroidProject modelProject,
             @Nullable File sdkHome,
-            @Nullable String variantName,
-            @Nullable BuildToolInfo buildToolInfo) {
+            @Nullable String variantName) {
         super(flags);
         mGradleProject = gradleProject;
         mModelProject = modelProject;
         mVariantName = variantName;
         mSdkHome = sdkHome;
         mRegistry = registry;
-        mBuildToolInfo = buildToolInfo;
     }
 
     public void setCustomRules(List<File> customRules) {
@@ -198,11 +194,5 @@ public class LintGradleClient extends LintCliClient {
     protected void addProgressPrinter() {
         // No progress printing from the Gradle lint task; gradle tasks
         // do not really do that, even for long-running jobs.
-    }
-
-    @Nullable
-    @Override
-    public BuildToolInfo getBuildTools(@NonNull Project project) {
-        return mBuildToolInfo;
     }
 }
