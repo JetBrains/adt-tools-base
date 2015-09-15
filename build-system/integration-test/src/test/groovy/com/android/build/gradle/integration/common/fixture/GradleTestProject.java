@@ -117,7 +117,7 @@ public class GradleTestProject implements TestRule {
     static {
         String envBuildToolVersion = System.getenv("CUSTOM_BUILDTOOLS");
         DEFAULT_BUILD_TOOL_VERSION = !Strings.isNullOrEmpty(envBuildToolVersion) ?
-                envBuildToolVersion : "22.0.1";
+                envBuildToolVersion : "23.0.0";
         String envVersion = System.getenv().get("CUSTOM_GRADLE");
         ANDROID_GRADLE_PLUGIN_VERSION = !Strings.isNullOrEmpty(envVersion) ? envVersion
                 : Version.ANDROID_GRADLE_PLUGIN_VERSION;
