@@ -35,7 +35,7 @@ public class SQLiteDetectorTest extends AbstractCheckTest {
                 + "0 errors, 2 warnings\n",
 
                 lintProject(
-                        "src/test/pkg/MyTracksProvider.java.txt=>src/test/pkg/MyTracksProvider.java",
+                        "src/test/pkg/MyTracksProvider.java.txt=>src/test/pkg/TracksColumns.java",
                         "src/test/pkg/SQLiteTest.java.txt=>src/test/pkg/SQLiteTest.java",
                         // stub for type resolution
                         "src/test/pkg/SQLiteDatabase.java.txt=>src/android/database/sqlite/SQLiteDatabase.java"

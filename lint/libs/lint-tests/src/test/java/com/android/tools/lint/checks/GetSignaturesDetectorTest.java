@@ -25,6 +25,13 @@ public class GetSignaturesDetectorTest extends AbstractCheckTest {
         return new GetSignaturesDetector();
     }
 
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
     public void testLintWarningOnSingleGetSignaturesFlag() throws Exception {
         assertEquals(
                 "src/test/pkg/GetSignaturesSingleFlagTest.java:9: Information: Reading app signatures from getPackageInfo: The app signatures could be exploited if not validated properly; see issue explanation for details. [PackageManagerGetSignatures]\n"

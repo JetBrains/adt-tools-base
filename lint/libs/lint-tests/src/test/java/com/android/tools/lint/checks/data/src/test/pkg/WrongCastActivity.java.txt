@@ -13,4 +13,14 @@ public class WrongCastActivity extends Activity {
         ToggleButton toggleButton = (ToggleButton) findViewById(R.id.button);
         TextView textView = (TextView) findViewById(R.id.edittext);
     }
+
+    public static final class R {
+        public static final class layout {
+            public static final int casts = 0x7f0a0002;
+        }
+        public static final class id {
+            public static final int button = 0x7f0a0000;
+            public static final int edittext = 0x7f0a0001;
+        }
+    }
 }

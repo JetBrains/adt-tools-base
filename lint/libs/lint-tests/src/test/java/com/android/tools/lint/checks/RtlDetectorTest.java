@@ -46,6 +46,13 @@ public class RtlDetectorTest extends AbstractCheckTest {
         return new RtlDetector();
     }
 
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
     private Set<Issue> mEnabled = new HashSet<Issue>();
     private static final Set<Issue> ALL = new HashSet<Issue>();
     static {

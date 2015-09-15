@@ -27,6 +27,13 @@ public class RequiredAttributeDetectorTest extends AbstractCheckTest {
         return new RequiredAttributeDetector();
     }
 
+    @Override
+    protected boolean allowCompilationErrors() {
+        // Some of these unit tests are still relying on source code that references
+        // unresolved symbols etc.
+        return true;
+    }
+
     public void test() throws Exception {
         // Simple: Only consider missing attributes in the layout xml file
         // (though skip warnings on <merge> tags and under <GridLayout>

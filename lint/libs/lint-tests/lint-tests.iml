@@ -24,5 +24,6 @@
     <orderEntry type="library" exported="" name="intellij-annotations" level="project" />
     <orderEntry type="library" scope="TEST" name="groovy" level="project" />
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
+    <orderEntry type="library" name="ecj" level="project" />
   </component>
 </module>

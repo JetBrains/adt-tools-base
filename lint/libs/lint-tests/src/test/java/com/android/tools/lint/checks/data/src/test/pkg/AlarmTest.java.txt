@@ -2,7 +2,7 @@ package test.pkg;
 
 import android.app.AlarmManager;
 
-public class TestAlarm {
+public class AlarmTest {
     public void test(AlarmManager alarmManager) {
         alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 5000, 60000, null); // OK
         alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, 6000, 70000, null); // OK

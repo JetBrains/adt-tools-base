@@ -64,7 +64,7 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                         java("src/test/pkg/IntDefTest.java", ""
                                 + "package test.pkg;\n"
                                 + "import android.support.annotation.IntDef;\n"
-                                + "\n"
+                                + "import android.annotation.SuppressLint;\n"
                                 + "import java.lang.annotation.Retention;\n"
                                 + "import java.lang.annotation.RetentionPolicy;\n"
                                 + "\n"

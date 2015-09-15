@@ -12,4 +12,11 @@ public class WrongCastActivity2 extends Activity {
                 .findViewById(R.id.additional);
         Object x = (AdapterView<?>) bodyView.findViewById(R.id.reminder_lead);
     }
+
+    public static final class R {
+        public static final class id {
+            public static final int additional = 0x7f0a0000;
+            public static final int reminder_lead = 0x7f0a0001;
+        }
+    }
 }
