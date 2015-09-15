@@ -401,6 +401,7 @@ public abstract class TaskManager {
                 lintTask.setLintOptions(getExtension().getLintOptions());
                 lintTask.setSdkHome(sdkHandler.getSdkFolder());
                 lintTask.setToolingRegistry(toolingRegistry);
+                lintTask.setAndroidBuilder(androidBuilder);
             }
         });
         tasks.named(JavaBasePlugin.CHECK_TASK_NAME, new Action<Task>() {
@@ -1431,6 +1432,7 @@ public abstract class TaskManager {
             String capitalizedVariantName = StringHelper.capitalize(variantName);
             String taskName = "lintVital" + capitalizedVariantName;
             final Lint lintReleaseCheck = project.getTasks().create(taskName, Lint.class);
+            lintReleaseCheck.setAndroidBuilder(androidBuilder);
             // TODO: Make this task depend on lintCompile too (resolve initialization order first)
             optionalDependsOn(lintReleaseCheck, variantData.javacTask);
             lintReleaseCheck.setLintOptions(getExtension().getLintOptions());

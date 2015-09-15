@@ -34,6 +34,7 @@ import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.prefs.AndroidLocation;
+import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repository.local.LocalSdk;
@@ -774,6 +775,18 @@ public abstract class LintClient {
         }
 
         return max;
+    }
+
+    /**
+     * Returns the specific version of the build tools being used for the given project, if known
+     *
+     * @param project the project in question
+     *
+     * @return the build tools version in use by the project, or null if not known
+     */
+    @Nullable
+    public BuildToolInfo getBuildTools(@NonNull Project project) {
+        return null;
     }
 
     /**
