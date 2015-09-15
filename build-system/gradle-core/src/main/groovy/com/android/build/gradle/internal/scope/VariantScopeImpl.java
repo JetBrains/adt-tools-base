@@ -133,9 +133,6 @@ public class VariantScopeImpl implements VariantScope {
     private FileSupplier mappingFileProviderTask;
     private AndroidTask<BinaryFileProviderTask> binayFileProviderTask;
 
-    // TODO : why is Jack not registered as the obfuscationTask ???
-    private AndroidTask<? extends Task> obfuscationTask;
-
     private File resourceOutputDir;
 
 
@@ -808,17 +805,6 @@ public class VariantScopeImpl implements VariantScope {
     public void setCompileTask(
             AndroidTask<Task> compileTask) {
         this.compileTask = compileTask;
-    }
-
-    @Override
-    public AndroidTask<? extends Task> getObfuscationTask() {
-        return obfuscationTask;
-    }
-
-    @Override
-    public void setObfuscationTask(
-            AndroidTask<? extends Task> obfuscationTask) {
-        this.obfuscationTask = obfuscationTask;
     }
 
     @Override

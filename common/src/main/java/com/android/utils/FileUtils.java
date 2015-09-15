@@ -58,20 +58,16 @@ public final class FileUtils {
         }
     }
 
-    public static void copyFile(@NonNull final File from, @NonNull final File toDir)
+    public static void copy(@NonNull final File from, @NonNull final File toDir)
             throws IOException {
         File to = new File(toDir, from.getName());
         if (from.isDirectory()) {
-            if (!to.exists()) {
-                if (!to.mkdirs()) {
-                    throw new IOException(String.format("Could not create directory %s", to));
-                }
-            }
+            mkdirs(to);
 
             File[] children = from.listFiles();
             if (children != null) {
                 for (File child : children) {
-                    copyFile(child, to);
+                    copy(child, to);
                 }
             }
         } else if (from.isFile()) {
