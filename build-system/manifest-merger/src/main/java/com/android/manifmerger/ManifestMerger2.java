@@ -905,7 +905,7 @@ public class ManifestMerger2 {
          * @return itself.
          */
         @NonNull
-        public Invoker setMergeReportFile(@NonNull File mergeReport) {
+        public Invoker setMergeReportFile(@Nullable File mergeReport) {
             mReportFile = mergeReport;
             return this;
         }
