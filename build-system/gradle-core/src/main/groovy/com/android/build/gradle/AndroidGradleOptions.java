@@ -36,6 +36,8 @@ public class AndroidGradleOptions {
     private static final String PROPERTY_THREAD_POOL_SIZE = "android.threadPoolSize";
     private static final String PROPERTY_THREAD_POOL_SIZE_OLD = "com.android.build.threadPoolSize";
 
+    private static final String PROPERTY_NEW_SHRINKER = "android.newShrinker";
+
     // TODO: Drop the "com." prefix, for consistency.
     private static final String PROPERTY_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String PROPERTY_BENCHMARK_MODE = "com.android.benchmark.mode";
@@ -123,6 +125,10 @@ public class AndroidGradleOptions {
         }
 
         return null;
+    }
+
+    public static boolean useNewShrinker(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_NEW_SHRINKER);
     }
 
     @Nullable

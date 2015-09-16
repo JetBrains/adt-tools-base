@@ -53,10 +53,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import proguard.ClassPath;
-import proguard.ParseException;
 
 /**
  * ProGuard support as a transform
@@ -191,15 +189,7 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
         }
 
         // the config files
-        try {
-            processConfigFiles(new ConfigFileAction() {
-                @Override
-                public void process(@NonNull File configFile) throws IOException, ParseException {
-                    files.add(configFile);
-                }
-            });
-        } catch (Exception ignored) {
-        }
+        files.addAll(getAllConfigurationFiles());
 
         return files;
     }
@@ -301,12 +291,9 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
             // if they don't so create them.
             mkdirs(proguardOut);
 
-            processConfigFiles(new ConfigFileAction() {
-                @Override
-                public void process(@NonNull File configFile) throws IOException, ParseException {
-                    applyConfigurationFile(configFile);
-                }
-            });
+            for (File configFile : getAllConfigurationFiles()) {
+                applyConfigurationFile(configFile);
+            }
 
             configuration.printMapping = printMapping;
             configuration.dump = dump;
@@ -322,33 +309,6 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
             }
 
             throw new IOException(e);
-        }
-    }
-
-    private interface ConfigFileAction {
-        void process(@NonNull File configFile) throws IOException, ParseException;
-    }
-
-    private void processConfigFiles(@NonNull ConfigFileAction action) throws Exception {
-        for (Object configObject : configurationFiles) {
-            handleConfigObject(configObject, action);
-        }
-    }
-
-    private static void handleConfigObject(
-            @NonNull Object configObject,
-            @NonNull ConfigFileAction action) throws Exception {
-        if (configObject instanceof File) {
-            action.process((File) configObject);
-        } else if (configObject instanceof List) {
-            List list = (List) configObject;
-            for (Object child : list) {
-                handleConfigObject(child, action);
-            }
-        } else if (configObject instanceof Callable) {
-            handleConfigObject(((Callable) configObject).call(), action);
-        } else {
-            throw new RuntimeException("Unsupported config object: " + configObject);
         }
     }
 

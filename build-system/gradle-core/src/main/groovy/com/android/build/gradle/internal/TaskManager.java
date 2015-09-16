@@ -79,7 +79,9 @@ import com.android.build.gradle.internal.transforms.JacocoTransform;
 import com.android.build.gradle.internal.transforms.JarMergingTransform;
 import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
 import com.android.build.gradle.internal.transforms.MultiDexTransform;
+import com.android.build.gradle.internal.transforms.NewShrinkerTransform;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
+import com.android.build.gradle.internal.transforms.ProguardConfigurable;
 import com.android.build.gradle.internal.transforms.ShrinkResourcesTransform;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
@@ -1875,7 +1877,8 @@ public abstract class TaskManager {
         // ----- Minify next -----
 
         if (isMinifyEnabled) {
-            createProguardTransform(tasks, variantScope, isMultiDexEnabled && isLegacyMultiDexMode);
+            boolean outputToJarFile = isMultiDexEnabled && isLegacyMultiDexMode;
+            createMinifyTransform(tasks, variantScope, outputToJarFile);
         }
 
         // ----- Multi-Dex support
@@ -1883,6 +1886,10 @@ public abstract class TaskManager {
         AndroidTask<TransformTask> multiDexClassListTask = null;
         // non Library test are running as native multi-dex
         if (isMultiDexEnabled && isLegacyMultiDexMode) {
+            if (AndroidGradleOptions.useNewShrinker(project)) {
+                throw new IllegalStateException("New shrinker + multidex not supported yet.");
+            }
+
             // ----------
             // create a transform to jar the inputs into a single jar.
             if (!isMinifyEnabled) {
@@ -2289,18 +2296,41 @@ public abstract class TaskManager {
         return zipAlignTask;
     }
 
-    protected void createProguardTransform(
+    protected void createMinifyTransform(
             @NonNull TaskFactory taskFactory,
-            @NonNull final VariantScope variantScope, boolean createJarFile) {
-        createProguardTransform(taskFactory,
+            @NonNull final VariantScope variantScope,
+            boolean createJarFile) {
+        doCreateMinifyTransform(taskFactory,
                 variantScope,
-                null /*mappingConfiguration*/,
+                null /*mappingConfiguration*/, // No mapping in non-test modules.
                 createJarFile);
     }
 
-    protected final void createProguardTransform(
+    /**
+     * Actually creates the minify transform, using the given mapping configuration. The mapping is
+     * only used by test-only modules.
+     */
+    protected final void doCreateMinifyTransform(
             @NonNull TaskFactory taskFactory,
             @NonNull final VariantScope variantScope,
+            @Nullable Configuration mappingConfiguration,
+            boolean createJarFile) {
+        if (AndroidGradleOptions.useNewShrinker(project)) {
+            createNewShrinkerTransform(variantScope, taskFactory);
+        } else {
+            createProguardTransform(taskFactory, variantScope, mappingConfiguration, createJarFile);
+        }
+    }
+
+    private void createNewShrinkerTransform(VariantScope scope, TaskFactory taskFactory) {
+        NewShrinkerTransform transform = new NewShrinkerTransform(scope);
+        addProguardConfigFiles(transform, scope.getVariantData());
+        scope.getTransformManager().addTransform(taskFactory, scope, transform);
+    }
+
+    private void createProguardTransform(
+            @NonNull TaskFactory taskFactory,
+            @NonNull VariantScope variantScope,
             @Nullable Configuration mappingConfiguration,
             boolean createJarFile) {
         try {
@@ -2324,7 +2354,8 @@ public abstract class TaskManager {
 
                 // All -dontwarn rules for test dependencies should go in here:
                 transform.configurationFiles(
-                        testedVariantData.getVariantConfiguration().getTestProguardFiles());
+                        Suppliers.ofInstance(
+                                testedVariantData.getVariantConfiguration().getTestProguardFiles()));
 
                 // register the mapping file which may or may not exists (only exist if obfuscation)
                 // is enabled.
@@ -2339,22 +2370,7 @@ public abstract class TaskManager {
                             .dontwarn("org.jacoco.**");
                 }
 
-                transform.configurationFiles(new Callable<Collection<File>>() {
-                    @Override
-                    public Collection<File> call() throws Exception {
-                        List<File> proguardFiles = variantConfig.getProguardFiles(
-                                true,
-                                Collections.singletonList(getDefaultProguardFile(
-                                        TaskManager.DEFAULT_PROGUARD_CONFIG_FILE)));
-
-                        // use the first output when looking for the proguard rule output of
-                        // the aapt task. The different outputs are no different in a way that
-                        // makes this rule file different per output.
-                        proguardFiles.add(variantData.getOutputs().get(0)
-                                .processResourcesTask.getProguardOutputFile());
-                        return proguardFiles;
-                    }
-                });
+                addProguardConfigFiles(transform, variantData);
 
                 if (mappingConfiguration != null) {
                     transform.applyTestedMapping(mappingConfiguration);
@@ -2386,8 +2402,6 @@ public abstract class TaskManager {
                 task.dependsOn(taskFactory, mappingConfiguration);
             }
 
-            variantScope.setObfuscationTask(task);
-
             if (variantConfig.getBuildType().isShrinkResources()) {
                 // if resources are shrink, insert a no-op transform per variant output
                 // to transform the res package into a stripped res package
@@ -2403,7 +2417,7 @@ public abstract class TaskManager {
                     AndroidTask<TransformTask> shrinkTask = variantScope.getTransformManager()
                             .addTransform(taskFactory, variantOutputScope, shrinkResTransform);
                     // need to record this task since the package task will not depend
-                    // on it through the tansform manager.
+                    // on it through the transform manager.
                     variantOutputScope.setShrinkResourcesTask(shrinkTask);
                 }
             }
@@ -2411,6 +2425,28 @@ public abstract class TaskManager {
         } catch (ParseException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void addProguardConfigFiles(
+            ProguardConfigurable transform,
+            final BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
+        transform.configurationFiles(new Supplier<List<File>>() {
+            @Override
+            public List<File> get() {
+                List<File> proguardFiles = variantConfig.getProguardFiles(
+                        true,
+                        Collections.singletonList(getDefaultProguardFile(
+                                TaskManager.DEFAULT_PROGUARD_CONFIG_FILE)));
+
+                // use the first output when looking for the proguard rule output of
+                // the aapt task. The different outputs are not different in a way that
+                // makes this rule file different per output.
+                BaseVariantOutputData outputData = variantData.getOutputs().get(0);
+                proguardFiles.add(outputData.processResourcesTask.getProguardOutputFile());
+                return proguardFiles;
+            }
+        });
     }
 
     public void createReportTasks(

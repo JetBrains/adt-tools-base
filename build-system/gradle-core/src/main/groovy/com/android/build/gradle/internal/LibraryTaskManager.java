@@ -357,7 +357,7 @@ public class LibraryTaskManager extends TaskManager {
                         Set<Scope> jarScopes;
 
                         if (buildType.isMinifyEnabled()) {
-                            createProguardTransform(tasks, variantScope, false);
+                            createMinifyTransform(tasks, variantScope, false);
                             jarScopes = Sets.immutableEnumSet(PROJECT, PROJECT_LOCAL_DEPS);
 
                         } else {
@@ -607,7 +607,7 @@ public class LibraryTaskManager extends TaskManager {
 
         // never need to only extract the res, as we don't merge the resources of local
         // jars ever
-        // FIXM: should we?
+        // FIXME: should we?
         return TransformManager.EMPTY_SCOPES;
     }
 
