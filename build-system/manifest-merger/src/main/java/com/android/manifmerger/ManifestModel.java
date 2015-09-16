@@ -119,7 +119,7 @@ class ManifestModel {
 
         @Override
         @Nullable
-        public String getKey(Element xmlElement) {
+        public String getKey(@NonNull Element xmlElement) {
             String key = mNamespaceUri == null
                 ? xmlElement.getAttribute(mAttributeName)
                 : xmlElement.getAttributeNS(mNamespaceUri, mAttributeName);
@@ -148,6 +148,7 @@ class ManifestModel {
      * element key first in an "android:name" attribute and if not value found there, in the
      * "android:glEsVersion" attribute.
      */
+    @Nullable
     private static final NodeKeyResolver NAME_AND_GLESVERSION_KEY_RESOLVER = new NodeKeyResolver() {
         private final NodeKeyResolver nameAttrResolver = DEFAULT_NAME_ATTRIBUTE_RESOLVER;
         private final NodeKeyResolver glEsVersionResolver =
@@ -157,7 +158,7 @@ class ManifestModel {
         @Nullable
         @Override
         public String getKey(Element xmlElement) {
-            String key = nameAttrResolver.getKey(xmlElement);
+            @Nullable String key = nameAttrResolver.getKey(xmlElement);
             return Strings.isNullOrEmpty(key)
                     ? glEsVersionResolver.getKey(xmlElement)
                     : key;
@@ -178,19 +179,20 @@ class ManifestModel {
      * We concatenate such elements sub-keys (after sorting them to work around declaration order)
      * and use that for the intent-filter unique key.
      */
+    @Nullable
     private static final NodeKeyResolver INTENT_FILTER_KEY_RESOLVER = new NodeKeyResolver() {
         @Nullable
         @Override
-        public String getKey(Element element) {
-            OrphanXmlElement xmlElement = new OrphanXmlElement(element);
+        public String getKey(@NonNull Element element) {
+            @NonNull OrphanXmlElement xmlElement = new OrphanXmlElement(element);
             assert(xmlElement.getType() == NodeTypes.INTENT_FILTER);
             // concatenate all actions and categories attribute names.
-            List<String> allSubElementKeys = new ArrayList<String>();
+            @NonNull List<String> allSubElementKeys = new ArrayList<String>();
             NodeList childNodes = element.getChildNodes();
             for (int i = 0; i < childNodes.getLength(); i++) {
                 Node child = childNodes.item(i);
                 if (child.getNodeType() != Node.ELEMENT_NODE) continue;
-                OrphanXmlElement subElement = new OrphanXmlElement((Element) child);
+                @NonNull OrphanXmlElement subElement = new OrphanXmlElement((Element) child);
                 if (subElement.getType() == NodeTypes.ACTION
                         || subElement.getType() == NodeTypes.CATEGORY) {
                     Attr nameAttribute = subElement.getXml()
@@ -228,8 +230,8 @@ class ManifestModel {
         @Nullable
         @Override
         public String getKey(Element xmlElement) {
-            String firstKey = firstAttributeKeyResolver.getKey(xmlElement);
-            String secondKey = secondAttributeKeyResolver.getKey(xmlElement);
+            @Nullable String firstKey = firstAttributeKeyResolver.getKey(xmlElement);
+            @Nullable String secondKey = secondAttributeKeyResolver.getKey(xmlElement);
 
             return Strings.isNullOrEmpty(firstKey)
                     ? secondKey
@@ -598,7 +600,7 @@ class ManifestModel {
                 @Nullable AttributeModel.Builder... attributeModelBuilders) {
             this.mMergeType = Preconditions.checkNotNull(mergeType);
             this.mNodeKeyResolver = Preconditions.checkNotNull(nodeKeyResolver);
-            ImmutableList.Builder<AttributeModel> attributeModels =
+            @NonNull ImmutableList.Builder<AttributeModel> attributeModels =
                     new ImmutableList.Builder<AttributeModel>();
             if (attributeModelBuilders != null) {
                 for (AttributeModel.Builder attributeModelBuilder : attributeModelBuilders) {

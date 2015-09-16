@@ -55,11 +55,13 @@ public final class SourceFilePosition {
         return mSourceFile;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return print(false);
     }
 
+    @NonNull
     public String print(boolean shortFormat) {
         if (mSourcePosition.equals(SourcePosition.UNKNOWN)) {
             return mSourceFile.print(shortFormat);

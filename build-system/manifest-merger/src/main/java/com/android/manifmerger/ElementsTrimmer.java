@@ -136,7 +136,7 @@ public class ElementsTrimmer {
 
     }
 
-    private static Integer getGlEsVersion(XmlElement xmlElement) {
+    private static Integer getGlEsVersion(@NonNull XmlElement xmlElement) {
         Attr glEsVersion = xmlElement.getXml()
                 .getAttributeNodeNS(ANDROID_URI, AndroidManifest.ATTRIBUTE_GLESVERSION);
         if (glEsVersion == null) {
@@ -145,7 +145,7 @@ public class ElementsTrimmer {
         return getHexValue(glEsVersion);
     }
 
-    private static Integer getHexValue(Attr attribute) {
+    private static Integer getHexValue(@NonNull Attr attribute) {
         return Integer.decode(attribute.getValue());
     }
 }

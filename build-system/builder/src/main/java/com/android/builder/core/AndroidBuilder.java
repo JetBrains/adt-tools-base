@@ -106,7 +106,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -638,7 +637,7 @@ public class AndroidBuilder {
                     }
                     save(xmlDocument, new File(outManifestLocation));
                     if (outAaptSafeManifestLocation != null) {
-                        new PlaceholderEncoder().visit(xmlDocument);
+                        PlaceholderEncoder.visit(xmlDocument);
                         save(xmlDocument, new File(outAaptSafeManifestLocation));
                     }
                     mLogger.info("Merged manifest saved to " + outManifestLocation);
