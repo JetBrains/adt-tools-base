@@ -33,13 +33,34 @@ public class ConstructorTest {
         harness.reset();
 
         Constructors.Sub sub = new Constructors.Sub(1.2, ".3.", 4);
-        assertEquals("base:1.2.3.4", sub.getBaseFinal());
+        assertEquals("base:1.2[.3.]4", sub.getBaseFinal());
         assertEquals("sub:1.2.3.4", sub.getSubFinal());
+        assertEquals("Sub(double, String, int)", sub.value);
+
+        sub = new Constructors.Sub(1234L, 0.5f);
+        assertEquals("base:0.5[[1234]]0", sub.getBaseFinal());
+        assertEquals("sub:0.5[1234]0", sub.getSubFinal());
+        assertEquals("Sub(long, float)", sub.value);
+
+        Constructors outer = new Constructors("outer");
+        Constructors.DupInvokeSpecialSub dup = outer.new DupInvokeSpecialSub();
+        assertEquals("original", dup.value);
+        assertEquals("outer", outer.value);
 
         harness.applyPatch("changeBaseClass");
         sub = new Constructors.Sub(1.2, ".3.", 4);
-        assertEquals("1.2.3.4:patched_base", sub.getBaseFinal());
+        assertEquals("1.2(.3.)4:patched_base", sub.getBaseFinal());
         assertEquals("1.2.3.4:patched_sub", sub.getSubFinal());
+        assertEquals("patched_Sub(double, String, int)", sub.value);
 
+        sub = new Constructors.Sub(1234L, 0.5f);
+        assertEquals("0.5((1234))0:patched_base", sub.getBaseFinal());
+        assertEquals("0.5(1234)0:patched_sub", sub.getSubFinal());
+        assertEquals("patched_Sub(long, float)", sub.value);
+
+        outer = new Constructors("outer_patched");
+        dup = outer.new DupInvokeSpecialSub();
+        assertEquals("patched", dup.value);
+        assertEquals("outer_patched", outer.value);
     }
 }

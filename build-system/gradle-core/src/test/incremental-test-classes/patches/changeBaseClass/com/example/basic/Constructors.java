@@ -18,6 +18,11 @@ package com.example.basic;
 
 public class Constructors {
 
+    public String value;
+    public Constructors(String value) {
+        this.value = value;
+    }
+
     public static class Base {
 
         private final String baseFinal;
@@ -35,13 +40,42 @@ public class Constructors {
 
         private final String subFinal;
 
+        public String value;
+
         public Sub(double a, String b, int c) {
-            super(a, b, c);
+            super(a, callMeBefore(b), c);
             subFinal =  a + b + c + ":patched_sub";
+            value = "patched_Sub(double, String, int)";
+        }
+
+        public Sub(long l, float f) {
+            this(f, callMeBefore(String.valueOf(l)), 0);
+            value = "patched_Sub(long, float)";
+        }
+
+        public Sub(boolean b) {
+            this(b ? 1.0 : 0.0, b ? "true" : "false", b ? 1 : 0);
+            value = "Sub(boolean)";
         }
 
         public String getSubFinal() {
             return subFinal;
+        }
+
+        public static String callMeBefore(String s){
+            return "(" + s + ")";
+        }
+    }
+
+    public class DupInvokeSpecialBase {
+        public DupInvokeSpecialBase(DupInvokeSpecialBase a) { }
+    }
+
+    public class DupInvokeSpecialSub extends DupInvokeSpecialBase {
+        public String value;
+        public DupInvokeSpecialSub() {
+            super(new DupInvokeSpecialBase(null));
+            value = "patched";
         }
     }
 }
