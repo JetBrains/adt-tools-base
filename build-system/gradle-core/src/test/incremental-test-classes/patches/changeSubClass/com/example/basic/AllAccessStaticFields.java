@@ -19,7 +19,7 @@ package com.example.basic;
 /**
  * Class to test static and static final fields.
  */
-public class StaticFields {
+public class AllAccessStaticFields {
 
     private static int privateInt = 13;
     protected static int protectedInt = 26;
@@ -42,10 +42,10 @@ public class StaticFields {
     public static void staticSetAllFields(
             int privateInt, int protectedInt, int packagePrivateInt, int publicInt) {
 
-        StaticFields.privateInt = privateInt;
-        StaticFields.protectedInt = protectedInt;
-        StaticFields.packagePrivateInt = packagePrivateInt;
-        StaticFields.publicInt = publicInt;
+        AllAccessStaticFields.privateInt = privateInt;
+        AllAccessStaticFields.protectedInt = protectedInt;
+        AllAccessStaticFields.packagePrivateInt = packagePrivateInt;
+        AllAccessStaticFields.publicInt = publicInt;
     }
 
 

@@ -20,7 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
-import com.example.basic.PrivateFieldAccess;
+import com.example.basic.AllTypesFields;
 
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -28,7 +28,7 @@ import org.junit.Test;
 /**
  * Tests for private fields accesses.
  */
-public class PrivateFieldAccessTest {
+public class AllTypesFieldsTest {
 
     @ClassRule
     public static ClassEnhancement harness = new ClassEnhancement(false);
@@ -43,13 +43,13 @@ public class PrivateFieldAccessTest {
     public void checkInitialByteCodeChanges() throws Exception {
 
         harness.reset();
-        PrivateFieldAccess privateFieldAccess = new PrivateFieldAccess();
+        AllTypesFields allTypesFields = new AllTypesFields();
 
-        privateFieldAccess.setPrivateBooleanField(false);
-        assertFalse(privateFieldAccess.getPrivateBooleanField());
+        allTypesFields.setPrivateBooleanField(false);
+        assertFalse(allTypesFields.getPrivateBooleanField());
 
-        privateFieldAccess.setPrivateDoubleField(1354.43d);
-        assertEquals(1354.43d, privateFieldAccess.getPrivateDoubleField(), 0d);
+        allTypesFields.setPrivateDoubleField(1354.43d);
+        assertEquals(1354.43d, allTypesFields.getPrivateDoubleField(), 0d);
 
         // more to come...
     }

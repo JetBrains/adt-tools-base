@@ -171,6 +171,8 @@ public class ClassEnhancement implements TestRule {
 
         Class<?> originalEnhancedClass = getClass().getClassLoader().loadClass(name);
         Field newImplementationField = originalEnhancedClass.getField("$change");
+        // class might not be accessible from there
+        newImplementationField.setAccessible(true);
 
         if (patch == null) {
             // Revert to original implementation.

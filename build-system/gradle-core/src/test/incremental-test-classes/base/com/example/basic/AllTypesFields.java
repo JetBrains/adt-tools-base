@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
-public class PrivateFieldAccess {
+public class AllTypesFields {
 
     private boolean privateBooleanField;
 
@@ -63,7 +63,7 @@ public class PrivateFieldAccess {
 
     private final String privateFinalStringFieldCtorInit;
 
-    public PrivateFieldAccess() {
+    public AllTypesFields() {
         privateFinalBooleanFieldCtorInit = true;
         privateFinalLongFieldCtorInit = 1243L;
         privateFinalIntFieldCtorInit = 1243;
@@ -89,7 +89,7 @@ public class PrivateFieldAccess {
         return privateFinalStringFieldCtorInit;
     }
 
-    public PrivateFieldAccess chaining(String value) {
+    public AllTypesFields chaining(String value) {
         privateStringField = value;
         return this;
     }
@@ -112,7 +112,7 @@ public class PrivateFieldAccess {
         return privateFinalBooleanFieldCtorInit;
     }
 
-    public PrivateFieldAccess chaining(boolean value) {
+    public AllTypesFields chaining(boolean value) {
         privateBooleanField = value;
         return this;
     }
@@ -135,7 +135,7 @@ public class PrivateFieldAccess {
         return privateFinalIntFieldCtorInit;
     }
 
-    public PrivateFieldAccess chaining(int value) {
+    public AllTypesFields chaining(int value) {
         privateIntField = value;
         return this;
     }
@@ -158,7 +158,7 @@ public class PrivateFieldAccess {
         return privateFinalLongFieldCtorInit;
     }
 
-    public PrivateFieldAccess chaining(long value) {
+    public AllTypesFields chaining(long value) {
         privateLongField = value;
         return this;
     }
@@ -181,7 +181,7 @@ public class PrivateFieldAccess {
         return privateFinalDoubleFieldCtorInit;
     }
 
-    public PrivateFieldAccess chaining(double value) {
+    public AllTypesFields chaining(double value) {
         privateDoubleField = value;
         return this;
     }
@@ -204,7 +204,7 @@ public class PrivateFieldAccess {
         return privateFinalFloatFieldCtorInit;
     }
 
-    public PrivateFieldAccess chaining(float value) {
+    public AllTypesFields chaining(float value) {
         privateFloatField = value;
         return this;
     }
