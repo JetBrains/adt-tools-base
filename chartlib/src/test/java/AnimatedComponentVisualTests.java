@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Box;
@@ -402,6 +403,7 @@ public class AnimatedComponentVisualTests extends JDialog {
         final AtomicInteger variance = new AtomicInteger(10);
         final AtomicInteger delay = new AtomicInteger(100);
         final AtomicInteger type = new AtomicInteger(0);
+        final AtomicBoolean supportNegativeValues = new AtomicBoolean(false);
         new Thread() {
             @Override
             public void run() {
@@ -412,7 +414,7 @@ public class AnimatedComponentVisualTests extends JDialog {
                         int v = variance.get();
                         for (int i = 0; i < streams; i++) {
                             float delta = (float) Math.random() * variance.get() - v * 0.5f;
-                            values[i] = Math.max(0, delta + values[i]);
+                            values[i] = supportNegativeValues.get() ? delta + values[i] : Math.max(0, delta + values[i]);
                         }
                         synchronized (data) {
                             data.add(System.currentTimeMillis(), type.get() + (v == 0 ? 1 : 0), Arrays.copyOf(values,
@@ -483,6 +485,14 @@ public class AnimatedComponentVisualTests extends JDialog {
                 timeline.setStackStreams(e.getStateChange() == ItemEvent.SELECTED);
             }
         }, true));
+        controls.add(createCheckbox("Support Negative Values", new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent itemEvent) {
+                boolean support = itemEvent.getStateChange() == ItemEvent.SELECTED;
+                timeline.setSupportNegativeValues(support);
+                supportNegativeValues.set(support);
+            }
+        }));
 
         controls.add(new Box.Filler(new Dimension(0, 0), new Dimension(300, Integer.MAX_VALUE), new Dimension(300, Integer.MAX_VALUE)));
         panel.add(timeline, BorderLayout.CENTER);
