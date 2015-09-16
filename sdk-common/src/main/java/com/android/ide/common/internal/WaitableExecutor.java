@@ -38,6 +38,8 @@ import java.util.concurrent.Future;
  * {@link #waitForTasksWithQuickFail(boolean)}, or {@link #waitForAllTasks()}.
  *
  * This class is not Thread safe!
+ *
+ * @param <T> Result type of all the tasks.
  */
 public class WaitableExecutor<T> {
 
@@ -69,10 +71,10 @@ public class WaitableExecutor<T> {
     /**
      * Submits a Callable for execution.
      *
-     * @param runnable the callable to run.
+     * @param callable the callable to run.
      */
-    public void execute(Callable<T> runnable) {
-        mFutureSet.add(mCompletionService.submit(runnable));
+    public void execute(Callable<T> callable) {
+        mFutureSet.add(mCompletionService.submit(callable));
     }
 
     /**
