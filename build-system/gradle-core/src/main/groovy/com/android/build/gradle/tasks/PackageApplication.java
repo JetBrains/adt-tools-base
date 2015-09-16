@@ -48,25 +48,23 @@ import java.util.concurrent.Callable;
 @ParallelizableTask
 public class PackageApplication extends IncrementalTask implements FileSupplier {
 
-    public static final TransformManager.StreamFilter sDexFilter
-            = new TransformManager.StreamFilter() {
-        @Override
-        public boolean accept(@NonNull Set<ContentType> types,
-                @NonNull Set<Scope> scopes) {
-            return types.contains(ContentType.DEX);
-        }
-    };
+    public static final TransformManager.StreamFilter sDexFilter =
+            new TransformManager.StreamFilter() {
+                @Override
+                public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
+                    return types.contains(ContentType.DEX);
+                }
+            };
 
-    public static final TransformManager.StreamFilter sResFilter
-            = new TransformManager.StreamFilter() {
-        @Override
-        public boolean accept(@NonNull Set<ContentType> types,
-                @NonNull Set<Scope> scopes) {
-            return types.contains(ContentType.RESOURCES) &&
-                    !scopes.contains(Scope.PROVIDED_ONLY) &&
-                    !scopes.contains(Scope.TESTED_CODE);
-        }
-    };
+    public static final TransformManager.StreamFilter sResFilter =
+            new TransformManager.StreamFilter() {
+                @Override
+                public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
+                    return types.contains(ContentType.RESOURCES) &&
+                            !scopes.contains(Scope.PROVIDED_ONLY) &&
+                            !scopes.contains(Scope.TESTED_CODE);
+                }
+            };
 
     // ----- PUBLIC TASK API -----
 
@@ -317,7 +315,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             ConventionMappingHelper.map(packageApp, "dexFolders", new Callable< Map<File, Format>>() {
                 @Override
                 public  Map<File, Format> call() {
-                    return scope.getVariantScope().getTransformManager().getPipelineOuput(
+                    return scope.getVariantScope().getTransformManager().getPipelineOutput(
                             sDexFilter, null);
                 }
             });

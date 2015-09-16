@@ -318,7 +318,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 (variantData.javacTask != null) ?
                         variantData.javacTask.getDestinationDir() :
                         variantData.getScope().getJavaOutputDir(),
-                variantData.getScope().getJavaResourcesDestinationDir(),
+                variantData.getJavaResourcesForUnitTesting(),
                 taskManager.getGlobalScope().getMockableAndroidJarFile(),
                 dependencies,
                 sourceProviders.variantSourceProvider,
@@ -434,7 +434,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 (variantData.javacTask != null) ?
                         variantData.javacTask.getDestinationDir() :
                         scope.getJavaOutputDir(),
-                scope.getJavaResourcesDestinationDir(),
+                scope.getVariantData().getJavaResourcesForUnitTesting(),
                 DependenciesImpl.cloneDependencies(variantData, androidBuilder),
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider,

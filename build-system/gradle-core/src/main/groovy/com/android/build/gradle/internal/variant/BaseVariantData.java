@@ -129,7 +129,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public Task compileTask;
 
     public FileSupplier mappingFileProviderTask;
-    public BinaryFileProviderTask binayFileProviderTask;
+    public BinaryFileProviderTask binaryFileProviderTask;
 
     // TODO : why is Jack not registered as the obfuscationTask ???
     public Task obfuscationTask;
@@ -664,5 +664,14 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     @NonNull
     public VariantScope getScope() {
         return scope;
+    }
+
+    @NonNull
+    public File getJavaResourcesForUnitTesting() {
+        if (processJavaResourcesTask != null) {
+            return processJavaResourcesTask.getOutputs().getFiles().getSingleFile();
+        } else {
+            return getScope().getSourceFoldersJavaResDestinationDir();
+        }
     }
 }
