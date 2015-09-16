@@ -9,12 +9,11 @@ import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.builder.model.SourceProvider;
+import com.google.common.util.concurrent.Callables;
 
 import org.gradle.api.tasks.Sync;
 
-import java.io.File;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * Configuration Action for a process*JavaRes tasks.
@@ -81,11 +80,6 @@ public class ProcessJavaResConfigAction implements TaskConfigAction<Sync> {
         ConventionMappingHelper.map(
                 processResources,
                 "destinationDir",
-                new Callable<File>() {
-                    @Override
-                    public File call() throws Exception {
-                        return scope.getSourceFoldersJavaResDestinationDir();
-                    }
-                });
+                Callables.returning(scope.getSourceFoldersJavaResDestinationDir()));
     }
 }

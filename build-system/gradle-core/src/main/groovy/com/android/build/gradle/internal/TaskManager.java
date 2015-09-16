@@ -57,7 +57,6 @@ import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.scope.VariantScopeImpl;
 import com.android.build.gradle.internal.tasks.AndroidReportTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
@@ -959,16 +958,19 @@ public abstract class TaskManager {
     /**
      * Creates the java resources processing tasks.
      *
-     * The java processing will happen in three steps :
-     * <ul>{@link ExtractJarsTransform} will extract all java resources from packaged jar files
+     * The java processing will happen in three steps:
+     * <ul>
+     * <li>{@link ExtractJarsTransform} will extract all java resources from packaged jar files
      * dependencies. This consumes the
      * following streams:  PROJECT_LOCAL_DEPS, SUB_PROJECTS, SUB_PROJECTS_LOCAL_DEPS, and
      * EXTERNAL_LIBRARIES. Each jar file will be extracted in a separate folder under its own
-     * stream.</ul>
-     * <ul>{@link ProcessJavaResConfigAction} will sync all source folders into a single folder
-     * identified by {@link VariantScopeImpl#getSourceFoldersJavaResDestinationDir()}</ul>
-     * <ul>{@link MergeJavaResourcesTransform} will take all these folders and will create a single
-     * merged folder with the {@link PackagingOptions} settings applied.</ul>
+     * stream.</li>
+     * <li>{@link Sync} task configured with {@link ProcessJavaResConfigAction} will sync all source
+     * folders into a single folder identified by
+     * {@link VariantScope#getSourceFoldersJavaResDestinationDir()}</li>
+     * <li>{@link MergeJavaResourcesTransform} will take all these folders and will create a single
+     * merged folder with the {@link PackagingOptions} settings applied.</li>
+     * </ul>
      *
      * the result of 3 is a combined stream containing all java resources, to be either directly
      * embedded in the resulting APK or fed into the further transforms.
@@ -1002,8 +1004,8 @@ public abstract class TaskManager {
 
         // now copy the source folders java resources into the temporary location, mainly to
         // maintain the PluginDsl COPY semantics.
-        AndroidTask<Sync> processJavaResourcesTask = androidTasks
-                .create(tasks, new ProcessJavaResConfigAction(variantScope));
+        AndroidTask<Sync> processJavaResourcesTask =
+                androidTasks.create(tasks, new ProcessJavaResConfigAction(variantScope));
         variantScope.setProcessJavaResourcesTask(processJavaResourcesTask);
 
         // create the stream generated from this task
@@ -1200,8 +1202,9 @@ public abstract class TaskManager {
     public void createUnitTestVariantTasks(
             @NonNull TaskFactory tasks,
             @NonNull TestVariantData variantData) {
-        variantData.assembleVariantTask.dependsOn(createMockableJar.getName());
         VariantScope variantScope = variantData.getScope();
+        BaseVariantData testedVariantData = variantScope.getTestedVariantData();
+        checkState(testedVariantData != null);
 
         createPreBuildTasks(variantScope);
 
@@ -1210,10 +1213,19 @@ public abstract class TaskManager {
 
         createProcessJavaResTasks(tasks, variantScope);
         createCompileAnchorTask(tasks, variantScope);
+
+        // :app:compileDebugUnitTestSources should be enough for running tests from AS, so add an
+        // explicit dependency on resource copying tasks.
+        variantScope.getCompileTask().dependsOn(
+                tasks,
+                variantScope.getProcessJavaResourcesTask(),
+                testedVariantData.getScope().getProcessJavaResourcesTask());
+
         AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
         setJavaCompilerTask(javacTask, tasks, variantScope);
-        createUnitTestTask(tasks, variantScope);
+        createRunUnitTestTask(tasks, variantScope);
 
+        variantData.assembleVariantTask.dependsOn(createMockableJar.getName());
         // This hides the assemble unit test task from the task list.
         variantData.assembleVariantTask.setGroup(null);
     }
@@ -1402,7 +1414,7 @@ public abstract class TaskManager {
         }
     }
 
-    private void createUnitTestTask(
+    private void createRunUnitTestTask(
             @NonNull TaskFactory tasks,
             @NonNull final VariantScope variantScope) {
         final AndroidTask<Test> runtTestsTask =
@@ -1811,7 +1823,7 @@ public abstract class TaskManager {
                                 "packaged/" + config.getDirName() + "/"));
                         jarTask.from(scope.getJavaOutputDir());
                         jarTask.dependsOn(scope.getJavacTask().getName());
-                        variantData.binayFileProviderTask = jarTask;
+                        variantData.binaryFileProviderTask = jarTask;
                     }
 
                 });

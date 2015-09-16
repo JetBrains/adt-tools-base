@@ -352,7 +352,7 @@ public class TransformManager {
     }
 
     @NonNull
-    public Map<File, Format> getPipelineOuput(
+    public Map<File, Format> getPipelineOutput(
             @NonNull StreamFilter streamFilter,
             @Nullable Format requiredFormat) {
         ImmutableList<TransformStream> streams = getStreams(streamFilter);
