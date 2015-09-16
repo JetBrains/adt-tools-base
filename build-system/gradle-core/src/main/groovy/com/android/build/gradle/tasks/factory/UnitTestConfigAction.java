@@ -107,14 +107,11 @@ public class UnitTestConfigAction implements TaskConfigAction<Test> {
                             classpaths.add(testedVariantData.getScope().getJavaOuptuts());
                             classpaths.add(scope.getJavaOuptuts());
                         }
-                        classpaths.add(variantData.processJavaResourcesTask != null
-                                ? variantData.processJavaResourcesTask.getOutputs()
-                                : new File(scope.getSourceFoldersJavaResDestinationDir(), "src"));
-                        classpaths.add(testedVariantData.processJavaResourcesTask != null
-                                ? testedVariantData.processJavaResourcesTask.getOutputs()
-                                : new File(testedVariantData.getScope()
-                                        .getSourceFoldersJavaResDestinationDir(), "src"));
+
+                        classpaths.add(variantData.getJavaResourcesForUnitTesting());
+                        classpaths.add(testedVariantData.getJavaResourcesForUnitTesting());
                         classpaths.add(filteredBootClasspath);
+
                         // Mockable JAR is last, to make sure you can shadow the classes with
                         // dependencies.
                         classpaths.add(scope.getGlobalScope().getMockableAndroidJarFile());
