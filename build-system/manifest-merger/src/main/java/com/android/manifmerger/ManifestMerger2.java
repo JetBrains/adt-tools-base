@@ -63,11 +63,17 @@ public class ManifestMerger2 {
     @NonNull
     private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
 
+    @NonNull
     private final ILogger mLogger;
+    @NonNull
     private final ImmutableList<Pair<String, File>> mLibraryFiles;
+    @NonNull
     private final ImmutableList<File> mFlavorsAndBuildTypeFiles;
+    @NonNull
     private final ImmutableList<Invoker.Feature> mOptionalFeatures;
+    @NonNull
     private final MergeType mMergeType;
+    @NonNull
     private final Optional<File> mReportFile;
 
     private ManifestMerger2(
@@ -99,6 +105,7 @@ public class ManifestMerger2 {
      * @throws MergeFailureException if the merging cannot be completed (for instance, if xml
      * files cannot be loaded).
      */
+    @NonNull
     private MergingReport merge() throws MergeFailureException {
         // initiate a new merging report
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mLogger);
@@ -246,8 +253,7 @@ public class ManifestMerger2 {
             // ready, all placeholders values must have been provided.
             KeyBasedValueResolver<String> placeHolderValueResolver =
                     new MapBasedKeyBasedValueResolver<String>(mPlaceHolderValues);
-            PlaceholderHandler placeholderHandler = new PlaceholderHandler();
-            placeholderHandler.visit(
+            PlaceholderHandler.visit(
                     mMergeType,
                     xmlDocumentOptional.get(),
                     placeHolderValueResolver,
@@ -274,11 +280,10 @@ public class ManifestMerger2 {
                     ToolsInstructionsCleaner.cleanToolsReferences(finalMergedDocument, mLogger);
         }
 
-        if (mOptionalFeatures.contains(Invoker.Feature.EXTRACT_FQCNS)) {
-            extractFcqns(finalMergedDocument);
-        }
-
         if (finalMergedDocument != null) {
+            if (mOptionalFeatures.contains(Invoker.Feature.EXTRACT_FQCNS)) {
+                extractFcqns(finalMergedDocument);
+            }
             mergingReportBuilder.setMergedDocument(finalMergedDocument);
         }
 
@@ -298,7 +303,7 @@ public class ManifestMerger2 {
      * Creates the merging report file.
      * @param mergingReport the merging activities report to serialize.
      */
-    private void writeReport(MergingReport mergingReport) {
+    private void writeReport(@NonNull MergingReport mergingReport) {
         FileWriter fileWriter = null;
         try {
             if (!mReportFile.get().getParentFile().exists()
@@ -338,7 +343,7 @@ public class ManifestMerger2 {
      * package attribute value.
      * @param finalMergedDocument the AndroidManifest.xml document.
      */
-    private void extractFcqns(XmlDocument finalMergedDocument) {
+    private static void extractFcqns(@NonNull XmlDocument finalMergedDocument) {
         extractFcqns(finalMergedDocument.getPackageName(), finalMergedDocument.getRootNode());
     }
 
@@ -348,11 +353,11 @@ public class ManifestMerger2 {
      * @param packageName the manifest package name.
      * @param xmlElement the xml element to process recursively.
      */
-    private void extractFcqns(String packageName, XmlElement xmlElement) {
+    private static void extractFcqns(@NonNull String packageName, @NonNull XmlElement xmlElement) {
         for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
             if (xmlAttribute.getModel() !=null && xmlAttribute.getModel().isPackageDependent()) {
                 String value = xmlAttribute.getValue();
-                if (value != null && value.startsWith(packageName) &&
+                if (value.startsWith(packageName) &&
                         value.charAt(packageName.length()) == '.') {
                     xmlAttribute.getXml().setValue(value.substring(packageName.length()));
                 }
@@ -372,10 +377,11 @@ public class ManifestMerger2 {
      * @return a loaded manifest info.
      * @throws MergeFailureException
      */
+    @NonNull
     private LoadedManifestInfo load(
-            ManifestInfo manifestInfo,
-            KeyResolver<String> selectors,
-            MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
+            @NonNull ManifestInfo manifestInfo,
+            @NonNull KeyResolver<String> selectors,
+            @NonNull MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
 
         XmlDocument xmlDocument;
         try {
@@ -405,9 +411,9 @@ public class ManifestMerger2 {
                 Optional.fromNullable(originalPackageName), xmlDocument);
     }
 
-    private void performPlaceHolderSubstitution(ManifestInfo manifestInfo,
-            XmlDocument xmlDocument,
-            MergingReport.Builder mergingReportBuilder) {
+    private void performPlaceHolderSubstitution(@NonNull ManifestInfo manifestInfo,
+            @NonNull XmlDocument xmlDocument,
+            @NonNull MergingReport.Builder mergingReportBuilder) {
 
         if (mOptionalFeatures.contains(Invoker.Feature.NO_PLACEHOLDER_REPLACEMENT)) {
             return;
@@ -421,7 +427,7 @@ public class ManifestMerger2 {
                     ? manifestInfo.getMainManifestPackageName().get()
                     : xmlDocument.getPackageName();
             // add all existing placeholders except package name that will be swapped.
-            ImmutableMap.Builder<String, Object> builder = ImmutableMap.<String, Object>builder();
+            ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
             for (Map.Entry<String, Object> entry : mPlaceHolderValues.entrySet()) {
                 if (!entry.getKey().equals(PlaceholderHandler.PACKAGE_NAME)) {
                     builder.put(entry);
@@ -436,8 +442,7 @@ public class ManifestMerger2 {
 
         KeyBasedValueResolver<String> placeHolderValueResolver =
                 new MapBasedKeyBasedValueResolver<String>(finalPlaceHolderValues);
-        PlaceholderHandler placeholderHandler = new PlaceholderHandler();
-        placeholderHandler.visit(
+        PlaceholderHandler.visit(
                 mMergeType,
                 xmlDocument,
                 placeHolderValueResolver,
@@ -446,9 +451,9 @@ public class ManifestMerger2 {
 
     // merge the optionally existing xmlDocument with a lower priority xml file.
     private Optional<XmlDocument> merge(
-            Optional<XmlDocument> xmlDocument,
-            LoadedManifestInfo lowerPriorityDocument,
-            MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
+            @NonNull Optional<XmlDocument> xmlDocument,
+            @NonNull LoadedManifestInfo lowerPriorityDocument,
+            @NonNull MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
 
         MergingReport.Result validationResult = PreValidator
                 .validate(mergingReportBuilder, lowerPriorityDocument.getXmlDocument());
@@ -478,8 +483,8 @@ public class ManifestMerger2 {
         return result;
     }
 
-    private List<LoadedManifestInfo> loadLibraries(SelectorResolver selectors,
-            MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
+    private List<LoadedManifestInfo> loadLibraries(@NonNull SelectorResolver selectors,
+            @NonNull MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
 
         ImmutableList.Builder<LoadedManifestInfo> loadedLibraryDocuments = ImmutableList.builder();
         for (Pair<String, File> libraryFile : mLibraryFiles) {
@@ -532,6 +537,7 @@ public class ManifestMerger2 {
      * @return an {@link com.android.manifmerger.ManifestMerger2.Invoker} instance that will allow
      * further customization and trigger the merging tool.
      */
+    @NonNull
     public static Invoker newMerger(@NonNull File mainManifestFile,
             @NonNull ILogger logger,
             @NonNull MergeType mergeType) {
@@ -618,10 +624,10 @@ public class ManifestMerger2 {
 
         // utility method to add an attribute which name is derived from the enum name().
         private static void addToElement(
-                SystemProperty systemProperty,
-                ActionRecorder actionRecorder,
+                @NonNull SystemProperty systemProperty,
+                @NonNull ActionRecorder actionRecorder,
                 String value,
-                XmlElement to) {
+                @NonNull XmlElement to) {
 
             to.getXml().setAttribute(systemProperty.toCamelCase(), value);
             XmlAttribute xmlAttribute = new XmlAttribute(to,
@@ -637,10 +643,10 @@ public class ManifestMerger2 {
         // utility method to add an attribute in android namespace which local name is derived from
         // the enum name().
         private static void addToElementInAndroidNS(
-                SystemProperty systemProperty,
-                ActionRecorder actionRecorder,
+                @NonNull SystemProperty systemProperty,
+                @NonNull ActionRecorder actionRecorder,
                 String value,
-                XmlElement to) {
+                @NonNull XmlElement to) {
 
             String toolsPrefix = getAndroidPrefix(to.getXml());
             to.getXml().setAttributeNS(SdkConstants.ANDROID_URI,
@@ -665,8 +671,9 @@ public class ManifestMerger2 {
         // utility method to create or get an existing use-sdk xml element under manifest.
         // this could be made more generic by adding more metadata to the enum but since there is
         // only one case so far, keep it simple.
+        @NonNull
         private static XmlElement createOrGetUseSdk(
-                ActionRecorder actionRecorder, XmlDocument document) {
+                @NonNull ActionRecorder actionRecorder, @NonNull XmlDocument document) {
 
             Element manifest = document.getXml().getDocumentElement();
             NodeList usesSdks = manifest
@@ -698,7 +705,7 @@ public class ManifestMerger2 {
         }
     }
 
-    private static String getAndroidPrefix(Element xml) {
+    private static String getAndroidPrefix(@NonNull Element xml) {
         String toolsPrefix = XmlUtils.lookupNamespacePrefix(
                 xml, SdkConstants.ANDROID_URI, SdkConstants.ANDROID_NS_NAME, false);
         if (!toolsPrefix.equals(SdkConstants.ANDROID_NS_NAME) && xml.getOwnerDocument()
@@ -752,8 +759,8 @@ public class ManifestMerger2 {
      * @param xmlDocument the xml document to inject into.
      */
     protected void performSystemPropertiesInjection(
-            MergingReport.Builder mergingReport,
-            XmlDocument xmlDocument) {
+            @NonNull MergingReport.Builder mergingReport,
+            @NonNull XmlDocument xmlDocument) {
         for (SystemProperty systemProperty : SystemProperty.values()) {
             String propertyOverride = mSystemPropertyResolver.getValue(systemProperty);
             if (propertyOverride != null) {
@@ -793,17 +800,21 @@ public class ManifestMerger2 {
         protected final ImmutableMap.Builder<SystemProperty, Object> mSystemProperties =
                 new ImmutableMap.Builder<SystemProperty, Object>();
 
+        @NonNull
         protected final ILogger mLogger;
-
+        @NonNull
         protected final ImmutableMap.Builder<String, Object> mPlaceholders =
                 new ImmutableMap.Builder<String, Object>();
-
+        @NonNull
         private final ImmutableList.Builder<Pair<String, File>> mLibraryFilesBuilder =
                 new ImmutableList.Builder<Pair<String, File>>();
+        @NonNull
         private final ImmutableList.Builder<File> mFlavorsAndBuildTypeFiles =
                 new ImmutableList.Builder<File>();
+        @NonNull
         private final ImmutableList.Builder<Feature> mFeaturesBuilder =
                 new ImmutableList.Builder<Feature>();
+        @NonNull
         private final MergeType mMergeType;
         @Nullable private File mReportFile;
 
@@ -813,7 +824,8 @@ public class ManifestMerger2 {
          * @param value the value for the property
          * @return itself.
          */
-        public Invoker setOverride(SystemProperty override, String value) {
+        @NonNull
+        public Invoker setOverride(@NonNull SystemProperty override, @NonNull String value) {
             mSystemProperties.put(override, value);
             return thisAsT();
         }
@@ -822,7 +834,8 @@ public class ManifestMerger2 {
          * Adds placeholders names and associated values for substitution.
          * @return itself.
          */
-        public Invoker setPlaceHolderValues(Map<String, String> keyValuePairs) {
+        @NonNull
+        public Invoker setPlaceHolderValues(@NonNull Map<String, String> keyValuePairs) {
             mPlaceholders.putAll(keyValuePairs);
             return thisAsT();
         }
@@ -831,7 +844,8 @@ public class ManifestMerger2 {
          * Adds a new placeholder name and value for substitution.
          * @return itself.
          */
-        public Invoker setPlaceHolderValue(String placeHolderName, String value) {
+        @NonNull
+        public Invoker setPlaceHolderValue(@NonNull String placeHolderName, @NonNull String value) {
             mPlaceholders.put(placeHolderName, value);
             return thisAsT();
         }
@@ -878,7 +892,7 @@ public class ManifestMerger2 {
         private Invoker(
                 @NonNull File mainManifestFile,
                 @NonNull ILogger logger,
-                MergeType mergeType) {
+                @NonNull MergeType mergeType) {
             this.mMainManifestFile = Preconditions.checkNotNull(mainManifestFile);
             this.mLogger = logger;
             this.mMergeType = mergeType;
@@ -890,6 +904,7 @@ public class ManifestMerger2 {
          * @param mergeReport the file to write the report in.
          * @return itself.
          */
+        @NonNull
         public Invoker setMergeReportFile(@NonNull File mergeReport) {
             mReportFile = mergeReport;
             return this;
@@ -901,7 +916,8 @@ public class ManifestMerger2 {
          * @param file the library manifest file to add.
          * @return itself.
          */
-        public Invoker addLibraryManifest(File file) {
+        @NonNull
+        public Invoker addLibraryManifest(@NonNull File file) {
             if (mMergeType == MergeType.LIBRARY) {
                 throw new IllegalStateException(
                         "Cannot add library dependencies manifests when creating a library");
@@ -910,7 +926,8 @@ public class ManifestMerger2 {
             return thisAsT();
         }
 
-        public Invoker addLibraryManifests(List<Pair<String, File>> namesAndFiles) {
+        @NonNull
+        public Invoker addLibraryManifests(@NonNull List<Pair<String, File>> namesAndFiles) {
             if (mMergeType == MergeType.LIBRARY && !namesAndFiles.isEmpty()) {
                 throw new IllegalStateException(
                         "Cannot add library dependencies manifests when creating a library");
@@ -926,7 +943,8 @@ public class ManifestMerger2 {
          * @param files library manifest files to add last.
          * @return itself.
          */
-        public Invoker addLibraryManifests(File... files) {
+        @NonNull
+        public Invoker addLibraryManifests(@NonNull File... files) {
             for (File file : files) {
                 addLibraryManifest(file);
             }
@@ -938,7 +956,8 @@ public class ManifestMerger2 {
          * @param file build type or flavor manifest file
          * @return itself.
          */
-        public Invoker addFlavorAndBuildTypeManifest(File file) {
+        @NonNull
+        public Invoker addFlavorAndBuildTypeManifest(@NonNull File file) {
             this.mFlavorsAndBuildTypeFiles.add(file);
             return thisAsT();
         }
@@ -949,6 +968,7 @@ public class ManifestMerger2 {
          * @param files build type of flavor manifest files to add.
          * @return itself.
          */
+        @NonNull
         public Invoker addFlavorAndBuildTypeManifests(File... files) {
             this.mFlavorsAndBuildTypeFiles.add(files);
             return thisAsT();
@@ -960,6 +980,7 @@ public class ManifestMerger2 {
          * @param features one to many features to set.
          * @return itself.
          */
+        @NonNull
         public Invoker withFeatures(Feature...features) {
             mFeaturesBuilder.add(features);
             return thisAsT();
@@ -976,6 +997,7 @@ public class ManifestMerger2 {
          * @throws com.android.manifmerger.ManifestMerger2.MergeFailureException if the merging
          * cannot be completed successfully.
          */
+        @NonNull
         public MergingReport merge() throws MergeFailureException {
 
             // provide some free placeholders values.
@@ -1005,6 +1027,7 @@ public class ManifestMerger2 {
             return manifestMerger.merge();
         }
 
+        @NonNull
         @SuppressWarnings("unchecked")
         private T thisAsT() {
             return (T) this;
@@ -1018,7 +1041,7 @@ public class ManifestMerger2 {
 
         private final ImmutableMap<T, Object> keyValues;
 
-        public MapBasedKeyBasedValueResolver(Map<T, Object> keyValues) {
+        public MapBasedKeyBasedValueResolver(@NonNull Map<T, Object> keyValues) {
             this.keyValues = ImmutableMap.copyOf(keyValues);
         }
 
@@ -1106,6 +1129,7 @@ public class ManifestMerger2 {
             return mSelectors.get(key);
         }
 
+        @NonNull
         @Override
         public Iterable<String> getKeys() {
             return mSelectors.keySet();

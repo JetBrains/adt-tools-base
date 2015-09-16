@@ -33,12 +33,12 @@ public class PlaceholderEncoder {
      *
      * @param xmlDocument the xml document to visit
      */
-    public void visit(@NonNull XmlDocument xmlDocument) {
+    public static void visit(@NonNull XmlDocument xmlDocument) {
 
         visit(xmlDocument.getRootNode());
     }
 
-    private void visit(@NonNull XmlElement xmlElement) {
+    private static void visit(@NonNull XmlElement xmlElement) {
 
         for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
             Matcher matcher = PlaceholderHandler.PATTERN.matcher(xmlAttribute.getValue());

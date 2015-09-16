@@ -70,9 +70,10 @@ public class ToolsInstructionsCleaner {
             : null;
     }
 
+    @NonNull
     private static MergingReport.Result cleanToolsReferences(
-            Element element,
-            ILogger logger) {
+            @NonNull Element element,
+            @NonNull ILogger logger) {
 
         NamedNodeMap namedNodeMap = element.getAttributes();
         if (namedNodeMap != null) {

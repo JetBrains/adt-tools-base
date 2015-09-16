@@ -16,6 +16,8 @@
 
 package com.android.manifmerger;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
@@ -174,8 +176,8 @@ public class Merger {
         return 0;
     }
 
-    protected ManifestMerger2.Invoker createInvoker(File mainManifestFile,
-            ILogger logger) {
+    protected ManifestMerger2.Invoker createInvoker(@NonNull File mainManifestFile,
+            @NonNull ILogger logger) {
         return ManifestMerger2.newMerger(mainManifestFile, logger, ManifestMerger2.MergeType.APPLICATION);
     }
 
@@ -195,8 +197,8 @@ public class Merger {
 
 
     @VisibleForTesting
-    protected File checkPath(String path) throws FileNotFoundException {
-        File file = new File(path);
+    protected File checkPath(@NonNull String path) throws FileNotFoundException {
+        @NonNull File file = new File(path);
         if (!file.exists()) {
             System.err.println(path + " does not exist");
             throw new FileNotFoundException(path);
@@ -205,7 +207,7 @@ public class Merger {
     }
 
     @VisibleForTesting
-    protected ILogger createLogger(StdLogger.Level level) {
+    protected ILogger createLogger(@NonNull StdLogger.Level level) {
         return new StdLogger(level);
     }
 

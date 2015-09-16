@@ -77,6 +77,7 @@ public class OrphanXmlElement extends XmlNode {
     }
 
 
+    @NonNull
     @Override
     public NodeKey getId() {
         return new NodeKey(Strings.isNullOrEmpty(getKey())
@@ -84,6 +85,7 @@ public class OrphanXmlElement extends XmlNode {
                 : getName().toString() + "#" + getKey());
     }
 
+    @NonNull
     @Override
     public NodeName getName() {
         return XmlNode.unwrapName(mXml);

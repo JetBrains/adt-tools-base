@@ -19,6 +19,7 @@ package com.android.manifmerger;
 import static com.android.manifmerger.ManifestMerger2.SystemProperty;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
+import com.android.annotations.NonNull;
 import com.android.ide.common.blame.SourceFile;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
@@ -48,25 +49,25 @@ public final class XmlLoader {
      * @param xmlFile the xml file.
      * @return the initialized {@link com.android.manifmerger.XmlDocument}
      */
+    @NonNull
     public static XmlDocument load(
-            KeyResolver<String> selectors,
-            KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
-            String displayName,
-            File xmlFile,
-            XmlDocument.Type type,
-            Optional<String> mainManifestPackageName)
+            @NonNull KeyResolver<String> selectors,
+            @NonNull KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
+            @NonNull String displayName,
+            @NonNull File xmlFile,
+            @NonNull XmlDocument.Type type,
+            @NonNull Optional<String> mainManifestPackageName)
             throws IOException, SAXException, ParserConfigurationException {
         InputStream inputStream = new BufferedInputStream(new FileInputStream(xmlFile));
 
         Document domDocument = PositionXmlParser.parse(inputStream);
-        return domDocument != null ? new XmlDocument(
+        return new XmlDocument(
                 new SourceFile(xmlFile, displayName),
                 selectors,
                 systemPropertyResolver,
                 domDocument.getDocumentElement(),
                 type,
-                mainManifestPackageName)
-                : null;
+                mainManifestPackageName);
     }
 
 
@@ -80,23 +81,22 @@ public final class XmlLoader {
      * @throws SAXException if the xml is incorrect
      * @throws ParserConfigurationException if the xml engine cannot be configured.
      */
+    @NonNull
     public static XmlDocument load(
-            KeyResolver<String> selectors,
-            KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
-            SourceFile sourceFile,
-            String xml,
-            XmlDocument.Type type,
-            Optional<String> mainManifestPackageName)
+            @NonNull KeyResolver<String> selectors,
+            @NonNull KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
+            @NonNull SourceFile sourceFile,
+            @NonNull String xml,
+            @NonNull XmlDocument.Type type,
+            @NonNull Optional<String> mainManifestPackageName)
             throws IOException, SAXException, ParserConfigurationException {
         Document domDocument = PositionXmlParser.parse(xml);
-        return domDocument != null
-                ? new XmlDocument(
+        return new XmlDocument(
                         sourceFile,
                         selectors,
                         systemPropertyResolver,
                         domDocument.getDocumentElement(),
                         type,
-                        mainManifestPackageName)
-                : null;
+                        mainManifestPackageName);
     }
 }

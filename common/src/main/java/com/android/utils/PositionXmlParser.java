@@ -551,6 +551,7 @@ public class PositionXmlParser {
         }
 
         /** Returns the document parsed by the handler */
+        @NonNull
         Document getDocument() {
             return mDocument;
         }
