@@ -130,7 +130,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public void addDefaultNativeSourceSet(
                 @Path("android.sources") AndroidComponentModelSourceSet sources) {
-            sources.addDefaultSourceSet("jni", AndroidLanguageSourceSet.class);
+            sources.addDefaultSourceSet("jni", NativeSourceSet.class);
         }
 
         @Model(ModelConstants.NDK_HANDLER)
@@ -322,28 +322,37 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 @Path("android.ndk") final NdkConfig ndkConfig,
                 @Path("buildDir") final File buildDir,
                 final NdkHandler ndkHandler) {
-            if (!ndkConfig.getModuleName().isEmpty()) {
-                final NativeLibrarySpec library = specs.withType(NativeLibrarySpec.class)
-                        .get(ndkConfig.getModuleName());
-                binaries.withType(
-                        DefaultAndroidBinary.class,
-                        new Action<DefaultAndroidBinary>() {
-                            @Override
-                            public void execute(DefaultAndroidBinary binary) {
-                                binary.computeMergedNdk(
-                                        ndkConfig,
-                                        binary.getProductFlavors(),
-                                        binary.getBuildType());
+            final NativeLibrarySpec library = specs.withType(NativeLibrarySpec.class)
+                    .get(ndkConfig.getModuleName());
 
+            final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+            for(Abi abi : NdkHandler.getAbiList()) {
+                builder.add(abi.getName());
+            }
+            final ImmutableSet<String> supportedAbis = builder.build();
+
+            binaries.withType(
+                    DefaultAndroidBinary.class,
+                    new Action<DefaultAndroidBinary>() {
+                        @Override
+                        public void execute(DefaultAndroidBinary binary) {
+                            binary.computeMergedNdk(
+                                    ndkConfig,
+                                    binary.getProductFlavors(),
+                                    binary.getBuildType());
+                            if (binary.getMergedNdkConfig().getAbiFilters().isEmpty()) {
+                                binary.getMergedNdkConfig().getAbiFilters().addAll(supportedAbis);
+                            }
+
+                            if (library != null) {
                                 Collection<SharedLibraryBinarySpec> nativeBinaries =
                                         getNativeBinaries(
                                                 library,
                                                 binary.getBuildType(),
                                                 binary.getProductFlavors());
                                 for (SharedLibraryBinarySpec nativeBin : nativeBinaries) {
-                                    if (binary.getMergedNdkConfig().getAbiFilters().isEmpty() ||
-                                            binary.getMergedNdkConfig().getAbiFilters().contains(
-                                                    nativeBin.getTargetPlatform().getName())) {
+                                    if (binary.getMergedNdkConfig().getAbiFilters().contains(
+                                            nativeBin.getTargetPlatform().getName())) {
                                         NdkConfiguration.configureBinary(
                                                 nativeBin,
                                                 buildDir,
@@ -353,8 +362,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                     }
                                 }
                             }
-                        });
-            }
+                        }
+                    });
         }
 
         @Finalize
@@ -422,6 +431,12 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             builder.add(new File(
                     scope.getGlobalScope().getBuildDir(),
                     NdkNamingScheme.getOutputDirectoryName(
+                            config.getBuildType().getName(),
+                            config.getFlavorName(),
+                            abi.getName())).getParentFile());
+            builder.add(new File(
+                    scope.getGlobalScope().getBuildDir(),
+                    NdkNamingScheme.getDependencyLibraryDirectoryName(
                             config.getBuildType().getName(),
                             config.getFlavorName(),
                             abi.getName())).getParentFile());

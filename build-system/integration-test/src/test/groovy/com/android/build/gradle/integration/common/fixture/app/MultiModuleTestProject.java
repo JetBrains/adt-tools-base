@@ -24,7 +24,7 @@ public class MultiModuleTestProject implements TestProject {
      * @param subprojects a map with gradle project path as key and the corresponding TestProject as
      *                    value.
      */
-    public MultiModuleTestProject(Map<String, TestProject> subprojects) {
+    public MultiModuleTestProject(@NonNull Map<String, ? extends TestProject> subprojects) {
         this.subprojects = Maps.newHashMap(subprojects);
     }
 
@@ -35,7 +35,10 @@ public class MultiModuleTestProject implements TestProject {
      * @param subproject A TestProject.
      * @param count Number of subprojects to create.
      */
-    public MultiModuleTestProject(String baseName, TestProject subproject, int count) {
+    public MultiModuleTestProject(
+            @NonNull String baseName,
+            @NonNull TestProject subproject,
+            int count) {
         subprojects = Maps.newHashMapWithExpectedSize(count);
         for (int i = 0; i < count; i++) {
             subprojects.put(baseName + i, subproject);
