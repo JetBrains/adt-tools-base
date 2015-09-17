@@ -108,50 +108,14 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         // on the original method would translate into a static synchronized method here.
         access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
         MethodVisitor original = super.visitMethod(access, newName, newDesc, signature, exceptions);
+        ISVisitor mv = new ISVisitor(Opcodes.ASM5, original, access, newName, newDesc, isStatic);
         if (name.equals("<init>")) {
-            return new ConstructorVisitor(Opcodes.ASM5, original, access, newName, newDesc);
+            MethodNode method = getMethodByNameInClass(name, desc, classNode);
+            method = ConstructorDelegationDetector.getConstructorBody(visitedClassName, method);
+            method.accept(mv);
+            return null;
         } else {
-            return new ISVisitor(Opcodes.ASM5, original, access, newName, newDesc, isStatic);
-        }
-    }
-
-    /**
-     * {@link MethodVisitor} implementation that is effectively swallowing all code until
-     * {@link #stopIgnoring()} method is called.
-     */
-    public static class IgnoringMethodVisitorAdapter extends MethodVisitor {
-
-        private MethodVisitor delegateVisitor;
-
-        public IgnoringMethodVisitorAdapter(int api, MethodVisitor mv) {
-            super(api, null);
-            delegateVisitor = mv;
-        }
-
-        public void stopIgnoring() {
-            super.mv = delegateVisitor;
-        }
-    }
-
-    public class ConstructorVisitor extends ISVisitor {
-
-        String desc;
-        IgnoringMethodVisitorAdapter adapter;
-
-        public ConstructorVisitor(int api, MethodVisitor mv, int access, String name, String desc) {
-            super(api, new IgnoringMethodVisitorAdapter(api, mv), access, name, desc, false);
-            adapter = (IgnoringMethodVisitorAdapter) this.mv;
-            this.desc = desc;
-        }
-
-        @Override
-        public void visitMethodInsn(int opcode, String owner, String name, String desc,
-                boolean itf) {
-            super.visitMethodInsn(opcode, owner, name, desc, itf);
-            if (opcode == Opcodes.INVOKESPECIAL && name.equals("<init>")
-                    && owner.equals(visitedSuperName)) {
-                adapter.stopIgnoring();
-            }
+            return mv;
         }
     }
 

@@ -70,7 +70,20 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         if (name.equals("<clinit>")) {
             return defaultVisitor;
         } else {
-            return new ISMethodVisitor(Opcodes.ASM5, defaultVisitor, access, name, desc);
+            ISMethodVisitor mv = new ISMethodVisitor(Opcodes.ASM5, defaultVisitor, access, name, desc);
+            if (name.equals("<init>")) {
+                MethodNode method = getMethodByNameInClass(name, desc, classNode);
+                Label label = ConstructorDelegationDetector
+                        .addRedirectionPoint(visitedClassName, method);
+                if (label == null) {
+                    throw new IllegalStateException("Cannot find place to instrument constructor");
+                }
+                mv.setRedirectionPoint(label);
+                method.accept(mv);
+                return null;
+            } else {
+                return mv;
+            }
         }
     }
 
@@ -79,30 +92,30 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         private final String name;
         private final String desc;
         private final int access;
-        private final boolean isConstructor;
+        private Label redirection;
 
         public ISMethodVisitor(int api, MethodVisitor mv, int access,  String name, String desc) {
             super(api, mv, access, name, desc);
             this.name = name;
             this.desc = desc;
             this.access = access;
-            this.isConstructor = name.equals("<init>");
-        }
-
-        @Override
-        public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf)  {
-            super.visitMethodInsn(opcode, owner, name, desc, itf);
-            if (isConstructor && opcode == Opcodes.INVOKESPECIAL && name.equals("<init>") && owner.equals(visitedSuperName)) {
-                addRedirection();
-            }
         }
 
         @Override
         public void visitCode() {
-            if (!isConstructor) {
+            if (redirection == null) {
                 addRedirection();
             }
             super.visitCode();
+        }
+
+        @Override
+        public void visitLabel(Label label) {
+            if (label == redirection) {
+                addRedirection();
+            } else {
+                super.visitLabel(label);
+            }
         }
 
         private void addRedirection() {
@@ -159,6 +172,10 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             // jump label for classes without any new implementation, just invoke the original
             // method implementation.
             visitLabel(l0);
+        }
+
+        public void setRedirectionPoint(Label redirectionPoint) {
+            redirection = redirectionPoint;
         }
     }
 
