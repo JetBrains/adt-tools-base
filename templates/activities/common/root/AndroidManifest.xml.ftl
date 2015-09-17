@@ -10,7 +10,7 @@
                 </#if>
             </#if>
             <#if hasNoActionBar>
-                android:theme="@style/AppTheme.NoActionBar"
+                android:theme="@style/${themeNameNoActionBar}"
             </#if>
             <#if buildApi gte 16 && parentActivityClass != "">
                 android:parentActivityName="${parentActivityClass}"
