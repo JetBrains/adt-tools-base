@@ -1,6 +1,6 @@
 <resources>
 
-   <style name="FullscreenTheme" parent="AppTheme">
+   <style name="FullscreenTheme" parent="${themeName}">
         <item name="android:actionBarStyle">@style/FullscreenActionBarStyle</item>
         <item name="android:windowActionBarOverlay">true</item>
         <item name="android:windowBackground">@null</item>
