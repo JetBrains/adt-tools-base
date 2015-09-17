@@ -6,6 +6,7 @@
         android:label="@string/app_name"<#if copyIcons && !isLibraryProject>
         android:icon="@mipmap/ic_launcher"<#elseif assetName??>
         android:icon="@drawable/${assetName}"</#if>
+        android:supportsRtl="true"
         <#if baseTheme != "none" && !isLibraryProject>
         android:theme="@style/AppTheme"</#if>>
 

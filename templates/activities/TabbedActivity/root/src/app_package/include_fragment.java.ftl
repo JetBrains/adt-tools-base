@@ -28,7 +28,7 @@
                 Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.${fragmentLayoutName}, container, false);
             TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-            textView.setText("Hello World from section: " + getArguments().getInt(ARG_SECTION_NUMBER));
+            textView.setText(getString(R.string.section_format, getArguments().getInt(ARG_SECTION_NUMBER)));
             return rootView;
         }
     }

@@ -37,9 +37,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/fab_margin"
         android:src="@android:drawable/ic_dialog_email"
-        android:layout_gravity="center_vertical|start"
-        app:layout_anchor="@+id/frameLayout"
-        app:layout_anchorGravity="top|end" />
+        android:layout_gravity="bottom|end" />
 
 
 </android.support.design.widget.CoordinatorLayout>
