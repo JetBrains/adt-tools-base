@@ -16,27 +16,26 @@
 package com.android.tools.perflib.analyzer;
 
 import com.android.annotations.NonNull;
-import com.android.tools.perflib.heap.Instance;
 
+import java.util.Collections;
 import java.util.List;
 
-public class Offender {
+public class Offender<T> {
 
     @NonNull
-    protected List<Instance> mOffendingInstances;
+    protected List<T> mOffenders;
 
     @NonNull
     protected String mOffendingDescription;
 
-    public Offender(@NonNull String offendingDescription,
-            @NonNull List<Instance> offendingInstances) {
+    public Offender(@NonNull String offendingDescription, @NonNull List<T> offendingInstances) {
         mOffendingDescription = offendingDescription;
-        mOffendingInstances = offendingInstances;
+        mOffenders = offendingInstances;
     }
 
     @NonNull
-    public List<Instance> getOffendingInstances() {
-        return mOffendingInstances;
+    public List<T> getOffenders() {
+        return Collections.unmodifiableList(mOffenders);
     }
 
     @NonNull
