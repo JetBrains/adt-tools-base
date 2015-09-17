@@ -489,7 +489,7 @@ public class JackTask extends AbstractAndroidCompile
             scope.getVariantData().jackTask = jackTask;
             scope.getVariantData().javaCompilerTask = jackTask;
             scope.getVariantData().mappingFileProviderTask = jackTask;
-            scope.getVariantData().binayFileProviderTask = jackTask;
+            scope.getVariantData().binaryFileProviderTask = jackTask;
         }
     }
 }
