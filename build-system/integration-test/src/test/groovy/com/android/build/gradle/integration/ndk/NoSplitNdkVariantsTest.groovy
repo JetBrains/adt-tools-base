@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.ndk
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import com.android.build.gradle.integration.common.utils.DeviceHelper
 import com.android.builder.core.BuilderConstants
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
@@ -129,7 +130,12 @@ android {
     @Category(DeviceTests.class)
     public void connectedAndroidTest() {
         if (GradleTestProject.DEVICE_PROVIDER_NAME.equals(BuilderConstants.CONNECTED)) {
-            project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "ArmDebugAndroidTest")
+            Collection<String> abis = DeviceHelper.getDeviceAbis()
+            if (abis.contains("x86")) {
+                project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "x86DebugAndroidTest")
+            } else {
+                project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "ArmDebugAndroidTest")
+            }
         } else {
             project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "X86DebugAndroidTest")
         }

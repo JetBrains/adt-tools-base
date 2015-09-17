@@ -16,10 +16,14 @@
 
 package com.android.build.gradle.integration.common.utils;
 
+import static com.android.SdkConstants.FD_PLATFORM_TOOLS;
+import static com.android.SdkConstants.FN_ADB;
+
 import com.android.annotations.NonNull;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.repository.FullRevision;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 
@@ -79,5 +83,14 @@ public class SdkHelper {
             throw new RuntimeException("Test requires build-tools " + fullRevision.toString());
         }
         return new File(buildToolInfo.getPath(pathId));
+    }
+
+    @NonNull
+    public static File getAdb() {
+        File adb = FileUtils.join(findSdkDir(), FD_PLATFORM_TOOLS, FN_ADB);
+        if (!adb.exists()) {
+            throw new RuntimeException("Unable to find adb.");
+        }
+        return adb;
     }
 }
