@@ -39,8 +39,8 @@ class VdPath extends VdElement{
     int mStrokeLineJoin = -1;
     float mStrokeMiterlimit = -1;
     boolean mClip = false;
-    float mStrokeOpacity = Float.NaN;
-    float mFillOpacity = Float.NaN;
+    float mStrokeOpacity = 1.0f;
+    float mFillOpacity = 1.0f;
     float mTrimPathStart = 0;
     float mTrimPathEnd = 1;
     float mTrimPathOffset = 0;
