@@ -5,6 +5,7 @@
         android:label="@string/app_name"<#if copyIcons>
         android:icon="@mipmap/ic_launcher"<#else>
         android:icon="@drawable/${assetName}"</#if>
+        <#if buildApi gte 17>android:supportsRtl="true"</#if>
         android:theme="@style/AppTheme">
 
     </application>
