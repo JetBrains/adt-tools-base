@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.incremental;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -131,79 +132,85 @@ public class GenericInstantRuntime {
         return declareField;
     }
 
-    public static Object invokeProtectedMethod(Object target,
-            String name,
-            String[] parameterTypes,
-            Object[] params) {
+    public static Object invokeProtectedMethod(Object receiver,
+            Object[] params,
+            Class[] parameterTypes,
+            String methodName) {
 
         if (logging!=null && logging.isLoggable(Level.FINE)) {
-            logging.log(Level.FINE, String.format("protectedMethod:%s on %s", name, target));
+            logging.log(Level.FINE, String.format("protectedMethod:%s on %s", methodName, receiver));
         }
-        Class[] paramTypes = translateParameterTypes(target.getClass(), parameterTypes);
         try {
-            Method toDispatchTo = getMethodByName(target.getClass(), name, paramTypes);
+            Method toDispatchTo = getMethodByName(receiver.getClass(), methodName, parameterTypes);
             if (toDispatchTo == null) {
-                throw new RuntimeException(new NoSuchMethodException(name));
+                throw new RuntimeException(new NoSuchMethodException(methodName));
             }
             toDispatchTo.setAccessible(true);
-            return toDispatchTo.invoke(target, params);
+            return toDispatchTo.invoke(receiver, params);
         } catch (InvocationTargetException e) {
-            logging.log(Level.SEVERE, String.format("Exception while invoking %s", name), e);
+            logging.log(Level.SEVERE, String.format("Exception while invoking %s", methodName), e);
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
-            logging.log(Level.SEVERE, String.format("Exception while invoking %s", name), e);
+            logging.log(Level.SEVERE, String.format("Exception while invoking %s", methodName), e);
             throw new RuntimeException(e);
         }
     }
 
-    public static Object invokeProtectedStaticMethod(Class targetClass,
-            String name,
-            String[] parameterTypes,
-            Object[] params) {
+    public static Object invokeProtectedStaticMethod(
+            Object[] params,
+            Class[] parameterTypes,
+            String methodName,
+            Class receiverClass) {
 
         if (logging!=null && logging.isLoggable(Level.FINE)) {
             logging.log(Level.FINE,
-                    String.format("protectedStaticMethod:%s on %s", name, targetClass.getName()));
+                    String.format("protectedStaticMethod:%s on %s", methodName, receiverClass.getName()));
         }
-        Class[] paramTypes = translateParameterTypes(targetClass, parameterTypes);
         try {
-            Method toDispatchTo = getMethodByName(targetClass, name, paramTypes);
+            Method toDispatchTo = getMethodByName(receiverClass, methodName, parameterTypes);
             if (toDispatchTo == null) {
                 throw new RuntimeException(new NoSuchMethodException(
-                        name + " in class " + targetClass.getName()));
+                        methodName + " in class " + receiverClass.getName()));
             }
             toDispatchTo.setAccessible(true);
             return toDispatchTo.invoke(null /* target */, params);
         } catch (InvocationTargetException e) {
-            logging.log(Level.SEVERE, String.format("Exception while invoking %s", name), e);
+            logging.log(Level.SEVERE, String.format("Exception while invoking %s", methodName), e);
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
-            logging.log(Level.SEVERE, String.format("Exception while invoking %s", name), e);
+            logging.log(Level.SEVERE, String.format("Exception while invoking %s", methodName), e);
             throw new RuntimeException(e);
         }
     }
 
-    private static Class[] translateParameterTypes(Class targetClass, String[] parameterTypes) {
-        Class[] paramTypes = new Class[parameterTypes.length];
-        for (int i = 0; i < parameterTypes.length; i++) {
-            BasicType basicType = BasicType.parse(parameterTypes[i]);
-            if (basicType != null) {
-                paramTypes[i] = basicType.getJavaType();
-            } else {
-                try {
-                    ClassLoader classLoader = targetClass.getClassLoader() != null
-                            ? targetClass.getClassLoader()
-                            : GenericInstantRuntime.class.getClassLoader();
-
-                    paramTypes[i] = classLoader.loadClass(parameterTypes[i]);
-                } catch (ClassNotFoundException e) {
-                    logging.log(Level.SEVERE,
-                            String.format("Exception while loading parameter %1$s class",
-                                    paramTypes[i]), e);
-                }
-            }
+    public static Object newForClass(String className, Class[] paramTypes, Object[] params) {
+        Class<?> clazz = null;
+        try {
+            clazz = Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            logging.log(Level.SEVERE, String.format("Exception while loading %s", className), e);
+            throw new RuntimeException(e);
         }
-        return paramTypes;
+        Constructor declaredConstructor = null;
+        try {
+            declaredConstructor = clazz.getDeclaredConstructor(paramTypes);
+        } catch (NoSuchMethodException e) {
+            logging.log(Level.SEVERE, "Exception while resolving constructor", e);
+            throw new RuntimeException(e);
+        }
+        declaredConstructor.setAccessible(true);
+        try {
+            return declaredConstructor.newInstance(params);
+        } catch (InstantiationException e) {
+            logging.log(Level.SEVERE, String.format("Exception while instantiating %s", className), e);
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            logging.log(Level.SEVERE, String.format("Exception while instantiating %s", className), e);
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
+            logging.log(Level.SEVERE, String.format("Exception while instantiating %s", className), e);
+            throw new RuntimeException(e);
+        }
     }
 
     private static Field getFieldByName(Class<?> aClass, String name) {

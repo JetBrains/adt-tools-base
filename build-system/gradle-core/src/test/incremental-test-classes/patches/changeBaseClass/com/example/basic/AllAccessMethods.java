@@ -36,7 +36,7 @@ public class AllAccessMethods {
         return "patched_package_private_method:" + a + b + c;
     }
 
-    public String publicMethod(double a, String b, int c) {
+    public String publicStringMethod(double a, String b, int c) {
         return "patched_public_method:" + a + b + c;
     }
 
@@ -53,7 +53,7 @@ public class AllAccessMethods {
     }
 
     public String publicMethodDispatch(double a, String b, int c) {
-        return publicMethod(a, b, c);
+        return publicStringMethod(a, b, c);
     }
 
     private String doNotOverridePrivateMethod(double a, String b, int c) {
@@ -85,7 +85,7 @@ public class AllAccessMethods {
     }
 
     public String doNotOverridePublicMethodDispatch(double a, String b, int c) {
-        return publicMethod(a, b, c);
+        return publicStringMethod(a, b, c);
     }
 
     public List<String> invokeAll(double a, String b, int c) {
@@ -93,7 +93,7 @@ public class AllAccessMethods {
         builder.add(privateMethod(a, b, c));
         builder.add(protectedMethod(a, b, c));
         builder.add(packagePrivateMethod(a, b, c));
-        builder.add(publicMethod(a, b, c));
+        builder.add(publicStringMethod(a, b, c));
         return builder.build();
     }
 

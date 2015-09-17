@@ -37,8 +37,64 @@ public class AllAccessMethods {
         return "package_private_method:" + a + b + c;
     }
 
-    public String publicMethod(double a, String b, int c) {
+    public String publicStringMethod(double a, String b, int c) {
         return "public_method:" + a + b + c;
+    }
+
+    public int publicIntMethod(int a) {
+        return a*2;
+    }
+
+    public long publicLongMethod(long a) {
+        return a*2;
+    }
+
+    public char publicCharMethod(char a) {
+        return 'a';
+    }
+
+    public double publicDoubleMethod(double a) {
+        return a*2;
+    }
+
+    public float publicFloatMethod(float a) {
+        return a*2;
+    }
+
+    public boolean publicBooleanMethod(boolean a) {
+        return !a;
+    }
+
+    public void voidMethod() {
+    }
+
+    public int[] publicIntArrayMethod(int[] a) {
+        return new int[] {a[0], 2, 3};
+    }
+
+    public long[] publicLongArrayMethod(long[] a) {
+        return new long[] {a[0], 4, 5};
+    }
+
+    public boolean[] publicBooleanArrayMethod(boolean[] a) {
+        return new boolean[] {!a[0], true, false};
+    }
+
+    public char[] publicCharArrayMethod(char[] a) {
+        return new char[] {a[0], 'b', 'c'};
+    }
+
+
+    public double[] publicDoubleArrayMethod(double[] a) {
+        return new double[] {a[0], 6d, 7d};
+    }
+
+    public float[] publicFloatArrayMethod(float[] a) {
+        return new float[] {a[0], 8f, 9f};
+    }
+
+    public String[] publicStringArrayMethod(String[] strings) {
+        return new String[] {strings[0], "a", "b"};
     }
 
     private String privateMethodDispath(double a, String b, int c) {
@@ -54,7 +110,7 @@ public class AllAccessMethods {
     }
 
     public String publicMethodDispatch(double a, String b, int c) {
-        return publicMethod(a, b, c);
+        return publicStringMethod(a, b, c);
     }
 
     // methods on the super class to check the overriden methods are invoked property from the
@@ -72,7 +128,7 @@ public class AllAccessMethods {
     }
 
     public String doNotOverridePublicMethodDispatch(double a, String b, int c) {
-        return publicMethod(a, b, c);
+        return publicStringMethod(a, b, c);
     }
 
     public List<String> invokeAll(double a, String b, int c) {
@@ -80,7 +136,7 @@ public class AllAccessMethods {
         builder.add(privateMethod(a, b, c));
         builder.add(protectedMethod(a, b, c));
         builder.add(packagePrivateMethod(a, b, c));
-        builder.add(publicMethod(a, b, c));
+        builder.add(publicStringMethod(a, b, c));
         return builder.build();
     }
 

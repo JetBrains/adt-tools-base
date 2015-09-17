@@ -171,7 +171,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     // this is an error, we should know of the fields we are visiting.
                     throw new RuntimeException("Unknown field access " + name);
                 }
-
                 accessRight = AccessRight.fromNodeAccess(fieldNode.access);
             }
 
@@ -369,113 +368,177 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             return false;
         }
 
-        private boolean handleVirtualOpcode(String owner, String name, String desc,
-                boolean itf) {
+        private boolean handleVirtualOpcode(String owner, String name, String desc, boolean itf) {
 
-            // handle the case when visiting something else than a "this" method invocation.
-            if (owner.equals(visitedClassName)) {
-
-                if (DEBUG) {
-                    System.out.println(
-                            "Method dispatch : " + name + ":" + desc + ":" + itf + ":" + isStatic);
-                }
-                MethodNode methodNode = getMethodByName(name, desc);
-                boolean isPublic = methodNode != null
-                        && ((methodNode.access & Opcodes.ACC_PUBLIC) != 0);
-
-                // if this is a public method, just let the normal invoke virtual invoke the
-                // original method implementation which in most case will just call back
-                // into the enhanced code.
-                if (isPublic) {
-                    return false;
-                }
-
-                // for anything else, private, protected and package private, we must go through
-                // reflection.
-                Type[] parameterTypes = Type.getArgumentTypes(desc);
-
-                int parameters = boxParametersToNewLocalArray(parameterTypes);
-
-                push(name);
-                push(parameterTypes.length);
-                newArray(Type.getType(String.class));
-
-                for (int i = 0; i < parameterTypes.length; i++) {
-                    dup();
-                    push(i);
-                    push(parameterTypes[i].getClassName());
-                    arrayStore(Type.getType(String.class));
-                }
-
-                loadLocal(parameters);
-
-                invokeStatic(RUNTIME_TYPE,
-                        Method.getMethod(
-                                "Object invokeProtectedMethod(Object, String, String[], Object[])"));
-                handleReturnType(desc);
-                return true;
+            AccessRight accessRight = getMethodAccessRight(owner, name, desc);
+            if (accessRight == AccessRight.PUBLIC) {
+                return false;
             }
-            return false;
+
+            // for anything else, private, protected and package private, we must go through
+            // reflection.
+            // Stack : <receiver>
+            //      <param_1>
+            //      <param_2>
+            //      ...
+            //      <param_n>
+            pushMethodRedirectArgumentsOnStack(name, desc);
+
+            // Stack : <receiver>
+            //      <array of parameter_values>
+            //      <array of parameter_types>
+            //      <method_name>
+            invokeStatic(RUNTIME_TYPE, Method.getMethod(
+                    "Object invokeProtectedMethod(Object, Object[], Class[], String)"));
+            // Stack : <return value or null if no return value>
+            handleReturnType(desc);
+            return true;
         }
 
-        private boolean handleStaticOpcode(String owner, String name, String desc,
-                boolean itf) {
+        private boolean handleStaticOpcode(String owner, String name, String desc, boolean itf) {
 
             if (DEBUG) {
                 System.out.println(
                         "Method dispatch : " + name + ":" + desc + ":" + itf + ":" + isStatic);
 
             }
-            AccessRight accessRight;
-            if (owner.equals(visitedClassName)) {
-                MethodNode methodByName = getMethodByName(name, desc);
-                if (methodByName == null) {
-                    throw new RuntimeException(
-                            "Statically invoked method not found " + name);
-                }
-                accessRight = AccessRight.fromNodeAccess(methodByName.access);
-            } else {
-                accessRight = guessAccessRight(owner);
+            AccessRight accessRight = getMethodAccessRight(owner, name, desc);
+            if (accessRight == AccessRight.PUBLIC) {
+                return false;
             }
-            if (accessRight != AccessRight.PUBLIC) {
-                // for anything else, private, protected and package private, we must go through
-                // reflection.
-                Type[] parameterTypes = Type.getArgumentTypes(desc);
 
-                // stack : <parameters values>
-                int parameters = boxParametersToNewLocalArray(parameterTypes);
-                visitLdcInsn(Type.getType("L" + owner + ";"));
-                push(name);
-                push(parameterTypes.length);
-                newArray(Type.getType(String.class));
+            // for anything else, private, protected and package private, we must go through
+            // reflection.
 
-                for (int i = 0; i < parameterTypes.length; i++) {
-                    dup();
-                    push(i);
-                    push(parameterTypes[i].getClassName());
-                    arrayStore(Type.getType(String.class));
-                }
+            // stack: <param_1>
+            //      <param_2>
+            //      ...
+            //      <param_n>
+            pushMethodRedirectArgumentsOnStack(name, desc);
 
-                loadLocal(parameters);
+            // push the class implementing the original static method
+            visitLdcInsn(Type.getType("L" + owner + ";"));
 
-                // stack : <target class name>
-                //      <target method name>
-                //      <target parameter types>
-                //      <boxed method parameter>
-                invokeStatic(RUNTIME_TYPE,
-                        Method.getMethod(
-                                "Object invokeProtectedStaticMethod(Class, String, String[], Object[])"));
-                // stack : method return value or null if the method was VOID.
-                handleReturnType(desc);
-                return true;
-            }
-            return false;
+            // stack: <boxed method parameter>
+            //      <target parameter types>
+            //      <target method name>
+            //      <target class name>
+            invokeStatic(RUNTIME_TYPE, Method.getMethod(
+                    "Object invokeProtectedStaticMethod(Object[], Class[], String, Class)"));
+            // stack : method return value or null if the method was VOID.
+            handleReturnType(desc);
+            return true;
         }
 
         @Override
         public void visitEnd() {
             if (DEBUG) {
                 System.out.println("Method visit end");
+            }
+        }
+
+        /**
+         * Returns the actual method access right or a best guess if we don't have access to the
+         * method definition.
+         * @param owner the method owner class
+         * @param name the method name
+         * @param desc the method signature
+         * @return the {@link AccessRight} for that method.
+         */
+        private AccessRight getMethodAccessRight(String owner, String name, String desc) {
+            AccessRight accessRight;
+            if (owner.equals(visitedClassName)) {
+                MethodNode methodByName = getMethodByName(name, desc);
+                if (methodByName == null) {
+                    // we did not find the method invoked on ourselves, which mean that it really
+                    // is a parent class method invocation and we just don't have access to it.
+                    // the most restrictive access right in that case is protected.
+                    return AccessRight.PROTECTED;
+                }
+                accessRight = AccessRight.fromNodeAccess(methodByName.access);
+            } else {
+                accessRight = guessAccessRight(owner);
+            }
+            return accessRight;
+        }
+
+        /**
+         * Push arguments necessary to invoke one of the method redirect function :
+         * <ul>{@link GenericInstantRuntime#invokeProtectedMethod(Object, Object[], Class[], String)}</ul>
+         * <ul>{@link GenericInstantRuntime#invokeProtectedStaticMethod(Object[], Class[], String, Class)}</ul>
+         *
+         * This function will only push on the stack the three common arguments :
+         *      Object[] the boxed parameter values
+         *      Class[] the parameter types
+         *      String the original method name
+         *
+         * Stack before :
+         *          <param1>
+         *          <param2>
+         *          ...
+         *          <paramN>
+         * Stack After :
+         *          <array of parameters>
+         *          <array of parameter types>
+         *          <method name>
+         * @param name the original method name.
+         * @param desc the original method signature.
+         */
+        private void pushMethodRedirectArgumentsOnStack(String name, String desc) {
+            Type[] parameterTypes = Type.getArgumentTypes(desc);
+
+            // stack : <parameters values>
+            int parameters = boxParametersToNewLocalArray(parameterTypes);
+            // push the parameter values as a Object[] on the stack.
+            loadLocal(parameters);
+
+            // push the parameter types as a Class[] on the stack
+            pushParameterTypesOnStack(parameterTypes);
+
+            push(name);
+        }
+
+        /**
+         * Creates an array of {@link Class} objects with the same size of the array of the passed
+         * parameter types. For each parameter type, stores its {@link Class} object into the
+         * result array. For intrinsic types which are not present in the class constant pool, just
+         * push the actual {@link Type} object on the stack and let ASM do the rest. For non
+         * intrinsic type use a {@link MethodVisitor#visitLdcInsn(Object)} to ensure the
+         * referenced class's presence in this class constant pool.
+         *
+         * Stack Before : nothing of interest
+         * Stack After : <array of {@link Class}>
+         *
+         * @param parameterTypes a method list of parameters.
+         */
+        private void pushParameterTypesOnStack(Type[] parameterTypes) {
+            push(parameterTypes.length);
+            newArray(Type.getType(Class.class));
+
+            for (int i = 0; i < parameterTypes.length; i++) {
+                dup();
+                push(i);
+                switch(parameterTypes[i].getSort()) {
+                    case Type.OBJECT:
+                    case Type.ARRAY:
+                        visitLdcInsn(parameterTypes[i]);
+                        break;
+                    case Type.BOOLEAN:
+                    case Type.CHAR:
+                    case Type.BYTE:
+                    case Type.SHORT:
+                    case Type.INT:
+                    case Type.LONG:
+                    case Type.FLOAT:
+                    case Type.DOUBLE:
+                        push(parameterTypes[i]);
+                        break;
+                    default:
+                        throw new RuntimeException(
+                                "Unexpected parameter type " + parameterTypes[i]);
+
+                }
+                arrayStore(Type.getType(Class.class));
             }
         }
 
