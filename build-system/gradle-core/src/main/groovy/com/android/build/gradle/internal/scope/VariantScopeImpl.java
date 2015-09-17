@@ -569,6 +569,21 @@ public class VariantScopeImpl implements VariantScope {
                 "/mapping/" + getVariantConfiguration().getDirName() + "/mapping.txt");
     }
 
+    @NonNull
+    @Override
+    public File getAaptFriendlyManifestOutputFile() {
+            return FileUtils.join(globalScope.getIntermediatesDir(), DIR_BUNDLES,
+                    getVariantConfiguration().getDirName(), "aapt", "AndroidManifest.xml");
+    }
+
+    @NonNull
+    @Override
+    public File getManifestReportFile() {
+        return FileUtils.join(getGlobalScope().getOutputsDir(),
+                "logs", "manifest-merger-" + variantData.getVariantConfiguration().getBaseName()
+                        + "-report.txt");
+    }
+
     // Tasks getters/setters.
 
     @Override
