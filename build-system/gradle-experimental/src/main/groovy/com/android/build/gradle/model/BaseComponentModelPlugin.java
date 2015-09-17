@@ -28,6 +28,7 @@ import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.AndroidConfigHelper;
 import com.android.build.gradle.internal.ExecutionConfigurationUtil;
 import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.JniLibsLanguageTransform;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.NdkOptionsHelper;
@@ -86,6 +87,7 @@ import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.language.base.internal.registry.LanguageTransformContainer;
 import org.gradle.model.Defaults;
 import org.gradle.model.Model;
 import org.gradle.model.ModelMap;
@@ -200,6 +202,13 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
     @SuppressWarnings("MethodMayBeStatic")
     public static class Rules extends RuleSource {
+
+        @Mutate
+        void registerLanguageTransform(
+                LanguageTransformContainer languages,
+                ServiceRegistry serviceRegistry) {
+            languages.add(new JniLibsLanguageTransform());
+        }
 
         @Defaults
         public void configureAndroidModel(
@@ -416,7 +425,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             sources.addDefaultSourceSet("assets", AndroidLanguageSourceSet.class);
             sources.addDefaultSourceSet("aidl", AndroidLanguageSourceSet.class);
             sources.addDefaultSourceSet("renderscript", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("jniLibs", AndroidLanguageSourceSet.class);
+            sources.addDefaultSourceSet("jniLibs", JniLibsSourceSet.class);
 
             sources.all(new Action<FunctionalSourceSet>() {
                 @Override
