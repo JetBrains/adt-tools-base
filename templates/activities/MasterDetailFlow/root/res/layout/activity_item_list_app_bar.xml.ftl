@@ -28,7 +28,7 @@
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         android:id="@+id/frameLayout">
 
-        <include layout="@layout/activity_${extractLetters(objectKind?lower_case)}_list" />
+        <include layout="@layout/${item_list_layout}" />
     </FrameLayout>
 
     <android.support.design.widget.FloatingActionButton
