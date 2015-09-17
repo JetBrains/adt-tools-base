@@ -20,6 +20,8 @@ import static com.android.build.transform.api.ScopedContent.ContentType.CLASSES;
 import static com.android.build.transform.api.ScopedContent.ContentType.DEX;
 import static com.android.build.transform.api.ScopedContent.ContentType.RESOURCES;
 import static com.android.utils.StringHelper.capitalize;
+import static com.google.common.base.Objects.firstNonNull;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -449,6 +451,10 @@ public class TransformManager {
         String transformName = transform.getName();
         Type type = transform.getTransformType();
         Format outputFormat = transform.getOutputFormat();
+        checkArgument(
+                outputFormat != null || type == Type.AS_INPUT,
+                "Only %s transforms can omit specifying the output format.",
+                Type.AS_INPUT);
 
         // map to handle multi stream sharing the same type/scope
         Map<StreamKey, Integer> dupCounter = Maps
@@ -471,8 +477,8 @@ public class TransformManager {
             // If the stream contains more types, it's not a problem since the transform
             // can disambiguate (unlike on scopes)
             Set<ContentType> contentTypes = stream.getContentTypes();
-            if (requestedScopes.containsAll(stream.getScopes()) &&
-                    hasMatchIn(requestedTypes, contentTypes)) {
+            if (requestedScopes.containsAll(stream.getScopes())
+                    && hasMatchIn(requestedTypes, contentTypes)) {
                 inputStreams.add(stream);
 
                 foundTypes.addAll(contentTypes);
@@ -504,7 +510,8 @@ public class TransformManager {
                         outputStreams.add(createMatchingOutput(
                                 stream,
                                 transform.getOutputTypes(),
-                                outputFormat,
+                                // Stream can preserve or change the format.
+                                firstNonNull(outputFormat, stream.getFormat()),
                                 transformName,
                                 taskName,
                                 variantDirName,

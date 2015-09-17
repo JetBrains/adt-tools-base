@@ -17,6 +17,7 @@
 package com.android.build.transform.api;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.annotations.Beta;
 
 import java.io.File;
@@ -162,9 +163,11 @@ public interface Transform {
     Type getTransformType();
 
     /**
-     * Returns the format of the output stream(s) that this Transform writes into.
+     * Returns the format of the output stream(s) that this Transform writes into. Null can be used
+     * by {@link AsInputTransform} and means that every output stream uses the same format as the
+     * corresponding input stream.
      */
-    @NonNull
+    @Nullable
     ScopedContent.Format getOutputFormat();
 
     /**
