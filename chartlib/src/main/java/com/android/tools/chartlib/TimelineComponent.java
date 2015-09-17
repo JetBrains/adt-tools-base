@@ -86,6 +86,11 @@ public final class TimelineComponent extends AnimatedComponent
     private boolean mFirstFrame;
 
     /**
+     * The boolean value whether to stack all streams together, by default it is true.
+     */
+    private boolean mStackStreams = true;
+
+    /**
      * The current maximum range in y-axis units.
      */
     private float mCurrentMax;
@@ -237,6 +242,10 @@ public final class TimelineComponent extends AnimatedComponent
         mEventsInfo = new TIntObjectHashMap<EventInfo>();
         setOpaque(true);
         reset();
+    }
+
+    public void setStackStreams(boolean stackStreams) {
+        mStackStreams = stackStreams;
     }
 
     public void configureStream(int stream, String name, Color color) {
@@ -596,8 +605,7 @@ public final class TimelineComponent extends AnimatedComponent
                 mTypes[i] = sample.type;
                 float value = 0.0f;
                 for (int j = 0; j < mData.getStreamCount(); ++j) {
-                    value += sample.values[j];
-                    mValues[j][i] = value;
+                    mValues[j][i] = mStackStreams ? (value += sample.values[j]) : sample.values[j];
                 }
             }
             for (int j = 0; j < mData.getStreamCount(); ++j) {
@@ -608,7 +616,8 @@ public final class TimelineComponent extends AnimatedComponent
             mEndTime = mData.getEndTime() - mBufferTime;
             mBeginTime = mEndTime - (mRight - LEFT_MARGIN) / X_SCALE;
             // Animate the current maximum towards the real one.
-            float cappedMax = Math.min(mData.getMaxTotal(), mAbsoluteMax);
+            float cappedMax = mStackStreams ? mData.getMaxTotal() : mData.getStreamMax();
+            cappedMax = Math.min(cappedMax, mAbsoluteMax);
             if (cappedMax > mCurrentMax) {
                 mCurrentMax = lerp(mCurrentMax, cappedMax, mFirstFrame ? 1.f : .95f);
             }
