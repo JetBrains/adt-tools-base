@@ -22,6 +22,6 @@ import org.objectweb.asm.tree.MethodNode;
 /**
  * Temporary interface that models ProGuard config files. Will be replaced with a more robust type.
  */
-interface KeepRules {
+public interface KeepRules {
     boolean keep(ClassNode classNode, MethodNode methodNode);
 }

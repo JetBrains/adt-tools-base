@@ -391,7 +391,7 @@ public class JackTask extends AbstractAndroidCompile
             final GradleVariantConfiguration config = scope.getVariantData().getVariantConfiguration();
             jackTask.setMultiDexEnabled(config.isMultiDexEnabled());
             jackTask.setMinSdkVersion(config.getMinSdkVersion().getApiLevel());
-            jackTask.incrementalDir  = scope.getJackIncrementalDir();
+            jackTask.incrementalDir  = scope.getIncrementalDir(getName());
 
             // if the tested variant is an app, add its classpath. For the libraries,
             // it's done automatically since the classpath includes the library output as a normal

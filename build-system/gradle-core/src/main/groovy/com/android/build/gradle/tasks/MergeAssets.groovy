@@ -23,7 +23,6 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.core.VariantType
-import com.android.builder.model.AndroidProject
 import com.android.ide.common.res2.AssetMerger
 import com.android.ide.common.res2.AssetSet
 import com.android.ide.common.res2.FileStatus
@@ -184,9 +183,7 @@ public class MergeAssets extends IncrementalTask {
 
             mergeAssetsTask.androidBuilder = scope.globalScope.androidBuilder
             mergeAssetsTask.setVariantName(variantConfig.getFullName())
-            mergeAssetsTask.incrementalFolder =
-                    new File(
-                            "$scope.globalScope.buildDir/${AndroidProject.FD_INTERMEDIATES}/incremental/mergeAssets/${variantConfig.dirName}")
+            mergeAssetsTask.incrementalFolder = scope.getIncrementalDir(getName())
 
             ConventionMappingHelper.map(mergeAssetsTask, "inputAssetSets") {
                 def generatedAssets = []

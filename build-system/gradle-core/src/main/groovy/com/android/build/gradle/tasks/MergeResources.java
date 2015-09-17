@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.model.AndroidProject;
 import com.android.builder.png.QueuedCruncher;
 import com.android.builder.png.VectorDrawableRenderer;
 import com.android.ide.common.internal.PngCruncher;
@@ -405,10 +404,7 @@ public class MergeResources extends IncrementalTask {
 
             mergeResourcesTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             mergeResourcesTask.setVariantName(scope.getVariantConfiguration().getFullName());
-            mergeResourcesTask.setIncrementalFolder(new File(
-                    scope.getGlobalScope().getBuildDir() + "/" + AndroidProject.FD_INTERMEDIATES +
-                            "/incremental/" + taskNamePrefix + "Resources/" +
-                            variantData.getVariantConfiguration().getDirName()));
+            mergeResourcesTask.setIncrementalFolder(scope.getIncrementalDir(getName()));
 
             mergeResourcesTask.setBlameLogFolder(scope.getResourceBlameLogDir());
 

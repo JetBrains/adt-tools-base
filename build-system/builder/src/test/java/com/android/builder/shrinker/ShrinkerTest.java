@@ -19,9 +19,14 @@ package com.android.builder.shrinker;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.TransformInput;
+import com.android.build.transform.api.TransformOutput;
 import com.android.builder.shrinker.TestClasses.Annotations;
 import com.android.builder.shrinker.TestClasses.Fields;
 import com.android.builder.shrinker.TestClasses.InnerClasses;
@@ -33,7 +38,6 @@ import com.android.builder.shrinker.TestClasses.SimpleScenario;
 import com.android.builder.shrinker.TestClasses.SuperCalls;
 import com.android.builder.shrinker.TestClasses.VirtualCalls;
 import com.android.ide.common.internal.WaitableExecutor;
-import com.android.ide.common.res2.FileStatus;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -53,7 +57,9 @@ import org.objectweb.asm.tree.MethodNode;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -67,7 +73,7 @@ public class ShrinkerTest {
 
     private File mOutDir;
 
-    private List<ClassStream> mClassStreams;
+    private Map<TransformInput, TransformOutput> mInputOutputs;
 
     private Shrinker<String> mShrinker;
 
@@ -77,7 +83,15 @@ public class ShrinkerTest {
         File classDir = new File(tmpDir.getRoot(), "app-classes");
         mOutDir = tmpDir.newFolder("out");
         File incrementalDir = tmpDir.newFolder("incremental");
-        mClassStreams = ImmutableList.<ClassStream>of(new TestClassStream(classDir, mOutDir));
+
+        TransformInput transformInput = mock(TransformInput.class);
+        when(transformInput.getFiles()).thenReturn(ImmutableList.of(classDir));
+        when(transformInput.getFormat()).thenReturn(ScopedContent.Format.SINGLE_FOLDER);
+        TransformOutput transformOutput = mock(TransformOutput.class);
+        when(transformOutput.getOutFile()).thenReturn(mOutDir);
+
+        mInputOutputs = ImmutableMap.of(transformInput, transformOutput);
+
         mShrinker = new Shrinker<String>(
                 new WaitableExecutor<Void>(),
                 new JavaSerializationShrinkerGraph(incrementalDir),
@@ -90,11 +104,7 @@ public class ShrinkerTest {
         Files.write(SimpleScenario.aaa(), new File(mTestPackageDir, "Aaa.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK, new TestKeepRules("Aaa", "aaa"))
-        );
+        run(new TestKeepRules("Aaa", "aaa"));
 
         // Then:
         assertMembersLeft("Aaa", "aaa:()V", "bbb:()V");
@@ -108,11 +118,7 @@ public class ShrinkerTest {
         Files.write(SimpleScenario.ccc(), new File(mTestPackageDir, "Ccc.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK, new TestKeepRules("Bbb", "bbb"))
-        );
+        run(new TestKeepRules("Bbb", "bbb"));
 
         // Then:
         assertMembersLeft("Aaa", "aaa:()V", "bbb:()V");
@@ -129,18 +135,13 @@ public class ShrinkerTest {
         Files.write(SimpleScenario.aaa(), new File(mTestPackageDir, "Aaa.class"));
         Files.write(SimpleScenario.ccc(), new File(mTestPackageDir, "Ccc.class"));
 
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK, new TestKeepRules("Bbb", "bbb"))
-        );
+        run(new TestKeepRules("Bbb", "bbb"));
 
         Files.write(SimpleScenario.bbb2(), bbbFile);
 
         // When:
         mShrinker.handleFileChanges(
-                ImmutableMap.of(bbbFile, FileStatus.CHANGED),
-                mClassStreams,
+                mInputOutputs,
                 ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
                         Shrinker.ShrinkType.SHRINK, new TestKeepRules("Bbb", "bbb")));
 
@@ -157,11 +158,7 @@ public class ShrinkerTest {
         Files.write(VirtualCalls.impl(1), new File(mTestPackageDir, "Impl1.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK, new TestKeepRules("Impl1", "abstractMethod"))
-        );
+        run(new TestKeepRules("Impl1", "abstractMethod"));
 
         // Then:
         assertMembersLeft("Impl1", "abstractMethod:()V");
@@ -178,11 +175,7 @@ public class ShrinkerTest {
         Files.write(VirtualCalls.impl(3), new File(mTestPackageDir, "Impl3.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK, new TestKeepRules("Main", "main"))
-        );
+        run(new TestKeepRules("Main", "main"));
 
         // Then:
         assertMembersLeft("Main", "main:([Ljava/lang/String;)V");
@@ -202,11 +195,7 @@ public class ShrinkerTest {
         Files.write(VirtualCalls.impl(3), new File(mTestPackageDir, "Impl3.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK, new TestKeepRules("Main", "main"))
-        );
+        run(new TestKeepRules("Main", "main"));
 
         // Then:
         assertMembersLeft("Main", "main:([Ljava/lang/String;)V");
@@ -224,11 +213,7 @@ public class ShrinkerTest {
         Files.write(VirtualCalls.child(), new File(mTestPackageDir, "Child.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK, new TestKeepRules("Main", "main"))
-        );
+        run(new TestKeepRules("Main", "main"));
 
         // Then:
         assertMembersLeft("Main", "main:()V");
@@ -243,11 +228,7 @@ public class ShrinkerTest {
         Files.write(SdkTypes.myException(), new File(mTestPackageDir, "MyException.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK, new TestKeepRules("Main", "main"))
-        );
+        run(new TestKeepRules("Main", "main"));
 
         // Then:
         assertMembersLeft("Main", "main:([Ljava/lang/String;)V");
@@ -267,12 +248,7 @@ public class ShrinkerTest {
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules("Main", "callCallable", "buildMyCallable"))
-        );
+        run(new TestKeepRules("Main", "callCallable", "buildMyCallable"));
 
         // Then:
         assertMembersLeft(
@@ -299,12 +275,7 @@ public class ShrinkerTest {
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules("Main", "callMyCallable", "buildMyCallable"))
-        );
+        run(new TestKeepRules("Main", "callMyCallable", "buildMyCallable"));
 
         // Then:
         assertMembersLeft(
@@ -331,12 +302,7 @@ public class ShrinkerTest {
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules("Main", "callCallable"))
-        );
+        run(new TestKeepRules("Main", "callCallable"));
 
         // Then:
         assertMembersLeft(
@@ -356,12 +322,7 @@ public class ShrinkerTest {
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules("Main", "useMyInterface", "buildMyImpl"))
-        );
+        run(new TestKeepRules("Main", "useMyInterface", "buildMyImpl"));
 
         // Then:
         assertMembersLeft(
@@ -389,12 +350,7 @@ public class ShrinkerTest {
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules("Main", "useMyImpl_interfaceMethod"))
-        );
+        run(new TestKeepRules("Main", "useMyImpl_interfaceMethod"));
 
         // Then:
         assertMembersLeft(
@@ -417,12 +373,7 @@ public class ShrinkerTest {
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules("Main", "useMyImpl_otherMethod"))
-        );
+        run(new TestKeepRules("Main", "useMyImpl_otherMethod"));
 
         // Then:
         assertMembersLeft(
@@ -445,12 +396,7 @@ public class ShrinkerTest {
         Files.write(TestClasses.emptyClass("MyFieldType"), new File(mTestPackageDir, "MyFieldType.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules("Main", "main"))
-        );
+        run(new TestKeepRules("Main", "main"));
 
         // Then:
         assertMembersLeft(
@@ -477,12 +423,7 @@ public class ShrinkerTest {
         Files.write(TestClasses.emptyClass("MyFieldType"), new File(mTestPackageDir, "MyFieldType.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules("Main", "main_subclass"))
-        );
+        run(new TestKeepRules("Main", "main_subclass"));
 
         // Then:
         assertMembersLeft(
@@ -510,12 +451,7 @@ public class ShrinkerTest {
         Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules("Main", "buildImplementation"))
-        );
+        run(new TestKeepRules("Main", "buildImplementation"));
 
         // Then:
         assertMembersLeft(
@@ -535,12 +471,7 @@ public class ShrinkerTest {
         Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules("Main", "useInterfaceOne", "useInterfaceTwo"))
-        );
+        run(new TestKeepRules("Main", "useInterfaceOne", "useInterfaceTwo"));
 
         // Then:
         assertMembersLeft(
@@ -561,12 +492,7 @@ public class ShrinkerTest {
         Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules("Main", "useInterfaceOne", "buildImplementation"))
-        );
+        run(new TestKeepRules("Main", "useInterfaceOne", "buildImplementation"));
 
         // Then:
         assertMembersLeft(
@@ -587,16 +513,11 @@ public class ShrinkerTest {
         Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules(
-                                "Main",
-                                "useInterfaceOne",
-                                "useInterfaceTwo",
-                                "buildImplementation"))
-        );
+        run(new TestKeepRules(
+                "Main",
+                "useInterfaceOne",
+                "useInterfaceTwo",
+                "buildImplementation"));
 
         // Then:
         assertMembersLeft(
@@ -618,15 +539,10 @@ public class ShrinkerTest {
         Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules(
-                                "Main",
-                                "useImplementation",
-                                "buildImplementation"))
-        );
+        run(new TestKeepRules(
+                "Main",
+                "useImplementation",
+                "buildImplementation"));
 
         // Then:
         assertMembersLeft(
@@ -649,14 +565,9 @@ public class ShrinkerTest {
         Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules(
-                                "Main",
-                                "main"))
-        );
+        run(new TestKeepRules(
+                "Main",
+                "main"));
 
         // Then:
         assertMembersLeft(
@@ -684,14 +595,9 @@ public class ShrinkerTest {
         Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules(
-                                "Main",
-                                "main"))
-        );
+        run(new TestKeepRules(
+                "Main",
+                "main"));
 
         // Then:
         assertMembersLeft(
@@ -719,14 +625,9 @@ public class ShrinkerTest {
         Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules(
-                                "Main",
-                                "notAnnotated"))
-        );
+        run(new TestKeepRules(
+                "Main",
+                "notAnnotated"));
 
         // Then:
         assertMembersLeft(
@@ -747,14 +648,9 @@ public class ShrinkerTest {
         Files.write(Signatures.hasAge(), new File(mTestPackageDir, "HasAge.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules(
-                                "Main",
-                                "main"))
-        );
+        run(new TestKeepRules(
+                "Main",
+                "main"));
 
         // Then:
         assertMembersLeft(
@@ -774,14 +670,9 @@ public class ShrinkerTest {
         Files.write(Signatures.hasAge(), new File(mTestPackageDir, "HasAge.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules(
-                                "Main",
-                                "callMethod"))
-        );
+        run(new TestKeepRules(
+                "Main",
+                "callMethod"));
 
         // Then:
         assertMembersLeft(
@@ -800,14 +691,9 @@ public class ShrinkerTest {
         Files.write(SuperCalls.ccc(), new File(mTestPackageDir, "Ccc.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules(
-                                "Ccc",
-                                "callBbbMethod"))
-        );
+        run(new TestKeepRules(
+                "Ccc",
+                "callBbbMethod"));
 
         // Then:
         assertMembersLeft("Aaa");
@@ -823,14 +709,9 @@ public class ShrinkerTest {
         Files.write(SuperCalls.ccc(), new File(mTestPackageDir, "Ccc.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules(
-                                "Ccc",
-                                "callAaaMethod"))
-        );
+        run(new TestKeepRules(
+                "Ccc",
+                "callAaaMethod"));
 
         // Then:
         assertMembersLeft("Aaa", "onlyInAaa:()V");
@@ -846,14 +727,9 @@ public class ShrinkerTest {
         Files.write(SuperCalls.ccc(), new File(mTestPackageDir, "Ccc.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules(
-                                "Ccc",
-                                "callOverriddenMethod"))
-        );
+        run(new TestKeepRules(
+                "Ccc",
+                "callOverriddenMethod"));
 
         // Then:
         assertMembersLeft("Aaa");
@@ -869,12 +745,7 @@ public class ShrinkerTest {
         Files.write(InnerClasses.staticInnerClass(), new File(mTestPackageDir, "HasInnerClass$StaticInnerClass.class"));
 
         // When:
-        mShrinker.run(
-                mClassStreams,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK,
-                        new TestKeepRules("Main", "main"))
-        );
+        run(new TestKeepRules("Main", "main"));
 
         // Then:
         assertMembersLeft("Main", "main:()V");
@@ -917,6 +788,15 @@ public class ShrinkerTest {
     private File getOutputClassFile(String className) {
         return FileUtils.join(mOutDir, "test", className + ".class");
     }
+
+    private void run(TestKeepRules rules) throws IOException {
+        mShrinker.run(
+                mInputOutputs,
+                Collections.<TransformInput>emptyList(),
+                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(Shrinker.ShrinkType.SHRINK, rules),
+                false);
+    }
+
 
     private static Set<String> getMembers(File classFile) throws IOException {
         ClassReader classReader = new ClassReader(Files.toByteArray(classFile));

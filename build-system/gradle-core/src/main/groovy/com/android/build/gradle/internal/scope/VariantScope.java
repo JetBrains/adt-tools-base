@@ -168,16 +168,10 @@ public interface VariantScope extends BaseScope {
     File getAidlSourceOutputDir();
 
     @NonNull
-    File getAidlIncrementalDir();
-
-    @NonNull
     File getPackagedAidlDir();
 
     @NonNull
-    File getJackIncrementalDir();
-
-    @NonNull
-    File getJackTempDir();
+    File getIncrementalDir(String name);
 
     @NonNull
     File getJillPackagedLibrariesDir();
