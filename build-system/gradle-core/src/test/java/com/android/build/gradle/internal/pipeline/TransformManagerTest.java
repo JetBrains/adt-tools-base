@@ -701,4 +701,73 @@ public class TransformManagerTest extends TaskTestUtils {
         assertThat(transformTask.referencedInputStreams).isEmpty();
         assertThat(transformTask.outputStreams).containsExactly(newClass, newDex);
     }
+
+    @Test
+    public void keepInputFormat() {
+        // test the case where an AS_INPUT transform doesn't change the format
+
+        // create streams and add them to the pipeline
+        TransformStream projectClass = TransformStream.builder()
+                .addContentTypes(ContentType.CLASSES)
+                .addScope(Scope.PROJECT)
+                .setFormat(Format.SINGLE_FOLDER)
+                .setFiles(new File("my file"))
+                .setDependency("my dependency")
+                .build();
+        transformManager.addStream(projectClass);
+
+        TransformStream externalClass = TransformStream.builder()
+                .addContentTypes(ContentType.CLASSES)
+                .addScope(Scope.EXTERNAL_LIBRARIES)
+                .setFormat(Format.MULTI_FOLDER)
+                .setFiles(new File("my file"))
+                .setDependency("my dependency")
+                .build();
+        transformManager.addStream(externalClass);
+
+        // add a new transform
+        Transform t = TestTransform.builder()
+                .setInputTypes(ContentType.CLASSES)
+                .setOutputTypes(ContentType.CLASSES)
+                .setScopes(Scope.PROJECT, Scope.EXTERNAL_LIBRARIES)
+                .setTransformType(Type.AS_INPUT)
+                .setFormat(null) // Keep format of input streams.
+                .build();
+
+        // add the transform
+        AndroidTask<TransformTask> task = transformManager.addTransform(
+                taskFactory, scope, t);
+
+        // get the new streams
+        List<TransformStream> streams = transformManager.getStreams();
+        assertThat(streams).hasSize(2);
+
+        // check the original stream were consumed.
+        assertThat(streams).doesNotContain(projectClass);
+        assertThat(streams).doesNotContain(externalClass);
+
+        // check we still have the same streams.
+        streamTester()
+                .withContentTypes(ContentType.CLASSES)
+                .withScopes(Scope.PROJECT)
+                .withDependency(TASK_NAME)
+                .withFormat(Format.SINGLE_FOLDER)
+                .withParentStream(projectClass)
+                .test();
+        // and a class stream
+        streamTester()
+                .withContentTypes(ContentType.CLASSES)
+                .withScopes(Scope.EXTERNAL_LIBRARIES)
+                .withDependency(TASK_NAME)
+                .withFormat(Format.MULTI_FOLDER)
+                .withParentStream(externalClass)
+                .test();
+
+        // check the task contains the stream
+        TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
+        assertThat(transformTask).isNotNull();
+        assertThat(transformTask.consumedInputStreams).containsExactly(projectClass, externalClass);
+        assertThat(transformTask.referencedInputStreams).isEmpty();
+        assertThat(transformTask.outputStreams).containsExactlyElementsIn(streams);
+    }
 }

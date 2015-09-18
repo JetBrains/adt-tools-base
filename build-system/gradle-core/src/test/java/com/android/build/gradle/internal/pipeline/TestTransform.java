@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.transform.api.AsInputTransform;
 import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.ForkTransform;
@@ -39,7 +40,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -181,12 +181,12 @@ public class TestTransform implements Transform {
                 @NonNull Set<ContentType> inputTypes,
                 @NonNull Set<ContentType> outputTypes,
                 @NonNull Set<Scope> scopes,
-                @NonNull Set<Scope> refedScopes,
+                @NonNull Set<Scope> referencedScopes,
                 @NonNull Type transformType,
                 @NonNull Format format,
                 boolean isIncremental,
                 @NonNull List<File> secondaryFileInputs) {
-            super(name, inputTypes, outputTypes, scopes, refedScopes, transformType, format, isIncremental, secondaryFileInputs);
+            super(name, inputTypes, outputTypes, scopes, referencedScopes, transformType, format, isIncremental, secondaryFileInputs);
         }
 
         public Map<TransformInput, Collection<TransformOutput>> getInputs() {
@@ -287,12 +287,12 @@ public class TestTransform implements Transform {
                 @NonNull Set<ContentType> inputTypes,
                 @NonNull Set<ContentType> outputTypes,
                 @NonNull Set<Scope> scopes,
-                @NonNull Set<Scope> refedScopes,
+                @NonNull Set<Scope> referencedScopes,
                 @NonNull Type transformType,
                 @NonNull Format format,
                 boolean isIncremental,
                 @NonNull List<File> secondaryFileInputs) {
-            super(name, inputTypes, outputTypes, scopes, refedScopes, transformType, format, isIncremental, secondaryFileInputs);
+            super(name, inputTypes, outputTypes, scopes, referencedScopes, transformType, format, isIncremental, secondaryFileInputs);
         }
 
         public Collection<TransformInput> getInputs() {
@@ -320,7 +320,7 @@ public class TestTransform implements Transform {
                 .noneOf(ContentType.class);
         private Set<ContentType> outputTypes;
         private final Set<Scope> scopes = EnumSet.noneOf(Scope.class);
-        private final Set<Scope> refedScopes = EnumSet.noneOf(Scope.class);
+        private final Set<Scope> referencedScopes = EnumSet.noneOf(Scope.class);
         private Transform.Type transformType;
         private Format format = Format.SINGLE_FOLDER;
         private boolean isIncremental = false;
@@ -350,7 +350,7 @@ public class TestTransform implements Transform {
         }
 
         Builder setReferencedScopes(@NonNull Scope... scopes) {
-            this.refedScopes.addAll(Arrays.asList(scopes));
+            this.referencedScopes.addAll(Arrays.asList(scopes));
             return this;
         }
 
@@ -360,7 +360,7 @@ public class TestTransform implements Transform {
             return this;
         }
 
-        Builder setFormat(@NonNull Format format) {
+        Builder setFormat(@Nullable Format format) {
             this.format = format;
             return this;
         }
@@ -383,7 +383,7 @@ public class TestTransform implements Transform {
             Set<ContentType> outputTypes = this.outputTypes != null ?
                     Sets.immutableEnumSet(this.outputTypes) : inputTypes;
             Set<Scope> scopes = Sets.immutableEnumSet(this.scopes);
-            Set<Scope> refedScopes = Sets.immutableEnumSet(this.refedScopes);
+            Set<Scope> refedScopes = Sets.immutableEnumSet(this.referencedScopes);
             Type transformType = this.transformType;
             Format format = this.format;
 

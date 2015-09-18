@@ -21,7 +21,6 @@ import static com.android.utils.FileUtils.emptyFolder;
 import static com.android.utils.FileUtils.mkdirs;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.concurrency.Immutable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.AsInputTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
@@ -56,8 +55,8 @@ import java.util.zip.ZipInputStream;
 /**
  * Transform to extract jars.
  *
- * This only supports {@link Format#SINGLE_JAR} and {@link Format#MULTI_JAR}, and works with
- * {@link Type#AS_INPUT} so that each input stream has a matching output stream.
+ * This only supports {@link Format#JAR} and works with {@link Type#AS_INPUT} so that each input
+ * stream has a matching output stream.
  *
  * The output format is {@link Format#MULTI_FOLDER} because each input jar has its own sub-folder
  * in the output stream root folder.
@@ -166,7 +165,7 @@ public class ExtractJarsTransform implements AsInputTransform {
                 if (format != Format.JAR) {
                     throw new RuntimeException(
                             String.format(
-                                    "%s only supports SINGLE_JAR or MULTI_JAR streams. Current stream format: %s:\n\t%s",
+                                    "%s only supports JAR streams. Current stream format: %s:\n\t%s",
                                     getName(),
                                     format.name(),
                                     Iterables.getFirst(input.getFiles(), null)));
