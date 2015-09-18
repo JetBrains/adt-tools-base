@@ -37,7 +37,9 @@ interface ShrinkerGraph<T> {
 
     Set<Dependency<T>> getDependencies(T member);
 
-    Set<T> getMembers(T klass);
+    Set<T> getMethods(T klass);
+
+    Set<T> getFields(T klass);
 
     T addClass(String name, String superName, String[] interfaces, File classFile);
 
@@ -78,4 +80,12 @@ interface ShrinkerGraph<T> {
     void checkDependencies();
 
     boolean keepClass(String klass, Shrinker.ShrinkType shrinkType);
+
+    void allNodesAdded();
+
+    Iterable<T> getAllProgramClasses();
+
+    String getClassName(T classOrMember);
+
+    String getMethodName(T method);
 }

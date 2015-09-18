@@ -1,0 +1,62 @@
+/*
+ * Copyright (C) 2015 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.builder.shrinker.parser;
+
+import com.android.annotations.NonNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Represents a ProGuard filter specification.
+ *
+ * TODO: Is this needed for anything if we don't obfuscate?
+ */
+public class FilterSpecification implements Matcher<String> {
+
+    private static class FilterElement extends MatcherWithNegator<String> {
+        @NonNull
+        private final NameSpecification name;
+
+        public FilterElement(@NonNull NameSpecification name, boolean negator) {
+            this.name = name;
+            setNegator(negator);
+        }
+
+        @Override
+        protected boolean matchesWithoutNegator(@NonNull String t) {
+            return name.matches(t);
+        }
+    }
+
+    @NonNull
+    private final List<FilterElement> elements = new ArrayList<FilterElement>();
+
+    public void addElement(@NonNull NameSpecification name, boolean negator) {
+        elements.add(new FilterElement(name, negator));
+    }
+
+    @Override
+    public boolean matches(@NonNull String t) {
+        for (FilterElement element : elements) {
+            if (element.matches(t)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}

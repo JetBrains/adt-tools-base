@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package com.android.utils;
+package com.android.builder.shrinker.parser;
+
+import java.util.regex.Pattern;
 
 /**
- * Utilities for working with ASM.
+ * Name part of a ProGuard class specification, used for matching all names (classes, methods etc.)
  */
-public class AsmUtils {
-    private AsmUtils() {}
+public class NameSpecification extends MatcherWithNegator<String> {
+    private final Pattern mPattern;
 
-    public static final String CONSTRUCTOR = "<init>";
-    public static final String CLASS_INITIALIZER = "<clinit>";
+    public NameSpecification(Pattern pattern) {
+        mPattern = pattern;
+    }
 
-    /**
-     * Converts a class name from the Java language naming convention (foo.bar.baz) to the JVM
-     * internal naming convention (foo/bar/baz).
-     */
-    public static String toInternalName(String className) {
-        return className.replace('.', '/');
+    @Override
+    protected boolean matchesWithoutNegator(String s) {
+        return mPattern.matcher(s).matches();
     }
 }

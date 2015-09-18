@@ -14,22 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.utils;
+package com.android.builder.shrinker.parser;
 
 /**
- * Utilities for working with ASM.
+ * {@link Matcher} that can be negated (e.g. by prepending "!" to a class name).
  */
-public class AsmUtils {
-    private AsmUtils() {}
+public abstract class MatcherWithNegator<T> implements Matcher<T> {
+    private boolean negator = false;
 
-    public static final String CONSTRUCTOR = "<init>";
-    public static final String CLASS_INITIALIZER = "<clinit>";
+    @Override
+    public boolean matches(T t) {
+        boolean result = matchesWithoutNegator(t);
+        if (!negator) {
+            return result;
+        } else {
+            return !result;
+        }
+    }
 
-    /**
-     * Converts a class name from the Java language naming convention (foo.bar.baz) to the JVM
-     * internal naming convention (foo/bar/baz).
-     */
-    public static String toInternalName(String className) {
-        return className.replace('.', '/');
+    protected abstract boolean matchesWithoutNegator(T t);
+
+    public void setNegator(boolean negator) {
+        this.negator = negator;
     }
 }

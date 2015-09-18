@@ -17,19 +17,15 @@
 package com.android.builder.shrinker;
 
 import com.google.common.collect.ImmutableSet;
-
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
+import com.google.common.collect.Sets;
 
 import java.util.Set;
 
 /**
- * TODO: Document.
+ * Simple {@link KeepRules} implementation for testing.
  */
 class TestKeepRules implements KeepRules {
-
     private final String mClassName;
-
     private final Set<String> mMethodNames;
 
     TestKeepRules(String className, String... methodNames) {
@@ -37,9 +33,21 @@ class TestKeepRules implements KeepRules {
         mMethodNames = ImmutableSet.copyOf(methodNames);
     }
 
-
     @Override
-    public boolean keep(ClassNode classNode, MethodNode methodNode) {
-        return classNode.name.endsWith(mClassName) && mMethodNames.contains(methodNode.name);
+    public <T> Set<T> getSymbolsToKeep(T klass, ShrinkerGraph<T> graph) {
+        Set<T> symbols = Sets.newHashSet();
+
+        if (graph.getClassName(klass).endsWith(mClassName)) {
+            for (T member : graph.getMethods(klass)) {
+                String name = graph.getClassName(member);
+                for (String methodName : mMethodNames) {
+                    if (name.contains("." + methodName + ":")) {
+                        symbols.add(member);
+                    }
+                }
+            }
+        }
+
+        return symbols;
     }
 }

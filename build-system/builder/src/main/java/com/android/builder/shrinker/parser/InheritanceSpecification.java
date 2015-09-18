@@ -14,22 +14,28 @@
  * limitations under the License.
  */
 
-package com.android.utils;
+package com.android.builder.shrinker.parser;
 
 /**
- * Utilities for working with ASM.
+ * "extends" part of a ProGuard class specification.
  */
-public class AsmUtils {
-    private AsmUtils() {}
+public class InheritanceSpecification {
 
-    public static final String CONSTRUCTOR = "<init>";
-    public static final String CLASS_INITIALIZER = "<clinit>";
+    private final NameSpecification mNameSpec;
+    private final AnnotationSpecification mAnnotationType;
 
-    /**
-     * Converts a class name from the Java language naming convention (foo.bar.baz) to the JVM
-     * internal naming convention (foo/bar/baz).
-     */
-    public static String toInternalName(String className) {
-        return className.replace('.', '/');
+    public InheritanceSpecification(
+            NameSpecification nameSpec,
+            AnnotationSpecification annotationType) {
+        mNameSpec = nameSpec;
+        mAnnotationType = annotationType;
+    }
+
+    public NameSpecification getNameSpec() {
+        return mNameSpec;
+    }
+
+    public AnnotationSpecification getAnnotationType() {
+        return mAnnotationType;
     }
 }

@@ -31,7 +31,7 @@ import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
 import com.android.builder.core.VariantType;
 import com.android.builder.shrinker.JavaSerializationShrinkerGraph;
-import com.android.builder.shrinker.ProguardConfigParser;
+import com.android.builder.shrinker.ProguardConfigKeepRulesBuilder;
 import com.android.builder.shrinker.Shrinker;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.sdklib.IAndroidTarget;
@@ -138,7 +138,7 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
                 new JavaSerializationShrinkerGraph(incrementalDir),
                 platformJar);
 
-        ProguardConfigParser parser = new ProguardConfigParser();
+        ProguardConfigKeepRulesBuilder parser = new ProguardConfigKeepRulesBuilder();
 
         for (File configFile : getAllConfigurationFiles()) {
             parser.parse(configFile);
