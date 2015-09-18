@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -58,11 +59,6 @@ public class ${serviceClass} extends CanvasWatchFaceService {
     }
 
     private class Engine extends CanvasWatchFaceService.Engine {
-        Paint mBackgroundPaint;
-        Paint mHandPaint;
-        boolean mAmbient;
-        Time mTime;
-
         final Handler mUpdateTimeHandler = new EngineHandler(this);
 
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
@@ -73,6 +69,15 @@ public class ${serviceClass} extends CanvasWatchFaceService {
             }
         };
         boolean mRegisteredTimeZoneReceiver = false;
+
+        Paint mBackgroundPaint;
+        Paint mHandPaint;
+
+        boolean mAmbient;
+        Time mTime;
+<#if isInteractive>
+        int mTapCount;
+</#if>
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -88,12 +93,15 @@ public class ${serviceClass} extends CanvasWatchFaceService {
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_SHORT)
                     .setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
                     .setShowSystemUiTime(false)
+<#if isInteractive>
+                    .setAcceptsTapEvents(true)
+</#if>
                     .build());
 
             Resources resources = ${serviceClass}.this.getResources();
 
             mBackgroundPaint = new Paint();
-            mBackgroundPaint.setColor(resources.getColor(R.color.analog_background));
+            mBackgroundPaint.setColor(resources.getColor(R.color.background));
 
             mHandPaint = new Paint();
             mHandPaint.setColor(resources.getColor(R.color.analog_hands));
@@ -138,21 +146,48 @@ public class ${serviceClass} extends CanvasWatchFaceService {
             updateTimer();
         }
 
+<#if isInteractive>
+        /**
+         * Captures tap event (and tap type) and toggles the background color if the user finishes
+         * a tap.
+         */
+        @Override
+        public void onTapCommand(int tapType, int x, int y, long eventTime) {
+            Resources resources = ${serviceClass}.this.getResources();
+            switch (tapType) {
+                case TAP_TYPE_TOUCH:
+                    // The user has started touching the screen.
+                    break;
+                case TAP_TYPE_TOUCH_CANCEL:
+                    // The user has started a different gesture or otherwise cancelled the tap.
+                    break;
+                case TAP_TYPE_TAP:
+                    // The user has completed the tap gesture.
+                    mTapCount++;
+                    mBackgroundPaint.setColor(resources.getColor(mTapCount % 2 == 0 ?
+                            R.color.background : R.color.background2));
+                    break;
+            }
+            invalidate();
+        }
+
+</#if>
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
             mTime.setToNow();
 
-            int width = bounds.width();
-            int height = bounds.height();
-
             // Draw the background.
-            canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mBackgroundPaint);
+            if (isInAmbientMode()) {
+                canvas.drawColor(Color.BLACK);
+            } else {
+                canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mBackgroundPaint);
+            }
 
             // Find the center. Ignore the window insets so that, on round watches with a
             // "chin", the watch face is centered on the entire screen, not just the usable
             // portion.
-            float centerX = width / 2f;
-            float centerY = height / 2f;
+            float centerX = bounds.width() / 2f;
+            float centerY = bounds.height() / 2f;
 
             float secRot = mTime.second / 30f * (float) Math.PI;
             int minutes = mTime.minute;
