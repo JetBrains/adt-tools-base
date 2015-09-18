@@ -503,6 +503,24 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         "multiproject/library.properties=>build.gradle")); // dummy; only name counts
     }
 
+    public void testGradleOverrideManifestMergerOverride() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=186762
+        mEnabled = Collections.singleton(ManifestDetector.GRADLE_OVERRIDES);
+        assertEquals("No warnings.",
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                                + "    package=\"test.pkg\">\n"
+                                + "\n"
+                                + "    <uses-sdk android:minSdkVersion=\"14\" tools:overrideLibrary=\"lib.pkg\" />\n"
+                                + "\n"
+                                + "</manifest>\n"),
+                        copy("multiproject/library.properties", "build.gradle") // dummy; only name counts));
+        ));
+    }
+
     public void testManifestPackagePlaceholder() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.GRADLE_OVERRIDES);
         assertEquals(""
@@ -1042,14 +1060,14 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         public Variant getCurrentVariant() {
                             ProductFlavor flavor = mock(ProductFlavor.class);
                             if (getName().equals("ManifestDetectorTest_testGradleOverridesOk") ||
-                                    getName().equals(
-                                        "ManifestDetectorTest_testManifestPackagePlaceholder")) {
+                                    getName().equals("ManifestDetectorTest_testManifestPackagePlaceholder")) {
                                 when(flavor.getMinSdkVersion()).thenReturn(null);
                                 when(flavor.getTargetSdkVersion()).thenReturn(null);
                                 when(flavor.getVersionCode()).thenReturn(null);
                                 when(flavor.getVersionName()).thenReturn(null);
                             } else {
-                                assertEquals(getName(), "ManifestDetectorTest_testGradleOverrides");
+                                assertTrue(getName(), getName().equals("ManifestDetectorTest_testGradleOverrides") ||
+                                    getName().equals("ManifestDetectorTest_testGradleOverrideManifestMergerOverride"));
 
                                 ApiVersion apiMock = mock(ApiVersion.class);
                                 when(apiMock.getApiLevel()).thenReturn(5);
