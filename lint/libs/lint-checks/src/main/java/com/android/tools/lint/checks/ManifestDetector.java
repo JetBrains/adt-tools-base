@@ -40,6 +40,7 @@ import static com.android.SdkConstants.TAG_USES_FEATURE;
 import static com.android.SdkConstants.TAG_USES_LIBRARY;
 import static com.android.SdkConstants.TAG_USES_PERMISSION;
 import static com.android.SdkConstants.TAG_USES_SDK;
+import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VALUE_FALSE;
 import static com.android.xml.AndroidManifest.NODE_ACTION;
 import static com.android.xml.AndroidManifest.NODE_DATA;
@@ -544,23 +545,19 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 ProductFlavor flavor = variant.getMergedFlavor();
                 String gradleValue = null;
                 if (ATTR_MIN_SDK_VERSION.equals(attributeName)) {
-                    try {
-                        ApiVersion minSdkVersion = flavor.getMinSdkVersion();
-                        gradleValue = minSdkVersion != null ? minSdkVersion.getApiString() : null;
-                    } catch (Throwable e) {
-                        // TODO: REMOVE ME
-                        // This method was added in the 0.11 model. We'll need to drop support
-                        // for 0.10 shortly but until 0.11 is available this is a stopgap measure
+                    if (element.hasAttributeNS(TOOLS_URI, "overrideLibrary")) {
+                        // The manifest may be setting a minSdkVersion here to deliberately
+                        // let the manifest merger know that a library dependency's manifest
+                        // with a higher value is okay: this value wins. The manifest merger
+                        // should really be taking the Gradle file into account instead,
+                        // but for now we filter these out; http://b.android.com/186762
+                        return;
                     }
+                    ApiVersion minSdkVersion = flavor.getMinSdkVersion();
+                    gradleValue = minSdkVersion != null ? minSdkVersion.getApiString() : null;
                 } else if (ATTR_TARGET_SDK_VERSION.equals(attributeName)) {
-                    try {
-                        ApiVersion targetSdkVersion = flavor.getTargetSdkVersion();
-                        gradleValue = targetSdkVersion != null ? targetSdkVersion.getApiString() : null;
-                    } catch (Throwable e) {
-                        // TODO: REMOVE ME
-                        // This method was added in the 0.11 model. We'll need to drop support
-                        // for 0.10 shortly but until 0.11 is available this is a stopgap measure
-                    }
+                    ApiVersion targetSdkVersion = flavor.getTargetSdkVersion();
+                    gradleValue = targetSdkVersion != null ? targetSdkVersion.getApiString() : null;
                 } else if (ATTR_VERSION_CODE.equals(attributeName)) {
                     Integer versionCode = flavor.getVersionCode();
                     if (versionCode != null) {
