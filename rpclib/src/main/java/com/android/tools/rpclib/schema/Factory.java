@@ -31,6 +31,7 @@ public final class Factory {
         Primitive.register();
         Slice.register();
         Struct.register();
+        Variant.register();
         //<<<End:Java.FactoryBody:2>>>
     }
 }
