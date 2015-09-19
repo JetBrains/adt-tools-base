@@ -61,6 +61,10 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgType;
+import com.android.sdklib.repository.local.LocalPkgInfo;
+import com.android.sdklib.repository.local.LocalSdk;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintDriver;
@@ -108,6 +112,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -318,16 +323,70 @@ public class ApiDetector extends ResourceXmlDetector
 
     @Override
     public void beforeCheckProject(@NonNull Context context) {
-        mApiDatabase = ApiLookup.get(context.getClient());
-        // We can't look up the minimum API required by the project here:
-        // The manifest file hasn't been processed yet in the -before- project hook.
-        // For now it's initialized lazily in getMinSdk(Context), but the
-        // lint infrastructure should be fixed to parse manifest file up front.
+        if (mApiDatabase == null) {
+            mApiDatabase = ApiLookup.get(context.getClient());
+            // We can't look up the minimum API required by the project here:
+            // The manifest file hasn't been processed yet in the -before- project hook.
+            // For now it's initialized lazily in getMinSdk(Context), but the
+            // lint infrastructure should be fixed to parse manifest file up front.
 
-        if (mApiDatabase == null && !mWarnedMissingDb) {
-            mWarnedMissingDb = true;
-            context.report(IssueRegistry.LINT_ERROR, Location.create(context.file),
+            if (mApiDatabase == null && !mWarnedMissingDb) {
+                mWarnedMissingDb = true;
+                context.report(IssueRegistry.LINT_ERROR, Location.create(context.file),
                         "Can't find API database; API check not performed");
+            } else {
+                // See if you don't have at least version 23.0.1 of platform tools installed
+                LocalSdk sdk = context.getClient().getSdk();
+                if (sdk == null) {
+                    return;
+                }
+                LocalPkgInfo pkgInfo = sdk.getPkgInfo(PkgType.PKG_PLATFORM_TOOLS);
+                if (pkgInfo == null) {
+                    return;
+                }
+                IPkgDesc desc = pkgInfo.getDesc();
+                FullRevision revision = desc.getFullRevision();
+                if (revision == null) {
+                    return;
+                }
+                // The platform tools must be at at least the same revision
+                // as the compileSdkVersion!
+                // And as a special case, for 23, they must be at 23.0.1
+                // because 23.0.0 accidentally shipped without Android M APIs.
+                int compileSdkVersion = context.getProject().getBuildSdk();
+                if (compileSdkVersion == 23) {
+                    if (revision.getMajor() > 23 || revision.getMajor() == 23
+                      && (revision.getMinor() > 0 || revision.getMicro() > 0)) {
+                        return;
+                    }
+                } else if (compileSdkVersion <= revision.getMajor()) {
+                    return;
+                }
+
+                // Pick a location: when incrementally linting in the IDE, tie
+                // it to the current file
+                List<File> currentFiles = context.getProject().getSubset();
+                Location location;
+                if (currentFiles != null && currentFiles.size() == 1) {
+                    File file = currentFiles.get(0);
+                    String contents = context.getClient().readFile(file);
+                    int firstLineEnd = contents.indexOf('\n');
+                    if (firstLineEnd == -1) {
+                        firstLineEnd = contents.length();
+                    }
+                    location = Location.create(file,
+                        new DefaultPosition(0, 0, 0), new
+                        DefaultPosition(0, firstLineEnd, firstLineEnd));
+                } else {
+                    location = Location.create(context.file);
+                }
+                context.report(UNSUPPORTED,
+                        location,
+                        String.format("The SDK platform-tools version ((%1$s)) is too old "
+                                        + " to check APIs compiled with API %2$d; please update",
+                                revision.toShortString(),
+                                compileSdkVersion));
+            }
         }
     }
 
@@ -1445,7 +1504,7 @@ public class ApiDetector extends ResourceXmlDetector
         super.afterCheckProject(context);
     }
 
-// ---- Implements JavaScanner ----
+    // ---- Implements JavaScanner ----
 
     @Nullable
     @Override

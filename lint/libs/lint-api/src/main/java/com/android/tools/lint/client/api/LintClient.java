@@ -786,6 +786,15 @@ public abstract class LintClient {
      */
     @Nullable
     public BuildToolInfo getBuildTools(@NonNull Project project) {
+        LocalSdk sdk = getSdk();
+        if (sdk != null) {
+            // Build systems like Eclipse and ant just use the latest available
+            // build tools, regardless of project metadata. In Gradle, this
+            // method is overridden to use the actual build tools specified in the
+            // project.
+            return sdk.getLatestBuildTool();
+        }
+
         return null;
     }
 

@@ -1817,6 +1817,37 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testHigherCompileSdkVersionThanPlatformTools() throws Exception {
+        // Warn if the platform tools are too old on the system
+        assertEquals(""
+                + "ApiDetectorTest_testHigherCompileSdkVersionThanPlatformTools: Error: The SDK platform-tools version ((23.0.1)) is too old  to check APIs compiled with API 400; please update [NewApi]\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        copy("apicheck/minsdk14.xml", "AndroidManifest.xml"),
+                        source("project.properties", "target=android-400"), // in the future
+                        copy("apicheck/ApiCallTest12.java.txt", "src/test/pkg/ApiCallTest12.java"),
+                        copy("apicheck/ApiCallTest12.class.data", "bin/classes/test/pkg/ApiCallTest12.class")
+                ));
+    }
+
+    public void testHigherCompileSdkVersionThanPlatformToolsInEditor() throws Exception {
+        // When editing a file we place the error on the first line of the file instead
+        assertEquals(""
+                + "src/test/pkg/ApiCallTest12.java:1: Error: The SDK platform-tools version ((23.0.1)) is too old  to check APIs compiled with API 400; please update [NewApi]\n"
+                + "package test.pkg;\n"
+                + "~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProjectIncrementally(
+                        "src/test/pkg/ApiCallTest12.java",
+                        copy("apicheck/minsdk14.xml", "AndroidManifest.xml"),
+                        source("project.properties", "target=android-400"), // in the future
+                        copy("apicheck/ApiCallTest12.java.txt", "src/test/pkg/ApiCallTest12.java"),
+                        copy("apicheck/ApiCallTest12.class.data", "bin/classes/test/pkg/ApiCallTest12.class")
+                ));
+    }
+
     @Override
     protected TestLintClient createClient() {
         if (getName().equals("testMissingApiDatabase")) {
@@ -1839,6 +1870,18 @@ public class ApiDetectorTest extends AbstractCheckTest {
                     Project fromSuper = super.createProject(dir, referenceDir);
                     Project spy = spy(fromSuper);
                     when(spy.getGradleProjectModel()).thenReturn(model);
+                    return spy;
+                }
+            };
+        }
+        if (getName().equals("testPaddingStart")) {
+            return new TestLintClient() {
+                @NonNull
+                @Override
+                protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                    Project fromSuper = super.createProject(dir, referenceDir);
+                    Project spy = spy(fromSuper);
+                    when(spy.getBuildTools()).thenReturn(null);
                     return spy;
                 }
             };
@@ -1878,6 +1921,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
 
     @Override
     protected boolean ignoreSystemErrors() {
+        //noinspection SimplifiableIfStatement
         if (getName().equals("testMissingApiDatabase")) {
             return false;
         }
@@ -1888,8 +1932,11 @@ public class ApiDetectorTest extends AbstractCheckTest {
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
             @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
         if (issue == UNSUPPORTED || issue == INLINED) {
+            if (message.startsWith("The SDK platform-tools version (")) {
+                return;
+            }
             int requiredVersion = ApiDetector.getRequiredVersion(issue, message, TEXT);
-            assertTrue("Could not extract message tokens from " + message,
+            assertTrue("Could not extract message tokens from \"" + message + "\"",
                     requiredVersion >= 1 && requiredVersion <= SdkVersionInfo.HIGHEST_KNOWN_API);
         }
     }
