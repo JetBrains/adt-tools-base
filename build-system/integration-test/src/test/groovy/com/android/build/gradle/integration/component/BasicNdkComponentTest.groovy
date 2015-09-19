@@ -21,30 +21,43 @@ import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 
 /**
  * Basic integration test for native plugin.
  */
+@RunWith(Parameterized.class)
 @Category(SmokeTests.class)
 @CompileStatic
 class BasicNdkComponentTest {
 
-    @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder()
+    @Parameterized.Parameter(value = 0)
+    public String toolchain;
+
+    @Parameterized.Parameters(name="{0}")
+    public static Collection<Object[]> data() {
+        return [
+                ["gcc"].toArray(),
+                ["clang"].toArray(),
+        ];
+    }
+
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp(useCppSource: true))
             .forExpermimentalPlugin(true)
             .withHeap("2048m")
             .create();
 
-    @BeforeClass
-    public static void setUp() {
+    @Before
+    public void setUp() {
         project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
 
@@ -56,14 +69,10 @@ model {
     android.ndk {
         moduleName = "hello-jni"
         platformVersion = 19
+        toolchain = "$toolchain"
     }
 }
 """
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
     }
 
     @Test
