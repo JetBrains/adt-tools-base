@@ -14,11 +14,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- android:layout_gravity="start" tells DrawerLayout to treat
-         this as a sliding drawer on the left side for left-to-right
-         languages and on the right side for right-to-left languages.
-         If you're not building against API 17 or higher, use
-         android:layout_gravity="left" instead. -->
     <!-- The drawer is given a fixed width in dp and extends the full height of
          the container. -->
     <fragment android:id="@+id/navigation_drawer"
