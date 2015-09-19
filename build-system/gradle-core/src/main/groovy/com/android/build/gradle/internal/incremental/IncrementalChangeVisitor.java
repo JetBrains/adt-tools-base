@@ -338,7 +338,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         private boolean handleSpecialOpcode(String owner, String name, String desc,
                 boolean itf) {
-            if (owner.equals(visitedSuperName)) {
+            if (owner.equals(visitedSuperName) && !name.equals("<init>")) {
                 if (DEBUG) {
                     System.out.println(
                             "Super Method dispatch : " + name + ":" + desc + ":" + itf + ":"
