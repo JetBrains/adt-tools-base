@@ -21,8 +21,8 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
-import com.google.common.base.Joiner;
 
 import org.gradle.nativeplatform.NativeBinarySpec;
 
@@ -79,13 +79,24 @@ public class NdkNamingScheme {
      * Return the name of the directory that will contain the final output of the native binary.
      */
     public static String getOutputDirectoryName(String buildType, String productFlavor, String abi) {
-        return Joiner.on(File.separator).join(
+        return FileUtils.join(
                 FD_INTERMEDIATES,
                 "binaries",
                 buildType,
                 productFlavor,
                 "lib",
                 abi);
+    }
+
+
+    public static String getStandaloneOutputDirectoryName(@NonNull NativeBinarySpec binary) {
+        return FileUtils.join(
+                FD_OUTPUTS,
+                "native",
+                binary.getBuildType().getName(),
+                binary.getFlavor().getName(),
+                "lib",
+                binary.getTargetPlatform().getName());
     }
 
     public static String getOutputDirectoryName(NativeBinarySpec binary) {
@@ -99,7 +110,7 @@ public class NdkNamingScheme {
      * Return the name of the directory that will contain the native library with debug symbols.
      */
     public static String getDebugLibraryDirectoryName(String buildType, String productFlavor, String abi) {
-        return Joiner.on(File.separator).join(
+        return FileUtils.join(
                 FD_INTERMEDIATES,
                 "binaries",
                 buildType,
