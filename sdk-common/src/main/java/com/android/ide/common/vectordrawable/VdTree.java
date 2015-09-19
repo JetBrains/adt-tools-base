@@ -96,6 +96,13 @@ class VdTree {
         }
     }
 
+    private static int applyAlpha(int color, float alpha) {
+        int alphaBytes = (color >> 24) & 0xff;
+        color &= 0x00FFFFFF;
+        color |= ((int) (alphaBytes * alpha)) << 24;
+        return color;
+    }
+
     private Rectangle drawPath(VdPath path, Graphics canvas, int w, int h, float scale) {
 
         Path2D path2d = new Path2D.Double();
@@ -114,13 +121,15 @@ class VdTree {
         }
         if (path.mFillColor != 0) {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g.setColor(new Color(path.mFillColor, true));
+            Color fillColor = new Color(applyAlpha(path.mFillColor, path.mFillOpacity), true);
+            g.setColor(fillColor);
             g.fill(path2d);
         }
         if (path.mStrokeColor != 0) {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g.setStroke(new BasicStroke(path.mStrokeWidth));
-            g.setColor(new Color(path.mStrokeColor, true));
+            Color strokeColor = new Color(applyAlpha(path.mStrokeColor, path.mStrokeOpacity), true);
+            g.setColor(strokeColor);
             g.draw(path2d);
         }
 
