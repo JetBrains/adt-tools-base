@@ -13,26 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.tasks
-import com.android.build.gradle.internal.tasks.IncrementalTask
-import com.google.common.base.Function
-import com.google.common.base.Joiner
-import com.google.common.collect.Iterables
-import com.google.common.collect.Lists
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputFile
+package com.android.build.gradle.tasks;
+
+import com.android.build.gradle.internal.tasks.IncrementalTask;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Ordering;
+
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputFile;
+
+import java.io.File;
+import java.util.Map;
+
 /**
  * A task that processes the manifest
  */
 public abstract class ManifestProcessorTask extends IncrementalTask {
 
-    // ----- PUBLIC TASK API -----
+    private File manifestOutputFile;
+
+    private File aaptFriendlyManifestOutputFile;
 
     /**
      * The processed Manifest.
      */
     @OutputFile
-    File manifestOutputFile
+    public File getManifestOutputFile() {
+        return manifestOutputFile;
+    }
+
+    public void setManifestOutputFile(File manifestOutputFile) {
+        this.manifestOutputFile = manifestOutputFile;
+    }
 
     /**
      * The aapt friendly processed Manifest. In case we are processing a library manifest, some
@@ -40,27 +54,35 @@ public abstract class ManifestProcessorTask extends IncrementalTask {
      * importing application). However, such placeholders keys are not friendly to aapt which
      * flags some illegal characters. Such characters are replaced/encoded in this version.
      */
-    @OutputFile @Optional
-    File aaptFriendlyManifestOutputFile
+    @OutputFile
+    @Optional
+    public File getAaptFriendlyManifestOutputFile() {
+        return aaptFriendlyManifestOutputFile;
+    }
+
+    public void setAaptFriendlyManifestOutputFile(File aaptFriendlyManifestOutputFile) {
+        this.aaptFriendlyManifestOutputFile = aaptFriendlyManifestOutputFile;
+    }
+
 
     /**
      * Serialize a map key+value pairs into a comma separated list. Map elements are sorted to
      * ensure stability between instances.
+     *
      * @param mapToSerialize the map to serialize.
      */
-    protected String serializeMap(Map<String, String> mapToSerialize) {
-        Joiner keyValueJoiner = Joiner.on(":");
+    protected static String serializeMap(Map<String, Object> mapToSerialize) {
+        final Joiner keyValueJoiner = Joiner.on(":");
         // transform the map on a list of key:value items, sort it and concatenate it.
         return Joiner.on(",").join(
-                Lists.newArrayList(Iterables.transform(
+                Ordering.natural().sortedCopy(Iterables.transform(
                         mapToSerialize.entrySet(),
-                        new Function<Map.Entry<String, String>, String>() {
-
+                        new Function<Map.Entry<String, Object>, String>() {
                             @Override
-                            public String apply(final Map.Entry<String, String> input) {
+                            public String apply(final Map.Entry<String, Object> input) {
                                 return keyValueJoiner.join(input.getKey(), input.getValue());
                             }
-                        })).sort())
+                        })));
     }
 
     /**
@@ -68,7 +90,7 @@ public abstract class ManifestProcessorTask extends IncrementalTask {
      * return that otherwise return the actual output of the manifest merger tool directly.
      */
     public File getOutputFile() {
-        getAaptFriendlyManifestOutputFile() == null ? getManifestOutputFile()
-                : getAaptFriendlyManifestOutputFile();
+        File aaptFriendlyManifest = getAaptFriendlyManifestOutputFile();
+        return aaptFriendlyManifest != null ? aaptFriendlyManifest : getManifestOutputFile();
     }
 }

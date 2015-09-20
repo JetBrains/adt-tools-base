@@ -214,6 +214,12 @@ public interface VariantScope extends BaseScope {
 
     File getMappingFile();
 
+    @NonNull
+    File getAaptFriendlyManifestOutputFile();
+
+    @NonNull
+    File  getManifestReportFile();
+
     AndroidTask<Task> getPreBuildTask();
 
     void setPreBuildTask(

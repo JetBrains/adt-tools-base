@@ -601,7 +601,7 @@ public class AndroidBuilder {
             @NonNull String outManifestLocation,
             @Nullable String outAaptSafeManifestLocation,
             ManifestMerger2.MergeType mergeType,
-            Map<String, String> placeHolders,
+            Map<String, Object> placeHolders,
             @Nullable File reportFile) {
 
         try {
