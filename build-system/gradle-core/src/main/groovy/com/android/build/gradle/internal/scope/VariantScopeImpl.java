@@ -521,9 +521,11 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     @NonNull
-    public File getAidlIncrementalDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "incremental/aidl/" + getVariantConfiguration().getDirName());
+    public File getIncrementalDir(String name) {
+        return FileUtils.join(
+                globalScope.getIntermediatesDir(),
+                "incremental",
+                name);
     }
 
     @Override
@@ -531,25 +533,6 @@ public class VariantScopeImpl implements VariantScope {
     public File getPackagedAidlDir() {
         return new File(globalScope.getIntermediatesDir(),
                 DIR_BUNDLES + "/" + getVariantConfiguration().getDirName() + "/aidl");
-    }
-
-    /**
-     * Returns the location of an intermediate directory that can be used by the Jack toolchain
-     * to store states necessary to support incremental compilation.
-     * @return a variant specific directory.
-     */
-    @Override
-    @NonNull
-    public File getJackIncrementalDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "incremental/jack/" + getVariantConfiguration().getDirName());
-    }
-
-    @Override
-    @NonNull
-    public File getJackTempDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "tmp/jack/" + getVariantConfiguration().getDirName());
     }
 
     @Override

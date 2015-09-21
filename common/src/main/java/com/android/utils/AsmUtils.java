@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package com.android.builder.shrinker;
-
-import java.io.File;
+package com.android.utils;
 
 /**
- * Describes the input and output directories for the {@link Shrinker}.
- *
- * <p>TODO: Replace with the new bytecode pipeline APIs.
+ * Utilities for working with ASM.
  */
-public interface ClassStream {
+public class AsmUtils {
+    private AsmUtils() {}
 
-    boolean contains(File classFile);
+    public static final String CONSTRUCTOR = "<init>";
+    public static final String CLASS_INITIALIZER = "<clinit>";
 
-    Iterable<File> getClassFiles();
-
-    File getOutputDir(Shrinker.ShrinkType shrinkType);
-
-    File getClassDir();
+    public static String toInternalName(String className) {
+        return className.replace('.', '/');
+    }
 }

@@ -17,6 +17,7 @@
 package com.android.builder.shrinker;
 
 import com.android.annotations.Nullable;
+import com.android.utils.AsmUtils;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
@@ -80,7 +81,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
         T method = mGraph.getMemberReference(mClassName, name, desc);
 
         if ((access & Opcodes.ACC_STATIC) == 0
-                && !name.equals("<init>")
+                && !name.equals(AsmUtils.CONSTRUCTOR)
                 && mVirtualMethods != null) {
             mVirtualMethods.add(method);
         }
@@ -91,7 +92,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             handleDeclarationType(method, argType);
         }
 
-        if (name.equals("<clinit>")) {
+        if (name.equals(AsmUtils.CLASS_INITIALIZER)) {
             handleDependency(mKlass, method, DependencyType.REQUIRED);
         }
 
@@ -253,7 +254,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                 T target = mGraph.getMemberReference(owner, name, desc);
 
                 if (opcode == Opcodes.INVOKESPECIAL
-                        && (name.equals("<init>") || owner.equals(mClassName))) {
+                        && (name.equals(AsmUtils.CONSTRUCTOR) || owner.equals(mClassName))) {
                     // The "invokenonvirtual" semantics of invokespecial, for calling constructors
                     // and private methods.
                     handleDependency(mMethod, target, DependencyType.REQUIRED);

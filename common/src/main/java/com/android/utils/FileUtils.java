@@ -22,6 +22,7 @@ import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
 import com.google.common.hash.Hashing;
@@ -35,6 +36,25 @@ public final class FileUtils {
     private static final Joiner PATH_JOINER = Joiner.on(File.separatorChar);
     private static final Joiner COMMA_SEPARATED_JOINER = Joiner.on(", ");
     private static final Joiner UNIX_NEW_LINE_JOINER = Joiner.on('\n');
+
+    public static final Function<File, String> GET_NAME = new Function<File, String>() {
+        @Override
+        public String apply(File file) {
+            return file.getName();
+        }
+    };
+
+    @NonNull
+    public static Predicate<File> withExtension(@NonNull final String extension) {
+        checkArgument(extension.charAt(0) != '.', "Extension should not start with a dot.");
+
+        return new Predicate<File>() {
+            @Override
+            public boolean apply(File input) {
+                return Files.getFileExtension(input.getName()).equals(extension);
+            }
+        };
+    }
 
     public static void deleteFolder(@NonNull final File folder) throws IOException {
         if (!folder.exists()) {
@@ -142,11 +162,4 @@ public final class FileUtils {
     public static String getNamesAsCommaSeparatedList(@NonNull Iterable<File> files) {
         return COMMA_SEPARATED_JOINER.join(Iterables.transform(files, GET_NAME));
     }
-
-    private static final Function<File, String> GET_NAME = new Function<File, String>() {
-        @Override
-        public String apply(File file) {
-            return file.getName();
-        }
-    };
 }

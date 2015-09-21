@@ -389,7 +389,7 @@ public class AidlCompile extends IncrementalTask {
 
             compileTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             compileTask.setVariantName(scope.getVariantConfiguration().getFullName());
-            compileTask.setIncrementalFolder(scope.getAidlIncrementalDir());
+            compileTask.setIncrementalFolder(scope.getIncrementalDir(getName()));
 
             ConventionMappingHelper.map(compileTask, "sourceDirs", new Callable<List<File>>() {
                 @Override

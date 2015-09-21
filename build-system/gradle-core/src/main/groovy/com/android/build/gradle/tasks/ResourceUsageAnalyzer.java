@@ -57,6 +57,7 @@ import com.android.resources.ResourceType;
 import com.android.tools.lint.checks.StringFormatDetector;
 import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.android.tools.lint.detector.api.LintUtils;
+import com.android.utils.AsmUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -1223,7 +1224,7 @@ public class ResourceUsageAnalyzer {
                 end = line.length();
             }
             String target = line.substring(arrow + ARROW.length(), end).trim();
-            String ownerName = target.replace('.', '/');
+            String ownerName = AsmUtils.toInternalName(target);
             mResourceClassOwners.put(ownerName, type);
         }
     }

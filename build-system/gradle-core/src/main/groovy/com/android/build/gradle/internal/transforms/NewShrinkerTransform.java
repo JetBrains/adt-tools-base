@@ -16,9 +16,10 @@
 
 package com.android.build.gradle.internal.transforms;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.AsInputTransform;
@@ -28,10 +29,13 @@ import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
 import com.android.builder.core.VariantType;
-import com.android.utils.FileUtils;
+import com.android.builder.shrinker.JavaSerializationShrinkerGraph;
+import com.android.builder.shrinker.ProguardConfigParser;
+import com.android.builder.shrinker.Shrinker;
+import com.android.ide.common.internal.WaitableExecutor;
+import com.android.sdklib.IAndroidTarget;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 import java.io.File;
@@ -46,16 +50,24 @@ import java.util.Set;
  */
 public class NewShrinkerTransform extends ProguardConfigurable implements AsInputTransform {
 
-    private final VariantType variantType;
+    private static final String NAME = "newClassShrinker";
 
-    public NewShrinkerTransform(VariantScope variantScope) {
-        variantType = variantScope.getVariantData().getType();
+    private final VariantType variantType;
+    private final File platformJar;
+    private final File incrementalDir;
+
+    public NewShrinkerTransform(VariantScope scope) {
+        IAndroidTarget target = scope.getGlobalScope().getAndroidBuilder().getTarget();
+        checkState(target != null, "SDK target not ready.");
+        this.platformJar = new File(target.getPath(IAndroidTarget.ANDROID_JAR));
+        this.variantType = scope.getVariantData().getType();
+        this.incrementalDir = scope.getIncrementalDir(scope.getTaskName(NAME));
     }
 
     @NonNull
     @Override
     public String getName() {
-        return "newClassShrinker";
+        return NAME;
     }
 
     @NonNull
@@ -91,7 +103,7 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
         }
 
         if (variantType.isForTesting()) {
-            set.add(Scope.TESTED_CODE);
+            throw new IllegalStateException("New class shrinker is not supported in test variants.");
         }
 
         set.add(Scope.PROVIDED_ONLY);
@@ -105,16 +117,19 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
         return Type.AS_INPUT;
     }
 
-    @NonNull
+    @Nullable
     @Override
     public ScopedContent.Format getOutputFormat() {
-        return ScopedContent.Format.SINGLE_FOLDER;
+        return null;
     }
 
     @NonNull
     @Override
     public Collection<File> getSecondaryFileInputs() {
-        return getAllConfigurationFiles();
+        return ImmutableList.<File>builder()
+                .addAll(getAllConfigurationFiles())
+                // TODO: What about the incremental dir?
+                .build();
     }
 
     @NonNull
@@ -137,6 +152,7 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
 
     @Override
     public boolean isIncremental() {
+        // TODO: Make it incremental.
         return false;
     }
 
@@ -145,15 +161,22 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
             @NonNull Map<TransformInput, TransformOutput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
             boolean isIncremental) throws IOException, TransformException, InterruptedException {
-        for (Map.Entry<TransformInput, TransformOutput> entry : inputs.entrySet()) {
-            File inputFolder = Iterables.getOnlyElement(entry.getKey().getFiles());
-            File outputFolder = entry.getValue().getOutFile();
+        Shrinker<String> shrinker = new Shrinker<String>(
+                new WaitableExecutor<Void>(),
+                new JavaSerializationShrinkerGraph(incrementalDir),
+                platformJar);
 
-            File[] children = inputFolder.listFiles();
-            checkNotNull(children, inputFolder.getAbsolutePath() + " does not exist.");
-            for (File file : children) {
-                FileUtils.copy(file, outputFolder);
-            }
+        ProguardConfigParser parser = new ProguardConfigParser();
+
+        for (File configFile : getAllConfigurationFiles()) {
+            parser.parse(configFile);
         }
+
+        shrinker.run(
+                inputs,
+                referencedInputs,
+                // TODO: Multidex class list.
+                ImmutableMap.of(Shrinker.ShrinkType.SHRINK, parser.getKeepRules()),
+                this.isIncremental());
     }
 }
