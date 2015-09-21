@@ -1,129 +1,91 @@
-/*
- * Copyright (C) 2015 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package com.android.build.gradle.internal.transforms;
-
-import static com.android.SdkConstants.DOT_CLASS;
-import static com.android.utils.FileUtils.deleteIfExists;
-import static com.google.common.base.Preconditions.checkNotNull;
+package com.android.test.jarjar;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.transform.api.CombinedTransform;
-import com.android.build.transform.api.ScopedContent;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Scope;
-import com.android.build.transform.api.TransformException;
-import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutput;
+import com.android.build.transform.api.*;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.io.Closer;
+import com.google.common.io.Files;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-/**
- *
- */
-public class JarMergingTransform implements CombinedTransform {
+import static com.google.common.base.Preconditions.checkNotNull;
 
-    @NonNull
-    private final ImmutableSet<Scope> scopes;
+public class JarJarTransform implements CombinedTransform {
 
-    @NonNull
-    private final Set<ContentType> types;
+    private final boolean broken;
 
-    public JarMergingTransform(@NonNull Set<Scope> scopes, @NonNull Set<ContentType> types) {
-        this.scopes = ImmutableSet.copyOf(scopes);
-        this.types = ImmutableSet.copyOf(types);
+    public JarJarTransform(boolean broken) {
+        this.broken = broken;
     }
 
-    @NonNull
     @Override
     public String getName() {
-        return "jarMerging";
+        return "jarjar";
     }
 
-    @NonNull
     @Override
-    public Set<ContentType> getInputTypes() {
-        return types;
+    public Set<ScopedContent.ContentType> getInputTypes() {
+        return EnumSet.of(ScopedContent.ContentType.CLASSES);
     }
 
-    @NonNull
     @Override
-    public Set<ContentType> getOutputTypes() {
-        return types;
+    public Set<ScopedContent.ContentType> getOutputTypes() {
+        return EnumSet.of(ScopedContent.ContentType.CLASSES);
     }
 
-    @NonNull
     @Override
-    public Set<Scope> getScopes() {
-        return scopes;
+    public Set<ScopedContent.Scope> getScopes() {
+        if (broken) {
+            // needs to run on everything to rename what is using gson
+            return EnumSet.of(
+                    ScopedContent.Scope.PROJECT,
+                    ScopedContent.Scope.PROJECT_LOCAL_DEPS,
+                    ScopedContent.Scope.SUB_PROJECTS,
+                    ScopedContent.Scope.SUB_PROJECTS_LOCAL_DEPS,
+                    ScopedContent.Scope.EXTERNAL_LIBRARIES);
+        }
+
+        return EnumSet.of(ScopedContent.Scope.PROJECT, ScopedContent.Scope.PROJECT_LOCAL_DEPS);
     }
 
-    @NonNull
     @Override
-    public Set<Scope> getReferencedScopes() {
-        return TransformManager.EMPTY_SCOPES;
+    public Set<ScopedContent.Scope> getReferencedScopes() {
+        return Collections.emptySet();
     }
 
-    @NonNull
     @Override
     public Type getTransformType() {
         return Type.COMBINED;
     }
 
-    @NonNull
     @Override
     public ScopedContent.Format getOutputFormat() {
         return ScopedContent.Format.JAR;
     }
 
-    @NonNull
     @Override
     public Collection<File> getSecondaryFileInputs() {
         return ImmutableList.of();
     }
 
-    @NonNull
     @Override
     public Collection<File> getSecondaryFileOutputs() {
         return ImmutableList.of();
     }
 
-    @NonNull
     @Override
     public Collection<File> getSecondaryFolderOutputs() {
         return ImmutableList.of();
     }
 
-    @NonNull
     @Override
     public Map<String, Object> getParameterInputs() {
         return ImmutableMap.of();
@@ -140,15 +102,48 @@ public class JarMergingTransform implements CombinedTransform {
             @NonNull Collection<TransformInput> referencedStreams,
             @NonNull TransformOutput combinedOutput,
             boolean isIncremental) throws TransformException, IOException {
+
+        checkNotNull(combinedOutput, "Found no output in transform with Type=COMBINED");
+        File jarFile = combinedOutput.getOutFile();
+        deleteIfExists(jarFile);
+
+        // create intermediate files to handle the jar input and the rule file.
+        File mergedInputs = File.createTempFile("jajar", "jar");
+        File jarjarRules = File.createTempFile("jajar", "rule");
+
+        try {
+            // create a tmp jar that contains all the inputs. This is because jarjar expects a jar input.
+            // this code is based on the JarMergingTransform
+            combineInputIntoJar(inputs, mergedInputs);
+
+            // create the jarjar rules file.
+            Files.write("rule com.google.gson.** com.google.repacked.gson.@1", jarjarRules, Charsets.UTF_8);
+
+            // run jarjar by calling the main method as if it came from the command line.
+            String[] args =  ImmutableList.of(
+                    "process",
+                    jarjarRules.getAbsolutePath(),
+                    mergedInputs.getAbsolutePath(),
+                    jarFile.getAbsolutePath()
+            ).toArray(new String[4]);
+            com.tonicsystems.jarjar.Main.main(args);
+
+        } catch (Exception e) {
+            throw new TransformException(e);
+        } finally {
+            // delete tmp files
+            mergedInputs.delete();
+            jarjarRules.delete();
+        }
+    }
+
+    private void combineInputIntoJar(
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull File mergedInputs) throws TransformException, IOException {
         Closer closer = Closer.create();
         try {
-            // all the output will be the same since the transform type is COMBINED.
-            // and format is SINGLE_JAR so output is a jar
-            checkNotNull(combinedOutput, "Found no output in transform with Type=COMBINED");
-            File jarFile = combinedOutput.getOutFile();
-            deleteIfExists(jarFile);
 
-            FileOutputStream fos = closer.register(new FileOutputStream(jarFile));
+            FileOutputStream fos = closer.register(new FileOutputStream(mergedInputs));
             JarOutputStream jos = closer.register(new JarOutputStream(fos));
 
             final byte[] buffer = new byte[8192];
@@ -170,9 +165,7 @@ public class JarMergingTransform implements CombinedTransform {
                             File[] subStreams = file.listFiles();
                             if (subStreams != null) {
                                 for (File subStream : subStreams) {
-                                    if (subStream.isDirectory()) {
-                                        processFolder(jos, "", subStream, buffer);
-                                    }
+                                    processFolder(jos, "", subStream, buffer);
                                 }
                             }
                         }
@@ -197,6 +190,13 @@ public class JarMergingTransform implements CombinedTransform {
         }
     }
 
+    private static void deleteIfExists(File file) throws IOException {
+        boolean result = file.delete();
+        if (!result && file.exists()) {
+            throw new IOException("Failed to delete " + file.getAbsolutePath());
+        }
+    }
+
     private static void processFolder(
             @NonNull JarOutputStream jos,
             @NonNull String path,
@@ -207,25 +207,23 @@ public class JarMergingTransform implements CombinedTransform {
         if (files != null) {
             for (File file : files) {
                 if (file.isFile()) {
-                    if (file.getName().endsWith(DOT_CLASS)) {
-                        // new entry
-                        jos.putNextEntry(new JarEntry(path + file.getName()));
+                    // new entry
+                    jos.putNextEntry(new JarEntry(path + file.getName()));
 
-                        // put the file content
-                        Closer closer = Closer.create();
-                        try {
-                            FileInputStream fis = closer.register(new FileInputStream(file));
-                            int count;
-                            while ((count = fis.read(buffer)) != -1) {
-                                jos.write(buffer, 0, count);
-                            }
-                        } finally {
-                            closer.close();
+                    // put the file content
+                    Closer closer = Closer.create();
+                    try {
+                        FileInputStream fis = closer.register(new FileInputStream(file));
+                        int count;
+                        while ((count = fis.read(buffer)) != -1) {
+                            jos.write(buffer, 0, count);
                         }
-
-                        // close the entry
-                        jos.closeEntry();
+                    } finally {
+                        closer.close();
                     }
+
+                    // close the entry
+                    jos.closeEntry();
                 } else if (file.isDirectory()) {
                     processFolder(jos, path + file.getName() + "/", file, buffer);
                 }
@@ -250,7 +248,7 @@ public class JarMergingTransform implements CombinedTransform {
                 }
 
                 String name = entry.getName();
-                if (!name.endsWith(DOT_CLASS)) {
+                if (!name.endsWith(".class")) {
                     continue;
                 }
 

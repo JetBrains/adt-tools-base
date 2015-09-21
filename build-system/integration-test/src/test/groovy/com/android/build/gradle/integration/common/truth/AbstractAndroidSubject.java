@@ -34,36 +34,71 @@ public abstract class AbstractAndroidSubject<T extends AbstractZipSubject<T>> ex
     }
 
     /**
+     * Scope in which to search for classes.
+     */
+    public enum ClassFileScope {
+        /**
+         * The main class file. classes.dex for APK, and classes.jar for AAR
+         */
+        MAIN,
+        /**
+         * The secondary class files.
+         * For APK: classes2.dex, classes3.dex, etc...
+         * For AAR: local jars packaged under libs/
+         */
+        SECONDARY,
+        /**
+         * Main and secondary class files.
+         */
+        ALL
+    }
+
+    /**
      * Returns true if the provided class is present in the file.
      * @param expectedClassName the class name in the format Lpkg1/pk2/Name;
+     * @param scope the scope in which to search for the class.
      */
     protected abstract boolean checkForClass(
-            @NonNull String expectedClassName)
+            @NonNull String expectedClassName,
+            @NonNull ClassFileScope scope)
             throws ProcessException, IOException;
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void containsClass(String className) throws IOException, ProcessException {
-        if (!checkForClass(className)) {
+    public void containsClass(@NonNull String className) throws IOException, ProcessException {
+        containsClass(className, ClassFileScope.ALL);
+    }
+
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void containsClass(@NonNull String className, @NonNull ClassFileScope scope)
+            throws IOException, ProcessException {
+        if (!checkForClass(className, scope)) {
             failWithRawMessage("'%s' does not contain '%s'", getDisplaySubject(), className);
         }
     }
 
-    public void doesNotContainClass(String className) throws IOException, ProcessException {
-        if (checkForClass(className)) {
+    public void doesNotContainClass(@NonNull String className)
+            throws IOException, ProcessException {
+        doesNotContainClass(className, ClassFileScope.ALL);
+    }
+
+    public void doesNotContainClass(@NonNull String className, @NonNull ClassFileScope scope)
+            throws IOException, ProcessException {
+        if (checkForClass(className, scope)) {
             failWithRawMessage("'%s' unexpectedly contains '%s'", getDisplaySubject(), className);
         }
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void containsResource(String name) throws IOException, ProcessException {
+    public void containsResource(@NonNull String name) throws IOException, ProcessException {
         if (!checkForResource(name)) {
             failWithRawMessage("'%s' does not contain resource '%s'", getDisplaySubject(), name);
         }
     }
 
-    public void doesNotContainResource(String name) throws IOException, ProcessException {
+    public void doesNotContainResource(@NonNull String name) throws IOException, ProcessException {
         if (checkForResource(name)) {
-            failWithRawMessage("'%s' unexpectedly contains resource '%s'", getDisplaySubject(), name);
+            failWithRawMessage("'%s' unexpectedly contains resource '%s'",
+                    getDisplaySubject(), name);
         }
     }
 

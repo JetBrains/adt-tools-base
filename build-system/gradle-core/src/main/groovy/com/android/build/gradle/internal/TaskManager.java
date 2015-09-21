@@ -1893,8 +1893,11 @@ public abstract class TaskManager {
             // ----------
             // create a transform to jar the inputs into a single jar.
             if (!isMinifyEnabled) {
+                // merge the classes only, no need to package the resources since they are
+                // not used during the computation.
                 JarMergingTransform jarMergingTransform = new JarMergingTransform(
-                        TransformManager.SCOPE_FULL_PROJECT);
+                        TransformManager.SCOPE_FULL_PROJECT,
+                        TransformManager.CONTENT_CLASS);
                 transformManager.addTransform(tasks, variantScope, jarMergingTransform);
             }
 

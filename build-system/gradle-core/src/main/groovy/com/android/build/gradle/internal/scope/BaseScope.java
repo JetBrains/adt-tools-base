@@ -19,6 +19,9 @@ package com.android.build.gradle.internal.scope;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 
+import java.util.Collection;
+import java.util.List;
+
 /**
  * Base Scope for Variants and Variant Outputs
  */
@@ -38,4 +41,7 @@ public interface BaseScope {
 
     @NonNull
     String getDirName();
+
+    @NonNull
+    Collection<String> getDirectorySegments();
 }

@@ -28,7 +28,7 @@ import java.util.Set;
  * A Transform that processes intermediary build artifacts.
  * <p>
  * For each added transform, a new task is created. The action of adding a transform takes
- * care of handling dependencies between the task. This is done based on what the transform
+ * care of handling dependencies between the tasks. This is done based on what the transform
  * processes. The output of the transform becomes consumable by other transforms and these
  * tasks get automatically linked together.
  * <p/>
@@ -59,14 +59,14 @@ import java.util.Set;
  * implement the matching interface:
  * <ul>
  *     <li>{@link com.android.build.transform.api.Transform.Type#AS_INPUT}: This transform must
- *     implement {@link AsInputTransform}. It reads multiple scopes and output the transform data
+ *     implement {@link AsInputTransform}. It reads multiple scopes and output the transformed data
  *     in separate output for each scope. This allows later transforms to still apply to a smaller
  *     number of scopes. This is the preferred type for interoperability with other transforms.</li>
  *     <li>{@link com.android.build.transform.api.Transform.Type#COMBINED}: This transform must
- *     implement {@link CombinedTransform}. It reads multiple scopes and output the transform data
- *     in a single folder. This folder is now tied to all the scopes it contain and later transform
+ *     implement {@link CombinedTransform}. It reads multiple scopes and output the transformed data
+ *     in a single folder. This folder is now tied to all the scopes it contain and later transforms
  *     can only process this data if they declare that they apply to all these scopes (or more).
- *     Applying such a transform will restrict the ability to add more transforms</li>
+ *     Applying such a transform will restrict the ability to add more transforms.</li>
  *     <li>{@link com.android.build.transform.api.Transform.Type#FORK_INPUT}: This transform must
  *     implement {@link ForkTransform}. It works similarly to
  *     {@link com.android.build.transform.api.Transform.Type#AS_INPUT} transforms when it comes to

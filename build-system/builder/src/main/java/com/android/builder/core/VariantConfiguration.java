@@ -90,6 +90,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      *
      */
     private String mDirName;
+    private List<String> mDirSegments;
 
     @NonNull
     private final D mDefaultConfig;
@@ -417,6 +418,39 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return mDirName;
     }
 
+    /**
+     * Returns a unique directory name (can include multiple folders) for the variant,
+     * based on build type, flavor and test.
+     *
+     * @return the directory name for the variant
+     */
+    @NonNull
+    public Collection<String> getDirectorySegments() {
+        if (mDirSegments == null) {
+            ImmutableList.Builder<String> builder = ImmutableList.builder();
+
+            if (mType.isForTesting()) {
+                builder.add(mType.getPrefix());
+            }
+
+            if (!mFlavors.isEmpty()) {
+                StringBuilder sb = new StringBuilder(mFlavors.size() * 10);
+                for (F flavor : mFlavors) {
+                    StringHelper.appendCamelCase(sb, flavor.getName());
+                }
+                builder.add(sb.toString());
+
+                builder.add(mBuildType.getName());
+
+            } else {
+                builder.add(mBuildType.getName());
+            }
+
+            mDirSegments = builder.build();
+        }
+
+        return mDirSegments;
+    }
     /**
      * Returns a unique directory name (can include multiple folders) for the variant,
      * based on build type, flavor and test, and splits.

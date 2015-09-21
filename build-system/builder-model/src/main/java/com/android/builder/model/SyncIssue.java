@@ -62,7 +62,9 @@ public interface SyncIssue {
     // data is dependency coordinate
     int TYPE_OPTIONAL_LIB_NOT_FOUND   = 10;
 
-    int TYPE_MAX                      = 11; // increment when adding new types.
+    int TYPE_WRONG_TRANSFORM_SCOPE_ON_LIB = 11;
+
+    int TYPE_MAX                      = 12; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.

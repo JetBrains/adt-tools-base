@@ -39,6 +39,7 @@ import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.Transform.Type;
 import com.android.builder.model.AndroidProject;
 import com.android.utils.FileUtils;
+import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
@@ -84,6 +85,9 @@ public class TransformManager {
             Scope.SUB_PROJECTS,
             Scope.SUB_PROJECTS_LOCAL_DEPS,
             Scope.EXTERNAL_LIBRARIES);
+    public static final Set<Scope> SCOPE_FULL_LIBRARY = Sets.immutableEnumSet(
+            Scope.PROJECT,
+            Scope.PROJECT_LOCAL_DEPS);
 
     @NonNull
     private final AndroidTaskRegistry taskRegistry;
@@ -303,6 +307,18 @@ public class TransformManager {
         return streamsByType.build();
     }
 
+    @NonNull
+    public TransformStream getSingleStream(@NonNull StreamFilter streamFilter) {
+        List<TransformStream> streamMatches = Lists.newArrayListWithExpectedSize(streams.size());
+        for (TransformStream s : streams) {
+            if (streamFilter.accept(s.getContentTypes(), s.getScopes())) {
+                streamMatches.add(s);
+            }
+        }
+
+        return Iterables.getOnlyElement(streamMatches);
+    }
+
     public List<TransformStream> getStreamsByContentAndScope(
             @NonNull ContentType contentType,
             @NonNull Set<Scope> allowedScopes) {
@@ -456,9 +472,9 @@ public class TransformManager {
 
         boolean consumesInputs = type != Type.NO_OP;
 
-        String variantDirName = null;
+        Collection<String> variantDirSegments = null;
         if (consumesInputs) {
-            variantDirName = scope.getDirName();
+            variantDirSegments = scope.getDirectorySegments();
         }
 
         // list to hold the list of unused streams in the manager after everything is done.
@@ -507,7 +523,7 @@ public class TransformManager {
                                 outputFormat,
                                 transformName,
                                 taskName,
-                                variantDirName,
+                                variantDirSegments,
                                 buildDir,
                                 dupCounter));
                         break;
@@ -521,7 +537,7 @@ public class TransformManager {
                                     outputFormat,
                                     transformName,
                                     taskName,
-                                    variantDirName,
+                                    variantDirSegments,
                                     buildDir,
                                     dupCounter));
                         }
@@ -547,13 +563,13 @@ public class TransformManager {
             Set<ContentType> types = transform.getOutputTypes();
             Set<Scope> scopes = transform.getScopes();
 
-            File destinationFile = FileUtils.join(buildDir,
+            File destinationFile = FileUtils.join(buildDir, StringHelper.toStrings(
                     AndroidProject.FD_INTERMEDIATES,
                     FD_TRANSFORMS,
                     combineTypesForName(types),
                     combineScopesForName(scopes),
                     transform.getName(),
-                    variantDirName);
+                    variantDirSegments));
 
             if (transform.getOutputFormat() == Format.JAR) {
                 destinationFile = new File(destinationFile, SdkConstants.FN_CLASSES_JAR);
@@ -592,7 +608,7 @@ public class TransformManager {
             @NonNull Format format,
             @NonNull String transformName,
             @NonNull String taskName,
-            @NonNull String variantDirName,
+            @NonNull Collection<String> variantDirSegments,
             @NonNull File buildDir,
             @NonNull Map<StreamKey, Integer> dupCounter) {
         // because we need a matching output for each input, but we can be in a case
@@ -611,13 +627,13 @@ public class TransformManager {
         // copy with new location.
         return TransformStream.builder()
                 .copyWithRestrictedTypes(input, types)
-                .setFiles(FileUtils.join(buildDir,
+                .setFiles(FileUtils.join(buildDir, StringHelper.toStrings(
                         AndroidProject.FD_INTERMEDIATES,
                         FD_TRANSFORMS,
                         combineTypesForName(types),
                         combineScopesForName(input.getScopes()),
                         deDupedName,
-                        variantDirName))
+                        variantDirSegments)))
                 .setDependency(taskName)
                 .setParentStream(input)
                 .setFormat(format)

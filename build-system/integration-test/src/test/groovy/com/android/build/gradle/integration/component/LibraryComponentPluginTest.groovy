@@ -95,6 +95,6 @@ model {
     @Test
     void "check build config file is included"() {
         File releaseAar = project.getSubproject("lib").getAar("release");
-        assertThatAar(releaseAar).containsClass("com/example/helloworld/BuildConfig.class");
+        assertThatAar(releaseAar).containsClass("Lcom/example/helloworld/BuildConfig;");
     }
 }

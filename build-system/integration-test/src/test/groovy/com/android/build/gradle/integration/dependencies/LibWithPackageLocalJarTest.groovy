@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
@@ -29,6 +30,7 @@ import org.junit.Test
 
 import java.util.zip.ZipFile
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
 /**
@@ -69,8 +71,10 @@ dependencies {
 
     @Test
     void "check packaged local jar is packaged"() {
-        ZipFile aar = new ZipFile(project.getAar("debug"))
-        assertNotNull(aar.getEntry("libs/util-1.0.jar"))
+        // search in secondary jars only.
+        assertThatAar(project.getAar("debug")).containsClass(
+                "Lcom/example/android/multiproject/person/People;",
+                AbstractAndroidSubject.ClassFileScope.SECONDARY)
     }
 
     @Test

@@ -17,7 +17,12 @@
 package com.android.utils;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -46,4 +51,47 @@ public class StringHelper {
         }
         return sb.toString();
     }
+
+    /**
+     * Returns a list of Strings containing the objects passed in argument.
+     *
+     * If the objects are strings, they are directly added to the list.
+     * If the objects are collections of strings, the strings are added.
+     * For other objects, the result of their toString() is added.
+     * @param objects the objects to add
+     * @return the list of objects.
+     */
+    @NonNull
+    public static List<String> toStrings(@NonNull Object... objects) {
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        for (Object path : objects) {
+            if (path instanceof String) {
+                builder.add((String) path);
+            } else if (path instanceof Collection) {
+                Collection pathCollection = (Collection) path;
+                for (Object item : pathCollection) {
+                    if (item instanceof String) {
+                        builder.add((String) item);
+                    } else {
+                        builder.add(path.toString());
+                    }
+                }
+            } else {
+                builder.add(path.toString());
+            }
+        }
+
+        return builder.build();
+    }
+
+    public static void appendCamelCase(@NonNull StringBuilder sb, @Nullable String word) {
+        if (word != null) {
+            if (sb.length() == 0) {
+                sb.append(word);
+            } else {
+                sb.append(StringHelper.capitalize(word));
+            }
+        }
+    }
+
 }
