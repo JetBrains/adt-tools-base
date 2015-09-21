@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.tasks;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.DependencyManager;
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
@@ -33,6 +34,7 @@ import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.ParallelizableTask;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +59,7 @@ public class ProcessTestManifest extends ManifestProcessorTask {
     private List<ManifestDependencyImpl> libraries;
 
     @Override
-    protected void doFullTaskAction() {
+    protected void doFullTaskAction() throws IOException {
         getBuilder().processTestManifest(
                 getTestApplicationId(),
                 getMinSdkVersion(),
@@ -101,7 +103,6 @@ public class ProcessTestManifest extends ManifestProcessorTask {
     }
 
     @Input
-    @Optional
     public String getMinSdkVersion() {
         return minSdkVersion;
     }
@@ -111,7 +112,6 @@ public class ProcessTestManifest extends ManifestProcessorTask {
     }
 
     @Input
-    @Optional
     public String getTargetSdkVersion() {
         return targetSdkVersion;
     }
@@ -205,11 +205,13 @@ public class ProcessTestManifest extends ManifestProcessorTask {
             this.scope = scope;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return scope.getTaskName("process", "Manifest");
         }
 
+        @NonNull
         @Override
         public Class<ProcessTestManifest> getType() {
             return ProcessTestManifest.class;
