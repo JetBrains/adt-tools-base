@@ -37,6 +37,7 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
 
 import java.io.File;
+import java.util.regex.Pattern;
 
 @SuppressWarnings("javadoc")
 public class ApiDetectorTest extends AbstractCheckTest {
@@ -1819,8 +1820,8 @@ public class ApiDetectorTest extends AbstractCheckTest {
 
     public void testHigherCompileSdkVersionThanPlatformTools() throws Exception {
         // Warn if the platform tools are too old on the system
-        assertEquals(""
-                + "ApiDetectorTest_testHigherCompileSdkVersionThanPlatformTools: Error: The SDK platform-tools version ((23.0.1)) is too old  to check APIs compiled with API 400; please update [NewApi]\n"
+        assertTrue(Pattern.matches(""
+                + "ApiDetectorTest_testHigherCompileSdkVersionThanPlatformTools: Error: The SDK platform-tools version \\(\\([^)]+\\)\\) is too old  to check APIs compiled with API 400; please update \\[NewApi\\]\n"
                 + "1 errors, 0 warnings\n",
 
                 lintProject(
@@ -1828,13 +1829,13 @@ public class ApiDetectorTest extends AbstractCheckTest {
                         source("project.properties", "target=android-400"), // in the future
                         copy("apicheck/ApiCallTest12.java.txt", "src/test/pkg/ApiCallTest12.java"),
                         copy("apicheck/ApiCallTest12.class.data", "bin/classes/test/pkg/ApiCallTest12.class")
-                ));
+                )));
     }
 
     public void testHigherCompileSdkVersionThanPlatformToolsInEditor() throws Exception {
         // When editing a file we place the error on the first line of the file instead
-        assertEquals(""
-                + "src/test/pkg/ApiCallTest12.java:1: Error: The SDK platform-tools version ((23.0.1)) is too old  to check APIs compiled with API 400; please update [NewApi]\n"
+        assertTrue(Pattern.matches(""
+                + "src/test/pkg/ApiCallTest12.java:1: Error: The SDK platform-tools version \\(\\([^)]+\\)\\) is too old  to check APIs compiled with API 400; please update \\[NewApi\\]\n"
                 + "package test.pkg;\n"
                 + "~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
@@ -1845,7 +1846,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                         source("project.properties", "target=android-400"), // in the future
                         copy("apicheck/ApiCallTest12.java.txt", "src/test/pkg/ApiCallTest12.java"),
                         copy("apicheck/ApiCallTest12.class.data", "bin/classes/test/pkg/ApiCallTest12.class")
-                ));
+                )));
     }
 
     @Override
