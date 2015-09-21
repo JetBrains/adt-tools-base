@@ -23,13 +23,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.BaseScope;
 import com.android.build.gradle.internal.scope.GlobalScope;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.ScopedContent;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -97,6 +97,9 @@ public class TaskTestUtils {
         private List<File> files = Lists.newArrayList();
         private TransformStream parentStream;
 
+        // Differentiate between lack of test and testing for a null value.
+        private ScopedContent.Format format;
+
         private StreamTester() {
         }
 
@@ -107,6 +110,11 @@ public class TaskTestUtils {
 
         StreamTester withScopes(@NonNull ScopedContent.Scope... scopes) {
             this.scopes.addAll(Arrays.asList(scopes));
+            return this;
+        }
+
+        StreamTester withFormat(@Nullable ScopedContent.Format format) {
+            this.format = format;
             return this;
         }
 
@@ -166,6 +174,10 @@ public class TaskTestUtils {
                 assertThat(stream.getFiles().get()).containsExactlyElementsIn(files);
             } else {
                 assertThat(stream.getFiles().get()).hasSize(1);
+            }
+
+            if (format != null) {
+                assertThat(stream.getFormat()).isEqualTo(format);
             }
 
             // always check for parentStream, since we cannot make the distinction between
