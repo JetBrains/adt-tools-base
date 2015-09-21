@@ -31,6 +31,7 @@ import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformInput.FileStatus;
 import com.android.build.transform.api.TransformOutput;
 import com.android.builder.model.PackagingOptions;
+import com.android.ide.common.packaging.PackagingUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
@@ -208,13 +209,14 @@ public class MergeJavaResourcesTransform implements CombinedTransform {
             }
         } else {
             for (TransformInput stream : inputs) {
-                boolean handleClassFiles = stream.getContentTypes().contains(ContentType.CLASSES);
+                boolean filterOutClassFiles = stream.getContentTypes().contains(ContentType.CLASSES);
 
                 for (Entry<File, FileStatus> entry : stream.getChangedFiles().entrySet()) {
                     switch (entry.getValue()) {
                         case ADDED:
                         case CHANGED:
-                            handleAddedOrChangedFile(packagingOptionsFilter, outFolder, entry.getKey(), handleClassFiles);
+                            handleAddedOrChangedFile(packagingOptionsFilter, outFolder,
+                                    entry.getKey(), filterOutClassFiles);
                             break;
                         case REMOVED:
                             try {
@@ -234,12 +236,16 @@ public class MergeJavaResourcesTransform implements CombinedTransform {
             @NonNull FileFilter packagingOptionsFilter,
             @NonNull File outFolder,
             @NonNull File file,
-            boolean handleClassFiles) throws IOException {
-        if (handleClassFiles) {
+            boolean filterOutClassFiles) throws IOException {
+        if (filterOutClassFiles) {
             String fileName = file.getName().toLowerCase(Locale.getDefault());
             if (fileName.endsWith(SdkConstants.DOT_CLASS)) {
                 return;
             }
+        }
+
+        if (file.isFile() && !PackagingUtils.checkFileForPackaging(file.getName())) {
+            return;
         }
 
         packagingOptionsFilter.handleChanged(outFolder, file);
