@@ -531,15 +531,24 @@ public final class TimelineComponent extends AnimatedComponent
 
     @VisibleForTesting
     static String formatTime(int seconds) {
-        int[] factors = {60, seconds};
-        String[] suffix = {"m", "h"};
-        String ret = seconds % 60 + "s";
-        int t = seconds / 60;
-        for (int i = 0; i < suffix.length && t > 0; i++) {
-            ret = t % factors[i] + suffix[i] + " " + ret;
-            t /= factors[i];
+        final char[] suffix = {'h', 'm', 's'};
+        final int[] secsPer = {60*60, 60, 1};
+
+        StringBuilder sb = new StringBuilder(12); // "999h 59m 59s"
+        for (int i = 0; i < suffix.length; i++) {
+            int value = seconds / secsPer[i];
+            seconds = seconds % secsPer[i];
+            if (value == 0 && sb.length() == 0 && i != (suffix.length - 1)) {
+                continue;
+            }
+
+            if (sb.length() > 0) {
+                sb.append(' ');
+            }
+            sb.append(value);
+            sb.append(suffix[i]);
         }
-        return ret;
+        return sb.toString();
     }
 
     private void drawMarkers(Graphics2D g2d) {
