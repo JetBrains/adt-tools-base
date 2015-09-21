@@ -36,8 +36,13 @@ public class TimelineData {
     @GuardedBy("this")
     private long mStart;
 
+    // The highest value across all streams being stacked together.
     @GuardedBy("this")
     private float mMaxTotal;
+
+    // The highest value of any single stream.
+    @GuardedBy("this")
+    private float mStreamMax;
 
     public TimelineData(int streams, int capacity) {
         myStreams = streams;
@@ -56,6 +61,10 @@ public class TimelineData {
 
     public synchronized float getMaxTotal() {
         return mMaxTotal;
+    }
+
+    public synchronized float getStreamMax() {
+        return mStreamMax;
     }
 
     public synchronized void add(long time, int type, float... values) {
@@ -150,6 +159,7 @@ public class TimelineData {
         float total = 0.0f;
         for (float value : values) {
             total += value;
+            mStreamMax = Math.max(mStreamMax, value);
         }
         mMaxTotal = Math.max(mMaxTotal, total);
         mSamples.add(sample);
@@ -158,6 +168,7 @@ public class TimelineData {
     public synchronized void clear() {
         mSamples.clear();
         mMaxTotal = 0.0f;
+        mStreamMax = 0.0f;
         mStart = System.currentTimeMillis();
     }
 

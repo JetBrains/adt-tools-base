@@ -368,9 +368,14 @@ public class AnimatedComponentVisualTests extends JDialog {
     }
 
     private static Component createCheckbox(String label, ItemListener action) {
+        return createCheckbox(label, action, false);
+    }
+
+    private static Component createCheckbox(String label, ItemListener action, boolean selected) {
         JCheckBox button = new JCheckBox(label);
         button.addItemListener(action);
         button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getMaximumSize().height));
+        button.setSelected(selected);
         return button;
     }
 
@@ -472,6 +477,12 @@ public class AnimatedComponentVisualTests extends JDialog {
         controls.add(createEventButton(1, events, variance));
         controls.add(createEventButton(1, events, null));
         controls.add(createEventButton(2, events, variance));
+        controls.add(createCheckbox("Stack streams", new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                timeline.setStackStreams(e.getStateChange() == ItemEvent.SELECTED);
+            }
+        }, true));
 
         controls.add(new Box.Filler(new Dimension(0, 0), new Dimension(300, Integer.MAX_VALUE), new Dimension(300, Integer.MAX_VALUE)));
         panel.add(timeline, BorderLayout.CENTER);
