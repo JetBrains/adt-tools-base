@@ -39,7 +39,7 @@ import proguard.util.ListUtil;
 /**
  *
  */
-public class BaseProguardAction extends ProguardConfigurable {
+public abstract class BaseProguardAction extends ProguardConfigurable {
 
     protected static final List<String> JAR_FILTER = ImmutableList.of("!META-INF/MANIFEST.MF");
 

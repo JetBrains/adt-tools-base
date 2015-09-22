@@ -51,7 +51,7 @@ import java.util.Set;
  * This is not meant to be instantiated directly. Use
  * {@link com.android.build.gradle.internal.pipeline.TestTransform.Builder}.
  */
-public class TestTransform implements Transform {
+public class TestTransform extends Transform {
 
     // transform data
     private final String name;
@@ -118,24 +118,6 @@ public class TestTransform implements Transform {
     @Override
     public Collection<File> getSecondaryFileInputs() {
         return secondaryFileInputs;
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return ImmutableMap.of();
     }
 
     @Override

@@ -25,7 +25,7 @@ import java.util.Collection;
  * A Transform that only reads the input stream. It does not actually consumes them, and
  * let them available for another transform.
  */
-public interface NoOpTransform extends Transform {
+public interface NoOpTransform {
 
     /**
      * Perform the Transform.
@@ -34,10 +34,11 @@ public interface NoOpTransform extends Transform {
      * There is no {@link TransformOutput} since the transform is a no-op.
      *
      * <p/>
-     * The Transform can require a non-incremental changes, either because {@link #isIncremental()}
-     * returns false, or because there is a change in secondary files
-     * (as returned by {@link #getSecondaryFileInputs()}), or a change to non input file parameters
-     * (as returned by {@link #getParameterInputs()}), or an output was clobbered by something.
+     * The Transform can require a non-incremental changes, either because
+     * {@link Transform#isIncremental()} returns false, or because there is a change in secondary
+     * files (as returned by {@link Transform#getSecondaryFileInputs()}), or a change to non
+     * input file parameters (as returned by {@link Transform#getParameterInputs()}), or an output
+     * was clobbered by something.
      *
      * <p/>
      * If this happens then <var>isIncremental</var> will be false, and

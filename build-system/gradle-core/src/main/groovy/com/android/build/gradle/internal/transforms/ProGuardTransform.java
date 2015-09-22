@@ -128,12 +128,6 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
 
     @NonNull
     @Override
-    public Set<ContentType> getOutputTypes() {
-        return TransformManager.CONTENT_JARS;
-    }
-
-    @NonNull
-    @Override
     public Set<Scope> getScopes() {
         if (isLibrary) {
             return Sets.immutableEnumSet(Scope.PROJECT, Scope.PROJECT_LOCAL_DEPS);
@@ -198,18 +192,6 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
     @Override
     public Collection<File> getSecondaryFileOutputs() {
         return secondaryFileOutputs;
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return ImmutableMap.of();
     }
 
     @Override
