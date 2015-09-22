@@ -29,6 +29,7 @@ import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
@@ -170,7 +171,7 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
                 result = true;
             }
         } catch (Exception e) {
-            mLogger.error(e, "Exception in parsing the XML resource" + e.getMessage());
+            Throwables.propagate(e);
         }
 
         return result;
