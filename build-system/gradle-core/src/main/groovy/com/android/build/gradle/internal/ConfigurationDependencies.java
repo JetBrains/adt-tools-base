@@ -59,7 +59,7 @@ public class ConfigurationDependencies implements Dependencies {
         }
         Set<JavaLibrary> javaLibraries = Sets.newHashSet();
         for (File file : files) {
-            javaLibraries.add(new JavaLibraryImpl(file, null, null));
+            javaLibraries.add(new JavaLibraryImpl(file, false, null, null));
         }
         return javaLibraries;
     }

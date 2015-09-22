@@ -29,10 +29,10 @@ import org.junit.Test
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static org.junit.Assert.assertEquals
 /**
- * test for provided jar in app
+ * test for provided java submodule in app
  */
 @CompileStatic
-class AppWithProvidedDirectJarTest {
+class AppWithProvidedProjectJarTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
