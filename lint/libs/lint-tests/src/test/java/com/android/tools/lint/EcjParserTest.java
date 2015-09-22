@@ -907,7 +907,7 @@ public class EcjParserTest extends AbstractCheckTest {
                 ClassPathInfo classPath = super.getClassPath(project);
                 // Insert fake classpath entries (non existent directories) to
                 // make sure the parser handles that gracefully. See issue 87740.
-                classPath.getLibraries().add(new File("nonexistent path"));
+                classPath.getLibraries(true).add(new File("nonexistent path"));
                 return classPath;
             }
         };

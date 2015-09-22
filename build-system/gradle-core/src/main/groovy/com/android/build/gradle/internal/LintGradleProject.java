@@ -422,20 +422,52 @@ public class LintGradleProject extends Project {
             return mJavaClassFolders;
         }
 
+        private static boolean sProvidedAvailable = true;
+
         @NonNull
         @Override
-        public List<File> getJavaLibraries() {
-            if (mJavaLibraries == null) {
-                Collection<JavaLibrary> libs = mVariant.getMainArtifact().getDependencies().getJavaLibraries();
-                mJavaLibraries = Lists.newArrayListWithExpectedSize(libs.size());
-                for (JavaLibrary lib : libs) {
-                    File jar = lib.getJarFile();
-                    if (jar.exists()) {
-                        mJavaLibraries.add(jar);
+        public List<File> getJavaLibraries(boolean includeProvided) {
+            if (includeProvided) {
+                if (mJavaLibraries == null) {
+                    Dependencies dependencies = mVariant.getMainArtifact().getDependencies();
+                    Collection<JavaLibrary> libs = dependencies.getJavaLibraries();
+                    mJavaLibraries = Lists.newArrayListWithExpectedSize(libs.size());
+                    for (JavaLibrary lib : libs) {
+                        File jar = lib.getJarFile();
+                        if (jar.exists()) {
+                            mJavaLibraries.add(jar);
+                        }
                     }
                 }
+                return mJavaLibraries;
+            } else {
+                // Skip provided libraries?
+                if (mNonProvidedJavaLibraries == null) {
+                    Dependencies dependencies = mVariant.getMainArtifact().getDependencies();
+                    Collection<JavaLibrary> libs = dependencies.getJavaLibraries();
+                    mNonProvidedJavaLibraries = Lists.newArrayListWithExpectedSize(libs.size());
+                    for (JavaLibrary lib : libs) {
+                        File jar = lib.getJarFile();
+                        if (jar.exists()) {
+                            if (sProvidedAvailable) {
+                                // Method added in 1.4-rc1; gracefully handle running with
+                                // older plugins
+                                try {
+                                    if (lib.isProvided()) {
+                                        continue;
+                                    }
+                                } catch (Throwable t) {
+                                    //noinspection AssignmentToStaticFieldFromInstanceMethod
+                                    sProvidedAvailable = false; // don't try again
+                                }
+                            }
+
+                            mNonProvidedJavaLibraries.add(jar);
+                        }
+                    }
+                }
+                return mNonProvidedJavaLibraries;
             }
-            return mJavaLibraries;
         }
 
         @Nullable
@@ -619,7 +651,11 @@ public class LintGradleProject extends Project {
 
         @NonNull
         @Override
-        public List<File> getJavaLibraries() {
+        public List<File> getJavaLibraries(boolean includeProvided) {
+            if (!includeProvided && mLibrary.isOptional()) {
+                return Collections.emptyList();
+            }
+
             if (mJavaLibraries == null) {
                 mJavaLibraries = Lists.newArrayList();
                 File jarFile = mLibrary.getJarFile();
