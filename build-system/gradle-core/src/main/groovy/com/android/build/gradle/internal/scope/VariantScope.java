@@ -170,6 +170,10 @@ public interface VariantScope extends BaseScope {
     @NonNull
     File getPackagedAidlDir();
 
+    /**
+     * Returns a place to store incremental build data. The {@code name} argument has to be unique
+     * per task, ideally generated with {@link TaskConfigAction#getName()}.
+     */
     @NonNull
     File getIncrementalDir(String name);
 
