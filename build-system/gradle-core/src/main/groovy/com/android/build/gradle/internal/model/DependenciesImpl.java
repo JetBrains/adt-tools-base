@@ -116,7 +116,11 @@ public class DependenciesImpl implements Dependencies, Serializable {
                     projects.add(jarDep.getProjectPath());
                 } else {
                     javaLibraries.add(
-                            new JavaLibraryImpl(jarFile, null, jarDep.getResolvedCoordinates()));
+                            new JavaLibraryImpl(
+                                    jarFile,
+                                    !jarDep.isPackaged(),
+                                    null,
+                                    jarDep.getResolvedCoordinates()));
                 }
             }
         }
@@ -127,6 +131,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
                 javaLibraries.add(
                         new JavaLibraryImpl(
                                 jarDep.getJarFile(),
+                                !jarDep.isPackaged(),
                                 null,
                                 jarDep.getResolvedCoordinates()));
             }
@@ -137,7 +142,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
         if (variantConfig.getRenderscriptSupportModeEnabled()) {
             File supportJar = androidBuilder.getRenderScriptSupportJar();
             if (supportJar != null) {
-                javaLibraries.add(new JavaLibraryImpl(supportJar, null, null));
+                javaLibraries.add(new JavaLibraryImpl(supportJar, false, null, null));
             }
         }
 

@@ -28,19 +28,27 @@ import java.util.List;
 
 public class JavaLibraryImpl extends LibraryImpl implements JavaLibrary, Serializable {
     private final File jarFile;
+    private final boolean provided;
 
     public JavaLibraryImpl(
             @NonNull File jarFile,
+            @NonNull boolean provided,
             @Nullable MavenCoordinates requestedCoordinates,
             @Nullable MavenCoordinates resolvedCoordinates) {
         super(requestedCoordinates, resolvedCoordinates);
         this.jarFile = jarFile;
+        this.provided = provided;
     }
 
     @NonNull
     @Override
     public File getJarFile() {
         return jarFile;
+    }
+
+    @Override
+    public boolean isProvided() {
+        return provided;
     }
 
     @NonNull

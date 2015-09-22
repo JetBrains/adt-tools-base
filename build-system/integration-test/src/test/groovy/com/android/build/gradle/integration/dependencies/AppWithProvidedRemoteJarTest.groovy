@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue
  * test for provided local jar in app
  */
 @CompileStatic
-class AppWithProvidedLocalJarTest {
+class AppWithProvidedRemoteJarTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
@@ -54,8 +54,12 @@ android {
     buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
 }
 
+repositories {
+  maven { url System.env.CUSTOM_REPO }
+}
+
 dependencies {
-    provided files('libs/util-1.0.jar')
+    provided 'com.google.guava:guava:17.0'
 }
 """
 

@@ -36,4 +36,9 @@ public interface JavaLibrary extends Library {
      */
     @NonNull
     List<? extends JavaLibrary> getDependencies();
+
+    /**
+     * Returns whether the dependency is provided.
+     */
+    boolean isProvided();
 }
