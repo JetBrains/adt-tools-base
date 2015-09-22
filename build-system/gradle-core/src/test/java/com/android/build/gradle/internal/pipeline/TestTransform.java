@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.transform.api.AsInputTransform;
 import com.android.build.transform.api.CombinedTransform;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ForkTransform;
 import com.android.build.transform.api.NoOpTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
@@ -177,6 +178,7 @@ public class TestTransform extends Transform {
 
         @Override
         public void transform(
+                @NonNull Context context,
                 @NonNull Map<TransformInput, Collection<TransformOutput>> inputs,
                 @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
                 throws IOException, TransformException, InterruptedException {
@@ -210,6 +212,7 @@ public class TestTransform extends Transform {
 
         @Override
         public void transform(
+                @NonNull Context context,
                 @NonNull Map<TransformInput, TransformOutput> inputs,
                 @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
                 throws IOException, TransformException, InterruptedException {
@@ -247,6 +250,7 @@ public class TestTransform extends Transform {
 
         @Override
         public void transform(
+                @NonNull Context context,
                 @NonNull Collection<TransformInput> inputs,
                 @NonNull Collection<TransformInput> referencedInputs,
                 @NonNull TransformOutput output,
@@ -283,6 +287,7 @@ public class TestTransform extends Transform {
 
         @Override
         public void transform(
+                @NonNull Context context,
                 @NonNull Collection<TransformInput> inputs,
                 @NonNull Collection<TransformInput> referencedInputs,
                 boolean isIncremental)

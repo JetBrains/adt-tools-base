@@ -22,6 +22,7 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.AsInputTransform;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.ScopedContent.Scope;
 import com.android.build.transform.api.TransformException;
@@ -118,6 +119,7 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
 
     @Override
     public void transform(
+            @NonNull Context context,
             @NonNull Map<TransformInput, TransformOutput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
             boolean isIncremental) throws IOException, TransformException, InterruptedException {

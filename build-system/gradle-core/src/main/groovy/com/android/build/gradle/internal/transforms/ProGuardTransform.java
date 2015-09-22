@@ -31,6 +31,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.tasks.SimpleWorkQueue;
 import com.android.build.transform.api.CombinedTransform;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
@@ -201,6 +202,7 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
 
     @Override
     public void transform(
+            @NonNull Context context,
             @NonNull final Collection<TransformInput> inputs,
             @NonNull final Collection<TransformInput> referencedInputs,
             @NonNull final TransformOutput combinedOutput,

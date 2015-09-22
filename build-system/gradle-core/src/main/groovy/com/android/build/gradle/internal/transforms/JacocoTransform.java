@@ -20,6 +20,7 @@ import com.android.annotations.concurrency.Immutable;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.AsInputTransform;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
@@ -111,6 +112,7 @@ public class JacocoTransform extends Transform implements AsInputTransform {
 
     @Override
     public void transform(
+            @NonNull Context context,
             @NonNull Map<TransformInput, TransformOutput> inputOutputs,
             @NonNull Collection<TransformInput> referencedInputs,
             boolean isIncremental) throws IOException, TransformException, InterruptedException {

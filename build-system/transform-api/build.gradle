@@ -2,11 +2,23 @@ apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'clone-artifacts'
 
+configurations {
+    provided
+}
+
 dependencies {
     compile project(':base:annotations')
     compile 'com.google.guava:guava:17.0'
 
+    provided gradleApi()
+
     testCompile 'junit:junit:4.12'
+}
+
+sourceSets {
+    main {
+        compileClasspath += configurations.provided
+    }
 }
 
 group = 'com.android.tools.build'

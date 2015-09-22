@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ResourceUsageAnalyzer;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.NoOpTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
@@ -176,7 +177,9 @@ public class ShrinkResourcesTransform extends Transform implements NoOpTransform
     }
 
     @Override
-    public void transform(@NonNull Collection<TransformInput> inputs,
+    public void transform(
+            @NonNull Context context,
+            @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
             throws IOException, TransformException, InterruptedException {
         // there should be only one input since this transform is always applied after
