@@ -64,7 +64,7 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.XmlUtils;
-import com.google.common.collect.Lists;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 
 import org.w3c.dom.Document;
@@ -75,6 +75,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -303,51 +304,83 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
     }
 
-    private void checkParameterAnnotation(
+    private void checkParameterAnnotations(
             @NonNull JavaContext context,
             @NonNull Node argument,
             @NonNull Node call,
             @NonNull ResolvedMethod method,
-            @NonNull ResolvedAnnotation annotation,
-            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
-        String signature = annotation.getSignature();
+            @NonNull Iterable<ResolvedAnnotation> annotations) {
+        boolean handledResourceTypes = false;
+        for (ResolvedAnnotation annotation : annotations) {
+            String signature = annotation.getSignature();
 
-        if (COLOR_INT_ANNOTATION.equals(signature)) {
-            checkColor(context, argument);
-        } else if (signature.equals(INT_RANGE_ANNOTATION)) {
-            checkIntRange(context, annotation, argument, allAnnotations);
-        } else if (signature.equals(FLOAT_RANGE_ANNOTATION)) {
-            checkFloatRange(context, annotation, argument);
-        } else if (signature.equals(SIZE_ANNOTATION)) {
-            checkSize(context, annotation, argument);
-        } else if (signature.startsWith(PERMISSION_ANNOTATION)) {
-            // PERMISSION_ANNOTATION, PERMISSION_ANNOTATION_READ, PERMISSION_ANNOTATION_WRITE
-            // When specified on a parameter, that indicates that we're dealing with
-            // a permission requirement on this *method* which depends on the value
-            // supplied by this parameter
-            checkParameterPermission(context, signature, call, method, argument);
-        } else {
-            // We only run @IntDef, @StringDef and @<Type>Res checks if we're not
-            // running inside Android Studio / IntelliJ where there are already inspections
-            // covering the same warnings (using IntelliJ's own data flow analysis); we
-            // don't want to (a) create redundant warnings or (b) work harder than we
-            // have to
-            if (signature.equals(INT_DEF_ANNOTATION)) {
-                boolean flag = annotation.getValue(TYPE_DEF_FLAG_ATTRIBUTE) == Boolean.TRUE;
-                checkTypeDefConstant(context, annotation, argument, null, flag, allAnnotations);
-            } else if (signature.equals(STRING_DEF_ANNOTATION)) {
-                checkTypeDefConstant(context, annotation, argument, null, false, allAnnotations);
-            } else if (signature.endsWith(RES_SUFFIX)) {
-                String typeString = signature.substring(SUPPORT_ANNOTATIONS_PREFIX.length(),
-                        signature.length() - RES_SUFFIX.length()).toLowerCase(Locale.US);
-                ResourceType type = ResourceType.getEnum(typeString);
-                if (type != null) {
-                    checkResourceType(context, argument, type);
-                } else if (typeString.equals("any")) { // @AnyRes
-                    checkResourceType(context, argument, null);
+            if (COLOR_INT_ANNOTATION.equals(signature)) {
+                checkColor(context, argument);
+            } else if (signature.equals(INT_RANGE_ANNOTATION)) {
+                checkIntRange(context, annotation, argument, annotations);
+            } else if (signature.equals(FLOAT_RANGE_ANNOTATION)) {
+                checkFloatRange(context, annotation, argument);
+            } else if (signature.equals(SIZE_ANNOTATION)) {
+                checkSize(context, annotation, argument);
+            } else if (signature.startsWith(PERMISSION_ANNOTATION)) {
+                // PERMISSION_ANNOTATION, PERMISSION_ANNOTATION_READ, PERMISSION_ANNOTATION_WRITE
+                // When specified on a parameter, that indicates that we're dealing with
+                // a permission requirement on this *method* which depends on the value
+                // supplied by this parameter
+                checkParameterPermission(context, signature, call, method, argument);
+            } else {
+                // We only run @IntDef, @StringDef and @<Type>Res checks if we're not
+                // running inside Android Studio / IntelliJ where there are already inspections
+                // covering the same warnings (using IntelliJ's own data flow analysis); we
+                // don't want to (a) create redundant warnings or (b) work harder than we
+                // have to
+                if (signature.equals(INT_DEF_ANNOTATION)) {
+                    boolean flag = annotation.getValue(TYPE_DEF_FLAG_ATTRIBUTE) == Boolean.TRUE;
+                    checkTypeDefConstant(context, annotation, argument, null, flag,
+                            annotations);
+                } else if (signature.equals(STRING_DEF_ANNOTATION)) {
+                    checkTypeDefConstant(context, annotation, argument, null, false,
+                            annotations);
+                } else if (signature.endsWith(RES_SUFFIX)) {
+                    if (handledResourceTypes) {
+                        continue;
+                    }
+                    handledResourceTypes = true;
+                    EnumSet<ResourceType> types = null;
+                    // Handle all resource type annotations in one go: there could be multiple
+                    // resource type annotations specified on the same element; we need to
+                    // know about them all up front.
+                    for (ResolvedAnnotation a : annotations) {
+                        String s = a.getSignature();
+                        if (s.endsWith(RES_SUFFIX)) {
+                            String typeString = s.substring(SUPPORT_ANNOTATIONS_PREFIX.length(),
+                                    s.length() - RES_SUFFIX.length()).toLowerCase(Locale.US);
+                            ResourceType type = ResourceType.getEnum(typeString);
+                            if (type != null) {
+                                if (types == null) {
+                                    types = EnumSet.of(type);
+                                } else {
+                                    types.add(type);
+                                }
+                            } else if (typeString.equals("any")) { // @AnyRes
+                                types = getAnyRes();
+                                break;
+                            }
+                        }
+                    }
+
+                    if (types != null) {
+                        checkResourceType(context, argument, types);
+                    }
                 }
             }
         }
+    }
+
+    private static EnumSet<ResourceType> getAnyRes() {
+        EnumSet<ResourceType> types = EnumSet.allOf(ResourceType.class);
+        types.remove(COLOR_INT_MARKER_TYPE);
+        return types;
     }
 
     private void checkParameterPermission(
@@ -387,7 +420,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             return;
         }
 
-        List<ResourceType> types = getResourceTypes(context, argument);
+        EnumSet<ResourceType> types = getResourceTypes(context, argument);
 
         if (types != null && types.contains(ResourceType.COLOR)) {
             String message = String.format(
@@ -806,25 +839,25 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     private static void checkResourceType(
             @NonNull JavaContext context,
             @NonNull Node argument,
-            @Nullable ResourceType expectedType) {
-        List<ResourceType> actual = getResourceTypes(context, argument);
+            @NonNull EnumSet<ResourceType> expectedType) {
+        EnumSet<ResourceType> actual = getResourceTypes(context, argument);
         if (actual == null && (!isNumber(argument) || isZero(argument) || isMinusOne(argument)) ) {
             return;
-        } else if (actual != null && (expectedType == null
-                || actual.contains(expectedType)
-                || expectedType == DRAWABLE && (actual.contains(COLOR) || actual.contains(MIPMAP)))) {
+        } else if (actual != null && (!Sets.intersection(actual, expectedType).isEmpty()
+                || expectedType.contains(DRAWABLE)
+                && (actual.contains(COLOR) || actual.contains(MIPMAP)))) {
             return;
         }
 
         String message;
-        if (actual != null && actual.size() == 1 && actual.get(0) == COLOR_INT_MARKER_TYPE) {
+        if (actual != null && actual.size() == 1 && actual.contains(COLOR_INT_MARKER_TYPE)) {
             message = "Expected a color resource id (`R.color.`) but received an RGB integer";
-        } else if (expectedType == COLOR_INT_MARKER_TYPE) {
+        } else if (expectedType.contains(COLOR_INT_MARKER_TYPE)) {
             message = String.format("Should pass resolved color instead of resource id here: " +
                     "`getResources().getColor(%1$s)`", argument.toString());
-        } else if (expectedType != null) {
-            message = String.format(
-                    "Expected resource of type %1$s", expectedType.getName());
+        } else if (expectedType.size() < ResourceType.getNames().length - 1) {
+            message = String.format("Expected resource of type %1$s",
+                    Joiner.on(" or ").join(expectedType));
         } else {
             message = "Expected resource identifier (`R`.type.`name`)";
         }
@@ -832,7 +865,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     }
 
     @Nullable
-    private static List<ResourceType> getResourceTypes(@NonNull JavaContext context,
+    private static EnumSet<ResourceType> getResourceTypes(@NonNull JavaContext context,
             @NonNull Node argument) {
         if (argument instanceof Select) {
             Select node = (Select) argument;
@@ -843,7 +876,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     if (innerSelect.astIdentifier().astValue().equals(R_CLASS)) {
                         String typeName = select.astIdentifier().astValue();
                         ResourceType type = ResourceType.getEnum(typeName);
-                        return type != null ? Collections.singletonList(type) : null;
+                        return type != null ? EnumSet.of(type) : null;
                     }
                 }
                 if (select.astOperand() instanceof VariableReference) {
@@ -851,7 +884,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     if (reference.astIdentifier().astValue().equals(R_CLASS)) {
                         String typeName = select.astIdentifier().astValue();
                         ResourceType type = ResourceType.getEnum(typeName);
-                        return type != null ? Collections.singletonList(type) : null;
+                        return type != null ? EnumSet.of(type) : null;
                     }
                 }
             }
@@ -868,7 +901,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                             Select typeSelect = (Select) typeOperand;
                             String typeName = typeSelect.astIdentifier().astValue();
                             ResourceType type = ResourceType.getEnum(typeName);
-                            return type != null ? Collections.singletonList(type) : null;
+                            return type != null ? EnumSet.of(type) : null;
                         }
                     }
                 }
@@ -919,7 +952,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 for (ResolvedAnnotation annotation : resolved.getAnnotations()) {
                     String signature = annotation.getSignature();
                     if (signature.equals(COLOR_INT_ANNOTATION)) {
-                        return Collections.singletonList(COLOR_INT_MARKER_TYPE);
+                        return EnumSet.of(COLOR_INT_MARKER_TYPE);
                     }
                     if (signature.endsWith(RES_SUFFIX)
                             && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
@@ -927,18 +960,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                                 signature.length() - RES_SUFFIX.length()).toLowerCase(Locale.US);
                         ResourceType type = ResourceType.getEnum(typeString);
                         if (type != null) {
-                            return Collections.singletonList(type);
+                            return EnumSet.of(type);
                         } else if (typeString.equals("any")) { // @AnyRes
-                            ResourceType[] types = ResourceType.values();
-                            List<ResourceType> result = Lists.newArrayListWithExpectedSize(
-                                    types.length);
-                            for (ResourceType t : types) {
-                                if (t != COLOR_INT_MARKER_TYPE) {
-                                    result.add(t);
-                                }
-                            }
-
-                            return result;
+                            return getAnyRes();
                         }
                     }
                 }
@@ -1599,10 +1623,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
                 annotations = method.getParameterAnnotations(i);
                 annotations = filterRelevantAnnotations(annotations);
-                for (ResolvedAnnotation annotation : annotations) {
-                    checkParameterAnnotation(mContext, argument, call, method, annotation,
-                            annotations);
-                }
+                checkParameterAnnotations(mContext, argument, call, method, annotations);
             }
         }
     }
