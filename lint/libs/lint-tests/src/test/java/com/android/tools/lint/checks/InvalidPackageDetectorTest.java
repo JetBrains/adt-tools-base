@@ -16,7 +16,13 @@
 
 package com.android.tools.lint.checks;
 
+import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Project;
+
+import java.io.File;
+import java.util.Collections;
+import java.util.List;
 
 @SuppressWarnings("javadoc")
 public class InvalidPackageDetectorTest extends AbstractCheckTest {
@@ -93,5 +99,44 @@ public class InvalidPackageDetectorTest extends AbstractCheckTest {
                 "apicheck/themes.xml=>res/color/colors.xml",
                 "bytecode/dagger-compiler-1.2.1-subset.jar.data=>libs/dagger-compiler-1.2.1.jar"
             ));
+    }
+
+    public void testSkipProvidedLibraries() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=187191
+        assertEquals("No warnings.",
+
+                lintProject(
+                        "apicheck/minsdk14.xml=>AndroidManifest.xml",
+                        "apicheck/layout.xml=>res/layout/layout.xml",
+                        "apicheck/themes.xml=>res/values/themes.xml",
+                        "apicheck/themes.xml=>res/color/colors.xml",
+                        "apicheck/unsupported.jar.data=>libs/unsupported.jar"
+                ));
+    }
+
+    @Override
+    protected TestLintClient createClient() {
+        if ("testSkipProvidedLibraries".equals(getName())) {
+            // Set up a mock project model for the resource configuration test(s)
+            // where we provide a subset of densities to be included
+            return new TestLintClient() {
+                @NonNull
+                @Override
+                protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                    return new Project(this, dir, referenceDir) {
+                        @NonNull
+                        @Override
+                        public List<File> getJavaLibraries(boolean includeProvided) {
+                            if (!includeProvided) {
+                                return Collections.emptyList();
+                            }
+                            return super.getJavaLibraries(true);
+                        }
+                    };
+                }
+            };
+        }
+
+        return super.createClient();
     }
 }

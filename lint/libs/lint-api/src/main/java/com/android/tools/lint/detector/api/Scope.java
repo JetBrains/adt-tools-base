@@ -112,7 +112,8 @@ public enum Scope {
 
     /**
      * The analysis considers classes in the libraries for this project. These
-     * will be analyzed before the classes themselves.
+     * will be analyzed before the classes themselves. NOTE: This excludes
+     * provided libraries.
      */
     JAVA_LIBRARIES,
 

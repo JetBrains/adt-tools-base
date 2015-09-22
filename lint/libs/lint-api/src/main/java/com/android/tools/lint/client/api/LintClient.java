@@ -237,12 +237,15 @@ public abstract class LintClient {
     /**
      * Returns the list of Java libraries
      *
-     * @param project the project to look up jar dependencies for
+     * @param project         the project to look up jar dependencies for
+     * @param includeProvided If true, included provided libraries too (libraries that are not
+     *                        packaged with the app, but are provided for compilation purposes and
+     *                        are assumed to be present in the running environment)
      * @return a list of jar dependencies containing .class files
      */
     @NonNull
-    public List<File> getJavaLibraries(@NonNull Project project) {
-        return getClassPath(project).getLibraries();
+    public List<File> getJavaLibraries(@NonNull Project project, boolean includeProvided) {
+        return getClassPath(project).getLibraries(includeProvided);
     }
 
     /**
@@ -419,16 +422,19 @@ public abstract class LintClient {
         private final List<File> mClassFolders;
         private final List<File> mSourceFolders;
         private final List<File> mLibraries;
+        private final List<File> mNonProvidedLibraries;
         private final List<File> mTestFolders;
 
         public ClassPathInfo(
                 @NonNull List<File> sourceFolders,
                 @NonNull List<File> classFolders,
                 @NonNull List<File> libraries,
+                @NonNull List<File> nonProvidedLibraries,
                 @NonNull List<File> testFolders) {
             mSourceFolders = sourceFolders;
             mClassFolders = classFolders;
             mLibraries = libraries;
+            mNonProvidedLibraries = nonProvidedLibraries;
             mTestFolders = testFolders;
         }
 
@@ -443,8 +449,8 @@ public abstract class LintClient {
         }
 
         @NonNull
-        public List<File> getLibraries() {
-            return mLibraries;
+        public List<File> getLibraries(boolean includeProvided) {
+            return includeProvided ? mLibraries : mNonProvidedLibraries;
         }
 
         public List<File> getTestSourceFolders() {
@@ -577,7 +583,7 @@ public abstract class LintClient {
                 }
             }
 
-            info = new ClassPathInfo(sources, classes, libraries, tests);
+            info = new ClassPathInfo(sources, classes, libraries, libraries, tests);
             mProjectInfo.put(project, info);
         }
 
@@ -849,7 +855,7 @@ public abstract class LintClient {
      */
     @NonNull
     public Map<String, String> createSuperClassMap(@NonNull Project project) {
-        List<File> libraries = project.getJavaLibraries();
+        List<File> libraries = project.getJavaLibraries(true);
         List<File> classFolders = project.getJavaClassFolders();
         List<ClassEntry> classEntries = ClassEntry.fromClassPath(this, classFolders, true);
         if (libraries.isEmpty()) {

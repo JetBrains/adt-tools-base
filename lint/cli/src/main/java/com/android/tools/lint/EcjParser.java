@@ -421,12 +421,12 @@ public class EcjParser extends JavaParser {
 
         Set<File> libraries = Sets.newHashSet();
         Set<String> names = Sets.newHashSet();
-        for (File library : mProject.getJavaLibraries()) {
+        for (File library : mProject.getJavaLibraries(true)) {
             libraries.add(library);
             names.add(getLibraryName(library));
         }
         for (Project project : mProject.getAllLibraries()) {
-            for (File library : project.getJavaLibraries()) {
+            for (File library : project.getJavaLibraries(true)) {
                 String name = getLibraryName(library);
                 // Avoid pulling in android-support-v4.jar from libraries etc
                 // since we're pointing to the local copies rather than the real
