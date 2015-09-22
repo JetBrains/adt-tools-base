@@ -46,8 +46,40 @@ public class PackagePrivateClassTest {
         assertWithMessage("base: PackagePrivateInvoker:createPackagePrivateObject()")
                 .that(packagePrivateInvoker.createPackagePrivateObject()).isEqualTo("foo");
 
+        assertWithMessage("base: PackagePrivateInvoker:invokeTernaryOperator()")
+                .that(packagePrivateInvoker.invokeTernaryOperator(true))
+                .isEqualTo("package_private");
+
+        assertWithMessage("base: PackagePrivateInvoker:invokeTernaryOperator()")
+                .that(packagePrivateInvoker.invokeTernaryOperator(false))
+                .isEqualTo("another_package_private");
+
+        assertWithMessage("base: PackagePrivateInvoker:ternaryOperatorInConstructorParams()")
+                .that(packagePrivateInvoker.ternaryOperatorInConstructorParams(true))
+                .isEqualTo("true");
+
+        assertWithMessage("base: PackagePrivateInvoker:ternaryOperatorInConstructorParams()")
+                .that(packagePrivateInvoker.ternaryOperatorInConstructorParams(false))
+                .isEqualTo("false");
+
         harness.applyPatch("changeSubClass");
         assertWithMessage("changeSubClass: PackagePrivateInvoker:createPackagePrivateObject()")
                 .that(packagePrivateInvoker.createPackagePrivateObject()).isEqualTo("foobar");
+
+        assertWithMessage("changeSubClass: PackagePrivateInvoker:invokeTernaryOperator()")
+                .that(packagePrivateInvoker.invokeTernaryOperator(true))
+                .isEqualTo("patched_package_private");
+
+        assertWithMessage("changeSubClass: PackagePrivateInvoker:invokeTernaryOperator()")
+                .that(packagePrivateInvoker.invokeTernaryOperator(false))
+                .isEqualTo("patched_another_package_private");
+
+        assertWithMessage("changeSubClass: PackagePrivateInvoker:ternaryOperatorInConstructorParams()")
+                .that(packagePrivateInvoker.ternaryOperatorInConstructorParams(true))
+                .isEqualTo("false");
+
+        assertWithMessage("changeSubClass: PackagePrivateInvoker:ternaryOperatorInConstructorParams()")
+                .that(packagePrivateInvoker.ternaryOperatorInConstructorParams(false))
+                .isEqualTo("true");
     }
 }

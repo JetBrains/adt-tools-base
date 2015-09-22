@@ -17,21 +17,35 @@
 package com.example.basic;
 
 /**
- * Package Private class with PackagePrivate methods.
+ * Some other package private class.
  */
-class PackagePrivateClass implements Provider<String> {
+class AnotherPackagePrivateClass<T> implements Provider<T> {
 
-    private final String stringValue;
-    PackagePrivateClass(String param) {
-        this.stringValue = param;
-    }
+    final T value;
 
-    String getStringValue() {
-        return stringValue;
+    public AnotherPackagePrivateClass(T value) {
+        this.value = value;
     }
 
     @Override
-    public String getValue() {
-        return stringValue;
+    public T getValue() {
+        return value;
+    }
+
+    Builder builder() {
+        return new Builder();
+    }
+
+    class Builder {
+        T value;
+
+        Builder setValue(T value) {
+            this.value = value;
+            return builder();
+        }
+
+        AnotherPackagePrivateClass<T> build() {
+            return new AnotherPackagePrivateClass<T>(value);
+        }
     }
 }

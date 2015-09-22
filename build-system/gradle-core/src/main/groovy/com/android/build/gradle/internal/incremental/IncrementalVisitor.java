@@ -78,7 +78,7 @@ public class IncrementalVisitor extends ClassVisitor {
         super(Opcodes.ASM5, classVisitor);
         this.classNode = classNode;
         this.parentNodes = parentNodes;
-        System.out.println("Visiting " + classNode.name);
+        System.out.println(getClass().getSimpleName() + " Visiting " + classNode.name);
     }
 
     String getRuntimeTypeName(Type type) {
@@ -208,7 +208,8 @@ public class IncrementalVisitor extends ClassVisitor {
         Files.createParentDirs(outputFile);
 
         // when dealing with interface, we just copy the inputFile over without any changes.
-        if ((classNode.access & Opcodes.ACC_INTERFACE) != 0) {
+        if ((classNode.access & Opcodes.ACC_INTERFACE) != 0
+                || (classNode.access & Opcodes.ACC_ENUM) != 0) {
             Files.write(classBytes, outputFile);
             return;
         }
