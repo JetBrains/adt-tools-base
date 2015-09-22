@@ -381,10 +381,10 @@ public class LintCliClient extends LintClient {
                 classes = classPath.getClassFolders();
             }
             if (libraries == null) {
-                libraries = classPath.getLibraries();
+                libraries = classPath.getLibraries(true);
             }
 
-            info = new ClassPathInfo(sources, classes, libraries,
+            info = new ClassPathInfo(sources, classes, libraries, classPath.getLibraries(false),
                     classPath.getTestSourceFolders());
             mProjectInfo.put(project, info);
         }
