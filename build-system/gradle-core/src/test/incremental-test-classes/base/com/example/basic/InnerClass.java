@@ -23,12 +23,11 @@ public class InnerClass {
 
     private final String param;
 
-    private InnerClass(String param) {
+    public InnerClass(String param) {
         this.param = param;
     }
 
-    // todo : make it work when package private.
-    public static class Builder {
+    static class Builder {
         String build() {
             return new InnerClass("from builder").param;
         }

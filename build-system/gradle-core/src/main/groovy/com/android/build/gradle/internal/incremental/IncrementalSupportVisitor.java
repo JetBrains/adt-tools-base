@@ -60,6 +60,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         visitedSuperName = superName;
 
         super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
+        AccessRight accessRight = AccessRight.fromNodeAccess(access);
+        access = accessRight == AccessRight.PACKAGE_PRIVATE ? access | Opcodes.ACC_PUBLIC : access;
         super.visit(version, access, name, signature, superName, interfaces);
     }
 

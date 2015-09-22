@@ -60,6 +60,20 @@ public class IncrementalVisitor extends ClassVisitor {
     @NonNull
     protected final List<ClassNode> parentNodes;
 
+    /**
+     * Enumeration describing a method of field access rights.
+     */
+    protected enum AccessRight {
+        PRIVATE, PACKAGE_PRIVATE, PROTECTED, PUBLIC;
+
+        static AccessRight fromNodeAccess(int nodeAccess) {
+            if ((nodeAccess & Opcodes.ACC_PRIVATE) != 0) return PRIVATE;
+            if ((nodeAccess & Opcodes.ACC_PROTECTED) != 0) return PROTECTED;
+            if ((nodeAccess & Opcodes.ACC_PUBLIC) != 0) return PUBLIC;
+            return PACKAGE_PRIVATE;
+        }
+    }
+
     public IncrementalVisitor(@NonNull ClassNode classNode, List<ClassNode> parentNodes, ClassVisitor classVisitor) {
         super(Opcodes.ASM5, classVisitor);
         this.classNode = classNode;

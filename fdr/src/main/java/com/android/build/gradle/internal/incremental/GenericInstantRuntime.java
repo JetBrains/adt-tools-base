@@ -183,32 +183,25 @@ public class GenericInstantRuntime {
         }
     }
 
-    public static Object newForClass(String className, Class[] paramTypes, Object[] params) {
-        Class<?> clazz = null;
+    public static <T> T newForClass(Object[] params, Class[] paramTypes, Class<T> targetClass) {
+        Constructor declaredConstructor;
         try {
-            clazz = Class.forName(className);
-        } catch (ClassNotFoundException e) {
-            logging.log(Level.SEVERE, String.format("Exception while loading %s", className), e);
-            throw new RuntimeException(e);
-        }
-        Constructor declaredConstructor = null;
-        try {
-            declaredConstructor = clazz.getDeclaredConstructor(paramTypes);
+            declaredConstructor = targetClass.getDeclaredConstructor(paramTypes);
         } catch (NoSuchMethodException e) {
             logging.log(Level.SEVERE, "Exception while resolving constructor", e);
             throw new RuntimeException(e);
         }
         declaredConstructor.setAccessible(true);
         try {
-            return declaredConstructor.newInstance(params);
+            return targetClass.cast(declaredConstructor.newInstance(params));
         } catch (InstantiationException e) {
-            logging.log(Level.SEVERE, String.format("Exception while instantiating %s", className), e);
+            logging.log(Level.SEVERE, String.format("Exception while instantiating %s", targetClass), e);
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
-            logging.log(Level.SEVERE, String.format("Exception while instantiating %s", className), e);
+            logging.log(Level.SEVERE, String.format("Exception while instantiating %s", targetClass), e);
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            logging.log(Level.SEVERE, String.format("Exception while instantiating %s", className), e);
+            logging.log(Level.SEVERE, String.format("Exception while instantiating %s", targetClass), e);
             throw new RuntimeException(e);
         }
     }

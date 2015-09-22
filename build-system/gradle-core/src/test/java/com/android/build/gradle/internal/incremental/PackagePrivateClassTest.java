@@ -47,8 +47,7 @@ public class PackagePrivateClassTest {
                 .that(packagePrivateInvoker.createPackagePrivateObject()).isEqualTo("foo");
 
         harness.applyPatch("changeSubClass");
-        // todo: support accessing package private classes/ctor.
-        //assertWithMessage("changeSubClass: PackagePrivateInvoker:createPackagePrivateObject()")
-        //        .that(packagePrivateInvoker.createPackagePrivateObject()).isEqualTo("foobar");
+        assertWithMessage("changeSubClass: PackagePrivateInvoker:createPackagePrivateObject()")
+                .that(packagePrivateInvoker.createPackagePrivateObject()).isEqualTo("foobar");
     }
 }

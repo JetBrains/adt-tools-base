@@ -269,10 +269,10 @@ public class InstantRunTransform implements ForkTransform {
      * @throws IOException if the transformation failed.
      */
     protected void transformToClasses2Format(
-            @NonNull File inputDir,
-            @NonNull File inputFile,
-            @NonNull File outputDir,
-            @NonNull RecordingPolicy recordingPolicy)
+            @NonNull final File inputDir,
+            @NonNull final File inputFile,
+            @NonNull final File outputDir,
+            @NonNull final RecordingPolicy recordingPolicy)
             throws IOException {
 
         File outputFile = getOutputFile(inputDir, inputFile, outputDir);

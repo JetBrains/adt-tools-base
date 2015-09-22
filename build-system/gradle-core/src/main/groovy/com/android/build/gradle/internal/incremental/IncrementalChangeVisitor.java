@@ -50,6 +50,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     // todo : find a better way to specify logging and append to a log file.
     private static final boolean DEBUG = false;
 
+    private MachineState state = MachineState.NORMAL;
+
+    private enum MachineState {
+        NORMAL, AFTER_NEW
+    }
 
     public IncrementalChangeVisitor(ClassNode classNode, List<ClassNode> parentNodes, ClassVisitor classVisitor) {
         super(classNode, parentNodes, classVisitor);
@@ -85,6 +90,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             String[] exceptions) {
 
         if (name.equals("<clinit>")) {
+            // we remove the class init as it can reset static fields which we don't support right
+            // now.
             return null;
         }
 
@@ -116,20 +123,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             return null;
         } else {
             return mv;
-        }
-    }
-
-    /**
-     * Enumeration describing a method of field access rights.
-     */
-    private enum AccessRight {
-        PRIVATE, PACKAGE_PRIVATE, PROTECTED, PUBLIC;
-
-        static AccessRight fromNodeAccess(int nodeAccess) {
-            if ((nodeAccess & Opcodes.ACC_PRIVATE) != 0) return PRIVATE;
-            if ((nodeAccess & Opcodes.ACC_PROTECTED) != 0) return PROTECTED;
-            if ((nodeAccess & Opcodes.ACC_PUBLIC) != 0) return PUBLIC;
-            return PACKAGE_PRIVATE;
         }
     }
 
@@ -338,11 +331,13 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         private boolean handleSpecialOpcode(String owner, String name, String desc,
                 boolean itf) {
-            if (owner.equals(visitedSuperName) && !name.equals("<init>")) {
+            if (name.equals("<init>")) {
+                return handleConstructor(owner, name, desc);
+            }
+            if (owner.equals(visitedSuperName)) {
                 if (DEBUG) {
                     System.out.println(
-                            "Super Method dispatch : " + name + ":" + desc + ":" + itf + ":"
-                                    + isStatic);
+                            "Super Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
                 }
                 int arr = boxParametersToNewLocalArray(Type.getArgumentTypes(desc));
                 push(name + "." + desc);
@@ -357,8 +352,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             } else if (owner.equals(visitedClassName)) {
                 if (DEBUG) {
                     System.out.println(
-                            "Private Method dispatch : " + name + ":" + desc + ":" + itf + ":"
-                                    + isStatic);
+                            "Private Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
                 }
                 // private method dispatch, just invoke the $override class static method.
                 String newDesc = "(L" + visitedClassName + ";" + desc.substring(1);
@@ -370,6 +364,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         private boolean handleVirtualOpcode(String owner, String name, String desc, boolean itf) {
 
+            if (DEBUG) {
+                System.out.println(
+                        "Virtual Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
+
+            }
             AccessRight accessRight = getMethodAccessRight(owner, name, desc);
             if (accessRight == AccessRight.PUBLIC) {
                 return false;
@@ -399,7 +398,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
             if (DEBUG) {
                 System.out.println(
-                        "Method dispatch : " + name + ":" + desc + ":" + itf + ":" + isStatic);
+                        "Static Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
 
             }
             AccessRight accessRight = getMethodAccessRight(owner, name, desc);
@@ -428,6 +427,62 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             // stack : method return value or null if the method was VOID.
             handleReturnType(desc);
             return true;
+        }
+
+        @Override
+        public void visitTypeInsn(int opcode, String s) {
+            if (opcode == Opcodes.NEW) {
+                // state can only normal or dup_after new
+                if (state == MachineState.AFTER_NEW) {
+                    throw new RuntimeException("Panic, two NEW opcode without a DUP");
+                }
+
+                if (isInSamePackage(s)) {
+                    // this is a new allocation in the same package, this could be protected or
+                    // package private class, we must go through reflection, otherwise not.
+                    // set our state so we swallow the next DUP we encounter.
+                    state = MachineState.AFTER_NEW;
+
+                    // swallow the NEW, we will also swallow the DUP associated with the new
+                    return;
+                }
+            }
+            super.visitTypeInsn(opcode, s);
+        }
+
+        @Override
+        public void visitInsn(int opcode) {
+            // check the last object allocation we encountered, if this is in the same package
+            // we need to go through reflection and should therefore remove the DUP, otherwise
+            // we leave it.
+            if (opcode == Opcodes.DUP && state == MachineState.AFTER_NEW) {
+
+                state = MachineState.NORMAL;
+                return;
+            }
+            super.visitInsn(opcode);
+        }
+
+        private boolean handleConstructor(String owner, String name, String desc) {
+
+            if (isInSamePackage(owner)) {
+
+                Type expectedType = Type.getType("L" + owner + ";");
+                pushMethodRedirectArgumentsOnStack(name, desc);
+
+                // pop the name, we don't need it.
+                pop();
+                visitLdcInsn(expectedType);
+
+                invokeStatic(RUNTIME_TYPE, Method.getMethod(
+                        "Object newForClass(Object[], Class[], Class)"));
+
+                checkCast(expectedType);
+                unbox(expectedType);
+                return true;
+            } else {
+                return false;
+            }
         }
 
         @Override
