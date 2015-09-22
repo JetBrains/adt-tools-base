@@ -35,9 +35,11 @@ import static java.io.File.separator;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
+import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.local.LocalSdk;
 import com.android.tools.lint.client.api.LintListener.EventType;
@@ -1254,7 +1256,7 @@ public class LintDriver {
         // the parent chains (such that for example for a virtual dispatch, we can
         // also check the super classes).
 
-        List<File> libraries = project.getJavaLibraries();
+        List<File> libraries = project.getJavaLibraries(false);
         List<ClassEntry> libraryEntries = ClassEntry.fromClassPath(mClient, libraries, true);
 
         List<File> classFolders = project.getJavaClassFolders();
@@ -1471,7 +1473,7 @@ public class LintDriver {
             }
         }
         // Search in the libraries
-        for (File root : mClient.getJavaLibraries(project)) {
+        for (File root : mClient.getJavaLibraries(project, true)) {
             // TODO: Handle .jar files!
             //if (root.getPath().endsWith(DOT_JAR)) {
             //}
@@ -1907,8 +1909,37 @@ public class LintDriver {
 
         @NonNull
         @Override
-        public List<File> getJavaLibraries(@NonNull Project project) {
-            return mDelegate.getJavaLibraries(project);
+        public List<File> getJavaLibraries(@NonNull Project project, boolean includeProvided) {
+            return mDelegate.getJavaLibraries(project, includeProvided);
+        }
+
+        @NonNull
+        @Override
+        public List<File> getTestSourceFolders(@NonNull Project project) {
+            return mDelegate.getTestSourceFolders(project);
+        }
+
+        @Override
+        public Collection<Project> getKnownProjects() {
+            return mDelegate.getKnownProjects();
+        }
+
+        @Nullable
+        @Override
+        public BuildToolInfo getBuildTools(@NonNull Project project) {
+            return mDelegate.getBuildTools(project);
+        }
+
+        @NonNull
+        @Override
+        public Map<String, String> createSuperClassMap(@NonNull Project project) {
+            return mDelegate.createSuperClassMap(project);
+        }
+
+        @NonNull
+        @Override
+        public ResourceVisibilityLookup.Provider getResourceVisibilityProvider() {
+            return mDelegate.getResourceVisibilityProvider();
         }
 
         @Override
