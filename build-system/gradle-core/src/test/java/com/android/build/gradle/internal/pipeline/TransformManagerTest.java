@@ -24,6 +24,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.transform.api.AsInputTransform;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ForkTransform;
 import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.ScopedContent.ContentType;
@@ -442,8 +443,11 @@ public class TransformManagerTest extends TaskTestUtils {
         }
 
         @Override
-        public void transform(@NonNull Map<TransformInput, TransformOutput> inputs,
-                @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
+        public void transform(
+                @NonNull Context context,
+                @NonNull Map<TransformInput, TransformOutput> inputs,
+                @NonNull Collection<TransformInput> referencedInputs,
+                boolean isIncremental)
                 throws IOException, TransformException, InterruptedException {
         }
     }

@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.CombinedTransform;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
@@ -93,6 +94,7 @@ public class MultiStreamJarTransform extends Transform implements CombinedTransf
 
     @Override
     public void transform(
+            @NonNull Context context,
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
             @NonNull TransformOutput output,

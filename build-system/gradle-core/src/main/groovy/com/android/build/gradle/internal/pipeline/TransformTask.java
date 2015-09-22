@@ -25,6 +25,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.transform.api.AsInputTransform;
 import com.android.build.transform.api.CombinedTransform;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ForkTransform;
 import com.android.build.transform.api.NoOpTransform;
 import com.android.build.transform.api.Transform;
@@ -63,7 +64,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * A task running a transform.
  */
 @ParallelizableTask
-public class TransformTask extends StreamBasedTask {
+public class TransformTask extends StreamBasedTask implements Context {
 
     private Transform transform;
 
@@ -104,12 +105,14 @@ public class TransformTask extends StreamBasedTask {
             case AS_INPUT:
                 //noinspection unchecked
                 ((AsInputTransform) transform).transform(
+                        this,
                         (Map<TransformInput, TransformOutput>) (Map<?,?>) consumedInputs,
                         referencedInputs,
                         isIncremental);
                 break;
             case COMBINED:
                 ((CombinedTransform) transform).transform(
+                        this,
                         consumedInputs.keySet(),
                         referencedInputs,
                         Iterables.getOnlyElement(outputStreams).asOutput(),
@@ -118,13 +121,14 @@ public class TransformTask extends StreamBasedTask {
             case FORK_INPUT:
                 //noinspection unchecked
                 ((ForkTransform) transform).transform(
+                        this,
                         (Map<TransformInput, Collection<TransformOutput>>) (Map<?,?>) consumedInputs,
                         referencedInputs,
                         isIncremental);
                 break;
             case NO_OP:
                 ((NoOpTransform) transform).transform(
-                        consumedInputs.keySet(), referencedInputs, isIncremental);
+                        this, consumedInputs.keySet(), referencedInputs, isIncremental);
                 break;
             default:
             throw new UnsupportedOperationException(
@@ -210,7 +214,6 @@ public class TransformTask extends StreamBasedTask {
             public void execute(InputFileDetails inputFileDetails) {
                 // check if we're not already not-incremental, in which case nothing needs to be
                 // done.
-                System.out.println("CHANGED: " + inputFileDetails.getFile());
                 if (isIncremental.get()) {
                     isIncremental.set(findMatchingStreamforInputFile(
                             inputFileDetails,
@@ -231,7 +234,6 @@ public class TransformTask extends StreamBasedTask {
             public void execute(InputFileDetails inputFileDetails) {
                 // check if we're not already not-incremental, in which case nothing needs to be
                 // done.
-                System.out.println("REMOVED: " + inputFileDetails.getFile());
                 if (isIncremental.get()) {
                     isIncremental.set(findMatchingStreamforInputFile(
                             inputFileDetails,
