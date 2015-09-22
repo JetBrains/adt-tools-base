@@ -164,8 +164,8 @@ public interface Transform {
 
     /**
      * Returns the format of the output stream(s) that this Transform writes into. Null can be used
-     * by {@link AsInputTransform} and means that every output stream uses the same format as the
-     * corresponding input stream.
+     * to indicate that every output stream uses the same format as the corresponding input stream
+     * (only applicable to some transform types).
      */
     @Nullable
     ScopedContent.Format getOutputFormat();
