@@ -16,9 +16,7 @@
 package com.android.tools.perflib.heap.memoryanalyzer;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.tools.perflib.analyzer.AnalysisResultEntry;
-import com.android.tools.perflib.analyzer.Offender;
 import com.android.tools.perflib.heap.ClassInstance;
 import com.android.tools.perflib.heap.ClassObj;
 import com.android.tools.perflib.heap.Heap;
@@ -81,7 +79,7 @@ public class LeakedActivityAnalyzerTask extends MemoryAnalyzerTask {
     @NonNull
     @Override
     public String getTaskName() {
-        return "Leaked Activity";
+        return "Detect Leaked Activities";
     }
 
     @NonNull
@@ -90,33 +88,23 @@ public class LeakedActivityAnalyzerTask extends MemoryAnalyzerTask {
         return "Detects leaked activities in Android applications.";
     }
 
-    private static class LeakedActivityEntry implements AnalysisResultEntry {
-
-        @NonNull
-        private Offender mOffender;
+    public static class LeakedActivityEntry extends MemoryAnalysisResultEntry {
 
         private LeakedActivityEntry(@NonNull String offenseDescription,
-                @Nullable Instance offendingInstance) {
-            mOffender = new Offender(offenseDescription,
-                    Collections.singletonList(offendingInstance));
+                @NonNull Instance offendingInstance) {
+            super(offenseDescription, Collections.singletonList(offendingInstance));
         }
 
         @NonNull
         @Override
         public String getWarningMessage() {
-            return "Leaked activity detected";
+            return mOffender.getOffendingDescription();
         }
 
         @NonNull
         @Override
         public String getCategory() {
-            return "LeakedActivity";
-        }
-
-        @NonNull
-        @Override
-        public Offender getOffender() {
-            return mOffender;
+            return "Leaked Activities";
         }
     }
 }

@@ -16,9 +16,11 @@
 package com.android.tools.perflib.heap.memoryanalyzer;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.perflib.analyzer.AnalysisReport;
 import com.android.tools.perflib.analyzer.AnalysisResultEntry;
 import com.android.tools.perflib.analyzer.Analyzer;
+import com.android.tools.perflib.analyzer.AnalyzerTask;
 import com.android.tools.perflib.analyzer.Capture;
 import com.android.tools.perflib.analyzer.CaptureGroup;
 import com.android.tools.perflib.heap.Heap;
@@ -63,13 +65,6 @@ public class MemoryAnalyzer extends Analyzer {
     }
 
     /**
-     * Sets the tasks this {@link MemoryAnalyzer} will run.
-     */
-    public void setTasks(@NonNull Set<MemoryAnalyzerTask> tasks) {
-        mTasks = tasks;
-    }
-
-    /**
      * Analyze the given {@code captureGroup}. It is highly recommended to call this method on the
      * same thread as that of the {@code synchronizingExecutor} to avoid race conditions.
      *
@@ -81,13 +76,23 @@ public class MemoryAnalyzer extends Analyzer {
     @NonNull
     @Override
     public AnalysisReport analyze(@NonNull CaptureGroup captureGroup,
+            @NonNull Set<AnalysisReport.Listener> listeners,
+            @NonNull Set<? extends AnalyzerTask> tasks,
             @NonNull final Executor synchronizingExecutor,
             @NonNull ExecutorService taskExecutor) {
+        // TODO move this to Analyzer once Configuration is implemented
         if (mOutstandingReport != null) {
             return mOutstandingReport;
         }
 
+        for (AnalyzerTask task : tasks) {
+            if (task instanceof MemoryAnalyzerTask) {
+                mTasks.add((MemoryAnalyzerTask) task);
+            }
+        }
+
         mOutstandingReport = new AnalysisReport();
+        mOutstandingReport.addResultListeners(listeners);
 
         List<ListenableFutureTask<List<AnalysisResultEntry>>> futuresList
                 = new ArrayList<ListenableFutureTask<List<AnalysisResultEntry>>>();
@@ -133,7 +138,7 @@ public class MemoryAnalyzer extends Analyzer {
                                 }
 
                                 @Override
-                                public void onFailure(Throwable t) {
+                                public void onFailure(@Nullable Throwable t) {
 
                                 }
                             }, synchronizingExecutor);
@@ -147,13 +152,13 @@ public class MemoryAnalyzer extends Analyzer {
         Futures.addCallback(mRunningAnalyzers,
                 new FutureCallback<List<List<AnalysisResultEntry>>>() {
                     @Override
-                    public void onSuccess(List<List<AnalysisResultEntry>> result) {
+                    public void onSuccess(@Nullable List<List<AnalysisResultEntry>> result) {
                         mAnalysisComplete = true;
                         mOutstandingReport.setCompleted();
                     }
 
                     @Override
-                    public void onFailure(Throwable t) {
+                    public void onFailure(@NonNull Throwable t) {
                         mAnalysisComplete = true;
                         mOutstandingReport.setCancelled();
                     }

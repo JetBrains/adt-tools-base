@@ -17,7 +17,6 @@ package com.android.tools.perflib.heap.memoryanalyzer;
 
 import com.android.annotations.NonNull;
 import com.android.tools.perflib.analyzer.AnalysisResultEntry;
-import com.android.tools.perflib.analyzer.Offender;
 import com.android.tools.perflib.heap.ClassInstance;
 import com.android.tools.perflib.heap.ClassObj;
 import com.android.tools.perflib.heap.Heap;
@@ -30,7 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class DuplicateStringsAnalyzerTask extends MemoryAnalyzerTask {
+public class DuplicatedStringsAnalyzerTask extends MemoryAnalyzerTask {
 
     @Override
     List<AnalysisResultEntry> analyze(@NonNull Configuration configuration,
@@ -49,10 +48,12 @@ public class DuplicateStringsAnalyzerTask extends MemoryAnalyzerTask {
             for (Instance instance : instances) {
                 assert instance instanceof ClassInstance;
                 ClassInstance stringInstance = (ClassInstance) instance;
-                char[] characters = stringInstance.getStringChars();
-                if (characters != null) {
-                    String string = new String(characters);
-                    stringIndex.put(string, stringInstance);
+                if (stringInstance.getDistanceToGcRoot() != Integer.MAX_VALUE) {
+                    char[] characters = stringInstance.getStringChars();
+                    if (characters != null) {
+                        String string = new String(characters);
+                        stringIndex.put(string, stringInstance);
+                    }
                 }
             }
         }
@@ -61,7 +62,7 @@ public class DuplicateStringsAnalyzerTask extends MemoryAnalyzerTask {
             Set<ClassInstance> classInstanceSet = stringIndex.get(key);
             if (classInstanceSet.size() > 1) {
                 results.add(
-                        new DuplicateStringsEntry(key, new ArrayList<Instance>(classInstanceSet)));
+                        new DuplicatedStringsEntry(key, new ArrayList<Instance>(classInstanceSet)));
             }
         }
 
@@ -71,7 +72,7 @@ public class DuplicateStringsAnalyzerTask extends MemoryAnalyzerTask {
     @NonNull
     @Override
     public String getTaskName() {
-        return "Duplicate Strings Analyzer";
+        return "Find Duplicate Strings";
     }
 
     @NonNull
@@ -80,33 +81,24 @@ public class DuplicateStringsAnalyzerTask extends MemoryAnalyzerTask {
         return "Detects duplicate strings in the application.";
     }
 
-    private static class DuplicateStringsEntry implements AnalysisResultEntry {
+    public static class DuplicatedStringsEntry extends MemoryAnalysisResultEntry {
 
-        @NonNull
-        private Offender mOffender;
-
-        private DuplicateStringsEntry(@NonNull String offendingString,
+        private DuplicatedStringsEntry(@NonNull String offendingString,
                 @NonNull List<Instance> duplicates) {
-            mOffender = new Offender(offendingString, duplicates);
+            super(offendingString, duplicates);
         }
 
         @NonNull
         @Override
         public String getWarningMessage() {
-            // Ironic calling this multiple times will result in duplicate strings as well.
-            return "Duplicate String: \"" + mOffender.getOffendingDescription() + "\"";
+            return String.format("%d instances: \"%s\"", mOffender.getOffenders().size(),
+                    mOffender.getOffendingDescription());
         }
 
         @NonNull
         @Override
         public String getCategory() {
-            return "DuplicateStrings";
-        }
-
-        @NonNull
-        @Override
-        public Offender getOffender() {
-            return mOffender;
+            return "Duplicated Strings";
         }
     }
 }

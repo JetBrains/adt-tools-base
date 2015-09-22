@@ -17,6 +17,7 @@ package com.android.tools.perflib.analyzer;
 
 import com.android.annotations.NonNull;
 
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
@@ -26,6 +27,8 @@ public abstract class Analyzer {
 
     @NonNull
     public abstract AnalysisReport analyze(@NonNull CaptureGroup captureGroup,
+            @NonNull Set<AnalysisReport.Listener> listeners,
+            @NonNull Set<? extends AnalyzerTask> tasks,
             @NonNull Executor taskCompleteExecutor,
             @NonNull ExecutorService taskExecutor);
 

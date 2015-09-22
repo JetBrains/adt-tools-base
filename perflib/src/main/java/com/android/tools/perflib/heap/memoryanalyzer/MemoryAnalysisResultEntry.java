@@ -13,18 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.perflib.analyzer;
+package com.android.tools.perflib.heap.memoryanalyzer;
 
 import com.android.annotations.NonNull;
+import com.android.tools.perflib.analyzer.AnalysisResultEntry;
+import com.android.tools.perflib.analyzer.Offender;
+import com.android.tools.perflib.heap.Instance;
 
-public interface AnalysisResultEntry<T> {
+import java.util.List;
+
+public abstract class MemoryAnalysisResultEntry implements AnalysisResultEntry<Instance> {
 
     @NonNull
-    String getWarningMessage();
+    protected Offender<Instance> mOffender;
+
+    protected MemoryAnalysisResultEntry(@NonNull String offenseDescription,
+            @NonNull List<Instance> offendingInstance) {
+        mOffender = new Offender<Instance>(offenseDescription, offendingInstance);
+    }
 
     @NonNull
-    String getCategory();
-
-    @NonNull
-    Offender<T> getOffender();
+    @Override
+    public Offender<Instance> getOffender() {
+        return mOffender;
+    }
 }
