@@ -19,7 +19,7 @@ package com.android.tools.lint.checks;
 import com.android.tools.lint.detector.api.Detector;
 
 @SuppressWarnings("javadoc")
-public class HardcodedValuesDetectorTest  extends AbstractCheckTest {
+public class HardcodedValuesDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
         return new HardcodedValuesDetector();
