@@ -1386,4 +1386,95 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                                 "src/android/support/annotation/StringDef.java")
                 ));
     }
+
+    @SuppressWarnings({"InstantiationOfUtilityClass", "ResultOfObjectAllocationIgnored"})
+    public void testMultipleResourceTypes() throws Exception {
+        // Regression test for
+        //   https://code.google.com/p/android/issues/detail?id=187181
+        // Make sure that parameters which specify multiple resource types are handled
+        // correctly.
+        assertEquals(""
+                + "src/test/pkg/ResourceTypeTest.java:14: Error: Expected resource of type drawable or string [ResourceType]\n"
+                + "        new ResourceTypeTest(res, R.raw.my_raw_file); // ERROR\n"
+                + "                                  ~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/ResourceTypeTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.res.Resources;\n"
+                                + "import android.support.annotation.DrawableRes;\n"
+                                + "import android.support.annotation.StringRes;\n"
+                                + "\n"
+                                + "public class ResourceTypeTest {\n"
+                                + "    public ResourceTypeTest(Resources res, @DrawableRes @StringRes int id) {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static void test(Resources res) {\n"
+                                + "        new ResourceTypeTest(res, R.drawable.ic_announcement_24dp); // OK\n"
+                                + "        new ResourceTypeTest(res, R.string.action_settings); // OK\n"
+                                + "        new ResourceTypeTest(res, R.raw.my_raw_file); // ERROR\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static final class R {\n"
+                                + "        public static final class drawable {\n"
+                                + "            public static final int ic_announcement_24dp = 0x7f0a0000;\n"
+                                + "        }\n"
+                                + "        public static final class string {\n"
+                                + "            public static final int action_settings = 0x7f0a0001;\n"
+                                + "        }\n"
+                                + "        public static final class raw {\n"
+                                + "            public static final int my_raw_file = 0x7f0a0002;\n"
+                                + "        }\n"
+                                + "    }"
+                                + "}"),
+                        copy("src/android/support/annotation/DrawableRes.java.txt", "src/android/support/annotation/DrawableRes.java"),
+                        mStringResAnnotation
+                ));
+    }
+
+    @SuppressWarnings({"InstantiationOfUtilityClass", "ResultOfObjectAllocationIgnored"})
+    public void testAnyRes() throws Exception {
+        // Make sure error messages for @AnyRes are handled right since it's now an
+        // enum set containing all possible resource types
+        assertEquals(""
+                + "src/test/pkg/AnyResTest.java:14: Error: Expected resource identifier (R.type.name) [ResourceType]\n"
+                + "        new AnyResTest(res, 52); // ERROR\n"
+                + "                            ~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/AnyResTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.content.res.Resources;\n"
+                                + "import android.support.annotation.AnyRes;\n"
+                                + "\n"
+                                + "public class AnyResTest {\n"
+                                + "    public AnyResTest(Resources res, @AnyRes int id) {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static void test(Resources res) {\n"
+                                + "        new AnyResTest(res, R.drawable.ic_announcement_24dp); // OK\n"
+                                + "        new AnyResTest(res, R.string.action_settings); // OK\n"
+                                + "        new AnyResTest(res, R.raw.my_raw_file); // OK\n"
+                                + "        new AnyResTest(res, 52); // ERROR\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public static final class R {\n"
+                                + "        public static final class drawable {\n"
+                                + "            public static final int ic_announcement_24dp = 0x7f0a0000;\n"
+                                + "        }\n"
+                                + "        public static final class string {\n"
+                                + "            public static final int action_settings = 0x7f0a0001;\n"
+                                + "        }\n"
+                                + "        public static final class raw {\n"
+                                + "            public static final int my_raw_file = 0x7f0a0002;\n"
+                                + "        }\n"
+                                + "    }"
+                                + "}"),
+                        copy("src/android/support/annotation/AnyRes.java.txt", "src/android/support/annotation/AnyRes.java")
+                ));
+    }
 }
