@@ -35,8 +35,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 public interface MergeConsumer<I extends DataItem> {
 
     /**
-     * An exception thrown during by the consumer. It always contains the original exception as its
-     * cause.
+     * An exception thrown during resource merging by the consumer. It always contains the original
+     * exception as its cause.
      */
     class ConsumerException extends MergingException {
 
