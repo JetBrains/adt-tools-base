@@ -21,6 +21,7 @@ import static com.android.ide.common.resources.ResourceResolver.MAX_RESOURCE_IND
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.rendering.api.ArrayResourceValue;
 import com.android.ide.common.rendering.api.LayoutLog;
 import com.android.ide.common.rendering.api.RenderResources;
 import com.android.ide.common.rendering.api.ResourceValue;
@@ -87,9 +88,9 @@ public class ResourceItemResolver extends RenderResources {
             return null;
         }
 
-        // if the resource value is null, we simply return it.
         String value = resValue.getValue();
-        if (value == null) {
+        if (value == null || resValue instanceof ArrayResourceValue) {
+            // If there's no value or this an array resource (eg. <string-array>), return.
             return resValue;
         }
 
