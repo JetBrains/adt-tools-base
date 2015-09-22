@@ -128,7 +128,7 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
     public Collection<File> getSecondaryFileInputs() {
         return ImmutableList.<File>builder()
                 .addAll(getAllConfigurationFiles())
-                // TODO: What about the incremental dir?
+                .add(this.incrementalDir)
                 .build();
     }
 
