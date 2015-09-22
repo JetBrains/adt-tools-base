@@ -1,5 +1,6 @@
 package com.android.ide.common.resources;
 
+import com.android.ide.common.rendering.api.ArrayResourceValue;
 import com.android.ide.common.rendering.api.DensityBasedResourceValue;
 import com.android.ide.common.rendering.api.LayoutLog;
 import com.android.ide.common.rendering.api.ResourceValue;
@@ -108,6 +109,17 @@ public class ResourceResolverTest extends TestCase {
                         + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                         + "<resources>\n"
                         + "    <string name=\"show_all_apps\">Todo</string>\n"
+                        + "</resources>\n",
+
+                        "values/arrays.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources>\n"
+                        + "    <string name=\"first\">Item1</string>\n"
+                        + "    <string-array name=\"my_array\">\n"
+                        + "        <item>@string/first</item>\n"
+                        + "        <item>Item2</item>\n"
+                        + "        <item>Item3</item>\n"
+                        + "    </string-array>\n"
                         + "</resources>\n",
                 });
 
@@ -267,6 +279,10 @@ public class ResourceResolverTest extends TestCase {
             failed = true;
         }
         assertTrue("incorrect resource returned: " + val, failed);
+        ResourceValue array = resolver
+                .resolveResValue(resolver.getProjectResource(ResourceType.ARRAY, "my_array"));
+        assertTrue("array" + "my_array" + "resolved incorrectly as " + array.getResourceType()
+                .getName(), array instanceof ArrayResourceValue);
 
         // themeExtends
         assertTrue(resolver.themeExtends("@android:style/Theme", "@android:style/Theme"));
