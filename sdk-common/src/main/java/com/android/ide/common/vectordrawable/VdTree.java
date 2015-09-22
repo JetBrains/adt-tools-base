@@ -71,28 +71,14 @@ class VdTree {
         }
         ((Graphics2D) g).scale(scaleX, scaleY);
 
-        Rectangle bounds = null;
         for (int i = 0; i < mChildren.size(); i++) {
             // TODO: do things differently when it is a path or group!!
-            VdPath path = (VdPath) mChildren.get(i);
-            logger.log(Level.FINE, "mCurrentPaths[" + i + "]=" + path.getName() +
-                                   Integer.toHexString(path.mFillColor));
-            if (mChildren.get(i) != null) {
-                Rectangle r = drawPath(path, g, w, h, minScale);
-                if (bounds == null) {
-                    bounds = r;
-                } else {
-                    bounds.add(r);
+            if (mChildren.get(i) instanceof VdPath) {
+                VdPath path = (VdPath)mChildren.get(i);
+                if (mChildren.get(i) != null) {
+                    Rectangle r = drawPath(path, g, w, h, minScale);
                 }
             }
-        }
-        if (bounds != null) {
-            logger.log(Level.FINE, "Rectangle " + bounds);
-            logger.log(Level.FINE, "Port  " + mPortWidth + "," + mPortHeight);
-            double right = mPortWidth - bounds.getMaxX();
-            double bot = mPortHeight - bounds.getMaxY();
-            logger.log(Level.FINE, "x " + bounds.getMinX() + ", " + right);
-            logger.log(Level.FINE, "y " + bounds.getMinY() + ", " + bot);
         }
     }
 
