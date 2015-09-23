@@ -76,7 +76,7 @@ model {
     android.signingConfigs {
         create("myConfig") {
             // TODO: Let gradle resolve file when it is able to do that with File in a Managed type.
-            storeFile = new File("${project.file("debug.keystore")}")
+            storeFile = new File(/${project.file("debug.keystore")}/)
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
