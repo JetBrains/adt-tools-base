@@ -18,11 +18,13 @@ package com.example.android.deviceconfig;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.FeatureInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Point;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.os.Build;
@@ -30,7 +32,9 @@ import android.os.Environment;
 import android.os.StatFs;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.ViewConfiguration;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import org.w3c.dom.Document;
@@ -135,6 +139,7 @@ public class ConfigGenerator {
     public static final String NODE_BLUETOOTH_PROFILES = "bluetooth-profiles";
     public static final String NODE_SCREEN = "screen";
     public static final String NODE_SENSORS = "sensors";
+    public static final String NODE_STATUS_BAR = "status-bar";
     public static final String NODE_DIAGONAL_LENGTH = "diagonal-length";
     public static final String NODE_SCREEN_TYPE = "screen-type";
     public static final String NODE_KEYBOARD_STATE = "keyboard-state";
@@ -161,6 +166,47 @@ public class ConfigGenerator {
         mExtensions = extensions;
     }
 
+    public static int getScreenWidth(WindowManager windowManager, DisplayMetrics metrics) {
+        Display display = windowManager.getDefaultDisplay();
+        if (Build.VERSION.SDK_INT >= 14 && Build.VERSION.SDK_INT < 17) {
+            try {
+                return (Integer) Display.class.getMethod("getRawWidth").invoke(display);
+            } catch (Exception ignored) {
+            }
+        } else if (Build.VERSION.SDK_INT >= 17) {
+            try {
+                Point realSize = new Point();
+                Display.class.getMethod("getRealSize", Point.class).invoke(display, realSize);
+                return realSize.x;
+            } catch (Exception ignored) {
+            }
+        }
+
+        display.getMetrics(metrics);
+        return metrics.widthPixels;
+    }
+
+
+    public static int getScreenHeight(WindowManager windowManager, DisplayMetrics metrics) {
+        Display display = windowManager.getDefaultDisplay();
+        if (Build.VERSION.SDK_INT >= 14 && Build.VERSION.SDK_INT < 17) {
+            try {
+                return (Integer) Display.class.getMethod("getRawHeight").invoke(display);
+            } catch (Exception ignored) {
+            }
+        } else if (Build.VERSION.SDK_INT >= 17) {
+            try {
+                Point realSize = new Point();
+                Display.class.getMethod("getRealSize", Point.class).invoke(display, realSize);
+                return realSize.y;
+            } catch (Exception ignored) {
+            }
+        }
+
+        display.getMetrics(metrics);
+        return metrics.heightPixels;
+    }
+
     @SuppressLint("WorldReadableFiles")
     public String generateConfig() {
         Resources resources = mCtx.getResources();
@@ -168,17 +214,9 @@ public class ConfigGenerator {
         DisplayMetrics metrics = resources.getDisplayMetrics();
         Configuration config = resources.getConfiguration();
 
-        int screenWidth = metrics.widthPixels;
-        int screenHeight = metrics.heightPixels;
-
-        // HACK: Looking up the screen size doesn't work well, presumably because
-        // app isn't told about system UI sections like nav keys section and notification
-        // bar, which makes the xdpi/ydpi wrong. TODO: Use fullscreen mode APIs!
-        // HARDCODED:
-        /*
-        screenWidth = 1440;
-        screenHeight = 2560;
-        */
+        WindowManager wm = (WindowManager) mCtx.getSystemService(Context.WINDOW_SERVICE);
+        int screenWidth = getScreenWidth(wm, metrics);
+        int screenHeight = getScreenHeight(wm, metrics);
 
         try {
             Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
@@ -255,6 +293,27 @@ public class ConfigGenerator {
             case DisplayMetrics.DENSITY_XHIGH:
                 pixelDensityText = doc.createTextNode("xhdpi");
                 break;
+            case DisplayMetrics.DENSITY_XXHIGH:
+                pixelDensityText = doc.createTextNode("xxhdpi");
+                break;
+            case DisplayMetrics.DENSITY_XXXHIGH:
+                pixelDensityText = doc.createTextNode("xxxhdpi");
+                break;
+            case DisplayMetrics.DENSITY_280:
+                pixelDensityText = doc.createTextNode("280dpi");
+                break;
+            case DisplayMetrics.DENSITY_360:
+                pixelDensityText = doc.createTextNode("360dpi");
+                break;
+            case DisplayMetrics.DENSITY_400:
+                pixelDensityText = doc.createTextNode("400dpi");
+                break;
+            case DisplayMetrics.DENSITY_420:
+                pixelDensityText = doc.createTextNode("420dpi");
+                break;
+            case DisplayMetrics.DENSITY_560:
+                pixelDensityText = doc.createTextNode("560dpi");
+                break;
             default:
                 pixelDensityText = doc.createTextNode(" ");
             }
@@ -325,7 +384,7 @@ public class ConfigGenerator {
             case Configuration.TOUCHSCREEN_NOTOUCH:
                 mechanismText = doc.createTextNode("notouch");
             default:
-                mechanismText = doc.createTextNode(" ");
+                mechanismText = doc.createTextNode("TODO:typically \"finger\"");
             }
             mechanism.appendChild(mechanismText);
 
@@ -334,7 +393,7 @@ public class ConfigGenerator {
 
             Element screenType = doc.createElement(PREFIX + NODE_SCREEN_TYPE);
             touch.appendChild(screenType);
-            screenType.appendChild(doc.createTextNode(" "));
+            screenType.appendChild(doc.createTextNode("TODO:typically \"capacitive\""));
 
             Element networking = doc.createElement(PREFIX + NODE_NETWORKING);
             hardware.appendChild(networking);
@@ -454,54 +513,65 @@ public class ConfigGenerator {
             case Configuration.NAVIGATION_NONAV:
                 navText = doc.createTextNode("nonav");
             default:
-                navText = doc.createTextNode(" ");
+                navText = doc.createTextNode("TODO:typically \"nonav\"");
             }
             nav.appendChild(navText);
 
             Element ram = doc.createElement(PREFIX + NODE_RAM);
             hardware.appendChild(ram);
-            // totalMemory given in bytes, divide by 1048576 to get RAM in MiB
-            String line;
-            long ramAmount = 0;
-            String unit = UNIT_BYTES;
-            try {
-                BufferedReader meminfo = new BufferedReader(new FileReader("/proc/meminfo"));
-                while ((line = meminfo.readLine()) != null) {
-                    String[] vals = line.split("[\\s]+");
-                    if (vals[0].equals("MemTotal:")) {
-                        try {
-                            /*
-                             * We're going to want it as a string eventually,
-                             * but parsing it lets us validate it's actually a
-                             * number and something strange isn't going on
-                             */
-                            ramAmount = Long.parseLong(vals[1]);
-                            unit = vals[2];
-                            break;
-                        } catch (NumberFormatException e) {
-                            // Ignore
+
+            ActivityManager actManager = (ActivityManager) mCtx.getSystemService(Context.ACTIVITY_SERVICE);
+            ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
+            actManager.getMemoryInfo(memInfo);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
+                long totalMemory = memInfo.totalMem;
+                long ramAmount = totalMemory / (1024 * 1024);
+                ram.setAttribute(ATTR_UNIT, UNIT_MEBIBYTES);
+                ram.appendChild(doc.createTextNode(Long.toString(ramAmount)));
+            } else {
+                // totalMemory given in bytes, divide by 1048576 to get RAM in MiB
+                String line;
+                long ramAmount = 0;
+                String unit = UNIT_BYTES;
+                try {
+                    BufferedReader meminfo = new BufferedReader(new FileReader("/proc/meminfo"));
+                    while ((line = meminfo.readLine()) != null) {
+                        String[] vals = line.split("[\\s]+");
+                        if (vals[0].equals("MemTotal:")) {
+                            try {
+                                /*
+                                 * We're going to want it as a string eventually,
+                                 * but parsing it lets us validate it's actually a
+                                 * number and something strange isn't going on
+                                 */
+                                ramAmount = Long.parseLong(vals[1]);
+                                unit = vals[2];
+                                break;
+                            } catch (NumberFormatException e) {
+                                // Ignore
+                            }
                         }
                     }
+                    meminfo.close();
+                } catch (FileNotFoundException e) {
+                    // Ignore
                 }
-                meminfo.close();
-            } catch (FileNotFoundException e) {
-                // Ignore
-            }
-            if (ramAmount > 0) {
-                if (unit.equals("B")) {
-                    unit = UNIT_BYTES;
-                } else if (unit.equals("kB")) {
-                    unit = UNIT_KIBIBYTES;
-                } else if (unit.equals("MB")) {
-                    unit = UNIT_MEBIBYTES;
-                } else if (unit.equals("GB")) {
-                    unit = UNIT_GIBIBYTES;
-                } else {
-                    unit = " ";
+                if (ramAmount > 0) {
+                    if (unit.equals("B")) {
+                        unit = UNIT_BYTES;
+                    } else if (unit.equals("kB")) {
+                        unit = UNIT_KIBIBYTES;
+                    } else if (unit.equals("MB")) {
+                        unit = UNIT_MEBIBYTES;
+                    } else if (unit.equals("GB")) {
+                        unit = UNIT_GIBIBYTES;
+                    } else {
+                        unit = " ";
+                    }
                 }
+                ram.setAttribute(ATTR_UNIT, unit);
+                ram.appendChild(doc.createTextNode(Long.toString(ramAmount)));
             }
-            ram.setAttribute(ATTR_UNIT, unit);
-            ram.appendChild(doc.createTextNode(Long.toString(ramAmount)));
 
             Element buttons = doc.createElement(PREFIX + NODE_BUTTONS);
             hardware.appendChild(buttons);
@@ -513,33 +583,79 @@ public class ConfigGenerator {
             }
             buttons.appendChild(buttonsText);
 
+
+
+
+
+            long externalTotal;
+            long internalTotal;
+            StatFs internalStatFs = new StatFs( Environment.getRootDirectory().getAbsolutePath() );
+            StatFs externalStatFs = new StatFs( Environment.getExternalStorageDirectory().getAbsolutePath() );
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                internalTotal = (internalStatFs.getBlockCountLong() * internalStatFs.getBlockSizeLong()) / (1024 * 1024);
+                externalTotal = (externalStatFs.getBlockCountLong() * externalStatFs.getBlockSizeLong()) / (1024 * 1024);
+            } else {
+                internalTotal = ((long) internalStatFs.getBlockCount() * (long) internalStatFs.getBlockSize()) / (1024 * 1024);
+                externalTotal = ((long) externalStatFs.getBlockCount() * (long) externalStatFs.getBlockSize()) / (1024 * 1024);
+            }
+
             Element internalStorage = doc.createElement(PREFIX + NODE_INTERNAL_STORAGE);
             hardware.appendChild(internalStorage);
-            StatFs rootStat = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-            long bytesAvailable = rootStat.getBlockSize() * rootStat.getBlockCount();
-            long internalStorageSize = bytesAvailable / (1024 * 1024);
-            internalStorage.appendChild(doc.createTextNode(Long.toString(internalStorageSize)));
+            internalStorage.appendChild(doc.createTextNode(Long.toString(internalTotal)));
             internalStorage.setAttribute(ATTR_UNIT, UNIT_MEBIBYTES);
 
             Element externalStorage = doc.createElement(PREFIX + NODE_REMOVABLE_STORAGE);
             hardware.appendChild(externalStorage);
-            externalStorage.appendChild(doc.createTextNode(" "));
-
+            externalStorage.appendChild(doc.createTextNode(Long.toString(externalTotal)));
+            externalStorage.setAttribute(ATTR_UNIT, UNIT_MEBIBYTES);
 
             // Don't know CPU, GPU types
             Element cpu = doc.createElement(PREFIX + NODE_CPU);
             hardware.appendChild(cpu);
-            cpu.appendChild(doc.createTextNode(" "));
+
+            /* CPU
+             adb shell cat /proc/cpuinfo | grep "model name"
+             */
+            String cpuName = null;
+            try {
+                String line;
+                BufferedReader cpuinfo = new BufferedReader(new FileReader("/proc/cpuinfo"));
+                while ((line = cpuinfo.readLine()) != null) {
+                    if (line.startsWith("model name") || line.startsWith("Processor")) {
+                        int index = line.indexOf(':');
+                        if (index != -1) {
+                            cpuName = line.substring(index + 1).trim();
+                            break;
+                        }
+                    }
+                }
+                cpuinfo.close();
+            } catch (FileNotFoundException e) {
+                // Ignore
+            }
+            if (cpuName != null) {
+                cpu.appendChild(doc.createTextNode(cpuName));
+            } else {
+                cpu.appendChild(doc.createTextNode("TODO"));
+            }
+
             Element gpu = doc.createElement(PREFIX + NODE_GPU);
             hardware.appendChild(gpu);
-            gpu.appendChild(doc.createTextNode(" "));
+            // TODO - look it up with for example some processing on adb shell dumpsys | grep GLES
+            gpu.appendChild(doc.createTextNode("TODO"));
 
             Element abi = doc.createElement(PREFIX + NODE_ABI);
             hardware.appendChild(abi);
             Text abiText = doc.createTextNode("");
             abi.appendChild(abiText);
-            abiText.appendData("\n" + android.os.Build.CPU_ABI);
-            abiText.appendData("\n" + android.os.Build.CPU_ABI2);
+            if (Build.VERSION.SDK_INT >= 21) {
+                for (String abiName : Build.SUPPORTED_ABIS) {
+                    abiText.appendData("\n" + abiName);
+                }
+            } else {
+                abiText.appendData("\n" + android.os.Build.CPU_ABI);
+                abiText.appendData("\n" + android.os.Build.CPU_ABI2);
+            }
 
             // Don't know about either the dock or plugged-in element
             Element dock = doc.createElement(PREFIX + NODE_DOCK);
@@ -548,7 +664,7 @@ public class ConfigGenerator {
 
             Element pluggedIn = doc.createElement(PREFIX + NODE_POWER_TYPE);
             hardware.appendChild(pluggedIn);
-            pluggedIn.appendChild(doc.createTextNode(" "));
+            pluggedIn.appendChild(doc.createTextNode("battery"));
 
             Element software = doc.createElement(PREFIX + NODE_SOFTWARE);
             device.appendChild(software);
@@ -563,7 +679,7 @@ public class ConfigGenerator {
             if (packageMgr.hasSystemFeature(PackageManager.FEATURE_LIVE_WALLPAPER)) {
                 liveWallpaperSupport.appendChild(doc.createTextNode("true"));
             } else {
-                liveWallpaperSupport.appendChild(doc.createTextNode("flase"));
+                liveWallpaperSupport.appendChild(doc.createTextNode("false"));
             }
 
             Element bluetoothProfiles = doc.createElement(PREFIX + NODE_BLUETOOTH_PROFILES);
@@ -592,13 +708,58 @@ public class ConfigGenerator {
                 glExtensions.appendChild(doc.createTextNode(" "));
             }
 
+            Element statusBar = doc.createElement(PREFIX + NODE_STATUS_BAR);
+            software.appendChild(statusBar);
+            statusBar.appendChild(doc.createTextNode("true"));
+
+            // States
+            Element state = doc.createElement(PREFIX + NODE_STATE);
+            device.appendChild(state);
+            boolean isPhone = screenHeight > screenWidth;
+            state.setAttribute("name", "Portrait");
+            if (isPhone) {
+                state.setAttribute(ATTR_DEFAULT, "true");
+            }
+            Element description = doc.createElement(PREFIX + NODE_DESCRIPTION);
+            state.appendChild(description);
+            description.appendChild(doc.createTextNode("The device in portrait view"));
+            Element orientation = doc.createElement(PREFIX + NODE_SCREEN_ORIENTATION);
+            state.appendChild(orientation);
+            orientation.appendChild(doc.createTextNode("port"));
+            Element keyboardState = doc.createElement(PREFIX + NODE_KEYBOARD_STATE);
+            state.appendChild(keyboardState);
+            keyboardState.appendChild(doc.createTextNode("keyssoft"));
+            Element navState = doc.createElement(PREFIX + NODE_NAV_STATE);
+            state.appendChild(navState);
+            navState.appendChild(doc.createTextNode("nonav"));
+
+            state = doc.createElement(PREFIX + NODE_STATE);
+            device.appendChild(state);
+            state.setAttribute("name", "Landscape");
+            if (!isPhone) {
+                state.setAttribute(ATTR_DEFAULT, "true");
+            }
+            description = doc.createElement(PREFIX + NODE_DESCRIPTION);
+            state.appendChild(description);
+            description.appendChild(doc.createTextNode("The device in tablet view"));
+            orientation = doc.createElement(PREFIX + NODE_SCREEN_ORIENTATION);
+            state.appendChild(orientation);
+            orientation.appendChild(doc.createTextNode("port"));
+            keyboardState = doc.createElement(PREFIX + NODE_KEYBOARD_STATE);
+            state.appendChild(keyboardState);
+            keyboardState.appendChild(doc.createTextNode("keyssoft"));
+            navState = doc.createElement(PREFIX + NODE_NAV_STATE);
+            state.appendChild(navState);
+            navState.appendChild(doc.createTextNode("nonav"));
+
             Transformer tf = TransformerFactory.newInstance().newTransformer();
             tf.setOutputProperty(OutputKeys.INDENT, "yes");
             tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
             DOMSource source = new DOMSource(doc);
             String filename = String.format("devices_%1$tm_%1$td_%1$ty.xml", Calendar.getInstance()
                     .getTime());
-            File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            //File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            File dir = mCtx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
             File outFile = new File(dir, filename);
             FileOutputStream out = new FileOutputStream(new File(dir, filename));
             StreamResult result = new StreamResult(out);

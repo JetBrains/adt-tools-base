@@ -7,10 +7,6 @@ android {
     defaultConfig {
         applicationId "com.example.android.deviceconfig"
         minSdkVersion 8
-        targetSdkVersion 15
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_5
-            targetCompatibility JavaVersion.VERSION_1_5
-        }
+        targetSdkVersion 23
     }
 }
