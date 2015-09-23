@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <recipe>
 
-    <dependency mavenUrl="com.google.android.gms:play-services-wearable:7.5.0" />
-    <dependency mavenUrl="com.google.android.gms:play-services-maps:7.5.0" />
-    <dependency mavenUrl="com.google.android.support:wearable:1.2.0" />
+    <dependency mavenUrl="com.google.android.gms:play-services-wearable:+" />
+    <dependency mavenUrl="com.google.android.gms:play-services-maps:+" />
+    <dependency mavenUrl="com.google.android.support:wearable:+" />
 
 
     <merge from="root/AndroidManifest.xml.ftl"
