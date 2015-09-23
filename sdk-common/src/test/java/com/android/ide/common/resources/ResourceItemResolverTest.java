@@ -112,7 +112,7 @@ public class ResourceItemResolverTest extends TestCase {
                         + "    <string name=\"wallpaper_instructions\">Tap picture to set portrait wallpaper</string>\n"
                         + "    <string name=\"xliff_string\">First: <xliff:g id=\"firstName\">%1$s</xliff:g> Last: <xliff:g id=\"lastName\">%2$s</xliff:g></string>\n"
                         + "    <array name=\"my_array\">\"\n"
-                        + "        <item>  value1</item>\n"   // also test trimming.
+                        + "        <item>@string/home_title</item>\n"
                         + "        <item>value2\n</item>\n"
                         + "        <item>value3</item>\n"
                         + "    </array>\n"
@@ -211,9 +211,10 @@ public class ResourceItemResolverTest extends TestCase {
 
         // Test array values.
         ResourceValue resValue = resolver.findResValue("@array/my_array", false);
+        resValue = resolver.resolveResValue(resValue);  // test http://b.android.com/187097
         assertTrue(resValue instanceof ArrayResourceValue);
         assertEquals(3, ((ArrayResourceValue) resValue).getElementCount());
-        assertEquals("value1", ((ArrayResourceValue) resValue).getElement(0));
+        assertEquals("@string/home_title", ((ArrayResourceValue) resValue).getElement(0));
         assertEquals("value2", ((ArrayResourceValue) resValue).getElement(1));
         assertEquals("value3", ((ArrayResourceValue) resValue).getElement(2));
         resValue = resolver.findResValue("@android:array/my_fw_array", false);
@@ -279,7 +280,7 @@ public class ResourceItemResolverTest extends TestCase {
         resValue = resolver.findResValue("@array/my_array", false);
         assertTrue(resValue instanceof ArrayResourceValue);
         assertEquals(3, ((ArrayResourceValue) resValue).getElementCount());
-        assertEquals("value1", ((ArrayResourceValue) resValue).getElement(0));
+        assertEquals("@string/home_title", ((ArrayResourceValue) resValue).getElement(0));
         assertEquals("value2", ((ArrayResourceValue) resValue).getElement(1));
         assertEquals("value3", ((ArrayResourceValue) resValue).getElement(2));
         resValue = resolver.findResValue("@android:array/my_fw_array", false);
