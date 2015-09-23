@@ -128,7 +128,7 @@ Task instrumentIncrementalTestBaseClasses = tasks.create(
         name: "instrumentIncrementalTestBaseClasses",
         type: org.gradle.api.tasks.JavaExec) {
     main = 'com.android.build.gradle.internal.incremental.IncrementalSupportVisitor'
-    classpath = sourceSets.main.runtimeClasspath
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.compileClasspath
     args baseClasses, baseInstrumentedClasses
 }
 

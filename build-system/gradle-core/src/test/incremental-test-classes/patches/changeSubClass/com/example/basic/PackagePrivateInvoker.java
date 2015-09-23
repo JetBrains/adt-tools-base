@@ -25,4 +25,15 @@ public class PackagePrivateInvoker {
         PackagePrivateClass packagePrivateClass = new PackagePrivateClass("foo");
         return packagePrivateClass.getStringValue() + "bar";
     }
+
+    public String invokeTernaryOperator(boolean select) {
+        Provider<String> provider = select
+                ? new PackagePrivateClass("patched_package_private")
+                : new AnotherPackagePrivateClass<String>("patched_another_package_private");
+        return provider.getValue();
+    }
+
+    public String ternaryOperatorInConstructorParams(boolean select) {
+        return new AnotherPackagePrivateClass<String>(!select ? "true" : "false").getValue();
+    }
 }

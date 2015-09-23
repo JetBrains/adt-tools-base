@@ -42,10 +42,13 @@ import java.util.Map;
  * Since classes cannot be replaced in an existing class loader, we use a delegation model to
  * redirect any method implementation to the AndroidInstantRuntime.
  *
- * This redirection happens only when a new class implementation is available, so far we do a
- * hashtable lookup for updated implementation. In the future, we could generate a static field
- * during the class visit with this visitor and have that boolean field indicate the presence of an
- * updated version or not.
+ * This redirection happens only when a new class implementation is available. A new version
+ * will register itself in a static synthetic field called $change. Each method will be enhanced
+ * with a piece of code to check if a new version is available by looking at the $change field
+ * and redirect if necessary.
+ *
+ * Redirection will be achieved by calling a
+ * {@link IncrementalChange#access$dispatch(String, Object...)} method.
  */
 public class IncrementalSupportVisitor extends IncrementalVisitor {
 
@@ -59,7 +62,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         visitedClassName = name;
         visitedSuperName = superName;
 
-        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
+        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
         AccessRight accessRight = AccessRight.fromNodeAccess(access);
         access = accessRight == AccessRight.PACKAGE_PRIVATE ? access | Opcodes.ACC_PUBLIC : access;
         super.visit(version, access, name, signature, superName, interfaces);

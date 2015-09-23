@@ -17,21 +17,9 @@
 package com.example.basic;
 
 /**
- * Package Private class with PackagePrivate methods.
+ * Simple provider of a typed value.
  */
-class PackagePrivateClass implements Provider<String> {
+public interface Provider<T> {
 
-    private final String stringValue;
-    PackagePrivateClass(String param) {
-        this.stringValue = param;
-    }
-
-    String getStringValue() {
-        return stringValue;
-    }
-
-    @Override
-    public String getValue() {
-        return stringValue;
-    }
+    T getValue();
 }
