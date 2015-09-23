@@ -69,7 +69,7 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
             xmlContent = Files.toString(incomingFile, Charsets.UTF_8);
         }
 
-        final VdPreview.TargetSize imageTargetSize = VdPreview.TargetSize.createSizeFromWidth(24);
+        final VdPreview.TargetSize imageTargetSize = VdPreview.TargetSize.createSizeFromWidth(64);
         StringBuilder builder = new StringBuilder();
         BufferedImage image = VdPreview.getPreviewFromVectorXml(imageTargetSize,
                 xmlContent, builder);
@@ -182,4 +182,73 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
     public void testXmlColorAlpha() throws Exception {
         checkXmlConversion("test_fill_stroke_alpha");
     }
+
+    public void testXmlTransformation1() throws Exception {
+        checkXmlConversion("test_xml_transformation_1");
+    }
+
+    public void testXmlTransformation2() throws Exception {
+        checkXmlConversion("test_xml_transformation_2");
+    }
+
+    public void testXmlTransformation3() throws Exception {
+        checkXmlConversion("test_xml_transformation_3");
+    }
+
+    public void testXmlTransformation4() throws Exception {
+        checkXmlConversion("test_xml_transformation_4");
+    }
+
+    public void testXmlTransformation5() throws Exception {
+        checkXmlConversion("test_xml_transformation_5");
+    }
+
+    public void testXmlTransformation6() throws Exception {
+        checkXmlConversion("test_xml_transformation_6");
+    }
+
+    public void testXmlScaleStroke1() throws Exception {
+        checkXmlConversion("test_xml_scale_stroke_1");
+    }
+
+    public void testXmlScaleStroke2() throws Exception {
+        checkXmlConversion("test_xml_scale_stroke_2");
+    }
+
+    public void testXmlRenderOrder1() throws Exception {
+        checkXmlConversion("test_xml_render_order_1");
+    }
+
+    public void testXmlRenderOrder2() throws Exception {
+        checkXmlConversion("test_xml_render_order_2");
+    }
+
+    public void testXmlRepeatedA1() throws Exception {
+        checkXmlConversion("test_xml_repeated_a_1");
+    }
+
+    public void testXmlRepeatedA2() throws Exception {
+        checkXmlConversion("test_xml_repeated_a_2");
+    }
+
+    public void testXmlRepeatedCQ() throws Exception {
+        checkXmlConversion("test_xml_repeated_cq");
+    }
+
+    public void testXmlRepeatedST() throws Exception {
+        checkXmlConversion("test_xml_repeated_st");
+    }
+
+    public void testXmlStroke1() throws Exception {
+        checkXmlConversion("test_xml_stroke_1");
+    }
+
+    public void testXmlStroke2() throws Exception {
+        checkXmlConversion("test_xml_stroke_2");
+    }
+
+    public void testXmlStroke3() throws Exception {
+        checkXmlConversion("test_xml_stroke_3");
+    }
+
 }
