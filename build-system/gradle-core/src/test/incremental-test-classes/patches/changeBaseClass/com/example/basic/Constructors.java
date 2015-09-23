@@ -49,13 +49,18 @@ public class Constructors {
         }
 
         public Sub(long l, float f) {
-            this(f, callMeBefore(String.valueOf(l)), 0);
+            this(f, callMeBefore(String.valueOf(l + 1) + "*"), 0);
             value = "patched_Sub(long, float)";
         }
 
         public Sub(boolean b) {
             this(b ? 1.0 : 0.0, b ? "true" : "false", b ? 1 : 0);
             value = "Sub(boolean)";
+        }
+
+        public Sub(int x, int y, int z) {
+            this((x = 9) + 0.1, "" + x + y, z);
+            value = "Sub(" + x + ", " + y + ", " + z + ")";
         }
 
         public String getSubFinal() {

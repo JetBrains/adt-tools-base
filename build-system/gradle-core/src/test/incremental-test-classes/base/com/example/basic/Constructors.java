@@ -58,6 +58,11 @@ public class Constructors {
             value = "Sub(boolean)";
         }
 
+        public Sub(int x, int y, int z) {
+            this((x = 2) + 0.1, "" + x + y, z);
+            value = "Sub(" + x + ", " + y + ", " + z + ")";
+        }
+
         public String getSubFinal() {
             return subFinal;
         }

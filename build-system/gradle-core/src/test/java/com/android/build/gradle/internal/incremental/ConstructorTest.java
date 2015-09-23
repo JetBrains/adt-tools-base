@@ -42,6 +42,11 @@ public class ConstructorTest {
         assertEquals("sub:0.5[1234]0", sub.getSubFinal());
         assertEquals("Sub(long, float)", sub.value);
 
+        sub = new Constructors.Sub(10, 20, 30);
+        assertEquals("base:2.1[220]30", sub.getBaseFinal());
+        assertEquals("sub:2.122030", sub.getSubFinal());
+        assertEquals("Sub(2, 20, 30)", sub.value);
+
         Constructors outer = new Constructors("outer");
         Constructors.DupInvokeSpecialSub dup = outer.new DupInvokeSpecialSub();
         assertEquals("original", dup.value);
@@ -54,9 +59,14 @@ public class ConstructorTest {
         assertEquals("patched_Sub(double, String, int)", sub.value);
 
         sub = new Constructors.Sub(1234L, 0.5f);
-        assertEquals("0.5((1234))0:patched_base", sub.getBaseFinal());
-        assertEquals("0.5(1234)0:patched_sub", sub.getSubFinal());
+        assertEquals("0.5((1235*))0:patched_base", sub.getBaseFinal());
+        assertEquals("0.5(1235*)0:patched_sub", sub.getSubFinal());
         assertEquals("patched_Sub(long, float)", sub.value);
+
+        sub = new Constructors.Sub(10, 20, 30);
+        assertEquals("9.1(920)30:patched_base", sub.getBaseFinal());
+        assertEquals("9.192030:patched_sub", sub.getSubFinal());
+        assertEquals("Sub(9, 20, 30)", sub.value);
 
         outer = new Constructors("outer_patched");
         dup = outer.new DupInvokeSpecialSub();
