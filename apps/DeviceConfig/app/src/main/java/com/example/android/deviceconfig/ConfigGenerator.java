@@ -47,6 +47,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -147,6 +150,8 @@ public class ConfigGenerator {
     public static final String NODE_CPU = "cpu";
     public static final String NODE_INTERNAL_STORAGE = "internal-storage";
     public static final String NODE_NAME = "name";
+    public static final String NODE_ID = "id";
+    public static final String NODE_SKIN = "skin";
     public static final String NODE_MANUFACTURER = "manufacturer";
     public static final String NODE_API_LEVEL = "api-level";
     public static final String ATTR_DEFAULT = "default";
@@ -233,6 +238,11 @@ public class ConfigGenerator {
             Element name = doc.createElement(PREFIX + NODE_NAME);
             device.appendChild(name);
             name.appendChild(doc.createTextNode(android.os.Build.MODEL));
+
+            Element id = doc.createElement(PREFIX + NODE_ID);
+            device.appendChild(id);
+            id.appendChild(doc.createTextNode(android.os.Build.MODEL));
+
             Element manufacturer = doc.createElement(PREFIX + NODE_MANUFACTURER);
             device.appendChild(manufacturer);
             manufacturer.appendChild(doc.createTextNode(android.os.Build.MANUFACTURER));
@@ -408,6 +418,7 @@ public class ConfigGenerator {
             if (packageMgr.hasSystemFeature(PackageManager.FEATURE_NFC)) {
                 networkingText.appendData("\nNFC");
             }
+            networkingText.appendData("\n");
 
             Element sensors = doc.createElement(PREFIX + NODE_SENSORS);
             hardware.appendChild(sensors);
@@ -434,6 +445,7 @@ public class ConfigGenerator {
             if (packageMgr.hasSystemFeature(PackageManager.FEATURE_SENSOR_PROXIMITY)) {
                 sensorsText.appendData("\nProximitySensor");
             }
+            sensorsText.appendData("\n");
 
             Element mic = doc.createElement(PREFIX + NODE_MIC);
             hardware.appendChild(mic);
@@ -641,8 +653,36 @@ public class ConfigGenerator {
 
             Element gpu = doc.createElement(PREFIX + NODE_GPU);
             hardware.appendChild(gpu);
-            // TODO - look it up with for example some processing on adb shell dumpsys | grep GLES
-            gpu.appendChild(doc.createTextNode("TODO"));
+
+            String gpuName = null;
+            try {
+                String line;
+                // This doesn't work; presumably because apps can't hold the dump
+                // permission.
+                ProcessBuilder processBuilder = new ProcessBuilder("/system/bin/dumpsys");
+                Process process = processBuilder.start();
+                process.waitFor();
+                InputStream inputStream = process.getInputStream();
+                BufferedReader gpuInfo = new BufferedReader(new InputStreamReader(inputStream,
+                        Charset.forName("UTF-8")));
+                while ((line = gpuInfo.readLine()) != null) {
+                    if (line.startsWith("GLES:")) {
+                        int index = line.indexOf(':');
+                        if (index != -1) {
+                            gpuName = line.substring(index + 1).trim();
+                            break;
+                        }
+                    }
+                }
+                gpuInfo.close();
+            } catch (FileNotFoundException | InterruptedException ignore) {
+                // Ignore
+            }
+            if (gpuName != null) {
+                gpu.appendChild(doc.createTextNode(gpuName));
+            } else {
+                gpu.appendChild(doc.createTextNode("TODO"));
+            }
 
             Element abi = doc.createElement(PREFIX + NODE_ABI);
             hardware.appendChild(abi);
@@ -652,9 +692,11 @@ public class ConfigGenerator {
                 for (String abiName : Build.SUPPORTED_ABIS) {
                     abiText.appendData("\n" + abiName);
                 }
+                abiText.appendData("\n");
             } else {
                 abiText.appendData("\n" + android.os.Build.CPU_ABI);
                 abiText.appendData("\n" + android.os.Build.CPU_ABI2);
+                abiText.appendData("\n");
             }
 
             // Don't know about either the dock or plugged-in element
@@ -665,6 +707,10 @@ public class ConfigGenerator {
             Element pluggedIn = doc.createElement(PREFIX + NODE_POWER_TYPE);
             hardware.appendChild(pluggedIn);
             pluggedIn.appendChild(doc.createTextNode("battery"));
+
+            Element skin = doc.createElement(PREFIX + NODE_SKIN);
+            hardware.appendChild(skin);
+            skin.appendChild(doc.createTextNode(android.os.Build.MODEL.toLowerCase().replace(' ', '_'));
 
             Element software = doc.createElement(PREFIX + NODE_SOFTWARE);
             device.appendChild(software);
@@ -741,10 +787,10 @@ public class ConfigGenerator {
             }
             description = doc.createElement(PREFIX + NODE_DESCRIPTION);
             state.appendChild(description);
-            description.appendChild(doc.createTextNode("The device in tablet view"));
+            description.appendChild(doc.createTextNode("The device in landscape view"));
             orientation = doc.createElement(PREFIX + NODE_SCREEN_ORIENTATION);
             state.appendChild(orientation);
-            orientation.appendChild(doc.createTextNode("port"));
+            orientation.appendChild(doc.createTextNode("land"));
             keyboardState = doc.createElement(PREFIX + NODE_KEYBOARD_STATE);
             state.appendChild(keyboardState);
             keyboardState.appendChild(doc.createTextNode("keyssoft"));
