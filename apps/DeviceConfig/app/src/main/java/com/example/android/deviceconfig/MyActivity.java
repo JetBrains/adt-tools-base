@@ -16,6 +16,7 @@
 
 package com.example.android.deviceconfig;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +28,7 @@ import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -38,18 +40,22 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class MyActivity extends Activity implements OnClickListener {
 
-    public static final String TAG = "DeviceConfig";
     private static GLView mGl;
 
     /** Called when the activity is first created. */
+    @SuppressLint("SetTextI18n")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.main);
+        LinearLayout vg = (LinearLayout) findViewById(R.id.buttonHolder);
+        if (vg == null) {
+            return;
+        }
+
         // Instantiate a GL surface view so we can get extensions information
         mGl = new GLView(this);
-        LinearLayout vg = (LinearLayout) findViewById(R.id.buttonHolder);
         // If we set the layout to be 0, it just won't render
         ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(1, 1);
         mGl.setLayoutParams(params);
@@ -101,12 +107,12 @@ public class MyActivity extends Activity implements OnClickListener {
 
         DisplayMetrics metrics = getResources().getDisplayMetrics();
 
-
         tv = (TextView) findViewById(R.id.size_api);
         if (tv != null) {
-            int a = metrics.heightPixels;
-            int b = metrics.widthPixels;
-            tv.setText(b + "x" + a);
+            WindowManager windowManager = getWindowManager();
+            int widthPixels = ConfigGenerator.getScreenWidth(windowManager, metrics);
+            int heightPixels = ConfigGenerator.getScreenHeight(windowManager, metrics);
+            tv.setText(widthPixels + "x" + heightPixels);
         }
 
         tv = (TextView) findViewById(R.id.xdpi);
@@ -127,7 +133,6 @@ public class MyActivity extends Activity implements OnClickListener {
         if (tv != null) {
             tv.setText(String.format("%f", config.fontScale));
         }
-
     }
 
     public void onClick(View v) {
