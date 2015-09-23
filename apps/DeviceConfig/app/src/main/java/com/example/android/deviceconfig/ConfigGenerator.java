@@ -168,6 +168,18 @@ public class ConfigGenerator {
         DisplayMetrics metrics = resources.getDisplayMetrics();
         Configuration config = resources.getConfiguration();
 
+        int screenWidth = metrics.widthPixels;
+        int screenHeight = metrics.heightPixels;
+
+        // HACK: Looking up the screen size doesn't work well, presumably because
+        // app isn't told about system UI sections like nav keys section and notification
+        // bar, which makes the xdpi/ydpi wrong. TODO: Use fullscreen mode APIs!
+        // HARDCODED:
+        /*
+        screenWidth = 1440;
+        screenHeight = 2560;
+        */
+
         try {
             Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
 
@@ -217,8 +229,9 @@ public class ConfigGenerator {
 
             Element diagonalLength = doc.createElement(PREFIX + NODE_DIAGONAL_LENGTH);
             screen.appendChild(diagonalLength);
-            double xin = metrics.widthPixels / metrics.xdpi;
-            double yin = metrics.heightPixels / metrics.ydpi;
+            double xin = screenWidth / metrics.xdpi;
+            double yin = screenHeight / metrics.ydpi;
+
             double diag = Math.sqrt(Math.pow(xin, 2) + Math.pow(yin, 2));
             diagonalLength.appendChild(doc.createTextNode(
                   String.format(Locale.US, "%1$.2f", diag)));
@@ -268,11 +281,11 @@ public class ConfigGenerator {
 
             Element xDimension = doc.createElement(PREFIX + NODE_X_DIMENSION);
             dimensions.appendChild(xDimension);
-            xDimension.appendChild(doc.createTextNode(Integer.toString(metrics.widthPixels)));
+            xDimension.appendChild(doc.createTextNode(Integer.toString(screenWidth)));
 
             Element yDimension = doc.createElement(PREFIX + NODE_Y_DIMENSION);
             dimensions.appendChild(yDimension);
-            yDimension.appendChild(doc.createTextNode(Integer.toString(metrics.heightPixels)));
+            yDimension.appendChild(doc.createTextNode(Integer.toString(screenHeight)));
 
             Element xdpi = doc.createElement(PREFIX + NODE_XDPI);
             screen.appendChild(xdpi);
