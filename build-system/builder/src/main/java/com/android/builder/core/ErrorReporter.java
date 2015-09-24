@@ -52,6 +52,24 @@ public abstract class ErrorReporter implements MessageReceiver {
         return mMode;
     }
 
+    /**
+     * Reports an error.
+     *
+     * The behavior of this method depends on whether the project is being evaluated by
+     * an IDE or from the command line. If it's the former, the error will simply be recorder
+     * and displayed after the sync properly finishes. If it's the latter, then the evaluation
+     * is aborted right away.
+     *
+     * @param data a data representing the source of the error. This goes hand in hand with the
+     *             <var>type</var>, and is not meant to be readable. Instead a (possibly translated)
+     *             message is created from this data and type.
+     * @param type the type of the error.
+     * @param msg a human readable error (for command line output, or if an older IDE doesn't know
+     *            this particular issue type.)
+     * @return a SyncIssue if the error is only recorded.
+     *
+     * @see SyncIssue
+     */
     @NonNull
     public abstract SyncIssue handleSyncError(@NonNull String data, int type, @NonNull String msg);
 }

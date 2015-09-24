@@ -18,11 +18,11 @@ package com.android.build.gradle.ndk.internal;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
+import static com.android.utils.StringHelper.appendCamelCase;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.FileUtils;
-import com.android.utils.StringHelper;
 
 import org.gradle.nativeplatform.NativeBinarySpec;
 
@@ -62,16 +62,6 @@ public class NdkNamingScheme {
         appendCamelCase(sb, binary.getName());
         appendCamelCase(sb, target);
         return sb.toString();
-    }
-
-    private static void appendCamelCase(@NonNull StringBuilder sb, @Nullable String word) {
-        if (word != null) {
-            if (sb.length() == 0) {
-                sb.append(word);
-            } else {
-                sb.append(StringHelper.capitalize(word));
-            }
-        }
     }
 
     @NonNull

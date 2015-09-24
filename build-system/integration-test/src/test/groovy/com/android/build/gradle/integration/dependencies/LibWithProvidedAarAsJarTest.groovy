@@ -78,7 +78,7 @@ artifacts {
     @Test
     void "check provided jar is not packaged"() {
         assertThatAar(project.getSubproject('library').getAar("debug"))
-                .doesNotContainClass("com/example/android/multiproject/library2/PersionView2.class")
+                .doesNotContainClass("Lcom/example/android/multiproject/library2/PersionView2;")
     }
 
     @Test

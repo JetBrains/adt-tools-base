@@ -63,7 +63,7 @@ dependencies {
     @Test
     void "check provided jar is not packaged"() {
         assertThatAar(project.getSubproject('library').getAar("debug"))
-                .doesNotContainClass("com/example/android/multiproject/person/People.class")
+                .doesNotContainClass("Lcom/example/android/multiproject/person/People;")
     }
 
     @Test

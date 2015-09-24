@@ -6,6 +6,8 @@ import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
+import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.google.common.base.Joiner
 import com.google.common.io.Files
 import org.apache.commons.io.FileUtils
@@ -17,6 +19,7 @@ import org.junit.Test
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertNull
@@ -118,44 +121,30 @@ android {
     @Test
     public void "check debug AAR packaging"() {
         androidProject.execute("assembleDebug")
-        ZipFile aar = new ZipFile(androidProject.getAar("debug"))
 
-        assertNotNull("debug build arr should contain libinjar",
-                aar.getEntry("libs/libinjar.jar"))
-        assertFalse("Classes.jar in debug AAR should not contain LibInJar",
-                classesJarInAarContainsLibInJar(aar))
+        // check that the classes from the local jars are still in a local jar
+        assertThatAar(androidProject.getAar("debug")).containsClass(
+                "Lcom/example/libinjar/LibInJar;",
+                AbstractAndroidSubject.ClassFileScope.SECONDARY)
 
+        // check that it's not in the main class file.
+        assertThatAar(androidProject.getAar("debug")).doesNotContainClass(
+                "Lcom/example/libinjar/LibInJar;",
+                AbstractAndroidSubject.ClassFileScope.MAIN)
     }
 
     @Test
     public void "check release AAR packaging"() {
         androidProject.execute("assembleRelease")
-        ZipFile aar = new ZipFile(androidProject.getAar("release"))
 
-        assertNull("release build arr should not contain libinjar",
-                aar.getEntry("libs/libinjar.jar"))
-        assertTrue("Classes.jar in release AAR should contain some of LibInJar",
-                classesJarInAarContainsLibInJar(aar))
-    }
+        // check that the classes from the local jars are in the main class file
+        assertThatAar(androidProject.getAar("release")).containsClass(
+                "Lcom/example/libinjar/a;",
+                AbstractAndroidSubject.ClassFileScope.MAIN)
 
-    private boolean classesJarInAarContainsLibInJar(@NonNull ZipFile aar) {
-        // Extract the classes.jar from the aar file.
-        File tempClassesJarFile = androidProject.file("temp-classes.jar")
-        try {
-            Files.asByteSink(tempClassesJarFile).writeFrom(
-                    aar.getInputStream(aar.getEntry("classes.jar")))
-            ZipFile classesJar = new ZipFile(tempClassesJarFile)
-            // Check whether it contains some of libinjar.
-            for (ZipEntry entry : classesJar.entries()) {
-                // Proguard can name the classes however it likes,
-                // so this just checks for the package.
-                if (entry.name.startsWith("com/example/libinjar")) {
-                    return true
-                }
-            } // Failed to find.
-            return false
-        } finally {
-            tempClassesJarFile.delete()
-        }
+        // check that it's not in any local jar
+        assertThatAar(androidProject.getAar("release")).doesNotContainClass(
+                "Lcom/example/libinjar/LibInJar;",
+                AbstractAndroidSubject.ClassFileScope.SECONDARY)
     }
 }

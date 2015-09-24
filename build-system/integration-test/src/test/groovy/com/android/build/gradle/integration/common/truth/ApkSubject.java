@@ -20,6 +20,7 @@ import static com.android.SdkConstants.FN_APK_CLASSES_DEX;
 import static com.android.SdkConstants.FN_APK_CLASSES_N_DEX;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.integration.common.utils.ApkHelper;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
@@ -44,6 +45,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
@@ -154,54 +156,63 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     /**
      * Returns true if the provided class is present in the file.
      * @param expectedClassName the class name in the format Lpkg1/pk2/Name;
+     * @param scope the scope in which to search for the class.
      */
     @Override
     protected boolean checkForClass(
-            @NonNull String expectedClassName)
+            @NonNull String expectedClassName,
+            @NonNull ClassFileScope scope)
             throws ProcessException, IOException {
+        if (!expectedClassName.startsWith("L") || !expectedClassName.endsWith(";")) {
+            throw new RuntimeException("class name must be in the format Lcom/foo/Main;");
+        }
+
         File apkFile = getSubject();
 
         // get the dexdump exec
         File dexDumpExe = SdkHelper.getDexDump();
 
-        ZipFile zip = new ZipFile(apkFile);
-        try {
-            // while dexdump supports receiving directly an apk, this doesn't work for multi-dex.
-            // check that we're in multi-dex mode first by checking for a classes2.dex file in the
-            // APK
-            boolean multiDex = zip.getEntry("classes2.dex") != null;
-
-            // if not multi-dex just run the query on the APK itself, dexdump will look at the
-            // classes.dex inside.
-            if (!multiDex) {
+        switch (scope) {
+            case MAIN:
                 return checkFileForClassWithDexDump(expectedClassName, apkFile, dexDumpExe);
-            }
-
-            // else, we're going to extract all the classes<N>.dex we find until one of them
-            // contains the class we're searching for.
-            InputStream classDexStream;
-            int index = 1;
-            while ((classDexStream = getInputStream(zip, index == 1 ? FN_APK_CLASSES_DEX :
-                    String.format(FN_APK_CLASSES_N_DEX, index))) != null) {
-
-                byte[] content = ByteStreams.toByteArray(classDexStream);
-                classDexStream.close();
-                // write into tmp file
-                File dexFile = File.createTempFile("dex", "");
-                dexFile.deleteOnExit();
-                Files.write(content, dexFile);
-
-                // run dexDump on it
-                if (checkFileForClassWithDexDump(expectedClassName, dexFile, dexDumpExe)) {
+            case ALL:
+                if (checkFileForClassWithDexDump(expectedClassName, apkFile, dexDumpExe)) {
                     return true;
                 }
+                // intended fall-through
+            case SECONDARY:
+                // while dexdump supports receiving directly an apk, this doesn't work for
+                // multi-dex.
+                // We're going to extract all the classes<N>.dex we find until one of them
+                // contains the class we're searching for.
+                ZipFile zipFile = new ZipFile(getSubject());
+                try {
+                    InputStream classDexStream;
+                    int index = 2;
 
-                // not found? switch to next index.
-                index++;
-            }
-        } finally {
-            zip.close();
+                    while ((classDexStream = getLenientInputStream(zipFile,
+                            String.format(FN_APK_CLASSES_N_DEX, index))) != null) {
+
+                        byte[] content = ByteStreams.toByteArray(classDexStream);
+                        // write into tmp file
+                        File dexFile = File.createTempFile("dex", "");
+                        dexFile.deleteOnExit();
+                        Files.write(content, dexFile);
+
+                        // run dexDump on it
+                        if (checkFileForClassWithDexDump(expectedClassName, dexFile, dexDumpExe)) {
+                            return true;
+                        }
+
+                        // not found? switch to next index.
+                        index++;
+                    }
+                } finally {
+                    zipFile.close();
+                }
+                break;
         }
+
         return false;
     }
 
@@ -269,5 +280,20 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         }
 
         failWithRawMessage("maxSdkVersion not found in badging output for %s", getDisplaySubject());
+    }
+
+    @Nullable
+    private static InputStream getLenientInputStream(
+            @NonNull ZipFile zipFile, @NonNull String path) throws IOException {
+        ZipEntry entry = zipFile.getEntry(path);
+        if (entry == null) {
+            return null;
+        }
+
+        if (entry.isDirectory()) {
+            return null;
+        }
+
+        return zipFile.getInputStream(entry);
     }
 }
