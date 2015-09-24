@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
+import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.AidlCompile;
@@ -102,6 +103,9 @@ public interface VariantScope extends BaseScope {
 
     @NonNull
     File getIncrementalApplicationSupportDir();
+
+    @NonNull
+    File getIncrementalVerifierDir();
 
     @NonNull
     Iterable<File> getJavaOuptuts();
@@ -319,4 +323,8 @@ public interface VariantScope extends BaseScope {
     AndroidTask<?> getCoverageReportTask();
 
     void setCoverageReportTask(AndroidTask<?> coverageReportTask);
+
+    void setVerificationResult(InstantRunVerifierTransform.VerificationResult verificationResult);
+
+    InstantRunVerifierTransform.VerificationResult getVerificationResult();
 }

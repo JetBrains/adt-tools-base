@@ -78,6 +78,7 @@ import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
 import com.android.build.gradle.internal.transforms.InstantRunDex;
 import com.android.build.gradle.internal.transforms.InstantRunTransform;
+import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.transforms.JacocoTransform;
 import com.android.build.gradle.internal.transforms.JarMergingTransform;
 import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
@@ -1332,8 +1333,18 @@ public abstract class TaskManager {
         if (isIncrementalSupportActive(variantScope.getVariantConfiguration())) {
 
             TransformManager transformManager = variantScope.getTransformManager();
+
+            // always run the verifier first, since if it detects incompatible changes, we
+            // should skip bytecode enhancements of the changed classes.
+            InstantRunVerifierTransform verifierTransform =
+                    new InstantRunVerifierTransform(variantScope);
+            AndroidTask<TransformTask> verifierTask = transformManager
+                    .addTransform(tasks, variantScope, verifierTransform);
+
             InstantRunTransform instantRunTransform = new InstantRunTransform(globalScope);
-            transformManager.addTransform(tasks, variantScope, instantRunTransform);
+            AndroidTask<TransformTask> instantRunTask = transformManager
+                    .addTransform(tasks, variantScope, instantRunTransform);
+            instantRunTask.dependsOn(tasks, verifierTask);
 
             AndroidTask<FastDeployRuntimeExtractorTask> extractorTask = androidTasks.create(
                     tasks, new FastDeployRuntimeExtractorTask.ConfigAction(variantScope));
@@ -2009,6 +2020,7 @@ public abstract class TaskManager {
         if (isIncrementalSupportActive(scope.getVariantConfiguration())) {
 
             InstantRunDex classesTwoTransform = new InstantRunDex(
+                    scope,
                     InstantRunDex.BuildType.RESTART,
                     scope.getRestartDexOutputFolder(),
                     androidBuilder,
@@ -2019,6 +2031,7 @@ public abstract class TaskManager {
                     .addTransform(tasks, scope, classesTwoTransform);
 
             InstantRunDex classesThreeTransform = new InstantRunDex(
+                    scope,
                     InstantRunDex.BuildType.RELOAD,
                     scope.getReloadDexOutputFolder(),
                     androidBuilder,

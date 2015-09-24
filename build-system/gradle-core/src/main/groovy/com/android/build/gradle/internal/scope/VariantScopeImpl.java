@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
+import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -319,6 +320,13 @@ public class VariantScopeImpl implements VariantScope {
     @NonNull
     public File getIncrementalApplicationSupportDir() {
         return new File(globalScope.getIntermediatesDir(), "/incremental-classes/" +
+                variantData.getVariantConfiguration().getDirName());
+    }
+
+    @Override
+    @NonNull
+    public File getIncrementalVerifierDir() {
+        return new File(globalScope.getIntermediatesDir(), "/incremental-verifier/" +
                 variantData.getVariantConfiguration().getDirName());
     }
 
@@ -854,5 +862,19 @@ public class VariantScopeImpl implements VariantScope {
     @Override
     public void setCoverageReportTask(AndroidTask<?> coverageReportTask) {
         this.coverageReportTask = coverageReportTask;
+    }
+
+    @Nullable
+    InstantRunVerifierTransform.VerificationResult verificationResult;
+
+    @Override
+    public void setVerificationResult(
+            InstantRunVerifierTransform.VerificationResult verificationResult) {
+        this.verificationResult = verificationResult;
+    }
+
+    @Override
+    public InstantRunVerifierTransform.VerificationResult getVerificationResult() {
+        return verificationResult;
     }
 }
