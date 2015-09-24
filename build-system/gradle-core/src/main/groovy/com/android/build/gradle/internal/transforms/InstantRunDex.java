@@ -18,8 +18,10 @@ package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.NoOpTransform;
 import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.builder.core.AndroidBuilder;
@@ -52,7 +54,7 @@ import java.util.jar.JarOutputStream;
  * and will use the file's content to get a list of .class files to dex in order to produce an
  * incremental dex file that can contains the delta changes from the last invocation.
  */
-public class InstantRunDex implements NoOpTransform {
+public class InstantRunDex extends Transform implements NoOpTransform {
 
     /**
      * Expected dex file use.
@@ -102,7 +104,7 @@ public class InstantRunDex implements NoOpTransform {
     }
 
     @Override
-    public void transform(@NonNull Collection<TransformInput> inputs,
+    public void transform(@NonNull Context context, @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
             throws IOException, TransformException, InterruptedException {
 
@@ -188,20 +190,8 @@ public class InstantRunDex implements NoOpTransform {
 
     @NonNull
     @Override
-    public Set<ScopedContent.ContentType> getOutputTypes() {
-        return ImmutableSet.of();
-    }
-
-    @NonNull
-    @Override
     public Set<ScopedContent.Scope> getScopes() {
         return Sets.immutableEnumSet(ScopedContent.Scope.PROJECT);
-    }
-
-    @NonNull
-    @Override
-    public Set<ScopedContent.Scope> getReferencedScopes() {
-        return ImmutableSet.of();
     }
 
     @NonNull
@@ -214,30 +204,6 @@ public class InstantRunDex implements NoOpTransform {
     @Override
     public ScopedContent.Format getOutputFormat() {
         return ScopedContent.Format.JAR;
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileInputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return ImmutableMap.of();
     }
 
     @Override

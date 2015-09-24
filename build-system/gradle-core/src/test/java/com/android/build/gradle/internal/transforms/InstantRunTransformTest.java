@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
@@ -29,6 +30,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -44,6 +46,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Tests for the {@link InstantRunTransform} class
  */
 public class InstantRunTransformTest {
+
+    @Mock
+    Context context;
 
     @Test
     public void incrementalModeTest() throws TransformException, InterruptedException, IOException {
@@ -116,7 +121,7 @@ public class InstantRunTransformTest {
                 return new File("out.3");
             }
         }));
-        transform.transform(input.build(), ImmutableList.<TransformInput>of(), true);
+        transform.transform(context, input.build(), ImmutableList.<TransformInput>of(), true);
 
         ImmutableList<File> processedFiles = filesElectedForClasses2Transformation.build();
         assertEquals("Wrong number of files elected for classes 2 processing", 2, processedFiles.size());
@@ -234,7 +239,7 @@ public class InstantRunTransformTest {
                 return new File("out.3");
             }
         }));
-        transform.transform(input.build(), ImmutableList.<TransformInput>of(), true);
+        transform.transform(context, input.build(), ImmutableList.<TransformInput>of(), true);
 
         ImmutableList<File> processedFiles = filesElectedForClasses2Transformation.build();
         assertEquals("Wrong number of files elected for processing", 0, processedFiles.size());

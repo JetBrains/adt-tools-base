@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.incremental.IncrementalChangeVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalSupportVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalVisitor;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ForkTransform;
 import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.Transform;
@@ -56,7 +57,7 @@ import java.util.Set;
  * Implementation of the {@link Transform} to run the byte code enhancement logic on compiled
  * classes in order to support runtime hot swapping.
  */
-public class InstantRunTransform implements ForkTransform {
+public class InstantRunTransform extends Transform implements ForkTransform {
 
     protected static final ILogger LOGGER =
             new LoggerWrapper(Logging.getLogger(InstantRunTransform.class));
@@ -94,12 +95,6 @@ public class InstantRunTransform implements ForkTransform {
 
     @NonNull
     @Override
-    public Set<ScopedContent.Scope> getReferencedScopes() {
-        return ImmutableSet.of();
-    }
-
-    @NonNull
-    @Override
     public Type getTransformType() {
         return Type.FORK_INPUT;
     }
@@ -110,40 +105,16 @@ public class InstantRunTransform implements ForkTransform {
         return ScopedContent.Format.SINGLE_FOLDER;
     }
 
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileInputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return ImmutableMap.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
-    }
-
     @Override
     public boolean isIncremental() {
         return true;
     }
 
     @Override
-    public void transform(@NonNull Map<TransformInput, Collection<TransformOutput>> inputs,
+    public void transform(@NonNull Context context,
+            @NonNull Map<TransformInput, Collection<TransformOutput>> inputs,
             @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
             throws IOException, TransformException, InterruptedException {
-
 
         for (final Map.Entry<TransformInput, Collection<TransformOutput>> entry : inputs.entrySet()) {
             TransformInput transformInput = entry.getKey();
