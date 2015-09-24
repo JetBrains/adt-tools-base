@@ -85,7 +85,11 @@ android {
         // make sure the Gson library has been renamed and the original one is not present.
         File outputFile = Iterators.getOnlyElement(debugOutputs.iterator()).mainOutputFile.
                 getOutputFile()
-        assertThatAar(outputFile).containsClass("Lcom/android/tests/basic/Main;");
+        assertThatAar(outputFile).containsClass('Lcom/android/tests/basic/Main;');
+
+        // check we do not have the R class of the library in there.
+        assertThatAar(outputFile).doesNotContainClass('Lcom/android/tests/basic/R;')
+        assertThatAar(outputFile).doesNotContainClass('Lcom/android/tests/basic/R$drawable;')
     }
 
     @Test

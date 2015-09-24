@@ -38,6 +38,7 @@ import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.FilteredJarCopyTask;
 import com.android.build.gradle.internal.tasks.MergeFileTask;
 import com.android.build.gradle.internal.tasks.SingleFileCopyTask;
 import com.android.build.gradle.internal.transforms.MultiStreamJarTransform;
@@ -68,6 +69,7 @@ import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
@@ -680,15 +682,33 @@ public class LibraryTaskManager extends TaskManager {
             case MULTI_FOLDER:
                 throw new RuntimeException("Unsupported ScopedContent.Format value: " + format.name());
             case JAR:
-                // sync the content.
-                // TODO Need to fix the case where this jar still have R!!!
-                SingleFileCopyTask copyTask = project.getTasks().create(
+                // sync the content. We need to rewrite the jar file to remove the R class,
+                // so we cannot use a simple copy task.
+                String packageName = variantConfig.getPackageFromManifest();
+                if (packageName == null) {
+                    throw new BuildException("Failed to read manifest", null);
+                }
+
+                packageName = packageName.replace(".", "/");
+                List<String> excludes = Lists.newArrayListWithExpectedSize(5);
+
+                // these must be regexp to match the zip entries
+                excludes.add(packageName + "/R.class");
+                excludes.add(packageName + "/R\\$(.*).class");
+                if (!getExtension().getPackageBuildConfig()) {
+                    excludes.add(packageName + "/Manifest.class");
+                    excludes.add(packageName + "/Manifest\\$(.*).class");
+                    excludes.add(packageName + "/BuildConfig.class");
+                }
+
+                FilteredJarCopyTask copyTask = project.getTasks().create(
                         variantScope.getTaskName("copyMain", "Jar"),
-                        SingleFileCopyTask.class);
+                        FilteredJarCopyTask.class);
                 copyTask.setInputFile(Iterables.getOnlyElement(
                         classStream.getFiles().get()));
                 copyTask.setOutputFile(
                         new File(variantBundleDir, FN_CLASSES_JAR));
+                copyTask.setExcludes(excludes);
                 copyTask.dependsOn(classStream.getDependencies());
                 bundle.dependsOn(copyTask);
                 break;
