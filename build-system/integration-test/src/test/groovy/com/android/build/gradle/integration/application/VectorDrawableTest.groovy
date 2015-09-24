@@ -326,8 +326,9 @@ class VectorDrawableTest {
     }
 
     private void checkIncrementalBuild() {
-        def marker = FileUtils.join(
-                project.testDir, "build", "intermediates", "incremental", "mergeDebugResources",
+        File marker = FileUtils.join(
+                project.testDir,
+                "build", "intermediates", "incremental", "mergeDebugResources",
                 IncrementalTask.MARKER_NAME)
 
         assertThat(marker).exists()

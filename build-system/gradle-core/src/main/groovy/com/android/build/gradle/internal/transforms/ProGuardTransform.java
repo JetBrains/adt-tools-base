@@ -254,9 +254,6 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
         File outFile = combinedOutput.getOutFile();
 
         try {
-            final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope
-                    .getVariantData();
-            final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
             GlobalScope globalScope = variantScope.getGlobalScope();
 
             // set the mapping file if there is one.
@@ -266,12 +263,8 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
             }
 
             // --- InJars / LibraryJars ---
-            if (isLibrary) {
-                handleLibraryCase(variantConfig, inputs, referencedInputs);
-            } else {
-                addInputsToConfiguration(inputs, false);
-                addInputsToConfiguration(referencedInputs, true);
-            }
+            addInputsToConfiguration(inputs, false);
+            addInputsToConfiguration(referencedInputs, true);
 
             // libraryJars: the runtime jars, with all optional libraries.
             for (File runtimeJar : globalScope.getAndroidBuilder().getBootClasspath(true)) {
@@ -310,40 +303,6 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
 
             throw new IOException(e);
         }
-    }
-
-    private void handleLibraryCase(
-            @NonNull GradleVariantConfiguration variantConfig,
-            @NonNull Collection<TransformInput> inputStreams,
-            @NonNull Collection<TransformInput> referencedStreams) {
-
-        String packageName = variantConfig.getPackageFromManifest();
-        if (packageName == null) {
-            throw new BuildException("Failed to read manifest", null);
-        }
-
-        packageName = packageName.replace(".", "/");
-
-        // For inJars, we exclude a bunch of classes, but make the reverse
-        // filter for libraryJars so that the classes aren't missing.
-        List<String> excludeList = Lists.newArrayListWithExpectedSize(5);
-        List<String> includeList = Lists.newArrayListWithExpectedSize(5);
-        excludeList.add("!" + packageName + "/R.class");
-        includeList.add(      packageName + "/R.class");
-        excludeList.add("!" + packageName + "/R$*.class");
-        includeList.add(      packageName + "/R$*.class");
-        excludeList.add("!META-INF/MANIFEST.MF");
-        if (!variantScope.getGlobalScope().getExtension().getPackageBuildConfig()) {
-            excludeList.add("!" + packageName + "/Manifest.class");
-            includeList.add(      packageName + "/Manifest.class");
-            excludeList.add("!" + packageName + "/Manifest$*.class");
-            includeList.add(      packageName + "/Manifest$*.class");
-            excludeList.add("!" + packageName + "/BuildConfig.class");
-            includeList.add(      packageName + "/BuildConfig.class");
-        }
-
-        addInputsToConfiguration(inputStreams, false);
-        addInputsToConfiguration(referencedStreams, true);
     }
 
     private void addInputsToConfiguration(

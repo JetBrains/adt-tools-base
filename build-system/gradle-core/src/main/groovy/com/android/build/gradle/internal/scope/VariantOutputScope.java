@@ -28,6 +28,8 @@ import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.utils.StringHelper;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * A scope containing data for a specific variant.
@@ -80,6 +82,14 @@ public class VariantOutputScope implements BaseScope {
     @NonNull
     @Override
     public String getDirName() {
+        // this is here as a safety net in the Transform manager which handles either VariantScope
+        // or VariantOutputScope. Should this ever be called we'll need to compute this properly.
+        throw new UnsupportedOperationException("dir name per output scope not yet supported");
+    }
+
+    @NonNull
+    @Override
+    public Collection<String> getDirectorySegments() {
         // this is here as a safety net in the Transform manager which handles either VariantScope
         // or VariantOutputScope. Should this ever be called we'll need to compute this properly.
         throw new UnsupportedOperationException("dir name per output scope not yet supported");

@@ -25,11 +25,14 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
 public final class FileUtils {
 
@@ -115,11 +118,40 @@ public final class FileUtils {
         }
     }
 
+    /**
+     * Joins a list of path segments to a given File object.
+     *
+     * @param dir the file object.
+     * @param paths the segments.
+     * @return a new File object.
+     */
     @NonNull
     public static File join(@NonNull File dir, @NonNull String... paths) {
+        if (paths.length == 0) {
+            return dir;
+        }
+
         return new File(dir, PATH_JOINER.join(paths));
     }
 
+    /**
+     * Joins a list of path segments to a given File object.
+     *
+     * @param dir the file object.
+     * @param paths the segments.
+     * @return a new File object.
+     */
+    @NonNull
+    public static File join(@NonNull File dir, @NonNull Iterable<String> paths) {
+        return new File(dir, PATH_JOINER.join(paths));
+    }
+
+    /**
+     * Joins a set of segment into a string, separating each segments with a host-specific
+     * path separator.
+     * @param paths the segments.
+     * @return a string with the segments.
+     */
     @NonNull
     public static String join(@NonNull String... paths) {
         return PATH_JOINER.join(paths);

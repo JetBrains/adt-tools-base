@@ -64,6 +64,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -167,6 +168,12 @@ public class VariantScopeImpl implements VariantScope {
     @Override
     public String getDirName() {
         return variantData.getVariantConfiguration().getDirName();
+    }
+
+    @NonNull
+    @Override
+    public Collection<String> getDirectorySegments() {
+        return variantData.getVariantConfiguration().getDirectorySegments();
     }
 
     @NonNull
@@ -435,8 +442,10 @@ public class VariantScopeImpl implements VariantScope {
     @NonNull
     @Override
     public File getResourceBlameLogDir() {
-        return FileUtils.join(globalScope.getIntermediatesDir(),
-                "blame", "res",  getVariantConfiguration().getDirName());
+        return FileUtils.join(
+                globalScope.getIntermediatesDir(),
+                StringHelper.toStrings(
+                        "blame", "res", getDirectorySegments()));
     }
 
     @Override
@@ -461,9 +470,10 @@ public class VariantScopeImpl implements VariantScope {
     private File getGeneratedResourcesDir(String name) {
         return FileUtils.join(
                 globalScope.getGeneratedDir(),
-                "res",
-                name,
-                getVariantConfiguration().getDirName());
+                StringHelper.toStrings(
+                        "res",
+                        name,
+                        getDirectorySegments()));
     }
 
     @Override
