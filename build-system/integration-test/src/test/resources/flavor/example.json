@@ -11,7 +11,8 @@
     "client_type": 1,
     "android_client_info": {
       "package_name": "com.example.app.free"
-    }
+    },
+    "mobilesdk_app_id": "mobilesdk-app-id-free"
   },
 
   "oauth_client": [{
@@ -53,7 +54,8 @@
     "client_type": 1,
     "android_client_info": {
       "package_name": "com.example.app.paid"
-    }
+    },
+    "mobilesdk_app_id": "mobilesdk-app-id-paid"
   },
 
   "oauth_client": [{
