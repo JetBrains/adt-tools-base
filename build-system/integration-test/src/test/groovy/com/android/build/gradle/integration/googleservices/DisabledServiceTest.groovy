@@ -68,6 +68,10 @@ android {
     compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
     buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
 
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+    }
 }
 """
         model = project.executeAndReturnModel("clean", "assembleDebug")
