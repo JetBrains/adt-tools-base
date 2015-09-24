@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
@@ -26,6 +27,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.io.IOException;
@@ -79,15 +81,23 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             ISMethodVisitor mv = new ISMethodVisitor(Opcodes.ASM5, defaultVisitor, access, name, desc);
             if (name.equals("<init>")) {
                 MethodNode method = getMethodByNameInClass(name, desc, classNode);
-                Label label = ConstructorDelegationDetector
-                        .addRedirectionPoint(visitedClassName, method);
-                if (label == null) {
-                    throw new IllegalStateException("Cannot find place to instrument constructor");
-                }
-                mv.setRedirectionPoint(label);
+
+                ConstructorDelegationDetector.Constructor constructor = ConstructorDelegationDetector.deconstruct(
+                        visitedClassName, method);
+                Label start = new Label();
+                Label before = new Label();
+                Label after = new Label();
+                method.instructions.insert(constructor.loadThis, new LabelNode(start));
+                method.instructions.insertBefore(constructor.delegation, new LabelNode(before));
+                method.instructions.insert(constructor.delegation, new LabelNode(after));
+
+                mv.addRedirection(start, new ConstructorArgsRedirection(constructor.args.name + "." + constructor.args.desc, before,
+                        Type.getArgumentTypes(constructor.delegation.desc)));
+                mv.addRedirection(after, new MethodRedirection(constructor.body.name + "." + constructor.body.desc, Type.getReturnType(desc)));
                 method.accept(mv);
                 return null;
             } else {
+                mv.addRedirection(null, new MethodRedirection(name + "." + desc, Type.getReturnType(desc)));
                 return mv;
             }
         }
@@ -95,93 +105,52 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
     private class ISMethodVisitor extends GeneratorAdapter {
 
-        private final String name;
-        private final String desc;
-        private final int access;
-        private Label redirection;
+        private int change;
+        private final List<Type> args;
+        private final Map<Label, Redirection> redirections;
 
         public ISMethodVisitor(int api, MethodVisitor mv, int access,  String name, String desc) {
             super(api, mv, access, name, desc);
-            this.name = name;
-            this.desc = desc;
-            this.access = access;
-        }
-
-        @Override
-        public void visitCode() {
-            if (redirection == null) {
-                addRedirection();
-            }
-            super.visitCode();
-        }
-
-        @Override
-        public void visitLabel(Label label) {
-            if (label == redirection) {
-                addRedirection();
-            } else {
-                super.visitLabel(label);
-            }
-        }
-
-        private void addRedirection() {
-            // code to check if a new implementation of the current class is available.
-            visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
-                    getRuntimeTypeName(CHANGE_TYPE));
-            Label l0 = new Label();
-            super.visitJumpInsn(Opcodes.IFNULL, l0);
-            visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
-                    getRuntimeTypeName(CHANGE_TYPE));
-            push(name + "." + desc);
-
-            List<Type> args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(desc)));
+            this.change = -1;
+            this.redirections = new HashMap<Label, Redirection>();
+            this.args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(desc)));
             boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
             // if this is not a static, we add a fictional first parameter what will contain the "this"
             // reference which can be loaded with ILOAD_0 bytecode.
             if (!isStatic) {
                 args.add(0, Type.getType(Object.class));
             }
-
-            // create an array of objects capable of containing all the parameters and optional the "this"
-            push(args.size());
-            newArray(Type.getType(Object.class));
-
-            // we need to maintain the stack index when loading parameters from, as for long and double
-            // values, it uses 2 stack elements, all others use only 1 stack element.
-            int stackIndex = 0;
-            for (int arrayIndex = 0; arrayIndex < args.size(); arrayIndex++) {
-                Type arg = args.get(arrayIndex);
-                // duplicate the array of objects reference, it will be used to store the value in.
-                dup();
-                // index in the array of objects to store the boxed parameter.
-                push(arrayIndex);
-                // This will load "this" when it's not static function as the first element
-                visitVarInsn(arg.getOpcode(Opcodes.ILOAD), stackIndex);
-
-                // potentially box up intrinsic types.
-                box(arg);
-                arrayStore(Type.getType(Object.class));
-                // stack index must progress according to the parameter type we just processed.
-                stackIndex += arg.getSize();
-            }
-
-            // now invoke the generic dispatch method.
-            invokeInterface(CHANGE_TYPE, Method.getMethod("Object access$dispatch(String, Object[])"));
-            Type ret = Type.getReturnType(desc);
-            if (ret == Type.VOID_TYPE) {
-                pop();
-            } else {
-                unbox(ret);
-            }
-            returnValue();
-
-            // jump label for classes without any new implementation, just invoke the original
-            // method implementation.
-            visitLabel(l0);
         }
 
-        public void setRedirectionPoint(Label redirectionPoint) {
-            redirection = redirectionPoint;
+        @Override
+        public void visitCode() {
+            change = newLocal(CHANGE_TYPE);
+            visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change", getRuntimeTypeName(CHANGE_TYPE));
+            storeLocal(change);
+
+            redirectAt(null);
+            super.visitCode();
+        }
+
+        @Override
+        public void visitLabel(Label label) {
+            if (!redirectAt(label)) {
+                super.visitLabel(label);
+            }
+        }
+
+        private boolean redirectAt(Label label) {
+            if (redirections.containsKey(label)) {
+                Redirection redirection = redirections.get(label);
+                redirection.redirect(this, change, args);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        public void addRedirection(@Nullable Label at, @NonNull Redirection redirection) {
+            redirections.put(at, redirection);
         }
     }
 

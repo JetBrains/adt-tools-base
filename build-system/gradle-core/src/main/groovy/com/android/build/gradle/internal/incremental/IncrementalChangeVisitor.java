@@ -110,19 +110,30 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             System.out.println("New Desc is " + newDesc + ":" + isStatic);
         }
 
-        String newName = getOverridenName(name);
         // Do not carry on any access flags from the original method. For example synchronized
         // on the original method would translate into a static synchronized method here.
         access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
-        MethodVisitor original = super.visitMethod(access, newName, newDesc, signature, exceptions);
-        ISVisitor mv = new ISVisitor(Opcodes.ASM5, original, access, newName, newDesc, isStatic);
         if (name.equals("<init>")) {
             MethodNode method = getMethodByNameInClass(name, desc, classNode);
-            method = ConstructorDelegationDetector.getConstructorBody(visitedClassName, method);
-            method.accept(mv);
+            ConstructorDelegationDetector.Constructor constructor = ConstructorDelegationDetector.deconstruct(
+                    visitedClassName, method);
+
+            MethodVisitor original = super.visitMethod(access, constructor.args.name, constructor.args.desc, constructor.args.signature, exceptions);
+            ISVisitor mv = new ISVisitor(Opcodes.ASM5, original, access, constructor.args.name, constructor.args.desc, isStatic);
+            constructor.args.accept(mv);
+
+            original = super.visitMethod(access, constructor.body.name, constructor.body.desc, constructor.body.signature, exceptions);
+            mv = new ISVisitor(Opcodes.ASM5, original, access, constructor.body.name, newDesc, isStatic);
+            constructor.body.accept(mv);
+
+            // Make sure the redirection for the two new methods is created
+            classNode.methods.add(constructor.args);
+            classNode.methods.add(constructor.body);
             return null;
         } else {
-            return mv;
+            // TODO: change the method name as it can now collide with existing static methods with
+            MethodVisitor original = super.visitMethod(access, name, newDesc, signature, exceptions);
+            return new ISVisitor(Opcodes.ASM5, original, access, name, newDesc, isStatic);
         }
     }
 
@@ -647,7 +658,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         @SuppressWarnings("unchecked") List<MethodNode> methods = classNode.methods;
         for (MethodNode methodNode : methods) {
-            if (methodNode.name.equals("<clinit>")) {
+            if (methodNode.name.equals("<clinit>") || methodNode.name.equals("<init>")) {
                 continue;
             }
             String name = methodNode.name;
@@ -674,7 +685,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 mv.unbox(t);
                 argc++;
             }
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override", getOverridenName(name), newDesc,
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override", name, newDesc,
                     false);
             Type ret = Type.getReturnType(methodNode.desc);
             if (ret.getSort() == Type.VOID) {
@@ -720,15 +731,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         mv.visitEnd();
 
         super.visitEnd();
-    }
-
-    private static String getOverridenName(String methodName) {
-        // TODO: change the method name as it can now collide with existing static methods with
-        // the same signature.
-        if (methodName.equals("<init>")) {
-            return "init$override";
-        }
-        return methodName;
     }
 
     /**

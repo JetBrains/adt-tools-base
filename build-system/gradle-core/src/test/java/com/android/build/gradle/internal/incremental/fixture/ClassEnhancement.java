@@ -250,7 +250,7 @@ public class ClassEnhancement implements TestRule {
             ClassReader classReader = new ClassReader(classBytes);
             ClassNode classNode = new ClassNode(Opcodes.ASM5);
 
-            classReader.accept(classNode, 0);
+            classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
             ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
             IncrementalChangeVisitor incrementalChangeVisitor = new IncrementalChangeVisitor(
                     classNode, Collections.<ClassNode>emptyList(), classWriter);

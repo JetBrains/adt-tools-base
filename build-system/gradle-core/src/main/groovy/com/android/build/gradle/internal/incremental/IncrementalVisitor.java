@@ -46,12 +46,13 @@ public class IncrementalVisitor extends ClassVisitor {
 
     protected static final String PACKAGE =
             IncrementalVisitor.class.getPackage().getName().replace('.', '/');
-    protected static final Type CHANGE_TYPE = Type.getType(PACKAGE + "/IncrementalChange");
     protected static final Type INSTANT_RELOAD_EXCEPTION =
             Type.getType(PACKAGE + "/InstantReloadException");
     protected static final Type RUNTIME_TYPE = Type.getType(PACKAGE + "/AndroidInstantRuntime");
 
     protected static final boolean TRACING_ENABLED = Boolean.getBoolean("FDR_TRACING");
+
+    public static final Type CHANGE_TYPE = Type.getType(PACKAGE + "/IncrementalChange");
 
     protected String visitedClassName;
     protected String visitedSuperName;
