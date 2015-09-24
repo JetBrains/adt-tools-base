@@ -170,8 +170,8 @@ public class ClassEnhancement implements TestRule {
             NoSuchFieldException {
 
         Class<?> originalEnhancedClass = getClass().getClassLoader().loadClass(name);
-        if (originalEnhancedClass.isInterface() || originalEnhancedClass.isEnum()) {
-            // we don't patch interfaces or enums.
+        if (originalEnhancedClass.isInterface()) {
+            // we don't patch interfaces.
             return;
         }
         Field newImplementationField = originalEnhancedClass.getField("$change");

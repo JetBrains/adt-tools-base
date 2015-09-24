@@ -63,7 +63,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     @Override
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
-        super.visit(version, access, name + "$override", signature, "java/lang/Object",
+        super.visit(version, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER,
+                name + "$override", signature, "java/lang/Object",
                 new String[]{CHANGE_TYPE.getInternalName()});
 
         if (DEBUG) {
