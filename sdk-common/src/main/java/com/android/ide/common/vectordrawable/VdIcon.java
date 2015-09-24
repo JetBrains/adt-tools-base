@@ -113,12 +113,12 @@ public class VdIcon implements Icon, Comparable<VdIcon> {
 
     @Override
     public int getIconWidth() {
-        return (int) (mVdTree != null ? mVdTree.mPortWidth : 0);
+        return (int) (mVdTree != null ? mVdTree.getPortWidth() : 0);
     }
 
     @Override
     public int getIconHeight() {
-        return (int) (mVdTree != null ? mVdTree.mPortHeight : 0);
+        return (int) (mVdTree != null ? mVdTree.getPortHeight() : 0);
     }
 
     @Override

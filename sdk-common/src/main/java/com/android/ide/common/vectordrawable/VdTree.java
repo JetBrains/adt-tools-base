@@ -17,13 +17,19 @@
 package com.android.ide.common.vectordrawable;
 
 import com.android.ide.common.util.AssetUtil;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 
 import java.awt.*;
-import java.awt.geom.Path2D;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Used to represent the whole VectorDrawable XML file's tree.
@@ -31,96 +37,45 @@ import java.util.logging.Logger;
 class VdTree {
     private static Logger logger = Logger.getLogger(VdTree.class.getSimpleName());
 
-    VdGroup mCurrentGroup = new VdGroup();
-    ArrayList<VdElement> mChildren;
+    private static final String SHAPE_VECTOR = "vector";
+    private static final String SHAPE_PATH = "path";
+    private static final String SHAPE_GROUP = "group";
 
-    float mBaseWidth = 1;
-    float mBaseHeight = 1;
-    float mPortWidth = 1;
-    float mPortHeight = 1;
-    float mRootAlpha = 1;
+    private VdGroup mRootGroup = new VdGroup();
 
-    /**
-     * Ensure there is at least one animation for every path in group (linking
-     * them by names) Build the "current" path based on the first group
-     */
-    void parseFinish() {
-        mChildren = mCurrentGroup.getChildren();
-    }
+    private float mBaseWidth = 1;
+    private float mBaseHeight = 1;
+    private float mPortWidth = 1;
+    private float mPortHeight = 1;
+    private float mRootAlpha = 1;
 
-    void add(VdElement pathOrGroup) {
-        mCurrentGroup.add(pathOrGroup);
-    }
+    private final boolean DBG_PRINT_TREE = false;
 
-    float getBaseWidth(){
+    private static final String INDENT = "  ";
+
+    /*package*/ float getBaseWidth(){
         return mBaseWidth;
     }
 
-    float getBaseHeight(){
+    /*package*/ float getBaseHeight(){
         return mBaseHeight;
     }
 
-    private void drawInternal(Graphics g, int w, int h) {
+    /*package*/ float getPortWidth(){
+        return mPortWidth;
+    }
+
+    /*package*/ float getPortHeight(){
+        return mPortHeight;
+    }
+
+    private void drawTree(Graphics2D g, int w, int h) {
         float scaleX = w / mPortWidth;
         float scaleY = h / mPortHeight;
-        float minScale = Math.min(scaleX, scaleY);
 
-        if (mChildren == null) {
-            logger.log(Level.FINE, "no pathes");
-            return;
-        }
-        ((Graphics2D) g).scale(scaleX, scaleY);
+        AffineTransform rootMatrix = new AffineTransform(); // identity
 
-        for (int i = 0; i < mChildren.size(); i++) {
-            // TODO: do things differently when it is a path or group!!
-            if (mChildren.get(i) instanceof VdPath) {
-                VdPath path = (VdPath)mChildren.get(i);
-                if (mChildren.get(i) != null) {
-                    Rectangle r = drawPath(path, g, w, h, minScale);
-                }
-            }
-        }
-    }
-
-    private static int applyAlpha(int color, float alpha) {
-        int alphaBytes = (color >> 24) & 0xff;
-        color &= 0x00FFFFFF;
-        color |= ((int) (alphaBytes * alpha)) << 24;
-        return color;
-    }
-
-    private Rectangle drawPath(VdPath path, Graphics canvas, int w, int h, float scale) {
-
-        Path2D path2d = new Path2D.Double();
-        Graphics2D g = (Graphics2D) canvas;
-        path.toPath(path2d);
-
-        // TODO: Use AffineTransform to apply group's transformation info.
-        double theta = Math.toRadians(path.mRotate);
-        g.rotate(theta, path.mRotateX, path.mRotateY);
-        if (path.mClip) {
-            logger.log(Level.FINE, "CLIP");
-
-            g.setColor(Color.RED);
-            g.fill(path2d);
-
-        }
-        if (path.mFillColor != 0) {
-            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            Color fillColor = new Color(applyAlpha(path.mFillColor, path.mFillOpacity), true);
-            g.setColor(fillColor);
-            g.fill(path2d);
-        }
-        if (path.mStrokeColor != 0) {
-            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g.setStroke(new BasicStroke(path.mStrokeWidth));
-            Color strokeColor = new Color(applyAlpha(path.mStrokeColor, path.mStrokeOpacity), true);
-            g.setColor(strokeColor);
-            g.draw(path2d);
-        }
-
-        g.rotate(-theta, path.mRotateX, path.mRotateY);
-        return path2d.getBounds();
+        mRootGroup.draw(g, rootMatrix, scaleX, scaleY);
     }
 
     /**
@@ -139,13 +94,113 @@ class VdTree {
         if (rootAlpha < 1.0) {
             BufferedImage alphaImage = AssetUtil.newArgbBufferedImage(width, height);
             Graphics2D gTemp = (Graphics2D)alphaImage.getGraphics();
-            drawInternal(gTemp, width, height);
+            drawTree(gTemp, width, height);
             gFinal.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, rootAlpha));
             gFinal.drawImage(alphaImage, 0, 0, null);
             gTemp.dispose();
         } else {
-            drawInternal(gFinal, width, height);
+            drawTree(gFinal, width, height);
         }
         gFinal.dispose();
+    }
+
+    public void parse(Document doc) {
+        NodeList rootNodeList = doc.getElementsByTagName(SHAPE_VECTOR);
+        assert rootNodeList.getLength() == 1;
+        Node rootNode = rootNodeList.item(0);
+
+        parseRootNode(rootNode);
+        parseTree(rootNode, mRootGroup);
+
+        if (DBG_PRINT_TREE) {
+            debugPrintTree(0, mRootGroup);
+        }
+    }
+
+    private void parseTree(Node currentNode, VdGroup currentGroup) {
+        NodeList childrenNodes = currentNode.getChildNodes();
+        int length = childrenNodes.getLength();
+        for (int i = 0; i < length; i ++) {
+            Node child = childrenNodes.item(i);
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                if (SHAPE_GROUP.equals(child.getNodeName())) {
+                    VdGroup newGroup = parseGroupAttributes(child.getAttributes());
+                    currentGroup.add(newGroup);
+                    parseTree(child, newGroup);
+                } else if (SHAPE_PATH.equals(child.getNodeName())) {
+                    VdPath newPath = parsePathAttributes(child.getAttributes());
+                    currentGroup.add(newPath);
+                }
+            }
+        }
+    }
+
+    private void debugPrintTree(int level, VdGroup mRootGroup) {
+        int len = mRootGroup.size();
+        if (len == 0) {
+            return;
+        }
+        String prefix = "";
+        for (int i = 0; i < level; i ++) {
+            prefix += INDENT;
+        }
+        ArrayList<VdElement> children = mRootGroup.getChildren();
+        for (int i = 0; i < len; i ++) {
+            VdElement child = children.get(i);
+            System.out.println(prefix  + child.toString());
+            if (child.isGroup()) {
+                // TODO: print group info
+                debugPrintTree(level + 1, (VdGroup) child);
+            }
+        }
+    }
+
+    private void parseRootNode(Node rootNode) {
+        if (rootNode.hasAttributes()) {
+            parseSize(rootNode.getAttributes());
+        }
+    }
+
+    private void parseSize(NamedNodeMap attributes) {
+
+        Pattern pattern = Pattern.compile("^\\s*(\\d+(\\.\\d+)*)\\s*([a-zA-Z]+)\\s*$");
+
+        int len = attributes.getLength();
+
+        for (int i = 0; i < len; i++) {
+            String name = attributes.item(i).getNodeName();
+            String value = attributes.item(i).getNodeValue();
+            Matcher matcher = pattern.matcher(value);
+            float size = 0;
+            if (matcher.matches()) {
+                float v = Float.parseFloat(matcher.group(1));
+                size = v;
+            }
+
+            // TODO: Extract dimension units like px etc. Right now all are treated as "dp".
+            if ("android:width".equals(name)) {
+                mBaseWidth = size;
+            } else if ("android:height".equals(name)) {
+                mBaseHeight = size;
+            } else if ("android:viewportWidth".equals(name)) {
+                mPortWidth = Float.parseFloat(value);
+            } else if ("android:viewportHeight".equals(name)) {
+                mPortHeight = Float.parseFloat(value);
+            } else if ("android:alpha".equals(name)) {
+                mRootAlpha = Float.parseFloat(value);
+            }
+        }
+    }
+
+    private VdPath parsePathAttributes(NamedNodeMap attributes) {
+        VdPath vgPath = new VdPath();
+        vgPath.parseAttributes(attributes);
+        return vgPath;
+    }
+
+    private VdGroup parseGroupAttributes(NamedNodeMap attributes) {
+        VdGroup vgGroup = new VdGroup();
+        vgGroup.parseAttributes(attributes);
+        return vgGroup;
     }
 }

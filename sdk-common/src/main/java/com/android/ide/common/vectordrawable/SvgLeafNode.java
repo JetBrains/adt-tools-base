@@ -133,7 +133,7 @@ class SvgLeafNode extends SvgNode {
             return;
         }
         // TODO: We need to just apply the transformation to group.
-        VdPath.Node[] n = VdParser.parsePath(mPathData);
+        VdPath.Node[] n = PathParser.parsePath(mPathData);
         if (!(a == 1 && d == 1 && b == 0 && c == 0 && e == 0 && f == 0)) {
             VdPath.Node.transform(a, b, c, d, e, f, n);
         }
