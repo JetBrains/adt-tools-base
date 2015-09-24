@@ -56,11 +56,13 @@ import java.util.logging.Logger;
 public class ClassEnhancement implements TestRule {
 
     @NonNull
-    private final File mResourceBase;
+    private final File mInstrumentedPatchesFolder;
 
-    private File mBaseCompileOutputFolder;
+    @NonNull
+    private final File mBaseCompileOutputFolder;
 
-    private Map<String, File> mCompileOutputFolders;
+
+    private Map<String, File> mInstrumentedPatchFolders;
 
     private Map<String, ClassLoader> mEnhancedClassLoaders;
 
@@ -76,7 +78,7 @@ public class ClassEnhancement implements TestRule {
         this.tracing = tracing;
         File classes = new File(ClassEnhancement.class.getResource("/").getFile()).getParentFile();
         File incrementalTestClasses = new File(classes, "incremental-test");
-        mResourceBase = new File(incrementalTestClasses, "patches");
+        mInstrumentedPatchesFolder = new File(incrementalTestClasses, "instrumentedPatches");
         mBaseCompileOutputFolder = new File(incrementalTestClasses, "base");
     }
 
@@ -94,7 +96,7 @@ public class ClassEnhancement implements TestRule {
         if (patch == null || !Objects.equal(patch, currentPatchState)) {
 
             final File outputFolder =
-                    patch == null ? mBaseCompileOutputFolder : mCompileOutputFolders.get(patch);
+                    patch == null ? mBaseCompileOutputFolder : mInstrumentedPatchFolders.get(patch);
             Iterable<File> files =
                     Files.fileTreeTraverser()
                             .preOrderTraversal(outputFolder)
@@ -109,6 +111,9 @@ public class ClassEnhancement implements TestRule {
             });
 
             for (String changedClassName : classNames) {
+                if (changedClassName.endsWith("$override")) {
+                    changedClassName = changedClassName.substring(0, changedClassName.length() - 9);
+                }
                 patchClass(changedClassName, patch);
             }
             currentPatchState = patch;
@@ -121,13 +126,13 @@ public class ClassEnhancement implements TestRule {
             @Override
             public void evaluate() throws Throwable {
 
-                mCompileOutputFolders = getCompileFolders(mResourceBase);
+                mInstrumentedPatchFolders = getCompileFolders(mInstrumentedPatchesFolder);
 
                 final URL[] classLoaderUrls = getClassLoaderUrls();
                 final ClassLoader mainClassLoader = this.getClass().getClassLoader();
 
                 mEnhancedClassLoaders = setUpEnhancedClassLoaders(
-                        classLoaderUrls, mainClassLoader, mCompileOutputFolders, tracing);
+                        classLoaderUrls, mainClassLoader, mInstrumentedPatchFolders, tracing);
 
                 base.evaluate();
 
@@ -153,13 +158,13 @@ public class ClassEnhancement implements TestRule {
     private static Map<String, ClassLoader> setUpEnhancedClassLoaders(
             final URL[] classLoaderUrls,
             final ClassLoader mainClassLoader,
-            final Map<String, File> compileOutputFolders,
+            final Map<String, File> instrumentedPatches,
             final boolean tracing) {
-        return Maps.transformValues(compileOutputFolders, new Function<File, ClassLoader>() {
+        return Maps.transformValues(instrumentedPatches, new Function<File, ClassLoader>() {
             @Override
-            public ClassLoader apply(File compileOutputFolder) {
+            public ClassLoader apply(File instrumentedPatchFolder) {
                 return new IncrementalChangeClassLoader(
-                        classLoaderUrls, mainClassLoader, compileOutputFolder, tracing);
+                        classLoaderUrls, mainClassLoader, instrumentedPatchFolder, tracing);
             }
         });
     }
@@ -214,14 +219,14 @@ public class ClassEnhancement implements TestRule {
 
     private static class IncrementalChangeClassLoader extends URLClassLoader {
 
-        private final File mClassLocation;
+        private final File mInstrumentedPatchFolder;
         private final boolean tracing;
 
         public IncrementalChangeClassLoader(
-                URL[] urls, ClassLoader parent, File classLocation, boolean tracing) {
+                URL[] urls, ClassLoader parent, File instrumentedPatchFolder, boolean tracing) {
             super(urls, parent);
             this.tracing = tracing;
-            mClassLocation = classLocation;
+            mInstrumentedPatchFolder = instrumentedPatchFolder;
         }
 
         @Override
@@ -231,37 +236,21 @@ public class ClassEnhancement implements TestRule {
                 return super.findClass(name);
             }
 
-            // remove $override (length 9)
-            String originalClassName = name.substring(0, name.length() - 9);
-
             File compiledFile =
-                    new File(mClassLocation, originalClassName.replace(".", "/") + ".class");
+                    new File(mInstrumentedPatchFolder, name.replace(".", "/") + ".class");
 
             if (!compiledFile.exists()) {
                 return super.findClass(name);
             }
 
-            byte[] classBytes;
+            byte[] instrumentedClassBytes;
             try {
-                classBytes = Files.toByteArray(compiledFile);
+                instrumentedClassBytes = Files.toByteArray(compiledFile);
             } catch (IOException e) {
                 throw new ClassNotFoundException(Throwables.getStackTraceAsString(e));
             }
-            ClassReader classReader = new ClassReader(classBytes);
-            ClassNode classNode = new ClassNode(Opcodes.ASM5);
 
-            classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
-            ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
-            IncrementalChangeVisitor incrementalChangeVisitor = new IncrementalChangeVisitor(
-                    classNode, Collections.<ClassNode>emptyList(), classWriter);
-            classReader.accept(incrementalChangeVisitor, ClassReader.EXPAND_FRAMES);
-            byte[] changedClassBytes = classWriter.toByteArray();
-            if (tracing) {
-                Logger.getAnonymousLogger().severe(traceClass(changedClassBytes));
-                Logger.getLogger(ClassEnhancement.class.getName()).info(
-                        traceClass(changedClassBytes));
-            }
-            return defineClass(name, changedClassBytes, 0, changedClassBytes.length);
+            return defineClass(name, instrumentedClassBytes, 0, instrumentedClassBytes.length);
         }
     }
 

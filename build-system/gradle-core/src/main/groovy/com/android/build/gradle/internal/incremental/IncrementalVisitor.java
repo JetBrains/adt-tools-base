@@ -67,6 +67,7 @@ public class IncrementalVisitor extends ClassVisitor {
     protected enum AccessRight {
         PRIVATE, PACKAGE_PRIVATE, PROTECTED, PUBLIC;
 
+        @NonNull
         static AccessRight fromNodeAccess(int nodeAccess) {
             if ((nodeAccess & Opcodes.ACC_PRIVATE) != 0) return PRIVATE;
             if ((nodeAccess & Opcodes.ACC_PROTECTED) != 0) return PROTECTED;
@@ -75,19 +76,23 @@ public class IncrementalVisitor extends ClassVisitor {
         }
     }
 
-    public IncrementalVisitor(@NonNull ClassNode classNode, List<ClassNode> parentNodes, ClassVisitor classVisitor) {
+    public IncrementalVisitor(
+            @NonNull ClassNode classNode,
+            @NonNull List<ClassNode> parentNodes,
+            @NonNull ClassVisitor classVisitor) {
         super(Opcodes.ASM5, classVisitor);
         this.classNode = classNode;
         this.parentNodes = parentNodes;
         System.out.println(getClass().getSimpleName() + " Visiting " + classNode.name);
     }
 
-    String getRuntimeTypeName(Type type) {
+    @NonNull
+    protected static String getRuntimeTypeName(@NonNull Type type) {
         return "L" + type.getInternalName() + ";";
     }
 
     @Nullable
-    FieldNode getFieldByName(String fieldName) {
+    FieldNode getFieldByName(@NonNull String fieldName) {
         FieldNode fieldNode = getFieldByNameInClass(fieldName, classNode);
         Iterator<ClassNode> iterator = parentNodes.iterator();
         while(fieldNode == null && iterator.hasNext()) {
@@ -97,7 +102,10 @@ public class IncrementalVisitor extends ClassVisitor {
         return fieldNode;
     }
 
-    FieldNode getFieldByNameInClass(String fieldName, ClassNode classNode) {
+    @Nullable
+    protected static FieldNode getFieldByNameInClass(
+            @NonNull String fieldName, @NonNull ClassNode classNode) {
+        //noinspection unchecked ASM api.
         List<FieldNode> fields = classNode.fields;
         for (FieldNode field: fields) {
             if (field.name.equals(fieldName)) {
@@ -107,7 +115,8 @@ public class IncrementalVisitor extends ClassVisitor {
         return null;
     }
 
-    MethodNode getMethodByName(String methodName, String desc) {
+    @Nullable
+    protected MethodNode getMethodByName(String methodName, String desc) {
         MethodNode methodNode = getMethodByNameInClass(methodName, desc, classNode);
         Iterator<ClassNode> iterator = parentNodes.iterator();
         while(methodNode == null && iterator.hasNext()) {
@@ -117,7 +126,9 @@ public class IncrementalVisitor extends ClassVisitor {
         return methodNode;
     }
 
-    MethodNode getMethodByNameInClass(String methodName, String desc, ClassNode classNode) {
+    @Nullable
+    protected static MethodNode getMethodByNameInClass(String methodName, String desc, ClassNode classNode) {
+        //noinspection unchecked ASM API
         List<MethodNode> methods = classNode.methods;
         for (MethodNode method : methods) {
             if (method.name.equals(methodName) && method.desc.equals(desc)) {
@@ -127,20 +138,22 @@ public class IncrementalVisitor extends ClassVisitor {
         return null;
     }
 
-    protected void trace(GeneratorAdapter mv, String s) {
+    protected static void trace(@NonNull GeneratorAdapter mv, @Nullable String s) {
         mv.push(s);
         mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
                 Method.getMethod("void trace(String)"));
     }
 
-    protected void trace(GeneratorAdapter mv, String s1, String s2) {
+    protected static void trace(@NonNull GeneratorAdapter mv, @Nullable String s1,
+            @Nullable String s2) {
         mv.push(s1);
         mv.push(s2);
         mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
                 Method.getMethod("void trace(String, String)"));
     }
 
-    protected void trace(GeneratorAdapter mv, String s1, String s2, String s3) {
+    protected static void trace(@NonNull GeneratorAdapter mv, @Nullable String s1,
+            @Nullable String s2, @Nullable String s3) {
         mv.push(s1);
         mv.push(s2);
         mv.push(s3);
@@ -148,27 +161,32 @@ public class IncrementalVisitor extends ClassVisitor {
                 Method.getMethod("void trace(String, String, String)"));
     }
 
-    protected void trace(GeneratorAdapter mv, int argsNumber) {
-        StringBuilder methodSignture = new StringBuilder("void trace(String");
+    protected static void trace(@NonNull GeneratorAdapter mv, int argsNumber) {
+        StringBuilder methodSignature = new StringBuilder("void trace(String");
         for (int i=0 ; i < argsNumber-1; i++) {
-            methodSignture.append(", String");
+            methodSignature.append(", String");
         }
-        methodSignture.append(")");
+        methodSignature.append(")");
         mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
-                Method.getMethod(methodSignture.toString()));
+                Method.getMethod(methodSignature.toString()));
     }
 
     /**
      * Simple Builder interface for common methods between all byte code visitors.
      */
     public interface VisitorBuilder {
+        @NonNull
         IncrementalVisitor build(@NonNull ClassNode classNode,
-                List<ClassNode> parentNodes, ClassVisitor classVisitor);
+                @NonNull List<ClassNode> parentNodes, @NonNull ClassVisitor classVisitor);
 
         boolean processParents();
+
+        @NonNull
+        String getMangledRelativeClassFilePath(@NonNull String originalClassFilePath);
     }
 
-    protected static void main(String[] args, VisitorBuilder visitorBuilder) throws IOException {
+    protected static void main(@NonNull String[] args, @NonNull VisitorBuilder visitorBuilder)
+            throws IOException {
 
         if (args.length != 2) {
             throw new IllegalArgumentException("Needs to be given an input and output directory");
@@ -181,22 +199,23 @@ public class IncrementalVisitor extends ClassVisitor {
                 baseInstrumentedCompileOutputFolder, visitorBuilder);
     }
 
-    private static void instrumentClasses(File rootLocation, File outLocation, VisitorBuilder visitorBuilder)
-            throws IOException {
+    private static void instrumentClasses(@NonNull File rootLocation, @NonNull File outLocation,
+            @NonNull VisitorBuilder visitorBuilder) throws IOException {
 
         Iterable<File> files =
                 Files.fileTreeTraverser().preOrderTraversal(rootLocation).filter(Files.isFile());
 
         for (File inputFile : files) {
-            File outputFile = new File(outLocation,
-                    FileUtils.relativePath(inputFile, rootLocation));
-
-            instrumentClass(inputFile, outputFile, visitorBuilder);
+            instrumentClass(rootLocation, inputFile, outLocation, visitorBuilder);
         }
     }
 
-    public static void instrumentClass(
-            File inputFile, File outputFile, VisitorBuilder visitorBuilder) throws IOException {
+    @NonNull
+    public static File instrumentClass(
+            @NonNull File inputRootDirectory,
+            @NonNull File inputFile,
+            @NonNull File outputDirectory,
+            @NonNull VisitorBuilder visitorBuilder) throws IOException {
 
         byte[] classBytes;
         classBytes = Files.toByteArray(inputFile);
@@ -236,12 +255,15 @@ public class IncrementalVisitor extends ClassVisitor {
         ClassNode classNode = new ClassNode();
         classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
 
-        Files.createParentDirs(outputFile);
+
 
         // when dealing with interface, we just copy the inputFile over without any changes.
         if ((classNode.access & Opcodes.ACC_INTERFACE) != 0) {
+            String path = FileUtils.relativePath(inputFile, inputRootDirectory);
+            File outputFile = new File(outputDirectory, path);
+            Files.createParentDirs(outputFile);
             Files.write(classBytes, outputFile);
-            return;
+            return outputFile;
         }
 
         List<ClassNode> parentsNodes;
@@ -254,10 +276,17 @@ public class IncrementalVisitor extends ClassVisitor {
         IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
         classNode.accept(visitor);
 
+        String path = FileUtils.relativePath(inputFile, inputRootDirectory);
+        File outputFile = new File(outputDirectory, visitorBuilder.getMangledRelativeClassFilePath(path));
+        Files.createParentDirs(outputFile);
+
         Files.write(classWriter.toByteArray(), outputFile);
+        return outputFile;
     }
 
-    private static List<ClassNode> parseParents(File inputFile, ClassNode classNode) throws IOException {
+    @NonNull
+    private static List<ClassNode> parseParents(
+            @NonNull File inputFile, @NonNull ClassNode classNode) throws IOException {
         File binaryFolder = new File(inputFile.getAbsolutePath().substring(0,
                 inputFile.getAbsolutePath().length() - (classNode.name.length() + ".class".length())));
         List<ClassNode> parentNodes = new ArrayList<ClassNode>();

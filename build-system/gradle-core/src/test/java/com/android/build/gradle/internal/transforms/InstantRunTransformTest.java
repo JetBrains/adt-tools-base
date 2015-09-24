@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.transforms;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
@@ -27,24 +28,24 @@ import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
 import com.android.builder.core.AndroidBuilder;
+import com.android.utils.FileUtils;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.io.Files;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Tests for the {@link InstantRunTransform} class
@@ -74,7 +75,7 @@ public class InstantRunTransformTest {
         InstantRunTransform transform = new InstantRunTransform(globalScope) {
             @Override
             protected void transformToClasses2Format(
-                    File inputDir, File inputFile, File outputDir, RecordingPolicy recordingPolicy)
+                    @NonNull File inputDir, @NonNull File inputFile, @NonNull File outputDir, @NonNull RecordingPolicy recordingPolicy)
                     throws IOException {
                 filesElectedForClasses2Transformation.add(inputFile);
             }
@@ -150,29 +151,22 @@ public class InstantRunTransformTest {
     @Test
     public void fileDeletionTest() throws IOException, TransformException, InterruptedException {
 
-        final AtomicBoolean classes2Deleted = new AtomicBoolean(false);
-        final File classes2ToBeDeleted = Mockito.mock(File.class);
-        when(classes2ToBeDeleted.getAbsolutePath()).thenReturn("/out/file/to/delete.class");
-        when(classes2ToBeDeleted.delete()).then(new Answer<Boolean>() {
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-                classes2Deleted.set(true);
-                return true;
-            }
-        });
-        when(classes2ToBeDeleted.exists()).thenReturn(true);
+        final File tmpFolder = Files.createTempDir();
 
-        final AtomicBoolean classes3Deleted = new AtomicBoolean(false);
-        final File classes3ToBeDeleted = Mockito.mock(File.class);
-        when(classes3ToBeDeleted.getAbsolutePath()).thenReturn("/out/file/to/delete$override.class");
-        when(classes3ToBeDeleted.delete()).then(new Answer<Boolean>() {
-            @Override
-            public Boolean answer(InvocationOnMock invocation) throws Throwable {
-                classes3Deleted.set(true);
-                return true;
-            }
-        });
-        when(classes3ToBeDeleted.exists()).thenReturn(true);
+        final File inputFolder = new File(tmpFolder, "input");
+        FileUtils.mkdirs(inputFolder);
+
+        final File originalFile = createEmptyFile(inputFolder, "com/example/A.class");
+
+        final File outputFolder = new File(tmpFolder, "output");
+        final File outputFile = createEmptyFile(outputFolder, "com/example/A.class");
+
+        final File outputEnhancedFolder = new File(tmpFolder, "outputEnhanced");
+        final File outputEnhancedFile =
+                createEmptyFile(outputEnhancedFolder, "com/example/A$override.class");
+
+        assertTrue(outputFile.exists());
+        assertTrue(outputEnhancedFile.exists());
 
         final ImmutableList.Builder<File> filesElectedForClasses2Transformation = ImmutableList.builder();
         final ImmutableList.Builder<File> filesElectedForClasses3Transformation = ImmutableList.builder();
@@ -180,7 +174,7 @@ public class InstantRunTransformTest {
         InstantRunTransform transform = new InstantRunTransform(globalScope) {
             @Override
             protected void transformToClasses2Format(
-                    File inputDir, File inputFile, File outputDir, RecordingPolicy recordingPolicy)
+                    @NonNull File inputDir, @NonNull File inputFile, @NonNull File outputDir, @NonNull RecordingPolicy recordingPolicy)
                     throws IOException {
                 filesElectedForClasses2Transformation.add(inputFile);
             }
@@ -189,18 +183,6 @@ public class InstantRunTransformTest {
             protected void transformToClasses3Format(File inputDir, File inputFile, File outputDir)
                     throws IOException {
                 filesElectedForClasses3Transformation.add(inputFile);
-            }
-
-            @Override
-            protected File getOutputFile(File inputDir, File inputFile, File outputDir)
-                    throws IOException {
-                return classes2ToBeDeleted;
-            }
-
-            @Override
-            protected File getOutputPatchFile(File inputDir, File inputFile, File outputDir)
-                    throws IOException {
-                return classes3ToBeDeleted;
             }
 
             @Override
@@ -217,14 +199,14 @@ public class InstantRunTransformTest {
             @NonNull
             @Override
             public Collection<File> getFiles() {
-                return ImmutableList.of(new File("/tmp"));
+                return ImmutableList.of(inputFolder);
             }
 
             @NonNull
             @Override
             public Map<File, FileStatus> getChangedFiles() {
                 return ImmutableMap.<File, FileStatus>builder()
-                        .put(new File("/tmp/file/to/delete.class"), FileStatus.REMOVED)
+                        .put(originalFile, FileStatus.REMOVED)
                         .build();
             }
 
@@ -238,7 +220,7 @@ public class InstantRunTransformTest {
             @NonNull
             @Override
             public File getOutFile() {
-                return new File("out");
+                return outputFolder;
             }
         }, new TransformOutputForTests() {
 
@@ -251,15 +233,26 @@ public class InstantRunTransformTest {
             @NonNull
             @Override
             public File getOutFile() {
-                return new File("out.3");
+                return outputEnhancedFolder;
             }
         }));
         transform.transform(context, input.build(), ImmutableList.<TransformInput>of(), true);
 
         ImmutableList<File> processedFiles = filesElectedForClasses2Transformation.build();
         assertEquals("Wrong number of files elected for processing", 0, processedFiles.size());
-        assertTrue("classes2 file was not deleted", classes2Deleted.get());
-        assertTrue("classes3 file was not deleted", classes3Deleted.get());
+
+        assertFalse("Incremental support class file should have been deleted.", outputFile.exists());
+        assertFalse("Enhanced class file should have been deleted.", outputEnhancedFile.exists());
+
+        FileUtils.deleteFolder(tmpFolder);
+    }
+
+    private static File createEmptyFile(File folder, String path)
+            throws IOException {
+        File file = new File(folder, path);
+        Files.createParentDirs(file);
+        Files.touch(file);
+        return file;
     }
 
     private abstract static class TransformInputForTests implements TransformInput {

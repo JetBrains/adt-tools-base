@@ -31,18 +31,18 @@ import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logging;
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -178,19 +178,11 @@ public class InstantRunTransform extends Transform implements ForkTransform {
                         File inputFile = changedEntry.getKey();
                         switch (changedEntry.getValue()) {
                             case REMOVED:
+                                deleteOutputFile(IncrementalSupportVisitor.VISITOR_BUILDER,
+                                        inputDir, inputFile, classesTwoOutput.getOutFile());
+                                deleteOutputFile(IncrementalChangeVisitor.VISITOR_BUILDER,
+                                        inputDir, inputFile, classesThreeOutput.getOutFile());
                                 // remove the classes.2 and classes.3 files.
-                                File classes_2 = getOutputFile(inputDir, inputFile,
-                                        classesTwoOutput.getOutFile());
-                                if (classes_2.exists() && !classes_2.delete()) {
-                                    // it's not a big deal if the file cannot be deleted, hopefully
-                                    // no code is still referencing it, yet we should notify.
-                                    LOGGER.warning("Cannot delete %1$s file", classes_2);
-                                }
-                                File classes_3 = getOutputPatchFile(inputDir, inputFile,
-                                        classesThreeOutput.getOutFile());
-                                if (classes_3.exists() && !classes_3.delete()) {
-                                    LOGGER.warning("Cannot delete %1$s file", classes_3);
-                                }
                                 break;
                             case ADDED:
                                 // a new file was added, we only generate the classes.2 format
@@ -330,26 +322,28 @@ public class InstantRunTransform extends Transform implements ForkTransform {
             @NonNull final RecordingPolicy recordingPolicy)
             throws IOException {
 
-        File outputFile = getOutputFile(inputDir, inputFile, outputDir);
-        Files.createParentDirs(outputFile.getParentFile());
-
-        IncrementalVisitor.instrumentClass(inputFile, outputFile,
-                new IncrementalVisitor.VisitorBuilder() {
-                    @Override
-                    public IncrementalVisitor build(@NonNull ClassNode classNode,
-                            List<ClassNode> parentNodes,
-                            ClassVisitor classVisitor) {
-                        return new IncrementalSupportVisitor(classNode, parentNodes, classVisitor);
-                    }
-
-                    @Override
-                    public boolean processParents() {
-                        return false;
-                    }
-                });
+        File outputFile = IncrementalVisitor.instrumentClass(
+                inputDir, inputFile, outputDir, IncrementalSupportVisitor.VISITOR_BUILDER);
 
         if (recordingPolicy == RecordingPolicy.RECORD) {
             generatedClasses2Files.add(outputFile.getAbsolutePath());
+        }
+    }
+
+    private static void deleteOutputFile(
+            @NonNull IncrementalVisitor.VisitorBuilder visitorBuilder,
+            @NonNull File inputDir, @NonNull File inputFile, @NonNull File outputDir) {
+        String inputPath = FileUtils.relativePath(inputFile, inputDir);
+        String outputPath =
+                visitorBuilder.getMangledRelativeClassFilePath(inputPath);
+        File outputFile = new File(outputDir, outputPath);
+        try {
+            FileUtils.delete(outputFile);
+        } catch (IOException e) {
+            // it's not a big deal if the file cannot be deleted, hopefully
+            // no code is still referencing it, yet we should notify.
+            LOGGER.warning("Cannot delete %1$s file.\nCause: %2$s",
+                    outputFile, Throwables.getStackTraceAsString(e));
         }
     }
 
@@ -364,23 +358,8 @@ public class InstantRunTransform extends Transform implements ForkTransform {
     protected void transformToClasses3Format(File inputDir, File inputFile, File outputDir)
             throws IOException {
 
-        File outputFile = getOutputPatchFile(inputDir, inputFile, outputDir);
-        Files.createParentDirs(outputFile.getParentFile());
-
-        IncrementalVisitor.instrumentClass(inputFile, outputFile,
-                new IncrementalVisitor.VisitorBuilder() {
-                    @Override
-                    public IncrementalVisitor build(@NonNull ClassNode classNode,
-                            List<ClassNode> parentNodes,
-                            ClassVisitor classVisitor) {
-                        return new IncrementalChangeVisitor(classNode, parentNodes, classVisitor);
-                    }
-
-                    @Override
-                    public boolean processParents() {
-                        return true;
-                    }
-                });
+        File outputFile = IncrementalVisitor.instrumentClass(
+                inputDir, inputFile, outputDir, IncrementalChangeVisitor.VISITOR_BUILDER);
 
         generatedClasses3Names.add(
                 inputFile.getAbsolutePath().substring(
@@ -468,47 +447,6 @@ public class InstantRunTransform extends Transform implements ForkTransform {
         } finally {
             fileWriter.close();
         }
-    }
-
-    /**
-     * Return the expected output {@link File} for an input file located in the transform input
-     * directory. The output file will have a similar relative path than the input file (to the
-     * input dir) inside the output directory.
-     *
-     * @param inputDir the input directory containing the input file
-     * @param inputFile the input file within the input directory
-     * @param outputDir the output directory
-     * @return the output file within the output directory with the right relative path.
-     * @throws IOException
-     */
-    protected File getOutputFile(File inputDir, File inputFile, File outputDir) throws IOException {
-        String relativePath = inputFile.getAbsolutePath().substring(
-                inputDir.getAbsolutePath().length());
-
-        return new File(outputDir, relativePath);
-    }
-
-    /**
-     * Return the expected output {@link File} for an input file located in the transform input
-     * directory. The output file will have a similar relative path than the input file (to the
-     * input dir) inside the output directory and will be formed to be consistent with the
-     * {@link ScopedContent.ContentType#CLASSES_ENHANCED} format
-     *
-     * @param inputDir the input directory containing the input file
-     * @param inputFile the input file within the input directory
-     * @param outputDir the output directory
-     * @return the output file within the output directory with the right relative path.
-     * @throws IOException
-     */
-    protected File getOutputPatchFile(File inputDir, File inputFile, File outputDir)
-            throws IOException {
-
-        File usualOutputFile = getOutputFile(inputDir, inputFile, outputDir);
-
-        File outputDirectory = usualOutputFile.getParentFile();
-        String rootName = Files.getNameWithoutExtension(inputFile.getName());
-
-        return new File(outputDirectory, rootName + "$override.class");
     }
 
     @Nullable

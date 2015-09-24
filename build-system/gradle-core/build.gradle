@@ -133,23 +133,51 @@ Task instrumentIncrementalTestBaseClasses = tasks.create(
 }
 
 // Compile other changesets. They have the default changset on their classpath.
-Task compileIncrementalTestPatches = tasks.create("compileIncrementalTestPatches")
+Task instrumentIncrementalTestPatches = tasks.create("instrumentIncrementalTestPatches")
 
-testClasses.dependsOn(compileIncrementalTestPatches, instrumentIncrementalTestBaseClasses)
+compileTestJava.dependsOn(
+        instrumentIncrementalTestPatches,
+        instrumentIncrementalTestBaseClasses)
 
 File incrementalTestOutDir = new File(classesDir, "patches")
+File instrumentedIncrementalTestOutDir = new File(classesDir, "instrumentedPatches")
 
 for (File f: new File(project.projectDir, "src/test/incremental-test-classes/patches").listFiles()) {
-    System.out.println(f);
-    Task t = tasks.create(
+    File incrementalPatchClassFileDir = new File(incrementalTestOutDir, f.getName())
+    Task compilePatch = tasks.create(
             name: "compileIncrementalTestPatch${f.getName().capitalize()}",
             type: org.gradle.api.tasks.compile.JavaCompile) {
         source = project.files(f)
         classpath = sourceSets.test.compileClasspath
-        destinationDir = new File(incrementalTestOutDir, f.getName())
+        destinationDir = incrementalPatchClassFileDir
     }
 
-    t.dependsOn compileIncrementalTestBaseClasses
-    compileIncrementalTestPatches.dependsOn t
+    compilePatch.dependsOn compileIncrementalTestBaseClasses
+
+    Task instrumentPatch = tasks.create(
+            name: "instrumentIncrementalTestPatch${f.getName().capitalize()}",
+            type: org.gradle.api.tasks.JavaExec) {
+        main = 'com.android.build.gradle.internal.incremental.IncrementalChangeVisitor'
+        classpath = sourceSets.main.runtimeClasspath + sourceSets.test.compileClasspath
+        args incrementalPatchClassFileDir, new File(instrumentedIncrementalTestOutDir, f.getName())
+    }
+
+    instrumentPatch.dependsOn(compilePatch)
+
+    instrumentIncrementalTestPatches.dependsOn instrumentPatch
 }
 
+Task jarIncrementalTests = tasks.create(name: "jarIncrementalTests", type: Jar) {
+    from sourceSets.test,outputs
+    into 'build/incrementalTests.jar'
+    include "com/android/build/gradle/internal/incremental/**"
+    exclude "com/android/build/gradle/internal/incremental/fixture/**"
+}
+
+configurations {
+    incrementalTestClasses
+}
+
+artifacts {
+    incrementalTestClasses jarIncrementalTests
+}

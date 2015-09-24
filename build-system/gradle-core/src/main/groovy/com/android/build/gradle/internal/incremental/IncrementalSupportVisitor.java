@@ -54,7 +54,46 @@ import java.util.Map;
  */
 public class IncrementalSupportVisitor extends IncrementalVisitor {
 
-    public IncrementalSupportVisitor(ClassNode classNode, List<ClassNode> parentNodes, ClassVisitor classVisitor) {
+
+    private static final class VisitorBuilder implements IncrementalVisitor.VisitorBuilder {
+
+        private final boolean mProcessParents;
+
+        private VisitorBuilder(boolean processParents) {
+            mProcessParents = processParents;
+        }
+
+        @NonNull
+        @Override
+        public IncrementalVisitor build(
+                @NonNull ClassNode classNode,
+                @NonNull List<ClassNode> parentNodes,
+                @NonNull ClassVisitor classVisitor) {
+            return new IncrementalSupportVisitor(classNode, parentNodes, classVisitor);
+        }
+
+        @Override
+        public boolean processParents() {
+            return mProcessParents;
+        }
+
+        @Override
+        @NonNull
+        public String getMangledRelativeClassFilePath(@NonNull String originalClassFilePath) {
+            return originalClassFilePath;
+        }
+    }
+
+    public static final IncrementalVisitor.VisitorBuilder VISITOR_BUILDER =
+            new VisitorBuilder(false /*processParents*/);
+
+    private static final IncrementalVisitor.VisitorBuilder VISITOR_BUILDER_PROCESS_PARENTS =
+            new VisitorBuilder(true /*processParents*/);
+
+    public IncrementalSupportVisitor(
+            @NonNull ClassNode classNode,
+            @NonNull List<ClassNode> parentNodes,
+            @NonNull ClassVisitor classVisitor) {
         super(classNode, parentNodes, classVisitor);
     }
 
@@ -278,19 +317,6 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
      * @throws IOException if some files cannot be read or written.
      */
     public static void main(String[] args) throws IOException {
-
-        IncrementalVisitor.main(args, new VisitorBuilder() {
-            @Override
-            public IncrementalVisitor build(@NonNull ClassNode classNode,
-                    List<ClassNode> parentNodes,
-                    ClassVisitor classVisitor) {
-                return new IncrementalSupportVisitor(classNode, parentNodes, classVisitor);
-            }
-
-            @Override
-            public boolean processParents() {
-                return true;
-            }
-        });
+        IncrementalVisitor.main(args, VISITOR_BUILDER_PROCESS_PARENTS);
     }
 }

@@ -48,8 +48,31 @@ import java.util.List;
  */
 public class IncrementalChangeVisitor extends IncrementalVisitor {
 
+    public static final VisitorBuilder VISITOR_BUILDER = new IncrementalVisitor.VisitorBuilder() {
+        @NonNull
+        @Override
+        public IncrementalVisitor build(@NonNull ClassNode classNode,
+                @NonNull List<ClassNode> parentNodes,
+                @NonNull ClassVisitor classVisitor) {
+            return new IncrementalChangeVisitor(classNode, parentNodes, classVisitor);
+        }
+
+        @Override
+        public boolean processParents() {
+            return true;
+        }
+
+        @NonNull
+        @Override
+        public String getMangledRelativeClassFilePath(@NonNull String path) {
+            // Remove .class (length 6) and replace with $override.class
+            return path.substring(0, path.length() - 6) + OVERRIDE_SUFFIX + ".class";
+        }
+    };
+
     // todo : find a better way to specify logging and append to a log file.
     private static final boolean DEBUG = false;
+    private static final String OVERRIDE_SUFFIX = "$override";
 
     private MachineState state = MachineState.NORMAL;
 
@@ -60,7 +83,10 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         NORMAL, AFTER_NEW
     }
 
-    public IncrementalChangeVisitor(ClassNode classNode, List<ClassNode> parentNodes, ClassVisitor classVisitor) {
+    public IncrementalChangeVisitor(
+            @NonNull ClassNode classNode,
+            @NonNull List<ClassNode> parentNodes,
+            @NonNull ClassVisitor classVisitor) {
         super(classNode, parentNodes, classVisitor);
     }
 
@@ -68,7 +94,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
         super.visit(version, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER,
-                name + "$override", signature, "java/lang/Object",
+                name + OVERRIDE_SUFFIX, signature, "java/lang/Object",
                 new String[]{CHANGE_TYPE.getInternalName()});
 
         if (DEBUG) {
@@ -754,20 +780,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      * @throws IOException if some files cannot be read or written.
      */
     public static void main(String[] args) throws IOException {
-
-        IncrementalVisitor.main(args, new VisitorBuilder() {
-            @Override
-            public IncrementalVisitor build(@NonNull ClassNode classNode,
-                    List<ClassNode> parentNodes,
-                    ClassVisitor classVisitor) {
-                return new IncrementalChangeVisitor(classNode, parentNodes, classVisitor);
-            }
-
-            @Override
-            public boolean processParents() {
-                return true;
-            }
-        });
+        IncrementalVisitor.main(args, VISITOR_BUILDER);
     }
 
     /**
