@@ -16,6 +16,11 @@
 
 package com.android.ide.common.vectordrawable;
 
+import org.w3c.dom.NamedNodeMap;
+
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+
 /**
  * Used to represent one VectorDrawble's element, can be a group or path.
  */
@@ -25,4 +30,10 @@ abstract class VdElement {
     public String getName() {
         return mName;
     }
+
+    public abstract void draw(Graphics2D g, AffineTransform currentMatrix, float scaleX, float scaleY);
+
+    public abstract void parseAttributes(NamedNodeMap attributes);
+
+    public abstract boolean isGroup();
 }
