@@ -35,7 +35,6 @@ import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.internal.PngException;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
-import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
@@ -186,7 +185,11 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         File outFile = new File(typeFolder, filename);
 
                         if (type == DataFile.FileType.GENERATED_FILES) {
-                            mPreprocessor.generateFile(file, item.getSource().getFile());
+                            try {
+                                mPreprocessor.generateFile(file, item.getSource().getFile());
+                            } catch (Exception e) {
+                                throw new ConsumerException(e, item.getSource().getFile());
+                            }
                         }
 
                         try {
