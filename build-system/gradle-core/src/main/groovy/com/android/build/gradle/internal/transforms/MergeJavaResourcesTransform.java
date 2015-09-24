@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.CombinedTransform;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
@@ -146,6 +147,7 @@ public class MergeJavaResourcesTransform extends Transform implements CombinedTr
 
     @Override
     public void transform(
+            @NonNull Context context,
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
             @NonNull TransformOutput combinedOutput,

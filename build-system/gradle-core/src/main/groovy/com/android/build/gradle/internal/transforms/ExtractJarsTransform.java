@@ -23,6 +23,7 @@ import static com.android.utils.FileUtils.mkdirs;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.AsInputTransform;
+import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
@@ -113,6 +114,7 @@ public class ExtractJarsTransform extends Transform implements AsInputTransform 
 
     @Override
     public void transform(
+            @NonNull Context context,
             @NonNull Map<TransformInput, TransformOutput> inputOutputs,
             @NonNull Collection<TransformInput> referencedInputs,
             boolean isIncremental) throws IOException, InterruptedException, TransformException {

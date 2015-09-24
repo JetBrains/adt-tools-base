@@ -58,6 +58,7 @@ public class JarJarTransform extends Transform implements CombinedTransform {
 
     @Override
     public void transform(
+            @NonNull Context context,
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedStreams,
             @NonNull TransformOutput combinedOutput,

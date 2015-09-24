@@ -48,14 +48,16 @@ public interface AsInputTransform {
      * is different from Gradle's behavior where clean builds receive all files in the changed file
      * list.
      *
-     * @param inputs the inputs/outputs of the transform
-     * @param referencedInputs the referenced-only inputs
+     * @param context the context in which the transform is run.
+     * @param inputs the inputs/outputs of the transform.
+     * @param referencedInputs the referenced-only inputs.
      * @param isIncremental whether the transform is incremental.
-     * @throws IOException if an IO error occurs
+     * @throws IOException if an IO error occurs.
      * @throws InterruptedException
      * @throws TransformException Generic exception encapsulating the cause.
      */
     void transform(
+            @NonNull Context context,
             @NonNull Map<TransformInput, TransformOutput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
             boolean isIncremental) throws IOException, TransformException, InterruptedException;
