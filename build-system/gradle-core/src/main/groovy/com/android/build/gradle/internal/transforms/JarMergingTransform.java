@@ -26,6 +26,7 @@ import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
@@ -50,7 +51,7 @@ import java.util.zip.ZipInputStream;
 /**
  *
  */
-public class JarMergingTransform implements CombinedTransform {
+public class JarMergingTransform extends Transform implements CombinedTransform {
 
     @NonNull
     private final ImmutableSet<Scope> scopes;
@@ -77,20 +78,8 @@ public class JarMergingTransform implements CombinedTransform {
 
     @NonNull
     @Override
-    public Set<ContentType> getOutputTypes() {
-        return types;
-    }
-
-    @NonNull
-    @Override
     public Set<Scope> getScopes() {
         return scopes;
-    }
-
-    @NonNull
-    @Override
-    public Set<Scope> getReferencedScopes() {
-        return TransformManager.EMPTY_SCOPES;
     }
 
     @NonNull
@@ -103,30 +92,6 @@ public class JarMergingTransform implements CombinedTransform {
     @Override
     public ScopedContent.Format getOutputFormat() {
         return ScopedContent.Format.JAR;
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileInputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return ImmutableMap.of();
     }
 
     @Override

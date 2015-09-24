@@ -33,7 +33,6 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -45,7 +44,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import proguard.ParseException;
@@ -109,12 +107,6 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
 
     @NonNull
     @Override
-    public Set<Scope> getReferencedScopes() {
-        return TransformManager.EMPTY_SCOPES;
-    }
-
-    @NonNull
-    @Override
     public Type getTransformType() {
         return Type.NO_OP;
     }
@@ -138,18 +130,6 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
     @Override
     public Collection<File> getSecondaryFileOutputs() {
         return Lists.newArrayList(mainDexListFile, configFileOut);
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return ImmutableMap.of();
     }
 
     @Override

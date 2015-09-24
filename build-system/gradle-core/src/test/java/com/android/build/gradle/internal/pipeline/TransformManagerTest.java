@@ -21,8 +21,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.transform.api.AsInputTransform;
+import com.android.build.transform.api.ForkTransform;
+import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
@@ -401,86 +404,53 @@ public class TransformManagerTest extends TaskTestUtils {
         assertThat(transformTask.outputStreams).containsExactlyElementsIn(streams);
     }
 
+    private static class BrokenTransform extends Transform implements AsInputTransform {
+
+        @NonNull
+        @Override
+        public String getName() {
+            return "transform";
+        }
+
+        @NonNull
+        @Override
+        public Set<ContentType> getInputTypes() {
+            return null;
+        }
+
+        @NonNull
+        @Override
+        public Set<Scope> getScopes() {
+            return null;
+        }
+
+        @NonNull
+        @Override
+        public Type getTransformType() {
+            return Type.FORK_INPUT;
+        }
+
+        @NonNull
+        @Override
+        public Format getOutputFormat() {
+            return Format.SINGLE_FOLDER;
+        }
+
+        @Override
+        public boolean isIncremental() {
+            return false;
+        }
+
+        @Override
+        public void transform(@NonNull Map<TransformInput, TransformOutput> inputs,
+                @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
+                throws IOException, TransformException, InterruptedException {
+        }
+    }
+
     @Test
     public void forkTypeWithWrongImplementation() {
-        Transform t = new AsInputTransform() {
-            @NonNull
-            @Override
-            public String getName() {
-                return "transform";
-            }
-
-            @NonNull
-            @Override
-            public Set<ContentType> getInputTypes() {
-                return null;
-            }
-
-            @NonNull
-            @Override
-            public Set<ContentType> getOutputTypes() {
-                return null;
-            }
-
-            @NonNull
-            @Override
-            public Set<Scope> getScopes() {
-                return null;
-            }
-
-            @NonNull
-            @Override
-            public Set<Scope> getReferencedScopes() {
-                return null;
-            }
-
-            @NonNull
-            @Override
-            public Type getTransformType() {
-                return Type.FORK_INPUT;
-            }
-
-            @NonNull
-            @Override
-            public Format getOutputFormat() {
-                return Format.SINGLE_FOLDER;
-            }
-
-            @NonNull
-            @Override
-            public Collection<File> getSecondaryFileInputs() {
-                return null;
-            }
-
-            @NonNull
-            @Override
-            public Collection<File> getSecondaryFileOutputs() {
-                return null;
-            }
-
-            @NonNull
-            @Override
-            public Collection<File> getSecondaryFolderOutputs() {
-                return null;
-            }
-
-            @NonNull
-            @Override
-            public Map<String, Object> getParameterInputs() {
-                return null;
-            }
-
-            @Override
-            public boolean isIncremental() {
-                return false;
-            }
-
-            @Override
-            public void transform(@NonNull Map<TransformInput, TransformOutput> inputs,
-                    @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
-                    throws IOException, TransformException, InterruptedException {
-            }
-        };
+        Transform t = new BrokenTransform();
 
         exception.expect(RuntimeException.class);
         exception.expectMessage(

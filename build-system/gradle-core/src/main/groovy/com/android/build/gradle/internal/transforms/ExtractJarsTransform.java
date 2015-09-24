@@ -26,6 +26,7 @@ import com.android.build.transform.api.AsInputTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformInput.FileStatus;
@@ -61,7 +62,7 @@ import java.util.zip.ZipInputStream;
  * The output format is {@link Format#MULTI_FOLDER} because each input jar has its own sub-folder
  * in the output stream root folder.
  */
-public class ExtractJarsTransform implements AsInputTransform {
+public class ExtractJarsTransform extends Transform implements AsInputTransform {
 
     @NonNull
     private final Set<ContentType> contentTypes;
@@ -89,12 +90,6 @@ public class ExtractJarsTransform implements AsInputTransform {
 
     @NonNull
     @Override
-    public Set<ContentType> getOutputTypes() {
-        return contentTypes;
-    }
-
-    @NonNull
-    @Override
     public Set<Scope> getScopes() {
         return scopes;
     }
@@ -107,38 +102,8 @@ public class ExtractJarsTransform implements AsInputTransform {
 
     @NonNull
     @Override
-    public Set<Scope> getReferencedScopes() {
-        return TransformManager.EMPTY_SCOPES;
-    }
-
-    @NonNull
-    @Override
     public Type getTransformType() {
         return Type.AS_INPUT;
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileInputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return ImmutableMap.of();
     }
 
     @Override

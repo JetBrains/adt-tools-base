@@ -51,7 +51,7 @@ import java.util.Set;
 /**
  * Jacoco Transform
  */
-public class JacocoTransform implements AsInputTransform {
+public class JacocoTransform extends Transform implements AsInputTransform {
 
     @NonNull
     private final Supplier<Collection<File>> jacocoClasspath;
@@ -80,21 +80,9 @@ public class JacocoTransform implements AsInputTransform {
 
     @NonNull
     @Override
-    public Set<ScopedContent.ContentType> getOutputTypes() {
-        return TransformManager.CONTENT_CLASS;
-    }
-
-    @NonNull
-    @Override
     public Set<ScopedContent.Scope> getScopes() {
         // only run on the project classes
         return Sets.immutableEnumSet(ScopedContent.Scope.PROJECT);
-    }
-
-    @NonNull
-    @Override
-    public Set<ScopedContent.Scope> getReferencedScopes() {
-        return TransformManager.EMPTY_SCOPES;
     }
 
     @NonNull
@@ -114,24 +102,6 @@ public class JacocoTransform implements AsInputTransform {
     @Override
     public Collection<File> getSecondaryFileInputs() {
         return jacocoClasspath.get();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileOutputs() {
-        return Collections.emptyList();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return Collections.emptyMap();
     }
 
     @Override
