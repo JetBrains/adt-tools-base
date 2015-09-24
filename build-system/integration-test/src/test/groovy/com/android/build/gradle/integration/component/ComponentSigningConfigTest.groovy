@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.component
 
+import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.ide.common.signing.KeystoreHelper
@@ -48,7 +49,11 @@ class ComponentSigningConfigTest {
                 "android",
                 "androiddebugkey",
                 new StdLogger(StdLogger.Level.INFO));
-
+        // TODO: Let gradle resolve file when it is able to do that with File in a Managed type.
+        // I have to do some os specific magic due to \ interpretation in groovy.
+        String storeFile = SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS ?
+                """storeFile = new File(/${project.file("debug.keystore")}/)""" :
+                """storeFile = new File("${project.file("debug.keystore")}")"""
 
         project.buildFile << """
 apply plugin: "com.android.model.application"
@@ -75,8 +80,7 @@ model {
 
     android.signingConfigs {
         create("myConfig") {
-            // TODO: Let gradle resolve file when it is able to do that with File in a Managed type.
-            storeFile = new File(/${project.file("debug.keystore")}/)
+""" + storeFile + """
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
