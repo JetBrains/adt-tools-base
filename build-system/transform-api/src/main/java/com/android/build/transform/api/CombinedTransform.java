@@ -24,7 +24,7 @@ import java.util.Collection;
 /**
  * A Transform that combines all the input streams into a single output stream.
  */
-public interface CombinedTransform extends Transform {
+public interface CombinedTransform {
 
     /**
      * Perform the Transform.
@@ -33,10 +33,11 @@ public interface CombinedTransform extends Transform {
      * There is a single {@link TransformOutput} for the whole transform.
      *
      * <p/>
-     * The Transform can require a non-incremental changes, either because {@link #isIncremental()}
-     * returns false, or because there is a change in secondary files
-     * (as returned by {@link #getSecondaryFileInputs()}), or a change to non input file parameters
-     * (as returned by {@link #getParameterInputs()}), or an output was clobbered by something.
+     * The Transform can require a non-incremental changes, either because
+     * {@link Transform#isIncremental()} returns false, or because there is a change in secondary
+     * files (as returned by {@link Transform#getSecondaryFileInputs()}), or a change to non input
+     * file parameters (as returned by {@link Transform#getParameterInputs()}), or an output was
+     * clobbered by something.
      *
      * <p/>
      * If this happens then <var>isIncremental</var> will be false, and

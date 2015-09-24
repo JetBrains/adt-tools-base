@@ -18,7 +18,7 @@ import java.util.zip.ZipInputStream;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class JarJarTransform implements CombinedTransform {
+public class JarJarTransform extends Transform implements CombinedTransform {
 
     private final boolean broken;
 
@@ -33,11 +33,6 @@ public class JarJarTransform implements CombinedTransform {
 
     @Override
     public Set<ScopedContent.ContentType> getInputTypes() {
-        return EnumSet.of(ScopedContent.ContentType.CLASSES);
-    }
-
-    @Override
-    public Set<ScopedContent.ContentType> getOutputTypes() {
         return EnumSet.of(ScopedContent.ContentType.CLASSES);
     }
 
@@ -57,11 +52,6 @@ public class JarJarTransform implements CombinedTransform {
     }
 
     @Override
-    public Set<ScopedContent.Scope> getReferencedScopes() {
-        return Collections.emptySet();
-    }
-
-    @Override
     public Type getTransformType() {
         return Type.COMBINED;
     }
@@ -69,26 +59,6 @@ public class JarJarTransform implements CombinedTransform {
     @Override
     public ScopedContent.Format getOutputFormat() {
         return ScopedContent.Format.JAR;
-    }
-
-    @Override
-    public Collection<File> getSecondaryFileInputs() {
-        return ImmutableList.of();
-    }
-
-    @Override
-    public Collection<File> getSecondaryFileOutputs() {
-        return ImmutableList.of();
-    }
-
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
-    }
-
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return ImmutableMap.of();
     }
 
     @Override

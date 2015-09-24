@@ -26,6 +26,7 @@ import com.android.build.transform.api.NoOpTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.builder.core.AaptPackageProcessBuilder;
@@ -54,7 +55,7 @@ import java.util.Set;
  * Since this transform only reads the data from the stream but does not output anything
  * back into the stream, it is a {@link Type#NO_OP} transform.
  */
-public class ShrinkResourcesTransform implements NoOpTransform {
+public class ShrinkResourcesTransform extends Transform implements NoOpTransform {
 
     /** Whether we've already warned about how to turn off shrinking. Used to avoid
      * repeating the same multi-line message for every repeated abi split. */
@@ -147,12 +148,6 @@ public class ShrinkResourcesTransform implements NoOpTransform {
 
     @NonNull
     @Override
-    public Set<Scope> getReferencedScopes() {
-        return TransformManager.EMPTY_SCOPES;
-    }
-
-    @NonNull
-    @Override
     public Type getTransformType() {
         return Type.NO_OP;
     }
@@ -173,18 +168,6 @@ public class ShrinkResourcesTransform implements NoOpTransform {
     @Override
     public Collection<File> getSecondaryFileOutputs() {
         return ImmutableList.of(compressedResources);
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return ImmutableMap.of();
     }
 
     @Override

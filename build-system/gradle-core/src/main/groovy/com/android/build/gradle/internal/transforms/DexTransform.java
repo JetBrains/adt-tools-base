@@ -28,6 +28,7 @@ import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformInput.FileStatus;
@@ -78,7 +79,7 @@ import java.util.concurrent.Callable;
  * If there is a single stream (when there's a {@link Type#COMBINED} transform upstream),
  * then there's only a single dx phase.
  */
-public class DexTransform implements CombinedTransform {
+public class DexTransform extends Transform implements CombinedTransform {
 
     @NonNull
     private final DexOptions dexOptions;
@@ -139,12 +140,6 @@ public class DexTransform implements CombinedTransform {
 
     @NonNull
     @Override
-    public Set<Scope> getReferencedScopes() {
-        return TransformManager.EMPTY_SCOPES;
-    }
-
-    @NonNull
-    @Override
     public Type getTransformType() {
         return Type.COMBINED;
     }
@@ -166,12 +161,6 @@ public class DexTransform implements CombinedTransform {
             return ImmutableList.of(mainDexListFile);
         }
 
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileOutputs() {
         return ImmutableList.of();
     }
 

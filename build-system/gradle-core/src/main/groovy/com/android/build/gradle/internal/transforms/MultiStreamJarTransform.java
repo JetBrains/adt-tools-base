@@ -24,6 +24,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
@@ -50,7 +51,7 @@ import java.util.jar.JarOutputStream;
  *
  * This only jars the class files, not the resources.
  */
-public class MultiStreamJarTransform implements CombinedTransform {
+public class MultiStreamJarTransform extends Transform implements CombinedTransform {
 
     private static final String FILE_NAME_PREFIX = "localjar";
     private static final int PREFIX_LENGTH = FILE_NAME_PREFIX.length();
@@ -69,20 +70,8 @@ public class MultiStreamJarTransform implements CombinedTransform {
 
     @NonNull
     @Override
-    public Set<ScopedContent.ContentType> getOutputTypes() {
-        return Sets.immutableEnumSet(ScopedContent.ContentType.CLASSES);
-    }
-
-    @NonNull
-    @Override
     public Set<ScopedContent.Scope> getScopes() {
         return Sets.immutableEnumSet(ScopedContent.Scope.PROJECT_LOCAL_DEPS);
-    }
-
-    @NonNull
-    @Override
-    public Set<ScopedContent.Scope> getReferencedScopes() {
-        return TransformManager.EMPTY_SCOPES;
     }
 
     @NonNull
@@ -95,30 +84,6 @@ public class MultiStreamJarTransform implements CombinedTransform {
     @Override
     public ScopedContent.Format getOutputFormat() {
         return ScopedContent.Format.SINGLE_FOLDER;
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileInputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return ImmutableMap.of();
     }
 
     @Override

@@ -78,12 +78,6 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
 
     @NonNull
     @Override
-    public Set<ScopedContent.ContentType> getOutputTypes() {
-        return TransformManager.CONTENT_CLASS;
-    }
-
-    @NonNull
-    @Override
     public Set<Scope> getScopes() {
         if (variantType == VariantType.LIBRARY) {
             return Sets.immutableEnumSet(Scope.PROJECT, Scope.PROJECT_LOCAL_DEPS);
@@ -130,24 +124,6 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
                 .addAll(getAllConfigurationFiles())
                 .add(this.incrementalDir)
                 .build();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getParameterInputs() {
-        return ImmutableMap.of();
     }
 
     @Override

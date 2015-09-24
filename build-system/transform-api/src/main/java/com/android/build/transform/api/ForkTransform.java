@@ -25,9 +25,9 @@ import java.util.Map;
 /**
  * A transform that creates an additional output stream on top of its regular output.
  *
- * This transform can only have a single item in its {@link #getInputTypes()}.
+ * This transform can only have a single item in its {@link Transform#getInputTypes()}.
  */
-public interface ForkTransform extends Transform {
+public interface ForkTransform {
 
     /**
      * Perform the Transform.
@@ -37,10 +37,11 @@ public interface ForkTransform extends Transform {
      * which are associated with corresponding collection of {@link TransformOutput}.
      *
      * <p/>
-     * The Transform can require a non-incremental changes, either because {@link #isIncremental()}
-     * returns false, or because there is a change in secondary files
-     * (as returned by {@link #getSecondaryFileInputs()}), or a change to non input file parameters
-     * (as returned by {@link #getParameterInputs()}), or an output was clobbered by something.
+     * The Transform can require a non-incremental changes, either because
+     * {@link Transform#isIncremental()} returns false, or because there is a change in secondary
+     * files (as returned by {@link Transform#getSecondaryFileInputs()}), or a change to non input
+     * file parameters (as returned by {@link Transform#getParameterInputs()}), or an output was
+     * clobbered by something.
      *
      * <p/>
      * If this happens then <var>isIncremental</var> will be false, and

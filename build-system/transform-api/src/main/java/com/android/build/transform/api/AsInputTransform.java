@@ -25,7 +25,7 @@ import java.util.Map;
 /**
  * A Transform that writes the input streams in matching output streams.
  */
-public interface AsInputTransform extends Transform {
+public interface AsInputTransform {
 
     /**
      * Perform the Transform.
@@ -35,10 +35,11 @@ public interface AsInputTransform extends Transform {
      * which are associated with a corresponding {@link TransformOutput}.
      *
      * <p/>
-     * The Transform can require a non-incremental changes, either because {@link #isIncremental()}
-     * returns false, or because there is a change in secondary files
-     * (as returned by {@link #getSecondaryFileInputs()}), or a change to non input file parameters
-     * (as returned by {@link #getParameterInputs()}), or an output was clobbered by something.
+     * The Transform can require a non-incremental changes, either because
+     * {@link Transform#isIncremental()} returns false, or because there is a change in secondary
+     * files (as returned by {@link Transform#getSecondaryFileInputs()}), or a change to non input
+     * file parameters (as returned by {@link Transform#getParameterInputs()}), or an output was
+     * clobbered by something.
      *
      * <p/>
      * If this happens then <var>isIncremental</var> will be false, and

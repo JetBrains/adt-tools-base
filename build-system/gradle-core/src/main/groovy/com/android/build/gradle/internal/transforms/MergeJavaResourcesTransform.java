@@ -26,6 +26,7 @@ import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformInput.FileStatus;
@@ -49,7 +50,7 @@ import java.util.Set;
 /**
  * Transform to merge all the Java resources
  */
-public class MergeJavaResourcesTransform implements CombinedTransform {
+public class MergeJavaResourcesTransform extends Transform implements CombinedTransform {
 
     @NonNull
     private final VariantScope scope;
@@ -82,20 +83,8 @@ public class MergeJavaResourcesTransform implements CombinedTransform {
 
     @NonNull
     @Override
-    public Set<ContentType> getOutputTypes() {
-        return TransformManager.CONTENT_RESOURCES;
-    }
-
-    @NonNull
-    @Override
     public Set<Scope> getScopes() {
         return mergeScopes;
-    }
-
-    @NonNull
-    @Override
-    public Set<Scope> getReferencedScopes() {
-        return TransformManager.EMPTY_SCOPES;
     }
 
     @NonNull
@@ -108,24 +97,6 @@ public class MergeJavaResourcesTransform implements CombinedTransform {
     @Override
     public Format getOutputFormat() {
         return Format.SINGLE_FOLDER;
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileInputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFileOutputs() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getSecondaryFolderOutputs() {
-        return ImmutableList.of();
     }
 
     @NonNull
