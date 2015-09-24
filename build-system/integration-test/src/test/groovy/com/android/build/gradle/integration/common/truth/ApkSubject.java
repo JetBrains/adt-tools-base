@@ -164,39 +164,44 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         // get the dexdump exec
         File dexDumpExe = SdkHelper.getDexDump();
 
-        // while dexdump supports receiving directly an apk, this doesn't work for multi-dex.
-        // check that we're in multi-dex mode first by checking for a classes2.dex file in the
-        // APK
-        boolean multiDex = zip.getEntry("classes2.dex") != null;
+        ZipFile zip = new ZipFile(apkFile);
+        try {
+            // while dexdump supports receiving directly an apk, this doesn't work for multi-dex.
+            // check that we're in multi-dex mode first by checking for a classes2.dex file in the
+            // APK
+            boolean multiDex = zip.getEntry("classes2.dex") != null;
 
-        // if not multi-dex just run the query on the APK itself, dexdump will look at the
-        // classes.dex inside.
-        if (!multiDex) {
-            return checkFileForClassWithDexDump(expectedClassName, apkFile, dexDumpExe);
-        }
-
-        // else, we're going to extract all the classes<N>.dex we find until one of them
-        // contains the class we're searching for.
-        InputStream classDexStream;
-        int index = 1;
-        while ((classDexStream = getInputStream(index == 1 ? FN_APK_CLASSES_DEX :
-                String.format(FN_APK_CLASSES_N_DEX, index))) != null) {
-
-            byte[] content = ByteStreams.toByteArray(classDexStream);
-            // write into tmp file
-            File dexFile = File.createTempFile("dex", "");
-            dexFile.deleteOnExit();
-            Files.write(content, dexFile);
-
-            // run dexDump on it
-            if (checkFileForClassWithDexDump(expectedClassName, dexFile, dexDumpExe)) {
-                return true;
+            // if not multi-dex just run the query on the APK itself, dexdump will look at the
+            // classes.dex inside.
+            if (!multiDex) {
+                return checkFileForClassWithDexDump(expectedClassName, apkFile, dexDumpExe);
             }
 
-            // not found? switch to next index.
-            index++;
-        }
+            // else, we're going to extract all the classes<N>.dex we find until one of them
+            // contains the class we're searching for.
+            InputStream classDexStream;
+            int index = 1;
+            while ((classDexStream = getInputStream(zip, index == 1 ? FN_APK_CLASSES_DEX :
+                    String.format(FN_APK_CLASSES_N_DEX, index))) != null) {
 
+                byte[] content = ByteStreams.toByteArray(classDexStream);
+                classDexStream.close();
+                // write into tmp file
+                File dexFile = File.createTempFile("dex", "");
+                dexFile.deleteOnExit();
+                Files.write(content, dexFile);
+
+                // run dexDump on it
+                if (checkFileForClassWithDexDump(expectedClassName, dexFile, dexDumpExe)) {
+                    return true;
+                }
+
+                // not found? switch to next index.
+                index++;
+            }
+        } finally {
+            zip.close();
+        }
         return false;
     }
 
