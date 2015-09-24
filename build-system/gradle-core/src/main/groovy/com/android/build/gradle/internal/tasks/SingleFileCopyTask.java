@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.tasks;
 
+import com.android.annotations.NonNull;
 import com.google.common.io.Files;
 
 import org.gradle.api.DefaultTask;
@@ -43,8 +44,8 @@ import java.io.IOException;
  */
 public class SingleFileCopyTask extends DefaultTask {
 
-    private File inputFile;
-    private File outputFile;
+    protected File inputFile;
+    protected File outputFile;
 
     @InputFile
     public File getInputFile() {
@@ -56,11 +57,11 @@ public class SingleFileCopyTask extends DefaultTask {
         return outputFile;
     }
 
-    public void setInputFile(File inputFile) {
+    public void setInputFile(@NonNull File inputFile) {
         this.inputFile = inputFile;
     }
 
-    public void setOutputFile(File outputFile) {
+    public void setOutputFile(@NonNull File outputFile) {
         this.outputFile = outputFile;
     }
 
