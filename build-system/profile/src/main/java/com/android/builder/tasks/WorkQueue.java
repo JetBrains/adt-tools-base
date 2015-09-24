@@ -24,8 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A work queue that accepts jobs and treat them in order.
@@ -216,8 +214,7 @@ public class WorkQueue<T> implements Runnable {
                 final Job<T> job = queueTask.job;
                 if (job == null) {
                     // this clearly should not happen.
-                    Logger.getAnonymousLogger().severe(
-                            "I got a null pending job out of the priority queue");
+                    mLogger.error(null, "I got a null pending job out of the priority queue");
                     return;
                 }
                 verbose("Thread(%1$s): scheduling %2$s", threadName, job.getJobTitle());
@@ -225,8 +222,7 @@ public class WorkQueue<T> implements Runnable {
                 try {
                     mQueueThreadContext.runTask(job);
                 } catch (Exception e) {
-                    Logger.getAnonymousLogger().log(
-                            Level.WARNING, "Exception while processing task ", e);
+                    mLogger.warning("Exception while processing task %1$s", e);
                     job.error(e);
                     return;
                 }

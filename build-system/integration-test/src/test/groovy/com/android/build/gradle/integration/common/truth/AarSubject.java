@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
+import com.google.common.io.Closer;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.StringSubject;
 import com.google.common.truth.SubjectFactory;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 /**
@@ -58,10 +60,19 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject> {
 
     @NonNull
     public StringSubject textSymbolFile() throws IOException {
-        InputStream stream = getInputStream("R.txt");
+        ZipFile zipFile = new ZipFile(getSubject());
+        try {
+            InputStream stream = getInputStream(zipFile, "R.txt");
 
-        return new StringSubject(failureStrategy,
-                CharStreams.toString(new InputStreamReader(stream, Charsets.UTF_8)));
+            InputStreamReader inputStreamReader = new InputStreamReader(stream, Charsets.UTF_8);
+            try {
+                return new StringSubject(failureStrategy, CharStreams.toString(inputStreamReader));
+            } finally {
+                inputStreamReader.close();
+            }
+        } finally {
+            zipFile.close();
+        }
     }
 
     /**
@@ -72,21 +83,29 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject> {
     protected boolean checkForClass(
             @NonNull String expectedClassName)
             throws ProcessException, IOException {
-        InputStream stream = getInputStream("classes.jar");
-
-        ZipInputStream zis = new ZipInputStream(stream);
+        ZipFile zipFile = new ZipFile(getSubject());
         try {
-            ZipEntry zipEntry;
-            while ((zipEntry = zis.getNextEntry()) != null) {
-                if (expectedClassName.equals(zipEntry.getName())) {
-                    return true;
-                }
-            }
+            InputStream stream = getInputStream(zipFile, "classes.jar");
+            try {
+                ZipInputStream zis = new ZipInputStream(stream);
+                try {
+                    ZipEntry zipEntry;
+                    while ((zipEntry = zis.getNextEntry()) != null) {
+                        if (expectedClassName.equals(zipEntry.getName())) {
+                            return true;
+                        }
+                    }
 
-            // didn't find the class.
-            return false;
+                    // didn't find the class.
+                    return false;
+                } finally {
+                    zis.close();
+                }
+            } finally {
+                stream.close();
+            }
         } finally {
-            zis.close();
+            zipFile.close();
         }
     }
 

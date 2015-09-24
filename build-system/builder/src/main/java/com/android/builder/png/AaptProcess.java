@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.tasks.BooleanLatch;
 import com.android.builder.tasks.Job;
-import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.process.ProcessException;
 import com.android.utils.GrabProcessOutput;
 import com.android.utils.ILogger;
@@ -71,7 +70,7 @@ public class AaptProcess {
      * Notifies the slave process of a new crunching request, do not block on completion, the
      * notification will be issued through the job parameter's
      * {@link com.android.builder.tasks.Job#finished()} or
-     * {@link com.android.builder.tasks.Job#error()}
+     * {@link com.android.builder.tasks.Job#error(Exception)} ()}
      * functions.
      *
      * @param in the source file to crunch
@@ -82,16 +81,15 @@ public class AaptProcess {
     public void crunch(@NonNull File in, @NonNull File out, @NonNull Job<AaptProcess> job)
             throws IOException {
 
-        mLogger.verbose("Process(" + hashCode() + ")" + in.getName() +
-                "job: " + job.toString());
+        mLogger.verbose("Process(%1$d) %2$s job:%3$s", + hashCode(), in.getName(), job.toString());
         if (!mReady.get()) {
             throw new RuntimeException("AAPT process not ready to receive commands");
         }
         NotifierProcessOutput notifier =
                 new NotifierProcessOutput(job, mProcessOutputFacade, mLogger);
 
-        mLogger.verbose("Processs(" + hashCode() + ") length = "
-                + in.getAbsolutePath().length() + out.getAbsolutePath().length());
+        mLogger.verbose("Processs(%1$d) length = %2$d:$3$d",
+                hashCode(), in.getAbsolutePath().length(), out.getAbsolutePath().length());
         mProcessOutputFacade.setNotifier(notifier);
         mWriter.write("s\n");
         mWriter.write(in.getAbsolutePath());
@@ -99,10 +97,9 @@ public class AaptProcess {
         mWriter.write(out.getAbsolutePath());
         mWriter.write("\n");
         mWriter.flush();
-        mLogger.verbose("Processed(" + hashCode() + ")" + in.getName() +
-                "job: " + job.toString());
-        mMessages.add("Process(" + hashCode() + ") processed " + in.getName() +
-            "job: " + job.toString());
+        mLogger.verbose("Processed(%1$d) %2$s job:%3$s", hashCode(), in.getName(), job.toString());
+        mMessages.add(String.format("Process(%1$d) processed %2$s, job: %3$s",
+                hashCode(), in.getName(), job.toString()));
     }
 
     public void waitForReady() throws InterruptedException {
@@ -172,9 +169,9 @@ public class AaptProcess {
 
     private class ProcessOutputFacade implements GrabProcessOutput.IProcessOutput {
         @Nullable NotifierProcessOutput notifier = null;
-        AtomicBoolean ready = new AtomicBoolean(false);
 
         synchronized void setNotifier(@NonNull NotifierProcessOutput notifierProcessOutput) {
+            //noinspection VariableNotUsedInsideIf
             if (notifier != null) {
                 throw new RuntimeException("Notifier already set, threading issue");
             }
@@ -254,6 +251,7 @@ public class AaptProcess {
         @NonNull private final ProcessOutputFacade mOwner;
         @NonNull private final ILogger mLogger;
         @NonNull private final AtomicBoolean mInError = new AtomicBoolean(false);
+        @SuppressWarnings("StringBufferField")
         @NonNull private final StringBuilder mErrorBuilder = new StringBuilder();
 
             NotifierProcessOutput(
