@@ -38,7 +38,6 @@ import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
 import com.android.build.transform.api.Transform;
-import com.android.build.transform.api.Transform.Type;
 import com.android.builder.model.AndroidProject;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
@@ -227,39 +226,21 @@ public class TransformManager {
     }
 
     private static <T extends Transform> void validateTransform(T transform) {
-        switch (transform.getTransformType()) {
-            case AS_INPUT:
-                if (!(transform instanceof AsInputTransform)) {
-                    throw new RuntimeException(
-                            "Transform with Type AS_INPUT must be implementation of AsInputTransform");
-                }
-                break;
-            case COMBINED:
-                if (!(transform instanceof CombinedTransform)) {
-                    throw new RuntimeException(
-                            "Transform with Type COMBINED must be implementation of CombinedTransform");
-                }
-                break;
-            case FORK_INPUT:
-                if (!(transform instanceof ForkTransform)) {
-                    throw new RuntimeException(
-                            "Transform with Type FORK_INPUT must be implementation of ForkTransform");
-                }
-                if (transform.getInputTypes().size() > 1) {
-                    throw new RuntimeException(String.format(
-                            "FORK_INPUT mode only works since a single input type. Transform '%s' declared with %s",
-                            transform.getName(), transform.getInputTypes()));
-                }
-                break;
-            case NO_OP:
-                if (!(transform instanceof NoOpTransform)) {
-                    throw new RuntimeException(
-                            "Transform with Type NO_OP must be implementation of NoOpTransform");
-                }
-                break;
-            default:
-                throw new UnsupportedOperationException(
-                        "Unsupported transform type: " + transform.getTransformType());
+        if (!(transform instanceof AsInputTransform) &&
+                !(transform instanceof CombinedTransform) &&
+                !(transform instanceof ForkTransform) &&
+                !(transform instanceof NoOpTransform)) {
+            throw new UnsupportedOperationException(String.format(
+                    "Transform type '%s' must implement one of: [AsInputTransform, CombinedTransform, ForkTransform, NoOpTransform]",
+                    transform.getClass().getName()));
+        }
+
+        if (transform instanceof ForkTransform) {
+            if (transform.getInputTypes().size() > 1) {
+                throw new RuntimeException(String.format(
+                        "ForkTransform only works with single input type. Transform '%s' declared with %s",
+                        transform.getName(), transform.getInputTypes()));
+            }
         }
     }
 
@@ -465,18 +446,16 @@ public class TransformManager {
         EnumSet<ContentType> foundTypes = EnumSet.noneOf(ContentType.class);
 
         String transformName = transform.getName();
-        Type type = transform.getTransformType();
         Format outputFormat = transform.getOutputFormat();
         checkArgument(
-                outputFormat != null || type == Type.AS_INPUT,
-                "Only %s transforms can omit specifying the output format.",
-                Type.AS_INPUT);
+                outputFormat != null || transform instanceof AsInputTransform,
+                "Only AsInputTransforms can omit specifying the output format.");
 
         // map to handle multi stream sharing the same type/scope
         Map<StreamKey, Integer> dupCounter = Maps
                 .newHashMapWithExpectedSize(inputStreams.size());
 
-        boolean consumesInputs = type != Type.NO_OP;
+        boolean consumesInputs = !(transform instanceof NoOpTransform);
 
         Collection<String> variantDirSegments = null;
         if (consumesInputs) {
@@ -521,42 +500,33 @@ public class TransformManager {
                 }
 
                 // now handle the output.
-                switch (type) {
-                    case AS_INPUT:
+                if (transform instanceof AsInputTransform) {
+                    //noinspection ConstantConditions
+                    outputStreams.add(createMatchingOutput(
+                            stream,
+                            transform.getOutputTypes(),
+                            // Stream can preserve or change the format.
+                            firstNonNull(outputFormat, stream.getFormat()),
+                            transformName,
+                            taskName,
+                            variantDirSegments,
+                            buildDir,
+                            dupCounter));
+                } else if (transform instanceof ForkTransform) {
+                    // for this case, loop on all the output types, and create a matching
+                    // stream for each
+                    for (ContentType outputType : transform.getOutputTypes()) {
+                        //noinspection ConstantConditions
                         outputStreams.add(createMatchingOutput(
                                 stream,
-                                transform.getOutputTypes(),
-                                // Stream can preserve or change the format.
-                                firstNonNull(outputFormat, stream.getFormat()),
+                                EnumSet.of(outputType),
+                                outputFormat,
                                 transformName,
                                 taskName,
                                 variantDirSegments,
                                 buildDir,
                                 dupCounter));
-                        break;
-                    case FORK_INPUT:
-                        // for this case, loop on all the output types, and create a matching
-                        // stream for each
-                        for (ContentType outputType : transform.getOutputTypes()) {
-                            outputStreams.add(createMatchingOutput(
-                                    stream,
-                                    EnumSet.of(outputType),
-                                    outputFormat,
-                                    transformName,
-                                    taskName,
-                                    variantDirSegments,
-                                    buildDir,
-                                    dupCounter));
-                        }
-                        break;
-                    // Now all the types that don't have per-input outputs.
-                    case NO_OP:
-                    case COMBINED:
-                        // empty on purpose
-                        break;
-                    default:
-                        throw new UnsupportedOperationException(
-                                "Unsupported transform type: " + type);
+                    }
                 }
 
             } else {
@@ -565,7 +535,7 @@ public class TransformManager {
         }
 
         // special combined output.
-        if (type == Type.COMBINED) {
+        if (transform instanceof CombinedTransform) {
             // create single combined output stream for all types and scopes
             Set<ContentType> types = transform.getOutputTypes();
             Set<Scope> scopes = transform.getScopes();

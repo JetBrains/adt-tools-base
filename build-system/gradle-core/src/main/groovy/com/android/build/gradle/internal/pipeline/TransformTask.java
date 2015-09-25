@@ -29,7 +29,6 @@ import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ForkTransform;
 import com.android.build.transform.api.NoOpTransform;
 import com.android.build.transform.api.Transform;
-import com.android.build.transform.api.Transform.Type;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
@@ -101,38 +100,37 @@ public class TransformTask extends StreamBasedTask implements Context {
             referencedInputs = createReferencedTransformInputs(null);
         }
 
-        switch (transform.getTransformType()) {
-            case AS_INPUT:
-                //noinspection unchecked
-                ((AsInputTransform) transform).transform(
-                        this,
-                        (Map<TransformInput, TransformOutput>) (Map<?,?>) consumedInputs,
-                        referencedInputs,
-                        isIncremental);
-                break;
-            case COMBINED:
-                ((CombinedTransform) transform).transform(
-                        this,
-                        consumedInputs.keySet(),
-                        referencedInputs,
-                        Iterables.getOnlyElement(outputStreams).asOutput(),
-                        isIncremental);
-                break;
-            case FORK_INPUT:
-                //noinspection unchecked
-                ((ForkTransform) transform).transform(
-                        this,
-                        (Map<TransformInput, Collection<TransformOutput>>) (Map<?,?>) consumedInputs,
-                        referencedInputs,
-                        isIncremental);
-                break;
-            case NO_OP:
-                ((NoOpTransform) transform).transform(
-                        this, consumedInputs.keySet(), referencedInputs, isIncremental);
-                break;
-            default:
-            throw new UnsupportedOperationException(
-                    "Unsupported transform type: " + transform.getTransformType());
+        if (transform instanceof AsInputTransform) {
+            //noinspection unchecked
+            ((AsInputTransform) transform).transform(
+                    this,
+                    (Map<TransformInput, TransformOutput>) (Map<?,?>) consumedInputs,
+                    referencedInputs,
+                    isIncremental);
+
+        } else if (transform instanceof CombinedTransform) {
+            ((CombinedTransform) transform).transform(
+                    this,
+                    consumedInputs.keySet(),
+                    referencedInputs,
+                    Iterables.getOnlyElement(outputStreams).asOutput(),
+                    isIncremental);
+
+        } else if (transform instanceof ForkTransform) {
+            //noinspection unchecked
+            ((ForkTransform) transform).transform(
+                    this,
+                    (Map<TransformInput, Collection<TransformOutput>>) (Map<?,?>) consumedInputs,
+                    referencedInputs,
+                    isIncremental);
+
+        } else if (transform instanceof NoOpTransform) {
+            ((NoOpTransform) transform).transform(
+                    this, consumedInputs.keySet(), referencedInputs, isIncremental);
+
+        } else {
+            throw new UnsupportedOperationException("Unknown transform type: " +
+                    transform.getClass().getName());
         }
     }
 
@@ -366,9 +364,8 @@ public class TransformTask extends StreamBasedTask implements Context {
     @NonNull
     private Map<TransformInput, Object> createConsumedTransformInputs(
             @Nullable ListMultimap<TransformStream, InputFileDetails> streamToChangedFiles) {
-        Type transformType = transform.getTransformType();
-        boolean inputOutput = transformType == Type.AS_INPUT;
-        boolean multiOutput = transformType == Type.FORK_INPUT;
+        boolean inputOutput = transform instanceof AsInputTransform;
+        boolean multiOutput = transform instanceof ForkTransform;
         inputOutput |= multiOutput;
 
         Map<TransformInput, Object> results = Maps.newHashMap();

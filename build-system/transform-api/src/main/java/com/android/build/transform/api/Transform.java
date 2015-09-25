@@ -59,27 +59,24 @@ import java.util.Set;
  * </ul>
  *
  * <p/>
- * A transform is also tied to its {@link com.android.build.transform.api.Transform.Type}, and must
- * implement the matching interface:
+ * A transform indicates how it transforms the content based on the interface it implements:
  * <ul>
- *     <li>{@link com.android.build.transform.api.Transform.Type#AS_INPUT}: This transform must
- *     implement {@link AsInputTransform}. It reads multiple scopes and output the transformed data
- *     in separate output for each scope. This allows later transforms to still apply to a smaller
- *     number of scopes. This is the preferred type for interoperability with other transforms.</li>
- *     <li>{@link com.android.build.transform.api.Transform.Type#COMBINED}: This transform must
- *     implement {@link CombinedTransform}. It reads multiple scopes and output the transformed data
- *     in a single folder. This folder is now tied to all the scopes it contain and later transforms
- *     can only process this data if they declare that they apply to all these scopes (or more).
+ *     <li>{@link AsInputTransform}: This transform reads multiple scopes and outputs the
+ *     transformed data in separate output for each scope. This allows later transforms
+ *     to be applied to a smaller number of scopes. This is the preferred type for
+ *     interoperability with other transforms.</li>
+ *     <li>{@link CombinedTransform}: This transform reads multiple scopes and outputs the
+ *     transformed data in a single folder. This folder is now tied to all the scopes it
+ *     contain and later transforms can only process this data if they declare that they apply
+ *     to all these scopes (or more).
  *     Applying such a transform will restrict the ability to add more transforms.</li>
- *     <li>{@link com.android.build.transform.api.Transform.Type#FORK_INPUT}: This transform must
- *     implement {@link ForkTransform}. It works similarly to
- *     {@link com.android.build.transform.api.Transform.Type#AS_INPUT} transforms when it comes to
- *     scopes (each input as a matching output to write to). However this transform must indicate
- *     a single {@link #getInputTypes()}), and several {@link #getOutputTypes()}. For each input,
- *     the transform will receive one output per declared output type.</li>
- *     <li>{@link com.android.build.transform.api.Transform.Type#NO_OP}: This transform must
- *     implement {@link NoOpTransform}. It does not have any normal output. Instead it can output
- *     data using the secondary outputs.</li>
+ *     <li>{@link ForkTransform}: This transform works similarly to {@link AsInputTransform}
+ *     when it comes to scopes (each input as a matching output to write to). However this
+ *     transform must indicate a single {@link #getInputTypes()}), and several
+ *     {@link #getOutputTypes()}. For each input, the transform will receive one output per
+ *     declared output type.</li>
+ *     <li>{@link NoOpTransform}: This transform does not have any normal output. Instead it
+ *     can output data using the secondary outputs.</li>
  * </ul>
  *
  * <p/>
@@ -102,21 +99,6 @@ import java.util.Set;
 @Beta
 @SuppressWarnings("MethodMayBeStatic")
 public abstract class Transform {
-
-    /**
-     * How the transform consumes (or not) its input streams.
-     */
-    public enum Type {
-        /** Writes the input streams in matching output streams */
-        AS_INPUT,
-        /** Combines all the input streams into a single output stream */
-        COMBINED,
-        /** A Transform that only reads the input stream. It does not actually consumes them, and
-         * let them available for another transform. */
-        NO_OP,
-        /** A transform that creates an additional output stream on top of its regular output. */
-        FORK_INPUT
-    }
 
     /**
      * Returns the unique name of the transform.
@@ -166,15 +148,6 @@ public abstract class Transform {
     public Set<ScopedContent.Scope> getReferencedScopes() {
         return ImmutableSet.of();
     }
-
-    /**
-     * Returns the type of the Transform.
-     *
-     * <p/>
-     * This indicates how the Transform manipulate its inputs to create outputs.
-     */
-    @NonNull
-    public abstract Type getTransformType();
 
     /**
      * Returns the format of the output stream(s) that this Transform writes into. Null can be used

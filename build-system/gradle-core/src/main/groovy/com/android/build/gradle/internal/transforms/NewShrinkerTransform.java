@@ -106,12 +106,6 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
         return Sets.immutableEnumSet(set);
     }
 
-    @NonNull
-    @Override
-    public Type getTransformType() {
-        return Type.AS_INPUT;
-    }
-
     @Nullable
     @Override
     public ScopedContent.Format getOutputFormat() {

@@ -149,12 +149,6 @@ public class ShrinkResourcesTransform extends Transform implements NoOpTransform
 
     @NonNull
     @Override
-    public Type getTransformType() {
-        return Type.NO_OP;
-    }
-
-    @NonNull
-    @Override
     public Format getOutputFormat() {
         return Format.SINGLE_FOLDER;
     }
