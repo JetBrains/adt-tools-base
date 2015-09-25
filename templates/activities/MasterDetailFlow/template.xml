@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
     format="5"
-    revision="1"
+    revision="7"
     name="Master/Detail Flow"
     minApi="7"
     requireAppTheme="true"

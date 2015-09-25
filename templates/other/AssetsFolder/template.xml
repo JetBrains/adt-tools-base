@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
     format="5"
-    revision="1"
+    revision="3"
     name="Assets Folder"
     description="Creates a source root for assets which will be included in the APK."
     >
