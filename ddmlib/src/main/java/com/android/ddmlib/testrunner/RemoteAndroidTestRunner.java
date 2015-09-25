@@ -47,6 +47,7 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
 
     /** map of name-value instrumentation argument pairs */
     private Map<String, String> mArgMap;
+    private String mExtraOptions;
     private InstrumentationResultParser mParser;
 
     private static final String LOG_TAG = "RemoteAndroidTest";
@@ -167,6 +168,16 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
     }
 
     @Override
+    public void setExtraInstrumentationOptions(String extraOptions) {
+      mExtraOptions = extraOptions;
+    }
+
+    @Override
+    public String getExtraInstrumentationOptions() {
+      return mExtraOptions;
+    }
+
+    @Override
     public void setLogOnly(boolean logOnly) {
         addBooleanArg(LOG_ARG_NAME, logOnly);
     }
@@ -249,8 +260,8 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
     public void run(Collection<ITestRunListener> listeners)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException {
-        final String runCaseCommandStr = String.format("am instrument -w -r %1$s %2$s %3$s",
-                getRunOptions(), getArgsCommand(), getRunnerPath());
+        final String runCaseCommandStr = String.format("am instrument -w -r %1$s %2$s %3$s %4$s",
+                getRunOptions(), getArgsCommand(), getExtraInstrumentationOptions(), getRunnerPath());
         Log.i(LOG_TAG, String.format("Running %1$s on %2$s", runCaseCommandStr,
                 mRemoteDevice.getName()));
         String runName = mRunName == null ? mPackageName : mRunName;
