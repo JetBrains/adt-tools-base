@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
-    format="3"
-    revision="5"
+    format="5"
+    revision="1"
     name="Blank Activity"
     minApi="7"
     minBuildApi="14"
