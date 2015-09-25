@@ -90,12 +90,6 @@ public class MergeJavaResourcesTransform extends Transform implements CombinedTr
 
     @NonNull
     @Override
-    public Type getTransformType() {
-        return Type.COMBINED;
-    }
-
-    @NonNull
-    @Override
     public Format getOutputFormat() {
         return Format.SINGLE_FOLDER;
     }

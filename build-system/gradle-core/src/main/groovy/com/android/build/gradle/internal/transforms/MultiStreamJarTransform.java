@@ -75,12 +75,6 @@ public class MultiStreamJarTransform extends Transform implements CombinedTransf
         return Sets.immutableEnumSet(ScopedContent.Scope.PROJECT_LOCAL_DEPS);
     }
 
-    @NonNull
-    @Override
-    public Type getTransformType() {
-        return Type.COMBINED;
-    }
-
     @Nullable
     @Override
     public ScopedContent.Format getOutputFormat() {

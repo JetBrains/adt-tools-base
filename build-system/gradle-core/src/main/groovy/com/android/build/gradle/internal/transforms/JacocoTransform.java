@@ -88,13 +88,6 @@ public class JacocoTransform extends Transform implements AsInputTransform {
 
     @NonNull
     @Override
-    public Transform.Type getTransformType() {
-        // does not combine multiple input stream.
-        return Transform.Type.AS_INPUT;
-    }
-
-    @NonNull
-    @Override
     public ScopedContent.Format getOutputFormat() {
         return ScopedContent.Format.SINGLE_FOLDER;
     }

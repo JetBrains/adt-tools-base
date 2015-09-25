@@ -57,7 +57,7 @@ import java.util.zip.ZipInputStream;
 /**
  * Transform to extract jars.
  *
- * This only supports {@link Format#JAR} and works with {@link Type#AS_INPUT} so that each input
+ * This only supports {@link Format#JAR} and is a {@link AsInputTransform} so that each input
  * stream has a matching output stream.
  *
  * The output format is {@link Format#MULTI_FOLDER} because each input jar has its own sub-folder
@@ -99,12 +99,6 @@ public class ExtractJarsTransform extends Transform implements AsInputTransform 
     @Override
     public Format getOutputFormat() {
         return Format.MULTI_FOLDER;
-    }
-
-    @NonNull
-    @Override
-    public Type getTransformType() {
-        return Type.AS_INPUT;
     }
 
     @Override
