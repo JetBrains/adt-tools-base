@@ -24,27 +24,22 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.transform.api.AsInputTransform;
-import com.android.build.transform.api.Context;
+import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.ForkTransform;
-import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.NoOpTransform;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
 import com.android.build.transform.api.Transform;
-import com.android.build.transform.api.Transform.Type;
-import com.android.build.transform.api.TransformException;
-import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutput;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class TransformManagerTest extends TaskTestUtils {
@@ -68,7 +63,7 @@ public class TransformManagerTest extends TaskTestUtils {
         Transform t = TestTransform.builder()
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .build();
 
         // add the transform
@@ -113,7 +108,7 @@ public class TransformManagerTest extends TaskTestUtils {
         Transform t = TestTransform.builder()
                 .setInputTypes(ContentType.RESOURCES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .build();
 
         // add the transform
@@ -151,7 +146,7 @@ public class TransformManagerTest extends TaskTestUtils {
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
                 .setReferencedScopes(Scope.EXTERNAL_LIBRARIES)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .build();
 
         // add the transform
@@ -194,7 +189,7 @@ public class TransformManagerTest extends TaskTestUtils {
         Transform t = TestTransform.builder()
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .build();
 
         // add the transform
@@ -255,7 +250,7 @@ public class TransformManagerTest extends TaskTestUtils {
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
                 .setReferencedScopes(Scope.EXTERNAL_LIBRARIES)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .build();
         AndroidTask<TransformTask> task = transformManager.addTransform(
                 taskFactory, scope, t);
@@ -293,7 +288,7 @@ public class TransformManagerTest extends TaskTestUtils {
         Transform t = TestTransform.builder()
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT, Scope.EXTERNAL_LIBRARIES)
-                .setTransformType(Type.COMBINED)
+                .setTransformType(CombinedTransform.class)
                 .build();
 
         // add the transform
@@ -339,7 +334,7 @@ public class TransformManagerTest extends TaskTestUtils {
         Transform t = TestTransform.builder()
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.NO_OP)
+                .setTransformType(NoOpTransform.class)
                 .build();
 
         // add the transform
@@ -375,7 +370,7 @@ public class TransformManagerTest extends TaskTestUtils {
         Transform t = TestTransform.builder()
                 .setInputTypes(ContentType.CLASSES, ContentType.RESOURCES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.COMBINED)
+                .setTransformType(CombinedTransform.class)
                 .build();
 
         // add the transform
@@ -405,7 +400,7 @@ public class TransformManagerTest extends TaskTestUtils {
         assertThat(transformTask.outputStreams).containsExactlyElementsIn(streams);
     }
 
-    private static class BrokenTransform extends Transform implements AsInputTransform {
+    private static class BrokenTransform extends Transform {
 
         @NonNull
         @Override
@@ -416,49 +411,34 @@ public class TransformManagerTest extends TaskTestUtils {
         @NonNull
         @Override
         public Set<ContentType> getInputTypes() {
-            return null;
+            return ImmutableSet.of();
         }
 
         @NonNull
         @Override
         public Set<Scope> getScopes() {
-            return null;
+            return ImmutableSet.of();
         }
 
-        @NonNull
-        @Override
-        public Type getTransformType() {
-            return Type.FORK_INPUT;
-        }
-
-        @NonNull
+        @Nullable
         @Override
         public Format getOutputFormat() {
-            return Format.SINGLE_FOLDER;
+            return null;
         }
 
         @Override
         public boolean isIncremental() {
             return false;
         }
-
-        @Override
-        public void transform(
-                @NonNull Context context,
-                @NonNull Map<TransformInput, TransformOutput> inputs,
-                @NonNull Collection<TransformInput> referencedInputs,
-                boolean isIncremental)
-                throws IOException, TransformException, InterruptedException {
-        }
     }
 
     @Test
-    public void forkTypeWithWrongImplementation() {
+    public void missingImplementation() {
         Transform t = new BrokenTransform();
 
-        exception.expect(RuntimeException.class);
+        exception.expect(UnsupportedOperationException.class);
         exception.expectMessage(
-                "Transform with Type FORK_INPUT must be implementation of ForkTransform");
+                "Transform type 'com.android.build.gradle.internal.pipeline.TransformManagerTest$BrokenTransform' must implement one of: [AsInputTransform, CombinedTransform, ForkTransform, NoOpTransform]");
         // add the transform
         transformManager.addTransform(taskFactory, scope, t);
     }
@@ -470,12 +450,12 @@ public class TransformManagerTest extends TaskTestUtils {
                 .setInputTypes(ContentType.CLASSES, ContentType.DEX)
                 .setOutputTypes(ContentType.CLASSES, ContentType.DEX)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.FORK_INPUT)
+                .setTransformType(ForkTransform.class)
                 .build();
 
         exception.expect(RuntimeException.class);
         exception.expectMessage(
-                "FORK_INPUT mode only works since a single input type. Transform 'transform name' declared with [CLASSES, DEX]");
+                "ForkTransform only works with single input type. Transform 'transform name' declared with [CLASSES, DEX]");
 
         // add the transform
         transformManager.addTransform(taskFactory, scope, t);
@@ -501,7 +481,7 @@ public class TransformManagerTest extends TaskTestUtils {
                 .setInputTypes(ContentType.CLASSES)
                 .setOutputTypes(ContentType.CLASSES, ContentType.DEX)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.FORK_INPUT)
+                .setTransformType(ForkTransform.class)
                 .build();
 
         // add the transform
@@ -565,7 +545,7 @@ public class TransformManagerTest extends TaskTestUtils {
                 .setInputTypes(ContentType.CLASSES)
                 .setOutputTypes(ContentType.CLASSES, ContentType.DEX)
                 .setScopes(Scope.PROJECT, Scope.SUB_PROJECTS)
-                .setTransformType(Type.FORK_INPUT)
+                .setTransformType(ForkTransform.class)
                 .build();
 
         // add the transform
@@ -635,7 +615,7 @@ public class TransformManagerTest extends TaskTestUtils {
                 .setInputTypes(ContentType.CLASSES)
                 .setOutputTypes(ContentType.CLASSES, ContentType.DEX)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.FORK_INPUT)
+                .setTransformType(ForkTransform.class)
                 .build();
 
         // add the transform
@@ -704,7 +684,7 @@ public class TransformManagerTest extends TaskTestUtils {
                 .setInputTypes(ContentType.CLASSES)
                 .setOutputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT, Scope.EXTERNAL_LIBRARIES)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .setFormat(null) // Keep format of input streams.
                 .build();
 

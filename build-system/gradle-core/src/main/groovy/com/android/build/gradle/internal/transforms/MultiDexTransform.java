@@ -108,12 +108,6 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
 
     @NonNull
     @Override
-    public Type getTransformType() {
-        return Type.NO_OP;
-    }
-
-    @NonNull
-    @Override
     public Format getOutputFormat() {
         return Format.SINGLE_FOLDER;
     }

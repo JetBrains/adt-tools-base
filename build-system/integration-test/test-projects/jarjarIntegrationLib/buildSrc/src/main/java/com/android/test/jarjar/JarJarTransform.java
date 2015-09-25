@@ -52,11 +52,6 @@ public class JarJarTransform extends Transform implements CombinedTransform {
     }
 
     @Override
-    public Type getTransformType() {
-        return Type.COMBINED;
-    }
-
-    @Override
     public ScopedContent.Format getOutputFormat() {
         return ScopedContent.Format.JAR;
     }

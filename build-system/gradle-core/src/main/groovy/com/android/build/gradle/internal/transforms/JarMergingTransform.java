@@ -50,7 +50,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- *
+ * A transform that merges all the incoming streams into a single jar in a single combined
+ * stream.
  */
 public class JarMergingTransform extends Transform implements CombinedTransform {
 
@@ -81,12 +82,6 @@ public class JarMergingTransform extends Transform implements CombinedTransform 
     @Override
     public Set<Scope> getScopes() {
         return scopes;
-    }
-
-    @NonNull
-    @Override
-    public Type getTransformType() {
-        return Type.COMBINED;
     }
 
     @NonNull

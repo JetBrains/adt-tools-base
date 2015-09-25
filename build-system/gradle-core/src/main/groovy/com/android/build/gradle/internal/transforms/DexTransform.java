@@ -77,7 +77,7 @@ import java.util.concurrent.Callable;
  *
  * This handles pre-dexing as well. If there are more than one stream, then only streams with
  * changed files will be re-dexed before a single merge phase is done at the end.
- * If there is a single stream (when there's a {@link Type#COMBINED} transform upstream),
+ * If there is a single stream (when there's a {@link CombinedTransform} upstream),
  * then there's only a single dx phase.
  */
 public class DexTransform extends Transform implements CombinedTransform {
@@ -137,12 +137,6 @@ public class DexTransform extends Transform implements CombinedTransform {
     @Override
     public Set<Scope> getScopes() {
         return TransformManager.SCOPE_FULL_PROJECT;
-    }
-
-    @NonNull
-    @Override
-    public Type getTransformType() {
-        return Type.COMBINED;
     }
 
     @NonNull
