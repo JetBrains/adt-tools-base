@@ -25,11 +25,12 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.pipeline.TestTransform.TestAsInputTransform;
 import com.android.build.gradle.internal.pipeline.TestTransform.TestForkTransform;
 import com.android.build.gradle.internal.scope.AndroidTask;
+import com.android.build.transform.api.AsInputTransform;
+import com.android.build.transform.api.ForkTransform;
 import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.ScopedContent.ContentType;
 import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.ScopedContent.Scope;
-import com.android.build.transform.api.Transform.Type;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformInput.FileStatus;
@@ -70,7 +71,7 @@ public class TransformTaskTest extends TaskTestUtils {
         TestAsInputTransform t = (TestAsInputTransform) TestTransform.builder()
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .build();
 
         // add the transform to the manager
@@ -130,7 +131,7 @@ public class TransformTaskTest extends TaskTestUtils {
         TestAsInputTransform t = (TestAsInputTransform) TestTransform.builder()
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .build();
 
         // add the transform to the manager
@@ -175,7 +176,7 @@ public class TransformTaskTest extends TaskTestUtils {
                 .setIncremental(true)
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .build();
 
         // add the transform to the manager
@@ -246,7 +247,7 @@ public class TransformTaskTest extends TaskTestUtils {
                 .setIncremental(true)
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT, Scope.SUB_PROJECTS)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .build();
 
         // add the transform to the manager
@@ -334,7 +335,7 @@ public class TransformTaskTest extends TaskTestUtils {
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
                 .setReferencedScopes(Scope.SUB_PROJECTS)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .build();
 
         // add the transform to the manager
@@ -414,7 +415,7 @@ public class TransformTaskTest extends TaskTestUtils {
                 .setInputTypes(ContentType.CLASSES)
                 .setOutputTypes(ContentType.CLASSES, ContentType.DEX)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.FORK_INPUT)
+                .setTransformType(ForkTransform.class)
                 .build();
 
         // add the transform to the manager
@@ -491,7 +492,7 @@ public class TransformTaskTest extends TaskTestUtils {
                 .setIncremental(true)
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .setSecondaryFile(secondaryFile)
                 .build();
 
@@ -548,7 +549,7 @@ public class TransformTaskTest extends TaskTestUtils {
                 .setIncremental(true)
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .setSecondaryFile(secondaryFile)
                 .build();
 
@@ -605,7 +606,7 @@ public class TransformTaskTest extends TaskTestUtils {
                 .setIncremental(true)
                 .setInputTypes(ContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(Type.AS_INPUT)
+                .setTransformType(AsInputTransform.class)
                 .setSecondaryFile(secondaryFile)
                 .build();
 

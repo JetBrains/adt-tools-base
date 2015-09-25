@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.transforms;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.AsInputTransform;
@@ -94,13 +95,7 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
         return Sets.immutableEnumSet(set);
     }
 
-    @NonNull
-    @Override
-    public Type getTransformType() {
-        return Type.AS_INPUT;
-    }
-
-    @NonNull
+    @Nullable
     @Override
     public ScopedContent.Format getOutputFormat() {
         return ScopedContent.Format.SINGLE_FOLDER;

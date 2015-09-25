@@ -158,12 +158,6 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
 
     @NonNull
     @Override
-    public Type getTransformType() {
-        return Type.COMBINED;
-    }
-
-    @NonNull
-    @Override
     public Format getOutputFormat() {
         if (asJar) {
             return Format.JAR;
