@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
-    format="4"
-    revision="2"
+    format="5"
+    revision="3"
     name="Fragment (List)"
     description="Creates a new empty fragment containing a list that can optionally change to a grid when on large screens. Compatible back to API level 4."
     minApi="7"

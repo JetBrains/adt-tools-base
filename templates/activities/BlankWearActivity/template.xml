@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
-    format="4"
-    revision="1"
+    format="5"
+    revision="2"
     name="Blank Wear Activity"
     minApi="20"
     minBuildApi="20"
