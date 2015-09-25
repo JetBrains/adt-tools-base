@@ -15,7 +15,7 @@
  */
 package com.android.tools.rpclib.schema;
 
-import com.android.tools.rpclib.binary.BinaryObject;
+import com.android.tools.rpclib.any.Box;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
 
@@ -23,34 +23,33 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-public final class Interface extends Type {
+public final class AnyType extends Type {
 
-    String mName;
-
-    public Interface(@NotNull Decoder d) throws IOException {
-        mName = d.string();
+    public AnyType(@NotNull Decoder d) throws IOException {
     }
 
     @NotNull
     @Override
     public String getName() {
-        return mName;
+        return "any";
     }
 
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
-        assert (value instanceof BinaryObject);
-        e.object((BinaryObject) value);
+        e.variant(Box.wrap(value));
     }
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        return d.object();
+        Box boxed = (Box) d.variant();
+        if (boxed == null) {
+            return null;
+        }
+        return boxed.unwrap();
     }
 
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
-        TypeTag.interfaceTag().encode(e);
-        e.string(mName);
+        TypeTag.anyTag().encode(e);
     }
 }
