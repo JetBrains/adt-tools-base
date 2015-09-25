@@ -158,24 +158,6 @@ public interface IRemoteAndroidTestRunner {
     void addBooleanArg(String name, boolean value);
 
     /**
-     * Sets extra instrumentation options.
-     * <p/>
-     * @see RemoteAndroidTestRunner#setExtraInstrumentationOptions
-     *
-     * @param extraOptions contains "-e keyN valueN --user_id 0 ..." content.
-     */
-    void setExtraInstrumentationOptions(String extraOptions);
-
-    /**
-     * Gets extra instrumentation options.
-     * <p/>
-     * @see RemoteAndroidTestRunner#getExtraInstrumentationOptions
-     *
-     * Returns the extra instrumentation options.
-     */
-    String getExtraInstrumentationOptions();
-
-  /**
      * Sets this test run to log only mode - skips test execution.
      */
     void setLogOnly(boolean logOnly);
