@@ -1078,7 +1078,7 @@
             <d:screen>
                 <d:screen-size>normal</d:screen-size>
                 <d:diagonal-length>5.20</d:diagonal-length>
-                <d:pixel-density>xxhdpi</d:pixel-density>
+                <d:pixel-density>420dpi</d:pixel-density>
                 <d:screen-ratio>notlong</d:screen-ratio>
                 <d:dimensions>
                     <d:x-dimension>1080</d:x-dimension>
@@ -1105,6 +1105,7 @@
                 Gyroscope
                 LightSensor
                 ProximitySensor
+                <!--Fingerprint-->
             </d:sensors>
             <d:mic>true</d:mic>
             <d:camera>
@@ -1119,11 +1120,11 @@
             </d:camera>
             <d:keyboard>nokeys</d:keyboard>
             <d:nav>nonav</d:nav>
-            <d:ram unit="MiB">1813</d:ram>
+            <d:ram unit="GiB">2</d:ram>
             <d:buttons>soft</d:buttons>
-            <d:internal-storage unit="MiB">2952</d:internal-storage>
-            <d:removable-storage unit="MiB">25483</d:removable-storage>
-            <d:cpu>Qualcomm 8992, Dual-core ARM Cortex A57 and quad-core A53</d:cpu>
+            <d:internal-storage unit="GiB">16</d:internal-storage>
+            <d:removable-storage unit="GiB">2</d:removable-storage>
+            <d:cpu>Qualcomm Snapdragon 808 processor, 1.8 GHz hexa-core 64-bit</d:cpu>
             <d:gpu>Qualcomm Adreno 418</d:gpu>
             <d:abi>
                 arm64-v8a
@@ -1217,6 +1218,7 @@
                 Gyroscope
                 LightSensor
                 ProximitySensor
+                <!--Fingerprint-->
             </d:sensors>
             <d:mic>true</d:mic>
             <d:camera>
@@ -1231,11 +1233,11 @@
             </d:camera>
             <d:keyboard>nokeys</d:keyboard>
             <d:nav>nonav</d:nav>
-            <d:ram unit="MiB">2702</d:ram>
+            <d:ram unit="GiB">3</d:ram>
             <d:buttons>soft</d:buttons>
-            <d:internal-storage unit="MiB">2952</d:internal-storage>
-            <d:removable-storage unit="MiB">24751</d:removable-storage>
-            <d:cpu>Qualcomm Snapdragon 810 v2.1, Quad-core ARM Cortex A57 and quad-core A53</d:cpu>
+            <d:internal-storage unit="GiB">32</d:internal-storage>
+            <d:removable-storage unit="GiB">2</d:removable-storage>
+            <d:cpu>Qualcomm Snapdragon 810 v2.1 processor, 2.0 GHz octa-core 64-bit</d:cpu>
             <d:gpu>Qualcomm Adreno 430</d:gpu>
             <d:abi>
                 arm64-v8a
