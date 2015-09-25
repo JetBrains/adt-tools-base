@@ -68,7 +68,7 @@ public class UninstallTask extends BaseTask {
 
         final ILogger lifecycleLogger = new LoggerWrapper(getLogger(), LogLevel.LIFECYCLE);
         final DeviceProvider deviceProvider =
-                new ConnectedDeviceProvider(getAdbExe(), lifecycleLogger);
+                new ConnectedDeviceProvider(getAdbExe(), getTimeOutInMs(), lifecycleLogger);
 
         deviceProvider.init();
         final List<? extends DeviceConnector> devices = deviceProvider.getDevices();
