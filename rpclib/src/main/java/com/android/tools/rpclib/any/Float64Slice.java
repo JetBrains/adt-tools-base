@@ -53,7 +53,7 @@ final class Float64Slice extends Box implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {78, -75, 21, -35, 85, -72, -27, -124, 28, 53, 1, -36, -34, -34, -38, -84, -90, -72, -91, -69, };
+    private static final byte[] IDBytes = {-5, -11, 57, -47, -63, -39, -114, 54, -103, -44, 29, -95, 81, 56, 61, 101, -71, 61, -97, 115, };
     public static final BinaryID ID = new BinaryID(IDBytes);
 
     static {

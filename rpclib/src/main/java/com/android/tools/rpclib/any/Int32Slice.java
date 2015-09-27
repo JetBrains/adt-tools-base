@@ -53,7 +53,7 @@ final class Int32Slice extends Box implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {74, 13, -67, -70, 41, -39, 17, -80, -11, 108, -97, -29, -39, 100, 103, -33, 91, 43, 46, 121, };
+    private static final byte[] IDBytes = {41, -5, 14, 38, -103, 12, 88, -78, 9, -111, 54, 85, -26, -38, -56, 22, 42, 36, 92, 65, };
     public static final BinaryID ID = new BinaryID(IDBytes);
 
     static {

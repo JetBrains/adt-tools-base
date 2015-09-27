@@ -53,7 +53,7 @@ final class Float32 extends Box implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {-110, -48, 121, -120, -60, 8, -128, -111, 27, -95, 80, -57, 2, 49, 2, 91, -91, 42, -91, 29, };
+    private static final byte[] IDBytes = {-12, 47, -48, 101, 78, 7, 42, 121, 48, -21, 85, -22, 42, -123, 61, 118, -75, 74, 17, -64, };
     public static final BinaryID ID = new BinaryID(IDBytes);
 
     static {

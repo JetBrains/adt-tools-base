@@ -53,7 +53,7 @@ final class BoolSlice extends Box implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {-26, -1, -9, 77, -74, 106, 123, 6, 8, -1, 31, -9, -19, -65, 93, 78, 68, 86, -67, -11, };
+    private static final byte[] IDBytes = {-12, -72, 104, 64, 10, 124, -126, -63, -53, 19, 119, -52, 36, 15, -83, 41, -42, -32, -22, 121, };
     public static final BinaryID ID = new BinaryID(IDBytes);
 
     static {

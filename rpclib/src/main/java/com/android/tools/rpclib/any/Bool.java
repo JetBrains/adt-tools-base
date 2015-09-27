@@ -53,7 +53,7 @@ final class Bool extends Box implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {-39, -7, 57, -82, 83, -9, 74, 72, -102, 45, 12, 58, 119, -121, -35, -117, 39, -59, -23, -13, };
+    private static final byte[] IDBytes = {108, 122, -8, -18, 15, 0, -50, -57, 55, 52, 47, -19, -103, -46, 15, -96, -49, 4, 77, 107, };
     public static final BinaryID ID = new BinaryID(IDBytes);
 
     static {

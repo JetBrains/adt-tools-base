@@ -48,7 +48,7 @@ public final class TypeB implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {4, -124, -33, 125, -120, 37, -17, 67, -9, 113, 60, 92, 3, 43, -32, -3, 66, 31, 110, -121, };
+    private static final byte[] IDBytes = {57, -124, -48, 105, 21, 78, 24, 72, 104, -21, 77, -88, 119, 103, 79, 51, -23, 13, 19, -111, };
     public static final BinaryID ID = new BinaryID(IDBytes);
 
     static {

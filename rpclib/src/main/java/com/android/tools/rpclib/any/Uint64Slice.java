@@ -53,7 +53,7 @@ final class Uint64Slice extends Box implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {-62, -6, -110, 106, -31, -19, 85, -55, 84, -22, 18, -74, -71, 103, 45, 62, -115, 28, 65, -123, };
+    private static final byte[] IDBytes = {-65, 32, -126, -74, 37, 45, -38, 56, 50, -11, -99, -70, -127, 78, -118, 36, -100, 32, 13, 78, };
     public static final BinaryID ID = new BinaryID(IDBytes);
 
     static {
