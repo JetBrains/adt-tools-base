@@ -22,15 +22,12 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 public final class Entity implements BinaryObject {
-
     private BinaryID mTypeID;
-
     private String mPackage;
-
     private String mName;
-
+    private String mIdentity;
+    private String mVersion;
     private boolean mExported;
-
     private Field[] mFields;
 
     private BinaryObject[] mMetadata;
@@ -103,6 +100,8 @@ public final class Entity implements BinaryObject {
             e.id(o.mTypeID);
             e.string(o.mPackage);
             e.string(o.mName);
+            e.string(o.mIdentity);
+            e.string(o.mVersion);
             e.bool(o.mExported);
             e.uint32(o.mFields.length);
             for (int i = 0; i < o.mFields.length; i++) {
@@ -121,6 +120,8 @@ public final class Entity implements BinaryObject {
             o.mTypeID = d.id();
             o.mPackage = d.string();
             o.mName = d.string();
+            o.mIdentity = d.string();
+            o.mVersion = d.string();
             o.mExported = d.bool();
             o.mFields = new Field[d.uint32()];
             for (int i = 0; i < o.mFields.length; i++) {
