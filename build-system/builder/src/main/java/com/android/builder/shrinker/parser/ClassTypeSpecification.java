@@ -16,29 +16,28 @@
 
 package com.android.builder.shrinker.parser;
 
-import com.android.annotations.NonNull;
+import static com.google.common.base.Preconditions.checkState;
+
+import org.objectweb.asm.Opcodes;
 
 /**
  * Represents the "class type" part of a ProGuard class specification.
  */
-public class ClassTypeSpecification extends MatcherWithNegator<ClassTypeSpecification.TypeEnum> {
+public class ClassTypeSpecification extends MatcherWithNegator<Integer> {
 
-    @NonNull
-    private final TypeEnum mTypeEnum;
+    private static final int CLASS_TYPE_FLAGS =
+            Opcodes.ACC_INTERFACE | Opcodes.ACC_ENUM;
 
-    /**
-     * Enum indicating whether the type in a interface, class or enum
-     */
-    public enum TypeEnum {
-        INTERFACE, CLASS, ENUM
-    }
+    private final int mSpec;
 
-    public ClassTypeSpecification(@NonNull TypeEnum typeEnum) {
-        mTypeEnum = typeEnum;
+    public ClassTypeSpecification(int spec) {
+        checkState((spec & CLASS_TYPE_FLAGS) == spec);
+        mSpec = spec;
     }
 
     @Override
-    protected boolean matchesWithoutNegator(TypeEnum typeEnum) {
-        return typeEnum == mTypeEnum;
+    protected boolean matchesWithoutNegator(Integer toCheck) {
+        int modifiers = toCheck;
+        return (modifiers & CLASS_TYPE_FLAGS) == mSpec;
     }
 }

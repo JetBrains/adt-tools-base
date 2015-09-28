@@ -18,16 +18,18 @@ package com.android.builder.shrinker.parser;
 
 import com.android.annotations.NonNull;
 
+import org.objectweb.asm.Opcodes;
+
 /**
  * Modifier part of a ProGuard class specification.
  */
 public class ModifierSpecification implements Matcher<Integer> {
     private static final int ACCESSIBILITY_FLAGS =
-            Modifier.PUBLIC
-                    | Modifier.PROTECTED
-                    | Modifier.PRIVATE;
+            Opcodes.ACC_PUBLIC
+                    | Opcodes.ACC_PROTECTED
+                    | Opcodes.ACC_PRIVATE;
 
-    private int modifier;
+    private int modifier = 0;
 
     private int modifierWithNegator;
 
@@ -66,16 +68,15 @@ public class ModifierSpecification implements Matcher<Integer> {
             }
         }
 
-        int otherflags = toCompare & ~ACCESSIBILITY_FLAGS;
-        int otherflagsSpec = modifier & ~ACCESSIBILITY_FLAGS;
-        if ((otherflags & otherflagsSpec) != otherflagsSpec) {
+        int otherFlags = toCompare & ~ACCESSIBILITY_FLAGS;
+        int otherFlagsSpec = modifier & ~ACCESSIBILITY_FLAGS;
+        if ((otherFlags & otherFlagsSpec) != otherFlagsSpec) {
             return false;
         }
 
-        int otherflagsSpecWithNegator = modifierWithNegator & ~ACCESSIBILITY_FLAGS;
-        if (otherflagsSpecWithNegator != 0) {
-            return ((otherflagsSpecWithNegator & ~otherflags) == otherflagsSpecWithNegator);
-        }
-        return true;
+        int otherFlagsSpecWithNegator = modifierWithNegator & ~ACCESSIBILITY_FLAGS;
+
+        return otherFlagsSpecWithNegator == 0
+                || ((otherFlagsSpecWithNegator & ~otherFlags) == otherFlagsSpecWithNegator);
     }
 }
