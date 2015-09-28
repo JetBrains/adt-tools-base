@@ -35,12 +35,14 @@ import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.client.api.JavaParser.ResolvedVariable;
 import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 
+import java.util.List;
 import java.util.ListIterator;
 
 import lombok.ast.BinaryExpression;
 import lombok.ast.BinaryOperator;
 import lombok.ast.BooleanLiteral;
 import lombok.ast.Cast;
+import lombok.ast.Catch;
 import lombok.ast.CharLiteral;
 import lombok.ast.Expression;
 import lombok.ast.ExpressionStatement;
