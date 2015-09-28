@@ -21,17 +21,21 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.transform.api.Context;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
+import com.android.builder.core.AndroidBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -50,13 +54,24 @@ public class InstantRunTransformTest {
     @Mock
     Context context;
 
+    @Mock
+    GlobalScope globalScope;
+
+    @Before
+    public void setUpMock() {
+        MockitoAnnotations.initMocks(this);
+        AndroidBuilder mockBuilder = Mockito.mock(AndroidBuilder.class);
+        when(mockBuilder.getBootClasspath(true)).thenReturn(ImmutableList.<File>of());
+        when(globalScope.getAndroidBuilder()).thenReturn(mockBuilder);
+    }
+
     @Test
     public void incrementalModeTest() throws TransformException, InterruptedException, IOException {
 
         final ImmutableList.Builder<File> filesElectedForClasses2Transformation = ImmutableList.builder();
         final ImmutableList.Builder<File> filesElectedForClasses3Transformation = ImmutableList.builder();
 
-        InstantRunTransform transform = new InstantRunTransform() {
+        InstantRunTransform transform = new InstantRunTransform(globalScope) {
             @Override
             protected void transformToClasses2Format(
                     File inputDir, File inputFile, File outputDir, RecordingPolicy recordingPolicy)
@@ -162,7 +177,7 @@ public class InstantRunTransformTest {
         final ImmutableList.Builder<File> filesElectedForClasses2Transformation = ImmutableList.builder();
         final ImmutableList.Builder<File> filesElectedForClasses3Transformation = ImmutableList.builder();
 
-        InstantRunTransform transform = new InstantRunTransform() {
+        InstantRunTransform transform = new InstantRunTransform(globalScope) {
             @Override
             protected void transformToClasses2Format(
                     File inputDir, File inputFile, File outputDir, RecordingPolicy recordingPolicy)

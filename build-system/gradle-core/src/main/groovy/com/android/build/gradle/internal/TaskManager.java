@@ -1332,7 +1332,7 @@ public abstract class TaskManager {
         if (isIncrementalSupportActive(variantScope.getVariantConfiguration())) {
 
             TransformManager transformManager = variantScope.getTransformManager();
-            InstantRunTransform instantRunTransform = new InstantRunTransform();
+            InstantRunTransform instantRunTransform = new InstantRunTransform(globalScope);
             transformManager.addTransform(tasks, variantScope, instantRunTransform);
 
             AndroidTask<FastDeployRuntimeExtractorTask> extractorTask = androidTasks.create(
@@ -1370,7 +1370,9 @@ public abstract class TaskManager {
      * @return true if incremental support is active, false otherwise.
      */
     private boolean isIncrementalSupportActive(VariantConfiguration config) {
-        return config.getBuildType().isDebuggable() && !config.getType().isForTesting()
+        return config.getBuildType().isDebuggable()
+                && !config.getBuildType().isMinifyEnabled()
+                && !config.getType().isForTesting()
                 && globalScope.isActive(OptionalCompilationStep.INSTANT_DEV);
     }
 

@@ -201,7 +201,37 @@ public class IncrementalVisitor extends ClassVisitor {
         byte[] classBytes;
         classBytes = Files.toByteArray(inputFile);
         ClassReader classReader = new ClassReader(classBytes);
-        ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES);
+        // override the getCommonSuperClass to use the thread context class loader instead of
+        // the system classloader. This is useful as ASM needs to load classes from the project
+        // which the system classloader does not have visibility upon.
+        // TODO: investigate if there is not a simpler way than overriding.
+        ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_FRAMES) {
+            @Override
+            protected String getCommonSuperClass(final String type1, final String type2) {
+                Class<?> c, d;
+                ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+                try {
+                    c = Class.forName(type1.replace('/', '.'), false, classLoader);
+                    d = Class.forName(type2.replace('/', '.'), false, classLoader);
+                } catch (Exception e) {
+                    throw new RuntimeException(e.toString());
+                }
+                if (c.isAssignableFrom(d)) {
+                    return type1;
+                }
+                if (d.isAssignableFrom(c)) {
+                    return type2;
+                }
+                if (c.isInterface() || d.isInterface()) {
+                    return "java/lang/Object";
+                } else {
+                    do {
+                        c = c.getSuperclass();
+                    } while (!c.isAssignableFrom(d));
+                    return c.getName().replace('.', '/');
+                }
+            }
+        };
 
         ClassNode classNode = new ClassNode();
         classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
