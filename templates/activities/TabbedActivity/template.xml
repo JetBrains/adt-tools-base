@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
     format="5"
-    revision="1"
+    revision="6"
     name="Tabbed Activity"
     minApi="13"
     minBuildApi="14"

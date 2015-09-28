@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
     format="5"
-    revision="1"
+    revision="3"
     name="Android Manifest File"
     description="Creates an Android Manifest XML File."
     >

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
     format="5"
-    revision="1"
+    revision="3"
     name="Fragment (Blank)"
     description="Creates a blank fragment that is compatible back to API level 4."
     minApi="7"

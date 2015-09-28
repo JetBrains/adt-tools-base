@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
     format="5"
-    revision="1"
+    revision="2"
     name="Media service"
     description="Create a MediaBrowserService and adds the required metadata for Android Auto"
     minApi="21">
