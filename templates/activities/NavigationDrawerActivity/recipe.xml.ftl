@@ -17,8 +17,15 @@
             to="${escapeXmlAttribute(resOut)}/menu/${menuName}.xml" />
 
 <#if appCompatActivity>
-    <copy from="root/res-v22/drawable"
+    <copy from="root/res-buildApi22/drawable"
             to="${escapeXmlAttribute(resOut)}/drawable" />
+    <copy from="root/res-buildApi22/drawable-v21"
+            to="${escapeXmlAttribute(resOut)}/drawable<#if includeImageDrawables>-v21</#if>" />
+
+    <#if includeImageDrawables>
+        <copy from="root/res-buildApi22/values/drawables.xml"
+                to="${escapeXmlAttribute(resOut)}/values/drawables.xml" />
+    </#if>
 
     <#if !(hasDependency('com.android.support:design'))>
         <dependency mavenUrl="com.android.support:design:${buildApi}.+"/>
@@ -36,14 +43,15 @@
         <execute file="../common/recipe_no_actionbar.xml.ftl" />
     </#if>
 
-    <instantiate from="root/res-v22/menu/drawer.xml.ftl"
+    <instantiate from="root/res-buildApi22/menu/drawer.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/menu/${drawerMenu}.xml" />
-    <instantiate from="root/res-v22/layout/navigation_view.xml.ftl"
+
+    <instantiate from="root/res-buildApi22/layout/navigation_view.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
-    <instantiate from="root/res-v22/layout/navigation_header.xml.ftl"
+    <instantiate from="root/res-buildApi22/layout/navigation_header.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/${navHeaderLayoutName}.xml" />
 
-    <instantiate from="root/src-v22/app_package/DrawerActivity.java.ftl"
+    <instantiate from="root/src-buildApi22/app_package/DrawerActivity.java.ftl"
                    to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 
     <open file="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
