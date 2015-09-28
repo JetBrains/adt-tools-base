@@ -74,8 +74,10 @@ import org.eclipse.jdt.internal.compiler.ast.NumberLiteral;
 import org.eclipse.jdt.internal.compiler.ast.Statement;
 import org.eclipse.jdt.internal.compiler.ast.StringLiteral;
 import org.eclipse.jdt.internal.compiler.ast.TrueLiteral;
+import org.eclipse.jdt.internal.compiler.ast.TryStatement;
 import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.TypeReference;
+import org.eclipse.jdt.internal.compiler.ast.UnionTypeReference;
 import org.eclipse.jdt.internal.compiler.batch.CompilationUnit;
 import org.eclipse.jdt.internal.compiler.batch.FileSystem;
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileConstants;
@@ -94,6 +96,7 @@ import org.eclipse.jdt.internal.compiler.impl.ShortConstant;
 import org.eclipse.jdt.internal.compiler.impl.StringConstant;
 import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding;
 import org.eclipse.jdt.internal.compiler.lookup.Binding;
+import org.eclipse.jdt.internal.compiler.lookup.CatchParameterBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ElementValuePair;
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
@@ -125,11 +128,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import lombok.ast.Catch;
 import lombok.ast.Identifier;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.Node;
 import lombok.ast.Position;
 import lombok.ast.StrictListAccessor;
+import lombok.ast.Try;
 import lombok.ast.VariableDeclaration;
 import lombok.ast.VariableDefinition;
 import lombok.ast.VariableDefinitionEntry;
@@ -974,6 +979,52 @@ public class EcjParser extends JavaParser {
         }
 
         return null;
+    }
+
+    @Override
+    public List<TypeDescriptor> getCatchTypes(@NonNull JavaContext context,
+            @NonNull Catch catchBlock) {
+        Try aTry = catchBlock.upToTry();
+        if (aTry != null) {
+            Object nativeNode = getNativeNode(aTry);
+            if (nativeNode instanceof TryStatement) {
+                TryStatement tryStatement = (TryStatement) nativeNode;
+                Argument[] catchArguments = tryStatement.catchArguments;
+                Argument argument = null;
+                if (catchArguments.length > 1) {
+                    int index = 0;
+                    for (Catch aCatch : aTry.astCatches()) {
+                        if (aCatch == catchBlock) {
+                            if (index < catchArguments.length) {
+                                argument = catchArguments[index];
+                                break;
+                            }
+                        }
+                        index++;
+                    }
+                } else {
+                    argument = catchArguments[0];
+                }
+                if (argument != null) {
+                    if (argument.type instanceof UnionTypeReference) {
+                        UnionTypeReference typeRef = (UnionTypeReference) argument.type;
+                        List<TypeDescriptor> types = Lists.newArrayListWithCapacity(typeRef.typeReferences.length);
+                        for (TypeReference typeReference : typeRef.typeReferences) {
+                            TypeBinding binding = typeReference.resolvedType;
+                            if (binding != null) {
+                                types.add(new EcjTypeDescriptor(binding));
+                            }
+                        }
+                        return types;
+                    } else if (argument.type.resolvedType != null) {
+                        TypeDescriptor t = new EcjTypeDescriptor(argument.type.resolvedType);
+                        return Collections.singletonList(t);
+                    }
+                }
+            }
+        }
+
+        return super.getCatchTypes(context, catchBlock);
     }
 
     @Nullable
