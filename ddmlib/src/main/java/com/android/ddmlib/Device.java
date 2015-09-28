@@ -931,7 +931,7 @@ final class Device implements IDevice {
             int index = 0;
             boolean allUploadSucceeded = true;
             while (allUploadSucceeded && index < apkFilePaths.size()) {
-                allUploadSucceeded = uploadAPK(sessionId, apkFilePaths.get(index), index++);
+                allUploadSucceeded = uploadAPK(sessionId, apkFilePaths.get(index), index++, timeOutInMs);
             }
 
             // if all files were upload successfully, commit otherwise abandon the installation.
@@ -1037,7 +1037,7 @@ final class Device implements IDevice {
             CharMatcher.inRange('a','z').or(CharMatcher.inRange('A','Z'))
                     .or(CharMatcher.anyOf("_-")).negate();
 
-    private boolean uploadAPK(final String sessionId, String apkFilePath, int uniqueId) {
+    private boolean uploadAPK(final String sessionId, String apkFilePath, int uniqueId, int timeOutInMs) {
         Log.d(sessionId, String.format("Uploading APK %1$s ", apkFilePath));
         File fileToUpload = new File(apkFilePath);
         if (!fileToUpload.exists()) {
@@ -1064,7 +1064,7 @@ final class Device implements IDevice {
             InstallReceiver receiver = new InstallReceiver();
             AdbHelper.executeRemoteCommand(AndroidDebugBridge.getSocketAddress(),
                     AdbHelper.AdbService.EXEC, command, this,
-                    receiver, DdmPreferences.getTimeOut(), TimeUnit.MILLISECONDS, inputStream);
+                    receiver, timeOutInMs, TimeUnit.MILLISECONDS, inputStream);
             if (receiver.getErrorMessage() != null) {
                 Log.e(sessionId, String.format("Error while uploading %1$s : %2$s", fileToUpload.getName(),
                         receiver.getErrorMessage()));
