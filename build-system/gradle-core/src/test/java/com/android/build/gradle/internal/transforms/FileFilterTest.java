@@ -293,7 +293,7 @@ public class FileFilterTest {
         // remove one...
         assertTrue(secondFile.delete());
 
-        fileFilter.handleRemoved(sMergedFolder, secondFile);
+        fileFilter.handleRemoved(sMergedFolder, "foo/text.properties");
 
         assertTrue(mergedFile.exists());
         assertContentInAnyOrder(
@@ -385,19 +385,19 @@ public class FileFilterTest {
         String mergedContent = Files.asCharSource(mergedFile, Charset.defaultCharset()).read();
         if (mergedContent.equals("one")) {
             assertTrue(firstFile.delete());
-            fileFilter.handleRemoved(sMergedFolder, firstFile);
+            fileFilter.handleRemoved(sMergedFolder, "foo/text.properties");
             mergedContent = Files.asCharSource(mergedFile, Charset.defaultCharset()).read();
             assertTrue(mergedContent.equals("two") || mergedContent.equals("three"));
         }
         if (mergedContent.equals("two")) {
             assertTrue(thirdFile.delete());
-            fileFilter.handleRemoved(sMergedFolder, secondFile);
+            fileFilter.handleRemoved(sMergedFolder, "foo/text.properties");
             mergedContent = Files.asCharSource(mergedFile, Charset.defaultCharset()).read();
             assertTrue(mergedContent.equals("one") || mergedContent.equals("three"));
         }
         if (mergedContent.equals("three")) {
             assertTrue(thirdFile.delete());
-            fileFilter.handleRemoved(sMergedFolder, thirdFile);
+            fileFilter.handleRemoved(sMergedFolder, "foo/text.properties");
             mergedContent = Files.asCharSource(mergedFile, Charset.defaultCharset()).read();
             assertTrue(mergedContent.equals("one") || mergedContent.equals("two"));
         }

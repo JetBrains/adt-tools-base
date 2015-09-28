@@ -169,34 +169,33 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
      * all remaining items.
      *
      * @param outputDir expected merged output directory.
-     * @param removedFile removed file from the temporary resources folders.
+     * @param removedFilePath removed file path from the temporary resources folders.
      * @throws IOException
      */
-    public void handleRemoved(@NonNull File outputDir, @NonNull File removedFile)
+    public void handleRemoved(@NonNull File outputDir, @NonNull String removedFilePath)
             throws IOException {
 
 
-        String archivePath = getArchivePath(removedFile);
         // first delete the output file, it will be eventually replaced.
-        File outFile = new File(outputDir, archivePath);
+        File outFile = new File(outputDir, removedFilePath);
         if (outFile.exists()) {
             if (!outFile.delete()) {
                 throw new IOException("Cannot delete " + outFile.getAbsolutePath());
             }
         }
-        FileFilter.PackagingOption itemPackagingOption = getPackagingAction(archivePath);
+        FileFilter.PackagingOption itemPackagingOption = getPackagingAction(removedFilePath);
 
         switch(itemPackagingOption) {
             case PICK_FIRST:
                 // this was a picked up item, make sure we copy the first still available
-                com.google.common.base.Optional<File> firstPick = getFirstPick(archivePath);
+                com.google.common.base.Optional<File> firstPick = getFirstPick(removedFilePath);
                 if (firstPick.isPresent()) {
-                    copy(firstPick.get(), outputDir, archivePath);
+                    copy(firstPick.get(), outputDir, removedFilePath);
                 }
                 return;
             case MERGE:
                 // re-merge all
-                mergeAll(outputDir, archivePath);
+                mergeAll(outputDir, removedFilePath);
                 return;
             case EXCLUDE:
             case NONE:

@@ -256,15 +256,29 @@ public class DexTransform extends Transform implements CombinedTransform {
                 for (TransformInput input : inputs) {
                     switch (input.getFormat()) {
                         case SINGLE_FOLDER:
-                            // no incremental mode: if something changes in the folder, then
-                            // we grab it.
-                            if (!isIncremental || !input.getChangedFiles().isEmpty()) {
-                                // there should really be just a single file in this case anyway...
-                                inputFiles.addAll(input.getFiles());
+                            if (input.getFiles().size() != 1) {
+                                throw new RuntimeException(
+                                        "SINGLE_FOLDER format with wrong input files size: " + input);
+                            }
+                            final File rootFolder = input.getFiles().iterator().next();
+                            // in incremental mode or not, but it really does not matter if things
+                            // were added, removed or changed. The fact is :
+                            // - if the source folder is gone, we should remove the predex file.
+                            // - if the source folder is still around, add it back to the list of
+                            // files to process, since predexing is not incremental, a new correct
+                            // predex file will be produced.
+                            if (rootFolder.exists()) {
+                                inputFiles.add(rootFolder);
+                            } else {
+                                File preDexedFile = getDexFileName(intermediateFolder, rootFolder);
+                                if (preDexedFile.exists()) {
+                                    deletedFiles.add(preDexedFile);
+                                }
                             }
                             break;
                         case MULTI_FOLDER:
-                            throw new RuntimeException("MULTI_FOLDER format received in Transform method");
+                            throw new RuntimeException(
+                                    "MULTI_FOLDER format received in Transform method" + input);
                         case JAR:
                             if (isIncremental) {
                                 for (Entry<File, FileStatus> entry : input.getChangedFiles()

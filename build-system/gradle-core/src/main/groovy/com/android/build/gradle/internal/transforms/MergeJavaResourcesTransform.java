@@ -34,6 +34,7 @@ import com.android.build.transform.api.TransformInput.FileStatus;
 import com.android.build.transform.api.TransformOutput;
 import com.android.builder.model.PackagingOptions;
 import com.android.ide.common.packaging.PackagingUtils;
+import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
@@ -168,6 +169,8 @@ public class MergeJavaResourcesTransform extends Transform implements CombinedTr
             for (TransformInput stream : inputs) {
                 boolean filterOutClassFiles = stream.getContentTypes().contains(ContentType.CLASSES);
 
+                final File expansionFolder = stream.getFiles().iterator().next();
+
                 for (Entry<File, FileStatus> entry : stream.getChangedFiles().entrySet()) {
                     switch (entry.getValue()) {
                         case ADDED:
@@ -177,8 +180,11 @@ public class MergeJavaResourcesTransform extends Transform implements CombinedTr
                             break;
                         case REMOVED:
                             try {
+                                String relativeRemovedPath =
+                                        FileUtils.relativePossiblyNonExistingPath(
+                                                entry.getKey(), expansionFolder);
                                 packagingOptionsFilter.handleRemoved(
-                                        outFolder, entry.getKey());
+                                        outFolder, relativeRemovedPath);
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
                             }
