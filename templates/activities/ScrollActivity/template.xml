@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <template
-    format="3"
+    format="5"
     revision="1"
     name="Scrolling Activity"
     minApi="7"

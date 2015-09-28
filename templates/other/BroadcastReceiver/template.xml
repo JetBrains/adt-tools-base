@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
-    format="4"
-    revision="2"
+    format="5"
+    revision="1"
     name="Broadcast Receiver"
     description="Creates a new broadcast receiver component and adds it to your Android manifest.">
 
