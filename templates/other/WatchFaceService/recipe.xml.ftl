@@ -5,6 +5,12 @@
 
     <merge from="root/AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
+    <merge from="root/AndroidManifestPermissions.xml"
+             to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
+<#if appManifestOut??>
+    <merge from="root/AndroidManifestPermissions.xml"
+             to="${escapeXmlAttribute(appManifestOut)}/AndroidManifest.xml" />
+</#if>
 
     <merge from="root/res/values/strings.xml.ftl"
              to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
