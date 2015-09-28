@@ -179,7 +179,7 @@ public class TypoDetectorTest extends AbstractCheckTest {
                    "\"through\" or \"throughout\" ?\n";
         assertEquals("throught", TypoDetector.getTypo(s, TEXT));
         assertEquals(Arrays.asList("thought", "through", "throughout"),
-                TypoDetector.getSuggestions(s, TEXT));
+                TypoDetector.getSuggestions(s, TEXT).getReplacements());
     }
 
     public void testNorwegianDefault() throws Exception {

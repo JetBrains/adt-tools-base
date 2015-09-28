@@ -435,25 +435,52 @@ public class TypoDetector extends ResourceXmlDetector {
         context.report(ISSUE, node, location, message);
     }
 
-    /** Returns the suggested replacements, if any, for the given typo. The error
-     * message <b>must</b> be one supplied by lint.
+    /** Simple data holder used to return several values from
+     * {@link #getSuggestions(String, TextFormat)}
+     */
+    public static class TypoSuggestionInfo {
+        @NonNull
+        private final String mOriginal;
+        @NonNull
+        private final List<String> mReplacements;
+
+        public TypoSuggestionInfo(@NonNull String original, @NonNull List<String> replacements) {
+            mOriginal = original;
+            mReplacements = replacements;
+        }
+
+        @NonNull
+        public String getOriginal() {
+            return mOriginal;
+        }
+
+        @NonNull
+        public List<String> getReplacements() {
+            return mReplacements;
+        }
+    }
+
+    /** Returns the suggested replacements and original string, for the given typo.
+     * The error message <b>must</b> be one supplied by lint.
      *
      * @param errorMessage the error message
      * @param format the format of the error message
-     * @return a list of replacement words suggested by the error message
+     * @return {@link TypoSuggestionInfo}
      */
-    @Nullable
-    public static List<String> getSuggestions(@NonNull String errorMessage,
+    @NonNull
+    public static TypoSuggestionInfo getSuggestions(@NonNull String errorMessage,
             @NonNull TextFormat format) {
         errorMessage = format.toText(errorMessage);
 
         // The words are all in quotes; the first word is the misspelling,
         // the other words are the suggested replacements
-        List<String> words = new ArrayList<String>();
+        List<String> replacements = new ArrayList<String>();
         // Skip the typo
         int index = errorMessage.indexOf('"');
-        index = errorMessage.indexOf('"', index + 1);
-        index++;
+        int originalEndIndex = errorMessage.indexOf('"', index + 1);
+        String original = errorMessage.substring(index + 1, originalEndIndex);
+
+        index = originalEndIndex + 1;
 
         while (true) {
             index = errorMessage.indexOf('"', index);
@@ -466,11 +493,11 @@ public class TypoDetector extends ResourceXmlDetector {
             if (index == -1) {
                 index = errorMessage.length();
             }
-            words.add(errorMessage.substring(start, index));
+            replacements.add(errorMessage.substring(start, index));
             index++;
         }
 
-        return words;
+        return new TypoSuggestionInfo(original, replacements);
     }
 
     /**
