@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <template
-    format="3"
+    format="5"
     revision="1"
     name="Fragment (with a +1 button)"
     description="Creates a fragment with a Google Plus +1 button."

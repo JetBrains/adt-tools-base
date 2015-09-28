@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <template
-    format="4"
+    format="5"
     revision="1"
     name="Android Wear Module"
     description="Creates a new Android Wear Module."
