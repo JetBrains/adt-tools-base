@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
+import com.android.ddmlib.DdmPreferences;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.collect.Sets;
@@ -32,13 +33,19 @@ import java.util.Set;
 public class DeviceHelper {
 
     /**
+     * This hardcoded timeout only impacts the gradle plugin integration tests, i.e. not anything
+     * that is externally published.
+     */
+    private static final int DEFAULT_ADB_TIMEOUT_MSEC = DdmPreferences.DEFAULT_TIMEOUT * 3;
+
+    /**
      * Return the set of all ABIs supported by any of the connected devices.
      */
     @NonNull
     public static Set<String> getDeviceAbis() throws DeviceException {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
         ConnectedDeviceProvider deviceProvider =
-                new ConnectedDeviceProvider(SdkHelper.getAdb(), logger);
+                new ConnectedDeviceProvider(SdkHelper.getAdb(), DEFAULT_ADB_TIMEOUT_MSEC, logger);
         deviceProvider.init();
         Set<String> abis = Sets.newHashSet();
         for(DeviceConnector deviceConnector : deviceProvider.getDevices()) {

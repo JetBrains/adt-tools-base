@@ -90,6 +90,7 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
                                 variantData.getScope(),
                                 new ConnectedDeviceProvider(
                                         sdkHandler.getSdkInfo().getAdb(),
+                                        getGlobalScope().getExtension().getAdbOptions().getTimeOutInMs(),
                                         new LoggerWrapper(getLogger())),
                                 testData));
 

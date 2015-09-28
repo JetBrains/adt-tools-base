@@ -1695,6 +1695,7 @@ public abstract class TaskManager {
                 new DeviceProviderInstrumentTestTask.ConfigAction(
                         testVariantData.getScope(),
                         new ConnectedDeviceProvider(sdkHandler.getSdkInfo().getAdb(),
+                                globalScope.getExtension().getAdbOptions().getTimeOutInMs(),
                                 new LoggerWrapper(logger)), testData));
 
         connectedTask.dependsOn(tasks, artifactsTasks);
