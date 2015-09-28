@@ -91,7 +91,9 @@ public class InstallVariantTask extends BaseTask {
     @TaskAction
     public void install() throws DeviceException, ProcessException, InterruptedException {
         final ILogger iLogger = new LoggerWrapper(getLogger(), LogLevel.LIFECYCLE);
-        DeviceProvider deviceProvider = new ConnectedDeviceProvider(getAdbExe(), iLogger);
+        DeviceProvider deviceProvider = new ConnectedDeviceProvider(getAdbExe(),
+                getTimeOutInMs(),
+                iLogger);
         deviceProvider.init();
 
         VariantConfiguration variantConfig = variantData.getVariantConfiguration();
