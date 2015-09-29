@@ -28,6 +28,7 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.logging.ConsoleRenderer;
 
@@ -38,7 +39,7 @@ import java.util.List;
 /**
  * Task doing test report aggregation.
  */
-
+@ParallelizableTask
 public class AndroidReportTask extends DefaultTask implements AndroidTestTask {
 
     private final List<AndroidTestTask> subTasks = Lists.newArrayList();
