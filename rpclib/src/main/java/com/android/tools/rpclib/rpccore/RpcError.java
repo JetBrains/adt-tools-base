@@ -48,7 +48,7 @@ public final class RpcError implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {-2, 118, -32, 58, 68, -93, -64, 56, -37, 98, 46, -29, -13, -28, -7, -121, -7, 25, -66, -3, };
+    private static final byte[] IDBytes = {-58, 60, 49, 70, -11, -14, 109, 120, 6, 6, -119, 3, 91, -26, 63, 108, 111, 122, 17, 26, };
     public static final BinaryID ID = new BinaryID(IDBytes);
 
     static {

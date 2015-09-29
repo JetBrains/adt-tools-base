@@ -53,7 +53,7 @@ final class StringBox extends Box implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {-112, -48, 40, 50, -25, 114, 61, 16, -111, 40, -118, -38, 34, 55, -32, -11, -1, 112, -5, -117, };
+    private static final byte[] IDBytes = {-89, -27, -71, 37, -61, -56, -31, -122, 48, -44, -16, -35, 21, 87, 20, -81, -36, -64, -80, -49, };
     public static final BinaryID ID = new BinaryID(IDBytes);
 
     static {
