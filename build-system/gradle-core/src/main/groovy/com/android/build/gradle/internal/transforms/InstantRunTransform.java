@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.incremental.IncrementalChangeVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalSupportVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalVisitor;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ForkTransform;
 import com.android.build.transform.api.ScopedContent;
@@ -33,8 +34,6 @@ import com.android.build.transform.api.TransformOutput;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -48,6 +47,10 @@ import org.objectweb.asm.tree.ClassNode;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -64,9 +67,14 @@ public class InstantRunTransform extends Transform implements ForkTransform {
     private final ImmutableList.Builder<String> generatedClasses2Files = ImmutableList.builder();
     private final ImmutableList.Builder<String> generatedClasses3Names = ImmutableList.builder();
     private final ImmutableList.Builder<String> generatedClasses3Files = ImmutableList.builder();
+    private final GlobalScope globalScope;
+
+
+    public InstantRunTransform(GlobalScope globalScope) {
+        this.globalScope = globalScope;
+    }
 
     enum RecordingPolicy {RECORD, DO_NOT_RECORD}
-
 
     @NonNull
     @Override
@@ -95,8 +103,10 @@ public class InstantRunTransform extends Transform implements ForkTransform {
 
     @NonNull
     @Override
-    public Type getTransformType() {
-        return Type.FORK_INPUT;
+    public Set<ScopedContent.Scope> getReferencedScopes() {
+        return Sets.immutableEnumSet(ScopedContent.Scope.EXTERNAL_LIBRARIES,
+                ScopedContent.Scope.PROJECT_LOCAL_DEPS,
+                ScopedContent.Scope.SUB_PROJECTS);
     }
 
     @NonNull
@@ -116,106 +126,127 @@ public class InstantRunTransform extends Transform implements ForkTransform {
             @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
             throws IOException, TransformException, InterruptedException {
 
-        for (final Map.Entry<TransformInput, Collection<TransformOutput>> entry : inputs.entrySet()) {
-            TransformInput transformInput = entry.getKey();
-            if (transformInput.getFiles().size() != 1) {
-                throw new RuntimeException("Multiple input folders detected : " +
-                    Joiner.on(",").join(transformInput.getFiles()));
-            }
-            final File inputDir = transformInput.getFiles().iterator().next();
-            if (inputDir.isFile()) {
-                throw new RuntimeException(
-                        "Expected a directory in non incremental, got a file " +
-                                inputDir.getAbsolutePath());
+        // first get all referenced input to construct a class loader capable of loading those
+        // classes. This is useful for ASM as it needs to load classes
+        List<URL> referencedInputUrls = getAllClassesLocations(inputs, referencedInputs);
 
-            }
-            final TransformOutput classesTwoOutput = getTransformOutput(entry.getValue(),
-                    ScopedContent.ContentType.CLASSES);
-            if (classesTwoOutput == null) {
-                throw new RuntimeException(
-                        "Cannot find TransformOutput for " + ScopedContent.ContentType.CLASSES);
-            }
-            final TransformOutput classesThreeOutput = getTransformOutput(entry.getValue(),
-                    ScopedContent.ContentType.CLASSES_ENHANCED);
-            if (classesThreeOutput == null) {
-                throw new RuntimeException(
-                        "Cannot find TransformOutput for " + ScopedContent.ContentType.CLASSES_ENHANCED);
-            }
+        // This classloader could be optimized a bit, first we could create a parent class loader
+        // with the android.jar only that could be stored in the GlobalScope for reuse. This
+        // classloader could also be store in the VariantScope for potential reuse if some
+        // other transform need to load project's classes.
+        URLClassLoader urlClassLoader = new URLClassLoader(
+                referencedInputUrls.toArray(new URL[referencedInputUrls.size()]),
+                getClass().getClassLoader());
 
-            if (isIncremental) {
+        ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(urlClassLoader);
 
-                for (Map.Entry<File, TransformInput.FileStatus> changedEntry :
-                        transformInput.getChangedFiles().entrySet()) {
+            for (final Map.Entry<TransformInput, Collection<TransformOutput>> entry : inputs
+                    .entrySet()) {
+                TransformInput transformInput = entry.getKey();
+                if (transformInput.getFiles().size() != 1) {
+                    throw new RuntimeException("Multiple input folders detected : " +
+                            Joiner.on(",").join(transformInput.getFiles()));
+                }
+                final File inputDir = transformInput.getFiles().iterator().next();
+                if (inputDir.isFile()) {
+                    throw new RuntimeException(
+                            "Expected a directory in non incremental, got a file " +
+                                    inputDir.getAbsolutePath());
 
-                    File inputFile = changedEntry.getKey();
-                    switch(changedEntry.getValue()) {
-                        case REMOVED:
-                            // remove the classes.2 and classes.3 files.
-                            File classes_2 = getOutputFile(inputDir, inputFile,
-                                    classesTwoOutput.getOutFile());
-                            if (classes_2.exists() && !classes_2.delete()) {
-                                // it's not a big deal if the file cannot be deleted, hopefully
-                                // no code is still referencing it, yet we should notify.
-                                LOGGER.warning("Cannot delete %1$s file", classes_2);
-                            }
-                            File classes_3 = getOutputPatchFile(inputDir, inputFile,
-                                    classesThreeOutput.getOutFile());
-                            if (classes_3.exists() && !classes_3.delete()) {
-                                LOGGER.warning("Cannot delete %1$s file", classes_3);
-                            }
-                            break;
-                        case ADDED:
-                            // a new file was added, we only generate the classes.2 format
+                }
+                final TransformOutput classesTwoOutput = getTransformOutput(entry.getValue(),
+                        ScopedContent.ContentType.CLASSES);
+                if (classesTwoOutput == null) {
+                    throw new RuntimeException(
+                            "Cannot find TransformOutput for " + ScopedContent.ContentType.CLASSES);
+                }
+                final TransformOutput classesThreeOutput = getTransformOutput(entry.getValue(),
+                        ScopedContent.ContentType.CLASSES_ENHANCED);
+                if (classesThreeOutput == null) {
+                    throw new RuntimeException(
+                            "Cannot find TransformOutput for "
+                                    + ScopedContent.ContentType.CLASSES_ENHANCED);
+                }
+
+                if (isIncremental) {
+
+                    for (Map.Entry<File, TransformInput.FileStatus> changedEntry :
+                            transformInput.getChangedFiles().entrySet()) {
+
+                        File inputFile = changedEntry.getKey();
+                        switch (changedEntry.getValue()) {
+                            case REMOVED:
+                                // remove the classes.2 and classes.3 files.
+                                File classes_2 = getOutputFile(inputDir, inputFile,
+                                        classesTwoOutput.getOutFile());
+                                if (classes_2.exists() && !classes_2.delete()) {
+                                    // it's not a big deal if the file cannot be deleted, hopefully
+                                    // no code is still referencing it, yet we should notify.
+                                    LOGGER.warning("Cannot delete %1$s file", classes_2);
+                                }
+                                File classes_3 = getOutputPatchFile(inputDir, inputFile,
+                                        classesThreeOutput.getOutFile());
+                                if (classes_3.exists() && !classes_3.delete()) {
+                                    LOGGER.warning("Cannot delete %1$s file", classes_3);
+                                }
+                                break;
+                            case ADDED:
+                                // a new file was added, we only generate the classes.2 format
+                                transformToClasses2Format(
+                                        inputDir,
+                                        inputFile,
+                                        classesTwoOutput.getOutFile(),
+                                        RecordingPolicy.RECORD);
+                                break;
+                            case CHANGED:
+                                // an existing file was changed, we regenerate the classes.2 and
+                                // classes.3 files at they are both needed to support restart and
+                                // reload.
+                                transformToClasses2Format(
+                                        inputDir,
+                                        inputFile,
+                                        classesTwoOutput.getOutFile(), RecordingPolicy.RECORD);
+                                transformToClasses3Format(
+                                        inputDir,
+                                        inputFile,
+                                        classesThreeOutput.getOutFile());
+                                break;
+
+                            default:
+                                throw new RuntimeException("Unhandled FileStatus : "
+                                        + changedEntry.getValue());
+                        }
+                    }
+
+                } else {
+                    // non incremental mode, we need to traverse the TransformInput#getFiles() folder}
+                    for (File file : Files.fileTreeTraverser().breadthFirstTraversal(inputDir)) {
+
+                        if (file.isDirectory()) {
+                            continue;
+                        }
+
+                        try {
+                            // do not record the changes, everything should be packaged in the
+                            // main APK.
                             transformToClasses2Format(
                                     inputDir,
-                                    inputFile,
+                                    file,
                                     classesTwoOutput.getOutFile(),
-                                    RecordingPolicy.RECORD);
-                            break;
-                        case CHANGED:
-                            // an existing file was changed, we regenerate the classes.2 and
-                            // classes.3 files at they are both needed to support restart and
-                            // reload.
-                            transformToClasses2Format(
-                                    inputDir,
-                                    inputFile,
-                                    classesTwoOutput.getOutFile(), RecordingPolicy.RECORD);
-                            transformToClasses3Format(
-                                    inputDir,
-                                    inputFile,
-                                    classesThreeOutput.getOutFile());
-                            break;
+                                    RecordingPolicy.DO_NOT_RECORD);
+                        } catch (IOException e) {
+                            throw new RuntimeException("Exception while preparing "
+                                    + file.getAbsolutePath());
+                        }
 
-                        default:
-                            throw new RuntimeException("Unhandled FileStatus : "
-                                    + changedEntry.getValue());
                     }
                 }
-
-            } else {
-                // non incremental mode, we need to traverse the TransformInput#getFiles() folder}
-                for (File file : Files.fileTreeTraverser().breadthFirstTraversal(inputDir)) {
-
-                    if (file.isDirectory()) {
-                        continue;
-                    }
-
-                    try {
-                        // do not record the changes, everything should be packaged in the
-                        // main APK.
-                        transformToClasses2Format(
-                                inputDir,
-                                file,
-                                classesTwoOutput.getOutFile(),
-                                RecordingPolicy.DO_NOT_RECORD);
-                    } catch (IOException e) {
-                        throw new RuntimeException("Exception while preparing "
-                                + file.getAbsolutePath());
-                    }
-
-                }
+                wrapUpOutputs(classesTwoOutput, classesThreeOutput);
             }
-            wrapUpOutputs(classesTwoOutput, classesThreeOutput);
+        } finally {
+            Thread.currentThread().setContextClassLoader(currentClassLoader);
         }
     }
 
@@ -229,6 +260,59 @@ public class InstantRunTransform extends Transform implements ForkTransform {
 
         writeIncrementalChanges(generatedClasses2Files.build(), classes2Output.getOutFile());
         writeIncrementalChanges(generatedClasses3Files.build(), classes3Output.getOutFile());
+    }
+
+
+    /**
+     * Calculate a list of {@link URL} that represent all the directories containing classes
+     * either directly belonging to this project or referencing it.
+     *
+     * @param inputs the project's inputs
+     * @param referencedInputs the project's referenced inputs
+     * @return a {@link List} or {@link URL} for all the locations.
+     * @throws MalformedURLException if once the locatio
+     */
+    @NonNull
+    private List<URL> getAllClassesLocations(
+            @NonNull Map<TransformInput, Collection<TransformOutput>> inputs,
+            @NonNull Collection<TransformInput> referencedInputs) throws MalformedURLException {
+
+        List<URL> referencedInputUrls = new ArrayList<URL>();
+
+        // add the bootstrap classpath for jars like android.jar
+        for (File file : globalScope.getAndroidBuilder().getBootClasspath(
+                true /* includeOptionalLibraries */)) {
+            referencedInputUrls.add(file.toURI().toURL());
+        }
+
+        // now add the project dependencies.
+        for (TransformInput referencedInput : referencedInputs) {
+            if (referencedInput.getFormat() == ScopedContent.Format.MULTI_FOLDER) {
+                for (File folder : referencedInput.getFiles()) {
+                    if (folder!=null && folder.isDirectory()) {
+                        File[] folderContent = folder.listFiles();
+                        if (folderContent!=null) {
+                            for (File subFolder : folderContent) {
+                                referencedInputUrls.add(subFolder.toURI().toURL());
+                            }
+                        }
+                    }
+                }
+            } else {
+                for (File file : referencedInput.getFiles()) {
+                    referencedInputUrls.add(file.toURI().toURL());
+                }
+            }
+        }
+
+        // and finally add input folders.
+        for (Map.Entry<TransformInput, Collection<TransformOutput>> entry : inputs.entrySet()) {
+            TransformInput input = entry.getKey();
+            if (input.getFormat() == ScopedContent.Format.SINGLE_FOLDER) {
+                referencedInputUrls.add(input.getFiles().iterator().next().toURI().toURL());
+            }
+        }
+        return referencedInputUrls;
     }
 
     /**

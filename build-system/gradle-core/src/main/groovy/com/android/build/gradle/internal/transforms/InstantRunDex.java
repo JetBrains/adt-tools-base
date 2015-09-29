@@ -196,12 +196,6 @@ public class InstantRunDex extends Transform implements NoOpTransform {
 
     @NonNull
     @Override
-    public Type getTransformType() {
-        return Type.NO_OP;
-    }
-
-    @NonNull
-    @Override
     public ScopedContent.Format getOutputFormat() {
         return ScopedContent.Format.JAR;
     }
