@@ -16,28 +16,47 @@
 package com.android.tools.rpclib.schema;
 
 
-import com.android.tools.rpclib.binary.BinaryObject;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-public abstract class Type implements BinaryObject {
-  @NotNull
-  public abstract String getName();
+public abstract class Type {
 
-  @NotNull
-  public static Type wrap(BinaryObject object) {
-    return (Type)object;
-  }
+    @NotNull
+    public abstract String getName();
 
-  @NotNull
-  public BinaryObject unwrap() {
-    return this;
-  }
+    public abstract void encodeValue(@NotNull Encoder e, Object value) throws IOException;
 
-  public abstract void encodeValue(@NotNull Encoder e, Object value) throws IOException;
+    public abstract Object decodeValue(@NotNull Decoder d) throws IOException;
 
-  public abstract Object decodeValue(@NotNull Decoder d) throws IOException;
+    public abstract void encode(@NotNull Encoder e) throws IOException;
+
+    public static Type decode(@NotNull Decoder d) throws IOException {
+        TypeTag tag = TypeTag.decode(d);
+        switch (tag.value) {
+            case TypeTag.PrimitiveTag:
+                return new Primitive(d);
+            case TypeTag.StructTag:
+                return new Struct(d);
+            case TypeTag.PointerTag:
+                return new Pointer(d);
+            case TypeTag.InterfaceTag:
+                return new Interface(d);
+            case TypeTag.VariantTag:
+                return new Variant(d);
+            case TypeTag.AnyTag:
+                return new AnyType(d);
+            case TypeTag.SliceTag:
+                return new Slice(d);
+            case TypeTag.ArrayTag:
+                return new Array(d);
+            case TypeTag.MapTag:
+                return new Map(d);
+            default:
+                throw new IOException("Decode unknown type " + tag);
+        }
+    }
 }
