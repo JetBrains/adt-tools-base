@@ -194,6 +194,11 @@ public class MergingReport {
         }
 
         @NonNull
+        public SourceFilePosition getSourceLocation() {
+            return mSourceLocation;
+        }
+
+        @NonNull
         @Override
         public String toString() {
             return mSourceLocation.toString() // needs short string.
