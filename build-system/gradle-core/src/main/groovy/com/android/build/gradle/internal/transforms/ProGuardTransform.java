@@ -315,15 +315,7 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
                     }
                     break;
                 case MULTI_FOLDER:
-                    for (File file : transformInput.getFiles()) {
-                        File[] subStreams = file.listFiles();
-                        if (subStreams != null) {
-                            for (File subStream : subStreams) {
-                                inputJar(classPath, subStream, filter);
-                            }
-                        }
-                    }
-                    break;
+                    throw new RuntimeException("MULTI_FOLDER format received in Transform method");
                 default:
                     throw new RuntimeException("Unsupported ScopedContent.Format value: " + transformInput.getFormat().name());
             }

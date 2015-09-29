@@ -20,11 +20,13 @@ import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
 import com.android.build.transform.api.TransformInput;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -68,6 +70,26 @@ class TransformInputImpl extends ScopedContentImpl implements TransformInput {
             return this;
         }
 
+        public Builder setContentTypes(@NonNull Set<ContentType> contentTypes) {
+            this.contentTypes = ImmutableSet.copyOf(contentTypes);
+            return this;
+        }
+
+        public Builder setScopes(@NonNull Set<Scope> scopes) {
+            this.scopes = ImmutableSet.copyOf(scopes);
+            return this;
+        }
+
+        public Builder setFiles(@NonNull Collection<File> files) {
+            this.files = ImmutableList.copyOf(files);
+            return this;
+        }
+
+        public Builder setFiles(@NonNull File... files) {
+            this.files = ImmutableList.copyOf(Arrays.asList(files));
+            return this;
+        }
+
         public Builder setFormat(@NonNull Format format) {
             this.format = format;
             return this;
@@ -75,6 +97,11 @@ class TransformInputImpl extends ScopedContentImpl implements TransformInput {
 
         public Builder addChangedFile(@NonNull File file, @NonNull FileStatus status) {
             changedFiles.put(file, status);
+            return this;
+        }
+
+        public Builder resetChangedFiles() {
+            changedFiles.clear();
             return this;
         }
     }
