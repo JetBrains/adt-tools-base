@@ -381,7 +381,7 @@ public class TransformTask extends StreamBasedTask implements Context {
                     results.putAll(handleMultiFoldersWithMultiOutputs(input,
                             streamToChangedFiles == null ? null : streamToChangedFiles.get(input)));
                 } else if (inputOutput) {
-                    results.putAll(handleMultiFoldersWithSingOutput(input,
+                    results.putAll(handleMultiFoldersWithSingleOutput(input,
                             streamToChangedFiles == null ? null : streamToChangedFiles.get(input)));
                 } else {
                     results.putAll(handleMultiFoldersWithNoOutputs(input,
@@ -445,7 +445,7 @@ public class TransformTask extends StreamBasedTask implements Context {
         }
 
         Preconditions.checkState(!outputStreams.isEmpty(),
-                "No matching output for FORK_INPUT transform with input: " + input);
+                "No matching output for ForkTransform with input: " + input);
 
         return handleMultiFolders(input, inputFileDetails, new OutputCreator() {
             @Override
@@ -472,30 +472,35 @@ public class TransformTask extends StreamBasedTask implements Context {
      * @param inputFileDetails the changed files for this stream.
      * @return a map of input, output.
      */
-    private Map<TransformInput, Object> handleMultiFoldersWithSingOutput(
+    private Map<TransformInput, Object> handleMultiFoldersWithSingleOutput(
             @NonNull TransformStream input,
             @Nullable List<InputFileDetails> inputFileDetails) {
 
         // get the true Stream for the output.
-        TransformStream outputStream = null;
-        for (TransformStream output : outputStreams) {
-            if (input == output.getParentStream()) {
-                outputStream = output;
-                break;
-            }
-        }
-
+        final TransformStream outputStream = getMatchingOutputStream(input);
         Preconditions.checkNotNull(outputStream,
-                "No matching output for AS_INPUT transform with input: " + input);
-
-        final TransformStream fOutputStream = outputStream;
+                "No matching output for AsInputTransform with input: " + input);
 
         return handleMultiFolders(input, inputFileDetails, new OutputCreator() {
             @Override
             public Object create(@NonNull String subStreamName) {
-                return fOutputStream.asSubStreamOutput(subStreamName);
+                return outputStream.asSubStreamOutput(subStreamName);
             }
         });
+    }
+
+
+    /**
+     * Returns the matching {@link TransformStream} for an input {@link TransformStream}
+     */
+    @Nullable
+    private TransformStream getMatchingOutputStream(@NonNull TransformStream input) {
+        for (TransformStream output : outputStreams) {
+            if (input == output.getParentStream()) {
+                return output;
+            }
+        }
+        return null;
     }
 
     interface OutputCreator {
