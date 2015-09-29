@@ -30,6 +30,7 @@ import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -51,6 +52,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     private static final boolean DEBUG = false;
 
     private MachineState state = MachineState.NORMAL;
+
+    // List of constructors we encountered and deconstructed.
+    List<MethodNode> addedMethods = new ArrayList<MethodNode>();
 
     private enum MachineState {
         NORMAL, AFTER_NEW
@@ -127,9 +131,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             mv = new ISVisitor(Opcodes.ASM5, original, access, constructor.body.name, newDesc, isStatic);
             constructor.body.accept(mv);
 
-            // Make sure the redirection for the two new methods is created
-            classNode.methods.add(constructor.args);
-            classNode.methods.add(constructor.body);
+            // Remember our created methods so we can generated the access$dispatch for them.
+            addedMethods.add(constructor.args);
+            addedMethods.add(constructor.body);
             return null;
         } else {
             // TODO: change the method name as it can now collide with existing static methods with
@@ -642,6 +646,10 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
     @Override
     public void visitEnd() {
+        addDispatchMethod();
+    }
+
+    public void addDispatchMethod() {
         int access = Opcodes.ACC_PUBLIC | Opcodes.ACC_VARARGS;
         Method m = new Method("access$dispatch", "(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;");
         MethodVisitor visitor = super.visitMethod(access,
@@ -657,7 +665,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             trace(mv, 2);
         }
 
-        @SuppressWarnings("unchecked") List<MethodNode> methods = classNode.methods;
+        List<MethodNode> methods = new ArrayList<MethodNode>();
+        //noinspection unchecked
+        methods.addAll(classNode.methods);
+        methods.addAll(addedMethods);
+
         for (MethodNode methodNode : methods) {
             if (methodNode.name.equals("<clinit>") || methodNode.name.equals("<init>")) {
                 continue;
