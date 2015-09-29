@@ -36,6 +36,7 @@ import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformInput.FileStatus;
 import com.android.build.transform.api.TransformOutput;
 import com.android.utils.FileUtils;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -616,6 +617,93 @@ public class TransformTaskTest extends TaskTestUtils {
         }
     }
 
+    // IJ's inpection cannot deal with .named() in assertThat(X).named("").isNotNull()!
+    @SuppressWarnings("ConstantConditions")
+    @Test
+    public void multiFolderWithMissingFolder()
+            throws TransformException, InterruptedException, IOException {
+        // create a stream and add it to the pipeline
+        File rootFolder = Files.createTempDir();
+        rootFolder.deleteOnExit();
+        TransformStream projectClass = TransformStream.builder()
+                .addContentType(ContentType.CLASSES)
+                .addScope(Scope.PROJECT)
+                .setFormat(Format.MULTI_FOLDER)
+                .setFiles(rootFolder)
+                .setDependency("my dependency")
+                .build();
+        transformManager.addStream(projectClass);
+
+        // create the transform
+        TestAsInputTransform t = (TestAsInputTransform) TestTransform.builder()
+                .setIncremental(true)
+                .setInputTypes(ContentType.CLASSES)
+                .setScopes(Scope.PROJECT)
+                .setTransformType(AsInputTransform.class)
+                .build();
+
+        // add the transform to the manager
+        AndroidTask<TransformTask> task = transformManager.addTransform(
+                taskFactory, scope, t);
+        // and get the real gradle task object
+        TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
+        assertThat(transformTask).named("transform task").isNotNull();
+
+        // get the current output Stream in the transform manager.
+        List<TransformStream> streams = transformManager.getStreams();
+        assertThat(streams).hasSize(1);
+
+        // call the task with incremental data
+        // substream folders must exist when the transform is run.
+        File subStream1 = new File(rootFolder, "subStream1");
+        FileUtils.mkdirs(subStream1);
+
+        // create a 2nd stream that does not exist anymore
+        File subStream2 = new File(rootFolder, "subStream2");
+        File removedFile2 = new File(subStream2, "removed");
+        File removedFile2b = new File(subStream2, "removed_bis");
+
+        transformTask.transform(inputBuilder()
+                .incremental()
+                .removedFile(removedFile2)
+                .removedFile(removedFile2b)
+                .build());
+
+        // check that was passed to the transform.
+        assertThat(t.isIncrementalInputs()).isTrue();
+
+        // there should be 2 input/output, one for each substream.
+        Map<TransformInput, TransformOutput> inputs = t.getInputs();
+        assertThat(inputs).hasSize(2);
+
+        // get the substream1.
+        Entry<TransformInput, TransformOutput> entry = getEntryByFile(inputs, subStream1);
+        assertThat(entry).named("substream1 entry").isNotNull();
+
+        Map<File, FileStatus> changedFiles = entry.getKey().getChangedFiles();
+        MapSubject subStream1Subject = assertThat(changedFiles).named("substream1 changed files");
+        subStream1Subject.hasSize(0);
+
+        assertThat(entry.getValue()).named("subStream1 output").isNotNull();
+        assertThat(entry.getValue().getOutFile().getName())
+                .named("subStream1 output filename")
+                .isEqualTo(Iterables.getOnlyElement(entry.getKey().getFiles()).getName());
+
+        // get the substream2.
+        entry = getEntryByFile(inputs, subStream2);
+        assertThat(entry).named("subStream2 entry").isNotNull();
+        changedFiles = entry.getKey().getChangedFiles();
+        MapSubject subStream2Subject = assertThat(changedFiles).named("subStream2 changed files");
+        subStream2Subject.hasSize(2);
+        subStream2Subject.containsEntry(removedFile2, FileStatus.REMOVED);
+        subStream2Subject.containsEntry(removedFile2b, FileStatus.REMOVED);
+
+        assertThat(entry.getValue()).named("subStream2 output").isNotNull();
+        assertThat(entry.getValue().getOutFile().getName())
+                .named("subStream2 output filename")
+                .isEqualTo(Iterables.getOnlyElement(entry.getKey().getFiles()).getName());
+    }
+
     private static <T> Entry<TransformInput, T> getEntryByFile(
             @NonNull Map<TransformInput, T> map,
             @NonNull File rootFile) {
@@ -935,6 +1023,16 @@ public class TransformTaskTest extends TaskTestUtils {
                 @Override
                 public File getFile() {
                     return file;
+                }
+
+                @Override
+                public String toString() {
+                    return Objects.toStringHelper(this)
+                            .add("file", getFile())
+                            .add("added", isAdded())
+                            .add("modified", isModified())
+                            .add("removed", isRemoved())
+                            .toString();
                 }
             };
         }
