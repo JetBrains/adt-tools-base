@@ -113,22 +113,12 @@ public class MergeJavaResourcesTransform extends Transform implements CombinedTr
             switch (stream.getFormat()) {
                 case SINGLE_FOLDER:
                     for (File file : stream.getFiles()) {
-                        // TODO find name for this stream.
-                        builder.add(new FileFilter.SubStream(file, "unnamed"));
+                        // TODO find name for this stream more properly. (ie support true SINGLE_FOLDER)
+                        builder.add(new FileFilter.SubStream(file, file.getName()));
                     }
                     break;
                 case MULTI_FOLDER:
-                    for (File file : stream.getFiles()) {
-                        File[] children = file.listFiles();
-                        if (children != null) {
-                            for (File child : children) {
-                                if (child.isDirectory()) {
-                                    builder.add(new FileFilter.SubStream(child, child.getName()));
-                                }
-                            }
-                        }
-                    }
-                    break;
+                    throw new RuntimeException("MULTI_FOLDER format received in Transform method");
                 case JAR:
                     throw new RuntimeException("Merge Java Res Transform does not support JAR stream types as inputs");
                 default:

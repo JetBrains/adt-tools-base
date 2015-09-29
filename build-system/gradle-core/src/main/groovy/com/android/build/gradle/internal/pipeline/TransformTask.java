@@ -28,10 +28,12 @@ import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.Context;
 import com.android.build.transform.api.ForkTransform;
 import com.android.build.transform.api.NoOpTransform;
+import com.android.build.transform.api.ScopedContent.Format;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -50,7 +52,9 @@ import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 import org.gradle.api.tasks.incremental.InputFileDetails;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -371,12 +375,186 @@ public class TransformTask extends StreamBasedTask implements Context {
         Map<TransformInput, Object> results = Maps.newHashMap();
 
         for (TransformStream input : consumedInputStreams) {
-            TransformInputImpl.Builder inputBuilder = TransformInputImpl.builder()
-                    .from(input)
-                    .setFormat(input.getFormat());
+            if (input.getFormat() == Format.MULTI_FOLDER) {
+                // in this case, we'll create a TransformInput for each sub-stream.
+                if (multiOutput) {
+                    results.putAll(handleMultiFoldersWithMultiOutputs(input,
+                            streamToChangedFiles == null ? null : streamToChangedFiles.get(input)));
+                } else if (inputOutput) {
+                    results.putAll(handleMultiFoldersWithSingOutput(input,
+                            streamToChangedFiles == null ? null : streamToChangedFiles.get(input)));
+                } else {
+                    results.putAll(handleMultiFoldersWithNoOutputs(input,
+                            streamToChangedFiles == null ? null : streamToChangedFiles.get(input)));
+                }
 
-            if (streamToChangedFiles != null) {
-                List<InputFileDetails> changedFiles = streamToChangedFiles.get(input);
+            } else {
+                TransformInputImpl.Builder inputBuilder = TransformInputImpl.builder()
+                        .from(input);
+
+                if (streamToChangedFiles != null) {
+                    List<InputFileDetails> changedFiles = streamToChangedFiles.get(input);
+                    if (changedFiles != null) {
+                        for (InputFileDetails details : changedFiles) {
+                            inputBuilder.addChangedFile(
+                                    details.getFile(),
+                                    details.isAdded() ? ADDED
+                                            : (details.isModified() ? CHANGED : REMOVED));
+                        }
+                    }
+                }
+
+                if (multiOutput) {
+                    results.put(inputBuilder.build(), findOutputsFor(input));
+                } else if (inputOutput) {
+                    results.put(inputBuilder.build(), findOutputFor(input));
+                } else {
+                    results.put(inputBuilder.build(), null);
+                }
+            }
+        }
+
+        // can't use ImmutableMap due to possible null values.
+        // Since the backing map is a local var in this method whose reference
+        // is lost after the method return, there's no issue with modifications to the
+        // underlying map happening.
+        return Collections.unmodifiableMap(results);
+    }
+
+    private static Map<? extends TransformInput,?> handleMultiFoldersWithNoOutputs(
+            @NonNull TransformStream input,
+            @Nullable List<InputFileDetails> inputFileDetails) {
+        return handleMultiFolders(input, inputFileDetails, new OutputCreator() {
+            @Override
+            public Object create(@NonNull String subStreamName) {
+                return null;
+            }
+        });
+    }
+
+    private Map<? extends TransformInput,?> handleMultiFoldersWithMultiOutputs(
+            @NonNull TransformStream input,
+            @Nullable List<InputFileDetails> inputFileDetails) {
+
+        final Collection<TransformStream> matchingOutputStreams = Lists.newArrayListWithExpectedSize(
+                transform.getOutputTypes().size());
+        for (TransformStream outputStream : outputStreams) {
+            if (input == outputStream.getParentStream()) {
+                matchingOutputStreams.add(outputStream);
+            }
+        }
+
+        Preconditions.checkState(!outputStreams.isEmpty(),
+                "No matching output for FORK_INPUT transform with input: " + input);
+
+        return handleMultiFolders(input, inputFileDetails, new OutputCreator() {
+            @Override
+            public Object create(@NonNull String subStreamName) {
+                List<TransformOutput> outputs = Lists.newArrayListWithCapacity(
+                        outputStreams.size());
+                for (TransformStream outputStream : matchingOutputStreams) {
+                    outputs.add(outputStream.asSubStreamOutput(subStreamName));
+                }
+
+                return outputs;
+            }
+        });
+    }
+
+    /**
+     * Handles a TransformStream of type {@link Format#MULTI_FOLDER} for a transform of type
+     * {@link AsInputTransform}.
+     *
+     * This looks at all the available sub-streams and create a pair of TransformInput/Output
+     * for the stream (With format {@link Format#SINGLE_FOLDER}), and its own changed files.
+     *
+     * @param input the stream
+     * @param inputFileDetails the changed files for this stream.
+     * @return a map of input, output.
+     */
+    private Map<TransformInput, Object> handleMultiFoldersWithSingOutput(
+            @NonNull TransformStream input,
+            @Nullable List<InputFileDetails> inputFileDetails) {
+
+        // get the true Stream for the output.
+        TransformStream outputStream = null;
+        for (TransformStream output : outputStreams) {
+            if (input == output.getParentStream()) {
+                outputStream = output;
+                break;
+            }
+        }
+
+        Preconditions.checkNotNull(outputStream,
+                "No matching output for AS_INPUT transform with input: " + input);
+
+        final TransformStream fOutputStream = outputStream;
+
+        return handleMultiFolders(input, inputFileDetails, new OutputCreator() {
+            @Override
+            public Object create(@NonNull String subStreamName) {
+                return fOutputStream.asSubStreamOutput(subStreamName);
+            }
+        });
+    }
+
+    interface OutputCreator {
+        Object create(@NonNull String subStreamName);
+    }
+
+    @NonNull
+    private static Map<TransformInput, Object> handleMultiFolders(
+            @NonNull TransformStream input,
+            @Nullable List<InputFileDetails> inputFileDetails,
+            @NonNull OutputCreator creator) {
+        Map<TransformInput, Object> results = Maps.newHashMap();
+
+        // first gather all the substream folders.
+        List<File> substreams = Lists.newArrayList();
+
+        for (File substreamRoot : input.getFiles().get()) {
+            File[] files = substreamRoot.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File file) {
+                    return file.isDirectory();
+                }
+            });
+
+            if (files != null) {
+                substreams.addAll(Arrays.asList(files));
+            }
+        }
+
+        // now look at the changed files, and map it to the substreams.
+        ListMultimap<File, InputFileDetails> substreamMap = null;
+        if (inputFileDetails != null) {
+            substreamMap = ArrayListMultimap.create(substreams.size(), inputFileDetails.size());
+
+            for (InputFileDetails detail : inputFileDetails) {
+                String path = detail.getFile().getPath();
+
+                for (File substream : substreams) {
+                    if (path.startsWith(substream.getPath())) {
+                        substreamMap.put(substream, detail);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // now create the TransformInput/Output
+        // reuse the builder to reuse the sets of content types/scopes.
+        TransformInputImpl.Builder inputBuilder = TransformInputImpl.builder()
+                .setContentTypes(input.getContentTypes())
+                .setScopes(input.getScopes())
+                .setFormat(Format.SINGLE_FOLDER);
+
+        for (File substream : substreams) {
+            inputBuilder.setFiles(substream).resetChangedFiles();
+
+            // add incremental data if any
+            if (substreamMap != null) {
+                List<InputFileDetails> changedFiles = substreamMap.get(substream);
                 if (changedFiles != null) {
                     for (InputFileDetails details : changedFiles) {
                         inputBuilder.addChangedFile(
@@ -387,21 +565,12 @@ public class TransformTask extends StreamBasedTask implements Context {
                 }
             }
 
-            if (multiOutput) {
-                results.put(inputBuilder.build(), findOutputsFor(input));
-            } else if (inputOutput) {
-                results.put(inputBuilder.build(), findOutputFor(input));
-            } else {
-                results.put(inputBuilder.build(), null);
-            }
+            results.put(inputBuilder.build(), creator.create(substream.getName()));
         }
 
-        // can't use ImmutableMap due to possible null values.
-        // Since the backing map is a local var in this method whose reference
-        // is lost after the method return, there's no issue with modifications to the
-        // underlying map happening.
-        return Collections.unmodifiableMap(results);
+        return results;
     }
+
 
     /**
      * Creates the TransformInput from the TransformStream instances.

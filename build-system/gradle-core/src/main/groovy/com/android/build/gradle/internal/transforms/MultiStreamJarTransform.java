@@ -111,7 +111,7 @@ public class MultiStreamJarTransform extends Transform implements CombinedTransf
                     // that's stupid, but just copy the jars.
                     for (File jarFile : input.getFiles()) {
                         fileNameBuilder.setLength(PREFIX_LENGTH);
-                        fileNameBuilder.append(index++);
+                        fileNameBuilder.append(index++).append(DOT_JAR);
                         File outFile = new File(outFolder, fileNameBuilder.toString());
                         Files.copy(jarFile, outFile);
                     }
@@ -119,31 +119,15 @@ public class MultiStreamJarTransform extends Transform implements CombinedTransf
                 case SINGLE_FOLDER:
                     for (File folder : input.getFiles()) {
                         fileNameBuilder.setLength(PREFIX_LENGTH);
-                        fileNameBuilder.append(index++);
+                        fileNameBuilder.append(index++).append(DOT_JAR);
                         File outFile = new File(outFolder, fileNameBuilder.toString());
                         jarFolder(folder, outFile);
                     }
                     break;
                 case MULTI_FOLDER:
-                    for (File folder : input.getFiles()) {
-                        // get the substreams.
-                        File[] substreams = folder.listFiles(new FileFilter() {
-                            @Override
-                            public boolean accept(File file) {
-                                return file.isDirectory();
-                            }
-                        });
-
-                        if (substreams != null) {
-                            for (File substream : substreams) {
-                                fileNameBuilder.setLength(PREFIX_LENGTH);
-                                fileNameBuilder.append(index++).append(DOT_JAR);
-                                File outFile = new File(outFolder, fileNameBuilder.toString());
-                                jarFolder(substream, outFile);
-                            }
-                        }
-                    }
-                    break;
+                    throw new RuntimeException("MULTI_FOLDER format received in Transform method");
+                default:
+                    throw new RuntimeException("Unsupported ScopedContent.Format value: " + input.getFormat().name());
             }
         }
     }

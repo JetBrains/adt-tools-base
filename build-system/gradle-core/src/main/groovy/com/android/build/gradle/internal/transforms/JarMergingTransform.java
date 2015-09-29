@@ -127,24 +127,13 @@ public class JarMergingTransform extends Transform implements CombinedTransform 
 
                         }
                         break;
-                    case MULTI_FOLDER:
-                        for (File file : input.getFiles()) {
-                            File[] subStreams = file.listFiles();
-                            if (subStreams != null) {
-                                for (File subStream : subStreams) {
-                                    if (subStream.isDirectory()) {
-                                        processFolder(jos, "", subStream, buffer);
-                                    }
-                                }
-                            }
-                        }
-
-                        break;
                     case JAR:
                         for (File f : input.getFiles()) {
                             processJarFile(jos, f, buffer);
                         }
                         break;
+                    case MULTI_FOLDER:
+                        throw new RuntimeException("MULTI_FOLDER format received in Transform method");
                     default:
                         throw new RuntimeException("Unsupported ScopedContent.Format value: " + input.getFormat().name());
                 }
