@@ -36,6 +36,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.tooling.BuildException
 
@@ -58,6 +59,7 @@ import static com.android.SdkConstants.UTF_8
  * app module where ProGuarding is enabled.
  * </ul>
  */
+@ParallelizableTask
 class ExtractAnnotations extends AbstractAndroidCompile {
     public BaseVariantData variant
 

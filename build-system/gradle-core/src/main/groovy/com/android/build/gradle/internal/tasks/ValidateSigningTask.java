@@ -25,6 +25,7 @@ import com.android.prefs.AndroidLocation;
 
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.tooling.BuildException;
 
@@ -37,6 +38,7 @@ import java.io.File;
  * It's linked to a given SigningConfig
  *
  */
+@ParallelizableTask
 public class ValidateSigningTask extends BaseTask {
 
     private SigningConfig signingConfig;

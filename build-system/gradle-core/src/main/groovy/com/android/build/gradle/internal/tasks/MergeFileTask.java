@@ -20,6 +20,7 @@ import com.google.common.io.Files;
 
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -29,6 +30,7 @@ import java.util.Set;
 /**
  * Task to merge files. This appends all the files together into an output file.
  */
+@ParallelizableTask
 public class MergeFileTask extends DefaultAndroidTask {
 
     private Set<File> mInputFiles;

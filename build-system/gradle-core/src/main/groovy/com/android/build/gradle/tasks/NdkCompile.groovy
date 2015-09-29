@@ -35,6 +35,7 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.SkipWhenEmpty
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
@@ -43,6 +44,7 @@ import org.gradle.api.tasks.util.PatternSet
 import static com.android.SdkConstants.CURRENT_PLATFORM
 import static com.android.SdkConstants.PLATFORM_WINDOWS
 
+@ParallelizableTask
 class NdkCompile extends NdkTask {
 
     public static String USE_DEPRECATED_NDK = "android.useDeprecatedNdk";

@@ -31,6 +31,7 @@ import com.android.utils.FileUtils
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 
 import static com.android.builder.model.AndroidProject.FD_GENERATED
@@ -38,6 +39,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 /**
  * Task to compile Renderscript files. Supports incremental update.
  */
+@ParallelizableTask
 public class RenderscriptCompile extends NdkTask {
 
     // ----- PUBLIC TASK API -----

@@ -37,12 +37,14 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+@ParallelizableTask
 public class UninstallTask extends BaseTask {
 
     private BaseVariantData variant;

@@ -18,11 +18,13 @@ package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
 
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.bundling.Jar;
 
 /**
  * Decorated {@link Jar} task with android specific behaviors.
  */
+@ParallelizableTask
 public class AndroidJarTask extends Jar implements BinaryFileProviderTask {
 
     @Override
