@@ -16,11 +16,12 @@
 
 package com.android.build.gradle.integration.common.utils;
 
-import static com.google.common.truth.Truth.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.google.common.base.Charsets;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
@@ -40,7 +41,7 @@ public class FileHelper {
      * Return a list of relative path of the files in a directory.
      */
     public static List<String> listFiles(@NonNull File base) {
-        assertTrue(base.isDirectory());
+        assertThat(base).isDirectory();
 
         List<String> fileList = Lists.newArrayList();
         for (File file : Files.fileTreeTraverser().preOrderTraversal(base).filter(
@@ -64,7 +65,7 @@ public class FileHelper {
     }
 
     public static void checkContent(File file, Iterable<String> expectedContents) throws IOException {
-        assertTrue("File '" + file.getAbsolutePath() + "' does not exist.", file.isFile());
+        assertThat(file).isFile();
 
         String contents = Files.toString(file, Charsets.UTF_8);
         for (String expectedContent : expectedContents) {

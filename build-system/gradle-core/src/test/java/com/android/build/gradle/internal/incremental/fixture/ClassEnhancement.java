@@ -254,6 +254,7 @@ public class ClassEnhancement implements TestRule {
         }
     }
 
+    @SuppressWarnings("unused") // Helpful for debugging.
     public static String traceClass(byte[] bytes) {
         ClassReader classReader = new ClassReader(bytes, 0, bytes.length);
         StringWriter sw = new StringWriter();
@@ -262,6 +263,7 @@ public class ClassEnhancement implements TestRule {
         return sw.toString();
     }
 
+    @SuppressWarnings("unused") // Helpful for debugging.
     public static String traceClass(ClassLoader classLoader, String classNameAsResource) throws IOException {
         InputStream inputStream = classLoader.getResourceAsStream(classNameAsResource);
         assertNotNull(inputStream);
