@@ -18,7 +18,6 @@ package com.android.tools.rpclib.schema;
 public final class Factory {
 
     public static void register() {
-        Entity.register();
-        ConstantSet.register();
+        Message.register();
     }
 }

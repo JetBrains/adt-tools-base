@@ -15,6 +15,7 @@
  */
 package com.android.tools.rpclib.binary;
 
+import com.android.tools.rpclib.schema.Entity;
 import gnu.trove.TObjectIntHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,11 +33,13 @@ import java.util.Map;
  */
 public class Encoder {
   @NotNull private final OutputStream mOutputStream;
+  @NotNull private final TObjectIntHashMap<Entity> mEntities;
   @NotNull private final TObjectIntHashMap<BinaryObject> mObjects;
   @NotNull private final TObjectIntHashMap<BinaryID> mIDs;
   @NotNull private final byte[] mBuffer;
 
   public Encoder(@NotNull OutputStream out) {
+    mEntities = new TObjectIntHashMap<Entity>();
     mObjects = new TObjectIntHashMap<BinaryObject>();
     mIDs = new TObjectIntHashMap<BinaryID>();
     mOutputStream = out;
@@ -157,6 +160,17 @@ public class Encoder {
     mIDs.put(id, sid);
     uint32((sid << 1 ) | 1);
     id.write(this);
+  }
+
+  public void entity(@NotNull Entity entity) throws IOException {
+    if (mEntities.containsKey(entity)) {
+      int sid = mEntities.get(entity);
+      uint32(sid << 1);
+    }
+    int sid = mEntities.size() + 1;
+    mEntities.put(entity, sid);
+    uint32((sid << 1 ) | 1);
+    entity.encode(this);
   }
 
   public void value(@Nullable BinaryObject obj) throws IOException {

@@ -16,19 +16,14 @@
 package com.android.tools.rpclib.schema;
 
 public final class Constant {
-
     String mName;
-
     Object mValue;
 
     // Constructs a default-initialized {@link Constant}.
-    public Constant() {
-    }
-
+    public Constant() {}
     public String getName() {
         return mName;
     }
-
     public Object getValue() {
         return mValue;
     }

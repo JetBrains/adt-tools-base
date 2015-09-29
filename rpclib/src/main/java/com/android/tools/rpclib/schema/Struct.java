@@ -22,20 +22,20 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 public final class Struct extends Type {
-    BinaryID mID;
+    Entity mEntity;
 
     public Struct(@NotNull Decoder d) throws IOException {
-        mID = d.id();
+        mEntity = d.entity();
     }
 
     @NotNull
     @Override
     public String getName() {
-        return "";
+        return mEntity.getName();
     }
 
-    public BinaryID getID() {
-        return mID;
+    public Entity getEntity() {
+        return mEntity;
     }
 
     @Override
@@ -46,9 +46,9 @@ public final class Struct extends Type {
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        BinaryClass klass = Namespace.lookup(mID);
+        BinaryClass klass = Namespace.lookup(mEntity.getTypeID());
         if (klass == null) {
-            throw new IOException("Unknown type id: " + mID);
+            throw new IOException("Unknown type id: " + mEntity.getTypeID());
         }
         BinaryObject obj = klass.create();
         klass.decode(d, obj);
@@ -58,6 +58,6 @@ public final class Struct extends Type {
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
         TypeTag.structTag().encode(e);
-        e.id(mID);
+        e.entity(mEntity);
     }
 }
