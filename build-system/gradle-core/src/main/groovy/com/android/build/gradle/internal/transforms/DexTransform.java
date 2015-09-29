@@ -230,13 +230,7 @@ public class DexTransform extends Transform implements CombinedTransform {
                             inputFiles.addAll(input.getFiles());
                             break;
                         case MULTI_FOLDER:
-                            for (File rootFolder : input.getFiles()) {
-                                File[] children = rootFolder.listFiles();
-                                if (children != null) {
-                                    inputFiles.addAll(Arrays.asList(children));
-                                }
-                            }
-                            break;
+                            throw new RuntimeException("MULTI_FOLDER format received in Transform method");
                         default:
                             throw new RuntimeException("Unexpected format: " + input.getFormat());
                     }
@@ -270,18 +264,7 @@ public class DexTransform extends Transform implements CombinedTransform {
                             }
                             break;
                         case MULTI_FOLDER:
-                            // no incremental mode: if something changes in the folder, then
-                            // we grab it.
-                            // TODO: Fix this!
-                            if (!isIncremental || !input.getChangedFiles().isEmpty()) {
-                                for (File rootFOlder : input.getFiles()) {
-                                    File[] children = rootFOlder.listFiles();
-                                    if (children != null) {
-                                        inputFiles.addAll(Arrays.asList(children));
-                                    }
-                                }
-                            }
-                            break;
+                            throw new RuntimeException("MULTI_FOLDER format received in Transform method");
                         case JAR:
                             if (isIncremental) {
                                 for (Entry<File, FileStatus> entry : input.getChangedFiles()

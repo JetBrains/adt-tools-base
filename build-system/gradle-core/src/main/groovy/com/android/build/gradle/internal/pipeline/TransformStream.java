@@ -22,6 +22,7 @@ import com.android.annotations.concurrency.Immutable;
 import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformOutput;
+import com.android.utils.FileUtils;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
@@ -212,8 +213,9 @@ public class TransformStream extends ScopedContentImpl {
     /**
      * Returns an optional parent stream.
      *
-     * If a stream is the output of a Transform with type {@link Transform.Type#AS_INPUT}, there is
-     * a connection between the input and output stream (each input has a matching output).
+     * If a stream is the output of a Transform with type
+     * {@link com.android.build.transform.api.AsInputTransform}, there is a connection between the
+     * input and output stream (each input has a matching output).
      *
      * This method returns the matching input stream, if this stream is the output of such a
      * Transform.
@@ -232,7 +234,7 @@ public class TransformStream extends ScopedContentImpl {
             @NonNull
             @Override
             public File getOutFile() {
-                return Iterables.getOnlyElement(getFiles().get());
+                return Iterables.getOnlyElement(files.get());
             }
 
             @NonNull
@@ -251,6 +253,42 @@ public class TransformStream extends ScopedContentImpl {
             @Override
             public Format getFormat() {
                 return TransformStream.this.getFormat();
+            }
+        };
+    }
+
+    public TransformOutput asSubStreamOutput(@NonNull String subStreamName) {
+        if (parentStream == null || parentStream.getFormat() != Format.MULTI_FOLDER) {
+            throw new RuntimeException(
+                    "Cannot call asSubStreamOutput on a output of a stream that is not MULTI_FOLDER");
+        }
+
+        final File outputFile = new File(Iterables.getOnlyElement(files.get()), subStreamName);
+        FileUtils.mkdirs(outputFile);
+
+        return new TransformOutput() {
+            @NonNull
+            @Override
+            public File getOutFile() {
+                return outputFile;
+            }
+
+            @NonNull
+            @Override
+            public Set<ContentType> getContentTypes() {
+                return TransformStream.this.getContentTypes();
+            }
+
+            @NonNull
+            @Override
+            public Set<Scope> getScopes() {
+                return TransformStream.this.getScopes();
+            }
+
+            @NonNull
+            @Override
+            public Format getFormat() {
+                return Format.SINGLE_FOLDER;
             }
         };
     }

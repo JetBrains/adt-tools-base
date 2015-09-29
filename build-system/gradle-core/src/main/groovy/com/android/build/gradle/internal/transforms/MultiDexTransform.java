@@ -158,17 +158,11 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
                 case SINGLE_FOLDER:
                     inputFiles.addAll(transformInput.getFiles());
                     break;
-                case MULTI_FOLDER:
-                    for (File file : transformInput.getFiles()) {
-                        File[] subStreams = file.listFiles();
-                        if (subStreams != null) {
-                            Collections.addAll(inputFiles, subStreams);
-                        }
-                    }
-                    break;
                 case JAR:
                     inputFiles.addAll(transformInput.getFiles());
                     break;
+                case MULTI_FOLDER:
+                    throw new RuntimeException("MULTI_FOLDER format received in Transform method");
                 default:
                     throw new RuntimeException("Unsupported ScopedContent.Format value: " + transformInput.getFormat().name());
             }
