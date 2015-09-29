@@ -33,6 +33,7 @@ import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
+import com.android.utils.FileUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -510,7 +511,7 @@ public class TransformTask extends StreamBasedTask implements Context {
         Map<TransformInput, Object> results = Maps.newHashMap();
 
         // first gather all the substream folders.
-        List<File> substreams = Lists.newArrayList();
+        List<File> subStreams = Lists.newArrayList();
 
         for (File substreamRoot : input.getFiles().get()) {
             File[] files = substreamRoot.listFiles(new FileFilter() {
@@ -521,24 +522,41 @@ public class TransformTask extends StreamBasedTask implements Context {
             });
 
             if (files != null) {
-                substreams.addAll(Arrays.asList(files));
+                subStreams.addAll(Arrays.asList(files));
             }
         }
 
-        // now look at the changed files, and map it to the substreams.
+        // now look at the changed files, and map it to the subStreams.
         ListMultimap<File, InputFileDetails> substreamMap = null;
         if (inputFileDetails != null) {
-            substreamMap = ArrayListMultimap.create(substreams.size(), inputFileDetails.size());
+            substreamMap = ArrayListMultimap.create(subStreams.size(), inputFileDetails.size());
 
             for (InputFileDetails detail : inputFileDetails) {
-                String path = detail.getFile().getPath();
 
-                for (File substream : substreams) {
-                    if (path.startsWith(substream.getPath())) {
-                        substreamMap.put(substream, detail);
-                        break;
-                    }
+                File subStream = getFileForPath(subStreams, detail.getFile().getPath());
+                if (subStream != null) {
+                    substreamMap.put(subStream, detail);
+                    continue;
                 }
+
+                // if we are here, we did not find a matching subStream for this file.
+                if (!detail.isRemoved()) {
+                    throw new RuntimeException(
+                            "Non-removed InputFileDetails not matched to any subStream: "
+                                    + detail.getFile());
+                }
+
+                // since the file is removed we must imagine that we have a removed sub-stream.
+                // So we create the sub-stream to hold it.
+                // Find the root folder.
+                File root = Iterables.getOnlyElement(input.getFiles().get());
+                // get the name of the removed subStream.
+                String name = getSubStreamRoot(root, detail.getFile());
+
+                // create the subStream, add the entry in the map, and the subStream to the list.
+                File removedSubStream = new File(root, name);
+                substreamMap.put(removedSubStream, detail);
+                subStreams.add(removedSubStream);
             }
         }
 
@@ -549,12 +567,12 @@ public class TransformTask extends StreamBasedTask implements Context {
                 .setScopes(input.getScopes())
                 .setFormat(Format.SINGLE_FOLDER);
 
-        for (File substream : substreams) {
-            inputBuilder.setFiles(substream).resetChangedFiles();
+        for (File subStream : subStreams) {
+            inputBuilder.setFiles(subStream).resetChangedFiles();
 
             // add incremental data if any
             if (substreamMap != null) {
-                List<InputFileDetails> changedFiles = substreamMap.get(substream);
+                List<InputFileDetails> changedFiles = substreamMap.get(subStream);
                 if (changedFiles != null) {
                     for (InputFileDetails details : changedFiles) {
                         inputBuilder.addChangedFile(
@@ -565,12 +583,38 @@ public class TransformTask extends StreamBasedTask implements Context {
                 }
             }
 
-            results.put(inputBuilder.build(), creator.create(substream.getName()));
+            results.put(inputBuilder.build(), creator.create(subStream.getName()));
         }
 
         return results;
     }
 
+    /**
+     * Returns a {@link File} from a list of files which path starts with the provided path.
+     * @param files the list of files to look into.
+     * @param path the path of the searched file
+     * @return the file which path starts with the provided path or null if not found.
+     */
+    @Nullable
+    private static File getFileForPath(List<File> files, String path) {
+        for (File file : files) {
+            if (path.startsWith(file.getPath())) {
+                return file;
+            }
+        }
+        return null;
+    }
+
+    private static String getSubStreamRoot(@NonNull File root, @NonNull File subStreamFile) {
+        String relativePath = FileUtils.relativePossiblyNonExistingPath(subStreamFile, root);
+        // get the first element.
+        int pos = relativePath.indexOf(File.separator);
+        if (pos != -1) {
+            return relativePath.substring(0, pos);
+        }
+
+        return relativePath;
+    }
 
     /**
      * Creates the TransformInput from the TransformStream instances.

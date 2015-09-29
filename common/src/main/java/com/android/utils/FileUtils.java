@@ -149,6 +149,11 @@ public final class FileUtils {
     @NonNull
     public static String relativePath(@NonNull File file, @NonNull File dir) {
         checkArgument(file.isFile(), "%s is not a file.", file.getPath());
+        return relativePossiblyNonExistingPath(file, dir);
+    }
+
+    @NonNull
+    public static String relativePossiblyNonExistingPath(@NonNull File file, @NonNull File dir) {
         checkArgument(dir.isDirectory(), "%s is not a directory.", dir.getPath());
 
         return dir.toURI().relativize(file.toURI()).getPath();
