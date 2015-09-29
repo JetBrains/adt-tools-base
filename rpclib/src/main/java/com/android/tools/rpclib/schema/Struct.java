@@ -22,20 +22,16 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 public final class Struct extends Type {
-
-    String mName;
-
     BinaryID mID;
 
     public Struct(@NotNull Decoder d) throws IOException {
-        mName = d.string();
         mID = d.id();
     }
 
     @NotNull
     @Override
     public String getName() {
-        return mName;
+        return "";
     }
 
     public BinaryID getID() {
@@ -62,7 +58,6 @@ public final class Struct extends Type {
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
         TypeTag.structTag().encode(e);
-        e.string(mName);
         e.id(mID);
     }
 }
