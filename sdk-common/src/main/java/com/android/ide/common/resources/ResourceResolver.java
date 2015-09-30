@@ -527,13 +527,7 @@ public class ResourceResolver extends RenderResources {
             if (value instanceof StyleResourceValue) {
                 StyleResourceValue style = (StyleResourceValue)value;
 
-                // first look for a specified parent.
-                String parentName = style.getParentStyle();
-
-                // no specified parent? try to infer it from the name of the style.
-                if (parentName == null) {
-                    parentName = getParentName(value.getName());
-                }
+                String parentName = getParentName(style);
 
                 if (parentName != null) {
                     StyleResourceValue parentStyle = getStyle(parentName, inProjectStyleMap,
@@ -550,12 +544,18 @@ public class ResourceResolver extends RenderResources {
     /**
      * Computes the name of the parent style, or <code>null</code> if the style is a root style.
      */
-    private static String getParentName(String styleName) {
+    @Nullable
+    public static String getParentName(StyleResourceValue style) {
+        String parentName = style.getParentStyle();
+        if (parentName != null) {
+            return parentName;
+        }
+
+        String styleName = style.getName();
         int index = styleName.lastIndexOf('.');
         if (index != -1) {
             return styleName.substring(0, index);
         }
-
         return null;
     }
 
