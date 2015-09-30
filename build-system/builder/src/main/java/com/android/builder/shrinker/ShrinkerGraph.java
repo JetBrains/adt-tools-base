@@ -43,7 +43,7 @@ interface ShrinkerGraph<T> {
 
     T addClass(String name, String superName, String[] interfaces, int access, File classFile);
 
-    T addMember(String owner, String name, String desc, int modifiers);
+    T addMember(T owner, String name, String desc, int modifiers);
 
     T getClassForMember(T member);
 
@@ -68,7 +68,7 @@ interface ShrinkerGraph<T> {
     boolean decrementAndCheck(T member, DependencyType dependencyType, Shrinker.ShrinkType shrinkType);
 
     @Nullable
-    T getSuperclass(T klass);
+    T getSuperclass(T klass) throws ClassLookupException;
 
     @Nullable
     T findMatchingMethod(T klass, T method);
@@ -96,4 +96,8 @@ interface ShrinkerGraph<T> {
     int getClassModifiers(T klass);
 
     int getMemberModifiers(T member);
+
+    void addAnnotation(T klass, String desc);
+
+    Iterable<String> getAnnotations(T classOrMember);
 }

@@ -54,6 +54,7 @@ private ignoredFlag
     // TODO: do we need to handle these?
     | '-dontskipnonpubliclibraryclasses'
     | '-dontskipnonpubliclibraryclassmembers'
+    | '-allowaccessmodification'
   )
   ;
 
@@ -68,7 +69,6 @@ private unsupportedFlag
     | ('-optimizations' {FilterSpecification optimization_filter = new FilterSpecification();} filter[optimization_filter])
     | ('-optimizationpasses' NAME) //n
     | ('-assumenosideeffects' classSpecification)
-    | '-allowaccessmodification'
     | '-mergeinterfacesaggressively'
     | '-overloadaggressively'
     | '-microedition'
@@ -163,7 +163,7 @@ private member [ClassSpecification classSpec]
       | '<methods>' {GrammarActions.method(classSpec, $annotation.annotSpec,
           GrammarActions.getSignature("***", 0), "*", "("+ GrammarActions.getSignature("...", 0) + ")",
           $modifiers.modifiers);}
-      | '<fields>' {GrammarActions.field(classSpec, $annotation.annotSpec, null, "<fields>", $modifiers.modifiers);}
+      | '<fields>' {GrammarActions.field(classSpec, $annotation.annotSpec, null, "*", $modifiers.modifiers);}
     ) ';'
   ;
 

@@ -16,17 +16,24 @@
 
 package com.android.builder.shrinker;
 
-import java.util.Map;
-
 /**
- * Represents the -keep* flags from a ProGuard config file.
+ * Checked exception thrown by all graph operations that may fail due to invalid class being
+ * referenced.
  */
-public interface KeepRules {
+public class ClassLookupException extends Exception {
 
-    /**
-     * Given a program class and the whole {@link ShrinkerGraph}, decides which symbols should be
-     * kept in the output. The result can contain methods and fields from {@code klass} as well as
-     * {@code klass} itself (in case of -keep rules).
-     */
-    <T> Map<T, DependencyType> getSymbolsToKeep(T klass, ShrinkerGraph<T> graph);
+    private final String mClassName;
+
+    public ClassLookupException(String className) {
+        this.mClassName = className;
+    }
+
+    public String getClassName() {
+        return mClassName;
+    }
+
+    @Override
+    public String getMessage() {
+        return "Invalid class reference: " + mClassName;
+    }
 }

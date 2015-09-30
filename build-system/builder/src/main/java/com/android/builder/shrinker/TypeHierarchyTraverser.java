@@ -36,14 +36,21 @@ public class TypeHierarchyTraverser<T> extends TreeTraverser<T> {
 
     @Override
     public Iterable<T> children(@NonNull T klass) {
-        List<T> result = Lists.newArrayList();
-        T superclass = mGraph.getSuperclass(klass);
-        if (superclass != null) {
-            result.add(superclass);
+        try {
+            List<T> result = Lists.newArrayList();
+            T superclass = mGraph.getSuperclass(klass);
+            if (superclass != null) {
+                result.add(superclass);
+            }
+
+            Collections.addAll(result, mGraph.getInterfaces(klass));
+
+            return result;
+        } catch (ClassLookupException e) {
+            // TODO: Proper logging.
+            System.out.println("Invalid class reference: " + e.getClassName());
+            // TODO: Is this correct?
+            return Collections.emptyList();
         }
-
-        Collections.addAll(result, mGraph.getInterfaces(klass));
-
-        return result;
     }
 }

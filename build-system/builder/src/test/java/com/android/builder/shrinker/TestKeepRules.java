@@ -17,8 +17,9 @@
 package com.android.builder.shrinker;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Maps;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -34,15 +35,16 @@ class TestKeepRules implements KeepRules {
     }
 
     @Override
-    public <T> Set<T> getSymbolsToKeep(T klass, ShrinkerGraph<T> graph) {
-        Set<T> symbols = Sets.newHashSet();
+    public <T> Map<T, DependencyType> getSymbolsToKeep(T klass, ShrinkerGraph<T> graph) {
+        Map<T, DependencyType> symbols = Maps.newHashMap();
 
         if (graph.getClassName(klass).endsWith(mClassName)) {
-            for (T member : graph.getMethods(klass)) {
-                String name = graph.getClassName(member);
+            for (T method : graph.getMethods(klass)) {
+                String name = graph.getMethodName(method);
                 for (String methodName : mMethodNames) {
-                    if (name.contains("." + methodName + ":")) {
-                        symbols.add(member);
+                    if (name.equals(methodName)) {
+                        symbols.put(method, DependencyType.REQUIRED);
+                        symbols.put(klass, DependencyType.REQUIRED);
                     }
                 }
             }
