@@ -27,10 +27,10 @@ import static com.android.build.gradle.model.ModelConstants.TASK_MANAGER;
 
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.model.ModelBuilder;
-import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.managed.NdkAbiOptions;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.AndroidProject;
