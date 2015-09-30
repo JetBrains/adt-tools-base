@@ -91,18 +91,6 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
 
         @Model(EXTERNAL_BUILD_CONFIG)
         public static void createNativeBuildModel(NativeBuildConfig config) {
-            config.setBuildFiles(Lists.<File>newArrayList());
-        }
-
-        @Mutate
-        public static void initializeNativeLibrary(
-                @Path(EXTERNAL_BUILD_CONFIG + ".libraries") ModelMap<NativeLibrary> libraries) {
-            libraries.beforeEach(new Action<NativeLibrary>() {
-                @Override
-                public void execute(NativeLibrary nativeLibrary) {
-                    nativeLibrary.setArgs(Lists.<String>newArrayList());
-                }
-            });
         }
 
         @Mutate

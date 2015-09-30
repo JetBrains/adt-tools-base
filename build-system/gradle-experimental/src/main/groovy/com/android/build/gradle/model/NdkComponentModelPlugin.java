@@ -17,10 +17,9 @@
 package com.android.build.gradle.model;
 
 import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
-import static com.android.build.gradle.model.ModelConstants.ABI_OPTIONS;
 
+import com.android.build.gradle.internal.LanguageRegistryUtils;
 import com.android.build.gradle.internal.NdkHandler;
-import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -50,6 +49,9 @@ import org.gradle.api.internal.project.ProjectIdentifier;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.service.ServiceRegistry;
+import org.gradle.language.base.FunctionalSourceSet;
+import org.gradle.language.base.internal.registry.LanguageRegistration;
+import org.gradle.language.base.internal.registry.LanguageRegistry;
 import org.gradle.language.c.plugins.CPlugin;
 import org.gradle.language.cpp.plugins.CppPlugin;
 import org.gradle.model.Defaults;
@@ -93,9 +95,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
     @SuppressWarnings({"MethodMayBeStatic", "unused"})
     public static class Rules extends RuleSource {
 
-        @Mutate
+        @Defaults
         public void initializeNdkConfig(@Path("android.ndk") NdkConfig ndk) {
-            NdkOptionsHelper.init(ndk);
             ndk.setModuleName("");
             ndk.setToolchain("");
             ndk.setToolchainVersion("");
@@ -127,10 +128,21 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             }
         }
 
-        @Mutate
+        @Defaults
         public void addDefaultNativeSourceSet(
-                @Path("android.sources") AndroidComponentModelSourceSet sources) {
-            sources.addDefaultSourceSet("jni", NativeSourceSet.class);
+                @Path("android.sources") ModelMap<FunctionalSourceSet> sources,
+                final LanguageRegistry languageRegistry) {
+            final LanguageRegistration languageRegistration =
+                    LanguageRegistryUtils.find(languageRegistry, NativeSourceSet.class);
+            sources.beforeEach(new Action<FunctionalSourceSet>() {
+                @Override
+                public void execute(FunctionalSourceSet sourceSet) {
+                    sourceSet.registerFactory(
+                            languageRegistration.getSourceSetType(),
+                            languageRegistration.getSourceSetFactory(sourceSet.getName()));
+                    sourceSet.create("jni", NativeSourceSet.class);
+                }
+            });
         }
 
         @Model(ModelConstants.NDK_HANDLER)
@@ -151,13 +163,6 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
 
         @Defaults
         public void initBuildTypeNdk(@Path("android.buildTypes") ModelMap<BuildType> buildTypes) {
-            buildTypes.beforeEach(new Action<BuildType>() {
-                @Override
-                public void execute(BuildType buildType) {
-                    NdkOptionsHelper.init(buildType.getNdk());
-                }
-            });
-
             buildTypes.named(
                     BuilderConstants.DEBUG,
                     new Action<BuildType>() {
@@ -170,17 +175,6 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                     });
         }
 
-        @Defaults
-        public void initProductFlavorNdk(
-                @Path("android.productFlavors") ModelMap<ProductFlavor> productFlavors) {
-            productFlavors.beforeEach(new Action<ProductFlavor>() {
-                @Override
-                public void execute(ProductFlavor productFlavor) {
-                    NdkOptionsHelper.init(productFlavor.getNdk());
-                }
-            });
-        }
-
         @Mutate
         public void createAndroidPlatforms(PlatformContainer platforms, NdkHandler ndkHandler) {
             if (!ndkHandler.isNdkDirConfigured()) {
@@ -188,17 +182,6 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             }
             // Create android platforms.
             ToolchainConfiguration.configurePlatforms(platforms, ndkHandler);
-        }
-
-        @Defaults
-        public void initTargetedAbi(
-                @Path(ABI_OPTIONS) ModelMap<NdkAbiOptions> abiConfigs) {
-            abiConfigs.beforeEach(new Action<NdkAbiOptions>() {
-                @Override
-                public void execute(NdkAbiOptions abiOptions) {
-                    NdkOptionsHelper.init(abiOptions);
-                }
-            });
         }
 
         @Validate
@@ -257,7 +240,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 final ComponentSpecContainer specs,
                 @Path("android.ndk") final NdkConfig ndkConfig,
                 final NdkHandler ndkHandler,
-                @Path("android.sources") final AndroidComponentModelSourceSet sources,
+                @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 @Path("buildDir") final File buildDir,
                 final ServiceRegistry serviceRegistry) {
             if (!ndkHandler.isNdkDirConfigured()) {

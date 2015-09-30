@@ -181,10 +181,8 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
      *
      * @return the resource configuration options.
      */
-    @Unmanaged
-    @Nullable
+    @NonNull
     Set<String> getResourceConfigurations();
-    void setResourceConfigurations(Set<String> resourceConfigurations);
 
     /**
      * Returns the associated signing config or null if none are set on the product flavor.
@@ -197,8 +195,6 @@ public interface ProductFlavor extends DimensionAware, BaseConfig {
 
     NdkOptions getNdk();
 
-    @Unmanaged
-    @Nullable
+    @NonNull
     Set<String> getGeneratedDensities();
-    void setGeneratedDensities(@Nullable Set<String> densities);
 }

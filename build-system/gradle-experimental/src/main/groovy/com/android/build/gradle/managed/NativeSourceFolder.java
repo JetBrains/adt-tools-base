@@ -32,11 +32,7 @@ public interface NativeSourceFolder {
     File getSrc();
     void setSrc(File src);
 
-    @Unmanaged
     List<String> getCFlags();
-    void setCFlags(List<String> flags);
 
-    @Unmanaged
     List<String> getCppFlags();
-    void setCppFlags(List<String> flags);
 }

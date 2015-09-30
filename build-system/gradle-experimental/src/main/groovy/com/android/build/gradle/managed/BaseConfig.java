@@ -70,28 +70,21 @@ public interface BaseConfig extends Named {
      * @return a non-null collection of files.
      * @see #getTestProguardFiles()
      */
-    @Unmanaged
     Set<File> getProguardFiles();
-    void setProguardFiles(Set<File> files);
 
     /**
      * Returns the collection of proguard rule files for consumers of the library to use.
      *
      * @return a non-null collection of files.
      */
-    @Unmanaged
     Set<File> getConsumerProguardFiles();
-    void setConsumerProguardFiles(Set<File> files);
 
     /**
      * Returns the collection of proguard rule files to use for the test APK.
      *
      * @return a non-null collection of files.
      */
-    @Unmanaged
     Set<File> getTestProguardFiles();
-    void setTestProguardFiles(Set<File> files);
-
 
     /**
      * Returns the map of key value pairs for placeholder substitution in the android manifest file.
@@ -129,7 +122,5 @@ public interface BaseConfig extends Named {
      *
      * @return the optional jarjar rule file.
      */
-    @Unmanaged
     List<File> getJarJarRuleFiles();
-    void setJarJarRuleFiles(List<File> jarJarRuleFiles);
 }

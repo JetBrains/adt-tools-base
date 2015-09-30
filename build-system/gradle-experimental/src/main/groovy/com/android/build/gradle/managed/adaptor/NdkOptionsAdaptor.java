@@ -21,6 +21,8 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.managed.NdkOptions;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.List;
 import java.util.Set;
@@ -51,13 +53,13 @@ public class NdkOptionsAdaptor implements CoreNdkOptions {
     @Nullable
     @Override
     public List<String> getLdLibs() {
-        return ndkOptions.getLdLibs();
+        return ImmutableList.copyOf(ndkOptions.getLdLibs());
     }
 
     @Nullable
     @Override
     public Set<String> getAbiFilters() {
-        return ndkOptions.getAbiFilters();
+        return ImmutableSet.copyOf(ndkOptions.getAbiFilters());
     }
 
     @Nullable

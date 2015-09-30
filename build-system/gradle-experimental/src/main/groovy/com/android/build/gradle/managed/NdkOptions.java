@@ -40,37 +40,27 @@ public interface NdkOptions {
     /**
      * The ABI Filters.  Leave empty to include all supported ABI.
      */
-    @Unmanaged
     Set<String> getAbiFilters();
-    void setAbiFilters(@NonNull Set<String> filters);
 
     /**
      * The C Flags
      */
-    @Unmanaged
     List<String> getCFlags();
-    void setCFlags(@NonNull List<String> cFlags);
 
     /**
      * The C++ Flags
      */
-    @Unmanaged
     List<String> getCppFlags();
-    void setCppFlags(@NonNull List<String> cppFlags);
 
     /**
      * The linker flags
      */
-    @Unmanaged
     List<String> getLdFlags();
-    void setLdFlags(@NonNull List<String> ldFlags);
 
     /**
      * The LD Libs
      */
-    @Unmanaged
     List<String> getLdLibs();
-    void setLdLibs(@NonNull List<String> ldLibs);
 
     /**
      * The STL.

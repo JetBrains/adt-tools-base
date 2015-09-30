@@ -56,8 +56,8 @@ model {
     }
     android.ndk {
         moduleName = "hello-jni"
-        CFlags += "-DTEST_C_FLAG"
-        cppFlags += "-DTEST_CPP_FLAG"
+        CFlags.add("-DTEST_C_FLAG")
+        cppFlags.add("-DTEST_CPP_FLAG")
         toolchain = "clang"
     }
 }
@@ -84,15 +84,15 @@ project.buildFile <<
 """
 model {
     android.ndk {
-        abiFilters += "x86"
-        abiFilters += "armeabi-v7a"
+        abiFilters.add("x86")
+        abiFilters.add("armeabi-v7a")
     }
     android.abis {
         create("x86") {
-            CFlags += "-DX86"
+            CFlags.add("-DX86")
         }
         create("armeabi-v7a") {
-            CFlags += "-DARMEABI_V7A"
+            CFlags.add("-DARMEABI_V7A")
         }
     }
 }
@@ -172,13 +172,13 @@ model {
 model {
     android.productFlavors {
         create("x86") {
-            ndk.abiFilters += "x86"
+            ndk.abiFilters.add("x86")
         }
         create("arm") {
-            ndk.abiFilters += "armeabi-v7a"
+            ndk.abiFilters.add("armeabi-v7a")
         }
         create("mips") {
-            ndk.abiFilters +="mips"
+            ndk.abiFilters.add("mips")
         }
     }
 }
@@ -196,18 +196,18 @@ model {
 model {
     android.buildTypes {
         debug {
-            ndk.CFlags += "-DTEST_FLAG_DEBUG"
+            ndk.CFlags.add("-DTEST_FLAG_DEBUG")
         }
         release {
-            ndk.CFlags += "-DTEST_FLAG_RELEASE"
+            ndk.CFlags.add("-DTEST_FLAG_RELEASE")
         }
     }
     android.productFlavors {
         create("f1") {
-            ndk.CFlags += "-DTEST_FLAG_F1"
+            ndk.CFlags.add("-DTEST_FLAG_F1")
         }
         create("f2") {
-            ndk.CFlags += "-DTEST_FLAG_F2"
+            ndk.CFlags.add("-DTEST_FLAG_F2")
         }
     }
 }

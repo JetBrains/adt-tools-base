@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.AndroidConfigHelper;
 import com.android.build.gradle.internal.ExecutionConfigurationUtil;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.JniLibsLanguageTransform;
+import com.android.build.gradle.internal.LanguageRegistryUtils;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.NdkOptionsHelper;
@@ -46,7 +47,6 @@ import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
-import com.android.build.gradle.managed.ClassField;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.managed.ProductFlavor;
@@ -87,6 +87,8 @@ import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.language.base.internal.registry.LanguageRegistration;
+import org.gradle.language.base.internal.registry.LanguageRegistry;
 import org.gradle.language.base.internal.registry.LanguageTransformContainer;
 import org.gradle.model.Defaults;
 import org.gradle.model.Model;
@@ -314,7 +316,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         public void copyNdkConfig(
                 @Path("android.defaultConfig.ndk") NdkOptions defaultNdkConfig,
                 @Path("android.ndk") NdkConfig pluginNdkConfig) {
-            NdkOptionsHelper.init(defaultNdkConfig);
             NdkOptionsHelper.merge(defaultNdkConfig, pluginNdkConfig);
         }
 
@@ -369,70 +370,46 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             buildType.setEmbedMicroApp(true);
             buildType.setUseJack(false);
             buildType.setShrinkResources(false);
-            buildType.setProguardFiles(Sets.<File>newHashSet());
-            buildType.setConsumerProguardFiles(Sets.<File>newHashSet());
-            buildType.setTestProguardFiles(Sets.<File>newHashSet());
         }
 
         @Defaults
         public void initDefaultConfig(@Path("android.defaultConfig") ProductFlavor defaultConfig) {
-            initProductFlavor(defaultConfig);
 
             Set<Density> densities = Density.getRecommendedValuesForDevice();
             Set<String> strings = Sets.newHashSetWithExpectedSize(densities.size());
             for (Density density : densities) {
                 strings.add(density.getResourceValue());
             }
-            defaultConfig.setGeneratedDensities(strings);
         }
 
         @Defaults
-        public void initProductFlavors(
-                @Path("android.productFlavors") final ModelMap<ProductFlavor> productFlavors) {
-            productFlavors.beforeEach(new Action<ProductFlavor>() {
-                @Override
-                public void execute(ProductFlavor productFlavor) {
-                    initProductFlavor(productFlavor);
-                }
-            });
-        }
-
-        private void initProductFlavor(ProductFlavor productFlavor) {
-            productFlavor.setProguardFiles(Sets.<File>newHashSet());
-            productFlavor.setConsumerProguardFiles(Sets.<File>newHashSet());
-            productFlavor.setTestProguardFiles(Sets.<File>newHashSet());
-            productFlavor.setResourceConfigurations(Sets.<String>newHashSet());
-            productFlavor.setJarJarRuleFiles(Lists.<File>newArrayList());
-            productFlavor.getBuildConfigFields().beforeEach(new Action<ClassField>() {
-                @Override
-                public void execute(ClassField classField) {
-                    classField.setAnnotations(Sets.<String>newHashSet());
-                }
-            });
-            productFlavor.getResValues().beforeEach(new Action<ClassField>() {
-                @Override
-                public void execute(ClassField classField) {
-                    classField.setAnnotations(Sets.<String>newHashSet());
-                }
-            });
-        }
-
-        @Mutate
         public void addDefaultAndroidSourceSet(
-                @Path("android.sources") AndroidComponentModelSourceSet sources) {
-            sources.addDefaultSourceSet("resources", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("java", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("manifest", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("res", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("assets", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("aidl", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("renderscript", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("jniLibs", JniLibsSourceSet.class);
+                @Path("android.sources") ModelMap<FunctionalSourceSet> sources,
+                final LanguageRegistry languageRegistry) {
+            final LanguageRegistration androidLanguageRegistration =
+                    LanguageRegistryUtils.find(languageRegistry, AndroidLanguageSourceSet.class);
+            final LanguageRegistration jniLibsLanguageRegistration =
+                    LanguageRegistryUtils.find(languageRegistry, JniLibsSourceSet.class);
 
-            sources.all(new Action<FunctionalSourceSet>() {
+            sources.beforeEach(new Action<FunctionalSourceSet>() {
                 @Override
-                public void execute(FunctionalSourceSet functionalSourceSet) {
-                    LanguageSourceSet manifest = functionalSourceSet.getByName("manifest");
+                public void execute(FunctionalSourceSet sourceSet) {
+                    sourceSet.registerFactory(
+                            androidLanguageRegistration.getSourceSetType(),
+                            androidLanguageRegistration.getSourceSetFactory(sourceSet.getName()));
+                    sourceSet.registerFactory(
+                            jniLibsLanguageRegistration.getSourceSetType(),
+                            jniLibsLanguageRegistration.getSourceSetFactory(sourceSet.getName()));
+                    sourceSet.create("resources", AndroidLanguageSourceSet.class);
+                    sourceSet.create("java", AndroidLanguageSourceSet.class);
+                    sourceSet.create("manifest", AndroidLanguageSourceSet.class);
+                    sourceSet.create("res", AndroidLanguageSourceSet.class);
+                    sourceSet.create("assets", AndroidLanguageSourceSet.class);
+                    sourceSet.create("aidl", AndroidLanguageSourceSet.class);
+                    sourceSet.create("renderscript", AndroidLanguageSourceSet.class);
+                    sourceSet.create("jniLibs", JniLibsSourceSet.class);
+
+                    LanguageSourceSet manifest = sourceSet.getByName("manifest");
                     manifest.getSource().setIncludes(ImmutableList.of("AndroidManifest.xml"));
                 }
             });
@@ -528,7 +505,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 ModelMap<AndroidComponentSpec> androidSpecs,
                 TaskManager taskManager,
                 SdkHandler sdkHandler,
-                Project project, AndroidComponentModelSourceSet androidSources) {
+                Project project,
+                @Path("android.sources") ModelMap<FunctionalSourceSet> androidSources) {
             // setup SDK repositories.
             for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
                 project.getRepositories().maven(new Action<MavenArtifactRepository>() {

@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.managed;
 
+import com.android.annotations.NonNull;
+
 import org.gradle.api.Named;
 import org.gradle.model.Managed;
 
@@ -26,6 +28,23 @@ import java.io.File;
  */
 @Managed
 public interface NativeToolchain extends com.android.builder.model.NativeToolchain, Named {
-    void setCCompilerExecutable(File exe);
-    void setCppCompilerExecutable(File exe);
+    /**
+     * Returns the full path of the C compiler.
+     *
+     * @return the C compiler path.
+     */
+    @Override
+    @NonNull
+    File getCCompilerExecutable();
+    void setCCompilerExecutable(@NonNull File exe);
+
+    /**
+     * Returns the full path of the C++ compiler.
+     *
+     * @return the C++ compiler path.
+     */
+    @Override
+    @NonNull
+    File getCppCompilerExecutable();
+    void setCppCompilerExecutable(@NonNull File exe);
 }

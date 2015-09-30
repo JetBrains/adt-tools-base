@@ -92,7 +92,7 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
         return new NativeAndroidProjectImpl(
                 Version.ANDROID_GRADLE_PLUGIN_VERSION,
                 project.getName(),
-                config.getBuildFiles(),
+                ImmutableList.copyOf(config.getBuildFiles()),
                 artifacts,
                 toolchains,
                 settings,
@@ -128,10 +128,12 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
     }
 
     private String getSettingsName(List<String> flags) {
+        // Copy flags to ensure it is serializable.
+        List<String> flagsCopy = ImmutableList.copyOf(flags);
         NativeSettings setting = settingsMap.get(flags);
         if (setting == null) {
-            setting = new NativeSettingsImpl("setting" + settingIndex, flags);
-            settingsMap.put(flags, setting);
+            setting = new NativeSettingsImpl("setting" + settingIndex, flagsCopy);
+            settingsMap.put(flagsCopy, setting);
             settingIndex++;
         }
         return setting.getName();
@@ -144,7 +146,6 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
                     toolchain.getName(),
                     toolchain.getCCompilerExecutable(),
                     toolchain.getCCompilerExecutable()));
-
         }
         return toolchains;
     }

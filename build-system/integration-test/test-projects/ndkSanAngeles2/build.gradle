@@ -17,28 +17,28 @@ model {
 
     android.ndk {
         moduleName = "sanangeles"
-        CFlags += "-DDISABLE_IMPORTGL"
-        ldLibs += "GLESv1_CM"
-        ldLibs += "dl"
-        ldLibs += "log"
+        CFlags.add("-DDISABLE_IMPORTGL")
+        ldLibs.add("GLESv1_CM")
+        ldLibs.add("dl")
+        ldLibs.add("log")
         stl = "stlport_static"
         toolchain = "clang"
     }
 
     android.productFlavors {
         create("x86") {
-            ndk.abiFilters += "x86"
+            ndk.abiFilters.add("x86")
             // this is the flavor part of the version code.
             // It must be higher than the arm one for devices supporting
             // both, as x86 is preferred.
             versionCode = 3
         }
         create("arm") {
-            ndk.abiFilters += "armeabi-v7a"
+            ndk.abiFilters.add("armeabi-v7a")
             versionCode = 2
         }
         create("mips") {
-            ndk.abiFilters += "mips"
+            ndk.abiFilters.add("mips")
             versionCode = 1
         }
         create("fat") {

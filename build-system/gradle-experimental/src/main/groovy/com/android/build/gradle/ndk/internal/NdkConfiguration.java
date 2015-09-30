@@ -26,7 +26,6 @@ import com.android.build.gradle.internal.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.managed.NdkConfig;
-import com.android.build.gradle.model.AndroidComponentModelSourceSet;
 import com.android.build.gradle.model.NativeSourceSet;
 import com.android.build.gradle.tasks.GdbSetupTask;
 import com.android.build.gradle.tasks.StripDebugSymbolTask;
@@ -65,7 +64,7 @@ public class NdkConfiguration {
 
     public static void configureProperties(
             NativeLibrarySpec library,
-            final AndroidComponentModelSourceSet sources,
+            final ModelMap<FunctionalSourceSet> sources,
             final File buildDir,
             final NdkHandler ndkHandler,
             final ServiceRegistry serviceRegistry) {
@@ -285,9 +284,9 @@ public class NdkConfiguration {
      */
     private static NativeSourceSet sourceIfExist(
             BinarySpec binary,
-            AndroidComponentModelSourceSet projectSourceSet,
+            ModelMap<FunctionalSourceSet> projectSourceSet,
             final String sourceSetName) {
-        FunctionalSourceSet sourceSet = projectSourceSet.findByName(sourceSetName);
+        FunctionalSourceSet sourceSet = projectSourceSet.get(sourceSetName);
         if (sourceSet != null) {
             final NativeSourceSet jni = sourceSet.withType(NativeSourceSet.class).getByName("jni");
             binary.sources(new Action<ModelMap<LanguageSourceSet>>() {

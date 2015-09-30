@@ -39,7 +39,5 @@ public interface ClassField {
     String getDocumentation();
     void setDocumentation(String documentation);
 
-    @Unmanaged
     Set<String> getAnnotations();
-    void setAnnotations(Set<String> annotations);
 }
