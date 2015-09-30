@@ -321,10 +321,12 @@ public class MonkeyPatcher {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 for (WeakReference<Resources> wr : arrayMap.values()) {
                     Resources resources = wr.get();
-                    // Set the AssetManager of the Resources instance to our brand new one
-                    mAssets.set(resources, newAssetManager);
+                    if (resources != null) {
+                        // Set the AssetManager of the Resources instance to our brand new one
+                        mAssets.set(resources, newAssetManager);
 
-                    resources.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
+                        resources.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
+                    }
                 }
             }
 
