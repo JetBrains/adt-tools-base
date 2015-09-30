@@ -103,6 +103,7 @@ public class GoogleServicesTask extends DefaultTask {
         if (clientObject != null) {
             handleAnalytics(clientObject, resValues);
             handleAdsService(clientObject, resValues);
+            handleMapsService(clientObject, resValues);
             handleGoogleAppId(clientObject, resValues);
         } else {
             getLogger().warn("No matching client found for package name '" + packageName + "'");
@@ -214,6 +215,36 @@ public class GoogleServicesTask extends DefaultTask {
 
         findStringByName(adsService, "test_banner_ad_unit_id", resValues);
         findStringByName(adsService, "test_interstitial_ad_unit_id", resValues);
+    }
+
+    /**
+     * Handle a client object for maps (@string/google_maps_key).
+     * @param clientObject the client Json object.
+     * @throws IOException
+     */
+    private void handleMapsService(JsonObject clientObject, Map<String, String> resValues)
+            throws IOException {
+        JsonObject mapsService = getServiceByName(clientObject, "maps_service");
+        if (mapsService == null) return;
+
+        JsonArray array = clientObject.getAsJsonArray("api_key");
+        if (array != null) {
+            final int count = array.size();
+            for (int i = 0 ; i < count ; i++) {
+                JsonElement apiKeyElement = array.get(i);
+                if (apiKeyElement == null || !apiKeyElement.isJsonObject()) {
+                    continue;
+                }
+                JsonObject apiKeyObject = apiKeyElement.getAsJsonObject();
+                JsonPrimitive currentKey = apiKeyObject.getAsJsonPrimitive("current_key");
+                if (currentKey == null) {
+                    continue;
+                }
+                resValues.put("google_maps_key", currentKey.getAsString());
+                return;
+            }
+        }
+        throw new GradleException("Missing api_key/current_key object");
     }
 
     private static void findStringByName(JsonObject jsonObject, String stringName,
