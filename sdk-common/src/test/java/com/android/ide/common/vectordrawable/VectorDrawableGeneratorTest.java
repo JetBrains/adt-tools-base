@@ -16,6 +16,7 @@
 
 package com.android.ide.common.vectordrawable;
 
+import com.android.SdkConstants;
 import com.android.ide.common.util.GeneratorTest;
 import com.android.testutils.TestUtils;
 import com.android.utils.FileUtils;
@@ -82,7 +83,11 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         } else {
             InputStream is = new FileInputStream(pngFile);
             BufferedImage goldenImage = ImageIO.read(is);
-            assertImageSimilar(imageNameWithParent, goldenImage, image, 3.0f);
+            float diffThreshold = 1.5f;
+            if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_DARWIN) {
+                diffThreshold = 5.0f;
+            }
+            assertImageSimilar(imageNameWithParent, goldenImage, image, diffThreshold);
         }
 
     }
