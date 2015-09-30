@@ -3,5 +3,5 @@ apply plugin: 'com.android.library'
 android {
     resourcePrefix 'libapp_'
     compileSdkVersion 21
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    buildToolsVersion = rootProject.buildToolsVersion
 }

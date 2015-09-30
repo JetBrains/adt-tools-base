@@ -8,7 +8,7 @@ apply plugin: 'com.android.model.application'
 model {
     android {
         compileSdkVersion = 19
-        buildToolsVersion = rootProject.ext.buildToolsVersion
+        buildToolsVersion = rootProject.buildToolsVersion
     }
 
     android.ndk {
