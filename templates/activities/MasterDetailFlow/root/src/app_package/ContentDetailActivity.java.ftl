@@ -1,14 +1,15 @@
 package ${packageName};
 
-import ${superClassFqcn};
 import android.content.Intent;
 import android.os.Bundle;
 <#if hasAppBar>
-import android.support.v7.widget.Toolbar;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
 </#if>
+import ${superClassFqcn};
+import ${actionBarClassFqcn};
 <#if minApiLevel lt 16>
 import android.support.v4.app.NavUtils;
 </#if>
@@ -19,12 +20,9 @@ import ${applicationPackage}.R;
 
 /**
  * An activity representing a single ${objectKind} detail screen. This
- * activity is only used on handset devices. On tablet-size devices,
+ * activity is only used narrow width devices. On tablet-size devices,
  * item details are presented side-by-side with a list of items
  * in a {@link ${CollectionName}Activity}.
- * <p>
- * This activity is mostly just a 'shell' activity containing nothing
- * more than a {@link ${DetailName}Fragment}.
  */
 public class ${DetailName}Activity extends ${superClass} {
 
@@ -47,7 +45,10 @@ public class ${DetailName}Activity extends ${superClass} {
 </#if>
 
         // Show the Up button in the action bar.
-        get${Support}ActionBar().setDisplayHomeAsUpEnabled(true);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
 
         // savedInstanceState is non-null when there is fragment state
         // saved from previous configurations of this activity
