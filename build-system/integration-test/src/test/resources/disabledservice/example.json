@@ -30,6 +30,10 @@
     }
   }],
 
+  "api_key": [{
+    "current_key": "android-api-key-free"
+  }],
+
   "services": {
     "analytics_service": {
       "status": 2,
@@ -50,6 +54,9 @@
       "status": 1,
       "test_banner_ad_unit_id": "ca-app-pub-3940256099942544\/1033173712",
       "test_interstitial_ad_unit_id": "ca-app-pub-3940256099942544\/6300978111"
+    },
+    "maps_service": {
+      "status": 2
     }
   }
 },
@@ -70,6 +77,11 @@
       "certificate_hash": "IUW99pi4cVA5vQ6D8gab7UNawhw="
     }
   }],
+
+  "api_key": [{
+    "current_key": "android-api-key-paid"
+  }],
+
   "services": {
     "analytics_service": {
       "status": 2,
@@ -84,6 +96,9 @@
       "status": 2
     },
     "google_signin_service": {
+      "status": 2
+    },
+    "maps_service": {
       "status": 2
     }
   }
