@@ -587,6 +587,8 @@ public final class SdkConstants {
      * no rendering in the graphical layout editor. */
     public static final String CLASS_MOCK_VIEW = "com.android.layoutlib.bridge.MockView"; //$NON-NLS-1$
     public static final String CLASS_LAYOUT_INFLATER = "android.view.LayoutInflater"; //$NON-NLS-1$
+    public static final String CLASS_DATA_BINDING_COMPONENT = "android.databinding.DataBindingComponent"; //$NON-NLS-1$
+    public static final String CLASS_DATA_BINDING_BASE_BINDING = "android.databinding.ViewDataBinding";
 
     /* Android Design Support Class Constants */
     public static final String CLASS_COORDINATOR_LAYOUT = "android.support.design.widget.CoordinatorLayout"; //$NON-NLS-1$
