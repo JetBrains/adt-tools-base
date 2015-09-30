@@ -29,7 +29,7 @@ public final class Primitive extends Type {
 
     Method mMethod;
 
-    public Primitive(@NotNull Decoder d) throws IOException {
+    public Primitive(@NotNull Decoder d, boolean compact) throws IOException {
         mName = d.string();
         mMethod = Method.decode(d);
     }
@@ -152,7 +152,7 @@ public final class Primitive extends Type {
     }
 
     @Override
-    public void encode(@NotNull Encoder e) throws IOException {
+    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
         TypeTag.primitiveTag().encode(e);
         e.string(mName);
         mMethod.encode(e);

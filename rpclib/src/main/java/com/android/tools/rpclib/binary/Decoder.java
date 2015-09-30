@@ -174,11 +174,11 @@ public class Decoder {
   }
 
   @NotNull
-  public Entity entity() throws IOException {
+  public Entity entity(boolean compact) throws IOException {
     int v = uint32();
     int sid = v >> 1;
     if ((v & 1) != 0) {
-      Entity entity = new Entity(this);
+      Entity entity = new Entity(this, compact);
       mEntities.put(sid, entity);
       return entity;
     }

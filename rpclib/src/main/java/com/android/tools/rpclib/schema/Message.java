@@ -64,7 +64,7 @@ public final class Message implements BinaryObject {
             Message o = (Message) obj;
             e.uint32(o.entities.length);
             for (Entity entity : o.entities) {
-                e.entity(entity);
+                e.entity(entity, false);
             }
             e.uint32(o.constants.length);
             for (ConstantSet set :  o.constants) {
@@ -77,7 +77,7 @@ public final class Message implements BinaryObject {
             Message o = (Message) obj;
             o.entities = new Entity[d.uint32()];
             for (int i = 0; i < o.entities.length; i++) {
-                o.entities[i] = d.entity();
+                o.entities[i] = d.entity(false);
             }
             o.constants = new ConstantSet[d.uint32()];
             for (int i = 0; i < o.constants.length; i++) {

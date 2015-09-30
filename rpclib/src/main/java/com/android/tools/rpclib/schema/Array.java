@@ -30,10 +30,12 @@ public final class Array extends Type {
 
     int mSize;
 
-    public Array(@NotNull Decoder d) throws IOException {
-        mAlias = d.string();
+    public Array(@NotNull Decoder d, boolean compact) throws IOException {
         mSize = d.uint32();
-        mValueType = decode(d);
+        mValueType = decode(d, compact);
+        if (!compact) {
+            mAlias = d.string();
+        }
     }
 
     @NotNull
@@ -73,10 +75,12 @@ public final class Array extends Type {
     }
 
     @Override
-    public void encode(@NotNull Encoder e) throws IOException {
+    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
         TypeTag.arrayTag().encode(e);
-        e.string(mAlias);
         e.uint32(mSize);
-        mValueType.encode(e);
+        mValueType.encode(e, compact);
+        if (!compact) {
+            e.string(mAlias);
+        }
     }
 }

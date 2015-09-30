@@ -25,7 +25,7 @@ import java.io.IOException;
 
 public final class AnyType extends Type {
 
-    public AnyType(@NotNull Decoder d) throws IOException {
+    public AnyType(@NotNull Decoder d, boolean compact) throws IOException {
     }
 
     @NotNull
@@ -49,7 +49,7 @@ public final class AnyType extends Type {
     }
 
     @Override
-    public void encode(@NotNull Encoder e) throws IOException {
+    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
         TypeTag.anyTag().encode(e);
     }
 }

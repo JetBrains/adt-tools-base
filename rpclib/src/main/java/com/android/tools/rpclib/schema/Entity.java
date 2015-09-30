@@ -31,22 +31,28 @@ public final class Entity {
     private Field[] mFields;
     private BinaryObject[] mMetadata;
 
-    public Entity(@NotNull Decoder d) throws IOException {
-        mTypeID = d.id();
+    public Entity(@NotNull Decoder d, boolean compact) throws IOException {
         mPackage = d.string();
-        mName = d.string();
         mIdentity = d.string();
         mVersion = d.string();
-        mExported = d.bool();
+        if (!compact) {
+            mName = d.string();
+            mTypeID = d.id();
+            mExported = d.bool();
+        }
         mFields = new Field[d.uint32()];
         for (int i = 0; i < mFields.length; i++) {
             mFields[i] = new Field();
-            mFields[i].mDeclared = d.string();
-            mFields[i].mType = Type.decode(d);
+            mFields[i].mType = Type.decode(d, compact);
+            if (!compact) {
+                mFields[i].mDeclared = d.string();
+            }
         }
-        mMetadata = new BinaryObject[d.uint32()];
-        for (int i = 0; i < mMetadata.length; i++) {
-            mMetadata[i] = d.object();
+        if (!compact) {
+            mMetadata = new BinaryObject[d.uint32()];
+            for (int i = 0; i < mMetadata.length; i++) {
+                mMetadata[i] = d.object();
+            }
         }
     }
 
@@ -74,21 +80,27 @@ public final class Entity {
         return mMetadata;
     }
 
-    public void encode(@NotNull Encoder e) throws IOException {
-        e.id(mTypeID);
+    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
         e.string(mPackage);
-        e.string(mName);
         e.string(mIdentity);
         e.string(mVersion);
-        e.bool(mExported);
+        if (!compact) {
+            e.string(mName);
+            e.id(mTypeID);
+            e.bool(mExported);
+        }
         e.uint32(mFields.length);
         for (Field field : mFields) {
-            e.string(field.mDeclared);
-            field.mType.encode(e);
+            field.mType.encode(e, compact);
+            if (!compact) {
+                e.string(field.mDeclared);
+            }
         }
-        e.uint32(mMetadata.length);
-        for (BinaryObject meta : mMetadata) {
-            e.object(meta);
+        if (!compact) {
+            e.uint32(mMetadata.length);
+            for (BinaryObject meta : mMetadata) {
+                e.object(meta);
+            }
         }
     }
 }

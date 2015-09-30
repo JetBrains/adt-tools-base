@@ -162,7 +162,7 @@ public class Encoder {
     id.write(this);
   }
 
-  public void entity(@NotNull Entity entity) throws IOException {
+  public void entity(@NotNull Entity entity, boolean compact) throws IOException {
     if (mEntities.containsKey(entity)) {
       int sid = mEntities.get(entity);
       uint32(sid << 1);
@@ -170,7 +170,7 @@ public class Encoder {
     int sid = mEntities.size() + 1;
     mEntities.put(entity, sid);
     uint32((sid << 1 ) | 1);
-    entity.encode(this);
+    entity.encode(this, compact);
   }
 
   public void value(@Nullable BinaryObject obj) throws IOException {
