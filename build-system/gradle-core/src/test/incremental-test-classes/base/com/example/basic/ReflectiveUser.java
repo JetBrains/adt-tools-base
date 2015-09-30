@@ -16,8 +16,6 @@
 
 package com.example.basic;
 
-import org.apache.commons.lang.StringUtils;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -38,6 +36,6 @@ public class ReflectiveUser {
     }
 
     public String hiddenGem(String param) {
-        return StringUtils.reverse(param);
+        return new StringBuilder(param).reverse().toString();
     }
 }
