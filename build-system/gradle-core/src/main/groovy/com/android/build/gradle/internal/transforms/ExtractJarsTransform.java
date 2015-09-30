@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.transforms;
 
 import static com.android.utils.FileUtils.delete;
+import static com.android.utils.FileUtils.deleteFolder;
 import static com.android.utils.FileUtils.emptyFolder;
 import static com.android.utils.FileUtils.mkdirs;
 
@@ -169,6 +170,15 @@ public class ExtractJarsTransform extends Transform implements AsInputTransform 
                     }
 
                 } else {
+                    // empty the parent folder.
+                    File[] childrenFolders = outFolder.listFiles();
+                    if (childrenFolders!=null) {
+                        for (File childFolder : childrenFolders) {
+                            if (childFolder.isDirectory()) {
+                                deleteFolder(childFolder);
+                            }
+                        }
+                    }
                     for (final File jarFile : entry.getKey().getFiles()) {
                         executor.execute(new Callable<Void>() {
                             @Override
