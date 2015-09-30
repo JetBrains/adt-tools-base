@@ -63,7 +63,7 @@ public class ${DetailName}Fragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_${detail_name}, container, false);
+        View rootView = inflater.inflate(R.layout.${detail_name}, container, false);
 
         // Show the dummy content as text in a TextView.
         if (mItem != null) {

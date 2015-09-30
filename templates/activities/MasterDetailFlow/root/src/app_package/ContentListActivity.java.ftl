@@ -1,19 +1,33 @@
 package ${packageName};
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import ${superClassFqcn};
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 <#if hasAppBar>
 import android.support.v7.widget.Toolbar;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.view.View;
 </#if>
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
 <#if (parentActivityClass != "" && minApiLevel lt 16)>import android.support.v4.app.NavUtils;</#if>
-<#if parentActivityClass != "">import android.view.MenuItem;</#if>
+<#if parentActivityClass != "">
+import ${actionBarClassFqcn};
+import android.view.MenuItem;
+</#if>
 <#if applicationPackage??>
 import ${applicationPackage}.R;
 </#if>
+
+import ${packageName}.dummy.DummyContent;
+
+import java.util.List;
 
 /**
  * An activity representing a list of ${objectKindPlural}. This activity
@@ -22,17 +36,8 @@ import ${applicationPackage}.R;
  * lead to a {@link ${DetailName}Activity} representing
  * item details. On tablets, the activity presents the list of items and
  * item details side-by-side using two vertical panes.
- * <p>
- * The activity makes heavy use of fragments. The list of items is a
- * {@link ${CollectionName}Fragment} and the item details
- * (if present) is a {@link ${DetailName}Fragment}.
- * <p>
- * This activity also implements the required
- * {@link ${CollectionName}Fragment.Callbacks} interface
- * to listen for item selections.
  */
-public class ${CollectionName}Activity extends ${superClass}
-        implements ${CollectionName}Fragment.Callbacks {
+public class ${CollectionName}Activity extends ${superClass} {
 
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
@@ -44,7 +49,7 @@ public class ${CollectionName}Activity extends ${superClass}
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 <#if hasAppBar>
-        setContentView(R.layout.activity_${extractLetters(objectKind?lower_case)}_app_bar);
+        setContentView(R.layout.activity_${item_list_layout});
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -59,28 +64,27 @@ public class ${CollectionName}Activity extends ${superClass}
             }
         });
 <#else>
-        setContentView(R.layout.activity_${extractLetters(objectKind?lower_case)}_list);
+        setContentView(R.layout.${item_list_layout});
 </#if>
 <#if parentActivityClass != "">
         // Show the Up button in the action bar.
-        get${Support}ActionBar().setDisplayHomeAsUpEnabled(true);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
 </#if>
+
+        View recyclerView = findViewById(R.id.${collection_name});
+        assert recyclerView != null;
+        setupRecyclerView((RecyclerView) recyclerView);
 
         if (findViewById(R.id.${detail_name}_container) != null) {
             // The detail container view will be present only in the
-            // large-screen layouts (res/values-large and
-            // res/values-sw600dp). If this view is present, then the
+            // large-screen layouts (res/values-w900dp).
+            // If this view is present, then the
             // activity should be in two-pane mode.
             mTwoPane = true;
-
-            // In two-pane mode, list items should be given the
-            // 'activated' state when touched.
-            ((${CollectionName}Fragment) get${Support}FragmentManager()
-                    .findFragmentById(R.id.${collection_name}))
-                    .setActivateOnItemClick(true);
         }
-
-        // TODO: If exposing deep links into your app, handle intents here.
     }
     <#if parentActivityClass != "">
 
@@ -102,30 +106,78 @@ public class ${CollectionName}Activity extends ${superClass}
     }
     </#if>
 
-    /**
-     * Callback method from {@link ${CollectionName}Fragment.Callbacks}
-     * indicating that the item with the given ID was selected.
-     */
-    @Override
-    public void onItemSelected(String id) {
-        if (mTwoPane) {
-            // In two-pane mode, show the detail view in this activity by
-            // adding or replacing the detail fragment using a
-            // fragment transaction.
-            Bundle arguments = new Bundle();
-            arguments.putString(${DetailName}Fragment.ARG_ITEM_ID, id);
-            ${DetailName}Fragment fragment = new ${DetailName}Fragment();
-            fragment.setArguments(arguments);
-            get${Support}FragmentManager().beginTransaction()
-                    .replace(R.id.${detail_name}_container, fragment)
-                    .commit();
+    private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
+        recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(DummyContent.ITEMS));
+    }
 
-        } else {
-            // In single-pane mode, simply start the detail activity
-            // for the selected item ID.
-            Intent detailIntent = new Intent(this, ${DetailName}Activity.class);
-            detailIntent.putExtra(${DetailName}Fragment.ARG_ITEM_ID, id);
-            startActivity(detailIntent);
+    public class SimpleItemRecyclerViewAdapter
+            extends RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder> {
+
+        private final List<DummyContent.DummyItem> mValues;
+
+        public class ViewHolder extends RecyclerView.ViewHolder {
+            public DummyContent.DummyItem mItem;
+
+            public final View mView;
+            public final TextView mIdView;
+            public final TextView mContentView;
+
+            public ViewHolder(View view) {
+                super(view);
+                mView = view;
+                mIdView = (TextView) view.findViewById(R.id.id);
+                mContentView = (TextView) view.findViewById(R.id.content);
+            }
+
+            @Override
+            public String toString() {
+                return super.toString() + " '" + mContentView.getText() + "'";
+            }
+        }
+
+        public SimpleItemRecyclerViewAdapter(List<DummyContent.DummyItem> items) {
+            mValues = items;
+        }
+
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.${item_list_content_layout}, parent, false);
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(final ViewHolder holder, int position) {
+            holder.mItem = mValues.get(position);
+            holder.mIdView.setText(mValues.get(position).id);
+            holder.mContentView.setText(mValues.get(position).content);
+
+            holder.mView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (mTwoPane) {
+                        Bundle arguments = new Bundle();
+                        arguments.putString(${DetailName}Fragment.ARG_ITEM_ID, holder.mItem.id);
+                        ${DetailName}Fragment fragment = new ${DetailName}Fragment();
+                        fragment.setArguments(arguments);
+                        getSupportFragmentManager().beginTransaction()
+                                .replace(R.id.${detail_name}_container, fragment)
+                                .commit();
+                    }
+                    else {
+                        Context context = v.getContext();
+                        Intent intent = new Intent(context, ${DetailName}Activity.class);
+                        intent.putExtra(${DetailName}Fragment.ARG_ITEM_ID, holder.mItem.id);
+
+                        context.startActivity(intent);
+                    }
+                }
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return mValues.size();
         }
     }
 }

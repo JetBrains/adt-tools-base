@@ -64,6 +64,7 @@
         default="com.mycompany.myapp" />
 
     <globals file="globals.xml.ftl" />
+    <globals file="extras.xml.ftl" />
     <execute file="recipe.xml.ftl" />
 
 </template>
