@@ -199,7 +199,7 @@ public final class LogCatFilter {
 
         /* if pid filter is enabled, filter out messages whose pid does not match
          * the filter's pid */
-        if (mCheckPid && !m.getPid().equals(mPid)) {
+        if (mCheckPid && !Integer.toString(m.getPid()).equals(mPid)) {
             return false;
         }
 
