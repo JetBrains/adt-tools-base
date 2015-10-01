@@ -602,15 +602,21 @@ public class TransformManager {
         }
 
         // copy with new location.
+        File destinationFile = FileUtils.join(buildDir, StringHelper.toStrings(
+                AndroidProject.FD_INTERMEDIATES,
+                FD_TRANSFORMS,
+                combineTypesForName(types),
+                combineScopesForName(input.getScopes()),
+                deDupedName,
+                variantDirSegments));
+
+        if (format == Format.JAR) {
+            destinationFile = new File(destinationFile, SdkConstants.FN_CLASSES_JAR);
+        }
+
         return TransformStream.builder()
                 .copyWithRestrictedTypes(input, types)
-                .setFiles(FileUtils.join(buildDir, StringHelper.toStrings(
-                        AndroidProject.FD_INTERMEDIATES,
-                        FD_TRANSFORMS,
-                        combineTypesForName(types),
-                        combineScopesForName(input.getScopes()),
-                        deDupedName,
-                        variantDirSegments)))
+                .setFiles(destinationFile)
                 .setDependency(taskName)
                 .setParentStream(input)
                 .setFormat(format)
