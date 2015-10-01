@@ -20,7 +20,6 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,15 +32,8 @@ import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
 // in sync right now.
 @SuppressWarnings({"Assert", "unused"})
 public class ApplicationPatch {
-    /**
-     * Magic (random) number used to identify the protocol
-     */
-    public static final long PROTOCOL_IDENTIFIER = 0x35107124L;
-    public static final int PROTOCOL_VERSION = 1;
-
-    public final String path;
-    public final byte[] data;
-    public boolean forceRestart;
+    @NonNull public final String path;
+    @NonNull public final byte[] data;
 
     public ApplicationPatch(@NonNull String path, @NonNull byte[] data) {
         this.path = path;
@@ -56,51 +48,9 @@ public class ApplicationPatch {
                 '}';
     }
 
-    // Only needed on the IDE side
-    public static void write(@NonNull DataOutputStream output,
-                             @Nullable List<ApplicationPatch> changes,
-                             boolean forceRestart)
-            throws IOException {
-        output.writeLong(PROTOCOL_IDENTIFIER);
-        output.writeInt(PROTOCOL_VERSION);
-
-        if (changes == null) {
-            output.writeInt(0);
-        } else {
-            output.writeInt(changes.size());
-            for (ApplicationPatch change : changes) {
-                write(output, change);
-            }
-        }
-        output.writeBoolean(forceRestart);
-    }
-
-    // Only needed on the IDE side
-    private static void write(@NonNull DataOutputStream output, @NonNull ApplicationPatch change)
-            throws IOException {
-        output.writeUTF(change.path);
-        byte[] bytes = change.data;
-        output.writeInt(bytes.length);
-        output.write(bytes);
-    }
-
     // Only needed on the Android side
     @Nullable
     public static List<ApplicationPatch> read(@NonNull DataInputStream input) throws IOException {
-        long magic = input.readLong();
-        if (magic != PROTOCOL_IDENTIFIER) {
-            Log.w(LOG_TAG, "Unrecognized header format "
-                    + Long.toHexString(magic));
-            return null;
-        }
-        int version = input.readInt();
-        if (version != PROTOCOL_VERSION) {
-            Log.w(LOG_TAG, "Mismatched protocol versions; app is "
-                    + "using version " + PROTOCOL_VERSION + " and tool is using version "
-                    + version);
-            return null;
-        }
-
         int changeCount = input.readInt();
 
         if (Log.isLoggable(LOG_TAG, Log.INFO)) {
@@ -116,18 +66,15 @@ public class ApplicationPatch {
             changes.add(new ApplicationPatch(path, bytes));
         }
 
-        boolean forceRestart = input.readBoolean();
-        if (changeCount > 0) {
-            changes.get(0).forceRestart = forceRestart;
-        }
-
         return changes;
     }
 
+    @NonNull
     public String getPath() {
         return path;
     }
 
+    @NonNull
     public byte[] getBytes() {
         return data;
     }
