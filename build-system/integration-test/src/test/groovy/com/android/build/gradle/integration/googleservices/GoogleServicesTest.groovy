@@ -36,7 +36,7 @@ import org.junit.Test
  * Basic test with gcm + ga
  */
 @CompileStatic
-class BasicTest {
+class GoogleServicesTest {
 
     public static final AndroidTestApp helloWorldApp = new EmptyAndroidTestApp("com.example.app.free")
 
