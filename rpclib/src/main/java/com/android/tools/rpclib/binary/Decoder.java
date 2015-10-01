@@ -15,6 +15,7 @@
  */
 package com.android.tools.rpclib.binary;
 
+import com.android.tools.rpclib.schema.Entity;
 import gnu.trove.TIntObjectHashMap;
 import gnu.trove.TObjectIntHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -32,12 +33,14 @@ import java.util.Map;
  * https://android.googlesource.com/platform/tools/gpu/+/master/binary/doc.go
  */
 public class Decoder {
+  @NotNull private final TIntObjectHashMap<Entity> mEntities;
   @NotNull private final TIntObjectHashMap<BinaryObject> mObjects;
   @NotNull private final TIntObjectHashMap<BinaryID> mIDs;
   @NotNull private final InputStream mInputStream;
   @NotNull private final byte[] mBuffer;
 
   public Decoder(@NotNull InputStream in) {
+    mEntities = new TIntObjectHashMap<Entity>();
     mObjects = new TIntObjectHashMap<BinaryObject>();
     mIDs = new TIntObjectHashMap<BinaryID>();
     mInputStream = in;
@@ -168,6 +171,22 @@ public class Decoder {
       throw new RuntimeException("Unknown id: " + sid);
     }
     return id;
+  }
+
+  @NotNull
+  public Entity entity() throws IOException {
+    int v = uint32();
+    int sid = v >> 1;
+    if ((v & 1) != 0) {
+      Entity entity = new Entity(this);
+      mEntities.put(sid, entity);
+      return entity;
+    }
+    Entity entity = mEntities.get(sid);
+    if (entity == null) {
+      throw new RuntimeException("Unknown entity: " + sid);
+    }
+    return entity;
   }
 
   public void value(@NotNull BinaryObject obj) throws IOException {
