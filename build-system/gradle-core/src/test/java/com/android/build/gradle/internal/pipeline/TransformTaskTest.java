@@ -22,7 +22,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.pipeline.TestTransform.TestAsInputTransform;
+import com.android.build.gradle.internal.pipeline.TestTransform.TestCombinedTransform;
 import com.android.build.gradle.internal.pipeline.TestTransform.TestForkTransform;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.transform.api.AsInputTransform;
@@ -51,6 +53,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -964,6 +967,104 @@ public class TransformTaskTest extends TaskTestUtils {
 
         // check the changed files is empty.
         assertThat(tInput.getChangedFiles()).isEmpty();
+    }
+
+    @Test
+    public void asInputJarTransform() throws TransformException, InterruptedException, IOException {
+        testJarTransform(
+                TestAsInputTransform.class,
+                null,
+                new Action<TestAsInputTransform>() {
+            @Override
+            public void execute(TestAsInputTransform transform) {
+                Map<TransformInput, TransformOutput> inputs = transform.getInputs();
+                validateJarOutput(Iterables.getOnlyElement(inputs.entrySet()).getValue());
+            }
+        });
+    }
+
+    @Test
+    public void combinedJarTransform() throws TransformException, InterruptedException, IOException {
+        testJarTransform(
+                TestCombinedTransform.class,
+                null,
+                new Action<TestCombinedTransform>() {
+            @Override
+            public void execute(TestCombinedTransform transform) {
+                validateJarOutput(transform.getOutput());
+            }
+        });
+    }
+
+    @Test
+    public void forkInputJarTransform() throws TransformException, InterruptedException, IOException {
+        testJarTransform(
+                TestForkTransform.class,
+                EnumSet.of(ContentType.CLASSES, ContentType.DEX),
+                new Action<TestForkTransform>() {
+            @Override
+            public void execute(TestForkTransform transform) {
+                Map<TransformInput, Collection<TransformOutput>> inputs = transform.getInputs();
+                Collection<TransformOutput> outputs = Iterables.getOnlyElement(inputs.entrySet())
+                        .getValue();
+                for (TransformOutput output : outputs) {
+                    validateJarOutput(output);
+                }
+            }
+        });
+    }
+
+    private <T extends TestTransform> void testJarTransform(
+            @NonNull Class<T> transformClass,
+            @Nullable Set<ContentType> outputTypes,
+            @NonNull Action<T> action)
+            throws TransformException, InterruptedException, IOException {
+
+        // create a stream and add it to the pipeline
+        TransformStream projectClass = TransformStream.builder()
+                .addContentType(ContentType.CLASSES)
+                .addScope(Scope.PROJECT)
+                .setFormat(Format.SINGLE_FOLDER)
+                .setFiles(new File("input file"))
+                .setDependency("my dependency")
+                .build();
+        transformManager.addStream(projectClass);
+
+        // create the transform
+        TestTransform.Builder builder = TestTransform.builder();
+        builder.setInputTypes(ContentType.CLASSES)
+                .setScopes(Scope.PROJECT)
+                .setTransformType(transformClass)
+                .setFormat(Format.JAR);
+        if (outputTypes != null) {
+            builder.setOutputTypes(outputTypes);
+        }
+
+        //noinspection unchecked
+        T t = (T) builder.build();
+
+        // add the transform to the manager
+        AndroidTask<TransformTask> task = transformManager.addTransform(
+                taskFactory, scope, t);
+        // and get the real gradle task object
+        TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
+        assertThat(transformTask).isNotNull();
+
+        // get the current output Stream in the transform manager.
+        List<TransformStream> streams = transformManager.getStreams();
+
+        // call the task with a non-incremental build.
+        transformTask.transform(inputBuilder().build());
+
+        action.execute(t);
+    }
+
+    private static void validateJarOutput(@NonNull TransformOutput transformOutput) {
+        File outFile = transformOutput.getOutFile();
+        assertThat(outFile.getName()).named("output file filename").isEqualTo("classes.jar");
+        assertThat(outFile.exists()).named("output file should not exist").isFalse();
+        assertThat(outFile.getParentFile().isDirectory()).named(
+                "output file parent folder should exist").isTrue();
     }
 
     static InputFileBuilder fileBuilder() {
