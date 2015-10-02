@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.internal.transforms;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
@@ -131,6 +132,10 @@ public class JacocoTransform extends Transform implements AsInputTransform {
             @NonNull Map<File, FileStatus> changedFiles) throws IOException {
         for (Map.Entry<File, FileStatus> changedInput : changedFiles.entrySet()) {
             File inputFile = changedInput.getKey();
+            if (!inputFile.getName().endsWith(SdkConstants.DOT_CLASS)) {
+                continue;
+            }
+
             File outputFile = new File(outputDir, FileUtils.relativePath(inputFile, inputDir));
             switch (changedInput.getValue()) {
                 case REMOVED:
@@ -151,6 +156,10 @@ public class JacocoTransform extends Transform implements AsInputTransform {
         FileUtils.emptyFolder(outputDir);
         Iterable<File> files = FileUtils.getAllFiles(inputDir);
         for (File inputFile : files) {
+            if (!inputFile.getName().endsWith(SdkConstants.DOT_CLASS)) {
+                continue;
+            }
+
             File outputFile = new File(outputDir, FileUtils.relativePath(inputFile, inputDir));
             instrumentFile(instrumenter, inputFile, outputFile);
         }
