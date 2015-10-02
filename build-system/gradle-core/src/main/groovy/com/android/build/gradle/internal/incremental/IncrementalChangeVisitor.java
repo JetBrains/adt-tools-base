@@ -221,10 +221,12 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 // check the field access bits.
                 FieldNode fieldNode = getFieldByName(name);
                 if (fieldNode == null) {
-                    // this is an error, we should know of the fields we are visiting.
-                    throw new RuntimeException("Unknown field access " + name);
+                    // If this is an inherited field, we might not have had access to the parent
+                    // bytecode. In such a case, treat it as private.
+                    accessRight = AccessRight.PACKAGE_PRIVATE;
+                } else {
+                    accessRight = AccessRight.fromNodeAccess(fieldNode.access);
                 }
-                accessRight = AccessRight.fromNodeAccess(fieldNode.access);
             }
 
             boolean handled = false;
@@ -954,12 +956,22 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     /**
      * Returns true if the passed class name is in the same package as the visited class.
      *
-     * @param className a / separated class name.
+     * @param type The type name of the other object, either a "com/var/Object" or a "[Type" one.
      * @return true if className and visited class are in the same java package.
      */
-    private boolean isInSamePackage(@NonNull String className) {
-        return visitedClassName.substring(0, visitedClassName.lastIndexOf('/')).equals(
-                className.substring(0, className.lastIndexOf('/')));
+    private boolean isInSamePackage(@NonNull String type) {
+        if (type.charAt(0) == '[') {
+            return false;
+        }
+        return getPackage(visitedClassName).equals(getPackage(type));
+    }
+
+    /**
+     * @return the package of the given / separated class name.
+     */
+    private String getPackage(@NonNull String className) {
+        int i = className.lastIndexOf('/');
+        return i == -1 ? className : className.substring(0, i);
     }
 
     /**
