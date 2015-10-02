@@ -1,7 +1,0 @@
-apply plugin: 'com.android.application'
-
-android {
-    compileSdkVersion rootProject.latestCompileSdk
-    buildToolsVersion = rootProject.buildToolsVersion
-    ndkLib ":lib"
-}
