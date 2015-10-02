@@ -41,7 +41,12 @@ public class PublicMethodTest {
         GenericInstantRuntime.setLogger(Logger.getLogger(ClassEnhancement.class.getName()));
 
         harness.reset();
-        AllAccessMethods allAccessMethods = new AllAccessMethods();
+        AllAccessMethods allAccessMethods = new AllAccessMethods() {
+            @Override
+            public String abstractMethod(double a, String b, int c) {
+                return "Abstract";
+            }
+        };
         PublicMethodInvoker publicMethodInvoker = new PublicMethodInvoker(5);
 
         assertWithMessage("base: PublicMethodInvoker:invokeAllPublicMethods()")

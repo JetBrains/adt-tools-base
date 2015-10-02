@@ -83,7 +83,8 @@ public class ParentInvocationTest {
                 .that(parentInvocation.invokeAllFromSubclass(1.2, ".3.", 4)).containsExactly(
                 "patched_package_private_method:1.2.3.4_child",
                 "patched_protected_method:1.2.3.4_child",
-                "patched_public_method:1.2.3.4_child");
+                "patched_public_method:1.2.3.4_child",
+                "abstract: 1.2.3.4");
 
         assertWithMessage("changeBaseClass: ParentInvocation:invokeDoNoOverrideMethodsDirectly())")
                 .that(parentInvocation
@@ -106,7 +107,8 @@ public class ParentInvocationTest {
                 .that(parentInvocation.invokeAllFromSubclass(1.2, ".3.", 4)).containsExactly(
                 "patched_package_private_method:1.2.3.4_child",
                 "patched_protected_method:1.2.3.4_child",
-                "patched_public_method:1.2.3.4_child");
+                "patched_public_method:1.2.3.4_child",
+                "abstract_patched: 1.2.3.4");
 
         assertWithMessage("base: ParentInvocation:childMethod()")
                 .that(parentInvocation.childMethod(1.2, ".3.", 4)).isEqualTo("patched_child_method:1.2.3.4");

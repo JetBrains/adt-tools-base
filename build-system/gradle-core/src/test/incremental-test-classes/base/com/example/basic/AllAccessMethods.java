@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Class with all types of access methods.
  */
-public class AllAccessMethods {
+public abstract class AllAccessMethods {
 
     private String privateMethod(double a, String b, int c) {
         return "private_method:" + a + b + c;
@@ -113,6 +113,8 @@ public class AllAccessMethods {
         return publicStringMethod(a, b, c);
     }
 
+    abstract public String abstractMethod(double a, String b, int c);
+
     // methods on the super class to check the overriden methods are invoked property from the
     // super class methods.
     private String doNotOverridePrivateMethodDispath(double a, String b, int c) {
@@ -137,6 +139,7 @@ public class AllAccessMethods {
         builder.add(protectedMethod(a, b, c));
         builder.add(packagePrivateMethod(a, b, c));
         builder.add(publicStringMethod(a, b, c));
+        builder.add(abstractMethod(a, b, c));
         return builder.build();
     }
 

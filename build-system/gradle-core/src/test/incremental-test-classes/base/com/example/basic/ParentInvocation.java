@@ -44,11 +44,17 @@ public class ParentInvocation extends AllAccessMethods {
         return super.publicStringMethod(a, b, c) + "_child";
     }
 
+    @Override
+    public String abstractMethod(double a, String b, int c) {
+        return "abstract: " + a + b + c;
+    }
+
     public List<String> invokeAllFromSubclass(double a, String b, int c) {
         ImmutableList.Builder<String> builder = ImmutableList.builder();
         builder.add(packagePrivateMethod(a, b, c));
         builder.add(protectedMethod(a, b, c));
         builder.add(publicStringMethod(a, b, c));
+        builder.add(abstractMethod(a, b, c));
         return builder.build();
     }
 
