@@ -39,4 +39,17 @@ public final class Field {
         }
         return mDeclared;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Field field = (Field)o;
+        return mType.equals(field.mType);
+    }
+
+    @Override
+    public int hashCode() {
+        return mType.hashCode();
+    }
 }

@@ -20,6 +20,7 @@ import com.android.tools.rpclib.binary.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public final class Entity {
     private BinaryID mTypeID;
@@ -102,5 +103,25 @@ public final class Entity {
                 e.object(meta);
             }
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Entity entity = (Entity)o;
+        if (!mPackage.equals(entity.mPackage)) return false;
+        if (!mIdentity.equals(entity.mIdentity)) return false;
+        if (mVersion != null ? !mVersion.equals(entity.mVersion) : entity.mVersion != null) return false;
+        return Arrays.equals(mFields, entity.mFields);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mPackage.hashCode();
+        result = 31 * result + mIdentity.hashCode();
+        result = 31 * result + (mVersion != null ? mVersion.hashCode() : 0);
+        result = 31 * result + (mFields != null ? Arrays.hashCode(mFields) : 0);
+        return result;
     }
 }
