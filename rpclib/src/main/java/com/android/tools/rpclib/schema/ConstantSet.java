@@ -15,94 +15,51 @@
  */
 package com.android.tools.rpclib.schema;
 
-import com.android.tools.rpclib.binary.*;
+import com.android.tools.rpclib.binary.Decoder;
+import com.android.tools.rpclib.binary.Encoder;
 import com.intellij.util.containers.HashMap;
-
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-public final class ConstantSet implements BinaryObject {
+public final class ConstantSet {
+  private Type mType;
+  private Constant[] mEntries;
 
-    private Type mType;
+  private static final HashMap<Type, ConstantSet> mRegistry = new HashMap<Type, ConstantSet>();
 
-    private Constant[] mEntries;
+  public static void register(ConstantSet set) {
+    mRegistry.put(set.getType(), set);
+  }
 
-    private static final HashMap<Type, ConstantSet> mRegistry = new HashMap<Type, ConstantSet>();
+  public static ConstantSet lookup(Type type) {
+    return mRegistry.get(type);
+  }
 
-    public static void register(ConstantSet set) {
-        mRegistry.put(set.getType(), set);
+  // Constructs a default-initialized {@link ConstantSet}.
+  public ConstantSet(@NotNull Decoder d) throws IOException {
+    mType = Type.decode(d);
+    mEntries = new Constant[d.uint32()];
+    for (int i = 0; i < mEntries.length; i++) {
+      mEntries[i] = new Constant();
+      mEntries[i].mName = d.string();
+      mEntries[i].mValue = mType.decodeValue(d);
     }
+  }
 
-    public static ConstantSet lookup(Type type) {
-        return mRegistry.get(type);
+  public Type getType() {
+    return mType;
+  }
+
+  public Constant[] getEntries() {
+    return mEntries;
+  }
+
+  public void encode(@NotNull Encoder e) throws IOException {
+    mType.encode(e);
+    for (Constant mEntry : mEntries) {
+      e.string(mEntry.mName);
+      mType.encodeValue(e, mEntry.mValue);
     }
-
-    // Constructs a default-initialized {@link ConstantSet}.
-    public ConstantSet() {
-    }
-
-    public Type getType() {
-        return mType;
-    }
-
-    public Constant[] getEntries() {
-        return mEntries;
-    }
-
-    @Override
-    @NotNull
-    public BinaryClass klass() {
-        return Klass.INSTANCE;
-    }
-
-    private static final byte[] IDBytes = {40, -113, 108, -120, 49, -47, 4, 82, -73, 90, 37, -125,
-            1, 78, -102, 124, 83, 3, 50, -98,};
-
-    public static final BinaryID ID = new BinaryID(IDBytes);
-
-    static {
-        Namespace.register(ID, Klass.INSTANCE);
-    }
-
-    public static void register() {
-    }
-
-    public enum Klass implements BinaryClass {
-        INSTANCE;
-
-        @Override
-        @NotNull
-        public BinaryID id() {
-            return ID;
-        }
-
-        @Override
-        @NotNull
-        public BinaryObject create() {
-            return new ConstantSet();
-        }
-
-        @Override
-        public void encode(@NotNull Encoder e, BinaryObject obj) throws IOException {
-            ConstantSet o = (ConstantSet) obj;
-            o.mType.encode(e);
-            for (int i = 0; i < o.mEntries.length; i++) {
-                e.string(o.mEntries[i].mName);
-                o.mType.encodeValue(e, o.mEntries[i].mValue);
-            }
-        }
-
-        @Override
-        public void decode(@NotNull Decoder d, BinaryObject obj) throws IOException {
-            ConstantSet o = (ConstantSet) obj;
-            o.mType = Type.decode(d);
-            o.mEntries = new Constant[d.uint32()];
-            for (int i = 0; i < o.mEntries.length; i++) {
-                o.mEntries[i] = new Constant();
-                o.mEntries[i].mName = d.string();
-                o.mEntries[i].mValue = o.mType.decodeValue(d);
-            }
-        }
-    }
+  }
 }

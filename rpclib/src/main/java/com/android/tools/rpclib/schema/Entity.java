@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-public final class Entity implements BinaryObject {
+public final class Entity {
     private BinaryID mTypeID;
     private String mPackage;
     private String mName;
@@ -29,13 +29,26 @@ public final class Entity implements BinaryObject {
     private String mVersion;
     private boolean mExported;
     private Field[] mFields;
-
     private BinaryObject[] mMetadata;
 
-    // Constructs a default-initialized {@link Entity}.
-    public Entity() {
+    public Entity(@NotNull Decoder d) throws IOException {
+        mTypeID = d.id();
+        mPackage = d.string();
+        mName = d.string();
+        mIdentity = d.string();
+        mVersion = d.string();
+        mExported = d.bool();
+        mFields = new Field[d.uint32()];
+        for (int i = 0; i < mFields.length; i++) {
+            mFields[i] = new Field();
+            mFields[i].mDeclared = d.string();
+            mFields[i].mType = Type.decode(d);
+        }
+        mMetadata = new BinaryObject[d.uint32()];
+        for (int i = 0; i < mMetadata.length; i++) {
+            mMetadata[i] = d.object();
+        }
     }
-
 
     public BinaryID getTypeID() {
         return mTypeID;
@@ -61,78 +74,21 @@ public final class Entity implements BinaryObject {
         return mMetadata;
     }
 
-    @Override
-    @NotNull
-    public BinaryClass klass() {
-        return Klass.INSTANCE;
-    }
-
-    private static final byte[] IDBytes = {-15, -85, -82, -49, -61, 35, -8, 101, -95, -21, -32, 58,
-            -95, -82, -77, -85, 119, -80, 87, -17,};
-
-    public static final BinaryID ID = new BinaryID(IDBytes);
-
-    static {
-        Namespace.register(ID, Klass.INSTANCE);
-    }
-
-    public static void register() {
-    }
-
-    public enum Klass implements BinaryClass {
-        INSTANCE;
-
-        @Override
-        @NotNull
-        public BinaryID id() {
-            return ID;
+    public void encode(@NotNull Encoder e) throws IOException {
+        e.id(mTypeID);
+        e.string(mPackage);
+        e.string(mName);
+        e.string(mIdentity);
+        e.string(mVersion);
+        e.bool(mExported);
+        e.uint32(mFields.length);
+        for (Field field : mFields) {
+            e.string(field.mDeclared);
+            field.mType.encode(e);
         }
-
-        @Override
-        @NotNull
-        public BinaryObject create() {
-            return new Entity();
-        }
-
-        @Override
-        public void encode(@NotNull Encoder e, BinaryObject obj) throws IOException {
-            Entity o = (Entity) obj;
-            e.id(o.mTypeID);
-            e.string(o.mPackage);
-            e.string(o.mName);
-            e.string(o.mIdentity);
-            e.string(o.mVersion);
-            e.bool(o.mExported);
-            e.uint32(o.mFields.length);
-            for (int i = 0; i < o.mFields.length; i++) {
-                e.string(o.mFields[i].mDeclared);
-                o.mFields[i].mType.encode(e);
-            }
-            e.uint32(o.mMetadata.length);
-            for (int i = 0; i < o.mMetadata.length; i++) {
-                e.object(o.mMetadata[i]);
-            }
-        }
-
-        @Override
-        public void decode(@NotNull Decoder d, BinaryObject obj) throws IOException {
-            Entity o = (Entity) obj;
-            o.mTypeID = d.id();
-            o.mPackage = d.string();
-            o.mName = d.string();
-            o.mIdentity = d.string();
-            o.mVersion = d.string();
-            o.mExported = d.bool();
-            o.mFields = new Field[d.uint32()];
-            for (int i = 0; i < o.mFields.length; i++) {
-                o.mFields[i] = new Field();
-                o.mFields[i].mDeclared = d.string();
-                o.mFields[i].mType = Type.decode(d);
-            }
-            o.mMetadata = new BinaryObject[d.uint32()];
-            for (int i = 0; i < o.mMetadata.length; i++) {
-                o.mMetadata[i] = d.object();
-            }
+        e.uint32(mMetadata.length);
+        for (BinaryObject meta : mMetadata) {
+            e.object(meta);
         }
     }
 }
