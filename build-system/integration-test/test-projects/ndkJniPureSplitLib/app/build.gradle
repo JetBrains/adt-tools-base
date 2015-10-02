@@ -6,7 +6,7 @@ dependencies {
 
 android {
     compileSdkVersion 21
-    buildToolsVersion rootProject.ext.buildToolsVersion
+    buildToolsVersion rootProject.buildToolsVersion
     generatePureSplits true
 
     // This actual the app version code. Giving ourselves 100,000 values [0, 99999]

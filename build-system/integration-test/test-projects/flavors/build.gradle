@@ -5,7 +5,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 21
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    buildToolsVersion = rootProject.buildToolsVersion
 
     flavorDimensions   "group1", "group2"
 

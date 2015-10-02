@@ -6,7 +6,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 21
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    buildToolsVersion = rootProject.buildToolsVersion
 
     variantFilter {
         String abi = it.flavors.get(0).name

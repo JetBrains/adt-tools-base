@@ -2,10 +2,10 @@ apply plugin: 'com.android.library'
 
 android {
   compileSdkVersion 21
-  buildToolsVersion = rootProject.ext.buildToolsVersion
+  buildToolsVersion = rootProject.buildToolsVersion
 
   defaultConfig {
-    useJack rootProject.ext.useJack
+    useJack rootProject.useJack
     minSdkVersion 4
   }
 

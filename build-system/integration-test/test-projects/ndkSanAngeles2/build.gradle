@@ -7,7 +7,7 @@ apply plugin: 'com.android.model.application'
 model {
     android {
         compileSdkVersion = 19
-        buildToolsVersion = rootProject.ext.buildToolsVersion
+        buildToolsVersion = rootProject.buildToolsVersion
 
         defaultConfig.with {
             // This actual the app version code. Giving ourselves 1,000,000 values

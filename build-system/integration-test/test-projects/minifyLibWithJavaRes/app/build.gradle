@@ -6,7 +6,7 @@ dependencies {
 
 android {
     compileSdkVersion 21
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    buildToolsVersion = rootProject.buildToolsVersion
 
     signingConfigs {
         myConfig {
@@ -22,7 +22,7 @@ android {
         versionName "2.0"
         minSdkVersion 16
         targetSdkVersion 16
-        useJack rootProject.ext.useJack
+        useJack rootProject.useJack
     }
 
     buildTypes {
