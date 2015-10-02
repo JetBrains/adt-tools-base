@@ -27,6 +27,10 @@ public final class Interface extends Type {
 
     String mName;
 
+    public Interface(String name) {
+        mName = name;
+    }
+
     public Interface(@NotNull Decoder d, boolean compact) throws IOException {
         if (!compact) {
             mName = d.string();

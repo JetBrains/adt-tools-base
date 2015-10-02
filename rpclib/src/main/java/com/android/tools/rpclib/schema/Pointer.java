@@ -27,6 +27,10 @@ public final class Pointer extends Type {
 
     Type mType;
 
+    public Pointer(Type type) {
+        mType = type;
+    }
+
     public Pointer(@NotNull Decoder d, boolean compact) throws IOException {
         mType = decode(d, compact);
     }

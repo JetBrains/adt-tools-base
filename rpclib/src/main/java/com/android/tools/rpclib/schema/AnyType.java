@@ -25,6 +25,9 @@ import java.io.IOException;
 
 public final class AnyType extends Type {
 
+    public AnyType() {
+    }
+
     public AnyType(@NotNull Decoder d, boolean compact) throws IOException {
     }
 

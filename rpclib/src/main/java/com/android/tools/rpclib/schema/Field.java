@@ -21,7 +21,11 @@ public final class Field {
 
     Type mType;
 
-    // Constructs a default-initialized {@link Field}.
+    public Field(String name, Type type) {
+        mDeclared = name;
+        mType = type;
+    }
+
     public Field() {
     }
 

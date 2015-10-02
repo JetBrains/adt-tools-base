@@ -27,6 +27,10 @@ public final class Variant extends Type {
 
     String mName;
 
+    public Variant(String name) {
+        mName = name;
+    }
+
     public Variant(@NotNull Decoder d, boolean compact) throws IOException {
         if (!compact) {
             mName = d.string();

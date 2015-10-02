@@ -35,6 +35,11 @@ public final class Slice extends Type {
         }
     }
 
+    public Slice(String alias, Type valueType) {
+        mAlias = alias;
+        mValueType = valueType;
+    }
+
     @NotNull
     @Override
     public String getName() {

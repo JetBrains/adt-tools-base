@@ -29,6 +29,11 @@ public final class Primitive extends Type {
 
     Method mMethod;
 
+    public Primitive(String name, byte method) {
+        mName = name;
+        mMethod = new Method(method);
+    }
+
     public Primitive(@NotNull Decoder d, Method method, boolean compact) throws IOException {
         mMethod = method;
         if (!compact) {

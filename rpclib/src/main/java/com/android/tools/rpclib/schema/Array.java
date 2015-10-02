@@ -30,6 +30,12 @@ public final class Array extends Type {
 
     int mSize;
 
+    public Array(String alias, Type type, int size) {
+        mAlias = alias;
+        mValueType = type;
+        mSize = size;
+    }
+
     public Array(@NotNull Decoder d, boolean compact) throws IOException {
         mSize = d.uint32();
         mValueType = decode(d, compact);
