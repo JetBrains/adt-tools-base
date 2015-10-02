@@ -28,9 +28,11 @@ public final class Slice extends Type {
 
     Type mValueType;
 
-    public Slice(@NotNull Decoder d) throws IOException {
-        mAlias = d.string();
-        mValueType = Type.decode(d);
+    public Slice(@NotNull Decoder d, boolean compact) throws IOException {
+        mValueType = Type.decode(d, compact);
+        if (!compact) {
+            mAlias = d.string();
+        }
     }
 
     @NotNull
@@ -67,9 +69,11 @@ public final class Slice extends Type {
     }
 
     @Override
-    public void encode(@NotNull Encoder e) throws IOException {
+    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
         TypeTag.sliceTag().encode(e);
-        e.string(mAlias);
-        mValueType.encode(e);
+        mValueType.encode(e, compact);
+        if (!compact) {
+            e.string(mAlias);
+        }
     }
 }

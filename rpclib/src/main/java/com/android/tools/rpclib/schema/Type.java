@@ -32,29 +32,29 @@ public abstract class Type {
 
     public abstract Object decodeValue(@NotNull Decoder d) throws IOException;
 
-    public abstract void encode(@NotNull Encoder e) throws IOException;
+    public abstract void encode(@NotNull Encoder e, boolean compact) throws IOException;
 
-    public static Type decode(@NotNull Decoder d) throws IOException {
+    public static Type decode(@NotNull Decoder d, boolean compact) throws IOException {
         TypeTag tag = TypeTag.decode(d);
         switch (tag.value) {
             case TypeTag.PrimitiveTag:
-                return new Primitive(d);
+                return new Primitive(d, compact);
             case TypeTag.StructTag:
-                return new Struct(d);
+                return new Struct(d, compact);
             case TypeTag.PointerTag:
-                return new Pointer(d);
+                return new Pointer(d, compact);
             case TypeTag.InterfaceTag:
-                return new Interface(d);
+                return new Interface(d, compact);
             case TypeTag.VariantTag:
-                return new Variant(d);
+                return new Variant(d, compact);
             case TypeTag.AnyTag:
-                return new AnyType(d);
+                return new AnyType(d, compact);
             case TypeTag.SliceTag:
-                return new Slice(d);
+                return new Slice(d, compact);
             case TypeTag.ArrayTag:
-                return new Array(d);
+                return new Array(d, compact);
             case TypeTag.MapTag:
-                return new Map(d);
+                return new Map(d, compact);
             default:
                 throw new IOException("Decode unknown type " + tag);
         }

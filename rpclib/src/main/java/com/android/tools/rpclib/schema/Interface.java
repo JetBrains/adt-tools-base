@@ -27,8 +27,10 @@ public final class Interface extends Type {
 
     String mName;
 
-    public Interface(@NotNull Decoder d) throws IOException {
-        mName = d.string();
+    public Interface(@NotNull Decoder d, boolean compact) throws IOException {
+        if (!compact) {
+            mName = d.string();
+        }
     }
 
     @NotNull
@@ -49,8 +51,10 @@ public final class Interface extends Type {
     }
 
     @Override
-    public void encode(@NotNull Encoder e) throws IOException {
+    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
         TypeTag.interfaceTag().encode(e);
-        e.string(mName);
+        if (!compact) {
+            e.string(mName);
+        }
     }
 }
