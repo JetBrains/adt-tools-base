@@ -7,7 +7,7 @@ apply from: "../commonLocalRepo.gradle"
 
 android {
     compileSdkVersion 21
-    buildToolsVersion rootProject.ext.buildToolsVersion
+    buildToolsVersion rootProject.buildToolsVersion
 
     aaptOptions {
         cruncherEnabled = false

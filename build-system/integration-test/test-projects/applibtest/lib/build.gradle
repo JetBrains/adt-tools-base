@@ -4,7 +4,7 @@ apply from: "../../commonLocalRepo.gradle"
 
 android {
     compileSdkVersion 21
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    buildToolsVersion = rootProject.buildToolsVersion
 
     defaultConfig {
         testApplicationId = "com.android.tests.testprojecttest.testlib"
