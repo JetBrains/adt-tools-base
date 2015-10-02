@@ -14,38 +14,28 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.managed;
+package com.android.build.gradle.internal.gson;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.managed.NativeToolchain;
 
-import org.gradle.api.Named;
-import org.gradle.model.Managed;
+import org.gradle.api.internal.file.FileResolver;
 
 import java.io.File;
 
 /**
- * A @Managed interface for {@link com.android.builder.model.NativeToolchain}.
+ * Value type for {@link NativeToolchain} to be used with Gson.
  */
-@Managed
-public interface NativeToolchain extends com.android.builder.model.NativeToolchain, Named {
-    /**
-     * Returns the full path of the C compiler.
-     *
-     * @return the C compiler path.
-     */
-    @Override
+public class NativeToolchainValue {
     @Nullable
-    File getCCompilerExecutable();
-    void setCCompilerExecutable(@Nullable File exe);
+    File cCompilerExecutable;
+    @Nullable
+    File cppCompilerExecutable;
 
-    /**
-     * Returns the full path of the C++ compiler.
-     *
-     * @return the C++ compiler path.
-     */
-    @Override
-    @Nullable
-    File getCppCompilerExecutable();
-    void setCppCompilerExecutable(@Nullable File exe);
+    public void copyTo(@NonNull NativeToolchain toolchain) {
+        toolchain.setCCompilerExecutable(cCompilerExecutable);
+        toolchain.setCppCompilerExecutable(cppCompilerExecutable);
+    }
+
 }

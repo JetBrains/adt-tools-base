@@ -21,9 +21,12 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.android.builder.model.NativeSettings
+import com.android.builder.model.NativeToolchain
 import org.junit.AfterClass
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
@@ -33,26 +36,73 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  */
 class ExternalNativeComponentPluginTest {
 
-    @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp())
             .forExpermimentalPlugin(true)
             .create();
 
-    @BeforeClass
-    public static void setUp() {
+    @Test
+    public void "check configurations using JSON data file"() {
         project.getBuildFile() << """
 apply plugin: 'com.android.model.external'
 
 model {
     nativeBuild {
-        buildFiles.addAll([ file("CMakeLists.txt")])
+        configFile = file("config.json")
+    }
+}
+"""
+        project.file("config.json") << """
+{
+    "buildFiles" : ["CMakeLists.txt"],
+    "libraries" : {
+        "foo" : {
+            "executable" : "touch",
+            "args" : ["output.txt"],
+            "toolchain" : "toolchain1",
+            "output" : "build/libfoo.so",
+            "folders" : [
+                {
+                    src : "src/main/jni",
+                    cFlags : ["folderCFlag1", "folderCFlag2"],
+                    cppFlags : ["folderCppFlag1", "folderCppFlag2"]
+                }
+            ],
+            "files" : [
+                {
+                    "src" : "src/main/jni/hello.c",
+                    "flags" : ["fileFlag1", "fileFlag2"]
+                }
+            ]
+        }
+    },
+    "toolchains" : {
+        "toolchain1" : {
+            "cCompilerExecutable" : "clang",
+            "cppCompilerExecutable" : "clang++"
+        }
+    }
+}
+"""
+        NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
+        checkModel(model);
+    }
+
+    @Test
+    public void "check configurations using plugin DSL"() {
+        project.getBuildFile() << """
+apply plugin: 'com.android.model.external'
+
+model {
+    nativeBuild {
+        buildFiles.addAll([file("CMakeLists.txt")])
     }
     nativeBuild.libraries {
         create("foo") {
             executable = "touch"
             args.addAll(["output.txt"])
-            toolchain = "clang"
+            toolchain = "toolchain1"
             output = file("build/libfoo.so")
             folders.with {
                 create() {
@@ -71,25 +121,26 @@ model {
         }
     }
     nativeBuild.toolchains {
-        create("clang") {
-            CCompilerExecutable = file("${project.getNdkDir()}/toolchains/llvm-3.5/prebuilt/linux-x86_64/bin/clang")
-            cppCompilerExecutable = file("${project.getNdkDir()}/toolchains/llvm-3.5/prebuilt/linux-x86_64/bin/clang++")
+        create("toolchain1") {
+            CCompilerExecutable = file("clang")
+            cppCompilerExecutable = file("clang++")
 
         }
     }
 }
 """
+        NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
+        checkModel(model);
     }
 
-    @Test
-    public void assemble() {
-        NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
+    private void checkModel(NativeAndroidProject model) {
         Collection<NativeSettings> settingsMap = model.getSettings();
         assertThat(project.file("output.txt")).exists()
 
         assertThat(model.artifacts).hasSize(1)
 
         NativeArtifact artifact = model.artifacts.first()
+        assertThat(artifact.getToolChain()).isEqualTo("toolchain1")
         assertThat(artifact.sourceFolders).hasSize(1)
         assertThat(artifact.sourceFolders.first().folderPath.toString()).endsWith("src/main/jni")
         NativeSettings setting = settingsMap.find { it.getName() == artifact.sourceFolders.first().perLanguageSettings.get("c") }
@@ -101,11 +152,11 @@ model {
         assertThat(artifact.sourceFiles.first().filePath.toString()).endsWith("src/main/jni/hello.c")
         setting = settingsMap.find { it.getName() == artifact.sourceFiles.first().settingsName }
         assertThat(setting.getCompilerFlags()).containsAllOf("fileFlag1", "fileFlag2");
-    }
 
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
+        assertThat(model.getToolChains()).hasSize(1)
+        NativeToolchain toolchain = model.getToolChains().first()
+        assertThat(toolchain.getName()).isEqualTo("toolchain1")
+        assertThat(toolchain.getCCompilerExecutable().getName()).isEqualTo("clang")
+        assertThat(toolchain.getCppCompilerExecutable().getName()).isEqualTo("clang++")
     }
 }

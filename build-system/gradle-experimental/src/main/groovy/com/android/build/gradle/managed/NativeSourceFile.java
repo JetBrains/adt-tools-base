@@ -27,8 +27,15 @@ import java.util.List;
  */
 @Managed
 public interface NativeSourceFile {
+
+    /**
+     * The source file.
+     */
     File getSrc();
     void setSrc(File src);
 
+    /**
+     * List of compiler flags for this file.
+     */
     List<String> getFlags();
 }

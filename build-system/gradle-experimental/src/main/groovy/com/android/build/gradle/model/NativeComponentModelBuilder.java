@@ -145,7 +145,7 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
             toolchains.add(new NativeToolchainImpl(
                     toolchain.getName(),
                     toolchain.getCCompilerExecutable(),
-                    toolchain.getCCompilerExecutable()));
+                    toolchain.getCppCompilerExecutable()));
         }
         return toolchains;
     }
