@@ -326,6 +326,11 @@ public class TestTransform extends Transform {
             return this;
         }
 
+        Builder setOutputTypes(@NonNull Set<ContentType> types) {
+            outputTypes = EnumSet.copyOf(types);
+            return this;
+        }
+
         Builder setScopes(@NonNull Scope... scopes) {
             this.scopes.addAll(Arrays.asList(scopes));
             return this;
@@ -367,7 +372,8 @@ public class TestTransform extends Transform {
             Set<Scope> refedScopes = Sets.immutableEnumSet(this.referencedScopes);
             Format format = this.format;
 
-            if (transformType == AsInputTransform.class) {
+            if (transformType == AsInputTransform.class ||
+                    transformType == TestAsInputTransform.class) {
                 return new TestAsInputTransform(
                         name,
                         inputTypes,
@@ -378,7 +384,8 @@ public class TestTransform extends Transform {
                         isIncremental,
                         secondaryFileInputs);
 
-            } else if (transformType == CombinedTransform.class) {
+            } else if (transformType == CombinedTransform.class ||
+                    transformType == TestCombinedTransform.class) {
                 return new TestCombinedTransform(
                         name,
                         inputTypes,
@@ -389,7 +396,8 @@ public class TestTransform extends Transform {
                         isIncremental,
                         secondaryFileInputs);
 
-            } else if (transformType == NoOpTransform.class) {
+            } else if (transformType == NoOpTransform.class ||
+                    transformType == TestNoOpTransform.class) {
                 return new TestNoOpTransform(
                         name,
                         inputTypes,
@@ -400,7 +408,8 @@ public class TestTransform extends Transform {
                         isIncremental,
                         secondaryFileInputs);
 
-            } else if (transformType == ForkTransform.class) {
+            } else if (transformType == ForkTransform.class ||
+                    transformType == TestForkTransform.class) {
                 return new TestForkTransform(
                         name,
                         inputTypes,
