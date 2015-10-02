@@ -24,8 +24,8 @@ import java.io.IOException;
 public final class Struct extends Type {
     Entity mEntity;
 
-    public Struct(@NotNull Decoder d) throws IOException {
-        mEntity = d.entity();
+    public Struct(@NotNull Decoder d, boolean compact) throws IOException {
+        mEntity = d.entity(compact);
     }
 
     @NotNull
@@ -56,8 +56,8 @@ public final class Struct extends Type {
     }
 
     @Override
-    public void encode(@NotNull Encoder e) throws IOException {
+    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
         TypeTag.structTag().encode(e);
-        e.entity(mEntity);
+        e.entity(mEntity, compact);
     }
 }

@@ -38,7 +38,7 @@ public final class ConstantSet {
 
   // Constructs a default-initialized {@link ConstantSet}.
   public ConstantSet(@NotNull Decoder d) throws IOException {
-    mType = Type.decode(d);
+    mType = Type.decode(d, true);
     mEntries = new Constant[d.uint32()];
     for (int i = 0; i < mEntries.length; i++) {
       mEntries[i] = new Constant();
@@ -56,7 +56,7 @@ public final class ConstantSet {
   }
 
   public void encode(@NotNull Encoder e) throws IOException {
-    mType.encode(e);
+    mType.encode(e, true);
     for (Constant mEntry : mEntries) {
       e.string(mEntry.mName);
       mType.encodeValue(e, mEntry.mValue);
