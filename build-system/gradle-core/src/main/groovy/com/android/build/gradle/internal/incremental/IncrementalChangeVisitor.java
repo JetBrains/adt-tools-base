@@ -177,10 +177,12 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 // check the field access bits.
                 FieldNode fieldNode = getFieldByName(name);
                 if (fieldNode == null) {
-                    // this is an error, we should know of the fields we are visiting.
-                    throw new RuntimeException("Unknown field access " + name);
+                    // If this is an inherited field, we might not have had access to the parent
+                    // bytecode. In such a case, treat it as private.
+                    accessRight = AccessRight.PACKAGE_PRIVATE;
+                } else {
+                    accessRight = AccessRight.fromNodeAccess(fieldNode.access);
                 }
-                accessRight = AccessRight.fromNodeAccess(fieldNode.access);
             }
 
             boolean handled = false;
