@@ -35,10 +35,12 @@ public abstract class Type {
     public abstract void encode(@NotNull Encoder e, boolean compact) throws IOException;
 
     public static Type decode(@NotNull Decoder d, boolean compact) throws IOException {
-        TypeTag tag = TypeTag.decode(d);
+        byte v = d.uint8();
+        TypeTag tag = new TypeTag((byte)(v & 0xf));
+        v = (byte)((v >> 4) & 0xf);
         switch (tag.value) {
             case TypeTag.PrimitiveTag:
-                return new Primitive(d, compact);
+                return new Primitive(d, new Method(v), compact);
             case TypeTag.StructTag:
                 return new Struct(d, compact);
             case TypeTag.PointerTag:

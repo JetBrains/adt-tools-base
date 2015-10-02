@@ -29,9 +29,11 @@ public final class Primitive extends Type {
 
     Method mMethod;
 
-    public Primitive(@NotNull Decoder d, boolean compact) throws IOException {
-        mName = d.string();
-        mMethod = Method.decode(d);
+    public Primitive(@NotNull Decoder d, Method method, boolean compact) throws IOException {
+        mMethod = method;
+        if (!compact) {
+            mName = d.string();
+        }
     }
 
     @Override
@@ -153,8 +155,10 @@ public final class Primitive extends Type {
 
     @Override
     public void encode(@NotNull Encoder e, boolean compact) throws IOException {
-        TypeTag.primitiveTag().encode(e);
-        e.string(mName);
-        mMethod.encode(e);
+        //noinspection PointlessBitwiseExpression
+        e.uint8((short)(TypeTag.PrimitiveTag | ( mMethod.value << 4)));
+        if (!compact) {
+            e.string(mName);
+        }
     }
 }
