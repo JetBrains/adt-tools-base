@@ -36,6 +36,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -53,11 +54,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
 
 import dalvik.system.DexClassLoader;
 
@@ -73,34 +72,7 @@ public class ClassEnhancement implements TestRule {
 
     private Map<String, List<String>> mEnhancedClasses;
 
-    //TODO: dynamically generate this list.
-    private List<String> mBaseClasses = ImmutableList.of(
-
-            "com/example/basic/AllAccessMethods",
-            "com/example/basic/AllAccessStaticFields",
-            "com/example/basic/Constructors",
-            "com/example/basic/Constructors$Base",
-            "com/example/basic/Constructors$DupInvokeSpecialBase",
-            "com/example/basic/Constructors$Sub",
-            "com/example/basic/Enums",
-
-            "com/example/basic/Enums$1",
-            "com/example/basic/InnerClassInvoker",
-            "com/example/basic/PackagePrivateFieldAccess",
-            "com/example/basic/ReflectiveUser",
-            "com/example/basic/StaticMethodsInvoker",
-            "com/example/basic/PackagePrivateInvoker",
-            "com/example/basic/ParentInvocation",
-            "com/example/basic/PublicMethodInvoker",
-            "com/example/basic/GrandChild",
-            "com/example/basic/Exceptions",
-            "com/example/basic/MultipleMethodInvocations",
-
-            "com/example/basic/SuperCall",
-            "com/example/basic/Exceptions$MyException",
-            "com/example/basic/SuperCall$Base",
-            "com/example/basic/Constructors$DupInvokeSpecialSub",
-            "com/example/basic/SuperCall$Sub");
+    private Collection<String> mBaseClasses;
 
     private String currentPatchState = null;
 
@@ -112,7 +84,7 @@ public class ClassEnhancement implements TestRule {
 
     public ClassEnhancement(boolean tracing) {
         this.tracing = tracing;
-        mResourceBase = new File("");
+        mResourceBase = new File("incremental-test-classes-dex");
         mBaseCompileOutputFolder = null;
     }
 
@@ -150,12 +122,15 @@ public class ClassEnhancement implements TestRule {
 
                 mCompileOutputFolders = getCompileFolders(mResourceBase);
 
-                final URL[] classLoaderUrls = new URL[0];
                 final ClassLoader mainClassLoader = this.getClass().getClassLoader();
                 mEnhancedClassLoaders = setUpEnhancedClassLoaders(
-                        classLoaderUrls, mainClassLoader, mCompileOutputFolders, tracing);
+                        mainClassLoader, mCompileOutputFolders, tracing);
                 mEnhancedClasses = findEnhancedClasses(mCompileOutputFolders);
-
+                ImmutableSet.Builder<String> baseClassesBuilder = ImmutableSet.builder();
+                for (List<String> classNames: mEnhancedClasses.values()) {
+                    baseClassesBuilder.addAll(classNames);
+                }
+                mBaseClasses = baseClassesBuilder.build();
                 base.evaluate();
 
             }
@@ -175,7 +150,6 @@ public class ClassEnhancement implements TestRule {
     }
 
     private static Map<String, ClassLoader> setUpEnhancedClassLoaders(
-            final URL[] classLoaderUrls,
             final ClassLoader mainClassLoader,
             final Map<String, File> compileOutputFolders,
             final boolean tracing) {

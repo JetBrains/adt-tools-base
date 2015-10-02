@@ -121,7 +121,9 @@ task performanceTest(type: Test) {
 }
 
 test.dependsOn ':publishLocal'
-connectedIntegrationTest.dependsOn ':publishLocal'
+connectedIntegrationTest.dependsOn ':publishLocal',
+        ':base:gradle-core:instrumentIncrementalTestPatches',
+        ':base:gradle-core:instrumentIncrementalTestBaseClasses'
 performanceTest.dependsOn ':publishLocal'
 
 jacocoTestReport {
