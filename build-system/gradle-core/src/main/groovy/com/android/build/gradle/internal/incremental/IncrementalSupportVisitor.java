@@ -97,6 +97,13 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         super(classNode, parentNodes, classVisitor);
     }
 
+    /**
+     * Ensures that the class contains a $change field used for referencing the
+     * IncrementalChange dispatcher.
+     * <p/>
+     * Also updates package_private visiblity to public so we can call into this class from
+     * outside the package.
+     */
     @Override
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
@@ -104,12 +111,17 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         visitedSuperName = superName;
 
         super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
-                "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
+            "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
         AccessRight accessRight = AccessRight.fromNodeAccess(access);
         access = accessRight == AccessRight.PACKAGE_PRIVATE ? access | Opcodes.ACC_PUBLIC : access;
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
+    /**
+     * Insert Constructor specific logic({@link ConstructorArgsRedirection} and
+     * {@link ConstructorDelegationDetector}) for constructor redirecting or
+     * normal method redirecting ({@link MethodRedirection}) for other methods.
+     */
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
@@ -161,6 +173,15 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             }
         }
 
+        /**
+         * inserts a new local '$change' in each method that contains a reference to the type's
+         * IncrementalChange dispatcher, this is done to avoid threading issues.
+         * <p/>
+         * Pseudo code:
+         * <code>
+         *   $package/IncrementalChange $local1 = $className$.$change;
+         * </code>
+         */
         @Override
         public void visitCode() {
             change = newLocal(CHANGE_TYPE);
@@ -193,6 +214,30 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         }
     }
 
+    /***
+     * Inserts a trampoline to this class so that the updated methods can make calls to super
+     * class methods.
+     * <p/>
+     * Pseudo code for this trampoline:
+     * <code>
+     *   Object access$super($classType instance, String name, object[] args) {
+     *      if (name.equals(
+     *          "firstMethod.(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;")) {
+     *        return super~instance.firstMethod((String)arg[0], arg[1]);
+     *      }
+     *      if (name.equals("secondMethod.(Ljava/lang/String;I)V")) {
+     *        super~instance.secondMethod((String)arg[0], (int)arg[1]);
+     *        return;
+     *      }
+     *      ...
+     *      StringBuilder $local1 = new StringBuilder();
+     *      $local1.append("Method not found ");
+     *      $local1.append(name);
+     *      $local1.append(" in " $classType $super implementation");
+     *      throw new $package/InstantReloadException($local1.toString());
+     *   }
+     * </code>
+     */
     @Override
     public void visitEnd() {
         int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VARARGS;
@@ -273,7 +318,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         mv.visitVarInsn(Opcodes.ALOAD, 1);
         mv.invokeVirtual(Type.getType(StringBuilder.class),
                 Method.getMethod("StringBuilder append (String)"));
-        mv.push("in " + visitedClassName + "$super implementation");
+        mv.push(" in " + visitedClassName + "$super implementation");
         mv.invokeVirtual(Type.getType(StringBuilder.class),
                 Method.getMethod("StringBuilder append (String)"));
 

@@ -90,6 +90,14 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         super(classNode, parentNodes, classVisitor);
     }
 
+    /**
+     * Turns this class into an override class that can be loaded by our custom class loader:
+     *<ul>
+     *   <li>Make the class name be OriginalName$override</li>
+     *   <li>Ensure the class derives from java.lang.Object, no other inheritance</li></li>
+     *   <li>Ensure the class has a public parameterless constructor that is a noop.</li></li>
+     *</ul>
+     */
     @Override
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
@@ -116,6 +124,16 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         mv.visitEnd();
     }
 
+    /**
+     * For all methods in this class:
+     * <ul>
+     *   <li>Remove the class constructor as we don't support it right now</li>
+     *   <li>For all instance methods, make them static and pass the instance as the method's
+     *   first argument</li>
+     *   <li>For constructors split the method body into super arguments and the rest of
+     *   the method body, see {@link ConstructorDelegationDetector}</li>
+     * </ul>
+     */
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
@@ -230,6 +248,29 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         /**
          * Visits an instance field access. The field could be of the visited class or it could be
          * an accessible field from the class being visited (unless it's private).
+         * <p/>
+         * For private instance fields, the access instruction is rewritten to calls to reflection
+         * to access the fields value:
+         * <p/>
+         * Pseudo code for Get:
+         * <code>
+         *   value = $instance.fieldName;
+         * </code>
+         * becomes:
+         * <code>
+         *   value = (unbox)$package/AndroidInstantRuntime.getPrivateField($instance, $fieldName);
+         * </code>
+         * <p/>
+         * Pseudo code for Set:
+         * <code>
+         *   $instance.fieldName = value;
+         * </code>
+         * becomes:
+         * <code>
+         *   $package/AndroidInstantRuntime.setPrivateField($instance, value, $fieldName);
+         * </code>
+         *
+         *
          * @param opcode the field access opcode, can only be {@link Opcodes#PUTFIELD} or
          *               {@link Opcodes#GETFIELD}
          * @param name the field name
@@ -293,6 +334,28 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
          * resets a static field value, we don't know if the current field value was set through
          * the initial class initializer or some code path, should we change the field value to the
          * new one ?
+         *
+         * For private static fields, the access instruction is rewritten to calls to reflection
+         * to access the fields value:
+         * <p/>
+         * Pseudo code for Get:
+         * <code>
+         *   value = $type.fieldName;
+         * </code>
+         * becomes:
+         * <code>
+         *   value = (unbox)$package/AndroidInstantRuntime.getStaticPrivateField(
+         *       $type.class, $fieldName);
+         * </code>
+         * <p/>
+         * Pseudo code for Set:
+         * <code>
+         *   $type.fieldName = value;
+         * </code>
+         * becomes:
+         * <code>
+         *   $package/AndroidInstantRuntime.setStaticPrivateField(value, $type.class $fieldName);
+         * </code>
          *
          * @param opcode the field access opcode, can only be {@link Opcodes#PUTSTATIC} or
          *               {@link Opcodes#GETSTATIC}
@@ -371,6 +434,16 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             }
         }
 
+        /**
+         * Rewrites INVOKESPECIAL method calls:
+         * <ul>
+         *  <li>calls to constructors are handled specially (see below)</li>
+         *  <li>calls to super methods are rewritten to call the 'access$super' trampoline we
+         *      injected into the original code</li>
+         *  <li>calls to methods in this class are rewritten to call the mathcin $override class
+         *  static method</li>
+         * </ul>
+         */
         private boolean handleSpecialOpcode(String owner, String name, String desc,
                 boolean itf) {
             if (name.equals("<init>")) {
@@ -404,6 +477,21 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             return false;
         }
 
+        /**
+         * Rewrites INVOKEVIRTUAL method calls.
+         * <p/>
+         * Virtual calls to protected methods are rewritten according to the following pseudo code:
+         * before:
+         * <code>
+         *   $value = $instance.protectedVirtual(arg1, arg2);
+         * </code>
+         * after:
+         * <code>
+         *   $value = (unbox)$package/AndroidInstantRuntime.invokeProtectedMethod($instance,
+         *          new object[] {arg1, arg2}, new Class[] { String.class, Integer.class },
+         *          "protectedVirtual");
+         * </code>
+         */
         private boolean handleVirtualOpcode(String owner, String name, String desc, boolean itf) {
 
             if (DEBUG) {
@@ -436,6 +524,21 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             return true;
         }
 
+        /**
+         * Rewrites INVOKESTATIC method calls.
+         * <p/>
+         * Static calls to non-public methods are rewritten according to the following pseudo code:
+         * before:
+         * <code>
+         *   $value = $type.protectedStatic(arg1, arg2);
+         * </code>
+         * after:
+         * <code>
+         *   $value = (unbox)$package/AndroidInstantRuntime.invokeProtectedStaticMethod(
+         *          new object[] {arg1, arg2}, new Class[] { String.class, Integer.class },
+         *          "protectedStatic", $type.class);
+         * </code>
+         */
         private boolean handleStaticOpcode(String owner, String name, String desc, boolean itf) {
 
             if (DEBUG) {
@@ -505,6 +608,22 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             super.visitInsn(opcode);
         }
 
+        /**
+         * For calls to constructors in the same package, calls are rewritten to use reflection
+         * to create the instance (see above, the NEW & DUP instructions are also removed) using
+         * the following pseudo code.
+         * <p/>
+         * before:
+         * <code>
+         *   $value = new $type(arg1, arg2);
+         * </code>
+         * after:
+         * <code>
+         *   $value = ($type)$package/AndroidInstantRuntime.newForClass(new Object[] {arg1, arg2 },
+         *       new Class[]{ String.class, Integer.class }, $type.class);
+         * </code>
+         *
+         */
         private boolean handleConstructor(String owner, String name, String desc) {
 
             if (isInSamePackage(owner)) {
@@ -675,6 +794,31 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         addDispatchMethod();
     }
 
+    /**
+     * To each class, add the dispatch method called by the original code that acts as a trampoline to
+     * invoke the changed methods.
+     * <p/>
+     * Pseudo code:
+     * <code>
+     *   Object access$dispatch(String name, object[] args) {
+     *      if (name.equals(
+     *          "firstMethod.(L$type;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;")) {
+     *        return firstMethod(($type)arg[0], (String)arg[1], arg[2]);
+     *      }
+     *      if (name.equals("secondMethod.(L$type;Ljava/lang/String;I;)V")) {
+     *        secondMethod(($type)arg[0], (String)arg[1], (int)arg[2]);
+     *        return;
+     *      }
+     *      ...
+     *      StringBuilder $local1 = new StringBuilder();
+     *      $local1.append("Method not found ");
+     *      $local1.append(name);
+     *      $local1.append(" in " + visitedClassName +
+     *          "$dispatch implementation, restart the application");
+     *      throw new $package/InstantReloadException($local1.toString());
+     *   }
+     * </code>
+     */
     public void addDispatchMethod() {
         int access = Opcodes.ACC_PUBLIC | Opcodes.ACC_VARARGS;
         Method m = new Method("access$dispatch", "(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;");
@@ -750,7 +894,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         mv.visitVarInsn(Opcodes.ALOAD, 1);
         mv.invokeVirtual(Type.getType(StringBuilder.class),
                 Method.getMethod("StringBuilder append (String)"));
-        mv.push("in " + visitedClassName + "$dispatch implementation, restart the application");
+        mv.push(" in " + visitedClassName + "$dispatch implementation, restart the application");
         mv.invokeVirtual(Type.getType(StringBuilder.class),
                 Method.getMethod("StringBuilder append (String)"));
 
