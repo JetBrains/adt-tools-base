@@ -73,7 +73,11 @@ public class StlNativeToolSpecification extends AbstractNativeToolSpecification 
             return Collections.emptyList();
         }
         List<String> flags = Lists.newArrayList();
-        flags.add(getStlLib(platform.getName()).toString());
+        File stlLib = getStlLib(platform.getName());
+        // Add folder containing the STL library to ld library path so that user can easily append
+        // STL with the -l flag.
+        flags.add("-L" + stlLib.getParent());
+        flags.add("-l" + stlLib.getName().substring(3, stlLib.getName().lastIndexOf('.')));
         return flags;
     }
 
