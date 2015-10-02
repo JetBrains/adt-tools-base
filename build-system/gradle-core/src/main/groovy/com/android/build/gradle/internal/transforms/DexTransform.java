@@ -261,19 +261,21 @@ public class DexTransform extends Transform implements CombinedTransform {
                                         "SINGLE_FOLDER format with wrong input files size: " + input);
                             }
                             final File rootFolder = input.getFiles().iterator().next();
-                            // in incremental mode or not, but it really does not matter if things
-                            // were added, removed or changed. The fact is :
-                            // - if the source folder is gone, we should remove the predex file.
-                            // - if the source folder is still around, add it back to the list of
-                            // files to process, since predexing is not incremental, a new correct
-                            // predex file will be produced.
-                            if (rootFolder.exists()) {
-                                inputFiles.add(rootFolder);
-                            } else {
+                            // The incremental mode only detect file level changes.
+                            // It does not handle removed root folders. However the transform
+                            // task will add the TransformInput right after it's removed so that it
+                            // can be detected by the transform.
+                            if (!rootFolder.exists()) {
+                                // if the root folder is gone we need to remove the previous
+                                // output
                                 File preDexedFile = getDexFileName(intermediateFolder, rootFolder);
                                 if (preDexedFile.exists()) {
                                     deletedFiles.add(preDexedFile);
                                 }
+                            } else if (!isIncremental || !input.getChangedFiles().isEmpty()) {
+                                // add the folder for re-dexing only if we're not in incremental
+                                // mode or if it contains changed files.
+                                inputFiles.add(rootFolder);
                             }
                             break;
                         case MULTI_FOLDER:
