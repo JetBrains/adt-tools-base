@@ -125,11 +125,12 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     }
 
     /**
-     * For all methods in this class:
+     * Generates new delegates for all 'patchable' methods in the visited class. Delegates
+     * are static methods that do the same thing the visited code does, but from outside the class.
+     * For instance methods, the instance is passed as the first argument. Note that:
      * <ul>
-     *   <li>Remove the class constructor as we don't support it right now</li>
-     *   <li>For all instance methods, make them static and pass the instance as the method's
-     *   first argument</li>
+     *   <li>We ignore the class constructor as we don't support it right now</li>
+     *   <li>We skip abstract methods.</li>
      *   <li>For constructors split the method body into super arguments and the rest of
      *   the method body, see {@link ConstructorDelegationDetector}</li>
      * </ul>
@@ -138,9 +139,12 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
 
+        if ((access & Opcodes.ACC_ABSTRACT) != 0) {
+            // Nothing to generate;
+            return null;
+        }
         if (name.equals("<clinit>")) {
-            // we remove the class init as it can reset static fields which we don't support right
-            // now.
+            // we skip the class init as it can reset static fields which we don't support right now
             return null;
         }
 
