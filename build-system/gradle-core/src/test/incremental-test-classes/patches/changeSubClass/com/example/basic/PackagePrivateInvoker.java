@@ -36,4 +36,9 @@ public class PackagePrivateInvoker {
     public String ternaryOperatorInConstructorParams(boolean select) {
         return new AnotherPackagePrivateClass<String>(!select ? "true" : "false").getValue();
     }
+
+    public String invokePackagePrivateInterface() {
+        return "patched_"
+                + new PackagePrivateClass("random").getPackagePrivateInterface().getValue();
+    }
 }

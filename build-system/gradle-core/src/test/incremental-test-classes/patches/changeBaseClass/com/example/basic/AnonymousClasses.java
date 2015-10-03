@@ -17,30 +17,24 @@
 package com.example.basic;
 
 /**
- * Package Private class with PackagePrivate methods.
+ * Anonymous inner classes
  */
-class PackagePrivateClass implements Provider<String> {
+public abstract class AnonymousClasses {
 
-    private final String stringValue;
-    PackagePrivateClass(String param) {
-        this.stringValue = param;
-    }
+    public final AnonymousClasses FIRST = new AnonymousClasses() {
 
-    String getStringValue() {
-        return stringValue;
-    }
+        @Override
+        public String doSomething() {
+            return "patched_first";
+        }
+    };
 
-    @Override
-    public String getValue() {
-        return stringValue;
-    }
+    public final AnonymousClasses SECOND = new AnonymousClasses() {
+        @Override
+        public String doSomething() {
+            return "patched_second";
+        }
+    };
 
-    PackagePrivateInterface getPackagePrivateInterface() {
-        return new PackagePrivateInterface() {
-            @Override
-            public String getValue() {
-                return "packagePrivateInterface";
-            }
-        };
-    }
+    public abstract String doSomething();
 }
