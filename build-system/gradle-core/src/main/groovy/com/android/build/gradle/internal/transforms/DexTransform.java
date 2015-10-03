@@ -37,8 +37,10 @@ import com.android.build.transform.api.TransformOutput;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.builder.sdk.TargetInfo;
+import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
+import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
@@ -209,7 +211,7 @@ public class DexTransform extends Transform implements CombinedTransform {
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
             @NonNull TransformOutput combinedOutput,
-            boolean isIncremental) throws TransformException, IOException {
+            boolean isIncremental) throws TransformException, IOException, InterruptedException {
         checkNotNull(combinedOutput, "Found no output in transform with Type=COMBINED");
         File outFolder = combinedOutput.getOutFile();
 
@@ -389,9 +391,9 @@ public class DexTransform extends Transform implements CombinedTransform {
                             new LoggedProcessOutputHandler(logger));
                 }
             }
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
+        } catch (LoggedErrorException e) {
+            throw new TransformException(e);
+        } catch (ProcessException e) {
             throw new TransformException(e);
         }
     }
