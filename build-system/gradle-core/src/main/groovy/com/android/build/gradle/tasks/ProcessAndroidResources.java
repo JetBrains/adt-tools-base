@@ -366,7 +366,7 @@ public class ProcessAndroidResources extends IncrementalTask {
         this.resDir = resDir;
     }
 
-    @OutputDirectory
+    @InputDirectory
     @Optional
     public File getAssetsDir() {
         return assetsDir;
