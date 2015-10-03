@@ -340,6 +340,10 @@ public class PkgDesc implements IPkgDesc {
             sb.append("ndk");
             break;
 
+        case PKG_LLDB:
+            sb.append("lldb");
+            break;
+
         default:
             throw new IllegalArgumentException("IID not defined for type " + mType.toString());
         }
@@ -1111,6 +1115,19 @@ public class PkgDesc implements IPkgDesc {
         @NonNull
         public static Builder newNdk(@NonNull FullRevision revision) {
             Builder p = new Builder(PkgType.PKG_NDK);
+            p.mFullRevision = revision;
+            return p;
+        }
+
+        /**
+         * Creates a new LLDB package descriptor.
+         *
+         * @param revision The revision of the LLDB package.
+         * @return A {@link PkgDesc} describing this LLDB package.
+         */
+        @NonNull
+        public static Builder newLLDB(@NonNull FullRevision revision) {
+            Builder p = new Builder(PkgType.PKG_LLDB);
             p.mFullRevision = revision;
             return p;
         }
