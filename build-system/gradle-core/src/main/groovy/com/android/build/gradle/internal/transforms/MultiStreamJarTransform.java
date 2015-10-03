@@ -29,6 +29,8 @@ import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
+import com.android.ide.common.internal.LoggedErrorException;
+import com.android.ide.common.internal.WaitableExecutor;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -44,6 +46,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -83,7 +86,8 @@ public class MultiStreamJarTransform extends Transform implements CombinedTransf
 
     @Override
     public boolean isIncremental() {
-        return true;
+        // TODO: let's do this incrementally.
+        return false;
     }
 
     @Override
@@ -101,34 +105,53 @@ public class MultiStreamJarTransform extends Transform implements CombinedTransf
         fileNameBuilder.append(FILE_NAME_PREFIX);
         int index = 1;
 
-        // let's do non-incremental for now.
-        // TODO: let's do this incrementally.
-        // TODO: let's multi-thread this.
-        for (TransformInput input : inputs) {
+        WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
 
-            switch (input.getFormat()) {
-                case JAR:
-                    // that's stupid, but just copy the jars.
-                    for (File jarFile : input.getFiles()) {
-                        fileNameBuilder.setLength(PREFIX_LENGTH);
-                        fileNameBuilder.append(index++).append(DOT_JAR);
-                        File outFile = new File(outFolder, fileNameBuilder.toString());
-                        Files.copy(jarFile, outFile);
-                    }
-                    break;
-                case SINGLE_FOLDER:
-                    for (File folder : input.getFiles()) {
-                        fileNameBuilder.setLength(PREFIX_LENGTH);
-                        fileNameBuilder.append(index++).append(DOT_JAR);
-                        File outFile = new File(outFolder, fileNameBuilder.toString());
-                        jarFolder(folder, outFile);
-                    }
-                    break;
-                case MULTI_FOLDER:
-                    throw new RuntimeException("MULTI_FOLDER format received in Transform method");
-                default:
-                    throw new RuntimeException("Unsupported ScopedContent.Format value: " + input.getFormat().name());
+        try {
+            for (TransformInput input : inputs) {
+                switch (input.getFormat()) {
+                    case JAR:
+                        // that's stupid, but just copy the jars.
+                        for (final File jarFile : input.getFiles()) {
+                            fileNameBuilder.setLength(PREFIX_LENGTH);
+                            fileNameBuilder.append(index++).append(DOT_JAR);
+                            final File outFile = new File(outFolder, fileNameBuilder.toString());
+                            executor.execute(new Callable<Void>() {
+                                @Override
+                                public Void call() throws Exception {
+                                    Files.copy(jarFile, outFile);
+                                    return null;
+                                }
+                            });
+
+                        }
+                        break;
+                    case SINGLE_FOLDER:
+                        for (final File folder : input.getFiles()) {
+                            fileNameBuilder.setLength(PREFIX_LENGTH);
+                            fileNameBuilder.append(index++).append(DOT_JAR);
+                            final File outFile = new File(outFolder, fileNameBuilder.toString());
+                            executor.execute(new Callable<Void>() {
+                                @Override
+                                public Void call() throws Exception {
+                                    jarFolder(folder, outFile);
+                                    return null;
+                                }
+                            });
+
+                        }
+                        break;
+                    case MULTI_FOLDER:
+                        throw new RuntimeException("MULTI_FOLDER format received in Transform method");
+                    default:
+                        throw new RuntimeException("Unsupported ScopedContent.Format value: " + input.getFormat().name());
+                }
             }
+
+            executor.waitForTasksWithQuickFail(false);
+
+        } catch (LoggedErrorException e) {
+            throw new TransformException(e);
         }
     }
 
