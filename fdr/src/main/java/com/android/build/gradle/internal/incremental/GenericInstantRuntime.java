@@ -135,7 +135,7 @@ public class GenericInstantRuntime {
     public static Object invokeProtectedMethod(Object receiver,
             Object[] params,
             Class[] parameterTypes,
-            String methodName) {
+            String methodName) throws Throwable {
 
         if (logging!=null && logging.isLoggable(Level.FINE)) {
             logging.log(Level.FINE, String.format("protectedMethod:%s on %s", methodName, receiver));
@@ -148,8 +148,8 @@ public class GenericInstantRuntime {
             toDispatchTo.setAccessible(true);
             return toDispatchTo.invoke(receiver, params);
         } catch (InvocationTargetException e) {
-            logging.log(Level.SEVERE, String.format("Exception while invoking %s", methodName), e);
-            throw new RuntimeException(e);
+            // The called method threw an exception, rethrow
+            throw e.getCause();
         } catch (IllegalAccessException e) {
             logging.log(Level.SEVERE, String.format("Exception while invoking %s", methodName), e);
             throw new RuntimeException(e);
@@ -160,7 +160,7 @@ public class GenericInstantRuntime {
             Object[] params,
             Class[] parameterTypes,
             String methodName,
-            Class receiverClass) {
+            Class receiverClass) throws Throwable {
 
         if (logging!=null && logging.isLoggable(Level.FINE)) {
             logging.log(Level.FINE,
@@ -175,15 +175,16 @@ public class GenericInstantRuntime {
             toDispatchTo.setAccessible(true);
             return toDispatchTo.invoke(null /* target */, params);
         } catch (InvocationTargetException e) {
-            logging.log(Level.SEVERE, String.format("Exception while invoking %s", methodName), e);
-            throw new RuntimeException(e);
+            // The called method threw an exception, rethrow
+            throw e.getCause();
         } catch (IllegalAccessException e) {
             logging.log(Level.SEVERE, String.format("Exception while invoking %s", methodName), e);
             throw new RuntimeException(e);
         }
     }
 
-    public static <T> T newForClass(Object[] params, Class[] paramTypes, Class<T> targetClass) {
+    public static <T> T newForClass(Object[] params, Class[] paramTypes, Class<T> targetClass)
+            throws Throwable {
         Constructor declaredConstructor;
         try {
             declaredConstructor = targetClass.getDeclaredConstructor(paramTypes);
@@ -194,13 +195,13 @@ public class GenericInstantRuntime {
         declaredConstructor.setAccessible(true);
         try {
             return targetClass.cast(declaredConstructor.newInstance(params));
+        } catch (InvocationTargetException e) {
+            // The called method threw an exception, rethrow
+            throw e.getCause();
         } catch (InstantiationException e) {
             logging.log(Level.SEVERE, String.format("Exception while instantiating %s", targetClass), e);
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
-            logging.log(Level.SEVERE, String.format("Exception while instantiating %s", targetClass), e);
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
             logging.log(Level.SEVERE, String.format("Exception while instantiating %s", targetClass), e);
             throw new RuntimeException(e);
         }
