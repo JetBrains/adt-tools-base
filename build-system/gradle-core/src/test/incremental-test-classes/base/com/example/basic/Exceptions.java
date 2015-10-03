@@ -24,8 +24,23 @@ public class Exceptions {
         }
     }
 
+    public Exceptions() {
+    }
+
     public void throwsNamed() throws MyException {
         throw new MyException("original");
+    }
+
+    protected void protectedThrowsNamed() throws MyException {
+        throw new MyException("protected");
+    }
+
+    static void staticThrowsNamed() throws MyException {
+        throw new MyException("static");
+    }
+
+    Exceptions(String unused) throws MyException {
+        throw new MyException("ctr");
     }
 
     public String catchesNamed() {
@@ -37,6 +52,26 @@ public class Exceptions {
             ret += ":caught[" + e.message + "]";
         } finally {
             ret += ":finally";
+        }
+        return ret;
+    }
+
+    public String catchesHiddenNamed() {
+        String ret = "caught: ";
+        try {
+            protectedThrowsNamed();
+        } catch (MyException e) {
+            ret += "," + e.message;
+        }
+        try {
+            staticThrowsNamed();
+        } catch (MyException e) {
+            ret += "," + e.message;
+        }
+        try {
+            new Exceptions("");
+        } catch (MyException e) {
+            ret += "," + e.message;
         }
         return ret;
     }

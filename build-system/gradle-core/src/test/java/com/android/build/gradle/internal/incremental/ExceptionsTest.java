@@ -42,6 +42,7 @@ public class ExceptionsTest {
             assertEquals("original", e.message);
         }
         assertEquals("before:caught[original]:finally", exceptions.catchesNamed());
+        assertEquals("caught: ,protected,static,ctr", exceptions.catchesHiddenNamed());
 
         try {
             exceptions.throwsRuntime();
@@ -60,6 +61,7 @@ public class ExceptionsTest {
             assertEquals("patched", e.message);
         }
         assertEquals("before_p:caught_p[patched]:finally_p", exceptions.catchesNamed());
+        assertEquals("caught_p: ;protected_p;static_p;ctr_p", exceptions.catchesHiddenNamed());
 
         try {
             exceptions.throwsRuntime();

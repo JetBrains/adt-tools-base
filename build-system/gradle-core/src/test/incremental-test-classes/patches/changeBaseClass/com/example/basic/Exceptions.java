@@ -24,8 +24,23 @@ public class Exceptions {
         }
     }
 
+    public Exceptions() {
+    }
+
     public void throwsNamed() throws MyException {
         throw new MyException("patched");
+    }
+
+    protected void protectedThrowsNamed() throws MyException {
+        throw new MyException("protected_p");
+    }
+
+    static void staticThrowsNamed() throws MyException {
+        throw new MyException("static_p");
+    }
+
+    Exceptions(String unused) throws MyException {
+        throw new MyException("ctr_p");
     }
 
     public String catchesNamed() {
@@ -40,6 +55,27 @@ public class Exceptions {
         }
         return ret;
     }
+
+    public String catchesHiddenNamed() {
+        String ret = "caught_p: ";
+        try {
+            protectedThrowsNamed();
+        } catch (MyException e) {
+            ret += ";" + e.message;
+        }
+        try {
+            staticThrowsNamed();
+        } catch (MyException e) {
+            ret += ";" + e.message;
+        }
+        try {
+            new Exceptions("");
+        } catch (MyException e) {
+            ret += ";" + e.message;
+        }
+        return ret;
+    }
+
 
     public void throwsRuntime() {
         throw new RuntimeException("patched");
