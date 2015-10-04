@@ -43,23 +43,13 @@ public final class Primitive extends Type {
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-        Primitive primitive = (Primitive) o;
-        if (!mName.equals(primitive.mName)) {
-            return false;
-        }
-        assert (mMethod.value == primitive.mMethod.value);
-        return true;
+        if (!(o instanceof Primitive)) return false;
+        return mMethod.equals(((Primitive)o).mMethod);
     }
 
     @Override
     public int hashCode() {
-        return mName.hashCode();
+        return mMethod.hashCode();
     }
 
     @Override

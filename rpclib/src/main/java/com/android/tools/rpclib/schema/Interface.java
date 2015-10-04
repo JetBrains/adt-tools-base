@@ -37,6 +37,16 @@ public final class Interface extends Type {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        return (o instanceof Interface);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
     @NotNull
     @Override
     public String getName() {

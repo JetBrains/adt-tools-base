@@ -125,7 +125,6 @@ public final class Entity {
         int result = mPackage.hashCode();
         result = 31 * result + mIdentity.hashCode();
         result = 31 * result + (mVersion != null ? mVersion.hashCode() : 0);
-        result = 31 * result + (mFields != null ? Arrays.hashCode(mFields) : 0);
         return result;
     }
 }

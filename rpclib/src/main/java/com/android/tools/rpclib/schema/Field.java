@@ -46,10 +46,8 @@ public final class Field {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Field field = (Field)o;
-        return mType.equals(field.mType);
+        if (!(o instanceof Field)) return true;
+        return mType.equals(((Field)o).mType);
     }
 
     @Override

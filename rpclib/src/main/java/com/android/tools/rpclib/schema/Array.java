@@ -44,6 +44,19 @@ public final class Array extends Type {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Array)) return false;
+        Array array = (Array)o;
+        if (mSize != array.mSize) return false;
+        return mValueType.equals(array.mValueType);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * mValueType.hashCode() + mSize;
+    }
+
     @NotNull
     @Override
     public String getName() {

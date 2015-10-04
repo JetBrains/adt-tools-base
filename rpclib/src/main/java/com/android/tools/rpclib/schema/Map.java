@@ -39,6 +39,19 @@ public final class Map extends Type {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Pointer)) return false;
+        Map map = (Map)o;
+        if (!mKeyType.equals(map.mKeyType)) return false;
+        return mValueType.equals(map.mValueType);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * mKeyType.hashCode() + mValueType.hashCode();
+    }
+
     @NotNull
     @Override
     public String getName() {
