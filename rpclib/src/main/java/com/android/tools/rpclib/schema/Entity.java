@@ -39,7 +39,9 @@ public final class Entity {
         mFields = new Field[]{};
     }
 
-    public Entity(@NotNull Decoder d, boolean compact) throws IOException {
+    public Entity() {}
+
+    public void decode(@NotNull Decoder d, boolean compact) throws IOException {
         mPackage = d.string();
         mIdentity = d.string();
         mVersion = d.string();

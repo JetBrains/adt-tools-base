@@ -179,8 +179,9 @@ public class Decoder {
     int v = uint32();
     int sid = v >> 1;
     if ((v & 1) != 0) {
-      Entity entity = new Entity(this, compact);
+      Entity entity = new Entity();
       mEntities.put(sid, entity);
+      entity.decode(this, compact);
       return entity;
     }
     Entity entity = mEntities.get(sid);
