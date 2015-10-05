@@ -3,7 +3,7 @@ apply plugin: 'com.android.library'
 apply from: "../../commonLocalRepo.gradle"
 
 android {
-    compileSdkVersion 21
+    compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
 
     defaultConfig {

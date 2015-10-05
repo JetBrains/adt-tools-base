@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 22
+    compileSdkVersion 22 // Tests depend on Apache HTTP, TODO: use useLibrary.
     buildToolsVersion = rootProject.buildToolsVersion
 
     defaultConfig {

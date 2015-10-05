@@ -10,7 +10,7 @@ allprojects {
 
     android {
       buildToolsVersion rootProject.buildToolsVersion
-      compileSdkVersion 22
+      compileSdkVersion rootProject.latestCompileSdk
 
       defaultConfig {
         minSdkVersion 22

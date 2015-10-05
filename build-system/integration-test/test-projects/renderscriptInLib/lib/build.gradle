@@ -1,6 +1,6 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 15
+    compileSdkVersion rootProject.oldSdkForRenderscript
     buildToolsVersion = rootProject.buildToolsVersion
 }

@@ -23,7 +23,7 @@ apply from: "../commonLocalRepo.gradle"
 
 android {
     // We need an android.jar that contains Java 6 bytecode, since Jenkins runs on Java 6.
-    compileSdkVersion 19
+    compileSdkVersion rootProject.java6BasedSdk
     buildToolsVersion = rootProject.buildToolsVersion
     
     testOptions {
