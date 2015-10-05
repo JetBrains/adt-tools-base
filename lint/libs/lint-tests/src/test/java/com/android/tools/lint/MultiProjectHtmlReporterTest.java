@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class MultiProjectHtmlReporterTest  extends AbstractCheckTest {
+public class MultiProjectHtmlReporterTest extends AbstractCheckTest {
     public void test() throws Exception {
         File dir = new File(getTargetDir(), "report");
         try {

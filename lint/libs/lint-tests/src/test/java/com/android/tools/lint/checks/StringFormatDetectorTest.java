@@ -24,7 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @SuppressWarnings("javadoc")
-public class StringFormatDetectorTest  extends AbstractCheckTest {
+public class StringFormatDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
         return new StringFormatDetector();
