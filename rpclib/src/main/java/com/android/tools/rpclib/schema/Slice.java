@@ -35,6 +35,22 @@ public final class Slice extends Type {
         }
     }
 
+    public Slice(String alias, Type valueType) {
+        mAlias = alias;
+        mValueType = valueType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Slice)) return false;
+        return mValueType.equals(((Slice)o).mValueType);
+    }
+
+    @Override
+    public int hashCode() {
+        return mValueType.hashCode();
+    }
+
     @NotNull
     @Override
     public String getName() {

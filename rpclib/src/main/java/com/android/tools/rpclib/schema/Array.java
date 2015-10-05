@@ -30,12 +30,31 @@ public final class Array extends Type {
 
     int mSize;
 
+    public Array(String alias, Type type, int size) {
+        mAlias = alias;
+        mValueType = type;
+        mSize = size;
+    }
+
     public Array(@NotNull Decoder d, boolean compact) throws IOException {
         mSize = d.uint32();
         mValueType = decode(d, compact);
         if (!compact) {
             mAlias = d.string();
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Array)) return false;
+        Array array = (Array)o;
+        if (mSize != array.mSize) return false;
+        return mValueType.equals(array.mValueType);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * mValueType.hashCode() + mSize;
     }
 
     @NotNull

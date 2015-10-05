@@ -15,6 +15,7 @@
  */
 package com.android.tools.rpclib.binary;
 
+import com.android.tools.rpclib.schema.Entity;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -25,7 +26,7 @@ import java.util.Map;
  *
  */
 public interface BinaryClass {
-  @NotNull BinaryID id();
+  @NotNull Entity entity();
   @NotNull BinaryObject create();
   void decode(@NotNull Decoder d, BinaryObject obj) throws IOException;
   void encode(@NotNull Encoder e, BinaryObject obj) throws IOException;

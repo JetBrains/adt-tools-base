@@ -21,7 +21,11 @@ public final class Field {
 
     Type mType;
 
-    // Constructs a default-initialized {@link Field}.
+    public Field(String name, Type type) {
+        mDeclared = name;
+        mType = type;
+    }
+
     public Field() {
     }
 
@@ -38,5 +42,16 @@ public final class Field {
             return mType.getName();
         }
         return mDeclared;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Field)) return true;
+        return mType.equals(((Field)o).mType);
+    }
+
+    @Override
+    public int hashCode() {
+        return mType.hashCode();
     }
 }

@@ -27,8 +27,23 @@ public final class Pointer extends Type {
 
     Type mType;
 
+    public Pointer(Type type) {
+        mType = type;
+    }
+
     public Pointer(@NotNull Decoder d, boolean compact) throws IOException {
         mType = decode(d, compact);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Pointer)) return false;
+        return mType.equals(((Pointer)o).mType);
+    }
+
+    @Override
+    public int hashCode() {
+        return mType.hashCode();
     }
 
     @NotNull

@@ -36,8 +36,10 @@ public class Dynamic implements BinaryObject {
         return mKlass.mType;
     }
 
-    public static void register(Entity type) {
-        Namespace.register(type.getTypeID(), new Klass(type));
+    public static BinaryClass register(Entity type) {
+        BinaryClass klass = new Klass(type);
+        Namespace.register(klass);
+        return klass;
     }
 
     public int getFieldCount() {
@@ -66,10 +68,10 @@ public class Dynamic implements BinaryObject {
             mType = type;
         }
 
-        @Override
         @NotNull
-        public BinaryID id() {
-            return mType.getTypeID();
+        @Override
+        public Entity entity() {
+            return mType;
         }
 
         @Override
