@@ -75,19 +75,21 @@ interface ShrinkerGraph<T> {
 
     boolean isLibraryMember(T method);
 
+    boolean isLibraryClass(T klass);
+
     T[] getInterfaces(T klass);
 
     void checkDependencies();
 
     boolean keepClass(String klass, Shrinker.ShrinkType shrinkType);
 
-    void allNodesAdded();
+    void allClassesAdded();
 
     Iterable<T> getAllProgramClasses();
 
     String getClassName(T classOrMember);
 
-    String getMethodName(T method);
+    String getMethodNameAndDesc(T method);
 
     String getFieldName(T field);
 

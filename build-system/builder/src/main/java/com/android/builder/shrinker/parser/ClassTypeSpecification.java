@@ -37,6 +37,11 @@ public class ClassTypeSpecification extends MatcherWithNegator<Integer> {
 
     @Override
     protected boolean matchesWithoutNegator(Integer toCheck) {
+        if (mSpec == 0) {
+            // "The class keyword refers to any interface or class."
+            return true;
+        }
+
         int modifiers = toCheck;
         return (modifiers & CLASS_TYPE_FLAGS) == mSpec;
     }

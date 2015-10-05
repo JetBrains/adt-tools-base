@@ -50,8 +50,8 @@ class ProguardFlagsKeepRules implements KeepRules {
 
         for (ClassSpecification spec : mFlags.getKeepClassSpecs()) {
             if (matchesClass(klass, spec, graph)) {
-                // TODO: Add <init>(), per spec.
                 result.put(klass, DependencyType.REQUIRED);
+                result.put(graph.getMemberReference(graph.getClassName(klass), "<init>", "()V"), DependencyType.REQUIRED);
                 for (T member : findMatchingMembers(klass, spec, graph)) {
                     result.put(member, DependencyType.REQUIRED);
                 }
@@ -155,7 +155,7 @@ class ProguardFlagsKeepRules implements KeepRules {
             T method,
             MethodSpecification spec,
             ShrinkerGraph<T> graph) {
-        return matches(spec.getName(), graph.getMethodName(method))
+        return matches(spec.getName(), graph.getMethodNameAndDesc(method))
                 && matches(spec.getModifiers(), graph.getMemberModifiers(method))
                 && matchesAnnotations(method, spec.getAnnotations(), graph);
     }

@@ -606,12 +606,12 @@ public class TestClasses implements Opcodes {
                 mv.visitEnd();
             }
             {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "buildMyCallable",
-                        "()Ltest/MyCallable;", null, null);
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "buildMyCharSequence",
+                        "()Ltest/MyCharSequence;", null, null);
                 mv.visitCode();
-                mv.visitTypeInsn(NEW, "test/MyCallable");
+                mv.visitTypeInsn(NEW, "test/MyCharSequence");
                 mv.visitInsn(DUP);
-                mv.visitMethodInsn(INVOKESPECIAL, "test/MyCallable",
+                mv.visitMethodInsn(INVOKESPECIAL, "test/MyCharSequence",
                         "<init>", "()V", false);
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(2, 0);
@@ -630,27 +630,27 @@ public class TestClasses implements Opcodes {
                 mv.visitEnd();
             }
             {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "callCallable",
-                        "(Ljava/util/concurrent/Callable;)V",
-                        "<T:Ljava/lang/Object;>(Ljava/util/concurrent/Callable<TT;>;)V",
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "callCharSequence",
+                        "(Ljava/lang/CharSequence;)V",
+                        null,
                         new String[]{"java/lang/Exception"});
                 mv.visitCode();
                 mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKEINTERFACE, "java/util/concurrent/Callable", "call",
-                        "()Ljava/lang/Object;", true);
+                mv.visitMethodInsn(INVOKEINTERFACE, "java/lang/CharSequence", "length",
+                        "()I", true);
                 mv.visitInsn(POP);
                 mv.visitInsn(RETURN);
                 mv.visitMaxs(1, 1);
                 mv.visitEnd();
             }
             {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "callMyCallable",
-                        "(Ltest/MyCallable;)V", null,
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "callMyCharSequence",
+                        "(Ltest/MyCharSequence;)V", null,
                         new String[]{"java/lang/Exception"});
                 mv.visitCode();
                 mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "test/MyCallable",
-                        "call", "()Ljava/lang/String;", false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/MyCharSequence",
+                        "length", "()I", false);
                 mv.visitInsn(POP);
                 mv.visitInsn(RETURN);
                 mv.visitMaxs(1, 1);
@@ -659,7 +659,7 @@ public class TestClasses implements Opcodes {
             {
                 mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "useMyInterface",
                         "(Ltest/MyInterface;)V",
-                        "<T:Ljava/lang/Object;>(Ltest/MyInterface<TT;>;)V",
+                        null,
                         null);
                 mv.visitCode();
                 mv.visitVarInsn(ALOAD, 0);
@@ -671,13 +671,23 @@ public class TestClasses implements Opcodes {
                 mv.visitEnd();
             }
             {
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "useImplementationFromSuperclass",
+                        "(Ltest/ImplementationFromSuperclass;)V",
+                        null,
+                        null);
+                mv.visitCode();
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
                 mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "useMyImpl_interfaceMethod",
                         "(Ltest/MyImpl;)V", null, null);
                 mv.visitCode();
                 mv.visitVarInsn(ALOAD, 0);
                 mv.visitLdcInsn("foo");
                 mv.visitMethodInsn(INVOKEVIRTUAL, "test/MyImpl",
-                        "doSomething", "(Ljava/lang/String;)V", false);
+                        "doSomething", "(Ljava/lang/Object;)V", false);
                 mv.visitInsn(RETURN);
                 mv.visitMaxs(2, 1);
                 mv.visitEnd();
@@ -698,16 +708,15 @@ public class TestClasses implements Opcodes {
             return cw.toByteArray();
         }
 
-        public static byte[] myCallable() throws Exception {
+        public static byte[] myCharSequence() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
             FieldVisitor fv;
             MethodVisitor mv;
             AnnotationVisitor av0;
 
-            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/MyCallable",
-                    "Ljava/lang/Object;Ljava/util/concurrent/Callable<Ljava/lang/String;>;",
-                    "java/lang/Object", new String[]{"java/util/concurrent/Callable"});
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/MyCharSequence",
+                    null, "java/lang/Object", new String[]{"java/lang/CharSequence"});
 
             {
                 mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -719,23 +728,28 @@ public class TestClasses implements Opcodes {
                 mv.visitEnd();
             }
             {
-                mv = cw.visitMethod(ACC_PUBLIC, "call", "()Ljava/lang/String;", null,
-                        new String[]{"java/lang/Exception"});
+                mv = cw.visitMethod(ACC_PUBLIC, "length", "()I", null, null);
                 mv.visitCode();
-                mv.visitLdcInsn("hello");
-                mv.visitInsn(ARETURN);
+                mv.visitInsn(ICONST_0);
+                mv.visitInsn(IRETURN);
                 mv.visitMaxs(1, 1);
                 mv.visitEnd();
             }
             {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_BRIDGE + ACC_SYNTHETIC, "call",
-                        "()Ljava/lang/Object;", null, new String[]{"java/lang/Exception"});
+                mv = cw.visitMethod(ACC_PUBLIC, "charAt", "(I)C", null, null);
                 mv.visitCode();
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "test/MyCallable",
-                        "call", "()Ljava/lang/String;", false);
+                mv.visitInsn(ICONST_0);
+                mv.visitInsn(IRETURN);
+                mv.visitMaxs(1, 2);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "subSequence", "(II)Ljava/lang/CharSequence;", null,
+                        null);
+                mv.visitCode();
+                mv.visitInsn(ACONST_NULL);
                 mv.visitInsn(ARETURN);
-                mv.visitMaxs(1, 1);
+                mv.visitMaxs(1, 3);
                 mv.visitEnd();
             }
             cw.visitEnd();
@@ -751,8 +765,7 @@ public class TestClasses implements Opcodes {
             AnnotationVisitor av0;
 
             cw.visit(V1_6, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE,
-                    "test/MyInterface",
-                    "<T:Ljava/lang/Object;>Ljava/lang/Object;", "java/lang/Object", null);
+                    "test/MyInterface", null, "java/lang/Object", null);
 
             {
                 mv = cw.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "doSomething", "(Ljava/lang/Object;)V",
@@ -772,8 +785,7 @@ public class TestClasses implements Opcodes {
             AnnotationVisitor av0;
 
             cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/MyImpl",
-                    "Ljava/lang/Object;Ltest/MyInterface<Ljava/lang/String;>;",
-                    "java/lang/Object", new String[]{"test/MyInterface"});
+                    null, "java/lang/Object", new String[]{"test/MyInterface"});
 
             {
                 mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -785,7 +797,7 @@ public class TestClasses implements Opcodes {
                 mv.visitEnd();
             }
             {
-                mv = cw.visitMethod(ACC_PUBLIC, "doSomething", "(Ljava/lang/String;)V", null, null);
+                mv = cw.visitMethod(ACC_PUBLIC, "doSomething", "(Ljava/lang/Object;)V", null, null);
                 mv.visitCode();
                 mv.visitInsn(RETURN);
                 mv.visitMaxs(0, 2);
@@ -798,17 +810,96 @@ public class TestClasses implements Opcodes {
                 mv.visitMaxs(0, 1);
                 mv.visitEnd();
             }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        /**
+         * This class happens to have a method matching the interface signature. It does not
+         * implement the interface.
+         */
+        public static byte[] doesSomething() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/DoesSomething",
+                    null, "java/lang/Object", null);
+
+            cw.visitSource("DoesSomething.java", null);
+
             {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_BRIDGE + ACC_SYNTHETIC, "doSomething",
-                        "(Ljava/lang/Object;)V", null, null);
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
                 mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(22, l0);
                 mv.visitVarInsn(ALOAD, 0);
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitTypeInsn(CHECKCAST, "java/lang/String");
-                mv.visitMethodInsn(INVOKEVIRTUAL, "test/MyImpl",
-                        "doSomething", "(Ljava/lang/String;)V", false);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
                 mv.visitInsn(RETURN);
-                mv.visitMaxs(2, 2);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/DoesSomething;", null,
+                        l0, l1, 0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "doSomething", "(Ljava/lang/Object;)V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(25, l0);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/DoesSomething;", null,
+                        l0, l1, 0);
+                mv.visitMaxs(0, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        /**
+         * This class extends DoesSomething and implements MyInterface. Extending DoesSomething 
+         * is enough to implement the interface.
+         */
+        public static byte[] implementationFromSuperclass() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER,
+                    "test/ImplementationFromSuperclass", null,
+                    "test/DoesSomething",
+                    new String[]{"test/MyInterface"});
+
+            cw.visitSource("ImplementationFromSuperclass.java", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(22, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/DoesSomething",
+                        "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this",
+                        "Ltest/ImplementationFromSuperclass;", null, l0,
+                        l1, 0);
+                mv.visitMaxs(1, 1);
                 mv.visitEnd();
             }
             cw.visitEnd();
@@ -980,7 +1071,7 @@ public class TestClasses implements Opcodes {
                 mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
                 mv.visitCode();
                 mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/MyFields", "<init>", "()V", false);
                 mv.visitInsn(RETURN);
                 mv.visitMaxs(1, 1);
                 mv.visitEnd();
@@ -994,7 +1085,7 @@ public class TestClasses implements Opcodes {
     /**
      * Method overrides multiples interfaces.
      */
-    public static class MultipleOverridenMethods {
+    public static class MultipleOverriddenMethods {
         public static byte[] main() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
@@ -2039,6 +2130,393 @@ public class TestClasses implements Opcodes {
                 mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(2, 0);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+    }
+
+    public static class Reflection {
+
+        public static byte[] main_instanceOf() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            cw.visitSource("Main.java", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(22, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null, l0, l1,
+                        0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "main", "(Ljava/lang/Object;)Z", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(24, l0);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitTypeInsn(INSTANCEOF, "test/Foo");
+                mv.visitInsn(IRETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null, l0, l1,
+                        0);
+                mv.visitLocalVariable("o", "Ljava/lang/Object;", null, l0, l1, 1);
+                mv.visitMaxs(1, 2);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] main_classLiteral() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            cw.visitSource("Main.java", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null, l0, l1,
+                        0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "main", "()Ljava/lang/Object;", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLdcInsn(Type.getType("Ltest/Foo;"));
+                mv.visitInsn(ARETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null, l0, l1,
+                        0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+    }
+
+    public static class TryCatch {
+        public static byte[] main() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main",
+                    null, "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "main", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                Label l1 = new Label();
+                Label l2 = new Label();
+                mv.visitTryCatchBlock(l0, l1, l2,
+                        "test/CustomException");
+                mv.visitLabel(l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/Main",
+                        "helper", "()V", false);
+                mv.visitLabel(l1);
+                Label l3 = new Label();
+                mv.visitJumpInsn(GOTO, l3);
+                mv.visitLabel(l2);
+                mv.visitVarInsn(ASTORE, 1);
+                mv.visitInsn(RETURN);
+                mv.visitLabel(l3);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 2);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "helper", "()V", null, null);
+                mv.visitCode();
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(0, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] customException() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_SUPER, "test/CustomException", null,
+                    "java/lang/RuntimeException", null);
+
+            {
+                mv = cw.visitMethod(0, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] main_tryFinally() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "testclasses/Main",
+                    null, "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "main", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                Label l1 = new Label();
+                Label l2 = new Label();
+                mv.visitTryCatchBlock(l0, l1, l2, null);
+                Label l3 = new Label();
+                mv.visitTryCatchBlock(l2, l3, l2, null);
+                mv.visitLabel(l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "testclasses/Main",
+                        "helper", "()V", false);
+                mv.visitLabel(l1);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "testclasses/Main",
+                        "helper", "()V", false);
+                Label l4 = new Label();
+                mv.visitJumpInsn(GOTO, l4);
+                mv.visitLabel(l2);
+                mv.visitVarInsn(ASTORE, 1);
+                mv.visitLabel(l3);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "testclasses/Main",
+                        "helper", "()V", false);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitInsn(ATHROW);
+                mv.visitLabel(l4);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 2);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "helper", "()V", null, null);
+                mv.visitCode();
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(0, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+    }
+
+    public static class AbstractClasses {
+        public static byte[] myInterface() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_ABSTRACT + ACC_INTERFACE,
+                    "test/MyInterface", null, "java/lang/Object", null);
+
+            cw.visitSource("MyInterface.java", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_ABSTRACT, "m", "()V", null, null);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] abstractImpl() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER + ACC_ABSTRACT,
+                    "test/AbstractImpl", null, "java/lang/Object",
+                    new String[]{"test/MyInterface"});
+
+            cw.visitSource("AbstractImpl.java", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(22, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/AbstractImpl;", null,
+                        l0, l1, 0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "helper", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(24, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/AbstractImpl", "m",
+                        "()V", false);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLineNumber(25, l1);
+                mv.visitInsn(RETURN);
+                Label l2 = new Label();
+                mv.visitLabel(l2);
+                mv.visitLocalVariable("this", "Ltest/AbstractImpl;", null,
+                        l0, l2, 0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] realImpl() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/RealImpl", null,
+                    "test/AbstractImpl", null);
+
+            cw.visitSource("RealImpl.java", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(19, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/AbstractImpl",
+                        "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/RealImpl;", null, l0,
+                        l1, 0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "m", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(22, l0);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/RealImpl;", null, l0,
+                        l1, 0);
+                mv.visitMaxs(0, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "main", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(25, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/RealImpl",
+                        "helper", "()V", false);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLineNumber(26, l1);
+                mv.visitInsn(RETURN);
+                Label l2 = new Label();
+                mv.visitLabel(l2);
+                mv.visitLocalVariable("this", "Ltest/RealImpl;", null, l0,
+                        l2, 0);
+                mv.visitMaxs(1, 1);
                 mv.visitEnd();
             }
             cw.visitEnd();

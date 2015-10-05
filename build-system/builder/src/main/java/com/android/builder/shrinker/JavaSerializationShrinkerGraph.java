@@ -57,8 +57,8 @@ import java.util.concurrent.ExecutionException;
  */
 public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
-    /** Checks if the phase of adding nodes is done. */
-    private boolean allNodesAdded = false;
+    /** Checks if the phase of adding classes is done. */
+    private boolean allClassesAdded = false;
 
     private final File mStateDir;
 
@@ -100,7 +100,6 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @Override
     public String addMember(String owner, String name, String desc, int modifiers) {
-        checkState(!allNodesAdded, "allNodesAdded() has already been called.");
         String fullName = getFullMethodName(owner, name, desc);
         mMembers.put(owner, fullName);
         mModifiers.put(fullName, modifiers);
@@ -209,7 +208,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @Override
     public String getSuperclass(String klass) throws ClassLookupException {
-        checkState(allNodesAdded, "allNodesAdded() not called yet.");
+        checkState(allClassesAdded, "allNodesAdded() not called yet.");
         ClassInfo classInfo = mClasses.get(klass);
         if (classInfo == null) {
             throw new ClassLookupException(klass);
@@ -234,6 +233,12 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
+    public boolean isLibraryClass(String klass) {
+        ClassInfo classInfo = mClasses.get(klass);
+        return classInfo != null && classInfo.isLibraryClass();
+    }
+
+    @Override
     public String[] getInterfaces(String klass) {
         return mClasses.get(klass).interfaces;
     }
@@ -248,12 +253,18 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
             if (!target.contains(".")) {
                 if (!mClasses.containsKey(target)) {
                     // TODO: Warning system.
+                    if (target.startsWith("sun/misc/Unsafe") || target.startsWith("android/support")) {
+                        continue;
+                    }
                     System.out.println("Invalid dependency target: " + target);
                     invalidDeps.put(entry.getKey(), entry.getValue());
                 }
             } else {
                 if (!mMembers.containsEntry(getClassForMember(target), target)) {
                     // TODO: Warning system.
+                    if (target.startsWith("sun/misc/Unsafe") || target.startsWith("android/support")) {
+                        continue;
+                    }
                     System.out.println("Invalid dependency target: " + target);
                     invalidDeps.put(entry.getKey(), entry.getValue());
                 }
@@ -268,6 +279,9 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     @Override
     public boolean keepClass(String klass, ShrinkType shrinkType) {
         try {
+            if (mClasses.get(klass).isLibraryClass()) {
+                return true;
+            }
             LoadingCache<String, Counter> counters = mReferenceCounters.get(shrinkType);
             Counter counter = counters.get(klass);
             return counter.isReachable();
@@ -377,7 +391,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
             String[] interfaces,
             int access,
             File classFile) {
-        checkState(!allNodesAdded, "allNodesAdded() has already been called.");
+        checkState(!allClassesAdded, "allNodesAdded() has already been called.");
         //noinspection unchecked - ASM API
         ClassInfo classInfo = new ClassInfo(classFile, superName, interfaces);
         mClasses.put(name, classInfo);
@@ -386,8 +400,8 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public void allNodesAdded() {
-        this.allNodesAdded = true;
+    public void allClassesAdded() {
+        this.allClassesAdded = true;
     }
 
     @Override
@@ -409,7 +423,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public String getMethodName(String method) {
+    public String getMethodNameAndDesc(String method) {
         return method.substring(method.indexOf('.') + 1);
     }
 

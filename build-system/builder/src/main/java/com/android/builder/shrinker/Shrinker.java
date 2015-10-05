@@ -18,6 +18,7 @@ package com.android.builder.shrinker;
 
 import static com.android.utils.FileUtils.getAllFiles;
 import static com.android.utils.FileUtils.withExtension;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -33,6 +34,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
@@ -111,7 +113,10 @@ public class Shrinker<T> {
 
     private static byte[] rewrite(File classFile, Set<String> membersToKeep, Predicate<String> keepClass) throws IOException {
         ClassReader classReader = new ClassReader(Files.toByteArray(classFile));
-        ClassWriter classWriter = new ClassWriter(classReader, 0);
+        // Don't pass the reader as an argument to the writer. This forces the writer to recompute
+        // the constant pool, which we want, since it can contain unused entries that end up in the
+        // dex file.
+        ClassWriter classWriter = new ClassWriter(0);
         ClassVisitor filter = new FilterMembersVisitor(membersToKeep, keepClass, classWriter);
         classReader.accept(filter, 0);
         return classWriter.toByteArray();
@@ -136,6 +141,7 @@ public class Shrinker<T> {
             Iterable<TransformInput> programInputs,
             Iterable<TransformInput> libraryInputs) throws IOException {
         final Set<T> virtualMethods = Sets.newConcurrentHashSet();
+        final Set<T> multipleInheritance = Sets.newConcurrentHashSet();
         final Set<UnresolvedReference<T>> unresolvedReferences = Sets.newConcurrentHashSet();
 
         readPlatformJar();
@@ -163,6 +169,7 @@ public class Shrinker<T> {
                             processNewClassFile(
                                     classFile,
                                     virtualMethods,
+                                    multipleInheritance,
                                     unresolvedReferences);
                             return null;
                         }
@@ -172,11 +179,11 @@ public class Shrinker<T> {
         }
 
         waitForAllTasks();
-        mGraph.allNodesAdded();
+        mGraph.allClassesAdded();
 
         handleOverrides(virtualMethods);
+        handleMultipleInheritance(multipleInheritance);
         resolveReferences(unresolvedReferences);
-
         waitForAllTasks();
 
         mGraph.checkDependencies();
@@ -208,40 +215,39 @@ public class Shrinker<T> {
             mExecutor.execute(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    T currentClass = mGraph.getClassForMember(unresolvedReference.target);
+                    T startClass = mGraph.getClassForMember(unresolvedReference.target);
 
                     if (unresolvedReference.opcode == Opcodes.INVOKESPECIAL) {
                         // With invokespecial we disregard the class in target and start walking up
                         // the type hierarchy, starting from the superclass of the caller.
-                        currentClass =
+                        startClass =
                                 mGraph.getSuperclass(
                                         mGraph.getClassForMember(unresolvedReference.method));
+                        checkState(startClass != null);
                     }
 
-                    while (currentClass != null) {
+                    for (T currentClass : new TypeHierarchyTraverser<T>(mGraph).preOrderTraversal(startClass)) {
                         T target = mGraph.findMatchingMethod(currentClass, unresolvedReference.target);
                         if (target != null) {
                             if (!mGraph.isLibraryMember(target)) {
+                                mGraph.addDependency(unresolvedReference.method, currentClass, DependencyType.REQUIRED);
                                 mGraph.addDependency(unresolvedReference.method, target, DependencyType.REQUIRED);
                             }
-                            break;
-                        }
-
-                        try {
-                            currentClass = mGraph.getSuperclass(currentClass);
-                        } catch (ClassLookupException e) {
-                            // TODO: Check -dontwarn.
-                            System.out.println(
-                                    String.format(
-                                            "Unresolved reference: %s.%s",
-                                            mGraph.getClassName(
-                                                    mGraph.getClassForMember(
-                                                            unresolvedReference.target)),
-                                            mGraph.getMethodName(unresolvedReference.target)));
-                            break;
+                            return null;
                         }
                     }
 
+                    // TODO: Check -dontwarn.
+                    String className = mGraph.getClassName(
+                            mGraph.getClassForMember(
+                                    unresolvedReference.target));
+                    if (!className.startsWith("sun/misc/Unsafe")) {
+                        System.out.println(
+                                String.format(
+                                        "Unresolved reference: %s.%s",
+                                        className,
+                                        mGraph.getMethodNameAndDesc(unresolvedReference.target)));
+                    }
                     return null;
                 }
             });
@@ -282,7 +288,6 @@ public class Shrinker<T> {
                                         method,
                                         DependencyType.IF_CLASS_KEPT);
                             }
-                            break;
                         }
                     }
                     return null;
@@ -290,6 +295,68 @@ public class Shrinker<T> {
             });
         }
     }
+
+    private void handleMultipleInheritance(Set<T> multipleInheritance) {
+        for (final T klass : multipleInheritance) {
+            mExecutor.execute(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    T[] interfaces = mGraph.getInterfaces(klass);
+                    Set<T> methods = Sets.newHashSet();
+                    // TODO: Handle interface inheritance.
+                    for (T iface : interfaces) {
+                        for (T method : mGraph.getMethods(iface)) {
+                            methods.add(method);
+                        }
+                    }
+
+                    methods: for (T method : methods) {
+                        T matchingMethod = mGraph.findMatchingMethod(klass, method);
+                        if (matchingMethod != null) {
+                            continue; // klass implements the interface method the "usual" way.
+                        }
+
+                        try {
+                            T current = mGraph.getSuperclass(klass);
+                            while (current != null) {
+                                matchingMethod = mGraph.findMatchingMethod(current, method);
+                                if (matchingMethod != null) {
+                                    if (mGraph.isLibraryClass(current)) {
+                                        // We will not remove it anyway.
+                                        continue methods;
+                                    }
+                                    String name = mGraph.getMethodNameAndDesc(method);
+                                    String desc = name.substring(name.indexOf(':') + 1);
+                                    name = name.substring(0, name.indexOf(':'));
+                                    name = name + "$shrinker_fake";
+                                    T fakeMethod = mGraph.addMember(
+                                            klass, name, desc, mGraph.getMemberModifiers(method));
+
+                                    // Simulate a super call.
+                                    mGraph.addDependency(fakeMethod, matchingMethod, DependencyType.REQUIRED);
+
+                                    if (mGraph.isLibraryMember(method)) {
+                                        mGraph.addDependency(klass, fakeMethod, DependencyType.REQUIRED);
+                                    } else {
+                                        mGraph.addDependency(klass, fakeMethod, DependencyType.CLASS_IS_KEPT);
+                                        mGraph.addDependency(method, fakeMethod, DependencyType.IF_CLASS_KEPT);
+                                    }
+
+                                    continue methods;
+                                }
+
+                                current = mGraph.getSuperclass(current);
+                            }
+                        } catch (ClassLookupException e) {
+                            System.out.println("Can't resolve " + method);
+                        }
+                    }
+                    return null;
+                }
+            });
+        }
+    }
+
 
     private void readPlatformJar() throws IOException {
         JarFile jarFile = new JarFile(mAndroidJar);
@@ -354,7 +421,8 @@ public class Shrinker<T> {
     @NonNull
     private Set<Dependency<T>> getDependencies(MethodNode methodNode) {
         final Set<Dependency<T>> deps = Sets.newHashSet();
-        methodNode.accept(new DependencyFinderVisitor<T>(mGraph, null, null, null) {
+        methodNode.accept(new DependencyFinderVisitor<T>(mGraph, null, null, null,
+                null) {
             @Override
             protected void handleDependency(T source, T target, DependencyType type) {
                 deps.add(new Dependency<T>(target, type));
@@ -476,13 +544,14 @@ public class Shrinker<T> {
     private void processNewClassFile(
             File classFile,
             Set<T> virtualMethods,
+            Set<T> multipleInheritance,
             Set<UnresolvedReference<T>> unresolvedReferences) throws IOException {
         // TODO: Can we run keep rules in a visitor?
         // TODO: See if computing all these things on the class nodes is faster (on big projects).
         ClassNode classNode = new ClassNode(Opcodes.ASM5);
         ClassVisitor depsFinder =
                 new DependencyFinderVisitor<T>(mGraph, classNode, virtualMethods,
-                        unresolvedReferences) {
+                        unresolvedReferences, multipleInheritance) {
             @Override
             protected void handleDependency(T source, T target, DependencyType type) {
                 mGraph.addDependency(source, target, type);
@@ -524,11 +593,14 @@ public class Shrinker<T> {
             ShrinkType shrinkType = entry.getKey();
             KeepRules keepRules = entry.getValue();
 
+            Map<T, DependencyType> toIncrement = Maps.newHashMap();
+
             for (T klass : mGraph.getAllProgramClasses()) {
-                Map<T, DependencyType> symbolsToKeep = keepRules.getSymbolsToKeep(klass, mGraph);
-                for (Map.Entry<T, DependencyType> toIncrement : symbolsToKeep.entrySet()) {
-                    incrementCounter(toIncrement.getKey(), toIncrement.getValue(), shrinkType);
-                }
+                toIncrement.putAll(keepRules.getSymbolsToKeep(klass, mGraph));
+            }
+
+            for (Map.Entry<T, DependencyType> toIncrementEntry : toIncrement.entrySet()) {
+                incrementCounter(toIncrementEntry.getKey(), toIncrementEntry.getValue(), shrinkType);
             }
         }
     }

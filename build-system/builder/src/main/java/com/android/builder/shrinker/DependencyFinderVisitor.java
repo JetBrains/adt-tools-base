@@ -22,6 +22,7 @@ import com.android.utils.AsmUtils;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -39,6 +40,7 @@ import java.util.Set;
 public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
     private final ShrinkerGraph<T> mGraph;
     private final Set<T> mVirtualMethods;
+    private final Set<T> mMultipleInheritance;
     private final Set<Shrinker.UnresolvedReference<T>> mUnresolvedReferences;
 
     private String mClassName;
@@ -49,21 +51,37 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             ShrinkerGraph<T> graph,
             ClassVisitor cv,
             Set<T> virtualMethods,
-            Set<Shrinker.UnresolvedReference<T>> unresolvedReferences) {
+            Set<Shrinker.UnresolvedReference<T>> unresolvedReferences,
+            Set<T> multipleInheritance) {
         super(Opcodes.ASM5, cv);
         mGraph = graph;
         mVirtualMethods = virtualMethods;
         mUnresolvedReferences = unresolvedReferences;
+        mMultipleInheritance = multipleInheritance;
     }
 
     @Override
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
+        if (interfaces == null) {
+            interfaces = new String[0];
+        }
+
         mKlass = mGraph.getClassReference(name);
         if (!superName.equals("java/lang/Object")) {
             // Don't create graph edges for obvious things.
             handleDependency(mKlass, mGraph.getClassReference(superName), DependencyType.REQUIRED);
         }
+
+        // We don't create edges for interfaces, because interfaces can be removed by the shrinker,
+        // if they are not used.
+
+        if (interfaces.length > 0 && !mGraph.isLibraryClass(mGraph.getClassReference(superName))) {
+            // It's possible the superclass is implementing a method from the interface, we may need
+            // to add more edges to the graph to represent this.
+            mMultipleInheritance.add(mKlass);
+        }
+
 
         mClassName = name;
         mIsAnnotation = (access & Opcodes.ACC_ANNOTATION) != 0;
@@ -226,9 +244,9 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
 
         @Override
         public void visitTypeInsn(int opcode, String type) {
-            String className = getClassName(type);
-            if (className != null) {
-                handleDependency(mMethod, mGraph.getClassReference(className), DependencyType.REQUIRED);
+            T classReference = mGraph.getClassReference(getClassName(Type.getObjectType(type)));
+            if (classReference != null) {
+                handleDependency(mMethod, classReference, DependencyType.REQUIRED);
             }
             super.visitTypeInsn(opcode, type);
         }
@@ -240,6 +258,18 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             mUnresolvedReferences.add(
                     new Shrinker.UnresolvedReference<T>(mMethod, target, opcode));
             super.visitFieldInsn(opcode, owner, name, desc);
+        }
+
+        @Override
+        public void visitLdcInsn(Object cst) {
+            if (cst instanceof Type) {
+                Type type = Type.getObjectType(((Type) cst).getInternalName());
+                T classReference = mGraph.getClassReference(getClassName(type));
+                if (classReference != null) {
+                    handleDependency(mMethod, classReference, DependencyType.REQUIRED);
+                }
+            }
+            super.visitLdcInsn(cst);
         }
 
         @Override
@@ -258,10 +288,12 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                     // The "invokenonvirtual" semantics of invokespecial, for calling constructors
                     // and private methods.
                     handleDependency(mMethod, target, DependencyType.REQUIRED);
+                } else {
+                    // In all other cases we have to go through resolution stage (including fields,
+                    // static methods etc).
+                    mUnresolvedReferences.add(
+                            new Shrinker.UnresolvedReference<T>(mMethod, target, opcode));
                 }
-
-                mUnresolvedReferences.add(
-                        new Shrinker.UnresolvedReference<T>(mMethod, target, opcode));
             }
             super.visitMethodInsn(opcode, owner, name, desc, itf);
         }
@@ -273,6 +305,14 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
                 handleDependency(mMethod, mGraph.getClassReference(className), DependencyType.REQUIRED);
             }
             super.visitMultiANewArrayInsn(desc, dims);
+        }
+
+        @Override
+        public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
+            if (type != null) {
+                handleDependency(mMethod, mGraph.getClassReference(type), DependencyType.REQUIRED);
+            }
+            super.visitTryCatchBlock(start, end, handler, type);
         }
     }
 
