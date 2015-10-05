@@ -23,31 +23,29 @@ import com.android.tools.rpclib.binary.Encoder;
 import java.io.IOException;
 
 public final class Method {
-    public static final byte ID = 0;
-    public static Method id() { return new Method(ID); }
-    public static final byte Bool = 1;
+    public static final byte Bool = 0;
     public static Method bool() { return new Method(Bool); }
-    public static final byte Int8 = 2;
+    public static final byte Int8 = 1;
     public static Method int8() { return new Method(Int8); }
-    public static final byte Uint8 = 3;
+    public static final byte Uint8 = 2;
     public static Method uint8() { return new Method(Uint8); }
-    public static final byte Int16 = 4;
+    public static final byte Int16 = 3;
     public static Method int16() { return new Method(Int16); }
-    public static final byte Uint16 = 5;
+    public static final byte Uint16 = 4;
     public static Method uint16() { return new Method(Uint16); }
-    public static final byte Int32 = 6;
+    public static final byte Int32 = 5;
     public static Method int32() { return new Method(Int32); }
-    public static final byte Uint32 = 7;
+    public static final byte Uint32 = 6;
     public static Method uint32() { return new Method(Uint32); }
-    public static final byte Int64 = 8;
+    public static final byte Int64 = 7;
     public static Method int64() { return new Method(Int64); }
-    public static final byte Uint64 = 9;
+    public static final byte Uint64 = 8;
     public static Method uint64() { return new Method(Uint64); }
-    public static final byte Float32 = 10;
+    public static final byte Float32 = 9;
     public static Method float32() { return new Method(Float32); }
-    public static final byte Float64 = 11;
+    public static final byte Float64 = 10;
     public static Method float64() { return new Method(Float64); }
-    public static final byte String = 12;
+    public static final byte String = 11;
     public static Method string() { return new Method(String); }
 
     public final byte value;
@@ -80,7 +78,6 @@ public final class Method {
     @Override
     public String toString() {
         switch(value) {
-            case ID: return "ID";
             case Bool: return "Bool";
             case Int8: return "Int8";
             case Uint8: return "Uint8";

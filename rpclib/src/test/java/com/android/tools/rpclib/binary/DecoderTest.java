@@ -208,7 +208,7 @@ public class DecoderTest extends TestCase {
     inputBytes.write(new byte[]{0x03}); // type sid + encoded
     inputBytes.write(new byte[]{0x04, 't', 'e', 's', 't'}); // package
     inputBytes.write(new byte[]{0x05, 'T', 'y', 'p', 'e', 'A'}); // identity
-    inputBytes.write(new byte[]{0x00, 0x01, (byte)0xc0}); // version, fieldcount, string
+    inputBytes.write(new byte[]{0x00, 0x01, (byte)0xb0}); // version, fieldcount, string
 
     inputBytes.write(new byte[]{0x05, 'd', 'u', 'm', 'm', 'y'}); // payload
 

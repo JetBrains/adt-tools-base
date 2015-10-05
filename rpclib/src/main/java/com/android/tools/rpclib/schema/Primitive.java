@@ -70,9 +70,6 @@ public final class Primitive extends Type {
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
         switch (mMethod.value) {
-            case Method.ID:
-                e.id((BinaryID) value);
-                break;
             case Method.Bool:
                 e.bool((Boolean) value);
                 break;
@@ -117,8 +114,6 @@ public final class Primitive extends Type {
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
         switch (mMethod.value) {
-            case Method.ID:
-                return d.id();
             case Method.Bool:
                 return d.bool();
             case Method.Int8:
