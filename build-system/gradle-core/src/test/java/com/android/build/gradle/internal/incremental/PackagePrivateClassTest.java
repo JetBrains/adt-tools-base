@@ -62,6 +62,11 @@ public class PackagePrivateClassTest {
                 .that(packagePrivateInvoker.ternaryOperatorInConstructorParams(false))
                 .isEqualTo("false");
 
+        assertWithMessage("base: PackagePrivateInvoker:invokePackagePrivateInterface()")
+                .that(packagePrivateInvoker.invokePackagePrivateInterface())
+                .isEqualTo("packagePrivateInterface");
+
+
         harness.applyPatch("changeSubClass");
         assertWithMessage("changeSubClass: PackagePrivateInvoker:createPackagePrivateObject()")
                 .that(packagePrivateInvoker.createPackagePrivateObject()).isEqualTo("foobar");
@@ -81,5 +86,9 @@ public class PackagePrivateClassTest {
         assertWithMessage("changeSubClass: PackagePrivateInvoker:ternaryOperatorInConstructorParams()")
                 .that(packagePrivateInvoker.ternaryOperatorInConstructorParams(false))
                 .isEqualTo("true");
+
+        assertWithMessage("changeSubClass: PackagePrivateInvoker:invokePackagePrivateInterface()")
+                .that(packagePrivateInvoker.invokePackagePrivateInterface())
+                .isEqualTo("patched_packagePrivateInterface");
     }
 }

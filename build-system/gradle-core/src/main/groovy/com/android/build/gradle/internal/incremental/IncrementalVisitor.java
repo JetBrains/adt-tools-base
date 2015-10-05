@@ -255,14 +255,24 @@ public class IncrementalVisitor extends ClassVisitor {
         ClassNode classNode = new ClassNode();
         classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
 
+        String path = FileUtils.relativePath(inputFile, inputRootDirectory);
 
 
-        // when dealing with interface, we just copy the inputFile over without any changes.
+        // when dealing with interface, we just copy the inputFile over without any changes unless
+        // this is a package private interface.
+        AccessRight accessRight = AccessRight.fromNodeAccess(classNode.access);
         if ((classNode.access & Opcodes.ACC_INTERFACE) != 0) {
-            String path = FileUtils.relativePath(inputFile, inputRootDirectory);
+            // don't change the name of interfaces.
             File outputFile = new File(outputDirectory, path);
             Files.createParentDirs(outputFile);
-            Files.write(classBytes, outputFile);
+            if (accessRight == AccessRight.PACKAGE_PRIVATE) {
+                classNode.access = classNode.access | Opcodes.ACC_PUBLIC;
+                classNode.accept(classWriter);
+                Files.write(classWriter.toByteArray(), outputFile);
+            } else {
+                // just copy the input file over, no change.
+                Files.write(classBytes, outputFile);
+            }
             return outputFile;
         }
 
@@ -272,13 +282,10 @@ public class IncrementalVisitor extends ClassVisitor {
         } else {
             parentsNodes = Collections.emptyList();
         }
-
-        IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
-        classNode.accept(visitor);
-
-        String path = FileUtils.relativePath(inputFile, inputRootDirectory);
         File outputFile = new File(outputDirectory, visitorBuilder.getMangledRelativeClassFilePath(path));
         Files.createParentDirs(outputFile);
+        IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
+        classNode.accept(visitor);
 
         Files.write(classWriter.toByteArray(), outputFile);
         return outputFile;

@@ -17,30 +17,9 @@
 package com.example.basic;
 
 /**
- * Package Private class with PackagePrivate methods.
+ * Package Private interface for testing.
  */
-class PackagePrivateClass implements Provider<String> {
+interface PackagePrivateInterface {
 
-    private final String stringValue;
-    PackagePrivateClass(String param) {
-        this.stringValue = param;
-    }
-
-    String getStringValue() {
-        return stringValue;
-    }
-
-    @Override
-    public String getValue() {
-        return stringValue;
-    }
-
-    PackagePrivateInterface getPackagePrivateInterface() {
-        return new PackagePrivateInterface() {
-            @Override
-            public String getValue() {
-                return "packagePrivateInterface";
-            }
-        };
-    }
+    String getValue();
 }
