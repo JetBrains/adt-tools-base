@@ -16,13 +16,10 @@
 package com.android.ddmlib.logcat;
 
 import com.android.ddmlib.Log.LogLevel;
-import com.android.ddmlib.logcat.LogCatMessage;
-import com.android.ddmlib.logcat.LogCatMessageParser;
-
-import java.util.Date;
-import java.util.List;
 
 import junit.framework.TestCase;
+
+import java.util.List;
 
 /**
  * Unit tests for {@link LogCatMessageParser}.
@@ -59,7 +56,7 @@ public final class LogCatMessageParserTest extends TestCase {
             "warning message",                               //$NON-NLS-1$
             "[ 08-11 19:11:07.132   495:0x1ef F/wtftag   ]", //$NON-NLS-1$
             "wtf message",                                   //$NON-NLS-1$
-            "[ 08-11 21:15:35.7524  540:0x21c D/dtag     ]", //$NON-NLS-1$
+            "[ 08-11 21:15:35.754   540:0x21c D/dtag     ]", //$NON-NLS-1$
             "debug message",                                 //$NON-NLS-1$
     };
 
@@ -82,12 +79,12 @@ public final class LogCatMessageParserTest extends TestCase {
 
     /** Check the parsed tag. */
     public void testTag() {
-        assertEquals(mParsedMessages.get(1).getTag(), "etag");  //$NON-NLS-1$
+        assertEquals(mParsedMessages.get(1).getTag(), "etag");
     }
 
     /** Check the time field. */
     public void testTime() {
-        assertEquals(mParsedMessages.get(6).getTime(), "08-11 21:15:35.7524"); //$NON-NLS-1$
+        assertEquals(mParsedMessages.get(6).getTimestamp().toString(), "08-11 21:15:35.754");
     }
 
     /** Check the message field. */
@@ -96,18 +93,13 @@ public final class LogCatMessageParserTest extends TestCase {
     }
 
     public void testTid() {
-        assertEquals(mParsedMessages.get(0).getTid(), Integer.toString(0x1ef));
-        assertEquals(mParsedMessages.get(1).getTid(), "234");
+        assertEquals(mParsedMessages.get(0).getTid(), 0x1ef);
+        assertEquals(mParsedMessages.get(1).getTid(), 234);
     }
 
     public void testTimeAsDate() {
         LogCatHeader header = mParsedMessages.get(0).getHeader();
         // Test date against "08-11 19:11:07.132"
-        Date date = header.getTimeAsDate();
-        assertEquals(date.getMonth(), 7); // Month is 0 based
-        assertEquals(date.getDate(), 11);
-        assertEquals(date.getHours(), 19);
-        assertEquals(date.getMinutes(), 11);
-        assertEquals(date.getSeconds(), 7);
+        assertEquals(header.getTimestamp().toString(), "08-11 19:11:07.132");
     }
 }

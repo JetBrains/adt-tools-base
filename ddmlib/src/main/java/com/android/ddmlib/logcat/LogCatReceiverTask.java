@@ -38,11 +38,11 @@ public class LogCatReceiverTask implements Runnable {
     private static final int DEVICE_POLL_INTERVAL_MSEC = 1000;
 
     private static final LogCatMessage sDeviceDisconnectedMsg =
-            errorMessage("Device disconnected: 1");
+            new LogCatMessage(LogLevel.ERROR, "Device disconnected: 1");
     private static final LogCatMessage sConnectionTimeoutMsg =
-            errorMessage("LogCat Connection timed out");
+            new LogCatMessage(LogLevel.ERROR, "LogCat Connection timed out");
     private static final LogCatMessage sConnectionErrorMsg =
-            errorMessage("LogCat Connection error");
+            new LogCatMessage(LogLevel.ERROR, "LogCat Connection error");
 
     private final IDevice mDevice;
     private final LogCatOutputReceiver mReceiver;
@@ -128,9 +128,5 @@ public class LogCatReceiverTask implements Runnable {
         for (LogCatListener l: mListeners) {
             l.log(messages);
         }
-    }
-
-    private static LogCatMessage errorMessage(String msg) {
-        return new LogCatMessage(LogLevel.ERROR, "", "", "", "", "", msg);
     }
 }
