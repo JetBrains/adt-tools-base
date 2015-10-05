@@ -23,6 +23,8 @@ import static com.android.SdkConstants.ATTR_LABEL;
 import static com.android.SdkConstants.ATTR_PROMPT;
 import static com.android.SdkConstants.ATTR_TEXT;
 import static com.android.SdkConstants.ATTR_TITLE;
+import static com.android.tools.lint.checks.RestrictionsDetector.ATTR_DESCRIPTION;
+import static com.android.tools.lint.checks.RestrictionsDetector.TAG_RESTRICTIONS;
 
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
@@ -91,13 +93,18 @@ public class HardcodedValuesDetector extends LayoutDetector {
                 ATTR_PROMPT,
 
                 // Menus
-                ATTR_TITLE
+                ATTR_TITLE,
+
+                // App restrictions
+                ATTR_DESCRIPTION
         );
     }
 
     @Override
     public boolean appliesTo(@NonNull ResourceFolderType folderType) {
-        return folderType == ResourceFolderType.LAYOUT || folderType == ResourceFolderType.MENU;
+        return folderType == ResourceFolderType.LAYOUT
+                || folderType == ResourceFolderType.MENU
+                || folderType == ResourceFolderType.XML;
     }
 
     @Override
@@ -125,6 +132,16 @@ public class HardcodedValuesDetector extends LayoutDetector {
                 // etc on widgets dropped on the layout editor. Again, users are unlikely
                 // to leave it that way, so let's not flag it until they change it.
                 return;
+            }
+
+            // In XML folders, currently only checking application restriction files
+            // (since in general the res/xml folder can contain arbitrary XML content
+            // interpreted by the app)
+            if (context.getResourceFolderType() == ResourceFolderType.XML) {
+                String tagName = attribute.getOwnerDocument().getDocumentElement().getTagName();
+                if (!tagName.equals(TAG_RESTRICTIONS)) {
+                    return;
+                }
             }
 
             context.report(ISSUE, attribute, context.getLocation(attribute),
