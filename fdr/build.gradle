@@ -1,58 +1,18 @@
-buildscript {
-    repositories {
-        jcenter()
-        maven { url '../../../prebuilts/gradle-plugin' }
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:1.4.0-beta1'
-
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
-    }
-}
-
-apply plugin: 'com.android.library'
-
-android {
-    compileSdkVersion 22
-    buildToolsVersion "22.0.1"
-
-    defaultConfig {
-        minSdkVersion 15
-        targetSdkVersion 22
-        versionCode 1
-        versionName "1.0"
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_6
-        targetCompatibility JavaVersion.VERSION_1_6
-    }
-}
+apply plugin: 'java'
 
 repositories {
-    if (System.env.CUSTOM_REPO != null) {
-        maven { url System.env.CUSTOM_REPO }
-    } else if (System.env.USE_EXTERNAL_REPO) {
-        maven { url '../../../out/repo' }
-    }
+    maven { url System.env.ANDROID_HOME + '/extras/android/m2repository/' }
+}
+
+configurations {
+    provided
 }
 
 dependencies {
-    compile 'com.android.support:support-annotations:22.2.0'
+    provided 'com.android.support:support-annotations:22.2.0'
+    provided files(System.env.ANDROID_HOME + '/platforms/android-22/android.jar')
 }
 
-
-configurations {
-    classes
-}
-
-afterEvaluate {
-    artifacts {
-        classes packageReleaseJar
-    }
-    // disable the lint task as it does not support linting ASM correctly.
-    tasks["lint"].setEnabled(false);
-    // disable the test task for now to avoid creating the mock android.jar
-    tasks["test"].setEnabled(false);
-    tasks["mockableAndroidJar"].setEnabled(false);
+sourceSets {
+    main { compileClasspath += configurations.provided }
 }
