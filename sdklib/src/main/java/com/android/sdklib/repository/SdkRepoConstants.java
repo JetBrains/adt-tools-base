@@ -34,7 +34,7 @@ public class SdkRepoConstants extends RepoConstants {
      * The latest version of the sdk-repository XML Schema.
      * Valid version numbers are between 1 and this number, included.
      */
-    public static final int NS_LATEST_VERSION = 11;
+    public static final int NS_LATEST_VERSION = 12;
 
     /**
      * The min version of the sdk-repository XML Schema we'll try to load.
