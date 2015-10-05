@@ -24,8 +24,26 @@ import java.io.IOException;
 public final class Struct extends Type {
     Entity mEntity;
 
+    public Struct(Entity entity) {
+        mEntity = entity;
+    }
+
     public Struct(@NotNull Decoder d, boolean compact) throws IOException {
         mEntity = d.entity(compact);
+        if (!compact) {
+            d.string();
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        // struct types are all equivalent for the purposes of signature matching
+        return (o instanceof Struct);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 
     @NotNull
@@ -46,9 +64,9 @@ public final class Struct extends Type {
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        BinaryClass klass = Namespace.lookup(mEntity.getTypeID());
+        BinaryClass klass = Namespace.lookup(mEntity);
         if (klass == null) {
-            throw new IOException("Unknown type id: " + mEntity.getTypeID());
+            throw new IOException("Unknown type: " + mEntity);
         }
         BinaryObject obj = klass.create();
         klass.decode(d, obj);
@@ -59,5 +77,8 @@ public final class Struct extends Type {
     public void encode(@NotNull Encoder e, boolean compact) throws IOException {
         TypeTag.structTag().encode(e);
         e.entity(mEntity, compact);
+        if (!compact) {
+            e.string("");
+        }
     }
 }

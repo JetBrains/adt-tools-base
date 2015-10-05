@@ -162,15 +162,18 @@ public class Encoder {
     id.write(this);
   }
 
-  public void entity(@NotNull Entity entity, boolean compact) throws IOException {
-    if (mEntities.containsKey(entity)) {
+  public void entity(Entity entity, boolean compact) throws IOException {
+    if (entity == null) {
+      uint32(0);
+    } else if (mEntities.containsKey(entity)) {
       int sid = mEntities.get(entity);
       uint32(sid << 1);
+    } else {
+      int sid = mEntities.size() + 1;
+      mEntities.put(entity, sid);
+      uint32((sid << 1) | 1);
+      entity.encode(this, compact);
     }
-    int sid = mEntities.size() + 1;
-    mEntities.put(entity, sid);
-    uint32((sid << 1 ) | 1);
-    entity.encode(this, compact);
   }
 
   public void value(@Nullable BinaryObject obj) throws IOException {
@@ -179,12 +182,12 @@ public class Encoder {
 
   public void variant(@Nullable BinaryObject obj) throws IOException {
     if (obj == null) {
-      id(BinaryID.INVALID);
-      return;
+      entity(null, true);
+    } else {
+      BinaryClass c = obj.klass();
+      entity(c.entity(), true);
+      c.encode(this, obj);
     }
-    BinaryClass c = obj.klass();
-    id(c.id());
-    c.encode(this, obj);
   }
 
   public void object(@Nullable BinaryObject obj) throws IOException {

@@ -17,6 +17,7 @@
  */
 package com.android.tools.rpclib.rpccore;
 
+import com.android.tools.rpclib.schema.*;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
@@ -48,11 +49,14 @@ public final class RpcError implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {-58, 60, 49, 70, -11, -14, 109, 120, 6, 6, -119, 3, 91, -26, 63, 108, 111, 122, 17, 26, };
-    public static final BinaryID ID = new BinaryID(IDBytes);
+
+    private static final Entity ENTITY = new Entity("rpc","Error","","");
 
     static {
-        Namespace.register(ID, Klass.INSTANCE);
+        Namespace.register(Klass.INSTANCE);
+        ENTITY.setFields(new Field[]{
+            new Field("message", new Primitive("string", Method.String)),
+        });
     }
     public static void register() {}
     //<<<End:Java.ClassBody:1>>>
@@ -61,7 +65,7 @@ public final class RpcError implements BinaryObject {
         INSTANCE;
 
         @Override @NotNull
-        public BinaryID id() { return ID; }
+        public Entity entity() { return ENTITY; }
 
         @Override @NotNull
         public BinaryObject create() { return new RpcError(); }

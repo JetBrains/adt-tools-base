@@ -29,30 +29,27 @@ public final class Primitive extends Type {
 
     Method mMethod;
 
-    public Primitive(@NotNull Decoder d, boolean compact) throws IOException {
-        mName = d.string();
-        mMethod = Method.decode(d);
+    public Primitive(String name, byte method) {
+        mName = name;
+        mMethod = new Method(method);
+    }
+
+    public Primitive(@NotNull Decoder d, Method method, boolean compact) throws IOException {
+        mMethod = method;
+        if (!compact) {
+            mName = d.string();
+        }
     }
 
     @Override
     public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-        Primitive primitive = (Primitive) o;
-        if (!mName.equals(primitive.mName)) {
-            return false;
-        }
-        assert (mMethod.value == primitive.mMethod.value);
-        return true;
+        if (!(o instanceof Primitive)) return false;
+        return mMethod.equals(((Primitive)o).mMethod);
     }
 
     @Override
     public int hashCode() {
-        return mName.hashCode();
+        return mMethod.hashCode();
     }
 
     @Override
@@ -153,8 +150,10 @@ public final class Primitive extends Type {
 
     @Override
     public void encode(@NotNull Encoder e, boolean compact) throws IOException {
-        TypeTag.primitiveTag().encode(e);
-        e.string(mName);
-        mMethod.encode(e);
+        //noinspection PointlessBitwiseExpression
+        e.uint8((short)(TypeTag.PrimitiveTag | ( mMethod.value << 4)));
+        if (!compact) {
+            e.string(mName);
+        }
     }
 }

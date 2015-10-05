@@ -17,6 +17,7 @@
  */
 package com.android.tools.rpclib.binary;
 
+import com.android.tools.rpclib.schema.*;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
@@ -48,11 +49,14 @@ public final class TypeA implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {0, -120, -110, 57, -98, -80, 116, -79, 86, 51, 57, 114, 13, -80, -20, -106, -78, 42, -37, 72, };
-    public static final BinaryID ID = new BinaryID(IDBytes);
+
+    private static final Entity ENTITY = new Entity("test","TypeA","","");
 
     static {
-        Namespace.register(ID, Klass.INSTANCE);
+        Namespace.register(Klass.INSTANCE);
+        ENTITY.setFields(new Field[]{
+            new Field("Data", new Primitive("string", Method.String)),
+        });
     }
     public static void register() {}
     //<<<End:Java.ClassBody:1>>>
@@ -61,7 +65,7 @@ public final class TypeA implements BinaryObject {
         INSTANCE;
 
         @Override @NotNull
-        public BinaryID id() { return ID; }
+        public Entity entity() { return ENTITY; }
 
         @Override @NotNull
         public BinaryObject create() { return new TypeA(); }

@@ -32,13 +32,8 @@ public final class Message implements BinaryObject {
         return Klass.INSTANCE;
     }
 
-    private static final byte[] IDBytes = {40, -113, 108, -120, 49, -47, 4, 82, -73, 90, 37, -125,
-            1, 78, -102, 124, 83, 3, 50, -98,};
-
-    public static final BinaryID ID = new BinaryID(IDBytes);
-
     static {
-        Namespace.register(ID, Klass.INSTANCE);
+        Namespace.register(Klass.INSTANCE);
     }
 
     public static void register() {
@@ -47,10 +42,12 @@ public final class Message implements BinaryObject {
     public enum Klass implements BinaryClass {
         INSTANCE;
 
+        private static final Entity ENTITY = new Entity("schema","Message","","");
+
         @Override
         @NotNull
-        public BinaryID id() {
-            return ID;
+        public Entity entity() {
+            return ENTITY;
         }
 
         @Override

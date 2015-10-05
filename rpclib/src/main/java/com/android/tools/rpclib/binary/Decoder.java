@@ -15,6 +15,7 @@
  */
 package com.android.tools.rpclib.binary;
 
+import com.android.tools.rpclib.schema.Dynamic;
 import com.android.tools.rpclib.schema.Entity;
 import gnu.trove.TIntObjectHashMap;
 import gnu.trove.TObjectIntHashMap;
@@ -178,8 +179,9 @@ public class Decoder {
     int v = uint32();
     int sid = v >> 1;
     if ((v & 1) != 0) {
-      Entity entity = new Entity(this, compact);
+      Entity entity = new Entity();
       mEntities.put(sid, entity);
+      entity.decode(this, compact);
       return entity;
     }
     Entity entity = mEntities.get(sid);
@@ -195,10 +197,10 @@ public class Decoder {
 
   @Nullable
   public BinaryObject variant() throws IOException {
-    BinaryID id = id();
-    BinaryClass c = Namespace.lookup(id);
+    Entity entity = entity(true);
+    BinaryClass c = Namespace.lookup(entity);
     if (c == null) {
-      throw new RuntimeException("Unknown type id: " + id);
+      c = Dynamic.register(entity);
     }
     BinaryObject obj = c.create();
     c.decode(this, obj);

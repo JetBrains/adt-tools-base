@@ -20,24 +20,33 @@ import com.android.tools.rpclib.binary.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public final class Entity {
-    private BinaryID mTypeID;
     private String mPackage;
-    private String mName;
     private String mIdentity;
     private String mVersion;
+    private String mDisplay;
     private boolean mExported;
     private Field[] mFields;
     private BinaryObject[] mMetadata;
 
-    public Entity(@NotNull Decoder d, boolean compact) throws IOException {
+    public Entity(String pkg, String identity, String version, String display) {
+        mPackage = pkg;
+        mIdentity = identity;
+        mVersion = version;
+        mDisplay = display;
+        mFields = new Field[]{};
+    }
+
+    public Entity() {}
+
+    public void decode(@NotNull Decoder d, boolean compact) throws IOException {
         mPackage = d.string();
         mIdentity = d.string();
         mVersion = d.string();
         if (!compact) {
-            mName = d.string();
-            mTypeID = d.id();
+            mDisplay = d.string();
             mExported = d.bool();
         }
         mFields = new Field[d.uint32()];
@@ -56,16 +65,12 @@ public final class Entity {
         }
     }
 
-    public BinaryID getTypeID() {
-        return mTypeID;
-    }
-
     public String getPackage() {
         return mPackage;
     }
 
     public String getName() {
-        return mName;
+        return mDisplay == "" ? mIdentity : mDisplay;
     }
 
     public boolean getExported() {
@@ -74,6 +79,9 @@ public final class Entity {
 
     public Field[] getFields() {
         return mFields;
+    }
+    public void setFields(Field[] fields) {
+        mFields = fields;
     }
 
     public BinaryObject[] getMetadata() {
@@ -85,8 +93,7 @@ public final class Entity {
         e.string(mIdentity);
         e.string(mVersion);
         if (!compact) {
-            e.string(mName);
-            e.id(mTypeID);
+            e.string(mDisplay);
             e.bool(mExported);
         }
         e.uint32(mFields.length);
@@ -102,5 +109,24 @@ public final class Entity {
                 e.object(meta);
             }
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Entity entity = (Entity)o;
+        if (!mPackage.equals(entity.mPackage)) return false;
+        if (!mIdentity.equals(entity.mIdentity)) return false;
+        if (mVersion != null ? !mVersion.equals(entity.mVersion) : entity.mVersion != null) return false;
+        return Arrays.equals(mFields, entity.mFields);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mPackage.hashCode();
+        result = 31 * result + mIdentity.hashCode();
+        result = 31 * result + (mVersion != null ? mVersion.hashCode() : 0);
+        return result;
     }
 }

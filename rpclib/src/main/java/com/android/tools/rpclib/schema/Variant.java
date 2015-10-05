@@ -27,10 +27,24 @@ public final class Variant extends Type {
 
     String mName;
 
+    public Variant(String name) {
+        mName = name;
+    }
+
     public Variant(@NotNull Decoder d, boolean compact) throws IOException {
         if (!compact) {
             mName = d.string();
         }        
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return (o instanceof Variant);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 
     @NotNull
