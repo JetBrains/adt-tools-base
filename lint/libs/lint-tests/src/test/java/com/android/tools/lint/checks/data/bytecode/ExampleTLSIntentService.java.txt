@@ -1,0 +1,62 @@
+package test.pkg;
+
+import android.app.IntentService;
+import android.content.Intent;
+
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.security.GeneralSecurityException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+public class ExampleTLSIntentService extends IntentService {
+    TrustManager[] trustManagerExample;
+
+    {
+        trustManagerExample = new TrustManager[]{new X509TrustManager() {
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                try {
+                    FileInputStream fis = new FileInputStream("testcert.pem");
+                    BufferedInputStream bis = new BufferedInputStream(fis);
+                    CertificateFactory cf = CertificateFactory.getInstance("X.509");
+                    X509Certificate cert = (X509Certificate) cf.generateCertificate(bis);
+                    return new X509Certificate[]{cert};
+                } catch (Exception e) {
+                    throw new RuntimeException("Could not load cert");
+                }
+            }
+
+            @Override
+            public void checkClientTrusted(X509Certificate[] certs, String authType) throws CertificateException {
+                throw new CertificateException("Not trusted");
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] certs, String authType) throws CertificateException {
+                throw new CertificateException("Not trusted");
+            }
+        }};
+    }
+
+    public ExampleTLSIntentService() {
+        super("ExampleTLSIntentService");
+    }
+
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        try {
+            SSLContext sc = SSLContext.getInstance("TLSv1.2");
+            sc.init(null, trustManagerExample, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+        } catch (GeneralSecurityException e) {
+            System.out.println(e.getStackTrace());
+        }
+    }
+}
