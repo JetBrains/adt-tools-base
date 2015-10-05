@@ -154,20 +154,6 @@ class BasicTest {
     @Test
     void "we don't fail on LICENSE.txt when packaging dependencies"() {
         project.execute("assembleAndroidTest")
-
-        assertThatApk(project.getTestApk("debug")).containsFileWithContent(
-                "assets/randomfile.txt", "abcd")
-    }
-
-    @Test
-    void "check added assets gets included in androidTest"() {
-        TemporaryProjectModification.doTest(project) {
-            it.addFile("src/androidTest/assets/foo.txt", "foo.txt");
-            project.execute("assembleAndroidTest")
-
-            assertThatApk(project.getTestApk("debug")).containsFileWithContent(
-                    "assets/foo.txt", "foo.txt")
-        }
     }
 
     @Test
