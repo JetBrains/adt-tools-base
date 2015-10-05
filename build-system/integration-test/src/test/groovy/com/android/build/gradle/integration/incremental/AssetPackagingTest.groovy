@@ -227,6 +227,42 @@ android {
         }
     }
 
+    @Test
+    void "test app project with modified asset in dependency"() {
+        project.execute("app:clean", "library:clean", "app:assembleDebug")
+
+        TemporaryProjectModification.doTest(libProject) {
+            it.replaceFile("src/main/assets/filelib.txt", "new content")
+            project.execute("app:assembleDebug")
+
+            checkApk(appProject, "filelib.txt", "new content")
+        }
+    }
+
+    @Test
+    void "test app project with added asset in dependency"() {
+        project.execute("app:clean", "library:clean", "app:assembleDebug")
+
+        TemporaryProjectModification.doTest(libProject) {
+            it.addFile("src/main/assets/new_lib_file.txt", "new content")
+            project.execute("app:assembleDebug")
+
+            checkApk(appProject, "new_lib_file.txt", "new content")
+        }
+    }
+
+    @Test
+    void "test app project with removed asset in dependency"() {
+        project.execute("app:clean", "library:clean", "app:assembleDebug")
+
+        TemporaryProjectModification.doTest(libProject) {
+            it.removeFile("src/main/assets/filelib.txt")
+            project.execute("app:assembleDebug")
+
+            checkApk(appProject, "filelib.txt", null)
+        }
+    }
+
     // ---- APP TEST ---
 
     @Test
