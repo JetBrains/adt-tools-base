@@ -128,7 +128,7 @@ public class TemporaryProjectModification {
 
     public void replaceFile(
             @NonNull String relativePath,
-            @NonNull final String content) throws InitializationError {
+            @NonNull final String content) throws IOException {
         modifyFile(relativePath, new Function<String, String>() {
             @Override
             public String apply(String input) {
@@ -140,7 +140,7 @@ public class TemporaryProjectModification {
     public void replaceInFile(
             @NonNull String relativePath,
             @NonNull final String search,
-            @NonNull final String replace) throws InitializationError {
+            @NonNull final String replace) throws IOException {
         modifyFile(relativePath, new Function<String, String>() {
             @Override
             public String apply(String input) {
@@ -150,15 +150,10 @@ public class TemporaryProjectModification {
 
     }
 
-    public void removeFile(@NonNull String relativePath) throws InitializationError, IOException {
+    public void removeFile(@NonNull String relativePath) throws IOException {
         File file = getFile(relativePath);
 
-        String currentContent;
-        try {
-            currentContent = Files.toString(file, Charsets.UTF_8);
-        } catch (IOException e) {
-            throw new InitializationError(e);
-        }
+        String currentContent = Files.toString(file, Charsets.UTF_8);
 
         // We can modify multiple times, but we only want to store the original.
         if (!mFileEvents.containsKey(relativePath)) {
@@ -170,12 +165,14 @@ public class TemporaryProjectModification {
 
     public void addFile(
             @NonNull String relativePath,
-            @NonNull String content) throws InitializationError, IOException {
+            @NonNull String content) throws IOException {
         File file = getFile(relativePath);
 
         if (file.exists()) {
             throw new RuntimeException("File already exists: " + file);
         }
+
+        FileUtils.mkdirs(file.getParentFile());
 
         mFileEvents.put(relativePath, FileEvent.added());
 
@@ -184,15 +181,10 @@ public class TemporaryProjectModification {
 
     public void modifyFile(
             @NonNull String relativePath,
-            @NonNull Function<String, String> modification) throws InitializationError {
+            @NonNull Function<String, String> modification) throws IOException {
         File file = getFile(relativePath);
 
-        String currentContent;
-        try {
-            currentContent = Files.toString(file, Charsets.UTF_8);
-        } catch (IOException e) {
-            throw new InitializationError(e);
-        }
+        String currentContent = Files.toString(file, Charsets.UTF_8);
 
         // We can modify multiple times, but we only want to store the original.
         if (!mFileEvents.containsKey(relativePath)) {
@@ -204,34 +196,28 @@ public class TemporaryProjectModification {
         if (newContent == null) {
             assertTrue("File should have been deleted", file.delete());
         } else {
-            try {
-                Files.write(newContent, file, Charsets.UTF_8);
-            } catch (IOException e) {
-                throw new InitializationError(e);
-            }
+            Files.write(newContent, file, Charsets.UTF_8);
         }
     }
 
     /**
      * Returns the project back to its original state.
      */
-    private void close() throws InitializationError {
-        try {
-            for (Map.Entry<String, FileEvent> entry : mFileEvents.entrySet()) {
-                FileEvent fileEvent = entry.getValue();
-                switch (fileEvent.getType()) {
-                    case REMOVED:
-                    case CHANGED:
-                        Files.write(fileEvent.getFileContent(),
-                                getFile(entry.getKey()), Charsets.UTF_8);
-                        break;
-                    case ADDED:
-                        FileUtils.delete(mTestProject.file(entry.getKey()));
-                }
+    private void close() throws IOException {
+        for (Map.Entry<String, FileEvent> entry : mFileEvents.entrySet()) {
+            FileEvent fileEvent = entry.getValue();
+            switch (fileEvent.getType()) {
+                case REMOVED:
+                case CHANGED:
+                    Files.write(fileEvent.getFileContent(),
+                            getFile(entry.getKey()), Charsets.UTF_8);
+                    break;
+                case ADDED:
+                    // it's fine if the file was already removed somehow.
+                    FileUtils.deleteIfExists(mTestProject.file(entry.getKey()));
             }
-        } catch (IOException e) {
-            throw new InitializationError(e);
         }
+
         mFileEvents.clear();
     }
 
