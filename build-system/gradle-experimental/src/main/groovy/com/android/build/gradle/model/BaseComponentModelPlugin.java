@@ -187,6 +187,71 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         modelRegistry.create(ModelCreators.bridgedInstance(
                 ModelReference.of("toolingRegistry", ToolingModelBuilderRegistry.class),
                 toolingRegistry).descriptor("Tooling model builder model registry.").build());
+
+        // Create SDK handler.  This has to be done in the 'apply' method to ensure it is executed.
+        SdkHandler sdkHandler = createSdkHandler(project);
+        modelRegistry.create(ModelCreators.bridgedInstance(
+                ModelReference.of("createSdkHandler", SdkHandler.class),
+                sdkHandler).descriptor("SDK handler.").build());
+    }
+
+    private SdkHandler createSdkHandler(final Project project) {
+        final ILogger logger = new LoggerWrapper(project.getLogger());
+        final SdkHandler sdkHandler = new SdkHandler(project, logger);
+
+        // call back on execution. This is called after the whole build is done (not
+        // after the current project is done).
+        // This is will be called for each (android) projects though, so this should support
+        // being called 2+ times.
+        project.getGradle().buildFinished(new Closure<Object>(this, this) {
+            public void doCall(Object it) {
+                ExecutorSingleton.shutdown();
+                sdkHandler.unload();
+                try {
+                    PreDexCache.getCache().clear(project.getRootProject()
+                            .file(String.valueOf(project.getRootProject().getBuildDir()) + "/"
+                                    + FD_INTERMEDIATES + "/dex-cache/cache.xml"), logger);
+                    JackConversionCache.getCache().clear(project.getRootProject()
+                            .file(String.valueOf(project.getRootProject().getBuildDir()) + "/"
+                                    + FD_INTERMEDIATES + "/jack-cache/cache.xml"), logger);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                LibraryCache.getCache().unload();
+            }
+        });
+
+        project.getGradle().getTaskGraph().whenReady(new Closure<Void>(this, this) {
+            public void doCall(TaskExecutionGraph taskGraph) {
+                for (Task task : taskGraph.getAllTasks()) {
+                    if (task instanceof TransformTask) {
+                        if (((TransformTask) task).getTransform() instanceof DexTransform) {
+                            PreDexCache.getCache().load(project.getRootProject()
+                                    .file(String.valueOf(project.getRootProject().getBuildDir())
+                                            + "/" + FD_INTERMEDIATES + "/dex-cache/cache.xml"));
+                            break;
+                        }
+                    } else if (task instanceof JillTask) {
+                        JackConversionCache.getCache().load(project.getRootProject()
+                                .file(String.valueOf(project.getRootProject().getBuildDir())
+                                        + "/" + FD_INTERMEDIATES + "/jack-cache/cache.xml"));
+                        break;
+                    }
+                }
+            }
+        });
+
+        // setup SDK repositories.
+        for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
+            project.getRepositories().maven(new Action<MavenArtifactRepository>() {
+                @Override
+                public void execute(MavenArtifactRepository repo) {
+                    repo.setUrl(file.toURI());
+
+                }
+            });
+        }
+        return sdkHandler;
     }
 
     private static void createConfiguration(@NonNull ConfigurationContainer configurations,
@@ -261,69 +326,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             return new ExtraModelInfo(project, isApplication);
         }
 
-        @Model
-        public SdkHandler createSdkHandler(final Project project) {
-            final ILogger logger = new LoggerWrapper(project.getLogger());
-            final SdkHandler sdkHandler = new SdkHandler(project, logger);
-
-            // call back on execution. This is called after the whole build is done (not
-            // after the current project is done).
-            // This is will be called for each (android) projects though, so this should support
-            // being called 2+ times.
-            project.getGradle().buildFinished(new Closure<Object>(this, this) {
-                public void doCall(Object it) {
-                    ExecutorSingleton.shutdown();
-                    sdkHandler.unload();
-                    try {
-                        PreDexCache.getCache().clear(project.getRootProject()
-                                .file(String.valueOf(project.getRootProject().getBuildDir()) + "/"
-                                        + FD_INTERMEDIATES + "/dex-cache/cache.xml"), logger);
-                        JackConversionCache.getCache().clear(project.getRootProject()
-                                .file(String.valueOf(project.getRootProject().getBuildDir()) + "/"
-                                        + FD_INTERMEDIATES + "/jack-cache/cache.xml"), logger);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    LibraryCache.getCache().unload();
-                }
-
-                public void doCall() {
-                    doCall(null);
-                }
-            });
-
-            project.getGradle().getTaskGraph().whenReady(new Closure<Void>(this, this) {
-                public void doCall(TaskExecutionGraph taskGraph) {
-                    for (Task task : taskGraph.getAllTasks()) {
-                        if (task instanceof TransformTask) {
-                            if (((TransformTask) task).getTransform() instanceof DexTransform) {
-                                PreDexCache.getCache().load(project.getRootProject()
-                                        .file(String.valueOf(project.getRootProject().getBuildDir())
-                                                + "/" + FD_INTERMEDIATES + "/dex-cache/cache.xml"));
-                                break;
-                            }
-                        } else if (task instanceof JillTask) {
-                            JackConversionCache.getCache().load(project.getRootProject()
-                                    .file(String.valueOf(project.getRootProject().getBuildDir())
-                                            + "/" + FD_INTERMEDIATES + "/jack-cache/cache.xml"));
-                            break;
-                        }
-                    }
-                }
-            });
-
-            // setup SDK repositories.
-            for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
-                project.getRepositories().maven(new Action<MavenArtifactRepository>() {
-                    @Override
-                    public void execute(MavenArtifactRepository repo) {
-                        repo.setUrl(file.toURI());
-
-                    }
-                });
-            }
-            return sdkHandler;
-        }
 
         @Model(ANDROID_BUILDER)
         public AndroidBuilder createAndroidBuilder(Project project, ExtraModelInfo extraModelInfo) {
