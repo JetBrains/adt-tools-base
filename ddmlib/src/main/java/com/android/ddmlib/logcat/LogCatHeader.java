@@ -19,26 +19,17 @@ package com.android.ddmlib.logcat;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.Log.LogLevel;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 /**
  * Data class for message header information which gets reported by logcat.
  */
 public final class LogCatHeader {
 
-    // Parser that matches the format of the time reported by logcat
-    private static final SimpleDateFormat TIME_PARSER = new SimpleDateFormat("MM-dd hh:mm:ss.SSS");
-
     @NonNull
     private final LogLevel mLogLevel;
 
-    @NonNull
-    private final String mPid;
+    private final int mPid;
 
-    @NonNull
-    private final String mTid;
+    private final int mTid;
 
     @NonNull
     private final String mAppName;
@@ -47,33 +38,19 @@ public final class LogCatHeader {
     private final String mTag;
 
     @NonNull
-    private final String mTime;
+    private final LogCatTimestamp mTimestamp;
 
     /**
      * Construct an immutable log message object.
      */
-    public LogCatHeader(@NonNull LogLevel logLevel,
-            @NonNull String pid,
-            @NonNull String tid,
-            @NonNull String appName,
-            @NonNull String tag,
-            @NonNull String time) {
+    public LogCatHeader(@NonNull LogLevel logLevel, int pid, int tid, @NonNull String appName,
+            @NonNull String tag, @NonNull LogCatTimestamp timestamp) {
         mLogLevel = logLevel;
-        mPid = pid;
         mAppName = appName;
         mTag = tag;
-        mTime = time;
-
-        long tidValue;
-        try {
-            // Thread id's may be in hex on some platforms.
-            // Decode and store them in radix 10.
-            tidValue = Long.decode(tid.trim());
-        } catch (NumberFormatException e) {
-            tidValue = -1;
-        }
-
-        mTid = Long.toString(tidValue);
+        mTimestamp = timestamp;
+        mPid = pid;
+        mTid = tid;
     }
 
     @NonNull
@@ -81,13 +58,11 @@ public final class LogCatHeader {
         return mLogLevel;
     }
 
-    @NonNull
-    public String getPid() {
+    public int getPid() {
         return mPid;
     }
 
-    @NonNull
-    public String getTid() {
+    public int getTid() {
         return mTid;
     }
 
@@ -102,27 +77,13 @@ public final class LogCatHeader {
     }
 
     @NonNull
-    public String getTime() {
-        return mTime;
+    public LogCatTimestamp getTimestamp() {
+        return mTimestamp;
     }
-
-    /**
-     * Returns the header time as a {@link Date} instance, which is more convenient for comparing
-     * one header's time with another.
-     */
-    @NonNull
-    public Date getTimeAsDate() {
-        try {
-            return TIME_PARSER.parse(mTime);
-        } catch (ParseException e) {
-            throw new RuntimeException(String.format("Could not convert \"%s\" to %s", mTime,
-                    Date.class.getSimpleName()), e);
-        }
-    }
-
 
     @Override
     public String toString() {
-        return String.format("%s: %s/%s(%s)", mTime, mLogLevel.getPriorityLetter(), mTag, mPid);
+        return String.format("%s: %s/%s(%s)", mTimestamp, mLogLevel.getPriorityLetter(), mTag,
+                mPid);
     }
 }

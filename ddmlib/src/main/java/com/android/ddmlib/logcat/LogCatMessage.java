@@ -38,10 +38,11 @@ public final class LogCatMessage {
      * #LogCatMessage(LogCatHeader, String)} instead. This approach shares the same header data
      * across multiple messages.
      */
-    public LogCatMessage(@NonNull LogLevel logLevel, @NonNull String pid, @NonNull String tid,
+    @Deprecated
+    public LogCatMessage(@NonNull LogLevel logLevel, int pid, int tid,
             @NonNull String appName, @NonNull String tag,
-            @NonNull String time, @NonNull String msg) {
-        this(new LogCatHeader(logLevel, pid, tid, appName, tag, time), msg);
+            @NonNull LogCatTimestamp timestamp, @NonNull String msg) {
+        this(new LogCatHeader(logLevel, pid, tid, appName, tag, timestamp), msg);
     }
 
     /**
@@ -51,6 +52,15 @@ public final class LogCatMessage {
         mHeader = header;
         mMessage = msg;
     }
+
+    /**
+     * Helper constructor to generate a dummy message, useful if we want to add message from code
+     * that matches the logcat format.
+     */
+    public LogCatMessage(@NonNull LogLevel logLevel, @NonNull String message) {
+        this(logLevel, -1, -1, "", "", LogCatTimestamp.ZERO, message);
+    }
+
 
     @NonNull
     public LogCatHeader getHeader() {
@@ -67,13 +77,11 @@ public final class LogCatMessage {
         return mHeader.getLogLevel();
     }
 
-    @NonNull
-    public String getPid() {
+    public int getPid() {
         return mHeader.getPid();
     }
 
-    @NonNull
-    public String getTid() {
+    public int getTid() {
         return mHeader.getTid();
     }
 
@@ -88,8 +96,8 @@ public final class LogCatMessage {
     }
 
     @NonNull
-    public String getTime() {
-        return mHeader.getTime();
+    public LogCatTimestamp getTimestamp() {
+        return mHeader.getTimestamp();
     }
 
     @Override

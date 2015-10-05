@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log.LogLevel;
-import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +30,6 @@ import java.util.regex.Pattern;
  * Class to parse raw output of {@code adb logcat -v long} to {@link LogCatMessage} objects.
  */
 public final class LogCatMessageParser {
-
-    @Nullable LogCatHeader mPrevHeader;
 
     /**
      * Pattern for logcat -v long header ([ MM-DD HH:MM:SS.mmm PID:TID LEVEL/TAG ])
@@ -45,12 +42,16 @@ public final class LogCatMessageParser {
      */
     private static final Pattern sLogHeaderPattern = Pattern.compile(
             "^\\[\\s(\\d\\d-\\d\\d\\s\\d\\d:\\d\\d:\\d\\d\\.\\d+)"
-            + "\\s+(\\d*):\\s*(\\S+)\\s([VDIWEAF])/(.*[^\\s])\\s+\\]$");
+                    + "\\s+(\\d*):\\s*(\\S+)\\s([VDIWEAF])/(.*[^\\s])\\s+\\]$");
+
+    @Nullable
+    LogCatHeader mPrevHeader;
 
     /**
      * Parse a header line into a {@link LogCatHeader} object, or {@code null} if the input line
      * doesn't match the expected format.
-     * @param line raw text that should be the header line from logcat -v long
+     *
+     * @param line   raw text that should be the header line from logcat -v long
      * @param device device from which these log messages have been received
      * @return a {@link LogCatHeader} which represents the passed in text
      */
@@ -61,12 +62,23 @@ public final class LogCatMessageParser {
             return null;
         }
 
+        int pid = -1;
+        try {
+            pid = Integer.parseInt(matcher.group(2));
+        } catch (NumberFormatException ignored) {
+        }
+
+        int tid = -1;
+        try {
+            // Thread id's may be in hex on some platforms.
+            // Decode and store them in radix 10.
+            tid = Integer.decode(matcher.group(3));
+        } catch (NumberFormatException ignored) {
+        }
+
         String pkgName = "?"; //$NON-NLS-1$
-        if (device != null) {
-            Integer pid = Ints.tryParse(matcher.group(2));
-            if (pid != null) {
-                pkgName = device.getClientName(pid);
-            }
+        if (device != null && pid != -1) {
+            pkgName = device.getClientName(pid);
         }
 
         LogLevel logLevel = LogLevel.getByLetterString(matcher.group(4));
@@ -78,17 +90,17 @@ public final class LogCatMessageParser {
             logLevel = LogLevel.WARN;
         }
 
-        mPrevHeader = new LogCatHeader(logLevel, matcher.group(2), matcher.group(3), pkgName,
-                matcher.group(5), matcher.group(1));
+        mPrevHeader = new LogCatHeader(logLevel, pid, tid, pkgName,
+                matcher.group(5), LogCatTimestamp.fromString(matcher.group(1)));
 
         return mPrevHeader;
     }
 
     /**
-     * Parse a list of strings into {@link LogCatMessage} objects. This method
-     * maintains state from previous calls regarding the last seen header of
-     * logcat messages.
-     * @param lines list of raw strings obtained from logcat -v long
+     * Parse a list of strings into {@link LogCatMessage} objects. This method maintains state from
+     * previous calls regarding the last seen header of logcat messages.
+     *
+     * @param lines  list of raw strings obtained from logcat -v long
      * @param device device from which these log messages have been received
      * @return list of LogMessage objects parsed from the input
      * @throws IllegalStateException if given text before ever parsing a header
