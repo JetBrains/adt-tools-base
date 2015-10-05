@@ -130,19 +130,25 @@ public class SecurityDetectorTest extends AbstractCheckTest {
 
     public void testWorldWriteable() throws Exception {
         assertEquals(
-            "src/test/pkg/WorldWriteableFile.java:26: Warning: Using MODE_WORLD_READABLE when creating files can be risky, review carefully [WorldReadableFiles]\n" +
+            "src/test/pkg/WorldWriteableFile.java:27: Warning: Using MODE_WORLD_READABLE when creating files can be risky, review carefully [WorldReadableFiles]\n" +
             "            out = openFileOutput(mFile.getName(), MODE_WORLD_READABLE);\n" +
             "                                                  ~~~~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/WorldWriteableFile.java:31: Warning: Using MODE_WORLD_READABLE when creating files can be risky, review carefully [WorldReadableFiles]\n" +
+            "src/test/pkg/WorldWriteableFile.java:32: Warning: Using MODE_WORLD_READABLE when creating files can be risky, review carefully [WorldReadableFiles]\n" +
             "            prefs = getSharedPreferences(mContext, MODE_WORLD_READABLE);\n" +
             "                                                   ~~~~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/WorldWriteableFile.java:25: Warning: Using MODE_WORLD_WRITEABLE when creating files can be risky, review carefully [WorldWriteableFiles]\n" +
+            "src/test/pkg/WorldWriteableFile.java:36: Warning: Using MODE_WORLD_READABLE when creating files can be risky, review carefully [WorldReadableFiles]\n" +
+            "            dir = getDir(mFile.getName(), MODE_WORLD_READABLE);\n" +
+            "                                          ~~~~~~~~~~~~~~~~~~~\n" +
+            "src/test/pkg/WorldWriteableFile.java:26: Warning: Using MODE_WORLD_WRITEABLE when creating files can be risky, review carefully [WorldWriteableFiles]\n" +
             "            out = openFileOutput(mFile.getName(), MODE_WORLD_WRITEABLE);\n" +
             "                                                  ~~~~~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/WorldWriteableFile.java:30: Warning: Using MODE_WORLD_WRITEABLE when creating files can be risky, review carefully [WorldWriteableFiles]\n" +
+            "src/test/pkg/WorldWriteableFile.java:31: Warning: Using MODE_WORLD_WRITEABLE when creating files can be risky, review carefully [WorldWriteableFiles]\n" +
             "            prefs = getSharedPreferences(mContext, MODE_WORLD_WRITEABLE);\n" +
             "                                                   ~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 4 warnings\n" +
+            "src/test/pkg/WorldWriteableFile.java:35: Warning: Using MODE_WORLD_WRITEABLE when creating files can be risky, review carefully [WorldWriteableFiles]\n" +
+            "            dir = getDir(mFile.getName(), MODE_WORLD_WRITEABLE);\n" +
+            "                                          ~~~~~~~~~~~~~~~~~~~~\n" +
+            "0 errors, 6 warnings\n" +
             "",
 
             lintProject(
