@@ -19,6 +19,7 @@ import com.android.ddmlib.Log.LogLevel;
 import com.android.ddmlib.logcat.LogCatMessage;
 import com.android.ddmlib.logcat.LogCatMessageParser;
 
+import java.util.Date;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -97,5 +98,16 @@ public final class LogCatMessageParserTest extends TestCase {
     public void testTid() {
         assertEquals(mParsedMessages.get(0).getTid(), Integer.toString(0x1ef));
         assertEquals(mParsedMessages.get(1).getTid(), "234");
+    }
+
+    public void testTimeAsDate() {
+        LogCatHeader header = mParsedMessages.get(0).getHeader();
+        // Test date against "08-11 19:11:07.132"
+        Date date = header.getTimeAsDate();
+        assertEquals(date.getMonth(), 7); // Month is 0 based
+        assertEquals(date.getDate(), 11);
+        assertEquals(date.getHours(), 19);
+        assertEquals(date.getMinutes(), 11);
+        assertEquals(date.getSeconds(), 7);
     }
 }

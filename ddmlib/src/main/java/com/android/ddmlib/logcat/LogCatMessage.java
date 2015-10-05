@@ -21,72 +21,40 @@ import com.android.ddmlib.Log.LogLevel;
 
 /**
  * Model a single log message output from {@code logcat -v long}.
- * A logcat message has a {@link LogLevel}, the pid (process id) of the process
- * generating the message, the time at which the message was generated, and
- * the tag and message itself.
+ *
+ * Every message is furthermore associated with a {@link LogCatHeader} which contains additionally
+ * meta information about the message.
  */
 public final class LogCatMessage {
-    private final LogLevel mLogLevel;
-    private final String mPid;
-    private final String mTid;
-    private final String mAppName;
-    private final String mTag;
-    private final String mTime;
+
+    @NonNull
+    private final LogCatHeader mHeader;
+
+    @NonNull
     private final String mMessage;
 
     /**
-     * Construct an immutable log message object.
+     * @deprecated Create a {@link LogCatHeader} separately and call {@link
+     * #LogCatMessage(LogCatHeader, String)} instead. This approach shares the same header data
+     * across multiple messages.
      */
     public LogCatMessage(@NonNull LogLevel logLevel, @NonNull String pid, @NonNull String tid,
             @NonNull String appName, @NonNull String tag,
             @NonNull String time, @NonNull String msg) {
-        mLogLevel = logLevel;
-        mPid = pid;
-        mAppName = appName;
-        mTag = tag;
-        mTime = time;
+        this(new LogCatHeader(logLevel, pid, tid, appName, tag, time), msg);
+    }
+
+    /**
+     * Construct an immutable log message object.
+     */
+    public LogCatMessage(@NonNull LogCatHeader header, @NonNull String msg) {
+        mHeader = header;
         mMessage = msg;
-
-        long tidValue;
-        try {
-            // Thread id's may be in hex on some platforms.
-            // Decode and store them in radix 10.
-            tidValue = Long.decode(tid.trim());
-        } catch (NumberFormatException e) {
-            tidValue = -1;
-        }
-
-        mTid = Long.toString(tidValue);
     }
 
     @NonNull
-    public LogLevel getLogLevel() {
-        return mLogLevel;
-    }
-
-    @NonNull
-    public String getPid() {
-        return mPid;
-    }
-
-    @NonNull
-    public String getTid() {
-        return mTid;
-    }
-
-    @NonNull
-    public String getAppName() {
-        return mAppName;
-    }
-
-    @NonNull
-    public String getTag() {
-        return mTag;
-    }
-
-    @NonNull
-    public String getTime() {
-        return mTime;
+    public LogCatHeader getHeader() {
+        return mHeader;
     }
 
     @NonNull
@@ -94,12 +62,38 @@ public final class LogCatMessage {
         return mMessage;
     }
 
+    @NonNull
+    public LogLevel getLogLevel() {
+        return mHeader.getLogLevel();
+    }
+
+    @NonNull
+    public String getPid() {
+        return mHeader.getPid();
+    }
+
+    @NonNull
+    public String getTid() {
+        return mHeader.getTid();
+    }
+
+    @NonNull
+    public String getAppName() {
+        return mHeader.getAppName();
+    }
+
+    @NonNull
+    public String getTag() {
+        return mHeader.getTag();
+    }
+
+    @NonNull
+    public String getTime() {
+        return mHeader.getTime();
+    }
+
     @Override
     public String toString() {
-        return mTime + ": "
-                + mLogLevel.getPriorityLetter() + "/"
-                + mTag + "("
-                + mPid + "): "
-                + mMessage;
+        return mHeader.toString() + ": " + mMessage;
     }
 }
