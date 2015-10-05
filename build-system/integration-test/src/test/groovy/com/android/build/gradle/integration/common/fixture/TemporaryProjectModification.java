@@ -19,20 +19,17 @@ package com.android.build.gradle.integration.common.fixture;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
+import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
 import org.junit.runners.model.InitializationError;
-import org.junit.runners.model.MultipleFailureException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-
-import groovy.lang.Closure;
 
 /**
  * Allows project files to be modified, but stores their original content, so it can be restored for
@@ -40,9 +37,67 @@ import groovy.lang.Closure;
  */
 public class TemporaryProjectModification {
 
+    /**
+     * The type of file change event.
+     */
+    enum FileChangeType {
+        CHANGED, ADDED, REMOVED
+    }
+
+    /**
+     * A file change event and the associated original file content.
+     */
+    private static class FileEvent {
+        private final FileChangeType type;
+        private final String fileContent;
+
+        private FileEvent(
+                FileChangeType type, String fileContent) {
+            this.type = type;
+            this.fileContent = fileContent;
+        }
+
+        public FileChangeType getType() {
+            return type;
+        }
+
+        public String getFileContent() {
+            return fileContent;
+        }
+
+        /**
+         * Creates a {@link FileChangeType#CHANGED} FileEvent with a given original file content.
+         * @param content the original file content
+         * @return a FileEvent instance
+         */
+        static FileEvent changed(@NonNull String content) {
+            return new FileEvent(FileChangeType.CHANGED, content);
+        }
+
+        /**
+         * Creates a {@link FileChangeType#REMOVED} FileEvent with a given original file content.
+         * @param content the original file content
+         * @return a FileEvent instance
+         */
+        static FileEvent removed(@NonNull String content) {
+            return new FileEvent(FileChangeType.REMOVED, content);
+        }
+
+        /**
+         * Creates a {@link FileChangeType#ADDED} FileEvent.
+         * @return a FileEvent instance
+         */
+        static FileEvent added() {
+            return new FileEvent(FileChangeType.ADDED, null);
+        }
+    }
+
     private final GradleTestProject mTestProject;
 
-    private final Map<String, String> mFileContentToRestore = new HashMap<String, String>();
+    /**
+     * Map of file change event. Key is relative path, value is the change event data
+     */
+    private final Map<String, FileEvent> mFileEvents = Maps.newHashMap();
 
     private TemporaryProjectModification(GradleTestProject testProject) {
         mTestProject = testProject;
@@ -95,12 +150,10 @@ public class TemporaryProjectModification {
 
     }
 
-    public void modifyFile(
-            @NonNull String relativePath,
-            @NonNull Function<String, String> modification) throws InitializationError {
-        File file = mTestProject.file(relativePath.replace('/', File.separatorChar));
+    public void removeFile(@NonNull String relativePath) throws InitializationError, IOException {
+        File file = getFile(relativePath);
 
-        String currentContent = null;
+        String currentContent;
         try {
             currentContent = Files.toString(file, Charsets.UTF_8);
         } catch (IOException e) {
@@ -108,8 +161,42 @@ public class TemporaryProjectModification {
         }
 
         // We can modify multiple times, but we only want to store the original.
-        if (!mFileContentToRestore.containsKey(relativePath)) {
-            mFileContentToRestore.put(relativePath, currentContent);
+        if (!mFileEvents.containsKey(relativePath)) {
+            mFileEvents.put(relativePath, FileEvent.removed(currentContent));
+        }
+
+        FileUtils.delete(file);
+    }
+
+    public void addFile(
+            @NonNull String relativePath,
+            @NonNull String content) throws InitializationError, IOException {
+        File file = getFile(relativePath);
+
+        if (file.exists()) {
+            throw new RuntimeException("File already exists: " + file);
+        }
+
+        mFileEvents.put(relativePath, FileEvent.added());
+
+        Files.write(content, file, Charsets.UTF_8);
+    }
+
+    public void modifyFile(
+            @NonNull String relativePath,
+            @NonNull Function<String, String> modification) throws InitializationError {
+        File file = getFile(relativePath);
+
+        String currentContent;
+        try {
+            currentContent = Files.toString(file, Charsets.UTF_8);
+        } catch (IOException e) {
+            throw new InitializationError(e);
+        }
+
+        // We can modify multiple times, but we only want to store the original.
+        if (!mFileEvents.containsKey(relativePath)) {
+            mFileEvents.put(relativePath, FileEvent.changed(currentContent));
         }
 
         String newContent = modification.apply(currentContent);
@@ -128,14 +215,27 @@ public class TemporaryProjectModification {
     /**
      * Returns the project back to its original state.
      */
-    public void close() throws InitializationError {
+    private void close() throws InitializationError {
         try {
-            for (Map.Entry<String, String> entry : mFileContentToRestore.entrySet()) {
-                Files.write(entry.getValue(), mTestProject.file(entry.getKey()), Charsets.UTF_8);
+            for (Map.Entry<String, FileEvent> entry : mFileEvents.entrySet()) {
+                FileEvent fileEvent = entry.getValue();
+                switch (fileEvent.getType()) {
+                    case REMOVED:
+                    case CHANGED:
+                        Files.write(fileEvent.getFileContent(),
+                                getFile(entry.getKey()), Charsets.UTF_8);
+                        break;
+                    case ADDED:
+                        FileUtils.delete(mTestProject.file(entry.getKey()));
+                }
             }
         } catch (IOException e) {
             throw new InitializationError(e);
         }
-        mFileContentToRestore.clear();
+        mFileEvents.clear();
+    }
+
+    private File getFile(@NonNull String relativePath) {
+        return mTestProject.file(relativePath.replace('/', File.separatorChar));
     }
 }
