@@ -55,7 +55,7 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
             "According to the `Parcelable` interface documentation, " +
             "\"Classes implementing the Parcelable interface must also have a " +
             "static field called `CREATOR`, which is an object implementing the " +
-            "`Parcelable.Creator` interface.",
+            "`Parcelable.Creator` interface.\"",
 
             Category.USABILITY,
             3,
@@ -104,34 +104,19 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
                 return true;
             }
 
-            if (node.astImplementing() != null)
-                for (TypeReference reference : node.astImplementing()) {
-                    String name = reference.astParts().last().astIdentifier().astValue();
-                    if (name.equals("Parcelable")) {
-                        JavaParser.ResolvedNode resolved = mContext.resolve(node);
-                        if (resolved instanceof ResolvedClass) {
-                            ResolvedClass cls = (ResolvedClass) resolved;
-                            ResolvedField field = cls.getField("CREATOR", false);
-                            if (field == null) {
-                                // Make doubly sure that we're really implementing
-                                // android.os.Parcelable
-                                JavaParser.ResolvedNode r = mContext.resolve(reference);
-                                if (r instanceof ResolvedClass) {
-                                    ResolvedClass parcelable = (ResolvedClass) r;
-                                    if (!parcelable.isSubclassOf("android.os.Parcelable", false)) {
-                                        return true;
-                                    }
-                                }
-                                Location location = mContext.getLocation(node.astName());
-                                mContext.report(ISSUE, node, location,
-                                        "This class implements `Parcelable` but does not "
-                                                + "provide a `CREATOR` field");
-                            }
-                        }
-                        break;
+            JavaParser.ResolvedNode resolved = mContext.resolve(node);
+            if (resolved instanceof ResolvedClass) {
+                ResolvedClass cls = (ResolvedClass) resolved;
+                if (cls.isImplementing("android.os.Parcelable", false)) {
+                    ResolvedField field = cls.getField("CREATOR", false);
+                    if (field == null) {
+                        Location location = mContext.getLocation(node.astName());
+                        mContext.report(ISSUE, node, location,
+                                "This class implements `Parcelable` but does not "
+                                        + "provide a `CREATOR` field");
                     }
                 }
-
+            }
             return true;
         }
     }
