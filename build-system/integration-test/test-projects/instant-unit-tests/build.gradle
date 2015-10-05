@@ -14,45 +14,36 @@
  * limitations under the License.
  */
 
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+apply from: "../commonLocalRepo.gradle"
+
+def env = new Object() {
+    Object project = new Object() {
+        Object ext = new Object() {
+            String buildVersion
+            String baseVersion
+            String apiVersion
+            String experimentalVersion
+        }
+    }
+}
+apply from: "$System.env.CUSTOM_REPO/../../tools/buildSrc/base/version.gradle", to: env
+
+
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
 import com.google.common.collect.ImmutableList
 import com.google.common.io.CharSink
 import com.google.common.io.Files
 
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-
-buildscript {
-    repositories {
-        maven { url System.env.CUSTOM_REPO }
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:1.4.0-beta2'
-    }
-}
-
-allprojects {
-    repositories {
-        maven { url System.env.CUSTOM_REPO }
-        jcenter()
-    }
-}
-
 def PROJECT_ROOT = new File(System.getenv("CUSTOM_REPO")).getParentFile().getParentFile()
-
 
 apply plugin: 'com.android.library'
 
-configurations {
-    testedClasses
-}
-task(name: "createTestClasses") {
-
-}
-
 android {
     compileSdkVersion 15
-    buildToolsVersion "23.0.0"
+    buildToolsVersion rootProject.buildToolsVersion
 
     defaultConfig {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -72,15 +63,14 @@ android {
                 filter.setIncludes(["com/android/build/gradle/internal/incremental/*.java"])
             }
             assets {
-                srcDir(file("build/incremental-test-classes-dex/"))
+                srcDir(file("build/generatedAssets/"))
             }
         }
     }
 }
 
-
 dependencies {
-    compile 'com.android.tools:common:24.4.0-beta2'
+    compile 'com.android.tools:common:' + env.project.ext.baseVersion
     compile files(new File(
             PROJECT_ROOT,
             "out/build/base/fdr/build/intermediates/bundles/release/classes.jar"))
@@ -97,14 +87,12 @@ dependencies {
 }
 
 
-
 def jarInstrumentedBaseClasses = task("jarInstrumentedBaseClasses", type: Jar) {
     from (files(new File(PROJECT_ROOT,
             "out/build/base/gradle-core/build/classes/incremental-test/baseInstrumented")))
     destinationDir = file("build/incremental-test-classes-jar/")
     archiveName = "instrumentedBaseClasses.jar"
 }
-
 
 class DexTask extends DefaultTask {
 
@@ -148,7 +136,7 @@ for (File f: new File(PROJECT_ROOT, "out/build/base/gradle-core/build/classes/in
     String patchName = f.getName()
     Task dexInstrumentedPatch = task("dexInstrumentedPatch" + patchName.capitalize(), type:DexTask) {
         classesFolder = f
-        outputFolder = file("build/incremental-test-classes-dex/" + patchName)
+        outputFolder = file("build/generatedAssets/incremental-test-classes-dex/" + patchName)
     }
     dexInstrumentedPatches.dependsOn dexInstrumentedPatch
 
