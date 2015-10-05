@@ -1375,10 +1375,36 @@ public class EcjParser extends JavaParser {
                     cls = cls.superclass();
                 }
                 for (; cls != null; cls = cls.superclass()) {
-                    if (sameChars(name, cls.readableName())) {
+                    if (equalsCompound(name, cls.compoundName)) {
                         return true;
                     }
                 }
+            }
+
+            return false;
+        }
+
+        @Override
+        public boolean isImplementing(@NonNull String name, boolean strict) {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding cls = (ReferenceBinding) mBinding;
+                if (strict) {
+                    cls = cls.superclass();
+                }
+                return isInheritor(cls, name);
+            }
+
+            return false;
+        }
+
+        @Override
+        public boolean isInheritingFrom(@NonNull String name, boolean strict) {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding cls = (ReferenceBinding) mBinding;
+                if (strict) {
+                    cls = cls.superclass();
+                }
+                return isInheritor(cls, name);
             }
 
             return false;
@@ -2254,7 +2280,10 @@ public class EcjParser extends JavaParser {
                 if (index == length) {
                     return false; // Don't allow prefix in a compound name
                 }
-                if (name.charAt(index) != o[j]) {
+                if (name.charAt(index) != o[j]
+                        // Allow using . as an inner class separator whereas the
+                        // symbol table will always use $
+                        && !(o[j] == '$' && name.charAt(index) == '.')) {
                     return false;
                 }
                 index++;
@@ -2290,7 +2319,10 @@ public class EcjParser extends JavaParser {
                 if (index == length) {
                     return false; // Don't allow prefix in a compound name
                 }
-                if (name.charAt(index) != o[j]) {
+                if (name.charAt(index) != o[j]
+                        // Allow using . as an inner class separator whereas the
+                        // symbol table will always use $
+                        && !(o[j] == '$' && name.charAt(index) == '.')) {
                     return false;
                 }
                 index++;
@@ -2310,5 +2342,23 @@ public class EcjParser extends JavaParser {
         }
 
         return index == length;
+    }
+
+    /** Checks whether the given class extends or implements a class with the given name */
+    private static boolean isInheritor(@Nullable ReferenceBinding cls, @NonNull String name) {
+        for (; cls != null; cls = cls.superclass()) {
+            ReferenceBinding[] interfaces = cls.superInterfaces();
+            for (ReferenceBinding binding : interfaces) {
+                if (isInheritor(binding, name)) {
+                    return true;
+                }
+            }
+
+            if (equalsCompound(name, cls.compoundName)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

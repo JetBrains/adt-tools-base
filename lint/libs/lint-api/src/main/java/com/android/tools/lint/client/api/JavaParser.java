@@ -368,12 +368,43 @@ public abstract class JavaParser {
         /**
          * Determines whether this class extends the given name. If strict is true,
          * it will not consider C extends C true.
+         * <p>
+         * The target must be a class; to check whether this class extends an interface,
+         * use {@link #isImplementing(String,boolean)} instead. If you're not sure, use
+         * {@link #isInheritingFrom(String, boolean)}.
          *
          * @param name the fully qualified class name
          * @param strict if true, do not consider a class to be extending itself
          * @return true if this class extends the given class
          */
         public abstract boolean isSubclassOf(@NonNull String name, boolean strict);
+
+        /**
+         * Determines whether this is implementing the given interface.
+         * <p>
+         * The target must be an interface; to check whether this class extends a class,
+         * use {@link #isSubclassOf(String, boolean)} instead. If you're not sure, use
+         * {@link #isInheritingFrom(String, boolean)}.
+         *
+         * @param name the fully qualified interface name
+         * @param strict if true, do not consider a class to be extending itself
+         * @return true if this class implements the given interface
+         */
+        public abstract boolean isImplementing(@NonNull String name, boolean strict);
+
+        /**
+         * Determines whether this class extends or implements the class of the given name.
+         * If strict is true, it will not consider C extends C true.
+         * <p>
+         * For performance reasons, if you know that the target is a class, consider using
+         * {@link #isSubclassOf(String, boolean)} instead, and if the target is an interface,
+         * consider using {@link #isImplementing(String,boolean)}.
+         *
+         * @param name the fully qualified class name
+         * @param strict if true, do not consider a class to be inheriting from itself
+         * @return true if this class extends or implements the given class
+         */
+        public abstract boolean isInheritingFrom(@NonNull String name, boolean strict);
 
         @NonNull
         public abstract Iterable<ResolvedMethod> getConstructors();
