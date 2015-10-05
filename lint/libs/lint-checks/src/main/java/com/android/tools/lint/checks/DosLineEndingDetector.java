@@ -52,6 +52,7 @@ public class DosLineEndingDetector extends LayoutDetector {
             new Implementation(
                     DosLineEndingDetector.class,
                     Scope.RESOURCE_FILE_SCOPE))
+            .setEnabledByDefault(false) // This check is probably not relevant for most users anymore
             .addMoreInfo("https://bugs.eclipse.org/bugs/show_bug.cgi?id=375421"); //$NON-NLS-1$
 
      /** Constructs a new {@link DosLineEndingDetector} */
