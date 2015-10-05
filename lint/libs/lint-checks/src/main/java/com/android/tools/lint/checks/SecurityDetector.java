@@ -137,7 +137,7 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     /** Using the world-writable flag */
     public static final Issue WORLD_WRITEABLE = Issue.create(
             "WorldWriteableFiles", //$NON-NLS-1$
-            "`openFileOutput()` call passing `MODE_WORLD_WRITEABLE`",
+            "`openFileOutput()` or similar call passing `MODE_WORLD_WRITEABLE`",
             "There are cases where it is appropriate for an application to write " +
             "world writeable files, but these should be reviewed carefully to " +
             "ensure that they contain no private data, and that if the file is " +
@@ -152,7 +152,7 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     /** Using the world-readable flag */
     public static final Issue WORLD_READABLE = Issue.create(
             "WorldReadableFiles", //$NON-NLS-1$
-            "`openFileOutput()` call passing `MODE_WORLD_READABLE`",
+            "`openFileOutput()` or similar call passing `MODE_WORLD_READABLE`",
             "There are cases where it is appropriate for an application to write " +
             "world readable files, but these should be reviewed carefully to " +
             "ensure that they contain no private data that is leaked to other " +
@@ -361,11 +361,12 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
 
     @Override
     public List<String> getApplicableMethodNames() {
-        // These are the API calls that can accept a MODE_WORLD_READABLE/MODE_WORLD_WRITABLE
+        // These are the API calls that can accept a MODE_WORLD_READABLE/MODE_WORLD_WRITEABLE
         // argument.
-        List<String> values = new ArrayList<String>(2);
+        List<String> values = new ArrayList<String>(3);
         values.add("openFileOutput"); //$NON-NLS-1$
         values.add("getSharedPreferences"); //$NON-NLS-1$
+        values.add("getDir"); //$NON-NLS-1$
         return values;
     }
 
