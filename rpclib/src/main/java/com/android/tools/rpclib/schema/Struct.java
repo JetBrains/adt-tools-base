@@ -35,23 +35,6 @@ public final class Struct extends Type {
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        // struct types are all equivalent for the purposes of signature matching
-        return (o instanceof Struct);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-
-    @NotNull
-    @Override
-    public String getName() {
-        return mEntity.getName();
-    }
-
     public Entity getEntity() {
         return mEntity;
     }
@@ -80,5 +63,20 @@ public final class Struct extends Type {
         if (!compact) {
             e.string("");
         }
+    }
+
+    @Override
+    void name(StringBuilder out) {
+        out.append(mEntity.getName());
+    }
+
+    @Override
+    public void signature(StringBuilder out) {
+        out.append('$');
+    }
+
+
+    public boolean is(BinaryClass klass) {
+        return mEntity.signature().equals(klass.entity().signature());
     }
 }

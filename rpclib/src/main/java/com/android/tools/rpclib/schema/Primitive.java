@@ -42,25 +42,8 @@ public final class Primitive extends Type {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Primitive)) return false;
-        return mMethod.equals(((Primitive)o).mMethod);
-    }
-
-    @Override
-    public int hashCode() {
-        return mMethod.hashCode();
-    }
-
-    @Override
     public String toString() {
         return mName + "(" + mMethod + ")";
-    }
-
-    @NotNull
-    @Override
-    public String getName() {
-        return mName;
     }
 
     public Method getMethod() {
@@ -150,5 +133,15 @@ public final class Primitive extends Type {
         if (!compact) {
             e.string(mName);
         }
+    }
+
+    @Override
+    void name(StringBuilder out) {
+        out.append(mName);
+    }
+
+    @Override
+    public void signature(StringBuilder out) {
+        out.append(mMethod);
     }
 }
