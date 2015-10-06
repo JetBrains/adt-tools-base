@@ -38,22 +38,6 @@ public final class Variant extends Type {
     }
 
     @Override
-    public boolean equals(Object o) {
-        return (o instanceof Variant);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-
-    @NotNull
-    @Override
-    public String getName() {
-        return mName;
-    }
-
-    @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
         assert (value instanceof BinaryObject);
         e.object((BinaryObject) value);
@@ -70,5 +54,15 @@ public final class Variant extends Type {
         if (!compact) {
             e.string(mName);
         }
+    }
+
+    @Override
+    void name(StringBuilder out) {
+        out.append(mName);
+    }
+
+    @Override
+    public void signature(StringBuilder out) {
+        out.append('&');
     }
 }

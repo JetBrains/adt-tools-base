@@ -42,25 +42,8 @@ public final class Primitive extends Type {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Primitive)) return false;
-        return mMethod.equals(((Primitive)o).mMethod);
-    }
-
-    @Override
-    public int hashCode() {
-        return mMethod.hashCode();
-    }
-
-    @Override
     public String toString() {
         return mName + "(" + mMethod + ")";
-    }
-
-    @NotNull
-    @Override
-    public String getName() {
-        return mName;
     }
 
     public Method getMethod() {
@@ -70,9 +53,6 @@ public final class Primitive extends Type {
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
         switch (mMethod.value) {
-            case Method.ID:
-                e.id((BinaryID) value);
-                break;
             case Method.Bool:
                 e.bool((Boolean) value);
                 break;
@@ -117,8 +97,6 @@ public final class Primitive extends Type {
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
         switch (mMethod.value) {
-            case Method.ID:
-                return d.id();
             case Method.Bool:
                 return d.bool();
             case Method.Int8:
@@ -155,5 +133,15 @@ public final class Primitive extends Type {
         if (!compact) {
             e.string(mName);
         }
+    }
+
+    @Override
+    void name(StringBuilder out) {
+        out.append(mName);
+    }
+
+    @Override
+    public void signature(StringBuilder out) {
+        out.append(mMethod);
     }
 }

@@ -32,22 +32,6 @@ public final class AnyType extends Type {
     }
 
     @Override
-    public boolean equals(Object o) {
-        return (o instanceof AnyType);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-
-    @NotNull
-    @Override
-    public String getName() {
-        return "any";
-    }
-
-    @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
         e.variant(Box.wrap(value));
     }
@@ -64,5 +48,15 @@ public final class AnyType extends Type {
     @Override
     public void encode(@NotNull Encoder e, boolean compact) throws IOException {
         TypeTag.anyTag().encode(e);
+    }
+
+    @Override
+    void name(StringBuilder out) {
+        out.append("any");
+    }
+
+    @Override
+    public void signature(StringBuilder out) {
+        out.append('~');
     }
 }

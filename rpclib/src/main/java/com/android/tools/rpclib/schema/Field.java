@@ -43,15 +43,4 @@ public final class Field {
         }
         return mDeclared;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Field)) return true;
-        return mType.equals(((Field)o).mType);
-    }
-
-    @Override
-    public int hashCode() {
-        return mType.hashCode();
-    }
 }

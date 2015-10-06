@@ -36,14 +36,12 @@ import java.util.Map;
 public class Decoder {
   @NotNull private final TIntObjectHashMap<Entity> mEntities;
   @NotNull private final TIntObjectHashMap<BinaryObject> mObjects;
-  @NotNull private final TIntObjectHashMap<BinaryID> mIDs;
   @NotNull private final InputStream mInputStream;
   @NotNull private final byte[] mBuffer;
 
   public Decoder(@NotNull InputStream in) {
     mEntities = new TIntObjectHashMap<Entity>();
     mObjects = new TIntObjectHashMap<BinaryObject>();
-    mIDs = new TIntObjectHashMap<BinaryID>();
     mInputStream = in;
     mBuffer = new byte[9];
   }
@@ -156,22 +154,6 @@ public class Decoder {
     catch (UnsupportedEncodingException e) {
       throw new RuntimeException(e); // Should never happen
     }
-  }
-
-  @NotNull
-  public BinaryID id() throws IOException {
-    int v = uint32();
-    int sid = v >> 1;
-    if ((v & 1) != 0) {
-      BinaryID id = new BinaryID(this);
-      mIDs.put(sid, id);
-      return id;
-    }
-    BinaryID id = mIDs.get(sid);
-    if (id == null) {
-      throw new RuntimeException("Unknown id: " + sid);
-    }
-    return id;
   }
 
   @NotNull

@@ -39,25 +39,6 @@ public final class Map extends Type {
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Pointer)) return false;
-        Map map = (Map)o;
-        if (!mKeyType.equals(map.mKeyType)) return false;
-        return mValueType.equals(map.mValueType);
-    }
-
-    @Override
-    public int hashCode() {
-        return 31 * mKeyType.hashCode() + mValueType.hashCode();
-    }
-
-    @NotNull
-    @Override
-    public String getName() {
-        return "map<" + mKeyType.getName() + "," + mValueType.getName() + ">";
-    }
-
     public String getAlias() {
         return mAlias;
     }
@@ -99,5 +80,22 @@ public final class Map extends Type {
         if (!compact) {
             e.string(mAlias);
         }
+    }
+
+    @Override
+    void name(StringBuilder out) {
+        out.append("map<");
+        mKeyType.name(out);
+        out.append(',');
+        mValueType.name(out);
+        out.append('>');
+    }
+
+    @Override
+    public void signature(StringBuilder out) {
+        out.append("map[");
+        mKeyType.signature(out);
+        out.append(']');
+        mValueType.signature(out);
     }
 }

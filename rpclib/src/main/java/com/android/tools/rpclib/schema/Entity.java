@@ -30,6 +30,7 @@ public final class Entity {
     private boolean mExported;
     private Field[] mFields;
     private BinaryObject[] mMetadata;
+    private String mSignature;
 
     public Entity(String pkg, String identity, String version, String display) {
         mPackage = pkg;
@@ -111,22 +112,23 @@ public final class Entity {
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Entity entity = (Entity)o;
-        if (!mPackage.equals(entity.mPackage)) return false;
-        if (!mIdentity.equals(entity.mIdentity)) return false;
-        if (mVersion != null ? !mVersion.equals(entity.mVersion) : entity.mVersion != null) return false;
-        return Arrays.equals(mFields, entity.mFields);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = mPackage.hashCode();
-        result = 31 * result + mIdentity.hashCode();
-        result = 31 * result + (mVersion != null ? mVersion.hashCode() : 0);
-        return result;
+    public String signature() {
+        if (mSignature == null) {
+            StringBuilder out = new StringBuilder();
+            out.append(mPackage).append('.').append(mIdentity);
+            if (mVersion.length() > 0) {
+                out.append('@').append(mVersion);
+            }
+            out.append('{');
+            for (int index = 0; index < mFields.length; ++index) {
+                if (index > 0) {
+                    out.append(',');
+                }
+                mFields[index].getType().signature(out);
+            }
+            out.append('}');
+            mSignature = out.toString();
+        }
+        return mSignature;
     }
 }

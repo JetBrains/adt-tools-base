@@ -44,25 +44,6 @@ public final class Array extends Type {
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Array)) return false;
-        Array array = (Array)o;
-        if (mSize != array.mSize) return false;
-        return mValueType.equals(array.mValueType);
-    }
-
-    @Override
-    public int hashCode() {
-        return 31 * mValueType.hashCode() + mSize;
-    }
-
-    @NotNull
-    @Override
-    public String getName() {
-        return "array<" + mValueType.getName() + ">";
-    }
-
     public String getAlias() {
         return mAlias;
     }
@@ -101,5 +82,18 @@ public final class Array extends Type {
         if (!compact) {
             e.string(mAlias);
         }
+    }
+
+    @Override
+    void name(StringBuilder out) {
+        out.append("array<");
+        mValueType.name(out);
+        out.append('>');
+    }
+
+    @Override
+    public void signature(StringBuilder out) {
+        out.append('[').append(mSize).append(']');
+        mValueType.signature(out);
     }
 }

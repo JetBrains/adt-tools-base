@@ -35,23 +35,6 @@ public final class Pointer extends Type {
         mType = decode(d, compact);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof Pointer)) return false;
-        return mType.equals(((Pointer)o).mType);
-    }
-
-    @Override
-    public int hashCode() {
-        return mType.hashCode();
-    }
-
-    @NotNull
-    @Override
-    public String getName() {
-        return "pointer<" + mType.getName() + ">";
-    }
-
     public Type getType() {
         return mType;
     }
@@ -71,5 +54,18 @@ public final class Pointer extends Type {
     public void encode(@NotNull Encoder e, boolean compact) throws IOException {
         TypeTag.pointerTag().encode(e);
         mType.encode(e, compact);
+    }
+
+    @Override
+    void name(StringBuilder out) {
+        out.append("pointer<");
+        mType.name(out);
+        out.append('>');
+    }
+
+    @Override
+    public void signature(StringBuilder out) {
+        out.append('*');
+        mType.signature(out);
     }
 }

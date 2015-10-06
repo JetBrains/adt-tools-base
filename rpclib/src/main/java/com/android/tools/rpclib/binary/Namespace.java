@@ -27,14 +27,14 @@ import java.util.Map;
  *
  */
 public class Namespace {
-  private static Map<Entity, BinaryClass> registry = new HashMap<Entity, BinaryClass>();
+  private static Map<String, BinaryClass> registry = new HashMap<String, BinaryClass>();
 
   @NotNull private static final Logger LOG = Logger.getInstance(Namespace.class);
   public static void register(BinaryClass creator) {
-    registry.put(creator.entity(), creator);
+    registry.put(creator.entity().signature(), creator);
   }
 
   public static BinaryClass lookup(Entity entity) {
-    return registry.get(entity);
+    return registry.get(entity.signature());
   }
 }
