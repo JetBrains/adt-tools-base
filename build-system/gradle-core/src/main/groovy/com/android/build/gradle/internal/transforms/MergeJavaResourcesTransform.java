@@ -16,13 +16,13 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import static com.android.SdkConstants.FD_APK_NATIVE_LIBS;
 import static com.android.utils.FileUtils.mkdirs;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.Context;
 import com.android.build.transform.api.DirectoryInput;
 import com.android.build.transform.api.Format;
@@ -57,37 +57,154 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarFile;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * Transform to merge all the Java resources
+ * Transform to merge all the Java resources.
+ *
+ * Based on the value of {@link #getInputTypes()} this will either process native libraries
+ * or java resources. While native libraries inside jars are technically java resources, they
+ * must be handled separately.
  */
 public class MergeJavaResourcesTransform extends Transform {
+
+    private interface FileValidator {
+        boolean validateJarPath(@NonNull String path);
+        boolean validateFolderPath(@NonNull String path);
+        @NonNull
+        String folderPathToKey(@NonNull String path);
+        @NonNull
+        String keyToFolderPath(@NonNull String path);
+    }
 
     @NonNull
     private final PackagingOptions packagingOptions;
 
     @NonNull
+    private final String name;
+
+    @NonNull
     private final Set<Scope> mergeScopes;
+    @NonNull
+    private final Set<ContentType> mergedType;
+    @NonNull
+    private final FileValidator validator;
 
     public MergeJavaResourcesTransform(
             @NonNull PackagingOptions packagingOptions,
-            @NonNull Set<Scope> mergeScopes) {
+            @NonNull Set<Scope> mergeScopes,
+            @NonNull ContentType mergedType,
+            @NonNull String name) {
         this.packagingOptions = packagingOptions;
+        this.name = name;
         this.mergeScopes = Sets.immutableEnumSet(mergeScopes);
+        this.mergedType = Sets.immutableEnumSet(mergedType);
+
+
+        if (mergedType == ContentType.RESOURCES) {
+            validator = new FileValidator() {
+                @Override
+                public boolean validateJarPath(@NonNull String path) {
+                    return !path.endsWith(SdkConstants.DOT_CLASS) &&
+                            !path.endsWith(SdkConstants.DOT_NATIVE_LIBS);
+                }
+
+                @Override
+                public boolean validateFolderPath(@NonNull String path) {
+                    return !path.endsWith(SdkConstants.DOT_CLASS) &&
+                            !path.endsWith(SdkConstants.DOT_NATIVE_LIBS);
+
+                }
+
+                @NonNull
+                @Override
+                public String folderPathToKey(@NonNull String path) {
+                    return path;
+                }
+
+                @NonNull
+                @Override
+                public String keyToFolderPath(@NonNull String path) {
+                    return path;
+                }
+            };
+
+        } else if (mergedType == ContentType.NATIVE_LIBS) {
+            validator = new NativeLibValidator();
+
+        } else {
+            throw new UnsupportedOperationException(
+                    "mergedType param must be RESOURCES or NATIVE_LIBS");
+        }
+    }
+
+    private static final class NativeLibValidator implements FileValidator {
+        private final Pattern jarAbiPattern = Pattern.compile("lib/([^/]+)/[^/]+");
+        private final Pattern folderAbiPattern = Pattern.compile("([^/]+)/[^/]+");
+        private final Pattern filenamePattern = Pattern.compile(".*\\.so");
+
+        @Override
+        public boolean validateJarPath(@NonNull String path) {
+            // extract abi from path, checking the general path structure (lib/<abi>/<filename>)
+            Matcher m = jarAbiPattern.matcher(path);
+
+            // if the ABI is accepted, check the 3rd segment
+            if (m.matches()) {
+                // remove the beginning of the path (lib/<abi>/)
+                String filename = path.substring(5 + m.group(1).length());
+                // and check the filename
+                return filenamePattern.matcher(filename).matches() ||
+                        SdkConstants.FN_GDBSERVER.equals(filename) ||
+                        SdkConstants.FN_GDB_SETUP.equals(filename);
+            }
+
+            return false;
+        }
+
+        @Override
+        public boolean validateFolderPath(@NonNull String path) {
+            // extract abi from path, checking the general path structure (<abi>/<filename>)
+            Matcher m = folderAbiPattern.matcher(path);
+
+            // if the ABI is accepted, check the 3rd segment
+            if (m.matches()) {
+                // remove the beginning of the path (<abi>/)
+                String filename = path.substring(1 + m.group(1).length());
+                // and check the filename
+                return filenamePattern.matcher(filename).matches() ||
+                        SdkConstants.FN_GDBSERVER.equals(filename) ||
+                        SdkConstants.FN_GDB_SETUP.equals(filename);
+            }
+
+            return false;
+        }
+
+        @NonNull
+        @Override
+        public String folderPathToKey(@NonNull String path) {
+            return FD_APK_NATIVE_LIBS + "/" + path;
+        }
+
+        @NonNull
+        @Override
+        public String keyToFolderPath(@NonNull String path) {
+            return path.substring(FD_APK_NATIVE_LIBS.length() + 1);
+        }
     }
 
     @NonNull
     @Override
     public String getName() {
-        return "mergeJavaRes";
+        return name;
     }
 
     @NonNull
     @Override
     public Set<ContentType> getInputTypes() {
-        return TransformManager.CONTENT_RESOURCES;
+        return mergedType;
     }
 
     @NonNull
@@ -132,14 +249,14 @@ public class MergeJavaResourcesTransform extends Transform {
             outputProvider.deleteAll();
 
             // gather all the inputs.
-            ListMultimap<String, QualifiedContent> resFileList = ArrayListMultimap.create();
+            ListMultimap<String, QualifiedContent> sourceFileList = ArrayListMultimap.create();
             for (TransformInput input : inputs) {
                 for (JarInput jarInput : input.getJarInputs()) {
-                    gatherResListFromJar(jarInput, resFileList);
+                    gatherListFromJar(jarInput, sourceFileList);
                 }
 
                 for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
-                    gatherResListFromFolder(directoryInput, resFileList);
+                    gatherListFromFolder(directoryInput, sourceFileList);
                 }
             }
 
@@ -152,14 +269,14 @@ public class MergeJavaResourcesTransform extends Transform {
             // we're also going to record for each jar which files comes from it.
             ListMultimap<File, String> jarSources = ArrayListMultimap.create();
 
-            for (String key : resFileList.keySet()) {
+            for (String key : sourceFileList.keySet()) {
                 // first thing we do is check if it's excluded.
                 if (excludes.contains(key)) {
                     // skip, no need to do anything else.
                     continue;
                 }
 
-                List<QualifiedContent> contentSourceList = resFileList.get(key);
+                List<QualifiedContent> contentSourceList = sourceFileList.get(key);
 
                 // if there is only one content or if one of the source is PROJECT then it wins.
                 // This is similar behavior as the other merger (assets, res, manifest).
@@ -191,7 +308,9 @@ public class MergeJavaResourcesTransform extends Transform {
                 // if a file was selected, write it here.
                 if (selectedContent != null) {
                     if (selectedContent instanceof JarInput) {
-                        // just record it for now.
+                        // or just record it for now if it's coming from a jar.
+                        // This will allow to open these source jars just once to copy
+                        // all their content out.
                         jarSources.put(selectedContent.getFile(), key);
                     } else {
                         if (outFolder == null) {
@@ -217,14 +336,6 @@ public class MergeJavaResourcesTransform extends Transform {
 
             // then handle the merged files.
             if (!mergedFiles.isEmpty()) {
-                // if we haven't written into the outjar, create it.
-                if (outJar == null) {
-                    outJar = outputProvider.getContentLocation(
-                            "main", getOutputTypes(), getScopes(), Format.JAR);
-                    mkdirs(outJar.getParentFile());
-                    jarMerger = new JarMerger(outJar);
-                }
-
                 for (String key : mergedFiles.keySet()) {
                     List<File> sourceFiles = mergedFiles.get(key);
 
@@ -241,7 +352,7 @@ public class MergeJavaResourcesTransform extends Transform {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     for (File sourceFile : sourceFiles) {
                         if (sourceFile.isDirectory()) {
-                            File actualFile = getFile(sourceFile, key);
+                            File actualFile = computeFile(sourceFile, validator.keyToFolderPath(key));
                             baos.write(Files.toByteArray(actualFile));
                         } else {
                             ZipFile zipFile = new ZipFile(sourceFile);
@@ -255,6 +366,14 @@ public class MergeJavaResourcesTransform extends Transform {
                     }
 
                     if (hasJarSource) {
+                        // if we haven't written into the outjar, create it.
+                        if (outJar == null) {
+                            outJar = outputProvider.getContentLocation(
+                                    "main", getOutputTypes(), getScopes(), Format.JAR);
+                            mkdirs(outJar.getParentFile());
+                            jarMerger = new JarMerger(outJar);
+                        }
+
                         jarMerger.addEntry(key, baos.toByteArray());
                     } else {
                         if (outFolder == null) {
@@ -265,7 +384,7 @@ public class MergeJavaResourcesTransform extends Transform {
                             mkdirs(outFolder);
                         }
 
-                        Files.write(baos.toByteArray(), getFile(outFolder, key));
+                        Files.write(baos.toByteArray(), computeFile(outFolder, key));
                     }
                 }
             }
@@ -292,18 +411,24 @@ public class MergeJavaResourcesTransform extends Transform {
         return null;
     }
 
-    private static void copyFromFolder(
+    private void copyFromFolder(
             @NonNull File fromFolder,
             @NonNull File toFolder,
             @NonNull String path)
             throws IOException {
-        File from = getFile(fromFolder, path);
-        File to = getFile(toFolder, path);
+        File from = computeFile(fromFolder, validator.keyToFolderPath(path));
+        File to = computeFile(toFolder, path);
         mkdirs(to.getParentFile());
         Files.copy(from, to);
     }
 
-    private static File getFile(@NonNull File rootFolder, @NonNull String path) {
+    /**
+     * computes a file path from a root folder and a zip archive path.
+     * @param rootFolder the root folder
+     * @param path the archive path
+     * @return the File
+     */
+    private static File computeFile(@NonNull File rootFolder, @NonNull String path) {
         path = path.replace('/', File.separatorChar);
         return new File(rootFolder, path);
     }
@@ -341,7 +466,7 @@ public class MergeJavaResourcesTransform extends Transform {
         return jarMerger;
     }
 
-    private static void gatherResListFromJar(
+    private void gatherListFromJar(
             @NonNull JarInput jarInput,
             @NonNull ListMultimap<String, QualifiedContent> content) throws IOException {
 
@@ -364,10 +489,12 @@ public class MergeJavaResourcesTransform extends Transform {
         }
     }
 
-    private static boolean skipEntry(ZipEntry entry, String path) {
+    private boolean skipEntry(
+            @NonNull ZipEntry entry,
+            @NonNull String path) {
         if (entry.isDirectory() ||
-                path.endsWith(SdkConstants.DOT_CLASS) ||
-                JarFile.MANIFEST_NAME.equals(path)) {
+                JarFile.MANIFEST_NAME.equals(path) ||
+                !validator.validateJarPath(path)) {
             return true;
         }
 
@@ -393,13 +520,13 @@ public class MergeJavaResourcesTransform extends Transform {
                 false /*allowClassFiles*/);
     }
 
-    private static void gatherResListFromFolder(
+    private void gatherListFromFolder(
             @NonNull DirectoryInput directoryInput,
             @NonNull ListMultimap<String, QualifiedContent> content) {
-        gatherResListFromFolder(directoryInput.getFile(), "", directoryInput, content);
+        gatherListFromFolder(directoryInput.getFile(), "", directoryInput, content);
     }
 
-    private static void gatherResListFromFolder(
+    private void gatherListFromFolder(
             @NonNull File file,
             @NonNull String path,
             @NonNull DirectoryInput directoryInput,
@@ -416,13 +543,13 @@ public class MergeJavaResourcesTransform extends Transform {
             for (File child : children) {
                 String newPath = path.isEmpty() ? child.getName() : path + '/' + child.getName();
                 if (child.isDirectory()) {
-                    gatherResListFromFolder(
+                    gatherListFromFolder(
                             child,
                             newPath,
                             directoryInput,
                             content);
-                } else {
-                    content.put(newPath, directoryInput);
+                } else if (child.isFile() && validator.validateFolderPath(newPath)) {
+                    content.put(validator.folderPathToKey(newPath), directoryInput);
                 }
             }
         }

@@ -1805,12 +1805,10 @@ public class AndroidBuilder {
      * @param androidResPkgLocation the location of the packaged resource file
      * @param dexFolders the folder(s) with the dex file(s).
      * @param javaResourcesLocations the processed Java resource folders and/or jars
-     * @param jniLibsFolders the folders containing jni shared libraries
-     * @param mergingFolder folder to contain files that are being merged
+     * @param jniLibsLocations the folders containing jni shared libraries
      * @param abiFilters optional ABI filter
      * @param jniDebugBuild whether the app should include jni debug data
      * @param signingConfig the signing configuration
-     * @param packagingOptions the packaging options
      * @param outApkLocation location of the APK.
      * @throws DuplicateFileException
      * @throws FileNotFoundException if the store location was not found
@@ -1823,13 +1821,10 @@ public class AndroidBuilder {
             @NonNull String androidResPkgLocation,
             @NonNull Set<File> dexFolders,
             @NonNull Collection<File> javaResourcesLocations,
-            @Nullable Collection<File> jniLibsFolders,
-            @NonNull File mergingFolder,
-            @Nullable Set<String> abiFilters,
+            @NonNull Collection<File> jniLibsLocations,
+            @NonNull Set<String> abiFilters,
             boolean jniDebugBuild,
             @Nullable SigningConfig signingConfig,
-            @Nullable PackagingOptions packagingOptions,
-            @Nullable SignedJarBuilder.IZipEntryFilter packagingOptionsFilter,
             @NonNull String outApkLocation)
             throws DuplicateFileException, FileNotFoundException,
             KeytoolException, PackagerException, SigningException {
@@ -1846,8 +1841,8 @@ public class AndroidBuilder {
 
         try {
             Packager packager = new Packager(
-                    outApkLocation, androidResPkgLocation, mergingFolder,
-                    certificateInfo, mCreatedBy, packagingOptions, packagingOptionsFilter, mLogger);
+                    outApkLocation, androidResPkgLocation,
+                    certificateInfo, mCreatedBy, mLogger);
 
             // add dex folder to the apk root.
             if (!dexFolders.isEmpty()) {
@@ -1856,17 +1851,14 @@ public class AndroidBuilder {
 
             packager.setJniDebugMode(jniDebugBuild);
 
+            // add the output of the java resource merger
             for (File javaResourcesLocation : javaResourcesLocations) {
                 packager.addResources(javaResourcesLocation);
             }
 
-            // also add resources from library projects and jars
-            if (jniLibsFolders != null) {
-                for (File jniFolder : jniLibsFolders) {
-                    if (jniFolder.isDirectory()) {
-                        packager.addNativeLibraries(jniFolder, abiFilters);
-                    }
-                }
+            // and the output of the native lib merger.
+            for (File jniLibsLocation : jniLibsLocations) {
+                packager.addNativeLibraries(jniLibsLocation, abiFilters);
             }
 
             packager.sealApk();

@@ -20,7 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
-import com.android.build.gradle.tasks.MergeAssets;
+import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.RenderscriptCompile;
@@ -159,7 +159,7 @@ public interface BaseVariant {
      * Returns the asset merging task.
      */
     @Nullable
-    MergeAssets getMergeAssets();
+    MergeSourceSetFolders getMergeAssets();
 
     /**
      * Returns the BuildConfig generation task.

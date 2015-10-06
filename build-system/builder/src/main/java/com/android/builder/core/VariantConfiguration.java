@@ -1312,19 +1312,64 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return assetSets;
     }
 
+    /**
+     * Returns the dynamic list of {@link AssetSet} based on the configuration, its dependencies,
+     * as well as tested config if applicable (test of a library).
+     *
+     * The list is ordered in ascending order of importance, meaning the first set is meant to be
+     * overridden by the 2nd one and so on. This is meant to facilitate usage of the list in a
+     * {@link com.android.ide.common.res2.AssetMerger}.
+     *
+     * @return a list ResourceSet.
+     */
     @NonNull
-    public List<File> getLibraryJniFolders() {
-        List<File> list = Lists.newArrayListWithExpectedSize(mFlatLibraries.size());
+    public List<AssetSet> getJniLibsSets() {
+        List<AssetSet> jniSets = Lists.newArrayList();
 
-        for (int n = mFlatLibraries.size() - 1 ; n >= 0 ; n--) {
-            LibraryDependency dependency = mFlatLibraries.get(n);
-            File jniFolder = dependency.getJniFolder();
-            if (jniFolder.isDirectory()) {
-                list.add(jniFolder);
-            }
+        Collection<File> mainJniLibsDirs = mDefaultSourceProvider.getJniLibsDirectories();
+
+        // the main + generated asset folders are in the same AssetSet
+        AssetSet jniSet = new AssetSet(BuilderConstants.MAIN);
+        jniSet.addSources(mainJniLibsDirs);
+        jniSets.add(jniSet);
+
+        // the list of flavor must be reversed to use the right overlay order.
+        for (int n = mFlavorSourceProviders.size() - 1; n >= 0 ; n--) {
+            SourceProvider sourceProvider = mFlavorSourceProviders.get(n);
+
+            Collection<File> flavorJniDirs = sourceProvider.getJniLibsDirectories();
+            // we need the same of the flavor config, but it's in a different list.
+            // This is fine as both list are parallel collections with the same number of items.
+            jniSet = new AssetSet(mFlavors.get(n).getName());
+            jniSet.addSources(flavorJniDirs);
+            jniSets.add(jniSet);
         }
 
-        return list;
+        // multiflavor specific overrides flavor
+        if (mMultiFlavorSourceProvider != null) {
+            Collection<File> variantJniDirs = mMultiFlavorSourceProvider.getJniLibsDirectories();
+            jniSet = new AssetSet(getFlavorName());
+            jniSet.addSources(variantJniDirs);
+            jniSets.add(jniSet);
+        }
+
+        // build type overrides flavors
+        if (mBuildTypeSourceProvider != null) {
+            Collection<File> typeJniDirs = mBuildTypeSourceProvider.getJniLibsDirectories();
+            jniSet = new AssetSet(mBuildType.getName());
+            jniSet.addSources(typeJniDirs);
+            jniSets.add(jniSet);
+        }
+
+        // variant specific overrides all
+        if (mVariantSourceProvider != null) {
+            Collection<File> variantJniDirs = mVariantSourceProvider.getJniLibsDirectories();
+            jniSet = new AssetSet(getFullName());
+            jniSet.addSources(variantJniDirs);
+            jniSets.add(jniSet);
+        }
+
+        return jniSets;
     }
 
     /**
@@ -1401,19 +1446,6 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
         for (SourceProvider provider : providers) {
             sourceList.addAll(provider.getCDirectories());
-        }
-
-        return sourceList;
-    }
-
-    @NonNull
-    public List<File> getJniLibsList() {
-        List<SourceProvider> providers = getSortedSourceProviders();
-
-        List<File> sourceList = Lists.newArrayListWithExpectedSize(providers.size());
-
-        for (SourceProvider provider : providers) {
-            sourceList.addAll(provider.getJniLibsDirectories());
         }
 
         return sourceList;
@@ -1598,6 +1630,28 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
 
         return jars.build();
+    }
+
+    /**
+     * Returns the sub-project jni libs
+     *
+     * @return a non null, but possibly empty immutable set.
+     */
+    @NonNull
+    public ImmutableSet<File> getSubProjectJniLibraries() {
+        ImmutableSet.Builder<File> jniDirectories = ImmutableSet.builder();
+
+        for (LibraryDependency libraryDependency : mFlatLibraries) {
+            // only take the sub-project android libraries.
+            if (!libraryDependency.isOptional() && libraryDependency.getProject() != null) {
+                File jniDir = libraryDependency.getJniFolder();
+                if (jniDir.exists()) {
+                    jniDirectories.add(jniDir);
+                }
+            }
+        }
+
+        return jniDirectories.build();
     }
 
     /**

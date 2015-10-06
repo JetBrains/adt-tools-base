@@ -30,7 +30,6 @@ import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
-import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
@@ -40,21 +39,18 @@ import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
-import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
+import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
-import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
@@ -64,9 +60,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * A scope containing data for a specific variant.
@@ -106,12 +100,15 @@ public class VariantScopeImpl implements VariantScope {
     @Nullable
     private AndroidTask<MergeResources> mergeResourcesTask;
     @Nullable
-    private AndroidTask<MergeAssets> mergeAssetsTask;
+    private AndroidTask<MergeSourceSetFolders> mergeAssetsTask;
     private AndroidTask<GenerateBuildConfig> generateBuildConfigTask;
     private AndroidTask<GenerateResValues> generateResValuesTask;
 
     private AndroidTask<Sync> processJavaResourcesTask;
     private AndroidTask<TransformTask> mergeJavaResourcesTask;
+
+    private AndroidTask<MergeSourceSetFolders> mergeJniLibsFolderTask;
+
     private AndroidTask<NdkCompile> ndkCompileTask;
 
     /** @see BaseVariantData#javaCompilerTask */
@@ -242,37 +239,12 @@ public class VariantScopeImpl implements VariantScope {
     }
 
     @Override
-    @NonNull
-    public Set<File> getJniFolders() {
-        assert getNdkSoFolder() != null;
-
-        VariantConfiguration config = getVariantConfiguration();
-        ApkVariantData apkVariantData = (ApkVariantData) variantData;
-        // for now only the project's compilation output.
-        Set<File> set = Sets.newHashSet();
-        set.addAll(getNdkSoFolder());
-        set.add(getRenderscriptLibOutputDir());
-        set.addAll(config.getLibraryJniFolders());
-        set.addAll(config.getJniLibsList());
-
-        if (config.getMergedFlavor().getRenderscriptSupportModeEnabled() != null &&
-                config.getMergedFlavor().getRenderscriptSupportModeEnabled()) {
-            File rsLibs = globalScope.getAndroidBuilder().getSupportNativeLibFolder();
-            if (rsLibs != null && rsLibs.isDirectory()) {
-                set.add(rsLibs);
-            }
-        }
-        return set;
-    }
-
-    @Override
     @Nullable
     public BaseVariantData getTestedVariantData() {
         return variantData instanceof TestVariantData ?
                 (BaseVariantData) ((TestVariantData) variantData).getTestedVariantData() :
                 null;
     }
-
 
     // Precomputed file paths.
 
@@ -426,6 +398,13 @@ public class VariantScopeImpl implements VariantScope {
                                 "/assets") :
                 new File(globalScope.getIntermediatesDir(),
                         "/assets/" + getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    @Override
+    public File getMergeNativeLibsOutputDir() {
+        return FileUtils.join(globalScope.getIntermediatesDir(),
+                "/jniLibs/" + getVariantConfiguration().getDirName());
     }
 
     @Override
@@ -692,14 +671,26 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     @Nullable
-    public AndroidTask<MergeAssets> getMergeAssetsTask() {
+    public AndroidTask<MergeSourceSetFolders> getMergeAssetsTask() {
         return mergeAssetsTask;
     }
 
     @Override
     public void setMergeAssetsTask(
-            @Nullable AndroidTask<MergeAssets> mergeAssetsTask) {
+            @Nullable AndroidTask<MergeSourceSetFolders> mergeAssetsTask) {
         this.mergeAssetsTask = mergeAssetsTask;
+    }
+
+    @Nullable
+    @Override
+    public AndroidTask<MergeSourceSetFolders> getMergeJniLibFoldersTask() {
+        return mergeJniLibsFolderTask;
+    }
+
+    @Override
+    public void setMergeJniLibFoldersTask(
+            @Nullable AndroidTask<MergeSourceSetFolders> mergeJniLibsFolderTask) {
+        this.mergeJniLibsFolderTask = mergeJniLibsFolderTask;
     }
 
     @Override
@@ -733,23 +724,6 @@ public class VariantScopeImpl implements VariantScope {
     public void setProcessJavaResourcesTask(
             AndroidTask<Sync> processJavaResourcesTask) {
         this.processJavaResourcesTask = processJavaResourcesTask;
-    }
-
-    SignedJarBuilder.IZipEntryFilter packagingOptionsFilter;
-
-    @Override
-    public void setPackagingOptionsFilter(SignedJarBuilder.IZipEntryFilter filter) {
-        this.packagingOptionsFilter = filter;
-    }
-
-    /**
-     * Returns the {@link SignedJarBuilder.IZipEntryFilter} instance
-     * that manages all resources inclusion in the final APK following the rules defined in
-     * {@link com.android.builder.model.PackagingOptions} settings.
-     */
-    @Override
-    public SignedJarBuilder.IZipEntryFilter getPackagingOptionsFilter() {
-        return packagingOptionsFilter;
     }
 
     @Override

@@ -1146,6 +1146,8 @@ public final class SdkConstants {
     public static final String DOT_BC = DOT + EXT_BC;
     /** Dot-Extension of dependency files, i.e. ".d" */
     public static final String DOT_DEP = DOT + EXT_DEP;
+    /** Dot-Extension of native dynamic libraries, i.e. ".so" */
+    public static final String DOT_NATIVE_LIBS = DOT + EXT_NATIVE_LIB;
     /** Dot-Extension of dex files, i.e. ".dex" */
     public static final String DOT_DEX = DOT + EXT_DEX;
     /** Dot-Extension for temporary resource files, ie "ap_ */
