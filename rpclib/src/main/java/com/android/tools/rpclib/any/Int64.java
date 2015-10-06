@@ -58,10 +58,10 @@ final class Int64 extends Box implements BinaryObject {
     private static final Entity ENTITY = new Entity("any","int64_","","");
 
     static {
-        Namespace.register(Klass.INSTANCE);
         ENTITY.setFields(new Field[]{
             new Field("value", new Primitive("int64", Method.Int64)),
         });
+        Namespace.register(Klass.INSTANCE);
     }
     public static void register() {}
     //<<<End:Java.ClassBody:1>>>

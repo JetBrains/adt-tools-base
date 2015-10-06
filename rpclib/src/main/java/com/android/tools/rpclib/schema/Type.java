@@ -24,9 +24,17 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 public abstract class Type {
+    private String mName = null;
 
     @NotNull
-    public abstract String getName();
+    public final String getName() {
+        if (mName == null) {
+            StringBuilder out = new StringBuilder();
+            name(out);
+            mName = out.toString();
+        }
+        return mName;
+    }
 
     public abstract void encodeValue(@NotNull Encoder e, Object value) throws IOException;
 
@@ -60,5 +68,21 @@ public abstract class Type {
             default:
                 throw new IOException("Decode unknown type " + tag);
         }
+    }
+
+    abstract void name(StringBuilder out);
+
+    public abstract void signature(StringBuilder out);
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Type)) return false;
+        return (getName().equals(((Type)o).getName()));
+    }
+
+    @Override
+    public int hashCode() {
+        return getName().hashCode();
     }
 }

@@ -240,7 +240,7 @@ public class EncoderTest extends TestCase {
     expectedStream.write(new byte[]{0x03}); // type sid + encoded
     expectedStream.write(new byte[]{0x04, 't', 'e', 's', 't'}); // package
     expectedStream.write(new byte[]{0x05, 'T', 'y', 'p', 'e', 'A'}); // identity
-    expectedStream.write(new byte[]{0x00, 0x01, (byte)0xc0}); // version, fieldcount, string
+    expectedStream.write(new byte[]{0x00, 0x01, (byte)0xb0}); // version, fieldcount, string
 
     expectedStream.write(new byte[]{0x05, 'd', 'u', 'm', 'm', 'y'}); // payload
 

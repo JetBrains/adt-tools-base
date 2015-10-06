@@ -35,13 +35,11 @@ public class Encoder {
   @NotNull private final OutputStream mOutputStream;
   @NotNull private final TObjectIntHashMap<Entity> mEntities;
   @NotNull private final TObjectIntHashMap<BinaryObject> mObjects;
-  @NotNull private final TObjectIntHashMap<BinaryID> mIDs;
   @NotNull private final byte[] mBuffer;
 
   public Encoder(@NotNull OutputStream out) {
     mEntities = new TObjectIntHashMap<Entity>();
     mObjects = new TObjectIntHashMap<BinaryObject>();
-    mIDs = new TObjectIntHashMap<BinaryID>();
     mOutputStream = out;
     mBuffer = new byte[9];
   }
@@ -149,17 +147,6 @@ public class Encoder {
     catch (UnsupportedEncodingException e) {
       throw new RuntimeException(e); // Should never happen
     }
-  }
-
-  public void id(@NotNull BinaryID id) throws IOException {
-    if (mIDs.containsKey(id)) {
-      int sid = mIDs.get(id);
-      uint32(sid << 1);
-    }
-    int sid = mIDs.size() + 1;
-    mIDs.put(id, sid);
-    uint32((sid << 1 ) | 1);
-    id.write(this);
   }
 
   public void entity(Entity entity, boolean compact) throws IOException {

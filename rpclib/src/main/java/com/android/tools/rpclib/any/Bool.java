@@ -58,10 +58,10 @@ final class Bool extends Box implements BinaryObject {
     private static final Entity ENTITY = new Entity("any","bool_","","");
 
     static {
-        Namespace.register(Klass.INSTANCE);
         ENTITY.setFields(new Field[]{
             new Field("value", new Primitive("bool", Method.Bool)),
         });
+        Namespace.register(Klass.INSTANCE);
     }
     public static void register() {}
     //<<<End:Java.ClassBody:1>>>
