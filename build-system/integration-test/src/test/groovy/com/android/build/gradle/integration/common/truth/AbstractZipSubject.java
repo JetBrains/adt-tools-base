@@ -61,7 +61,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      */
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void contains(@NonNull String path) throws IOException {
-        ZipFile zip=getZip();
+        ZipFile zip = getZip();
         try {
             if (zip.getEntry(path) == null) {
                 failWithRawMessage("'%s' does not contain '%s'", zip.getName(), path);
@@ -120,7 +120,8 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      */
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void containsFileWithContent(@NonNull String path, @NonNull String content) {
-        assertThat(extractContentAsString(path).trim()).named(path).isEqualTo(content.trim());
+        assertThat(extractContentAsString(path).trim()).named(internalCustomName() + ": " + path).isEqualTo(
+                content.trim());
     }
 
     /**
@@ -128,7 +129,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      */
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void containsFileWithContent(@NonNull String path, @NonNull byte[] content) {
-        assertThat(extractContentAsByte(path)).named(path).isEqualTo(content);
+        assertThat(extractContentAsByte(path)).named(internalCustomName() + ": " + path).isEqualTo(content);
     }
 
     /**
