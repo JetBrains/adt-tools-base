@@ -32,6 +32,14 @@ public class ClassObjTest extends TestCase {
     mSnapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(file));
   }
 
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+
+    mSnapshot.dispose();
+    mSnapshot = null;
+  }
+
   public void testGetAllFieldsCount() {
     ClassObj application = mSnapshot.findClass("android.app.Application");
     assertNotNull(application);
