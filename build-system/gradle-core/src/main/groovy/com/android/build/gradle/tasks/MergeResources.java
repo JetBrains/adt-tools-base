@@ -92,6 +92,8 @@ public class MergeResources extends IncrementalTask {
 
     private Collection<String> generatedDensities;
 
+    private int minSdk;
+
     // fake input to detect changes. Not actually used by the task
     @InputFiles
     public Iterable<File> getRawInputFolders() {
@@ -247,7 +249,11 @@ public class MergeResources extends IncrementalTask {
             densities.add(Density.getEnum(density));
         }
 
-        return new VectorDrawableRenderer(getGeneratedPngsOutputDir(), densities, getILogger());
+        return new VectorDrawableRenderer(
+                getMinSdk(),
+                getGeneratedPngsOutputDir(),
+                densities,
+                getILogger());
     }
 
     @NonNull
@@ -356,6 +362,15 @@ public class MergeResources extends IncrementalTask {
         return generatedDensities;
     }
 
+    @Input
+    public int getMinSdk() {
+        return minSdk;
+    }
+
+    public void setMinSdk(int minSdk) {
+        this.minSdk = minSdk;
+    }
+
     public static class ConfigAction implements TaskConfigAction<MergeResources> {
 
         @NonNull
@@ -401,6 +416,9 @@ public class MergeResources extends IncrementalTask {
             final BaseVariantData<? extends BaseVariantOutputData> variantData =
                     scope.getVariantData();
             final AndroidConfig extension = scope.getGlobalScope().getExtension();
+
+            mergeResourcesTask.setMinSdk(
+                    variantData.getVariantConfiguration().getMinSdkVersion().getApiLevel());
 
             mergeResourcesTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             mergeResourcesTask.setVariantName(scope.getVariantConfiguration().getFullName());

@@ -1219,4 +1219,14 @@ public class GradleTestProject implements TestRule {
                 file,
                 Charsets.UTF_8);
     }
+
+    public void replaceInFile(
+            String relativePath,
+            String search,
+            String replace) throws IOException {
+        File file = new File(testDir, relativePath.replace("/", File.separator));
+        String content = Files.toString(file, Charset.defaultCharset());
+        String newContent = content.replaceAll(search, replace);
+        Files.write(newContent, file, Charset.defaultCharset());
+    }
 }

@@ -48,31 +48,30 @@ import javax.xml.parsers.DocumentBuilderFactory;
 /**
  * Generates PNG images (and XML copies) from VectorDrawable files.
  */
-@SuppressWarnings("MethodMayBeStatic")
 public class VectorDrawableRenderer implements ResourcePreprocessor {
     /** Projects with minSdk set to this or higher don't need to generate PNGs. */
     public static final int MIN_SDK_WITH_VECTOR_SUPPORT = 21;
 
     private final ILogger mLogger;
+    private final int mMinSdk;
     private final File mOutputDir;
     private final Collection<Density> mDensities;
 
-    public VectorDrawableRenderer(File outputDir, Collection<Density> densities, ILogger logger) {
+    public VectorDrawableRenderer(
+            int minSdk,
+            File outputDir,
+            Collection<Density> densities,
+            ILogger logger) {
+        mMinSdk = minSdk;
         mOutputDir = outputDir;
         mDensities = densities;
         mLogger = logger;
     }
 
-    public Collection<File> createPngFiles(
-            @NonNull File inputXmlFile,
-            @NonNull File outputResDirectory,
-            @NonNull Collection<Density> densities) throws IOException {
-        throw new RuntimeException("Replaced by the new way to generate PNGs");
-    }
-
     @Override
     public boolean needsPreprocessing(File resourceFile) {
-        return isXml(resourceFile)
+        return mMinSdk < MIN_SDK_WITH_VECTOR_SUPPORT
+                && isXml(resourceFile)
                 && isInDrawable(resourceFile)
                 && getEffectiveVersion(resourceFile) < MIN_SDK_WITH_VECTOR_SUPPORT
                 && isRootVector(resourceFile);
@@ -80,32 +79,54 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
 
     @Override
     public Collection<File> getFilesToBeGenerated(File inputXmlFile) {
+        Collection<File> filesToBeGenerated = Lists.newArrayList();
         FolderConfiguration originalConfiguration = getFolderConfiguration(inputXmlFile);
 
-        // Create all the PNG files and duplicate the XML into folders with the version qualifier.
-        Collection<File> filesToBeGenerated = Lists.newArrayList();
-        for (Density density : mDensities) {
-            FolderConfiguration newConfiguration = FolderConfiguration.copyOf(originalConfiguration);
-            newConfiguration.setDensityQualifier(new DensityQualifier(density));
+        if (originalConfiguration.getDensityQualifier() != null
+                && originalConfiguration.getDensityQualifier().getValue() == Density.NODPI) {
+            // If the files uses nodpi, just leave it alone.
+            filesToBeGenerated.add(new File(
+                    getDirectory(originalConfiguration),
+                    inputXmlFile.getName()));
+        } else if (originalConfiguration.getDensityQualifier() != null
+                && originalConfiguration.getDensityQualifier().getValue() != Density.ANYDPI) {
+            // If the density is specified, generate one png and one xml.
+            filesToBeGenerated.add(new File(
+                    getDirectory(originalConfiguration),
+                    inputXmlFile.getName().replace(".xml", ".png")));
 
-            File directory = new File(
-                    mOutputDir,
-                    newConfiguration.getFolderName(ResourceFolderType.DRAWABLE));
-            File pngFile = new File(
-                    directory,
-                    inputXmlFile.getName().replace(".xml", ".png"));
+            originalConfiguration.setVersionQualifier(
+                    new VersionQualifier(MIN_SDK_WITH_VECTOR_SUPPORT));
+            filesToBeGenerated.add(new File(
+                    getDirectory(originalConfiguration),
+                    inputXmlFile.getName()));
+        } else {
+            // Otherwise, generate one xml and N pngs, one per density.
+            for (Density density : mDensities) {
+                FolderConfiguration newConfiguration = FolderConfiguration.copyOf(originalConfiguration);
+                newConfiguration.setDensityQualifier(new DensityQualifier(density));
 
-            filesToBeGenerated.add(pngFile);
+                filesToBeGenerated.add(new File(
+                        getDirectory(newConfiguration),
+                        inputXmlFile.getName().replace(".xml", ".png")));
+            }
 
-            newConfiguration.setVersionQualifier(new VersionQualifier(MIN_SDK_WITH_VECTOR_SUPPORT));
-            File destination = new File(
-                    mOutputDir,
-                    newConfiguration.getFolderName(ResourceFolderType.DRAWABLE));
-            File xmlCopy = new File(destination, inputXmlFile.getName());
-            filesToBeGenerated.add(xmlCopy);
+            originalConfiguration.setDensityQualifier(new DensityQualifier(Density.ANYDPI));
+            originalConfiguration.setVersionQualifier(
+                    new VersionQualifier(MIN_SDK_WITH_VECTOR_SUPPORT));
+
+            filesToBeGenerated.add(
+                    new File(getDirectory(originalConfiguration), inputXmlFile.getName()));
         }
 
         return filesToBeGenerated;
+    }
+
+    @NonNull
+    private File getDirectory(FolderConfiguration newConfiguration) {
+        return new File(
+                mOutputDir,
+                newConfiguration.getFolderName(ResourceFolderType.DRAWABLE));
     }
 
     @Override
@@ -138,7 +159,7 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
     }
 
     @NonNull
-    private FolderConfiguration getFolderConfiguration(@NonNull File inputXmlFile) {
+    private static FolderConfiguration getFolderConfiguration(@NonNull File inputXmlFile) {
         String parentName = inputXmlFile.getParentFile().getName();
         FolderConfiguration originalConfiguration =
                 FolderConfiguration.getConfigForFolder(parentName);
@@ -149,7 +170,7 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
         return originalConfiguration;
     }
 
-    private boolean isInDrawable(@NonNull File inputXmlFile) {
+    private static boolean isInDrawable(@NonNull File inputXmlFile) {
         ResourceFolderType folderType =
                 ResourceFolderType.getFolderType(inputXmlFile.getParentFile().getName());
 
@@ -158,9 +179,9 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
 
     /**
      * Parse the root element of the file, return true if it is a vector.
-     * TODO: Combine this with the drawing code, such that we don't parse the file twice.
+     * TODO: Use SAX parser to only look at the root tag.
      */
-    private boolean isRootVector(File resourceFile) {
+    private static boolean isRootVector(File resourceFile) {
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
         boolean result = false;
         try {
@@ -177,11 +198,11 @@ public class VectorDrawableRenderer implements ResourcePreprocessor {
         return result;
     }
 
-    private boolean isXml(File resourceFile) {
-        return resourceFile.getPath().endsWith(".xml");
+    private static boolean isXml(File resourceFile) {
+        return Files.getFileExtension(resourceFile.getName()).equals("xml");
     }
 
-    private int getEffectiveVersion(File resourceFile) {
+    private static int getEffectiveVersion(File resourceFile) {
         FolderConfiguration configuration = getFolderConfiguration(resourceFile);
         if (configuration.getVersionQualifier() == null) {
             configuration.createDefault();
