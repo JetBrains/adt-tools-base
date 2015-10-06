@@ -58,10 +58,10 @@ final class Uint16 extends Box implements BinaryObject {
     private static final Entity ENTITY = new Entity("any","uint16_","","");
 
     static {
-        Namespace.register(Klass.INSTANCE);
         ENTITY.setFields(new Field[]{
             new Field("value", new Primitive("uint16", Method.Uint16)),
         });
+        Namespace.register(Klass.INSTANCE);
     }
     public static void register() {}
     //<<<End:Java.ClassBody:1>>>
