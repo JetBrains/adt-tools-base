@@ -109,14 +109,11 @@ public abstract class AbstractAndroidSubject<T extends AbstractZipSubject<T>> ex
     }
 
     private boolean checkForResource(String name) throws IOException {
-        ZipFile zipFile = null;
+        ZipFile zipFile = new ZipFile(getSubject());
         try {
-            zipFile = new ZipFile(getSubject());
             return zipFile.getEntry("res/" + name) != null;
         } finally {
-            if (zipFile != null) {
-                zipFile.close();
-            }
+            zipFile.close();
         }
     }
 }
