@@ -1,7 +1,7 @@
 apply plugin: 'com.android.test'
 
 android {
-    compileSdkVersion 19
+    compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
 
     targetProjectPath ':app'

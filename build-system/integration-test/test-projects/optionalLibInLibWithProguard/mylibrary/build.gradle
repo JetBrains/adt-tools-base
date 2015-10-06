@@ -1,8 +1,10 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 22
+    compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
+
+    useLibrary 'org.apache.http.legacy'
 
     defaultConfig {
         minSdkVersion 23

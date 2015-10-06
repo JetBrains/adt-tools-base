@@ -22,7 +22,7 @@ apply plugin: 'com.android.application'
 apply from: "../commonLocalRepo.gradle"
 
 android {
-    compileSdkVersion 19
+    compileSdkVersion rootProject.java6BasedSdk
     buildToolsVersion = rootProject.buildToolsVersion
 
     flavorDimensions "buildStatus", "testStatus"
