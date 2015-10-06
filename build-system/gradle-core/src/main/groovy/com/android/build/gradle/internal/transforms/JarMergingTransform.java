@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.transform.api.Context;
 import com.android.build.transform.api.DirectoryInput;
 import com.android.build.transform.api.Format;
@@ -43,20 +44,18 @@ import java.util.Collection;
 import java.util.Set;
 
 /**
- * A transform that merges all the incoming streams into a single jar in a single combined
- * stream.
+ * A transform that merges all the incoming inputs (folders and jars) into a single jar in a
+ * single combined output.
+ *
+ * This only packages the class files. It ignores other files.
  */
 public class JarMergingTransform extends Transform {
 
     @NonNull
     private final ImmutableSet<Scope> scopes;
 
-    @NonNull
-    private final Set<ContentType> types;
-
-    public JarMergingTransform(@NonNull Set<Scope> scopes, @NonNull Set<ContentType> types) {
+    public JarMergingTransform(@NonNull Set<Scope> scopes) {
         this.scopes = ImmutableSet.copyOf(scopes);
-        this.types = ImmutableSet.copyOf(types);
     }
 
     @NonNull
@@ -68,7 +67,7 @@ public class JarMergingTransform extends Transform {
     @NonNull
     @Override
     public Set<ContentType> getInputTypes() {
-        return types;
+        return TransformManager.CONTENT_CLASS;
     }
 
     @NonNull

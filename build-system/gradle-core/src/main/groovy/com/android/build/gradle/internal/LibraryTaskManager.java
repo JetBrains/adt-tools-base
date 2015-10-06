@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal;
 
+import static com.android.SdkConstants.FD_JNI;
 import static com.android.SdkConstants.FD_RENDERSCRIPT;
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
 import static com.android.SdkConstants.FN_CLASSES_JAR;
@@ -35,6 +36,7 @@ import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.LibraryJarTransform;
+import com.android.build.gradle.internal.tasks.LibraryJniLibsTransform;
 import com.android.build.gradle.internal.tasks.MergeFileTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -247,11 +249,6 @@ public class LibraryTaskManager extends TaskManager {
                     }
                 });
 
-        // package the prebuilt native libs into the bundle folder
-        final Sync packageJniLibs = project.getTasks().create(
-                variantScope.getTaskName("package", "JniLibs"),
-                Sync.class);
-
         // Add dependencies on NDK tasks if NDK plugin is applied.
         if (isNdkTaskNeeded) {
             // Add NDK tasks
@@ -260,34 +257,20 @@ public class LibraryTaskManager extends TaskManager {
                         @Override
                         public Void call() throws Exception {
                             createNdkTasks(variantScope);
-                            packageJniLibs.dependsOn(variantData.ndkCompileTask);
-                            packageJniLibs.from(variantData.ndkCompileTask.getSoFolder())
-                                    .include("**/*.so");
                             return null;
                         }
                     });
-        } else {
-            if (variantData.compileTask != null) {
-                variantData.compileTask.dependsOn(getNdkBuildable(variantData));
-            } else {
-                variantScope.getCompileTask().dependsOn(tasks, getNdkBuildable(variantData));
-            }
-            packageJniLibs.dependsOn(getNdkBuildable(variantData));
-            packageJniLibs.from(variantScope.getNdkSoFolder())
-                    .include("**/*.so");
         }
         variantScope.setNdkBuildable(getNdkBuildable(variantData));
+
+        // merge jni libs.
+        createMergeJniLibFoldersTasks(tasks, variantScope);
 
         Sync packageRenderscript = ThreadRecorder.get().record(
                 ExecutionType.LIB_TASK_MANAGER_CREATE_PACKAGING_TASK,
                 new Recorder.Block<Sync>() {
                     @Override
                     public Sync call() throws Exception {
-                        // package from 2 sources.
-                        packageJniLibs.from(variantConfig.getJniLibsList())
-                                .include("**/*.so");
-                        packageJniLibs.into(new File(variantBundleDir, "jni"));
-
                         // package the renderscript header files files into the bundle folder
                         Sync packageRenderscript = project.getTasks().create(
                                 variantScope.getTaskName("package", "Renderscript"), Sync.class);
@@ -407,11 +390,19 @@ public class LibraryTaskManager extends TaskManager {
                                 .addTransform(tasks, variantScope, transform);
                         bundle.dependsOn(jarPackagingTask.getName());
 
+                        // now add a transform that will take all the native libs and package
+                        // them into the libs folder of the bundle.
+                        LibraryJniLibsTransform jniTransform = new LibraryJniLibsTransform(
+                                new File(variantBundleDir, FD_JNI));
+                        AndroidTask<TransformTask> jniPackagingTask = transformManager
+                                .addTransform(tasks, variantScope, jniTransform);
+                        bundle.dependsOn(jniPackagingTask.getName());
+
                         return null;
                     }
                 });
 
-        bundle.dependsOn(packageRes.getName(), packageRenderscript, lintCopy, packageJniLibs,
+        bundle.dependsOn(packageRes.getName(), packageRenderscript, lintCopy,
                 mergeProGuardFileTask);
         bundle.dependsOn(variantScope.getNdkBuildable());
 

@@ -15,28 +15,26 @@
  */
 
 package com.android.build.gradle.integration.packaging
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.utils.FileUtils
+import com.google.common.base.Charsets
+import com.google.common.io.Files
 import groovy.transform.CompileStatic
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-
 /**
  * test for packaging of asset files.
  */
 @CompileStatic
-class AssetPackagingTest {
+class NativeSoPackagingTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
@@ -47,6 +45,7 @@ class AssetPackagingTest {
     private GradleTestProject libProject
     private GradleTestProject libProject2
     private GradleTestProject testProject
+    private GradleTestProject jarProject
 
     @Before
     void setUp() {
@@ -54,14 +53,16 @@ class AssetPackagingTest {
         libProject = project.getSubproject('library')
         libProject2 = project.getSubproject('library2')
         testProject = project.getSubproject('test')
+        jarProject = project.getSubproject('jar')
 
         // rewrite settings.gradle to remove un-needed modules
-        project.settingsFile.text = """
+        Files.write("""
 include 'app'
 include 'library'
 include 'library2'
 include 'test'
-"""
+include 'jar'
+""", new File(project.getTestDir(), "settings.gradle"), Charsets.UTF_8)
 
         // setup dependencies.
         appProject.getBuildFile() << """
@@ -71,6 +72,7 @@ android {
 
 dependencies {
     compile project(':library')
+    compile project(':jar')
 }
 """
 
@@ -90,36 +92,32 @@ android {
         // put some default files in the 4 projects, to check non incremental packaging as well,
         // and to provide files to change to test incremental support.
         File appDir = appProject.getTestDir()
-        createOriginalAsset(appDir,  "main",        "file.txt",         "app:abcd")
-        createOriginalAsset(appDir,  "androidTest", "filetest.txt",     "appTest:abcd")
+        createOriginalSoFile(appDir,  "main",        "libapp.so",         "app:abcd")
+        createOriginalSoFile(appDir,  "androidTest", "libapptest.so",     "appTest:abcd")
 
         File testDir = testProject.getTestDir()
-        createOriginalAsset(testDir, "main",        "file.txt",         "test:abcd")
+        createOriginalSoFile(testDir, "main",        "libtest.so",        "test:abcd")
 
         File libDir = libProject.getTestDir()
-        createOriginalAsset(libDir,  "main",        "filelib.txt",      "library:abcd")
-        createOriginalAsset(libDir,  "androidTest", "filelibtest.txt",  "libraryTest:abcd")
+        createOriginalSoFile(libDir,  "main",        "liblibrary.so",      "library:abcd")
+        createOriginalSoFile(libDir,  "androidTest", "liblibrarytest.so",  "libraryTest:abcd")
 
         File lib2Dir = libProject2.getTestDir()
-        createOriginalAsset(lib2Dir, "main",        "filelib2.txt",     "library2:abcd")
-        createOriginalAsset(lib2Dir, "androidTest", "filelib2test.txt", "library2Test:abcd")
+        createOriginalSoFile(lib2Dir, "main",        "liblibrary2.so",     "library2:abcd")
+        createOriginalSoFile(lib2Dir, "androidTest", "liblibrary2test.so", "library2Test:abcd")
+
+        File jarDir = jarProject.getTestDir()
+        File resFolder = FileUtils.join(jarDir, "src", "main", "resources", "lib", "x86")
+        FileUtils.mkdirs(resFolder)
+        new File(resFolder, "libjar.so") << "jar:abcd";
     }
 
-    @After
-    void cleanUp() {
-        project = null
-        appProject = null
-        testProject = null
-        libProject = null
-        libProject2 = null
-    }
-
-    private static void createOriginalAsset(
+    private static void createOriginalSoFile(
             @NonNull File projectFolder,
             @NonNull String dimension,
             @NonNull String filename,
             @NonNull String content) {
-        File assetFolder = FileUtils.join(projectFolder, "src", dimension, "assets")
+        File assetFolder = FileUtils.join(projectFolder, "src", dimension, "jniLibs", "x86")
         FileUtils.mkdirs(assetFolder)
         new File(assetFolder, filename) << content;
     }
@@ -128,29 +126,30 @@ android {
     void "test non incremental packaging"() {
         project.execute("clean", "assembleDebug", "assembleAndroidTest")
 
-        // chek the files are there. Start from the bottom of the dependency graph
-        checkAar(    libProject2, "filelib2.txt",     "library2:abcd")
-        checkTestApk(libProject2, "filelib2.txt",     "library2:abcd")
-        checkTestApk(libProject2, "filelib2test.txt", "library2Test:abcd")
+        // check the files are there. Start from the bottom of the dependency graph
+        checkAar(    libProject2, "liblibrary2.so",     "library2:abcd")
+        checkTestApk(libProject2, "liblibrary2.so",     "library2:abcd")
+        checkTestApk(libProject2, "liblibrary2test.so", "library2Test:abcd")
 
-        checkAar(    libProject,  "filelib.txt",     "library:abcd")
+        checkAar(    libProject,  "liblibrary.so",     "library:abcd")
         // aar does not contain dependency's assets
-        checkAar(    libProject, "filelib2.txt",     null)
+        checkAar(    libProject, "liblibrary2.so",     null)
         // test apk contains both test-ony assets, lib assets, and dependency assets.
-        checkTestApk(libProject, "filelib.txt",      "library:abcd")
-        checkTestApk(libProject, "filelib2.txt",     "library2:abcd")
-        checkTestApk(libProject, "filelibtest.txt",  "libraryTest:abcd")
+        checkTestApk(libProject, "liblibrary.so",      "library:abcd")
+        checkTestApk(libProject, "liblibrary2.so",     "library2:abcd")
+        checkTestApk(libProject, "liblibrarytest.so",  "libraryTest:abcd")
         // but not the assets of the dependency's own test
-        checkTestApk(libProject, "filelib2test.txt", null)
+        checkTestApk(libProject, "liblibrary2test.so", null)
 
         // app contain own assets + all dependencies' assets.
-        checkApk(    appProject, "file.txt",         "app:abcd")
-        checkApk(    appProject, "filelib.txt",      "library:abcd")
-        checkApk(    appProject, "filelib2.txt",     "library2:abcd")
-        checkTestApk(appProject, "filetest.txt",     "appTest:abcd")
+        checkApk(    appProject, "libapp.so",         "app:abcd")
+        checkApk(    appProject, "liblibrary.so",      "library:abcd")
+        checkApk(    appProject, "liblibrary2.so",     "library2:abcd")
+        checkApk(    appProject, "libjar.so",          "jar:abcd")
+        checkTestApk(appProject, "libapptest.so",     "appTest:abcd")
         // app test does not contain dependencies' own test assets.
-        checkTestApk(appProject, "filelibtest.txt",  null)
-        checkTestApk(appProject, "filelib2test.txt", null)
+        checkTestApk(appProject, "liblibrarytest.so",  null)
+        checkTestApk(appProject, "liblibrary2test.so", null)
     }
 
     // ---- APP DEFAULT ---
@@ -160,10 +159,10 @@ android {
         project.execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.addFile("src/main/assets/newfile.txt", "newfile content");
+            it.addFile("src/main/jniLibs/x86/libnewapp.so", "newfile content");
             project.execute("app:assembleDebug")
 
-            checkApk(appProject, "newfile.txt", "newfile content")
+            checkApk(appProject, "libnewapp.so", "newfile content")
         }
     }
 
@@ -172,10 +171,10 @@ android {
         project.execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.removeFile("src/main/assets/file.txt")
+            it.removeFile("src/main/jniLibs/x86/libapp.so")
             project.execute("app:assembleDebug")
 
-            checkApk(appProject, "file.txt", null)
+            checkApk(appProject, "libapp.so", null)
         }
     }
 
@@ -184,27 +183,11 @@ android {
         project.execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.replaceFile("src/main/assets/file.txt", "new content")
+            it.replaceFile("src/main/jniLibs/x86/libapp.so", "new content")
             project.execute("app:assembleDebug")
 
-            checkApk(appProject, "file.txt", "new content")
+            checkApk(appProject, "libapp.so", "new content")
         }
-    }
-
-    @Test
-    void "test app project with new debug asset file overriding main"() {
-        project.execute("app:clean", "app:assembleDebug")
-
-        TemporaryProjectModification.doTest(appProject) {
-            it.addFile("src/debug/assets/file.txt", "new content")
-            project.execute("app:assembleDebug")
-
-            checkApk(appProject, "file.txt", "new content")
-        }
-
-        // file's been removed, checking in the other direction.
-        project.execute("app:assembleDebug")
-        checkApk(appProject, "file.txt", "app:abcd")
     }
 
     @Test
@@ -212,15 +195,17 @@ android {
         project.execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.addFile("src/main/assets/filelib.txt", "new content")
+            it.addFile("src/main/jniLibs/x86/liblibrary.so", "new content")
             project.execute("app:assembleDebug")
 
-            checkApk(appProject, "filelib.txt", "new content")
-        }
+            checkApk(appProject, "liblibrary.so", "new content")
 
-        // file's been removed, checking in the other direction.
-        project.execute("app:assembleDebug")
-        checkApk(appProject, "filelib.txt", "library:abcd")
+            // now remove it to test it works in the other direction
+            it.removeFile("src/main/jniLibs/x86/liblibrary.so")
+            project.execute("app:assembleDebug")
+
+            checkApk(appProject, "liblibrary.so", "library:abcd")
+        }
     }
 
     @Test
@@ -228,15 +213,17 @@ android {
         project.execute("app:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.addFile("src/debug/assets/file.txt", "new content")
+            it.addFile("src/debug/jniLibs/x86/libapp.so", "new content")
             project.execute("app:assembleDebug")
 
-            checkApk(appProject, "file.txt", "new content")
-        }
+            checkApk(appProject, "libapp.so", "new content")
 
-        // file's been removed, checking in the other direction.
-        project.execute("app:assembleDebug")
-        checkApk(appProject, "file.txt", "app:abcd")
+            // now remove it to test it works in the other direction
+            it.removeFile("src/debug/jniLibs/x86/libapp.so")
+            project.execute("app:assembleDebug")
+
+            checkApk(appProject, "libapp.so", "app:abcd")
+        }
     }
 
     @Test
@@ -244,10 +231,10 @@ android {
         project.execute("app:clean", "library:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.replaceFile("src/main/assets/filelib.txt", "new content")
+            it.replaceFile("src/main/jniLibs/x86/liblibrary.so", "new content")
             project.execute("app:assembleDebug")
 
-            checkApk(appProject, "filelib.txt", "new content")
+            checkApk(appProject, "liblibrary.so", "new content")
         }
     }
 
@@ -256,10 +243,10 @@ android {
         project.execute("app:clean", "library:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.addFile("src/main/assets/new_lib_file.txt", "new content")
+            it.addFile("src/main/jniLibs/x86/libnewlibrary.so", "new content")
             project.execute("app:assembleDebug")
 
-            checkApk(appProject, "new_lib_file.txt", "new content")
+            checkApk(appProject, "libnewlibrary.so", "new content")
         }
     }
 
@@ -268,10 +255,10 @@ android {
         project.execute("app:clean", "library:clean", "app:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.removeFile("src/main/assets/filelib.txt")
+            it.removeFile("src/main/jniLibs/x86/liblibrary.so")
             project.execute("app:assembleDebug")
 
-            checkApk(appProject, "filelib.txt", null)
+            checkApk(appProject, "liblibrary.so", null)
         }
     }
 
@@ -282,10 +269,10 @@ android {
         project.execute("app:clean", "app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.addFile("src/androidTest/assets/newfile.txt", "new file content");
+            it.addFile("src/androidTest/jniLibs/x86/libnewapp.so", "new file content");
             project.execute("app:assembleAT")
 
-            checkTestApk(appProject, "newfile.txt", "new file content")
+            checkTestApk(appProject, "libnewapp.so", "new file content")
         }
     }
 
@@ -294,10 +281,10 @@ android {
         project.execute("app:clean", "app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.removeFile("src/androidTest/assets/filetest.txt")
+            it.removeFile("src/androidTest/jniLibs/x86/libapptest.so")
             project.execute("app:assembleAT")
 
-            checkTestApk(appProject, "filetest.txt", null)
+            checkTestApk(appProject, "libapptest.so", null)
         }
     }
 
@@ -306,10 +293,10 @@ android {
         project.execute("app:clean", "app:assembleAT")
 
         TemporaryProjectModification.doTest(appProject) {
-            it.replaceFile("src/androidTest/assets/filetest.txt", "new content")
+            it.replaceFile("src/androidTest/jniLibs/x86/libapptest.so", "new content")
             project.execute("app:assembleAT")
 
-            checkTestApk(appProject, "filetest.txt", "new content")
+            checkTestApk(appProject, "libapptest.so", "new content")
         }
     }
 
@@ -320,10 +307,10 @@ android {
         project.execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.addFile("src/main/assets/newfile.txt", "newfile content");
+            it.addFile("src/main/jniLibs/x86/libnewlibrary.so", "newfile content");
             project.execute("library:assembleDebug")
 
-            checkAar(libProject, "newfile.txt", "newfile content")
+            checkAar(libProject, "libnewlibrary.so", "newfile content")
         }
     }
 
@@ -332,10 +319,10 @@ android {
         project.execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.removeFile("src/main/assets/filelib.txt")
+            it.removeFile("src/main/jniLibs/x86/liblibrary.so")
             project.execute("library:assembleDebug")
 
-            checkAar(libProject, "filelib.txt", null)
+            checkAar(libProject, "liblibrary.so", null)
         }
     }
 
@@ -344,10 +331,10 @@ android {
         project.execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.replaceFile("src/main/assets/filelib.txt", "new content")
+            it.replaceFile("src/main/jniLibs/x86/liblibrary.so", "new content")
             project.execute("library:assembleDebug")
 
-            checkAar(libProject, "filelib.txt", "new content")
+            checkAar(libProject, "liblibrary.so", "new content")
         }
     }
 
@@ -356,15 +343,17 @@ android {
         project.execute("library:clean", "library:assembleDebug")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.addFile("src/debug/assets/filelib.txt", "new content")
+            it.addFile("src/debug/jniLibs/x86/liblibrary.so", "new content")
             project.execute("library:assembleDebug")
 
-            checkAar(libProject, "filelib.txt", "new content")
-        }
+            checkAar(libProject, "liblibrary.so", "new content")
 
-        // file's been removed, checking in the other direction.
-        project.execute("library:assembleDebug")
-        checkAar(libProject, "filelib.txt", "library:abcd")
+            // now remove it to test it works in the other direction
+            it.removeFile("src/debug/jniLibs/x86/liblibrary.so")
+            project.execute("library:assembleDebug")
+
+            checkAar(libProject, "liblibrary.so", "library:abcd")
+        }
     }
 
     // ---- LIB TEST ---
@@ -374,10 +363,10 @@ android {
         project.execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.addFile("src/androidTest/assets/newfile.txt", "new file content");
+            it.addFile("src/androidTest/jniLibs/x86/libnewlibrary.so", "new file content");
             project.execute("library:assembleAT")
 
-            checkTestApk(libProject, "newfile.txt", "new file content")
+            checkTestApk(libProject, "libnewlibrary.so", "new file content")
         }
     }
 
@@ -386,10 +375,10 @@ android {
         project.execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.removeFile("src/androidTest/assets/filelibtest.txt")
+            it.removeFile("src/androidTest/jniLibs/x86/liblibrarytest.so")
             project.execute("library:assembleAT")
 
-            checkTestApk(libProject, "filelibtest.txt", null)
+            checkTestApk(libProject, "liblibrarytest.so", null)
         }
     }
 
@@ -398,10 +387,10 @@ android {
         project.execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.replaceFile("src/androidTest/assets/filelibtest.txt", "new content")
+            it.replaceFile("src/androidTest/jniLibs/x86/liblibrarytest.so", "new content")
             project.execute("library:assembleAT")
 
-            checkTestApk(libProject, "filelibtest.txt", "new content")
+            checkTestApk(libProject, "liblibrarytest.so", "new content")
         }
     }
 
@@ -410,16 +399,17 @@ android {
         project.execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.addFile("src/androidTest/assets/filelib.txt", "new content")
+            it.addFile("src/androidTest/jniLibs/x86/liblibrary.so", "new content")
             project.execute("library:assembleAT")
 
-            checkTestApk(libProject, "filelib.txt", "new content")
+            checkTestApk(libProject, "liblibrary.so", "new content")
+
+            // now remove it to test it works in the other direction
+            it.removeFile("src/androidTest/jniLibs/x86/liblibrary.so")
+            project.execute("library:assembleAT")
+
+            checkTestApk(libProject, "liblibrary.so", "library:abcd")
         }
-
-        // file's been removed, checking in the other direction.
-        project.execute("library:assembleAT")
-        checkTestApk(libProject, "filelib.txt", "library:abcd")
-
     }
 
     @Test
@@ -427,15 +417,17 @@ android {
         project.execute("library:clean", "library:assembleAT")
 
         TemporaryProjectModification.doTest(libProject) {
-            it.addFile("src/androidTest/assets/filelib2.txt", "new content")
+            it.addFile("src/androidTest/jniLibs/x86/liblibrary2.so", "new content")
             project.execute("library:assembleAT")
 
-            checkTestApk(libProject, "filelib2.txt", "new content")
-        }
+            checkTestApk(libProject, "liblibrary2.so", "new content")
 
-        // file's been removed, checking in the other direction.
-        project.execute("library:assembleAT")
-        checkTestApk(libProject, "filelib2.txt", "library2:abcd")
+            // now remove it to test it works in the other direction
+            it.removeFile("src/androidTest/jniLibs/x86/liblibrary2.so")
+            project.execute("library:assembleAT")
+
+            checkTestApk(libProject, "liblibrary2.so", "library2:abcd")
+        }
     }
 
     // ---- TEST DEFAULT ---
@@ -445,10 +437,10 @@ android {
         project.execute("test:clean", "test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) {
-            it.addFile("src/main/assets/newfile.txt", "newfile content");
+            it.addFile("src/main/jniLibs/x86/libnewtest.so", "newfile content");
             project.execute("test:assembleDebug")
 
-            checkApk(testProject, "newfile.txt", "newfile content")
+            checkApk(testProject, "libnewtest.so", "newfile content")
         }
     }
 
@@ -457,10 +449,10 @@ android {
         project.execute("test:clean", "test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) {
-            it.removeFile("src/main/assets/file.txt")
+            it.removeFile("src/main/jniLibs/x86/libtest.so")
             project.execute("test:assembleDebug")
 
-            checkApk(testProject, "file.txt", null)
+            checkApk(testProject, "libtest.so", null)
         }
     }
 
@@ -469,14 +461,12 @@ android {
         project.execute("test:clean", "test:assembleDebug")
 
         TemporaryProjectModification.doTest(testProject) {
-            it.replaceFile("src/main/assets/file.txt", "new content")
+            it.replaceFile("src/main/jniLibs/x86/libtest.so", "new content")
             project.execute("test:assembleDebug")
 
-            checkApk(testProject, "file.txt", "new content")
+            checkApk(testProject, "libtest.so", "new content")
         }
     }
-
-    // -----------------------
 
     /**
      * check an apk has (or not) the given asset file name.
@@ -492,7 +482,7 @@ android {
             @NonNull GradleTestProject project,
             @NonNull String filename,
             @Nullable String content) {
-        check(assertThatApk(project.getApk("debug")), filename, content)
+        check(assertThatApk(project.getApk("debug")), "lib", filename, content)
     }
 
     /**
@@ -509,7 +499,7 @@ android {
             @NonNull GradleTestProject project,
             @NonNull String filename,
             @Nullable String content) {
-        check(assertThatApk(project.getTestApk("debug")), filename, content)
+        check(assertThatApk(project.getTestApk("debug")), "lib", filename, content)
     }
 
     /**
@@ -526,17 +516,18 @@ android {
             @NonNull GradleTestProject project,
             @NonNull String filename,
             @Nullable String content) {
-        check(assertThatAar(project.getAar("debug")), filename, content)
+        check(assertThatAar(project.getAar("debug")), "jni", filename, content)
     }
 
     private static void check(
             @NonNull AbstractAndroidSubject subject,
+            @NonNull String folderName,
             @NonNull String filename,
             @Nullable String content) {
         if (content != null) {
-            subject.containsFileWithContent("assets/" + filename, content)
+            subject.containsFileWithContent(folderName + "/x86/" + filename, content)
         } else {
-            subject.doesNotContain("assets/" + filename)
+            subject.doesNotContain(folderName + "/x86/" + filename)
         }
     }
 }
