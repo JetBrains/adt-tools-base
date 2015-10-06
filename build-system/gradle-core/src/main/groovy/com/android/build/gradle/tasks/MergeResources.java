@@ -40,6 +40,7 @@ import com.android.ide.common.res2.ResourceSet;
 import com.android.resources.Density;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.tasks.Input;
@@ -55,6 +56,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 @ParallelizableTask
@@ -82,8 +84,6 @@ public class MergeResources extends IncrementalTask {
 
     private boolean useNewCruncher;
 
-    private boolean insertSourceMarkers = true;
-
     private File blameLogFolder;
     // actual inputs
     private List<ResourceSet> inputResourceSets;
@@ -94,8 +94,8 @@ public class MergeResources extends IncrementalTask {
 
     private int minSdk;
 
-    // fake input to detect changes. Not actually used by the task
     @InputFiles
+    @SuppressWarnings("unused") // Fake input to detect changes. Not actually used by the task.
     public Iterable<File> getRawInputFolders() {
         return flattenSourceSets(getInputResourceSets());
     }
@@ -112,6 +112,8 @@ public class MergeResources extends IncrementalTask {
 
     private PngCruncher getCruncher() {
         if (getUseNewCruncher()) {
+            // At this point ensureTargetSetup() has been called, so no NPE below.
+            // noinspection ConstantConditions
             if (getBuilder().getTargetInfo().getBuildTools().getRevision().getMajor() >= 22) {
                 return QueuedCruncher.Builder.INSTANCE.newCruncher(
                         getBuilder().getTargetInfo().getBuildTools().getPath(
@@ -273,30 +275,11 @@ public class MergeResources extends IncrementalTask {
         return resourceSets;
     }
 
-    @Input
-    public boolean isProcess9Patch() {
-        return process9Patch;
-    }
-
-    @Input
-    public boolean isCrunchPng() {
-        return crunchPng;
-    }
-
-    @Input
-    public boolean isUseNewCruncher() {
-        return useNewCruncher;
-    }
-
-    @Input
-    public boolean isInsertSourceMarkers() {
-        return insertSourceMarkers;
-    }
-
     public List<ResourceSet> getInputResourceSets() {
         return inputResourceSets;
     }
 
+    @SuppressWarnings("unused") // Property set with convention mapping.
     public void setInputResourceSets(
             List<ResourceSet> inputResourceSets) {
         this.inputResourceSets = inputResourceSets;
@@ -358,6 +341,10 @@ public class MergeResources extends IncrementalTask {
         return generatedPngsOutputDir;
     }
 
+    public void setGeneratedPngsOutputDir(File generatedPngsOutputDir) {
+        this.generatedPngsOutputDir = generatedPngsOutputDir;
+    }
+
     public Collection<String> getGeneratedDensities() {
         return generatedDensities;
     }
@@ -369,6 +356,10 @@ public class MergeResources extends IncrementalTask {
 
     public void setMinSdk(int minSdk) {
         this.minSdk = minSdk;
+    }
+
+    public void setGeneratedDensities(Collection<String> generatedDensities) {
+        this.generatedDensities = generatedDensities;
     }
 
     public static class ConfigAction implements TaskConfigAction<MergeResources> {
@@ -426,26 +417,15 @@ public class MergeResources extends IncrementalTask {
 
             mergeResourcesTask.setBlameLogFolder(scope.getResourceBlameLogDir());
 
-            mergeResourcesTask.process9Patch = process9Patch;
-            mergeResourcesTask.crunchPng = extension.getAaptOptions()
-                    .getCruncherEnabled();
+            mergeResourcesTask.setProcess9Patch(process9Patch);
+            mergeResourcesTask.setCrunchPng(extension.getAaptOptions().getCruncherEnabled());
 
-            mergeResourcesTask.generatedDensities =
+            Set<String> generatedDensities =
                     variantData.getVariantConfiguration().getMergedFlavor().getGeneratedDensities();
+            mergeResourcesTask.setGeneratedDensities(
+                    Objects.firstNonNull(generatedDensities, Collections.<String>emptySet()));
 
-            if (mergeResourcesTask.generatedDensities == null) {
-                mergeResourcesTask.generatedDensities = Collections.emptySet();
-            }
-
-
-            ConventionMappingHelper.map(mergeResourcesTask, "useNewCruncher",
-                    new Callable<Boolean>() {
-                        @Override
-                        public Boolean call() throws Exception {
-                            return extension.getAaptOptions()
-                                    .getUseNewCruncher();
-                        }
-                    });
+            mergeResourcesTask.setUseNewCruncher(extension.getAaptOptions().getUseNewCruncher());
 
             ConventionMappingHelper.map(mergeResourcesTask, "inputResourceSets",
                     new Callable<List<ResourceSet>>() {
@@ -469,12 +449,12 @@ public class MergeResources extends IncrementalTask {
                         }
                     });
 
-            mergeResourcesTask.outputDir =
+            mergeResourcesTask.setOutputDir(
                     outputLocation != null
                             ? outputLocation
-                            : scope.getDefaultMergeResourcesOutputDir();
+                            : scope.getDefaultMergeResourcesOutputDir());
 
-            mergeResourcesTask.generatedPngsOutputDir = scope.getGeneratedPngsOutputDir();
+            mergeResourcesTask.setGeneratedPngsOutputDir(scope.getGeneratedPngsOutputDir());
 
             variantData.mergeResourcesTask = mergeResourcesTask;
         }
