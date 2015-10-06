@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.Context;
 import com.android.build.transform.api.NoOpTransform;
 import com.android.build.transform.api.ScopedContent;
@@ -28,12 +29,11 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -44,7 +44,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -88,13 +87,18 @@ public class InstantRunDex extends Transform implements NoOpTransform {
     @NonNull
     private final BuildType buildType;
 
+    @NonNull
+    private final VariantScope variantScope;
+
     public InstantRunDex(
+            @NonNull VariantScope variantScope,
             @NonNull BuildType buildType,
             @NonNull File outputFolder,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull DexOptions dexOptions,
             @NonNull Logger logger,
             @NonNull Set<ScopedContent.ContentType> inputTypes) {
+        this.variantScope = variantScope;
         this.buildType = buildType;
         this.outputFolder = outputFolder;
         this.androidBuilder = androidBuilder;
@@ -107,6 +111,18 @@ public class InstantRunDex extends Transform implements NoOpTransform {
     public void transform(@NonNull Context context, @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
             throws IOException, TransformException, InterruptedException {
+
+        if (buildType == BuildType.RELOAD) {
+            // if we are in reload mode, we should check the result of the verifier.
+            InstantRunVerifierTransform.VerificationResult verificationResult =
+                    variantScope.getVerificationResult();
+            if (verificationResult == null || !verificationResult.isCompatible()) {
+                // changes are incompatible, we therefore do not produce a reload dex file.
+                // Android Studio will take that as a cue to do a cold swap.
+                FileUtils.emptyFolder(outputFolder);
+                return;
+            }
+        }
 
         // create a tmp jar file.
         File classesJar = new File(outputFolder, "classes.jar");
