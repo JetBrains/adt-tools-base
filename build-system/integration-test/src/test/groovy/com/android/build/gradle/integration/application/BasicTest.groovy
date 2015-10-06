@@ -75,7 +75,7 @@ class BasicTest {
     @Test
     void basicModel() {
         assertFalse("Library Project", model.isLibrary())
-        assertEquals("Compile Target", "android-21", model.getCompileTarget())
+        assertEquals("Compile Target", "android-23", model.getCompileTarget())
         assertFalse("Non empty bootclasspath", model.getBootClasspath().isEmpty())
 
         assertNotNull("aaptOptions not null", model.getAaptOptions())

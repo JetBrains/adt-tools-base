@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 
 android {
     resourcePrefix 'lib2_'
-    compileSdkVersion 21
+    compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
 
     defaultConfig {

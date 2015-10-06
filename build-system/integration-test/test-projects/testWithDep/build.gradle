@@ -10,6 +10,6 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 21
+    compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
 }
