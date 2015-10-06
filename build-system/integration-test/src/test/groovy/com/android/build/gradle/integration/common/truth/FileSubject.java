@@ -31,6 +31,7 @@ import java.io.IOException;
 /**
  * Truth support for validating File.
  */
+@SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")  // Functions do not return.
 public class FileSubject extends Subject<FileSubject, File> {
     public FileSubject(FailureStrategy failureStrategy, File subject) {
         super(failureStrategy, subject);
@@ -48,21 +49,18 @@ public class FileSubject extends Subject<FileSubject, File> {
         }
     }
 
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void isFile() {
         if (!getSubject().isFile()) {
             fail("is a file");
         }
     }
 
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void isDirectory() {
         if (!getSubject().isDirectory()) {
             fail("is a directory");
         }
     }
 
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void containsAllOf(String... expectedContents) {
         isFile();
 
@@ -75,6 +73,27 @@ public class FileSubject extends Subject<FileSubject, File> {
             }
         } catch (IOException e) {
             failWithRawMessage("Unable to read %s", getSubject());
+        }
+    }
+
+    public void wasModifiedAt(long timestamp) {
+        long lastModified = getSubject().lastModified();
+        if (getSubject().lastModified() != timestamp) {
+            failWithBadResults("was not modified at", timestamp, "was modified at", lastModified);
+        }
+    }
+
+    public void isNewerThan(long timestamp) {
+        long lastModified = getSubject().lastModified();
+        if (getSubject().lastModified() <= timestamp) {
+            failWithBadResults("is newer than", timestamp, "was modified at", lastModified);
+        }
+    }
+
+    public void isOlderThan(long timestamp) {
+        long lastModified = getSubject().lastModified();
+        if (getSubject().lastModified() >= timestamp) {
+            failWithBadResults("is older than", timestamp, "was modified at", lastModified);
         }
     }
 
