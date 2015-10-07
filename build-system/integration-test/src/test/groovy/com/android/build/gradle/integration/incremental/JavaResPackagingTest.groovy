@@ -22,12 +22,11 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
 import com.android.utils.FileUtils
-import com.google.common.base.Charsets
-import com.google.common.io.Files
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.After
+import org.junit.Before
+import org.junit.Ignore
+import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
@@ -39,19 +38,19 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 @CompileStatic
 class JavaResPackagingTest {
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
             .create()
 
-    private static GradleTestProject appProject
-    private static GradleTestProject libProject
-    private static GradleTestProject libProject2
-    private static GradleTestProject testProject
-    private static GradleTestProject jarProject
+    private GradleTestProject appProject
+    private GradleTestProject libProject
+    private GradleTestProject libProject2
+    private GradleTestProject testProject
+    private GradleTestProject jarProject
 
-    @BeforeClass
-    static void setUp() {
+    @Before
+    void setUp() {
         appProject = project.getSubproject('app')
         libProject = project.getSubproject('library')
         libProject2 = project.getSubproject('library2')
@@ -115,6 +114,16 @@ android {
         new File(resFolder, "jar.txt") << "jar:abcd";
     }
 
+    @After
+    void cleanUp() {
+        project = null
+        appProject = null
+        testProject = null
+        libProject = null
+        libProject2 = null
+        jarProject = null
+    }
+
     private static void createOriginalResFile(
             @NonNull File projectFolder,
             @NonNull String dimension,
@@ -123,16 +132,6 @@ android {
         File assetFolder = FileUtils.join(projectFolder, "src", dimension, "resources", "com", "foo")
         FileUtils.mkdirs(assetFolder)
         new File(assetFolder, filename) << content;
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-        appProject = null
-        testProject = null
-        libProject = null
-        libProject2 = null
-        jarProject = null
     }
 
     @Test
@@ -155,7 +154,7 @@ android {
         checkTestApk(libProject, "library2test.txt", null)
 
         // app contain own assets + all dependencies' assets.
-        checkApk(    appProject, "app.txt",         "app:abcd")
+        checkApk(    appProject, "app.txt",          "app:abcd")
         checkApk(    appProject, "library.txt",      "library:abcd")
         checkApk(    appProject, "library2.txt",     "library2:abcd")
         checkApk(    appProject, "jar.txt",          "jar:abcd")
@@ -204,6 +203,22 @@ android {
     }
 
     @Test
+    void "test app project with new debug res file overriding main"() {
+        project.execute("app:clean", "app:assembleDebug")
+
+        TemporaryProjectModification.doTest(appProject) {
+            it.addFile("src/debug/resources/com/foo/app.txt", "new content")
+            project.execute("app:assembleDebug")
+
+            checkApk(appProject, "app.txt", "new content")
+        }
+
+        // file's been removed, checking in the other direction.
+        project.execute("app:assembleDebug")
+        checkApk(appProject, "app.txt", "app:abcd")
+    }
+
+    @Test
     void "test app project with new res file overriding dependency"() {
         project.execute("app:clean", "app:assembleDebug")
 
@@ -212,13 +227,12 @@ android {
             project.execute("app:assembleDebug")
 
             checkApk(appProject, "library.txt", "new content")
-
-            // now remove it to test it works in the other direction
-            it.removeFile("src/main/resources/com/foo/library.txt")
-            project.execute("app:assembleDebug")
-
-            checkApk(appProject, "library.txt", "library:abcd")
         }
+
+        // file's been removed, checking in the other direction.
+        project.execute("app:assembleDebug")
+        checkApk(appProject, "library.txt", "library:abcd")
+
     }
 
     @Test
@@ -230,13 +244,11 @@ android {
             project.execute("app:assembleDebug")
 
             checkApk(appProject, "app.txt", "new content")
-
-            // now remove it to test it works in the other direction
-            it.removeFile("src/debug/resources/com/foo/app.txt")
-            project.execute("app:assembleDebug")
-
-            checkApk(appProject, "app.txt", "app:abcd")
         }
+
+        // file's been removed, checking in the other direction.
+        project.execute("app:assembleDebug")
+        checkApk(appProject, "app.txt", "app:abcd")
     }
 
     @Test
@@ -360,13 +372,12 @@ android {
             project.execute("library:assembleDebug")
 
             checkAar(libProject, "library.txt", "new content")
-
-            // now remove it to test it works in the other direction
-            it.removeFile("src/debug/resources/com/foo/library.txt")
-            project.execute("library:assembleDebug")
-
-            checkAar(libProject, "library.txt", "library:abcd")
         }
+
+        // file's been removed, checking in the other direction.
+        project.execute("library:assembleDebug")
+        checkAar(libProject, "library.txt", "library:abcd")
+
     }
 
     // ---- LIB TEST ---
@@ -416,13 +427,11 @@ android {
             project.execute("library:assembleAT")
 
             checkTestApk(libProject, "library.txt", "new content")
-
-            // now remove it to test it works in the other direction
-            it.removeFile("src/androidTest/resources/com/foo/library.txt")
-            project.execute("library:assembleAT")
-
-            checkTestApk(libProject, "library.txt", "library:abcd")
         }
+
+        // file's been removed, checking in the other direction.
+        project.execute("library:assembleAT")
+        checkTestApk(libProject, "library.txt", "library:abcd")
     }
 
     @Test
@@ -435,12 +444,11 @@ android {
 
             checkTestApk(libProject, "library2.txt", "new content")
 
-            // now remove it to test it works in the other direction
-            it.removeFile("src/androidTest/resources/com/foo/library2.txt")
-            project.execute("library:assembleAT")
-
-            checkTestApk(libProject, "library2.txt", "library2:abcd")
         }
+
+        // file's been removed, checking in the other direction.
+        project.execute("library:assembleAT")
+        checkTestApk(libProject, "library2.txt", "library2:abcd")
     }
 
     // ---- TEST DEFAULT ---
