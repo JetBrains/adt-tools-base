@@ -69,6 +69,9 @@ final class Device implements IDevice {
     /** State of the device. */
     private DeviceState mState = null;
 
+    /** True if ADB is running as root */
+    private boolean mIsRoot = false;
+
     /** Device properties. */
     private final PropertyFetcher mPropFetcher = new PropertyFetcher(this);
     private final Map<String, String> mMountPoints = new HashMap<String, String>();
@@ -89,6 +92,7 @@ final class Device implements IDevice {
 
     private static final long GET_PROP_TIMEOUT_MS = 100;
     private static final long INITIAL_GET_PROP_TIMEOUT_MS = 250;
+    private static final int QUERY_IS_ROOT_TIMEOUT_MS = 1000;
 
     private static final long INSTALL_TIMEOUT_MINUTES;
 
@@ -1211,9 +1215,23 @@ final class Device implements IDevice {
     }
 
     @Override
-    public void root()
-      throws TimeoutException, AdbCommandRejectedException, IOException {
-        AdbHelper.root(AndroidDebugBridge.getSocketAddress(), this);
+    public boolean root() throws TimeoutException, AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException {
+        if (!mIsRoot) {
+            AdbHelper.root(AndroidDebugBridge.getSocketAddress(), this);
+        }
+        return isRoot();
+    }
+
+    @Override
+    public boolean isRoot() throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+        if (mIsRoot) {
+            return true;
+        }
+        CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+        executeShellCommand("echo $USER_ID", receiver, QUERY_IS_ROOT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        String userID = receiver.getOutput().trim();
+        mIsRoot = userID.equals("0");
+        return mIsRoot;
     }
 
     @Override
