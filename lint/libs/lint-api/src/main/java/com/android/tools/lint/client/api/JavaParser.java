@@ -632,6 +632,10 @@ public abstract class JavaParser {
 
     /** A package declaration */
     public abstract static class ResolvedPackage extends ResolvedNode {
+        /** Returns the parent package of this package, if any. */
+        @Nullable
+        public abstract ResolvedPackage getParentPackage();
+
         @NonNull
         @Override
         public Iterable<ResolvedAnnotation> getAnnotations() {

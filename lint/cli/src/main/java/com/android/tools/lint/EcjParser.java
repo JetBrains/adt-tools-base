@@ -100,6 +100,7 @@ import org.eclipse.jdt.internal.compiler.lookup.PackageBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemFieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemMethodBinding;
+import org.eclipse.jdt.internal.compiler.lookup.ProblemPackageBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
@@ -1738,6 +1739,37 @@ public class EcjParser extends JavaParser {
         }
 
         @Override
+        @Nullable
+        public ResolvedPackage getParentPackage() {
+            char[][] compoundName = mBinding.compoundName;
+            if (compoundName.length == 1) {
+                return null;
+            } else {
+                PackageBinding defaultPackage = mBinding.environment.defaultPackage;
+                PackageBinding packageBinding =
+                        (PackageBinding) defaultPackage.getTypeOrPackage(compoundName[0]);
+                if (packageBinding == null || packageBinding instanceof ProblemPackageBinding) {
+                    return null;
+                }
+
+                for (int i = 1, packageLength = compoundName.length - 1; i < packageLength; i++) {
+                    Binding next = packageBinding.getTypeOrPackage(compoundName[i]);
+                    if (next == null) {
+                        return null;
+                    }
+                    if (next instanceof PackageBinding) {
+                        if (next instanceof ProblemPackageBinding) {
+                            return null;
+                        }
+                        packageBinding = (PackageBinding) next;
+                    }
+                }
+
+                return new EcjResolvedPackage(packageBinding);
+            }
+        }
+
+        @Override
         public int getModifiers() {
             return 0;
         }
@@ -2241,6 +2273,8 @@ public class EcjParser extends JavaParser {
             }
         } else if (value instanceof AnnotationBinding) {
             return new EcjResolvedAnnotation((AnnotationBinding) value);
+        } else if (value instanceof FieldBinding) {
+            return new EcjResolvedField((FieldBinding)value);
         }
 
         return value;
