@@ -216,6 +216,40 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         return false;
     }
 
+    @Override
+    protected boolean checkForJavaResource(@NonNull String resourcePath)
+            throws ProcessException, IOException {
+        ZipFile zipFile = new ZipFile(getSubject());
+        try {
+            return zipFile.getEntry(resourcePath) != null;
+        } finally {
+            zipFile.close();
+        }
+    }
+
+    /**
+     * Asserts the subject contains a java resources at the given path with the specified String content.
+     *
+     * Content is trimmed when compared.
+     */
+    @Override
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void containsJavaResourceWithContent(@NonNull String path, @NonNull String content)
+            throws IOException, ProcessException {
+        containsFileWithContent(path, content);
+    }
+
+    /**
+     * Asserts the subject contains a java resources at the given path with the specified
+     * byte array content.
+     */
+    @Override
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void containsJavaResourceWithContent(@NonNull String path, @NonNull byte[] content)
+            throws IOException, ProcessException {
+        containsFileWithContent(path, content);
+    }
+
     /**
      * Run dex dump on a file (apk or dex file) to check for the presence of a given class.
      * @param expectedClassName the name of the class to search for

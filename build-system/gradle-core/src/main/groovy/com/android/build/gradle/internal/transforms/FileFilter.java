@@ -186,6 +186,7 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
         FileFilter.PackagingOption itemPackagingOption = getPackagingAction(removedFilePath);
 
         switch(itemPackagingOption) {
+            case NONE:
             case PICK_FIRST:
                 // this was a picked up item, make sure we copy the first still available
                 com.google.common.base.Optional<File> firstPick = getFirstPick(removedFilePath);
@@ -198,7 +199,6 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
                 mergeAll(outputDir, removedFilePath);
                 return;
             case EXCLUDE:
-            case NONE:
                 // do nothing
                 return;
             default:
