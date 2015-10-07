@@ -455,7 +455,16 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             if (name.equals("<init>")) {
                 return handleConstructor(owner, name, desc);
             }
-            if (owner.equals(visitedSuperName)) {
+            if (owner.equals(visitedClassName)) {
+                if (DEBUG) {
+                    System.out.println(
+                            "Private Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
+                }
+                // private method dispatch, just invoke the $override class static method.
+                String newDesc = "(L" + visitedClassName + ";" + desc.substring(1);
+                super.visitMethodInsn(Opcodes.INVOKESTATIC, owner + "$override", name, newDesc, itf);
+                return true;
+            } else {
                 if (DEBUG) {
                     System.out.println(
                             "Super Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
@@ -470,17 +479,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 handleReturnType(desc);
 
                 return true;
-            } else if (owner.equals(visitedClassName)) {
-                if (DEBUG) {
-                    System.out.println(
-                            "Private Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
-                }
-                // private method dispatch, just invoke the $override class static method.
-                String newDesc = "(L" + visitedClassName + ";" + desc.substring(1);
-                super.visitMethodInsn(Opcodes.INVOKESTATIC, owner + "$override", name, newDesc, itf);
-                return true;
             }
-            return false;
         }
 
         /**
