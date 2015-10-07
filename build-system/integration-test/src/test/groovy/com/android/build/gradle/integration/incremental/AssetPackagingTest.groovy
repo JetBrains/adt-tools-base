@@ -25,9 +25,9 @@ import com.android.utils.FileUtils
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
@@ -38,18 +38,18 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 @CompileStatic
 class AssetPackagingTest {
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
             .create()
 
-    private static GradleTestProject appProject
-    private static GradleTestProject libProject
-    private static GradleTestProject libProject2
-    private static GradleTestProject testProject
+    private GradleTestProject appProject
+    private GradleTestProject libProject
+    private GradleTestProject libProject2
+    private GradleTestProject testProject
 
-    @BeforeClass
-    static void setUp() {
+    @Before
+    void setUp() {
         appProject = project.getSubproject('app')
         libProject = project.getSubproject('library')
         libProject2 = project.getSubproject('library2')
@@ -90,19 +90,28 @@ android {
         // put some default files in the 4 projects, to check non incremental packaging as well,
         // and to provide files to change to test incremental support.
         File appDir = appProject.getTestDir()
-        createOriginalAsset(appDir,  "main",        "file.txt",         "app:acbd")
-        createOriginalAsset(appDir,  "androidTest", "filetest.txt",     "appTest:acbd")
+        createOriginalAsset(appDir,  "main",        "file.txt",         "app:abcd")
+        createOriginalAsset(appDir,  "androidTest", "filetest.txt",     "appTest:abcd")
 
         File testDir = testProject.getTestDir()
-        createOriginalAsset(testDir, "main",        "file.txt",         "test:acbd")
+        createOriginalAsset(testDir, "main",        "file.txt",         "test:abcd")
 
         File libDir = libProject.getTestDir()
-        createOriginalAsset(libDir,  "main",        "filelib.txt",      "library:acbd")
-        createOriginalAsset(libDir,  "androidTest", "filelibtest.txt",  "libraryTest:acbd")
+        createOriginalAsset(libDir,  "main",        "filelib.txt",      "library:abcd")
+        createOriginalAsset(libDir,  "androidTest", "filelibtest.txt",  "libraryTest:abcd")
 
         File lib2Dir = libProject2.getTestDir()
-        createOriginalAsset(lib2Dir, "main",        "filelib2.txt",     "library2:acbd")
-        createOriginalAsset(lib2Dir, "androidTest", "filelib2test.txt", "library2Test:acbd")
+        createOriginalAsset(lib2Dir, "main",        "filelib2.txt",     "library2:abcd")
+        createOriginalAsset(lib2Dir, "androidTest", "filelib2test.txt", "library2Test:abcd")
+    }
+
+    @After
+    void cleanUp() {
+        project = null
+        appProject = null
+        testProject = null
+        libProject = null
+        libProject2 = null
     }
 
     private static void createOriginalAsset(
@@ -115,39 +124,30 @@ android {
         new File(assetFolder, filename) << content;
     }
 
-    @AfterClass
-    static void cleanUp() {
-        project = null
-        appProject = null
-        testProject = null
-        libProject = null
-        libProject2 = null
-    }
-
     @Test
     void "test non incremental packaging"() {
         project.execute("clean", "assembleDebug", "assembleAndroidTest")
 
         // chek the files are there. Start from the bottom of the dependency graph
-        checkAar(    libProject2, "filelib2.txt",     "library2:acbd")
-        checkTestApk(libProject2, "filelib2.txt",     "library2:acbd")
-        checkTestApk(libProject2, "filelib2test.txt", "library2Test:acbd")
+        checkAar(    libProject2, "filelib2.txt",     "library2:abcd")
+        checkTestApk(libProject2, "filelib2.txt",     "library2:abcd")
+        checkTestApk(libProject2, "filelib2test.txt", "library2Test:abcd")
 
-        checkAar(    libProject,  "filelib.txt",     "library:acbd")
+        checkAar(    libProject,  "filelib.txt",     "library:abcd")
         // aar does not contain dependency's assets
         checkAar(    libProject, "filelib2.txt",     null)
         // test apk contains both test-ony assets, lib assets, and dependency assets.
-        checkTestApk(libProject, "filelib.txt",      "library:acbd")
-        checkTestApk(libProject, "filelib2.txt",     "library2:acbd")
-        checkTestApk(libProject, "filelibtest.txt",  "libraryTest:acbd")
+        checkTestApk(libProject, "filelib.txt",      "library:abcd")
+        checkTestApk(libProject, "filelib2.txt",     "library2:abcd")
+        checkTestApk(libProject, "filelibtest.txt",  "libraryTest:abcd")
         // but not the assets of the dependency's own test
         checkTestApk(libProject, "filelib2test.txt", null)
 
         // app contain own assets + all dependencies' assets.
-        checkApk(    appProject, "file.txt",         "app:acbd")
-        checkApk(    appProject, "filelib.txt",      "library:acbd")
-        checkApk(    appProject, "filelib2.txt",     "library2:acbd")
-        checkTestApk(appProject, "filetest.txt",     "appTest:acbd")
+        checkApk(    appProject, "file.txt",         "app:abcd")
+        checkApk(    appProject, "filelib.txt",      "library:abcd")
+        checkApk(    appProject, "filelib2.txt",     "library2:abcd")
+        checkTestApk(appProject, "filetest.txt",     "appTest:abcd")
         // app test does not contain dependencies' own test assets.
         checkTestApk(appProject, "filelibtest.txt",  null)
         checkTestApk(appProject, "filelib2test.txt", null)
@@ -192,6 +192,22 @@ android {
     }
 
     @Test
+    void "test app project with new debug asset file overriding main"() {
+        project.execute("app:clean", "app:assembleDebug")
+
+        TemporaryProjectModification.doTest(appProject) {
+            it.addFile("src/debug/assets/file.txt", "new content")
+            project.execute("app:assembleDebug")
+
+            checkApk(appProject, "file.txt", "new content")
+        }
+
+        // file's been removed, checking in the other direction.
+        project.execute("app:assembleDebug")
+        checkApk(appProject, "file.txt", "app:abcd")
+    }
+
+    @Test
     void "test app project with new asset file overriding dependency"() {
         project.execute("app:clean", "app:assembleDebug")
 
@@ -200,13 +216,11 @@ android {
             project.execute("app:assembleDebug")
 
             checkApk(appProject, "filelib.txt", "new content")
-
-            // now remove it to test it works in the other direction
-            it.removeFile("src/main/assets/filelib.txt")
-            project.execute("app:assembleDebug")
-
-            checkApk(appProject, "filelib.txt", "library:acbd")
         }
+
+        // file's been removed, checking in the other direction.
+        project.execute("app:assembleDebug")
+        checkApk(appProject, "filelib.txt", "library:abcd")
     }
 
     @Test
@@ -218,13 +232,11 @@ android {
             project.execute("app:assembleDebug")
 
             checkApk(appProject, "file.txt", "new content")
-
-            // now remove it to test it works in the other direction
-            it.removeFile("src/debug/assets/file.txt")
-            project.execute("app:assembleDebug")
-
-            checkApk(appProject, "file.txt", "app:acbd")
         }
+
+        // file's been removed, checking in the other direction.
+        project.execute("app:assembleDebug")
+        checkApk(appProject, "file.txt", "app:abcd")
     }
 
     @Test
@@ -348,13 +360,11 @@ android {
             project.execute("library:assembleDebug")
 
             checkAar(libProject, "filelib.txt", "new content")
-
-            // now remove it to test it works in the other direction
-            it.removeFile("src/debug/assets/filelib.txt")
-            project.execute("library:assembleDebug")
-
-            checkAar(libProject, "filelib.txt", "library:acbd")
         }
+
+        // file's been removed, checking in the other direction.
+        project.execute("library:assembleDebug")
+        checkAar(libProject, "filelib.txt", "library:abcd")
     }
 
     // ---- LIB TEST ---
@@ -404,13 +414,12 @@ android {
             project.execute("library:assembleAT")
 
             checkTestApk(libProject, "filelib.txt", "new content")
-
-            // now remove it to test it works in the other direction
-            it.removeFile("src/androidTest/assets/filelib.txt")
-            project.execute("library:assembleAT")
-
-            checkTestApk(libProject, "filelib.txt", "library:acbd")
         }
+
+        // file's been removed, checking in the other direction.
+        project.execute("library:assembleAT")
+        checkTestApk(libProject, "filelib.txt", "library:abcd")
+
     }
 
     @Test
@@ -422,13 +431,11 @@ android {
             project.execute("library:assembleAT")
 
             checkTestApk(libProject, "filelib2.txt", "new content")
-
-            // now remove it to test it works in the other direction
-            it.removeFile("src/androidTest/assets/filelib2.txt")
-            project.execute("library:assembleAT")
-
-            checkTestApk(libProject, "filelib2.txt", "library2:acbd")
         }
+
+        // file's been removed, checking in the other direction.
+        project.execute("library:assembleAT")
+        checkTestApk(libProject, "filelib2.txt", "library2:abcd")
     }
 
     // ---- TEST DEFAULT ---
@@ -468,6 +475,8 @@ android {
             checkApk(testProject, "file.txt", "new content")
         }
     }
+
+    // -----------------------
 
     /**
      * check an apk has (or not) the given asset file name.
@@ -530,5 +539,4 @@ android {
             subject.doesNotContain("assets/" + filename)
         }
     }
-
 }
