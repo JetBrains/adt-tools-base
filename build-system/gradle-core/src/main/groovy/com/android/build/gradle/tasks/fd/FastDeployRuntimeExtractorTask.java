@@ -22,6 +22,8 @@ import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
@@ -59,10 +61,9 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
     // don't have to deal with AppInfo replacement.
     @TaskAction
     public void extract() throws IOException {
-        URL fdrJar = FastDeployRuntimeExtractorTask.class.getResource("/fdr/classes.jar");
+        URL fdrJar = FastDeployRuntimeExtractorTask.class.getResource("/fdr/fdr.jar");
         if (fdrJar == null) {
-            System.err.println("Couldn't find embedded Instant-Run runtime library");
-            return;
+            throw new RuntimeException("Couldn't find Instant-Run runtime library");
         }
         URLConnection urlConnection = fdrJar.openConnection();
         urlConnection.setUseCaches(false);
@@ -131,8 +132,6 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
         public void execute(FastDeployRuntimeExtractorTask fastDeployRuntimeExtractorTask) {
             fastDeployRuntimeExtractorTask.setVariantName(
                     scope.getVariantConfiguration().getFullName());
-            // change this to use a special directory and have the classes.jar use that
-            // special directory as input, although this may go away with the pipeline architecture.
             fastDeployRuntimeExtractorTask.setOutputFile(
                     scope.getIncrementalRuntimeSupportJar());
         }
