@@ -37,6 +37,7 @@ import com.android.io.StreamException;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
 import com.android.sdklib.repository.FullRevision;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
@@ -1114,7 +1115,7 @@ public class GradleTestProject implements TestRule {
      * @param path Full path of the file.  May be a relative path.
      */
     public File file(String path) {
-        File result = new File(path);
+        File result = new File(FileUtils.toSystemDependentPath(path));
         if (result.isAbsolute()) {
             return result;
         } else {
@@ -1202,22 +1203,14 @@ public class GradleTestProject implements TestRule {
      * @param lineNumber the line number, starting at 1
      * @param line the line to replace with.
      * @throws IOException
+     *
+     * TODO: Inline.
      */
     public void replaceLine(
             String relativePath,
             int lineNumber,
             String line) throws IOException {
-        File file = new File(testDir, relativePath.replace("/", File.separator));
-
-        List<String> lines = Files.readLines(file, Charsets.UTF_8);
-
-        lines.add(lineNumber, line);
-        lines.remove(lineNumber - 1);
-
-        Files.write(
-                Joiner.on(System.getProperty("line.separator")).join(lines),
-                file,
-                Charsets.UTF_8);
+        FileHelper.replaceLine(file(relativePath), lineNumber, line);
     }
 
     public void replaceInFile(
