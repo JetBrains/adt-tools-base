@@ -30,6 +30,9 @@ import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
+import com.android.builder.profile.ExecutionType;
+import com.android.builder.profile.Recorder;
+import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Optional;
@@ -99,6 +102,16 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
 
     @Override
     public void transform(@NonNull Context context, @NonNull Collection<TransformInput> inputs,
+            @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
+            throws IOException, TransformException, InterruptedException {
+
+        long startTime = System.currentTimeMillis();
+        doTransform(context, inputs, referencedInputs, isIncremental);
+        LOGGER.info(String.format("Wall time for verifier : %1$d ms",
+                System.currentTimeMillis() - startTime));
+    }
+
+    public void doTransform(@NonNull Context context, @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
             throws IOException, TransformException, InterruptedException {
 
@@ -207,10 +220,17 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
     }
 
     @VisibleForTesting
-    protected IncompatibleChange runVerifier(File originalClass, File updatedClass)
+    protected IncompatibleChange runVerifier(final File originalClass, final File updatedClass)
             throws IOException {
 
-        return getInstantRunVerifier().run(originalClass, updatedClass);
+        return ThreadRecorder.get().record(ExecutionType.TASK_FILE_VERIFICATION,
+                new Recorder.Block<IncompatibleChange>() {
+                    @Override
+                    public IncompatibleChange call() throws Exception {
+                        return getInstantRunVerifier().run(originalClass, updatedClass);
+                    }
+                }, new Recorder.Property("file", originalClass.getName())
+        );
     }
 
     @VisibleForTesting
