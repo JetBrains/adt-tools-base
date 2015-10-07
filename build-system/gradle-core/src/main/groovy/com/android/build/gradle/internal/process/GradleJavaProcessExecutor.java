@@ -86,6 +86,9 @@ public class GradleJavaProcessExecutor implements JavaProcessExecutor {
             javaExecSpec.setStandardOutput(processOutput.getStandardOutput());
             javaExecSpec.setErrorOutput(processOutput.getErrorOutput());
 
+            // we run by default in headless mode, so the forked JVM doesn't steal focus.
+            javaExecSpec.systemProperty("java.awt.headless", "true");
+
             // we want the caller to be able to do its own thing.
             javaExecSpec.setIgnoreExitValue(true);
         }
