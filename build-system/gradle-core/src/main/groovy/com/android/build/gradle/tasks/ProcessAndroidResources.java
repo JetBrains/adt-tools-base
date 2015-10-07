@@ -449,7 +449,7 @@ public class ProcessAndroidResources extends IncrementalTask {
         this.packageForR = packageForR;
     }
 
-    @Nested
+    @Input
     @Optional
     public Collection<String> getSplits() {
         return splits;
