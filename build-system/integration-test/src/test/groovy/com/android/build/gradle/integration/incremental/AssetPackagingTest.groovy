@@ -22,8 +22,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
 import com.android.utils.FileUtils
-import com.google.common.base.Charsets
-import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.junit.After
 import org.junit.Before
@@ -56,12 +54,12 @@ class AssetPackagingTest {
         testProject = project.getSubproject('test')
 
         // rewrite settings.gradle to remove un-needed modules
-        Files.write("""
+        project.settingsFile.text = """
 include 'app'
 include 'library'
 include 'library2'
 include 'test'
-""", new File(project.getTestDir(), "settings.gradle"), Charsets.UTF_8)
+"""
 
         // setup dependencies.
         appProject.getBuildFile() << """
