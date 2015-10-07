@@ -17,7 +17,7 @@
 package com.verifier.tests;
 
 /**
- * Created by jedo on 9/29/15.
+ * Class which should always pass verification.
  */
 public class UnchangedClass {
 
