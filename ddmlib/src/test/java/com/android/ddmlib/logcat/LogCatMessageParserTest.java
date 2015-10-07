@@ -15,11 +15,15 @@
  */
 package com.android.ddmlib.logcat;
 
+import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log.LogLevel;
 
 import junit.framework.TestCase;
+import org.easymock.EasyMock;
 
 import java.util.List;
+
+import static com.android.ddmlib.IDevice.*;
 
 /**
  * Unit tests for {@link LogCatMessageParser}.
@@ -63,7 +67,13 @@ public final class LogCatMessageParserTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         LogCatMessageParser parser = new LogCatMessageParser();
-        mParsedMessages = parser.processLogLines(MESSAGES, null);
+
+        IDevice d = EasyMock.createMock(IDevice.class);
+        EasyMock.expect(d.getClientName(495)).andStubReturn("com.example.name");
+        EasyMock.expect(d.getClientName(EasyMock.anyInt())).andStubReturn("");
+        EasyMock.replay(d);
+
+        mParsedMessages = parser.processLogLines(MESSAGES, d);
     }
 
     /** Check that the correct number of messages are received. */
@@ -101,5 +111,10 @@ public final class LogCatMessageParserTest extends TestCase {
         LogCatHeader header = mParsedMessages.get(0).getHeader();
         // Test date against "08-11 19:11:07.132"
         assertEquals(header.getTimestamp().toString(), "08-11 19:11:07.132");
+    }
+
+    public void testPackageName() {
+        assertEquals(mParsedMessages.get(0).getAppName(), "com.example.name");
+        assertEquals(mParsedMessages.get(6).getAppName(), "?");
     }
 }

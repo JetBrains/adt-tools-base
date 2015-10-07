@@ -76,9 +76,12 @@ public final class LogCatMessageParser {
         } catch (NumberFormatException ignored) {
         }
 
-        String pkgName = "?"; //$NON-NLS-1$
+        String pkgName = null;
         if (device != null && pid != -1) {
             pkgName = device.getClientName(pid);
+        }
+        if (pkgName == null || pkgName.isEmpty()) {
+            pkgName = "?"; //$NON-NLS-1$
         }
 
         LogLevel logLevel = LogLevel.getByLetterString(matcher.group(4));
