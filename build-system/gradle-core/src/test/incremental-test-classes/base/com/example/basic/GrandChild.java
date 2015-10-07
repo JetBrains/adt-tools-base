@@ -34,4 +34,9 @@ public class GrandChild extends ParentInvocation {
                 // invokespecial
                 + super.doNotOverridePublicMethodDispatch(12d, "from grand child", 24);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
 }

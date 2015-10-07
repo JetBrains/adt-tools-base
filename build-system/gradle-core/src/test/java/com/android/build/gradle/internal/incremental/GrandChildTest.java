@@ -51,6 +51,9 @@ public class GrandChildTest {
                 "public_method:24.0from grand child12_child"
                         +"public_method:12.0from grand child24_child");
 
+        assertWithMessage("base: grandChild:equals()")
+                .that(grandChild.equals(grandChild)).isTrue();
+
         // change the super class of the parentInvocation instance and check that parent's methods
         // are the new implementations.
         harness.applyPatch("changeSubClass");
@@ -58,11 +61,14 @@ public class GrandChildTest {
         assertWithMessage("changeSub: grandChild:someProtectedMethodInv()")
                 .that(grandChild.someProtectedMethodInv()).isEqualTo(
                 "protected_method:26.0from grand child13_child"
-                        +"protected_method:13.0from grand child26_child");
+                        + "protected_method:13.0from grand child26_child");
 
         assertWithMessage("changeSub: grandChild:somePublicMethodInv()")
                 .that(grandChild.somePublicMethodInv()).isEqualTo(
                 "public_method:26.0from grand child12_child"
                         +"public_method:12.0from grand child26_child");
+
+        assertWithMessage("changeSub: grandChild:equals()")
+                .that(grandChild.equals(grandChild)).isFalse();
     }
 }
