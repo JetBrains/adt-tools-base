@@ -35,6 +35,7 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.ParallelizableTask;
 
 import java.io.File;
@@ -176,7 +177,7 @@ public class MergeManifests extends ManifestProcessorTask {
         this.maxSdkVersion = maxSdkVersion;
     }
 
-    @Input
+    @OutputFile
     @Optional
     public File getReportFile() {
         return reportFile;
