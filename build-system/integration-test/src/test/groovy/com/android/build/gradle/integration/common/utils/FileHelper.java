@@ -22,7 +22,9 @@ import static org.junit.Assert.assertTrue;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
@@ -30,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Helper to help verify content of a file.
@@ -57,6 +60,34 @@ public class FileHelper {
 
         }
         return fileList;
+    }
+
+    /**
+     * Find a list of files in a directory with the specified name.
+     */
+    public static List<File> find(@NonNull File base, @NonNull final String name) {
+        Preconditions.checkArgument(base.isDirectory(), "'base' must be a directory.");
+        return Lists.newArrayList(Files.fileTreeTraverser().preOrderTraversal(base).filter(
+                new Predicate<File>() {
+                    @Override
+                    public boolean apply(File file) {
+                        return file.getName().equals(name);
+                    }
+                }));
+    }
+
+    /**
+     * Find a list of files in a directory with the specified pattern
+     */
+    public static List<File> find(@NonNull File base, @NonNull final Pattern pattern) {
+        Preconditions.checkArgument(base.isDirectory(), "'base' must be a directory.");
+        return Lists.newArrayList(Files.fileTreeTraverser().preOrderTraversal(base).filter(
+                new Predicate<File>() {
+                    @Override
+                    public boolean apply(File file) {
+                        return pattern.matcher(file.getPath()).find();
+                    }
+                }));
     }
 
     public static void checkContent(File file, String expectedContent) throws IOException {
