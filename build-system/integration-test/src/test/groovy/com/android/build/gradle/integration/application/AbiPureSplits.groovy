@@ -17,19 +17,19 @@
 package com.android.build.gradle.integration.application
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.FileHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
-import com.google.common.collect.Sets
-import org.junit.AfterClass
 import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static com.android.builder.core.BuilderConstants.DEBUG
+import static com.google.common.collect.Iterables.getOnlyElement
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
@@ -37,10 +37,8 @@ import static org.junit.Assert.assertTrue
  * Test drive for the abiPureSplits samples test.
  */
 class AbiPureSplits {
-    static AndroidProject model
-
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("abiPureSplits")
             .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
@@ -48,21 +46,24 @@ class AbiPureSplits {
     @BeforeClass
     static void setup() {
         GradleTestProject.assumeBuildToolsAtLeast(21)
-        model = project.executeAndReturnModel("clean", "assembleDebug")
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-        model = null
     }
 
     @Test
     public void "test abi pure splits"() throws Exception {
+        AndroidProject model = project.executeAndReturnModel("clean", "assembleDebug")
+        checkOutputs(model, ["mips", "x86", "armeabi-v7a"])
 
+        // Remove mips
+        FileHelper.searchAndReplace(project.buildFile, ", 'mips'", "")
+
+        model = project.executeAndReturnModel("assembleDebug")
+        checkOutputs(model, ["x86", "armeabi-v7a"])
+    }
+
+    private static void checkOutputs(AndroidProject model, List<String> expected) {
         // Load the custom model for the project
         Collection<Variant> variants = model.getVariants()
-        assertEquals("Variant Count", 2 , variants.size())
+        assertEquals("Variant Count", 2, variants.size())
 
         // get the main artifact of the debug artifact
         Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
@@ -72,26 +73,18 @@ class AbiPureSplits {
 
         // get the outputs.
         Collection<AndroidArtifactOutput> debugOutputs = debugMainArtifact.getOutputs()
-        assertNotNull(debugOutputs)
 
-        // build a set of expected outputs
-        Set<String> expected = Sets.newHashSetWithExpectedSize(5)
-        expected.add("mips")
-        expected.add("x86")
-        expected.add("armeabi-v7a")
-
-        assertEquals(1, debugOutputs.size())
-        AndroidArtifactOutput output = debugOutputs.iterator().next()
-        assertEquals(4, output.getOutputs().size())
+        AndroidArtifactOutput output = getOnlyElement(debugOutputs)
+        assertEquals(expected.size() + 1, output.getOutputs().size())
         for (OutputFile outputFile : output.getOutputs()) {
             String filter = ModelHelper.getFilter(outputFile, OutputFile.ABI)
-            assertEquals(filter == null  ? OutputFile.MAIN : OutputFile.SPLIT,
+            assertEquals(filter == null ? OutputFile.MAIN : OutputFile.SPLIT,
                     outputFile.getOutputType())
 
             // with pure splits, all split have the same version code.
             assertEquals(123, output.getVersionCode())
             if (filter != null) {
-                expected.remove(filter)
+                assertTrue(expected.remove(filter))
 
                 if (outputFile.getFilterTypes().contains(OutputFile.ABI)) {
                     // if this is an ABI split, ensure the .so file presence (and only one)

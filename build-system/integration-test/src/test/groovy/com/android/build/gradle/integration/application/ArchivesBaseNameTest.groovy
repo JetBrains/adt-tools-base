@@ -15,55 +15,57 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-
+import static com.android.build.gradle.integration.common.utils.FileHelper.searchAndReplace
 /**
  * Ensures that archivesBaseName setting on android project is used when choosing the apk file
  * names
  */
 @CompileStatic
 class ArchivesBaseNameTest {
+    private static final String OLD_NAME = "random_apk_name"
+    private static final String NEW_NAME = "changed_name"
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("basic")
             .create()
-    static Map<String, AndroidProject> models
 
-    @BeforeClass
-    static void setUp() {
+    @Before
+    void setUp() {
         project.getBuildFile() << """
-
 android {
-    archivesBaseName = 'random_apk_name'
+    archivesBaseName = '$OLD_NAME'
 }
 """
-        models = project.getAllModels()
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
     }
 
     @Test
     void "check model failed to load"() {
-        File outputFile = models.get(":").getVariants().iterator().next()
+        checkApkName(OLD_NAME)
+
+        searchAndReplace(project.buildFile, OLD_NAME, NEW_NAME)
+        checkApkName(NEW_NAME)
+    }
+
+    private void checkApkName(String apkName) {
+        AndroidProject model = project.executeAndReturnModel("assembleDebug")
+        File outputFile = model.getVariants().find { it.name == "debug" }
                 .getMainArtifact()
-                .getOutputs().iterator().next()
+                .getOutputs().first()
                 .getMainOutputFile()
                 .getOutputFile()
 
-        assertThat(outputFile.getName()).startsWith("random_apk_name")
+
+        assertThat(outputFile.getName()).startsWith(apkName)
+        assertThat(outputFile).isFile()
     }
 }

@@ -15,56 +15,64 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ApkHelper
+import com.android.build.gradle.integration.common.utils.FileHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.Assert
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertTrue
 
 /**
  * Tests for @{applicationId} placeholder presence in library manifest files.
  * Such placeholders should be left intact until the library is merged into a consuming application
  * with a known application Id.
  */
-@CompileStatic
 class ApplicationIdInLibsTest {
-    static Map<String, AndroidProject> models
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("applicationIdInLibsTest")
             .create()
 
-    @BeforeClass
-    static void setup() {
-        models = project.executeAndReturnMultiModel("clean",
-                ":examplelibrary:generateDebugAndroidTestSources", "app:assembleDebug")
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
-    }
-
     @Test
     public void "test library placeholder substitution in final apk"() throws Exception {
+        Map<String, AndroidProject> models =
+                project.executeAndReturnMultiModel(
+                        "clean",
+                        "app:assembleDebug")
+        assertTrue(checkPermissionPresent(
+                models,
+                "'com.example.manifest_merger_example.flavor.permission.C2D_MESSAGE'"))
 
+        FileHelper.searchAndReplace(
+                project.file('app/build.gradle'),
+                "manifest_merger_example.flavor",
+                "manifest_merger_example.change")
+
+        models = project.executeAndReturnMultiModel(
+                "clean",
+                "app:assembleDebug")
+        assertFalse(checkPermissionPresent(
+                models,
+                "'com.example.manifest_merger_example.flavor.permission.C2D_MESSAGE'"))
+        assertTrue(checkPermissionPresent(
+                models,
+                "'com.example.manifest_merger_example.change.permission.C2D_MESSAGE'"))
+    }
+
+    private static boolean checkPermissionPresent(Map<String, AndroidProject> models, String permission) {
         // Load the custom model for the project
         Collection<Variant> variants = models.get(":app").getVariants()
-        assertEquals("Variant Count", 2 , variants.size())
+        assertEquals("Variant Count", 2, variants.size())
 
         // get the main artifact of the debug artifact
         Variant debugVariant = ModelHelper.getVariant(variants, "flavorDebug")
@@ -77,18 +85,19 @@ class ApplicationIdInLibsTest {
         assertNotNull(debugOutputs)
 
         assertEquals(1, debugOutputs.size())
-        AndroidArtifactOutput output = debugOutputs.iterator().next()
+        AndroidArtifactOutput output = debugOutputs.first()
         assertEquals(1, output.getOutputs().size())
 
         List<String> apkBadging =
-                ApkHelper.getApkBadging(output.getOutputs().iterator().next().getOutputFile());
+                ApkHelper.getApkBadging(output.getOutputs().first().getOutputFile());
 
         for (String line : apkBadging) {
             if (line.contains("uses-permission: name=" +
-                    "'com.example.manifest_merger_example.flavor.permission.C2D_MESSAGE'")) {
-                return;
+                    permission)) {
+                return true;
             }
         }
-        Assert.fail("failed to find the permission with the right placeholder substitution.")
+
+        return false;
     }
 }
