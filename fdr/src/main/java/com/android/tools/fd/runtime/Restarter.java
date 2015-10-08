@@ -76,14 +76,7 @@ public class Restarter {
             if (foreground != null) {
                 // http://stackoverflow.com/questions/6609414/howto-programatically-restart-android-app
                 //noinspection UnnecessaryLocalVariable
-                try {
-                    // Avoid crashing when not available, e.g.
-                    //   java.lang.RuntimeException: Can't create handler inside thread that has
-                    //        not called Looper.prepare()
-                    Toast.makeText(foreground, "Restarting app to show changed resources",
-                            Toast.LENGTH_SHORT).show();
-                } catch (Throwable ignore) {
-                }
+                showToast(foreground, "Restarting app to show changed resources");
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                     Log.i(LOG_TAG, "RESTARTING APP");
                 }
@@ -100,8 +93,7 @@ public class Restarter {
                             + " to start after exiting process");
                 }
             } else {
-                Toast.makeText(knownActivities.iterator().next(), "Unable to restart app",
-                        Toast.LENGTH_SHORT).show();
+                showToast(knownActivities.iterator().next(), "Unable to restart app");
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                     Log.i(LOG_TAG, "Couldn't find any foreground activities to restart " +
                             "for resource refresh");
@@ -111,6 +103,16 @@ public class Restarter {
         }
 
         // TODO: Toast warning?
+    }
+
+    private static void showToast(Activity activity, String text) {
+        try {
+            // Avoid crashing when not available, e.g.
+            //   java.lang.RuntimeException: Can't create handler inside thread that has
+            //        not called Looper.prepare()
+            Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
+        } catch (Throwable ignore) {
+        }
     }
 
     @Nullable
