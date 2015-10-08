@@ -33,6 +33,9 @@ import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
+import com.android.builder.profile.ExecutionType;
+import com.android.builder.profile.Recorder;
+import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
@@ -77,8 +80,25 @@ public class TransformTask extends StreamBasedTask implements Context {
     }
 
     @TaskAction
-    void transform(IncrementalTaskInputs incrementalTaskInputs)
+    void transform(final IncrementalTaskInputs incrementalTaskInputs)
             throws IOException, TransformException, InterruptedException {
+
+        ThreadRecorder.get().record(ExecutionType.TASK_TRANSFORM,
+                new Recorder.Block<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        doTransform(incrementalTaskInputs);
+                        return null;
+                    }
+                },
+                new Recorder.Property("project", getProject().getName()),
+                new Recorder.Property("transform", transform.getName()),
+                new Recorder.Property("incremental", Boolean.toString(transform.isIncremental())));
+    }
+
+    private void doTransform(IncrementalTaskInputs incrementalTaskInputs)
+            throws IOException, TransformException, InterruptedException {
+
         Map<TransformInput, Object> consumedInputs;
         List<TransformInput> referencedInputs;
         boolean isIncremental = transform.isIncremental() && incrementalTaskInputs.isIncremental();
