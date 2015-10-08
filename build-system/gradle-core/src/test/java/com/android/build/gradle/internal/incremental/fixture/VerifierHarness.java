@@ -50,7 +50,6 @@ public class VerifierHarness {
         } else {
             patchedFile = originalFile;
         }
-        InstantRunVerifier instantRunVerifier = new InstantRunVerifier();
-        return instantRunVerifier.run(originalFile, patchedFile);
+        return InstantRunVerifier.run(originalFile, patchedFile);
     }
 }

@@ -18,16 +18,23 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.utils.AsmUtils;
 import com.google.common.base.Objects;
 import com.google.common.io.Files;
 
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.util.Textifier;
+import org.objectweb.asm.util.TraceMethodVisitor;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,9 +46,8 @@ import java.util.List;
  */
 public class InstantRunVerifier {
 
-    private static final Comparator<MethodNode> METHOD_NODE_COMPARATOR =
-            new MethodNodeComparator();
-    private static final Comparator<AnnotationNode> ANNOTATION_NODE_COMPARATOR =
+    private static final Comparator<MethodNode> METHOD_COMPARATOR = new MethodNodeComparator();
+    private static final Comparator<AnnotationNode> ANNOTATION_COMPARATOR =
             new AnnotationNodeComparator();
     private static final Comparator<Object> OBJECT_COMPARATOR = new Comparator<Object>() {
         @Override
@@ -50,52 +56,66 @@ public class InstantRunVerifier {
         }
     };
 
-
-    public InstantRunVerifier() {
+    private InstantRunVerifier() {
     }
 
     // ASM API not generified.
     @SuppressWarnings("unchecked")
     @Nullable
-    public IncompatibleChange run(File originalClass, File updatedClass) throws IOException {
+    public static IncompatibleChange run(File original, File updated) throws IOException {
 
-        ClassNode originalClassNode = loadClass(originalClass);
-        ClassNode updatedClassNode = loadClass(updatedClass);
+        ClassNode originalClass = loadClass(original);
+        ClassNode updatedClass = loadClass(updated);
 
-        if (!originalClassNode.superName.equals(updatedClassNode.superName)) {
+        if (!originalClass.superName.equals(updatedClass.superName)) {
             return IncompatibleChange.PARENT_CLASS_CHANGED;
         }
 
-        if (!compareList(originalClassNode.interfaces, updatedClassNode.interfaces,
+        if (!compareList(originalClass.interfaces, updatedClass.interfaces,
                 OBJECT_COMPARATOR)) {
             return IncompatibleChange.IMPLEMENTED_INTERFACES_CHANGE;
         }
 
         // ASM API here and below.
         //noinspection unchecked
-        if (!compareList(originalClassNode.visibleAnnotations,
-                updatedClassNode.visibleAnnotations,
-                ANNOTATION_NODE_COMPARATOR)) {
+        if (!compareList(originalClass.visibleAnnotations,
+                updatedClass.visibleAnnotations,
+                ANNOTATION_COMPARATOR)) {
             return IncompatibleChange.CLASS_ANNOTATION_CHANGE;
         }
 
+        return verifyMethods(originalClass, updatedClass);
+    }
+
+    @Nullable
+    private static IncompatibleChange verifyMethods(
+            @NonNull ClassNode originalClass, @NonNull ClassNode updatedClass) {
+
+        @SuppressWarnings("unchecked") // ASM API.
         List<MethodNode> nonVisitedMethodsOnUpdatedClass =
-                new ArrayList<MethodNode>(updatedClassNode.methods);
+                new ArrayList<MethodNode>(updatedClass.methods);
 
         //noinspection unchecked
-        for(MethodNode methodNode : (List<MethodNode>) originalClassNode.methods) {
-            // although it's probably ok if a method got deleted since nobody should be calling it
-            // anymore BUT the application might be using reflection to get the list of methods
-            // and would still see the deleted methods. To be prudent, restart.
-            MethodNode updatedMethod = findMethod(updatedClassNode, methodNode.name, methodNode.desc);
-            if (updatedMethod==null) {
-                return IncompatibleChange.METHOD_DELETED;
+        for(MethodNode methodNode : (List<MethodNode>) originalClass.methods) {
+
+            MethodNode updatedMethod = findMethod(updatedClass, methodNode.name, methodNode.desc);
+            if (updatedMethod == null) {
+                // although it's probably ok if a method got deleted since nobody should be calling
+                // it anymore BUT the application might be using reflection to get the list of
+                // methods and would still see the deleted methods. To be prudent, restart.
+                // However, if the class initializer got removed, it's always fine.
+                return methodNode.name.equals(AsmUtils.CLASS_INITIALIZER)
+                        ? null
+                        : IncompatibleChange.METHOD_DELETED;
             }
 
             // remove the method from the visited ones on the updated class.
             nonVisitedMethodsOnUpdatedClass.remove(updatedMethod);
 
-            IncompatibleChange change = verifyMethod(methodNode, updatedMethod);
+            IncompatibleChange change = methodNode.name.equals(AsmUtils.CLASS_INITIALIZER)
+                    ? visitClassInitializer(methodNode, updatedMethod)
+                    : verifyMethod(methodNode, updatedMethod);
+
             if (change!=null) {
                 return change;
             }
@@ -105,6 +125,15 @@ public class InstantRunVerifier {
             return IncompatibleChange.METHOD_ADDED;
         }
         return null;
+    }
+
+    @Nullable
+    private static IncompatibleChange visitClassInitializer(MethodNode originalClassInitializer,
+            MethodNode updateClassInitializer) {
+
+        return METHOD_COMPARATOR.areEqual(originalClassInitializer, updateClassInitializer)
+                ? null
+                : IncompatibleChange.STATIC_INITIALIZER_CHANGE;
     }
 
     @Nullable
@@ -124,12 +153,13 @@ public class InstantRunVerifier {
     @Nullable
     private static MethodNode findMethod(@NonNull ClassNode classNode,
             @NonNull  String name,
-            @NonNull String desc) {
+            @Nullable String desc) {
 
         //noinspection unchecked
         for (MethodNode methodNode : (List<MethodNode>) classNode.methods) {
 
-            if (methodNode.name.equals(name) && methodNode.desc.equals(desc)) {
+            if (methodNode.name.equals(name) &&
+                    ((desc == null && methodNode.desc == null) || (methodNode.desc.equals(desc)))) {
                 return methodNode;
             }
         }
@@ -144,8 +174,42 @@ public class InstantRunVerifier {
 
         @Override
         public boolean areEqual(@Nullable  MethodNode first, @Nullable MethodNode second) {
-            return (first == null && second == null) || (first!=null && second!=null &&
-                    first.name.equals(second.name) && first.desc.equals(second.desc));
+            if (first==null && second==null) {
+                return true;
+            }
+            if (first==null || second==null) {
+                return false;
+            }
+            if (!first.name.equals(second.name) || !first.desc.equals(second.desc)) {
+                return false;
+            }
+            VerifierTextifier firstMethodTextifier = new VerifierTextifier();
+            VerifierTextifier secondMethodTextifier = new VerifierTextifier();
+            first.accept(new TraceMethodVisitor(firstMethodTextifier));
+            second.accept(new TraceMethodVisitor(secondMethodTextifier));
+
+            StringWriter firstText = new StringWriter();
+            StringWriter secondText = new StringWriter();
+            firstMethodTextifier.print(new PrintWriter(firstText));
+            secondMethodTextifier.print(new PrintWriter(secondText));
+
+            return firstText.toString().equals(secondText.toString());
+        }
+    }
+
+    /**
+     * Subclass of {@link Textifier} that will pretty print method bytecodes but will swallow the
+     * line numbers notification as it is not pertinent for the InstantRun hot swapping.
+     */
+    private static class VerifierTextifier extends Textifier {
+
+        protected VerifierTextifier() {
+            super(Opcodes.ASM5);
+        }
+
+        @Override
+        public void visitLineNumber(int i, Label label) {
+            // don't care about line numbers
         }
     }
 

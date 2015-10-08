@@ -66,7 +66,6 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
 
     private final VariantScope variantScope;
     private final File outputDir;
-    private final InstantRunVerifier instantRunVerifier = new InstantRunVerifier();
 
     /**
      * Object that encapsulates the result of the verification process.
@@ -94,10 +93,6 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
     public InstantRunVerifierTransform(VariantScope variantScope) {
         this.variantScope = variantScope;
         this.outputDir = variantScope.getIncrementalVerifierDir();
-    }
-
-    protected InstantRunVerifier getInstantRunVerifier() {
-        return instantRunVerifier;
     }
 
     @Override
@@ -227,7 +222,7 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
                 new Recorder.Block<IncompatibleChange>() {
                     @Override
                     public IncompatibleChange call() throws Exception {
-                        return getInstantRunVerifier().run(originalClass, updatedClass);
+                        return InstantRunVerifier.run(originalClass, updatedClass);
                     }
                 }, new Recorder.Property("file", originalClass.getName())
         );

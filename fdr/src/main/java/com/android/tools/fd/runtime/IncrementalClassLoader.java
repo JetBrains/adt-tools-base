@@ -22,7 +22,6 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 import dalvik.system.BaseDexClassLoader;
-import dalvik.system.DexClassLoader;
 
 import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
 

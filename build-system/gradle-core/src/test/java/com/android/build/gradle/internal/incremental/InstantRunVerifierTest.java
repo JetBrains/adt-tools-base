@@ -23,12 +23,19 @@ import com.android.build.gradle.internal.incremental.fixture.VerifierHarness;
 import com.verifier.tests.AddClassAnnotation;
 import com.verifier.tests.AddInterfaceImplementation;
 import com.verifier.tests.AddMethodAnnotation;
+import com.verifier.tests.AddNotRuntimeClassAnnotation;
 import com.verifier.tests.ChangeSuperClass;
+import com.verifier.tests.ChangedClassInitializer1;
+import com.verifier.tests.ChangedClassInitializer2;
+import com.verifier.tests.ChangedClassInitializer3;
 import com.verifier.tests.MethodAddedClass;
+import com.verifier.tests.MethodCollisionClass;
 import com.verifier.tests.RemoveClassAnnotation;
 import com.verifier.tests.RemoveInterfaceImplementation;
 import com.verifier.tests.RemoveMethodAnnotation;
+import com.verifier.tests.RemoveNotRuntimeClassAnnotation;
 import com.verifier.tests.UnchangedClass;
+import com.verifier.tests.UnchangedClassInitializer1;
 
 import org.junit.Test;
 
@@ -80,6 +87,22 @@ public class InstantRunVerifierTest {
     }
 
     @Test
+    public void testNotRuntimeClassAnnotationAdded() throws IOException {
+        // not adding a non runtime visible class annotation should be ok.
+        assertNull(harness.verify(AddNotRuntimeClassAnnotation.class, null));
+        // and adding it should still be fine.
+        assertNull(harness.verify(AddNotRuntimeClassAnnotation.class, "verifier"));
+    }
+
+    @Test
+    public void testNotRuntimeClassAnnotationRemoved() throws IOException {
+        // not removing a non runtime visible class annotation should be ok.
+        assertNull(harness.verify(RemoveNotRuntimeClassAnnotation.class, null));
+        // and removing it should still be fine.
+        assertNull(harness.verify(RemoveNotRuntimeClassAnnotation.class, "verifier"));
+    }
+
+    @Test
     public void testMethodAnnotationAdded() throws IOException {
         // not adding a method annotation should be ok.
         assertNull(harness.verify(AddMethodAnnotation.class, null));
@@ -109,5 +132,30 @@ public class InstantRunVerifierTest {
         assertNull(harness.verify(RemoveInterfaceImplementation.class, null));
         IncompatibleChange changes = harness.verify(RemoveInterfaceImplementation.class, "verifier");
         assertEquals(IncompatibleChange.IMPLEMENTED_INTERFACES_CHANGE, changes);
+    }
+
+    @Test
+    public void testMethodCollisionRemoved() throws IOException {
+        // not adding/removing overloaded methods should be ok.
+        assertNull(harness.verify(MethodCollisionClass.class, null));
+        IncompatibleChange changes = harness.verify(MethodCollisionClass.class, "verifier");
+        assertEquals(IncompatibleChange.METHOD_DELETED, changes);
+    }
+
+    @Test
+    public void testUnchangedClassInitializer() throws IOException {
+        assertNull(harness.verify(UnchangedClassInitializer1.class, null));
+        assertNull(harness.verify(UnchangedClassInitializer1.class, "verifier"));
+        assertNull(harness.verify(UnchangedClassInitializer1.class, "lineChangingVerifier"));
+    }
+
+    @Test
+    public void testChangedClassInitializer() throws IOException {
+        assertEquals(IncompatibleChange.STATIC_INITIALIZER_CHANGE,
+                harness.verify(ChangedClassInitializer1.class, "verifier"));
+        assertEquals(IncompatibleChange.STATIC_INITIALIZER_CHANGE,
+                harness.verify(ChangedClassInitializer2.class, "verifier"));
+        assertEquals(IncompatibleChange.STATIC_INITIALIZER_CHANGE,
+                harness.verify(ChangedClassInitializer3.class, "verifier"));
     }
 }
