@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+ <g>
+   <g>
+     <rect x="20" y="20" width="50" height="50"
+         style="fill: #cc3333"/>
+   </g>
+   <g>
+     <path d="m 0 0 a 39.4827 38.844944 54.52335 1 1 13.549484 26.81581
+              c 56.943657 51.96854 27.938824 61.148792 24.168636 26.642727
+              h 10  s 14 49 35 54 t 11 22 v 20   10 -10 h -20,   -20 0 V 40 0 20  "
+         style="fill: #3333cc" transform="rotate(45, 50, 50) scale(0.9, 0.9)"/>
+   </g>
+ </g>
+</svg>

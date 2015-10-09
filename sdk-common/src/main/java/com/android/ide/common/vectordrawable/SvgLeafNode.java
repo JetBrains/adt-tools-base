@@ -20,6 +20,7 @@ import com.android.annotations.Nullable;
 import com.google.common.collect.ImmutableMap;
 import org.w3c.dom.Node;
 
+import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
@@ -127,21 +128,30 @@ class SvgLeafNode extends SvgNode {
     }
 
     @Override
-    public void transform(float a, float b, float c, float d, float e, float f) {
+    public void transformIfNeeded(float a, float b, float c, float d, float e, float f) {
         if ((mPathData == null)) {
             // Nothing to draw and transform, early return.
             return;
         }
         // TODO: We need to just apply the transformation to group.
         VdPath.Node[] n = PathParser.parsePath(mPathData);
-        if (!(a == 1 && d == 1 && b == 0 && c == 0 && e == 0 && f == 0)) {
-            VdPath.Node.transform(a, b, c, d, e, f, n);
+        AffineTransform finalTransform = new AffineTransform(a, b, c, d, e, f);
+        finalTransform.concatenate(mStackedTransform);
+        if (!finalTransform.isIdentity()) {
+            VdPath.Node.transform(finalTransform, n);
         }
         mPathData = VdPath.Node.NodeListToString(n);
     }
 
     @Override
+    public void flattern(AffineTransform transform) {
+        mStackedTransform.setTransform(transform);
+        mStackedTransform.concatenate(mLocalTransform);
+    }
+
+    @Override
     public void writeXML(OutputStreamWriter writer) throws IOException {
+        // First decide whether or not we can skip this path, since it draw nothing out.
         String fillColor = mVdAttributesMap.get(Svg2Vector.SVG_FILL_COLOR);
         String strokeColor = mVdAttributesMap.get(Svg2Vector.SVG_STROKE_COLOR);
         logger.log(Level.FINE, "fill color " + fillColor);
@@ -153,6 +163,7 @@ class SvgLeafNode extends SvgNode {
             return;
         }
 
+        // Second, write the color info handling the default values.
         writer.write("    <path\n");
         if (!mVdAttributesMap.containsKey(Svg2Vector.SVG_FILL_COLOR)) {
             logger.log(Level.FINE, "ADDING FILL SVG_FILL_COLOR");
@@ -162,6 +173,8 @@ class SvgLeafNode extends SvgNode {
             logger.log(Level.FINE, "Adding default stroke width");
             writer.write("        android:strokeWidth=\"1\"\n");
         }
+
+        // Last, write the path data and all associated attributes.
         writer.write("        android:pathData=\"" + mPathData + "\"");
         writer.write(getAttributeValues(Svg2Vector.presentationMap));
     }
