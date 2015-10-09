@@ -46,7 +46,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
-import org.apache.tools.ant.taskdefs.condition.And;
 import org.gradle.tooling.BuildAction;
 import org.gradle.tooling.BuildActionExecuter;
 import org.gradle.tooling.BuildLauncher;
@@ -94,7 +93,8 @@ public class GradleTestProject implements TestRule {
 
     public static final File TEST_RES_DIR = new File("src/test/resources");
 
-    public static final int DEFAULT_COMPILE_SDK_VERSION = 21;
+    public static final int DEFAULT_COMPILE_SDK_VERSION = 23;
+    public static final int LATEST_NDK_VERSION = 21;
     public static final String DEFAULT_BUILD_TOOL_VERSION;
     public static final String REMOTE_TEST_PROVIDER = System.getenv().get("REMOTE_TEST_PROVIDER");
 

@@ -238,7 +238,7 @@ model {
                 .getNativeLibraries().first()
         for (String flag : lib.getCCompilerFlags()) {
             if (flag.contains("sysroot")) {
-                assertThat(flag).contains("android-${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}")
+                assertThat(flag).contains("android-${GradleTestProject.LATEST_NDK_VERSION}")
             }
         }
     }
