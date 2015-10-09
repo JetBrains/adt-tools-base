@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.utils;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
@@ -114,6 +115,7 @@ public class FileHelper {
             @NonNull String replace) throws IOException {
         String content = Files.toString(file, Charset.defaultCharset());
         String newContent = content.replaceAll(search, replace);
+        assertNotEquals("No match in file.", content, newContent);
         Files.write(newContent, file, Charset.defaultCharset());
     }
 
