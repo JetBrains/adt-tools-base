@@ -28,11 +28,9 @@ public final class Struct extends Type {
         mEntity = entity;
     }
 
-    public Struct(@NotNull Decoder d, boolean compact) throws IOException {
-        mEntity = d.entity(compact);
-        if (!compact) {
-            d.string();
-        }
+    public Struct(@NotNull Decoder d) throws IOException {
+        mEntity = d.entity();
+        d.nonCompactString();
     }
 
     public Entity getEntity() {
@@ -57,12 +55,10 @@ public final class Struct extends Type {
     }
 
     @Override
-    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
+    public void encode(@NotNull Encoder e) throws IOException {
         TypeTag.structTag().encode(e);
-        e.entity(mEntity, compact);
-        if (!compact) {
-            e.string("");
-        }
+        e.entity(mEntity);
+        e.nonCompactString("");
     }
 
     @Override

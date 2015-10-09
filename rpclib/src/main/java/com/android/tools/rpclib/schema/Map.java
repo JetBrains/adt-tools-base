@@ -31,12 +31,10 @@ public final class Map extends Type {
 
     Type mValueType;
 
-    public Map(@NotNull Decoder d, boolean compact) throws IOException {
-        mKeyType = decode(d, compact);
-        mValueType = decode(d, compact);
-        if (!compact) {
-            mAlias = d.string();
-        }
+    public Map(@NotNull Decoder d) throws IOException {
+        mKeyType = decode(d);
+        mValueType = decode(d);
+        mAlias = d.nonCompactString();
     }
 
     public String getAlias() {
@@ -73,13 +71,11 @@ public final class Map extends Type {
     }
 
     @Override
-    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
+    public void encode(@NotNull Encoder e) throws IOException {
         TypeTag.mapTag().encode(e);
-        mKeyType.encode(e, compact);
-        mValueType.encode(e, compact);
-        if (!compact) {
-            e.string(mAlias);
-        }
+        mKeyType.encode(e);
+        mValueType.encode(e);
+        e.nonCompactString(mAlias);
     }
 
     @Override

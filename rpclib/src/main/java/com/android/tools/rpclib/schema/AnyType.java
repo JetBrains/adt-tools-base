@@ -28,7 +28,7 @@ public final class AnyType extends Type {
     public AnyType() {
     }
 
-    public AnyType(@NotNull Decoder d, boolean compact) throws IOException {
+    public AnyType(@NotNull Decoder d) throws IOException {
     }
 
     @Override
@@ -46,7 +46,7 @@ public final class AnyType extends Type {
     }
 
     @Override
-    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
+    public void encode(@NotNull Encoder e) throws IOException {
         TypeTag.anyTag().encode(e);
     }
 

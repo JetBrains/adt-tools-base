@@ -36,12 +36,10 @@ public final class Array extends Type {
         mSize = size;
     }
 
-    public Array(@NotNull Decoder d, boolean compact) throws IOException {
+    public Array(@NotNull Decoder d) throws IOException {
         mSize = d.uint32();
-        mValueType = decode(d, compact);
-        if (!compact) {
-            mAlias = d.string();
-        }
+        mValueType = decode(d);
+        mAlias = d.nonCompactString();
     }
 
     public String getAlias() {
@@ -75,13 +73,11 @@ public final class Array extends Type {
     }
 
     @Override
-    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
+    public void encode(@NotNull Encoder e) throws IOException {
         TypeTag.arrayTag().encode(e);
         e.uint32(mSize);
-        mValueType.encode(e, compact);
-        if (!compact) {
-            e.string(mAlias);
-        }
+        mValueType.encode(e);
+        e.nonCompactString(mAlias);
     }
 
     @Override
