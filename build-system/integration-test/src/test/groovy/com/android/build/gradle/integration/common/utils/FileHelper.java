@@ -18,13 +18,11 @@ package com.android.build.gradle.integration.common.utils;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
