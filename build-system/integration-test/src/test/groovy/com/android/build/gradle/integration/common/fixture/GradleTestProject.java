@@ -46,6 +46,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
+import org.apache.tools.ant.taskdefs.condition.And;
 import org.gradle.tooling.BuildAction;
 import org.gradle.tooling.BuildActionExecuter;
 import org.gradle.tooling.BuildLauncher;
@@ -674,11 +675,21 @@ public class GradleTestProject implements TestRule {
      * @param tasks Variadic list of tasks to execute.
      */
     public void execute(String ... tasks) {
-        execute(Collections.<String>emptyList(), false, false, ExpectedBuildResult.SUCCESS, tasks);
+        execute(AndroidProject.class,
+                Collections.<String>emptyList(),
+                false,
+                false,
+                ExpectedBuildResult.SUCCESS,
+                tasks);
     }
 
     public void execute(@NonNull List<String> arguments, String ... tasks) {
-        execute(arguments, false, false, ExpectedBuildResult.SUCCESS, tasks);
+        execute(AndroidProject.class,
+                arguments,
+                false,
+                false,
+                ExpectedBuildResult.SUCCESS,
+                tasks);
     }
 
     public void executeWithBenchmark(
@@ -689,7 +700,12 @@ public class GradleTestProject implements TestRule {
                 "-P" + RECORD_BENCHMARK_NAME + "=" + benchmarkName,
                 "-P" + RECORD_BENCHMARK_MODE + "=" + benchmarkMode.name().toLowerCase(Locale.US)
         );
-        execute(arguments, false, false, ExpectedBuildResult.SUCCESS, tasks);
+        execute(AndroidProject.class,
+                arguments,
+                false,
+                false,
+                ExpectedBuildResult.SUCCESS,
+                tasks);
     }
 
     public void executeExpectingFailure(String... tasks) {
@@ -697,7 +713,7 @@ public class GradleTestProject implements TestRule {
     }
 
     public void executeExpectingFailure(@NonNull List<String> arguments, String... tasks) {
-        execute(
+        execute(AndroidProject.class,
                 arguments,
                 false /*returnModel*/,
                 false /*emulateStudio_1_0*/,
@@ -726,6 +742,20 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
+     * Runs gradle on the project, and returns the model of the specified type.
+     * Throws exception on failure.
+     *
+     * @param modelClass Class of the model to return
+     * @param tasks Variadic list of tasks to execute.
+     *
+     * @return the model for the project with the specified type.
+     */
+    @NonNull
+    public <T> T executeAndReturnModel(Class<T> modelClass, String ... tasks) {
+        return this.<T>executeAndReturnModel(modelClass, false, tasks);
+    }
+
+    /**
      * Runs gradle on the project, and returns the project model.  Throws exception on failure.
      *
      * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
@@ -736,7 +766,26 @@ public class GradleTestProject implements TestRule {
     @NonNull
     public AndroidProject executeAndReturnModel(boolean emulateStudio_1_0, String ... tasks) {
         //noinspection ConstantConditions
-        return execute(Collections.<String>emptyList(), true, emulateStudio_1_0,
+        return execute(AndroidProject.class, Collections.<String>emptyList(), true, emulateStudio_1_0,
+                ExpectedBuildResult.SUCCESS, tasks);
+    }
+
+    /**
+     * Runs gradle on the project, and returns the project model.  Throws exception on failure.
+     *
+     * @param modelClass Class of the model to return
+     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param tasks Variadic list of tasks to execute.
+     *
+     * @return the AndroidProject model for the project.
+     */
+    @NonNull
+    public <T> T executeAndReturnModel(
+            Class<T> modelClass,
+            boolean emulateStudio_1_0,
+            String ... tasks) {
+        //noinspection ConstantConditions
+        return execute(modelClass, Collections.<String>emptyList(), true, emulateStudio_1_0,
                 ExpectedBuildResult.SUCCESS, tasks);
     }
 
@@ -769,7 +818,12 @@ public class GradleTestProject implements TestRule {
             executeBuild(Collections.<String>emptyList(), connection, tasks,
                     ExpectedBuildResult.SUCCESS);
 
-            return buildModel(connection, new GetAndroidModelAction(), emulateStudio_1_0, null, null);
+            return buildModel(
+                    connection,
+                    new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
+                    emulateStudio_1_0,
+                    null,
+                    null);
 
         } finally {
             connection.close();
@@ -833,7 +887,7 @@ public class GradleTestProject implements TestRule {
         try {
             Map<String, AndroidProject> modelMap = buildModel(
                     connection,
-                    new GetAndroidModelAction(),
+                    new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
                     emulateStudio_1_0,
                     null,
                     null);
@@ -872,7 +926,11 @@ public class GradleTestProject implements TestRule {
     public Map<String, AndroidProject> getAllModelsWithBenchmark(
             @Nullable String benchmarkName,
             @Nullable BenchmarkMode benchmarkMode) {
-        Map<String, AndroidProject> allModels = getAllModels(new GetAndroidModelAction(), false, benchmarkName, benchmarkMode);
+        Map<String, AndroidProject> allModels = getAllModels(
+                new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
+                false,
+                benchmarkName,
+                benchmarkMode);
         for (AndroidProject project : allModels.values()) {
             assertNoSyncIssues(project);
         }
@@ -901,7 +959,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> getAllModelsIgnoringSyncIssues() {
-        return getAllModels(new GetAndroidModelAction(), false, null, null);
+        return getAllModels(new GetAndroidModelAction<AndroidProject>(AndroidProject.class), false, null, null);
     }
 
     /**
@@ -950,7 +1008,8 @@ public class GradleTestProject implements TestRule {
      * @return the model, if <var>returnModel</var> was true, null otherwise
      */
     @Nullable
-    private AndroidProject execute(
+    private <T> T execute(
+            Class<T> type,
             @NonNull List<String> arguments,
             boolean returnModel,
             boolean emulateStudio_1_0,
@@ -961,9 +1020,9 @@ public class GradleTestProject implements TestRule {
             executeBuild(arguments, connection, tasks, expectedBuildResult);
 
             if (returnModel) {
-                Map<String, AndroidProject> modelMap = buildModel(
+                Map<String, T> modelMap = buildModel(
                         connection,
-                        new GetAndroidModelAction(),
+                        new GetAndroidModelAction(type),
                         emulateStudio_1_0,
                         null,
                         null);
