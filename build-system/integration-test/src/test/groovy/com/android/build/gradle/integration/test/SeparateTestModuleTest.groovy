@@ -49,4 +49,10 @@ class SeparateTestModuleTest {
     void "check model"() throws Exception {
         // check the content of the test model.
     }
+
+    @Test
+    public void "check dependencies between tasks"() throws Exception {
+        // Check :test:assembleDebug succeeds on its own, i.e. compiles the app module.
+        project.execute("clean", ":test:assembleDebug", ":test:checkDependencies")
+    }
 }
