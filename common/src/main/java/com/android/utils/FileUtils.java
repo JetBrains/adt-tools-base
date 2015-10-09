@@ -25,16 +25,17 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
+import java.nio.charset.Charset;
 import java.util.List;
 
 public final class FileUtils {
+
+    private FileUtils() {}
 
     private static final Joiner PATH_JOINER = Joiner.on(File.separatorChar);
     private static final Joiner COMMA_SEPARATED_JOINER = Joiner.on(", ");
@@ -176,11 +177,14 @@ public final class FileUtils {
     @NonNull
     public static String relativePossiblyNonExistingPath(@NonNull File file, @NonNull File dir) {
         String path = dir.toURI().relativize(file.toURI()).getPath();
+        return toSystemDependentPath(path);
+    }
 
+    @NonNull
+    public static String toSystemDependentPath(@NonNull String path) {
         if (File.separatorChar != '/') {
             path = path.replace('/', File.separatorChar);
         }
-
         return path;
     }
 
@@ -198,4 +202,5 @@ public final class FileUtils {
     public static String getNamesAsCommaSeparatedList(@NonNull Iterable<File> files) {
         return COMMA_SEPARATED_JOINER.join(Iterables.transform(files, GET_NAME));
     }
+
 }

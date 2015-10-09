@@ -17,20 +17,23 @@
 package com.android.build.gradle.integration.common.utils;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -105,4 +108,41 @@ public class FileHelper {
         }
     }
 
+    public static void searchAndReplace(
+            @NonNull File file,
+            @NonNull String search,
+            @NonNull String replace) throws IOException {
+        String content = Files.toString(file, Charset.defaultCharset());
+        String newContent = content.replaceAll(search, replace);
+        Files.write(newContent, file, Charset.defaultCharset());
+    }
+
+    /**
+     * Replace a line from a file with another line.
+     * @param file file to change
+     * @param lineNumber the line number, starting at 1
+     * @param line the line to replace with
+     * @throws IOException
+     */
+    public static void replaceLine(
+            @NonNull  File file,
+            int lineNumber,
+            @NonNull String line) throws IOException {
+        List<String> lines = Files.readLines(file, Charsets.UTF_8);
+
+        lines.add(lineNumber, line);
+        lines.remove(lineNumber - 1);
+
+        Files.write(
+                Joiner.on(System.getProperty("line.separator")).join(lines),
+                file,
+                Charsets.UTF_8);
+    }
+
+    public static void createFile(@NonNull File file, @NonNull String content) throws IOException {
+        checkArgument(!file.exists(), "%s exists already.", file);
+
+        Files.createParentDirs(file);
+        Files.write(content, file, Charset.defaultCharset());
+    }
 }

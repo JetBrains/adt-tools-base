@@ -15,33 +15,26 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
-
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import static com.android.build.gradle.integration.common.utils.FileHelper.createFile
+import static com.android.build.gradle.integration.common.utils.FileHelper.searchAndReplace
 /**
  * General Model tests
  */
 @CompileStatic
 class AaptOptionsTest {
 
-    public static final AndroidTestApp helloWorldApp = new HelloWorldApp();
-    static {
-        helloWorldApp.addFile(new TestSourceFile("src/main/res/raw", "data", "test"));
-    }
-
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
-        .fromTestApp(helloWorldApp)
-        .create()
+            .fromTestApp(new HelloWorldApp())
+            .create()
 
     @Before
     public void setUp() {
@@ -55,6 +48,9 @@ android {
 
 }
 """
+
+        createFile(project.file("src/main/res/raw/ignored"), "ignored")
+        createFile(project.file("src/main/res/raw/kept"), "kept")
     }
 
     @Test
@@ -62,11 +58,31 @@ android {
         project.getBuildFile() << """
 android {
     aaptOptions {
-        additionalParameters "--ignore-assets", "!data"
+        additionalParameters "--ignore-assets", "!ignored*"
     }
 }
 """
+        project.execute("clean", "assembleDebug")
+        File apk = project.getApk("debug")
+        assertThatApk(apk).containsFileWithContent("res/raw/kept", "kept")
+        assertThatApk(apk).doesNotContain("res/raw/ignored")
+
+        createFile(project.file("src/main/res/raw/ignored2"), "ignored2")
+        createFile(project.file("src/main/res/raw/kept2"), "kept2")
+
         project.execute("assembleDebug")
-        assertThatZip(project.getApk("debug")).doesNotContain("res/raw/data")
+        assertThatApk(apk).containsFileWithContent("res/raw/kept2", "kept2")
+        assertThatApk(apk).doesNotContain("res/raw/ignored2")
+
+        searchAndReplace(
+                project.buildFile,
+                'additionalParameters "--ignore-assets", "!ignored\\*"',
+                "")
+
+        project.execute("assembleDebug")
+        assertThatApk(apk).containsFileWithContent("res/raw/kept", "kept")
+        assertThatApk(apk).containsFileWithContent("res/raw/ignored", "ignored")
+        assertThatApk(apk).containsFileWithContent("res/raw/kept2", "kept2")
+        assertThatApk(apk).containsFileWithContent("res/raw/ignored2", "ignored2")
     }
 }
