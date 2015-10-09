@@ -74,7 +74,13 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     private static final boolean DEBUG = false;
     private static final String OVERRIDE_SUFFIX = "$override";
 
+    private static final String METHOD_MANGLE_PREFIX = "$";
+
     private MachineState state = MachineState.NORMAL;
+
+    // Description prefix used to add fake "this" as the first argument to each instance method
+    // when converted to a static method.
+    private String instanceToStaticDescPrefix;
 
     // List of constructors we encountered and deconstructed.
     List<MethodNode> addedMethods = new ArrayList<MethodNode>();
@@ -111,6 +117,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         visitedClassName = name;
         visitedSuperName = superName;
+        instanceToStaticDescPrefix = "(L" + visitedClassName + ";";
 
         // Create empty constructor
         MethodVisitor mv = super
@@ -149,7 +156,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         }
 
         boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
-        String newDesc = isStatic ? desc : "(L" + visitedClassName + ";" + desc.substring(1);
+        String newDesc = computeOverrideMethodDesc(desc, isStatic);
 
         if (DEBUG) {
             System.out.println(">>> Visiting method " + visitedClassName + ":" + name + ":" + desc);
@@ -184,9 +191,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             addedMethods.add(constructor.body);
             return null;
         } else {
-            // TODO: change the method name as it can now collide with existing static methods with
-            MethodVisitor original = super.visitMethod(access, name, newDesc, signature, exceptions);
-            return new ISVisitor(Opcodes.ASM5, original, access, name, newDesc, isStatic);
+            String newName = computeOverrideMethodName(name, desc);
+            MethodVisitor original = super.visitMethod(access, newName, newDesc, signature, exceptions);
+            return new ISVisitor(Opcodes.ASM5, original, access, newName, newDesc, isStatic);
         }
     }
 
@@ -461,7 +468,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                             "Private Method : " + name + ":" + desc + ":" + itf + ":" + isStatic);
                 }
                 // private method dispatch, just invoke the $override class static method.
-                String newDesc = "(L" + visitedClassName + ";" + desc.substring(1);
+                String newDesc = computeOverrideMethodDesc(desc, false /*isStatic*/);
                 super.visitMethodInsn(Opcodes.INVOKESTATIC, owner + "$override", name, newDesc, itf);
                 return true;
             } else {
@@ -473,8 +480,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 push(name + "." + desc);
                 loadLocal(arr);
                 mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName, "access$super",
-                        "(L" + visitedClassName
-                                + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;",
+                        instanceToStaticDescPrefix
+                                + "Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;",
                         false);
                 handleReturnType(desc);
 
@@ -856,10 +863,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     "(Ljava/lang/Object;)Z", false);
             Label l0 = new Label();
             mv.visitJumpInsn(Opcodes.IFEQ, l0);
-            // this should be abstracted somewhere.
-            String newDesc = (methodNode.access & Opcodes.ACC_STATIC) != 0
-                    ? methodNode.desc
-                    : "(L" + visitedClassName + ";" + methodNode.desc.substring(1);
+            String newDesc =
+                    computeOverrideMethodDesc(methodNode.desc, (methodNode.access & Opcodes.ACC_STATIC) != 0);
 
             if (TRACING_ENABLED) {
                 trace(mv, "M: " + name + " P:" + newDesc);
@@ -873,8 +878,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 mv.unbox(t);
                 argc++;
             }
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override", name, newDesc,
-                    false);
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override",
+                    computeOverrideMethodName(name, methodNode.desc), newDesc, false);
             Type ret = Type.getReturnType(methodNode.desc);
             if (ret.getSort() == Type.VOID) {
                 mv.visitInsn(Opcodes.ACONST_NULL);
@@ -990,5 +995,34 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             }
         }
         return false;
+    }
+
+    /**
+     * Instance methods, when converted to static methods need to have the subject object as
+     * the first parameter. If the method is static, it is unchanged.
+     */
+    @NonNull
+    private String computeOverrideMethodDesc(@NonNull String desc, boolean isStatic) {
+        if (isStatic) {
+            return desc;
+        } else {
+            return instanceToStaticDescPrefix + desc.substring(1);
+        }
+    }
+
+    /**
+     * Prevent method name collisions.
+     *
+     * A static method that takes an instance of this class as the first argument might clash with
+     * a rewritten instance method, and this rewrites all methods like that. This is an
+     * over-approximation of the necessary renames, but it has the advantage of neither adding
+     * additional state nor requiring lookups.
+     */
+    @NonNull
+    private String computeOverrideMethodName(@NonNull String name, @NonNull String desc) {
+        if (desc.startsWith(instanceToStaticDescPrefix) && !name.equals("init$body")) {
+            return METHOD_MANGLE_PREFIX + name;
+        }
+        return name;
     }
 }
