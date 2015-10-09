@@ -14,31 +14,16 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.incremental;
+package com.verifier.tests;
+
+import java.util.HashSet;
 
 /**
- * Changes to a class that cannot be hot swapped with the current InstantRun runtime
+ * Patch version that changes the super class of this class.
  */
-public enum IncompatibleChange {
+public class ChangeSuperClass extends HashSet<String> {
 
-    // changes in the hierarchy
-    PARENT_CLASS_CHANGED,
-    IMPLEMENTED_INTERFACES_CHANGE,
-
-    // class related changes.
-    CLASS_ANNOTATION_CHANGE,
-    STATIC_INITIALIZER_CHANGE,
-
-    // changes in constructors,
-    CONSTRUCTOR_SIGNATURE_CHANGE,
-
-    // changes in method
-    METHOD_SIGNATURE_CHANGE,
-    METHOD_ANNOTATION_CHANGE,
-    METHOD_DELETED,
-    METHOD_ADDED,
-
-    // changes in fields.
-    FIELD_ADDED,
-    FIELD_TYPE_CHANGE
+    public String getStringField() {
+        return "orphan!";
+    }
 }

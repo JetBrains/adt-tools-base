@@ -39,10 +39,17 @@ public class VerifierHarness {
         baseFolder = new File(incrementalTestClasses, "base");
     }
 
-    public IncompatibleChange verify(String fqcn, String patchLevel) throws IOException {
+    public IncompatibleChange verify(Class clazz, String patchLevel) throws IOException {
+        String fqcn = clazz.getName();
         File originalFile = new File(baseFolder, fqcn.replace('.', File.separatorChar) + ".class");
-        File patchLevelFolder = new File(patchesFolder, patchLevel);
-        File patchedFile = new File(patchLevelFolder, fqcn.replace('.', File.separatorChar) + ".class");
+        File patchedFile;
+        if (patchLevel != null) {
+            File patchLevelFolder = new File(patchesFolder, patchLevel);
+            patchedFile = new File(patchLevelFolder,
+                    fqcn.replace('.', File.separatorChar) + ".class");
+        } else {
+            patchedFile = originalFile;
+        }
         InstantRunVerifier instantRunVerifier = new InstantRunVerifier();
         return instantRunVerifier.run(originalFile, patchedFile);
     }

@@ -43,9 +43,9 @@ public class InstantRunVerifier {
             new MethodNodeComparator();
     private static final Comparator<AnnotationNode> ANNOTATION_NODE_COMPARATOR =
             new AnnotationNodeComparator();
-    private static final Comparator<String> STRING_COMPARATOR = new Comparator<String>() {
+    private static final Comparator<Object> OBJECT_COMPARATOR = new Comparator<Object>() {
         @Override
-        public boolean areEqual(String first, String second) {
+        public boolean areEqual(Object first, Object second) {
             return Objects.equal(first, second);
         }
     };
@@ -59,30 +59,31 @@ public class InstantRunVerifier {
     @Nullable
     public IncompatibleChange run(File originalClass, File updatedClass) throws IOException {
 
-        ClassNode orignalClassNode = loadClass(originalClass);
+        ClassNode originalClassNode = loadClass(originalClass);
         ClassNode updatedClassNode = loadClass(updatedClass);
 
-        if (!orignalClassNode.superName.equals(updatedClassNode.superName)) {
+        if (!originalClassNode.superName.equals(updatedClassNode.superName)) {
             return IncompatibleChange.PARENT_CLASS_CHANGED;
         }
 
-        if (!compareList(orignalClassNode.interfaces, updatedClassNode.interfaces, STRING_COMPARATOR)) {
+        if (!compareList(originalClassNode.interfaces, updatedClassNode.interfaces,
+                OBJECT_COMPARATOR)) {
             return IncompatibleChange.IMPLEMENTED_INTERFACES_CHANGE;
         }
 
         // ASM API here and below.
         //noinspection unchecked
-        if (!compareList(orignalClassNode.visibleAnnotations,
+        if (!compareList(originalClassNode.visibleAnnotations,
                 updatedClassNode.visibleAnnotations,
                 ANNOTATION_NODE_COMPARATOR)) {
-            return IncompatibleChange.CLASS_ANNOTATIONS_CHANGE;
+            return IncompatibleChange.CLASS_ANNOTATION_CHANGE;
         }
 
         List<MethodNode> nonVisitedMethodsOnUpdatedClass =
                 new ArrayList<MethodNode>(updatedClassNode.methods);
 
         //noinspection unchecked
-        for(MethodNode methodNode : (List<MethodNode>) orignalClassNode.methods) {
+        for(MethodNode methodNode : (List<MethodNode>) originalClassNode.methods) {
             // although it's probably ok if a method got deleted since nobody should be calling it
             // anymore BUT the application might be using reflection to get the list of methods
             // and would still see the deleted methods. To be prudent, restart.
@@ -153,8 +154,10 @@ public class InstantRunVerifier {
         @Override
         public boolean areEqual(@Nullable AnnotationNode first, @Nullable  AnnotationNode second) {
             // probably deep compare for values...
-            return (first == null && second == null) || (first!=null && second!=null &&
-                    first.desc.equals(second.desc) && first.values.equals(second.values));
+            //noinspection unchecked
+            return (first == null && second == null) || (first != null && second != null)
+                && OBJECT_COMPARATOR.areEqual(first.desc, second.desc) &&
+                    compareList(first.values, second.values, OBJECT_COMPARATOR);
         }
     }
 

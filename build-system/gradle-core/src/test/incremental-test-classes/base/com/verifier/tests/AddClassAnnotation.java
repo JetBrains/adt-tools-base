@@ -14,31 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.incremental;
+package com.verifier.tests;
 
 /**
- * Changes to a class that cannot be hot swapped with the current InstantRun runtime
+ * Class that will test adding a class annotation is flagged by the verifier.
  */
-public enum IncompatibleChange {
+public class AddClassAnnotation {
 
-    // changes in the hierarchy
-    PARENT_CLASS_CHANGED,
-    IMPLEMENTED_INTERFACES_CHANGE,
-
-    // class related changes.
-    CLASS_ANNOTATION_CHANGE,
-    STATIC_INITIALIZER_CHANGE,
-
-    // changes in constructors,
-    CONSTRUCTOR_SIGNATURE_CHANGE,
-
-    // changes in method
-    METHOD_SIGNATURE_CHANGE,
-    METHOD_ANNOTATION_CHANGE,
-    METHOD_DELETED,
-    METHOD_ADDED,
-
-    // changes in fields.
-    FIELD_ADDED,
-    FIELD_TYPE_CHANGE
+    public void someMethod() {}
 }
