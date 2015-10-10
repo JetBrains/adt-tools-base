@@ -95,6 +95,7 @@ public class GoogleServicesTask extends DefaultTask {
         JsonObject rootObject = root.getAsJsonObject();
 
         Map<String, String> resValues = new TreeMap<String, String>();
+        Map<String, Map<String, String>> resAttributes = new TreeMap<String, Map<String, String>>();
 
         handleProjectNumber(rootObject, resValues);
 
@@ -103,7 +104,7 @@ public class GoogleServicesTask extends DefaultTask {
         if (clientObject != null) {
             handleAnalytics(clientObject, resValues);
             handleAdsService(clientObject, resValues);
-            handleMapsService(clientObject, resValues);
+            handleMapsService(clientObject, resValues, resAttributes);
             handleGoogleAppId(clientObject, resValues);
         } else {
             getLogger().warn("No matching client found for package name '" + packageName + "'");
@@ -115,7 +116,7 @@ public class GoogleServicesTask extends DefaultTask {
             throw new GradleException("Failed to create folder: " + values);
         }
 
-        Files.write(getValuesContent(resValues), new File(values, "values.xml"), Charsets.UTF_8);
+        Files.write(getValuesContent(resValues, resAttributes), new File(values, "values.xml"), Charsets.UTF_8);
     }
 
     /**
@@ -222,7 +223,8 @@ public class GoogleServicesTask extends DefaultTask {
      * @param clientObject the client Json object.
      * @throws IOException
      */
-    private void handleMapsService(JsonObject clientObject, Map<String, String> resValues)
+    private void handleMapsService(JsonObject clientObject, Map<String, String> resValues,
+        Map<String, Map<String, String>> resAttributes)
             throws IOException {
         JsonObject mapsService = getServiceByName(clientObject, "maps_service");
         if (mapsService == null) return;
@@ -241,6 +243,9 @@ public class GoogleServicesTask extends DefaultTask {
                     continue;
                 }
                 resValues.put("google_maps_key", currentKey.getAsString());
+                Map<String, String> attributes = new TreeMap<String, String>();
+                attributes.put("translatable", "false");
+                resAttributes.put("google_maps_key", attributes);
                 return;
             }
         }
@@ -349,15 +354,23 @@ public class GoogleServicesTask extends DefaultTask {
                 "</resources>\n";
     }
 
-    private static String getValuesContent(Map<String, String> entries) {
+    private static String getValuesContent(Map<String, String> values,
+        Map<String, Map<String, String>> attributes) {
         StringBuilder sb = new StringBuilder(256);
 
         sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<resources>\n");
 
-        for (Map.Entry<String, String> entry : entries.entrySet()) {
-            sb.append("    <string name=\"").append(entry.getKey()).append("\">")
-                    .append(entry.getValue()).append("</string>\n");
+        for (Map.Entry<String, String> entry : values.entrySet()) {
+            String name = entry.getKey();
+            sb.append("    <string name=\"").append(name).append("\"");
+            if (attributes.containsKey(name)) {
+                for (Map.Entry<String, String> attr : attributes.get(name).entrySet()) {
+                    sb.append(" ").append(attr.getKey()).append("=\"")
+                        .append(attr.getValue()).append("\"");
+                }
+            }
+            sb.append(">").append(entry.getValue()).append("</string>\n");
         }
 
         sb.append("</resources>\n");
