@@ -25,8 +25,9 @@ if (gradleVersion == null && System.env.CUSTOM_REPO != null) {
             Object ext = new Object() {
                 String buildVersion
                 String baseVersion
-                String apiVersion
                 String experimentalVersion
+                String apiVersion
+                String nativeApiVersion
             }
         }
     }
