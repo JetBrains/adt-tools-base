@@ -21,7 +21,6 @@ import com.android.builder.model.AndroidArtifact;
 import org.gradle.api.Named;
 import org.gradle.model.Managed;
 import org.gradle.model.ModelSet;
-import org.gradle.model.Unmanaged;
 
 import java.io.File;
 import java.util.List;
@@ -29,8 +28,6 @@ import java.util.Set;
 
 /**
  * A Managed build type.
- *
- * TODO: Convert Unmanaged Collection to Managed type when Gradle provides ModelSet for basic class.
  */
 @Managed
 public interface BuildType extends BaseConfig {

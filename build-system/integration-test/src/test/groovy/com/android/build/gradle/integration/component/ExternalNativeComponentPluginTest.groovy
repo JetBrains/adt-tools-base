@@ -46,25 +46,25 @@ apply plugin: 'com.android.model.external'
 
 model {
     nativeBuild {
-        buildFiles = [ file("CMakeLists.txt")]
+        buildFiles.addAll([ file("CMakeLists.txt")])
     }
     nativeBuild.libraries {
         create("foo") {
             executable = "touch"
-            args = ["output.txt"]
+            args.addAll(["output.txt"])
             toolchain = "clang"
             output = file("build/libfoo.so")
             folders.with {
                 create() {
                     src = file("src/main/jni")
-                    CFlags = ["folderCFlag1", "folderCFlag2"]
-                    cppFlags = ["folderCppFlag1", "folderCppFlag2"]
+                    CFlags.addAll(["folderCFlag1", "folderCFlag2"])
+                    cppFlags.addAll(["folderCppFlag1", "folderCppFlag2"])
                 }
             }
             files.with {
                 create() {
                     src = file("src/main/jni/hello.c")
-                    flags = ["fileFlag1", "fileFlag2"]
+                    flags.addAll(["fileFlag1", "fileFlag2"])
                 }
             }
 

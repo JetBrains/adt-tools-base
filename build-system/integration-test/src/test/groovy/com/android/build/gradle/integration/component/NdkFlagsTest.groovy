@@ -130,8 +130,8 @@ model {
     }
     android.ndk {
         moduleName = "hello-jni"
-        CFlags += ['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"']
-        CFlags += ' -DFLAG_WITH_LEADING_SPACE'
+        CFlags.addAll(['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"'])
+        CFlags.add(' -DFLAG_WITH_LEADING_SPACE')
     }
 }
 """
@@ -146,7 +146,7 @@ model {
     }
     android.ndk {
         moduleName = "hello-jni"
-        cppFlags = ['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"']
+        cppFlags.addAll(['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"'])
     }
 }
 """
@@ -161,7 +161,7 @@ model {
     }
     android.ndk {
         moduleName = "hello-jni"
-        ldFlags += "-llog"
+        ldFlags.addAll("-llog")
     }
 }
 """

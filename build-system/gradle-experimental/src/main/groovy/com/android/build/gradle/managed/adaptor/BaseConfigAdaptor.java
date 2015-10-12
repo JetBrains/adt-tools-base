@@ -22,6 +22,7 @@ import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -60,7 +61,7 @@ public class BaseConfigAdaptor implements BaseConfig {
                             cf.getType(),
                             cf.getName(),
                             cf.getValue(),
-                            Objects.firstNonNull(cf.getAnnotations(), ImmutableSet.<String>of()),
+                            ImmutableSet.copyOf(cf.getAnnotations()),
                             Objects.firstNonNull(cf.getDocumentation(), "")));
         }
         return builder.build();
@@ -86,19 +87,19 @@ public class BaseConfigAdaptor implements BaseConfig {
     @NonNull
     @Override
     public Collection<File> getProguardFiles() {
-        return baseConfig.getProguardFiles();
+        return ImmutableList.copyOf(baseConfig.getProguardFiles());
     }
 
     @NonNull
     @Override
     public Collection<File> getConsumerProguardFiles() {
-        return baseConfig.getConsumerProguardFiles();
+        return ImmutableList.copyOf(baseConfig.getConsumerProguardFiles());
     }
 
     @NonNull
     @Override
     public Collection<File> getTestProguardFiles() {
-        return baseConfig.getTestProguardFiles();
+        return ImmutableList.copyOf(baseConfig.getTestProguardFiles());
     }
 
     @NonNull
@@ -135,7 +136,6 @@ public class BaseConfigAdaptor implements BaseConfig {
     @NonNull
     @Override
     public List<File> getJarJarRuleFiles() {
-        return baseConfig.getJarJarRuleFiles();
+        return ImmutableList.copyOf(baseConfig.getJarJarRuleFiles());
     }
-
 }

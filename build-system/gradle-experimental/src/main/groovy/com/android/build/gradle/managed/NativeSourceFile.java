@@ -30,8 +30,5 @@ public interface NativeSourceFile {
     File getSrc();
     void setSrc(File src);
 
-    @Unmanaged
     List<String> getFlags();
-    void setFlags(List<String> flags);
-
 }

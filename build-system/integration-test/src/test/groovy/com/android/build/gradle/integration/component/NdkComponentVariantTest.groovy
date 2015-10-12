@@ -64,22 +64,22 @@ model {
     }
     android.productFlavors {
         create("x86") {
-            ndk.abiFilters += "x86"
+            ndk.abiFilters.add("x86")
         }
         create("arm") {
-            ndk.abiFilters += "armeabi-v7a"
-            ndk.abiFilters += "armeabi"
+            ndk.abiFilters.add("armeabi-v7a")
+            ndk.abiFilters.add("armeabi")
         }
         create("mips") {
-            ndk.abiFilters += "mips"
+            ndk.abiFilters.add("mips")
         }
     }
     android.abis {
         create("x86") {
-            CFlags += "-DX86"
+            CFlags.add("-DX86")
         }
         create("armeabi-v7a") {
-            CFlags += "-DARMEABI_V7A"
+            CFlags.add("-DARMEABI_V7A")
         }
     }
 }

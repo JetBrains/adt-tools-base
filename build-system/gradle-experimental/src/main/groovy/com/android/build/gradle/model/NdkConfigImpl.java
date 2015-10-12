@@ -100,18 +100,8 @@ public class NdkConfigImpl implements NdkConfig {
     }
 
     @Override
-    public void setAbiFilters(@NonNull Set<String> abiFilters) {
-        throw new UnsupportedOperationException("Field should not be set.");
-    }
-
-    @Override
     public List<String> getCFlags() {
         return cFlags;
-    }
-
-    @Override
-    public void setCFlags(@NonNull List<String> cFlags) {
-        throw new UnsupportedOperationException("Field should not be set.");
     }
 
     @Override
@@ -120,28 +110,13 @@ public class NdkConfigImpl implements NdkConfig {
     }
 
     @Override
-    public void setCppFlags(@NonNull List<String> cppFlags) {
-        throw new UnsupportedOperationException("Field should not be set.");
-    }
-
-    @Override
     public List<String> getLdFlags() {
         return ldFlags;
     }
 
     @Override
-    public void setLdFlags(@NonNull List<String> ldFlags) {
-        throw new UnsupportedOperationException("Field should not be set.");
-    }
-
-    @Override
     public List<String> getLdLibs() {
         return ldLibs;
-    }
-
-    @Override
-    public void setLdLibs(@NonNull List<String> ldLibs) {
-        throw new UnsupportedOperationException("Field should not be set.");
     }
 
     @Override

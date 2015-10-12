@@ -38,9 +38,7 @@ public interface NativeLibrary extends Named {
     /**
      * Arguments to the executable for building the project.
      */
-    @Unmanaged
     List<String> getArgs();
-    void setArgs(List<String> args);
 
     /**
      * Name of the toolchain.

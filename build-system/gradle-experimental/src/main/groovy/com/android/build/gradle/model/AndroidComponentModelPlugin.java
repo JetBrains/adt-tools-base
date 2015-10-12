@@ -33,11 +33,10 @@ import com.google.common.primitives.Ints;
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.internal.reflect.Instantiator;
-import org.gradle.internal.service.ServiceRegistry;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.language.base.FunctionalSourceSet;
+import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.ProjectSourceSet;
-import org.gradle.language.base.internal.registry.LanguageRegistration;
 import org.gradle.language.base.internal.registry.LanguageRegistry;
 import org.gradle.language.base.plugins.ComponentModelBasePlugin;
 import org.gradle.model.Defaults;
@@ -71,7 +70,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
      */
     public static final String COMPONENT_NAME = "android";
 
-    public static final String GRADLE_ACCEPTABLE_VERSION = "2.6";
+    public static final String GRADLE_ACCEPTABLE_VERSION = "2.9";
 
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck";
@@ -132,12 +131,6 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         public void android(AndroidConfig androidModel) {
         }
 
-        @Defaults
-        public void androidModelSources(AndroidConfig androidModel,
-                @Path("androidSources") AndroidComponentModelSourceSet sources) {
-            androidModel.setSources(sources);
-        }
-
         @Finalize
         public void finalizeAndroidModel(AndroidConfig androidModel) {
             if (androidModel.getBuildToolsRevision() == null
@@ -193,26 +186,16 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             androidComponents.create(COMPONENT_NAME);
         }
 
-        @Model
-        public AndroidComponentModelSourceSet androidSources(ServiceRegistry serviceRegistry) {
-            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            return new AndroidComponentModelSourceSet(instantiator);
-        }
-
         /**
          * Create all source sets for each AndroidBinary.
          */
         @Mutate
         public void createVariantSourceSet(
-                @Path("android.sources") final AndroidComponentModelSourceSet sources,
+                @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 @Path("android.buildTypes") final ModelMap<BuildType> buildTypes,
                 @Path("android.productFlavors") ModelMap<ProductFlavor> flavors,
                 List<ProductFlavorCombo<ProductFlavor>> flavorGroups, ProjectSourceSet projectSourceSet,
                 LanguageRegistry languageRegistry) {
-            sources.setProjectSourceSet(projectSourceSet);
-            for (LanguageRegistration languageRegistration : languageRegistry) {
-                sources.registerLanguage(languageRegistration);
-            }
 
             // Create main source set.
             sources.create("main");
@@ -220,31 +203,44 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             sources.create(UNIT_TEST.getPrefix());
 
             for (BuildType buildType : buildTypes.values()) {
-                sources.maybeCreate(buildType.getName());
+                sources.create(buildType.getName());
 
-                for (ProductFlavorCombo group: flavorGroups) {
-                    sources.maybeCreate(group.getName());
-                    if (!group.getFlavorList().isEmpty()) {
-                        sources.maybeCreate(
-                                group.getName() + StringHelper.capitalize(buildType.getName()));
+                if (!flavors.isEmpty()) {
+                    for (ProductFlavorCombo group : flavorGroups) {
+                        if (!group.getFlavorList().isEmpty()) {
+                            sources.create(
+                                    group.getName() + StringHelper.capitalize(buildType.getName()));
+                        }
                     }
-
                 }
-
+            }
+            for (ProductFlavorCombo group: flavorGroups) {
+                sources.create(group.getName());
             }
             if (flavorGroups.size() != flavors.size()) {
                 // If flavorGroups and flavors are the same size, there is at most 1 flavor
                 // dimension.  So we don't need to reconfigure the source sets for flavorGroups.
                 for (ProductFlavor flavor: flavors.values()) {
-                    sources.maybeCreate(flavor.getName());
+                    sources.create(flavor.getName());
                 }
             }
-        }
 
-        @Finalize
-        public void setDefaultSrcDir(
-                @Path("android.sources") AndroidComponentModelSourceSet sourceSet) {
-            sourceSet.setDefaultSrcDir();
+            sources.afterEach(new Action<FunctionalSourceSet>() {
+                @Override
+                public void execute(final FunctionalSourceSet functionalSourceSet) {
+                    functionalSourceSet.all(
+                            new Action<LanguageSourceSet>() {
+                                @Override
+                                public void execute(LanguageSourceSet languageSourceSet) {
+                                    SourceDirectorySet source = languageSourceSet.getSource();
+                                    if (source.getSrcDirs().isEmpty()) {
+                                        source.srcDir("src/" + functionalSourceSet.getName() + "/"
+                                                + languageSourceSet.getName());
+                                    }
+                                }
+                            });
+                }
+            });
         }
 
         @BinaryType
@@ -258,7 +254,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 @Path("android") final AndroidConfig androidConfig,
                 @Path("android.buildTypes") final ModelMap<BuildType> buildTypes,
                 final List<ProductFlavorCombo<ProductFlavor>> flavorCombos,
-                @Path("android.sources") final AndroidComponentModelSourceSet sources,
+                @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 final AndroidComponentSpec spec) {
             if (flavorCombos.isEmpty()) {
                 flavorCombos.add(new ProductFlavorCombo<ProductFlavor>());
@@ -293,9 +289,9 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
          */
         private static void sourceBinary(
                 BinarySpec binary,
-                AndroidComponentModelSourceSet projectSourceSet,
+                ModelMap<FunctionalSourceSet> projectSourceSet,
                 final String sourceSetName) {
-            FunctionalSourceSet sourceSet = projectSourceSet.findByName(sourceSetName);
+            FunctionalSourceSet sourceSet = projectSourceSet.get(sourceSetName);
             if (sourceSet != null) {
                 binary.getInputs().addAll(sourceSet);
             }

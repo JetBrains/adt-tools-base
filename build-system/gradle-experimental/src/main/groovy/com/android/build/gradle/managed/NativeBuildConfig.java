@@ -25,6 +25,7 @@ import org.gradle.model.Unmanaged;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Configuration model for a native project.
@@ -37,9 +38,7 @@ public interface NativeBuildConfig {
      *
      * These files may be monitored to determine if the JSON data file needs to be updated.
      */
-    @Unmanaged
-    Collection<File> getBuildFiles();
-    void setBuildFiles(@NonNull Collection<File> buildFiles);
+    Set<File> getBuildFiles();
 
     /**
      * Command for generating a JSON data file.
@@ -48,9 +47,7 @@ public interface NativeBuildConfig {
      * another program, the command to generate the data file can be specified such that it will be
      * invoke by the generateBuildData task.
      */
-    @Unmanaged
     List<String> getGeneratorCommand();
-    void setGeneratorCommand(List<String> command);
 
     /**
      * A JSON data file for configuring this plugin.
@@ -61,9 +58,7 @@ public interface NativeBuildConfig {
     /**
      * Arguments to the executable for building the project.
      */
-    @Unmanaged
     List<String> getArgs();
-    void setArgs(List<String> args);
 
     /**
      * Configurations for each native artifact.

@@ -26,19 +26,19 @@ import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
-import com.android.build.gradle.model.AndroidComponentModelSourceSet;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.sdklib.repository.FullRevision;
 
 import org.gradle.api.Action;
+import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.model.Managed;
 import org.gradle.model.ModelMap;
 import org.gradle.model.Unmanaged;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.Set;
 
 /**
  * Component model for all Android plugin.
@@ -67,13 +67,13 @@ public interface AndroidConfig {
 
     /** List of device providers */
     @Unmanaged
-    List<DeviceProvider> getDeviceProviders();
-    void setDeviceProviders(List<DeviceProvider> providers);
+    Collection<DeviceProvider> getDeviceProviders();
+    void setDeviceProviders(Collection<DeviceProvider> providers);
 
     /** List of remote CI servers */
     @Unmanaged
-    List<TestServer> getTestServers();
-    void setTestServers(List<TestServer> providers);
+    Collection<TestServer> getTestServers();
+    void setTestServers(Collection<TestServer> providers);
 
     /** Name of the variant to publish */
     String getDefaultPublishConfig();
@@ -105,9 +105,8 @@ public interface AndroidConfig {
     /** Signing configs used by this project. */
     ModelMap<SigningConfig> getSigningConfigs();
 
-    @Unmanaged
-    AndroidComponentModelSourceSet getSources();
-    void setSources(AndroidComponentModelSourceSet sources);
+    /** Android source sets. */
+    ModelMap<FunctionalSourceSet> getSources();
 
     NdkConfig getNdk();
 
@@ -160,7 +159,6 @@ public interface AndroidConfig {
     Collection<LibraryRequest> getLibraryRequests();
     void setLibraryRequests(Collection<LibraryRequest> libraryRequests);
 
-    @Unmanaged
-    Collection<String> getAidlPackageWhitelist();
-    void setAidlPackageWhitelist(Collection<String> aidlPackageWhitelist);
+    Set<String> getAidlPackageWhitelist();
+
 }

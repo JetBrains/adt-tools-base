@@ -42,7 +42,6 @@ import com.android.build.gradle.internal.dsl.TestOptions;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.build.gradle.managed.SigningConfig;
-import com.android.build.gradle.model.AndroidComponentModelSourceSet;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.transform.api.Transform;
 import com.android.builder.core.BuilderConstants;
@@ -52,14 +51,15 @@ import com.android.builder.testing.api.TestServer;
 import com.android.sdklib.repository.FullRevision;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.model.ModelMap;
 
 import java.io.File;
 import java.util.Collection;
@@ -110,15 +110,13 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
     @Override
     @NonNull
     public List<DeviceProvider> getDeviceProviders() {
-        return model.getDeviceProviders() == null ?
-                Lists.<DeviceProvider>newArrayList() :
-                model.getDeviceProviders();
+        return ImmutableList.copyOf(model.getDeviceProviders());
     }
 
     @Override
     @NonNull
     public List<TestServer> getTestServers() {
-        return model.getTestServers();
+        return ImmutableList.copyOf(model.getTestServers());
     }
 
     @NonNull
@@ -206,12 +204,8 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
         return true;
     }
 
-    public AndroidComponentModelSourceSet getSources() {
+    public ModelMap<FunctionalSourceSet> getSources() {
         return model.getSources();
-    }
-
-    public void setSources(AndroidComponentModelSourceSet sources) {
-        model.setSources(sources);
     }
 
     public CoreNdkOptions getNdk() {
@@ -271,7 +265,7 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
 
     @Override
     public Collection<String> getAidlPackageWhiteList() {
-        return model.getAidlPackageWhitelist();
+        return ImmutableSet.copyOf(model.getAidlPackageWhitelist());
     }
 
     private void applyProjectSourceSet() {
@@ -291,24 +285,6 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
             convertSourceSet(androidSource.getJni(), source, "jni");
             convertSourceSet(androidSource.getJniLibs(), source, "jniLibs");
         }
-    }
-
-    @Nullable
-    private static AndroidSourceSet findAndroidSourceSet(
-            VariantManager variantManager,
-            String name) {
-        BuildTypeData buildTypeData = variantManager.getBuildTypes().get(name);
-        if (buildTypeData != null) {
-            return buildTypeData.getSourceSet();
-        }
-
-        boolean isTest = name.startsWith(ANDROID_TEST.getPrefix());
-        name = name.replaceFirst(ANDROID_TEST.getPrefix(), "");
-        ProductFlavorData productFlavorData = variantManager.getProductFlavors().get(name);
-        if (productFlavorData != null) {
-            return isTest ? productFlavorData.getTestSourceSet(ANDROID_TEST) : productFlavorData.getSourceSet();
-        }
-        return null;
     }
 
     /**

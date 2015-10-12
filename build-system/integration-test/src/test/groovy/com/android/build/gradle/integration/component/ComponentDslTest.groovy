@@ -61,7 +61,7 @@ model {
     }
     android.productFlavors {
         create("f1") {
-            proguardFiles += file("proguard.txt")
+            proguardFiles.add(file("proguard.txt"))
             buildConfigFields.create {
                 type = "String"
                 name = "foo"
