@@ -148,7 +148,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 method.accept(mv);
                 return null;
             } else {
-                mv.addRedirection(null, new MethodRedirection(name + "." + desc, Type.getReturnType(desc)));
+                mv.addRedirection(mv.getStartLabel(), new MethodRedirection(name + "." + desc, Type.getReturnType(desc)));
                 return mv;
             }
         }
@@ -159,12 +159,14 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         private int change;
         private final List<Type> args;
         private final Map<Label, Redirection> redirections;
+        private final Label start;
 
         public ISMethodVisitor(int api, MethodVisitor mv, int access,  String name, String desc) {
             super(api, mv, access, name, desc);
             this.change = -1;
             this.redirections = new HashMap<Label, Redirection>();
             this.args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(desc)));
+            this.start = new Label();
             boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
             // if this is not a static, we add a fictional first parameter what will contain the "this"
             // reference which can be loaded with ILOAD_0 bytecode.
@@ -184,33 +186,49 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
          */
         @Override
         public void visitCode() {
+            super.visitLabel(start);
             change = newLocal(CHANGE_TYPE);
             visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change", getRuntimeTypeName(CHANGE_TYPE));
             storeLocal(change);
 
-            redirectAt(null);
+            redirectAt(start);
             super.visitCode();
         }
 
         @Override
         public void visitLabel(Label label) {
-            if (!redirectAt(label)) {
-                super.visitLabel(label);
-            }
+            super.visitLabel(label);
+            redirectAt(label);
         }
 
-        private boolean redirectAt(Label label) {
-            if (redirections.containsKey(label)) {
-                Redirection redirection = redirections.get(label);
+        private void redirectAt(Label label) {
+            Redirection redirection = redirections.get(label);
+            if (redirection != null) {
                 redirection.redirect(this, change, args);
-                return true;
-            } else {
-                return false;
             }
         }
 
-        public void addRedirection(@Nullable Label at, @NonNull Redirection redirection) {
+        public void addRedirection(@NonNull Label at, @NonNull Redirection redirection) {
             redirections.put(at, redirection);
+        }
+
+
+        @Override
+        public void visitLocalVariable(String name, String desc, String signature, Label start,
+                Label end, int index) {
+            // In dex format, the argument names are separated from the local variable names. It
+            // seems to be needed to declare the local argument variables from the beginning of
+            // the methods for dex to pick that up. By inserting code before the first label we
+            // break that. In Java this is fine, and the debugger shows the right thing. However
+            // if we don't readjust the local variables, we just don't see the arguments.
+            if (index < args.size()) {
+                start = this.start;
+            }
+            super.visitLocalVariable(name, desc, signature, start, end, index);
+        }
+
+        public Label getStartLabel() {
+            return start;
         }
     }
 
