@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.ide.common.blame.SourceFile;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
+import com.google.common.io.Closeables;
 
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -55,11 +56,10 @@ public final class XmlLoader {
             @NonNull KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
             @NonNull String displayName,
             @NonNull File xmlFile,
+            @NonNull InputStream inputStream,
             @NonNull XmlDocument.Type type,
             @NonNull Optional<String> mainManifestPackageName)
             throws IOException, SAXException, ParserConfigurationException {
-        InputStream inputStream = new BufferedInputStream(new FileInputStream(xmlFile));
-
         Document domDocument = PositionXmlParser.parse(inputStream);
         return new XmlDocument(
                 new SourceFile(xmlFile, displayName),
@@ -69,7 +69,6 @@ public final class XmlLoader {
                 type,
                 mainManifestPackageName);
     }
-
 
     /**
      * Loads a xml document from its {@link String} representation without doing xml validation and

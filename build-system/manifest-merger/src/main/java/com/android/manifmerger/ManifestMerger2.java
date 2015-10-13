@@ -41,9 +41,13 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +79,8 @@ public class ManifestMerger2 {
     private final MergeType mMergeType;
     @NonNull
     private final Optional<File> mReportFile;
+    @NonNull
+    private final FileStreamProvider mFileStreamProvider;
 
     private ManifestMerger2(
             @NonNull ILogger logger,
@@ -85,7 +91,8 @@ public class ManifestMerger2 {
             @NonNull Map<String, Object> placeHolderValues,
             @NonNull KeyBasedValueResolver<SystemProperty> systemPropertiesResolver,
             @NonNull MergeType mergeType,
-            @NonNull Optional<File> reportFile) {
+            @NonNull Optional<File> reportFile,
+            @NonNull FileStreamProvider fileStreamProvider) {
         this.mSystemPropertyResolver = systemPropertiesResolver;
         this.mPlaceHolderValues = placeHolderValues;
         this.mManifestFile = mainManifestFile;
@@ -95,6 +102,7 @@ public class ManifestMerger2 {
         this.mOptionalFeatures = optionalFeatures;
         this.mMergeType = mergeType;
         this.mReportFile = reportFile;
+        this.mFileStreamProvider = fileStreamProvider;
     }
 
     /**
@@ -300,6 +308,16 @@ public class ManifestMerger2 {
     }
 
     /**
+     * Returns the {@link FileStreamProvider} used by this manifest merger. Use this
+     * to read files if you need to access the content of a {@link XmlDocument}.
+     */
+    @SuppressWarnings("unused") // Allow future library usage, if necessary
+    @NonNull
+    public FileStreamProvider getFileStreamProvider() {
+        return mFileStreamProvider;
+    }
+
+    /**
      * Creates the merging report file.
      * @param mergingReport the merging activities report to serialize.
      */
@@ -383,12 +401,15 @@ public class ManifestMerger2 {
             @NonNull KeyResolver<String> selectors,
             @NonNull MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
 
+        File xmlFile = manifestInfo.mLocation;
         XmlDocument xmlDocument;
         try {
+            InputStream inputStream = mFileStreamProvider.getInputStream(xmlFile);
             xmlDocument = XmlLoader.load(selectors,
                     mSystemPropertyResolver,
                     manifestInfo.mName,
-                    manifestInfo.mLocation,
+                    xmlFile,
+                    inputStream,
                     manifestInfo.getType(),
                     manifestInfo.getMainManifestPackageName());
         } catch (Exception e) {
@@ -492,11 +513,15 @@ public class ManifestMerger2 {
             ManifestInfo manifestInfo = new ManifestInfo(libraryFile.getFirst(),
                     libraryFile.getSecond(),
                     XmlDocument.Type.LIBRARY, Optional.<String>absent());
+            File xmlFile = manifestInfo.mLocation;
             XmlDocument libraryDocument;
             try {
+                InputStream inputStream = mFileStreamProvider.getInputStream(xmlFile);
                 libraryDocument = XmlLoader.load(selectors,
                         mSystemPropertyResolver,
-                        manifestInfo.mName, manifestInfo.mLocation,
+                        manifestInfo.mName,
+                        xmlFile,
+                        inputStream,
                         XmlDocument.Type.LIBRARY,
                         Optional.<String>absent()  /* mainManifestPackageName */);
             } catch (Exception e) {
@@ -771,6 +796,29 @@ public class ManifestMerger2 {
     }
 
     /**
+     * A {@linkplain FileStreamProvider} provides (buffered, if necessary) {@link InputStream}
+     * instances for a given {@link File} handle.
+     */
+    public static class FileStreamProvider {
+        /**
+         * Creates a reader for the given file -- which may not necessarily read the contents of the
+         * file on disk. For example, in the IDE, the client will map the file handle to a document in
+         * the editor, and read the current contents of that editor whether or not it has been saved.
+         * <p>
+         * This method is responsible for providing its own buffering, if necessary (e.g. when
+         * reading from disk, make sure you wrap the file stream in a buffering input stream.)
+         *
+         * @param file the file handle
+         * @return the contents of the file
+         * @throws FileNotFoundException if the file handle is invalid
+         */
+        @SuppressWarnings("MethodMayBeStatic") // Intended for overrides outside this library
+        protected InputStream getInputStream(@NonNull File file) throws FileNotFoundException {
+            return new BufferedInputStream(new FileInputStream(file));
+        }
+    }
+
+    /**
      * This class will hold all invocation parameters for the manifest merging tool.
      *
      * There are broadly three types of input to the merging tool :
@@ -817,6 +865,9 @@ public class ManifestMerger2 {
         @NonNull
         private final MergeType mMergeType;
         @Nullable private File mReportFile;
+
+        @Nullable
+        private FileStreamProvider mFileStreamProvider;
 
         /**
          * Sets a value for a {@link com.android.manifmerger.ManifestMerger2.SystemProperty}
@@ -987,6 +1038,20 @@ public class ManifestMerger2 {
         }
 
         /**
+         * Sets a file stream provider which allows the client of the manifest merger to provide
+         * arbitrary content lookup for files. <p> NOTE: There should only be one.
+         *
+         * @param provider the provider to use
+         * @return itself.
+         */
+        @NonNull
+        public Invoker withFileStreamProvider(@Nullable FileStreamProvider provider) {
+            assert mFileStreamProvider == null || provider == null;
+            mFileStreamProvider = provider;
+            return thisAsT();
+        }
+
+        /**
          * Perform the merging and return the result.
          *
          * @return an instance of {@link com.android.manifmerger.MergingReport} that will give
@@ -1013,6 +1078,8 @@ public class ManifestMerger2 {
                 }
             }
 
+            FileStreamProvider fileStreamProvider = mFileStreamProvider != null
+                    ? mFileStreamProvider : new FileStreamProvider();
             ManifestMerger2 manifestMerger =
                     new ManifestMerger2(
                             mLogger,
@@ -1023,7 +1090,8 @@ public class ManifestMerger2 {
                             mPlaceholders.build(),
                             new MapBasedKeyBasedValueResolver<SystemProperty>(systemProperties),
                             mMergeType,
-                            Optional.fromNullable(mReportFile));
+                            Optional.fromNullable(mReportFile),
+                            fileStreamProvider);
             return manifestMerger.merge();
         }
 
