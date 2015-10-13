@@ -13,17 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.tools.rpclib.binary;
 
 import org.jetbrains.annotations.NotNull;
 
-/**
- * An object that can be encoded and decoded using its {@link class}.
- */
-public interface BinaryObject {
-  /**
-   * @return the object's type class.
-   */
-  @NotNull
-  BinaryClass klass();
+import java.io.IOException;
+
+public final class EncodingControl {
+    public static final int Version = 0;
+    public static final int Compact = 0;
+    public static final int Full = 1;
+
+    public int mode;
+
+    public void encode(@NotNull Encoder e) throws IOException {
+        e.uint32(Version);
+        e.uint32(mode);
+    }
+
+    public void decode(@NotNull Decoder d) throws IOException {
+        int version = d.uint32();
+        if (version != Version) {
+            throw new IOException("(Invalid control block version");
+        }
+        mode = d.uint32();
+    }
 }

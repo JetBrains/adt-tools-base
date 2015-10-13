@@ -31,10 +31,8 @@ public final class Variant extends Type {
         mName = name;
     }
 
-    public Variant(@NotNull Decoder d, boolean compact) throws IOException {
-        if (!compact) {
-            mName = d.string();
-        }        
+    public Variant(@NotNull Decoder d) throws IOException {
+        mName = d.nonCompactString();
     }
 
     @Override
@@ -49,11 +47,9 @@ public final class Variant extends Type {
     }
 
     @Override
-    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
+    public void encode(@NotNull Encoder e) throws IOException {
         TypeTag.variantTag().encode(e);
-        if (!compact) {
-            e.string(mName);
-        }
+        e.nonCompactString(mName);
     }
 
     @Override

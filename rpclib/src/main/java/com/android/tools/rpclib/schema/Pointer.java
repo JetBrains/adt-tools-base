@@ -31,8 +31,8 @@ public final class Pointer extends Type {
         mType = type;
     }
 
-    public Pointer(@NotNull Decoder d, boolean compact) throws IOException {
-        mType = decode(d, compact);
+    public Pointer(@NotNull Decoder d) throws IOException {
+        mType = decode(d);
     }
 
     public Type getType() {
@@ -51,9 +51,9 @@ public final class Pointer extends Type {
     }
 
     @Override
-    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
+    public void encode(@NotNull Encoder e) throws IOException {
         TypeTag.pointerTag().encode(e);
-        mType.encode(e, compact);
+        mType.encode(e);
     }
 
     @Override

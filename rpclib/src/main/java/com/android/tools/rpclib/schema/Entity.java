@@ -27,7 +27,6 @@ public final class Entity {
     private String mIdentity;
     private String mVersion;
     private String mDisplay;
-    private boolean mExported;
     private Field[] mFields;
     private BinaryObject[] mMetadata;
     private String mSignature;
@@ -42,23 +41,18 @@ public final class Entity {
 
     public Entity() {}
 
-    public void decode(@NotNull Decoder d, boolean compact) throws IOException {
+    public void decode(@NotNull Decoder d) throws IOException {
         mPackage = d.string();
         mIdentity = d.string();
         mVersion = d.string();
-        if (!compact) {
-            mDisplay = d.string();
-            mExported = d.bool();
-        }
+        mDisplay = d.nonCompactString();
         mFields = new Field[d.uint32()];
         for (int i = 0; i < mFields.length; i++) {
             mFields[i] = new Field();
-            mFields[i].mType = Type.decode(d, compact);
-            if (!compact) {
-                mFields[i].mDeclared = d.string();
-            }
+            mFields[i].mType = Type.decode(d);
+            mFields[i].mDeclared = d.nonCompactString();
         }
-        if (!compact) {
+        if (d.getMode() != EncodingControl.Compact) {
             mMetadata = new BinaryObject[d.uint32()];
             for (int i = 0; i < mMetadata.length; i++) {
                 mMetadata[i] = d.object();
@@ -74,10 +68,6 @@ public final class Entity {
         return mDisplay == "" ? mIdentity : mDisplay;
     }
 
-    public boolean getExported() {
-        return mExported;
-    }
-
     public Field[] getFields() {
         return mFields;
     }
@@ -89,22 +79,17 @@ public final class Entity {
         return mMetadata;
     }
 
-    public void encode(@NotNull Encoder e, boolean compact) throws IOException {
+    public void encode(@NotNull Encoder e) throws IOException {
         e.string(mPackage);
         e.string(mIdentity);
         e.string(mVersion);
-        if (!compact) {
-            e.string(mDisplay);
-            e.bool(mExported);
-        }
+        e.nonCompactString(mDisplay);
         e.uint32(mFields.length);
         for (Field field : mFields) {
-            field.mType.encode(e, compact);
-            if (!compact) {
-                e.string(field.mDeclared);
-            }
+            field.mType.encode(e);
+            e.nonCompactString(field.mDeclared);
         }
-        if (!compact) {
+        if (e.getMode() != EncodingControl.Compact) {
             e.uint32(mMetadata.length);
             for (BinaryObject meta : mMetadata) {
                 e.object(meta);
