@@ -42,6 +42,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import java.io.File;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -212,6 +213,14 @@ public class XmlDocument {
         return PositionXmlParser.getPosition(xml);
     }
 
+    /**
+     * Returns the {@link SourceFile} associated with this XML document.
+     * <p>
+     * NOTE: You should <b>not</b> read the contents of the file directly; if you need to
+     * access the content, use {@link ManifestMerger2#getFileStreamProvider()} instead.
+     *
+     * @return the source file
+     */
     @NonNull
     public SourceFile getSourceFile() {
         return mSourceFile;

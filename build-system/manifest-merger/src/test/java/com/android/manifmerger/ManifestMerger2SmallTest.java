@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.sdklib.mock.MockLog;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
@@ -39,9 +40,12 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -503,6 +507,45 @@ public class ManifestMerger2SmallTest {
         MergingReport mergingReport = ManifestMerger2
                 .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
                 .withFeatures(ManifestMerger2.Invoker.Feature.NO_PLACEHOLDER_REPLACEMENT)
+                .merge();
+
+        assertTrue(mergingReport.getResult().isSuccess());
+        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+        assertEquals("${applicationId}",
+                xmlDocument.getXml().getElementsByTagName("manifest")
+                        .item(0).getAttributes().getNamedItem("package").getNodeValue());
+    }
+
+    @Test
+    public void testReplaceInputStream()
+            throws IOException, ManifestMerger2.MergeFailureException {
+        // This test is identical to testNoPlaceholderReplacement but instead
+        // of reading from a string, we test the ManifestMerger's ability to
+        // supply a custom input stream
+        final String xml = ""
+                + "<manifest\n"
+                + "    package=\"${applicationId}\""
+                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity t:name=\"activityOne\"/>\n"
+                + "    <application t:name=\".applicationOne\" "
+                + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                + "</manifest>";
+        String staleContent = "<manifest />";
+
+        // Note: disk content is wrong/stale; make sure we read the live content instead
+        File inputFile = inputAsFile("testNoPlaceHolderReplacement", staleContent);
+
+        MockLog mockLog = new MockLog();
+        MergingReport mergingReport = ManifestMerger2
+                .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                .withFeatures(ManifestMerger2.Invoker.Feature.NO_PLACEHOLDER_REPLACEMENT)
+                .withFileStreamProvider(new ManifestMerger2.FileStreamProvider() {
+                    @Override
+                    protected InputStream getInputStream(@NonNull File file)
+                            throws FileNotFoundException {
+                        return new ByteArrayInputStream(xml.getBytes(Charsets.UTF_8));
+                    }
+                })
                 .merge();
 
         assertTrue(mergingReport.getResult().isSuccess());
