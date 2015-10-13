@@ -213,6 +213,12 @@ public final class TimelineComponent extends AnimatedComponent
     private float mEventProgress;
 
     /**
+     * The reference values for which guiding horizontal lines are drawn. The colored lines provide guidance like the stream values
+     * should be at most a reference value, or at least a reference value.
+     */
+    private Map<Float, Color> mReferences = new HashMap<Float, Color>();
+
+    /**
      * Creates a timeline component that renders the given timeline data. It will animate the
      * timeline data by showing the value at the current time on the right y-axis of the graph.
      *
@@ -308,6 +314,7 @@ public final class TimelineComponent extends AnimatedComponent
         drawTimeMarkers(g2d);
         drawMarkers(g2d);
         drawGuides(g2d);
+        drawReferenceLines(g2d);
 
         mFirstFrame = false;
     }
@@ -601,6 +608,21 @@ public final class TimelineComponent extends AnimatedComponent
             g2d.drawString(marker, markerPosition - metrics.stringWidth(marker),
                     y + metrics.getAscent() * 0.5f);
         }
+    }
+
+    private void drawReferenceLines(Graphics2D g2d) {
+        for(Map.Entry<Float, Color> entry : mReferences.entrySet()) {
+            float reference = entry.getKey();
+            if (reference <= mCurrentMax && reference >= mCurrentMin) {
+                g2d.setColor(entry.getValue());
+                int y = (int)valueToY(reference);
+                g2d.drawLine(LEFT_MARGIN + 1, y, mRight - 1, y);
+            }
+        }
+    }
+
+    public void addReference(float reference, @NonNull Color color) {
+        mReferences.put(reference, color);
     }
 
     private void drawGuides(Graphics2D g2d) {
