@@ -115,26 +115,6 @@ public class ${CollectionName}Activity extends ${superClass} {
 
         private final List<DummyContent.DummyItem> mValues;
 
-        public class ViewHolder extends RecyclerView.ViewHolder {
-            public DummyContent.DummyItem mItem;
-
-            public final View mView;
-            public final TextView mIdView;
-            public final TextView mContentView;
-
-            public ViewHolder(View view) {
-                super(view);
-                mView = view;
-                mIdView = (TextView) view.findViewById(R.id.id);
-                mContentView = (TextView) view.findViewById(R.id.content);
-            }
-
-            @Override
-            public String toString() {
-                return super.toString() + " '" + mContentView.getText() + "'";
-            }
-        }
-
         public SimpleItemRecyclerViewAdapter(List<DummyContent.DummyItem> items) {
             mValues = items;
         }
@@ -163,8 +143,7 @@ public class ${CollectionName}Activity extends ${superClass} {
                         getSupportFragmentManager().beginTransaction()
                                 .replace(R.id.${detail_name}_container, fragment)
                                 .commit();
-                    }
-                    else {
+                    } else {
                         Context context = v.getContext();
                         Intent intent = new Intent(context, ${DetailName}Activity.class);
                         intent.putExtra(${DetailName}Fragment.ARG_ITEM_ID, holder.mItem.id);
@@ -178,6 +157,25 @@ public class ${CollectionName}Activity extends ${superClass} {
         @Override
         public int getItemCount() {
             return mValues.size();
+        }
+
+        public class ViewHolder extends RecyclerView.ViewHolder {
+            public final View mView;
+            public final TextView mIdView;
+            public final TextView mContentView;
+            public DummyContent.DummyItem mItem;
+
+            public ViewHolder(View view) {
+                super(view);
+                mView = view;
+                mIdView = (TextView) view.findViewById(R.id.id);
+                mContentView = (TextView) view.findViewById(R.id.content);
+            }
+
+            @Override
+            public String toString() {
+                return super.toString() + " '" + mContentView.getText() + "'";
+            }
         }
     }
 }
