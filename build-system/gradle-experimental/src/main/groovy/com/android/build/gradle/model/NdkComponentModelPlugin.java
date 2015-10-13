@@ -18,7 +18,9 @@ package com.android.build.gradle.model;
 
 import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
 import static com.android.build.gradle.model.ModelConstants.ARTIFACTS;
+import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFIG;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LanguageRegistryUtils;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
 import com.android.build.gradle.internal.NdkHandler;
@@ -28,9 +30,14 @@ import com.android.build.gradle.internal.dependency.ArtifactContainer;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.managed.BuildType;
+import com.android.build.gradle.managed.NativeBuildConfig;
+import com.android.build.gradle.managed.NativeLibrary;
+import com.android.build.gradle.managed.NativeSourceFolder;
+import com.android.build.gradle.managed.NativeToolchain;
 import com.android.build.gradle.managed.NdkAbiOptions;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.ProductFlavor;
+import com.android.build.gradle.ndk.internal.BinaryToolHelper;
 import com.android.build.gradle.ndk.internal.NdkConfiguration;
 import com.android.build.gradle.ndk.internal.NdkExtensionConvention;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
@@ -43,6 +50,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
 import org.gradle.api.BuildableModelElement;
@@ -55,6 +63,7 @@ import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
+import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.internal.registry.LanguageRegistration;
 import org.gradle.language.base.internal.registry.LanguageRegistry;
 import org.gradle.language.c.plugins.CPlugin;
@@ -67,6 +76,7 @@ import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
 import org.gradle.model.Validate;
+import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.nativeplatform.BuildTypeContainer;
 import org.gradle.nativeplatform.FlavorContainer;
 import org.gradle.nativeplatform.NativeBinarySpec;
@@ -78,17 +88,33 @@ import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
 import org.gradle.platform.base.BinaryContainer;
 import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.platform.base.PlatformContainer;
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+
+import javax.inject.Inject;
 
 /**
  * Plugin for Android NDK applications.
  */
 public class NdkComponentModelPlugin implements Plugin<Project> {
     private Project project;
+    @NonNull
+    private final ToolingModelBuilderRegistry toolingRegistry;
+    @NonNull
+    private final ModelRegistry modelRegistry;
+
+    @Inject
+    private NdkComponentModelPlugin(
+            @NonNull ToolingModelBuilderRegistry toolingRegistry,
+            @NonNull ModelRegistry modelRegistry) {
+        this.toolingRegistry = toolingRegistry;
+        this.modelRegistry = modelRegistry;
+    }
 
     @Override
     public void apply(Project project) {
@@ -97,6 +123,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         project.getPluginManager().apply(AndroidComponentModelPlugin.class);
         project.getPluginManager().apply(CPlugin.class);
         project.getPluginManager().apply(CppPlugin.class);
+
+        toolingRegistry.register(new NativeComponentModelBuilder(modelRegistry));
     }
 
     public static class Rules extends RuleSource {
@@ -361,6 +389,66 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                             }
                         }
                     });
+        }
+
+        /**
+         * Create external build config to allow NativeComponentModelBuilder to create native model.
+         */
+        @Model(EXTERNAL_BUILD_CONFIG)
+        public static void createNativeBuildModel(
+                NativeBuildConfig config,
+                ModelMap<DefaultAndroidBinary> binaries,
+                final NdkHandler ndkHandler) {
+            for (final DefaultAndroidBinary binary : binaries.values()) {
+                for (final NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
+                    if (!(nativeBinary instanceof SharedLibraryBinarySpec)) {
+                        continue;
+                    }
+                    final String abi = nativeBinary.getTargetPlatform().getName();
+                    config.getLibraries().create(
+                            binary.getName() + '-' + abi,
+                            new Action<NativeLibrary>() {
+                                @Override
+                                public void execute(NativeLibrary nativeLibrary) {
+                                    nativeLibrary.setOutput(
+                                            ((SharedLibraryBinarySpec) nativeBinary).getSharedLibraryFile());
+                                    Set<File> srcFolders = Sets.newHashSet();
+
+                                    for (LanguageSourceSet sourceSet : nativeBinary.getSources()) {
+                                        srcFolders.addAll(sourceSet.getSource().getSrcDirs());
+                                    }
+                                    final List<String> cFlags =
+                                            BinaryToolHelper.getCCompiler(nativeBinary).getArgs();
+                                    final List<String> cppFlags =
+                                            BinaryToolHelper.getCppCompiler(nativeBinary).getArgs();
+                                    for (final File srcFolder : srcFolders) {
+                                        nativeLibrary.getFolders().create(
+                                                new Action<NativeSourceFolder>() {
+                                                    @Override
+                                                    public void execute(NativeSourceFolder nativeSourceFolder) {
+                                                        nativeSourceFolder.setSrc(srcFolder);
+                                                        nativeSourceFolder.getCFlags().addAll(cFlags);
+                                                        nativeSourceFolder.getCppFlags().addAll(cppFlags);
+                                                    }
+                                                });
+                                    }
+                                    nativeLibrary.setToolchain("ndk-" + abi);
+                                }
+                            });
+                }
+            }
+            for (final Abi abi : ndkHandler.getSupportedAbis()) {
+                config.getToolchains().create("ndk-" + abi.getName(),
+                        new Action<NativeToolchain>() {
+                            @Override
+                            public void execute(NativeToolchain nativeToolchain) {
+                                nativeToolchain.setCCompilerExecutable(
+                                        ndkHandler.getCCompiler(abi));
+                                nativeToolchain.setCppCompilerExecutable(
+                                        ndkHandler.getCppCompiler(abi));
+                            }
+                        });
+            }
         }
 
         @Finalize
