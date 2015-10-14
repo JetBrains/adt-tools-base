@@ -125,6 +125,10 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
+
+        if (!canBeInstantRunEnabled(access)) {
+            return super.visitMethod(access, name, desc, signature, exceptions);
+        }
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
         if (name.equals("<clinit>")) {
             return defaultVisitor;
@@ -366,7 +370,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     private static void addAllNewMethods(Map<String, MethodNode> methods, ClassNode classNode) {
         //noinspection unchecked
         for (MethodNode method : (List<MethodNode>) classNode.methods) {
-            if (!methods.containsKey(method.name + method.desc)) {
+            if (canBeInstantRunEnabled(method.access)
+                    && !methods.containsKey(method.name + method.desc)) {
                 methods.put(method.name + method.desc, method);
             }
         }
