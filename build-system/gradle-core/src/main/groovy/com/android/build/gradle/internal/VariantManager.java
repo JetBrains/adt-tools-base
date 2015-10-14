@@ -826,7 +826,7 @@ public class VariantManager implements VariantModel {
                     new com.android.build.gradle.internal.dsl.SigningConfig("externalOverride");
 
             signingConfigDsl.setStoreFile(new File(signingOptions.storeFile));
-            signingConfigDsl.setStorePassword(signingOptions.keyPassword);
+            signingConfigDsl.setStorePassword(signingOptions.storePassword);
             signingConfigDsl.setKeyAlias(signingOptions.keyAlias);
             signingConfigDsl.setKeyPassword(signingOptions.keyPassword);
 
