@@ -37,7 +37,7 @@ class ComponentSigningConfigTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldApp())
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create();
 
     @BeforeClass

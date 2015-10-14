@@ -30,7 +30,7 @@ import org.junit.Test
 class AndroidComponentPluginTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create();
 
     @BeforeClass
