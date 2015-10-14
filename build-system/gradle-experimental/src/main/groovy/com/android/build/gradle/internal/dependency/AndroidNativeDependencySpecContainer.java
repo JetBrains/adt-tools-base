@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal;
+package com.android.build.gradle.internal.dependency;
 
+import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;

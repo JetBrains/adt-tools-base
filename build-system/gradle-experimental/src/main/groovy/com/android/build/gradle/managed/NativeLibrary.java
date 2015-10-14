@@ -16,10 +16,12 @@
 
 package com.android.build.gradle.managed;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import org.gradle.api.Named;
 import org.gradle.model.Managed;
 import org.gradle.model.ModelSet;
-import org.gradle.model.Unmanaged;
 
 import java.io.File;
 import java.util.List;
@@ -29,36 +31,50 @@ import java.util.List;
  */
 @Managed
 public interface NativeLibrary extends Named {
+
     /**
      * Executable for building the library.
      */
+    @Nullable
     String getExecutable();
     void setExecutable(String executable);
 
     /**
      * Arguments to the executable for building the project.
      */
+    @NonNull
     List<String> getArgs();
+
+    /**
+     * Target ABI.
+     */
+    @Nullable
+    String getAbi();
+    void setAbi(String abi);
 
     /**
      * Name of the toolchain.
      */
+    @Nullable
     String getToolchain();
     void setToolchain(String toolchain);
 
     /**
      * Folders containing source files.
      */
+    @NonNull
     ModelSet<NativeSourceFolder> getFolders();
 
     /**
      * Source files.
      */
+    @NonNull
     ModelSet<NativeSourceFile> getFiles();
 
     /**
      * The output file.
      */
+    @Nullable
     File getOutput();
     void setOutput(File output);
 }
