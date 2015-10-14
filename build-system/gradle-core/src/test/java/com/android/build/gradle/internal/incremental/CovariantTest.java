@@ -28,7 +28,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
- * Created by jedo on 10/13/15.
+ * Test for covariant return types.
  */
 public class CovariantTest {
 
