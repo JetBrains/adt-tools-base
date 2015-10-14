@@ -146,8 +146,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
 
-        if ((access & Opcodes.ACC_ABSTRACT) != 0) {
-            // Nothing to generate;
+        if (!canBeInstantRunEnabled(access)) {
+            // Nothing to generate.
             return null;
         }
         if (name.equals("<clinit>")) {
@@ -248,7 +248,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     break;
                 case Opcodes.PUTFIELD:
                 case Opcodes.GETFIELD:
-                    handled = visitFieldAccess(opcode, name, desc, accessRight);
+                    handled = visitFieldAccess(opcode, owner, name, desc, accessRight);
                     break;
                 default:
                     System.out.println("Unhandled field opcode " + opcode);
@@ -286,13 +286,14 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
          *
          * @param opcode the field access opcode, can only be {@link Opcodes#PUTFIELD} or
          *               {@link Opcodes#GETFIELD}
+         * @param owner the field declaring class
          * @param name the field name
          * @param desc the field type
          * @param accessRight the {@link AccessRight} for the field.
          * @return true if the field access was handled or false otherwise.
          */
         private boolean visitFieldAccess(
-                int opcode, String name, String desc, AccessRight accessRight) {
+                int opcode, String owner, String name, String desc, AccessRight accessRight) {
 
             // we should make this more efficient, have a per field access type method
             // for getting and setting field values.
@@ -302,13 +303,18 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                         if (DEBUG) {
                             System.out.println("Get field");
                         }
+                        // push declaring class
+                        visitLdcInsn(Type.getType("L" + owner + ";"));
+
                         // the instance of the owner class we are getting the field value from
                         // is on top of the stack. It could be "this"
                         push(name);
+
                         // Stack :  <receiver>
+                        //          <field_declaring_class>
                         //          <field_name>
                         invokeStatic(RUNTIME_TYPE,
-                                Method.getMethod("Object getPrivateField(Object, String)"));
+                                Method.getMethod("Object getPrivateField(Object, Class, String)"));
                         // Stack : <field_value>
                         unbox(Type.getType(desc));
                         break;
@@ -320,14 +326,18 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                         // is second on the stack. It could be "this"
                         // top of the stack is the new value we are trying to set, box it.
                         box(Type.getType(desc));
+
+                        // push declaring class
+                        visitLdcInsn(Type.getType("L" + owner + ";"));
                         // push the field name.
                         push(name);
                         // Stack :  <receiver>
                         //          <boxed_field_value>
+                        //          <field_declaring_class>
                         //          <field_name>
                         invokeStatic(RUNTIME_TYPE,
                                 Method.getMethod(
-                                        "void setPrivateField(Object, Object, String)"));
+                                        "void setPrivateField(Object, Object, Class, String)"));
                         break;
                     default:
                         throw new RuntimeException(
@@ -865,6 +875,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
         for (MethodNode methodNode : methods) {
             if (methodNode.name.equals("<clinit>") || methodNode.name.equals("<init>")) {
+                continue;
+            }
+            if (!canBeInstantRunEnabled(methodNode.access)) {
                 continue;
             }
             String name = methodNode.name;

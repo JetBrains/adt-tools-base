@@ -67,29 +67,23 @@ public class GenericInstantRuntime {
     }
 
     @Nullable
-    public static Object getPrivateField(Object targetObject, String fieldName) {
-        return getFieldValue(targetObject.getClass(), targetObject, fieldName);
-    }
-
-    @Nullable
-    public static void setPrivateField(@NonNull Object targetObject, @NonNull Object value, @NonNull  String fieldName) {
-        setFieldValue(targetObject.getClass(), targetObject, value, fieldName);
-    }
-
-    @Nullable
     public static Object getStaticPrivateField(Class targetClass, String fieldName) {
-        return getFieldValue(targetClass, null /* targetObject */, fieldName);
+        return getPrivateField(null /* targetObject */, targetClass, fieldName);
     }
 
     @Nullable
     public static void setStaticPrivateField(
             @NonNull Object value, @NonNull Class targetClass, @NonNull  String fieldName) {
-        setFieldValue(targetClass, null /* targetObject */, value, fieldName);
+        setPrivateField(null /* targetObject */, value, targetClass, fieldName);
     }
 
     @Nullable
-    private static void setFieldValue(
-            @NonNull Class targetClass, @Nullable Object targetObject, @Nullable  Object value, @NonNull  String fieldName) {
+    public static void setPrivateField(
+            @Nullable Object targetObject,
+            @Nullable  Object value,
+            @NonNull Class targetClass,
+            @NonNull  String fieldName) {
+
         try {
             Field declaredField = getField(targetClass, fieldName);
             declaredField.set(targetObject, value);
@@ -103,10 +97,11 @@ public class GenericInstantRuntime {
     }
 
     @Nullable
-    private static Object getFieldValue(
-            @NonNull Class targetClass,
+    public static Object getPrivateField(
             @Nullable Object targetObject,
+            @NonNull Class targetClass,
             @NonNull  String fieldName) {
+
         try {
             Field declaredField = getField(targetClass, fieldName);
             return declaredField.get(targetObject);
