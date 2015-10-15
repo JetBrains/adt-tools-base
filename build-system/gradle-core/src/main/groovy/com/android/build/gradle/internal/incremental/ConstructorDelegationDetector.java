@@ -23,6 +23,7 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.VarInsnNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
@@ -264,6 +265,17 @@ public class ConstructorDelegationDetector {
         while (insn != null) {
             insn.accept(body);
             insn = insn.getNext();
+        }
+
+        // manually transfer the exception table from the existing constructor to the new
+        // "init$body" method. The labels were transferred just above so we can reuse them.
+
+        //noinspection unchecked
+        for (TryCatchBlockNode tryCatchBlockNode : (List<TryCatchBlockNode>) method.tryCatchBlocks) {
+            body.visitTryCatchBlock(tryCatchBlockNode.start.getLabel(),
+                    tryCatchBlockNode.end.getLabel(),
+                    tryCatchBlockNode.handler.getLabel(),
+                    tryCatchBlockNode.type);
         }
 
         return new Constructor(loadThis, initArgs, delegation, body);
