@@ -330,7 +330,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
         // Regression test for https://code.google.com/p/android/issues/detail?id=77594
         mEnabled = Collections.singleton(DEPENDENCY);
         assertEquals(""
-                + "build.gradle:13: Warning: A newer version of com.google.code.gson:gson than 2.2 is available: 2.3 [GradleDependency]\n"
+                + "build.gradle:13: Warning: A newer version of com.google.code.gson:gson than 2.2 is available: 2.4 [GradleDependency]\n"
                 + "    compile 'com.google.code.gson:gson:2.2'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
