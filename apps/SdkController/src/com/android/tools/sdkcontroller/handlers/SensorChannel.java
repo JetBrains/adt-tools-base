@@ -16,10 +16,6 @@
 
 package com.android.tools.sdkcontroller.handlers;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -28,10 +24,13 @@ import android.hardware.SensorManager;
 import android.os.Message;
 import android.os.SystemClock;
 import android.util.Log;
-
 import com.android.tools.sdkcontroller.lib.Channel;
 import com.android.tools.sdkcontroller.lib.ProtocolConstants;
 import com.android.tools.sdkcontroller.service.ControllerService;
+
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Implements sensors emulation.

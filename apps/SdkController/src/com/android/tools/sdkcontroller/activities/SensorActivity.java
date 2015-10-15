@@ -16,10 +16,6 @@
 
 package com.android.tools.sdkcontroller.activities;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import android.os.Bundle;
 import android.os.Message;
 import android.util.Log;
@@ -28,18 +24,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnFocusChangeListener;
 import android.view.View.OnKeyListener;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.TableLayout;
-import android.widget.TableRow;
-import android.widget.TextView;
-
+import android.widget.*;
 import com.android.tools.sdkcontroller.R;
 import com.android.tools.sdkcontroller.handlers.SensorChannel;
 import com.android.tools.sdkcontroller.handlers.SensorChannel.MonitoredSensor;
 import com.android.tools.sdkcontroller.lib.Channel;
 import com.android.tools.sdkcontroller.service.ControllerService.ControllerBinder;
 import com.android.tools.sdkcontroller.service.ControllerService.ControllerListener;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Activity that displays and controls the sensors from {@link SensorChannel}.

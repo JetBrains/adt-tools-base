@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.tasks;
 
 import com.android.annotations.NonNull;
 import com.google.common.io.Files;
-
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.OutputFile;

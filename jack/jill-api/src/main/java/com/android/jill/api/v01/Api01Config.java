@@ -19,9 +19,8 @@ package com.android.jill.api.v01;
 
 import com.android.jill.api.JillConfig;
 
-import java.io.File;
-
 import javax.annotation.Nonnull;
+import java.io.File;
 
 /**
 * A configuration implementation for API level 01 of Jill.

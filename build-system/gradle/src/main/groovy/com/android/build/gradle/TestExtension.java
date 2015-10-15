@@ -7,9 +7,8 @@ import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
-import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.builder.core.AndroidBuilder;
-
+import com.android.builder.model.SigningConfig;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.internal.DefaultDomainObjectSet;
 import org.gradle.api.internal.project.ProjectInternal;

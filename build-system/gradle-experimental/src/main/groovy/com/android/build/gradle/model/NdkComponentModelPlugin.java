@@ -16,9 +16,6 @@
 
 package com.android.build.gradle.model;
 
-import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
-import static com.android.build.gradle.model.ModelConstants.ABI_OPTIONS;
-
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.ProductFlavorCombo;
@@ -39,32 +36,15 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-
-import org.gradle.api.Action;
-import org.gradle.api.BuildableModelElement;
-import org.gradle.api.InvalidUserDataException;
-import org.gradle.api.Plugin;
-import org.gradle.api.Project;
-import org.gradle.api.Task;
+import org.gradle.api.*;
 import org.gradle.api.internal.project.ProjectIdentifier;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.c.plugins.CPlugin;
 import org.gradle.language.cpp.plugins.CppPlugin;
-import org.gradle.model.Defaults;
-import org.gradle.model.Finalize;
-import org.gradle.model.Model;
-import org.gradle.model.ModelMap;
-import org.gradle.model.Mutate;
-import org.gradle.model.Path;
-import org.gradle.model.RuleSource;
-import org.gradle.model.Validate;
-import org.gradle.nativeplatform.BuildTypeContainer;
-import org.gradle.nativeplatform.FlavorContainer;
-import org.gradle.nativeplatform.NativeBinarySpec;
-import org.gradle.nativeplatform.NativeLibraryBinarySpec;
-import org.gradle.nativeplatform.NativeLibrarySpec;
+import org.gradle.model.*;
+import org.gradle.nativeplatform.*;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
 import org.gradle.platform.base.BinaryContainer;
 import org.gradle.platform.base.ComponentSpecContainer;
@@ -74,6 +54,9 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+
+import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
+import static com.android.build.gradle.model.ModelConstants.ABI_OPTIONS;
 
 /**
  * Plugin for Android NDK applications.

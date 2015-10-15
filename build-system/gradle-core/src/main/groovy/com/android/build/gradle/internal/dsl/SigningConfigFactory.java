@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
-
 import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.internal.reflect.Instantiator;
 /**

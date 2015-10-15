@@ -16,11 +16,10 @@
 
 package com.android.jill.api;
 
-import java.util.Collection;
-
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnegative;
 import javax.annotation.Nonnull;
+import java.util.Collection;
 
 /**
  * Provides instances of {@link JillConfig}.

@@ -16,57 +16,26 @@
 
 package com.android.build.gradle.internal.model;
 
-import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.OutputFile;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.api.ApkOutputFile;
-import com.android.build.gradle.internal.BuildTypeData;
-import com.android.build.gradle.internal.ExtraModelInfo;
-import com.android.build.gradle.internal.NdkHandler;
-import com.android.build.gradle.internal.ProductFlavorData;
-import com.android.build.gradle.internal.TaskManager;
-import com.android.build.gradle.internal.VariantManager;
+import com.android.build.gradle.internal.*;
 import com.android.build.gradle.internal.core.Abi;
-import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.ApkVariantOutputData;
-import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.internal.variant.TestVariantData;
-import com.android.build.gradle.internal.variant.TestedVariantData;
+import com.android.build.gradle.internal.variant.*;
 import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
-import com.android.builder.model.AaptOptions;
-import com.android.builder.model.AndroidArtifact;
-import com.android.builder.model.AndroidArtifactOutput;
-import com.android.builder.model.AndroidProject;
-import com.android.builder.model.ApiVersion;
-import com.android.builder.model.ArtifactMetaData;
-import com.android.builder.model.JavaArtifact;
-import com.android.builder.model.LintOptions;
-import com.android.builder.model.NativeLibrary;
-import com.android.builder.model.NativeToolchain;
-import com.android.builder.model.ProductFlavor;
-import com.android.builder.model.SigningConfig;
-import com.android.builder.model.SourceProvider;
-import com.android.builder.model.SourceProviderContainer;
-import com.android.builder.model.SyncIssue;
+import com.android.builder.model.*;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
+import com.google.common.collect.*;
 import org.gradle.api.Project;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
@@ -75,6 +44,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN;
 
 /**
  * Builder for the custom Android model.

@@ -17,17 +17,15 @@
 package com.android.ant;
 
 import com.android.xml.AndroidXPathFactory;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.Path;
 import org.xml.sax.InputSource;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 
 /**
  * Android specific XPath task.

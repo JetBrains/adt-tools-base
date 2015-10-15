@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.tasks;
 
 import com.android.annotations.Nullable;
 import com.android.builder.Version;
-
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 
