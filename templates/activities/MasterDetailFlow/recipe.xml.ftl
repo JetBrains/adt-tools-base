@@ -48,8 +48,7 @@
                    to="${escapeXmlAttribute(srcOut)}/${DetailName}Fragment.java" />
     <instantiate from="root/src/app_package/ContentListActivity.java.ftl"
                    to="${escapeXmlAttribute(srcOut)}/${CollectionName}Activity.java" />
-    <instantiate from="root/src/app_package/dummy/DummyContent.java.ftl"
-                   to="${escapeXmlAttribute(srcOut)}/dummy/DummyContent.java" />
+    <execute file="../common/recipe_dummy_content.xml.ftl" />
 
     <open file="${escapeXmlAttribute(srcOut)}/${DetailName}Fragment.java" />
     <open file="${escapeXmlAttribute(resOut)}/layout/fragment_${detail_name}.xml" />

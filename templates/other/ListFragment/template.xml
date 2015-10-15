@@ -3,7 +3,7 @@
     format="5"
     revision="3"
     name="Fragment (List)"
-    description="Creates a new empty fragment containing a list that can optionally change to a grid when on large screens. Compatible back to API level 4."
+    description="Creates a new empty fragment containing a list that can be rendered as a grid. Compatible back to API level 4."
     minApi="7"
     minBuildApi="8">
 
@@ -41,35 +41,38 @@
         help="Generate static fragment factory methods for easy instantiation" />
 
     <parameter
-        id="switchGrid"
-        name="Switch to grid view on large screens?"
-        type="boolean"
-        default="true" />
+        id="columnCount"
+        name="Column Count"
+        type="enum"
+        default="1"
+        help="The number of columns in the grid" >
+        <option id="1">1 (List)</option>
+        <option id="2">2 (Grid)</option>
+        <option id="3">3</option>
+        <option id="4">4</option>
+    </parameter>
 
     <parameter
         id="fragment_layout"
         type="string"
         constraints="layout|nonempty|unique"
         suggest="fragment_${extractLetters(objectKind?lower_case)}"
-        name="Fragment alias name"
-        visibility="switchGrid" />
-
-    <parameter
-        id="fragment_layout_grid"
-        type="string"
-        constraints="layout|nonempty|unique"
-        suggest="fragment_${extractLetters(objectKind?lower_case)}_grid"
-        name="Grid layout file name"
-        visibility="switchGrid" />
+        name="Object content layout file name" />
 
     <parameter
         id="fragment_layout_list"
         type="string"
         constraints="layout|nonempty|unique"
         suggest="fragment_${extractLetters(objectKind?lower_case)}_list"
-        name="List layout file name"
-        visibility="switchGrid" />
+        name="List layout file name" />
 
+    <parameter
+        id="adapterClassName"
+        type="string"
+        constraints="nonempty|class|unique"
+        suggest="My${extractLetters(objectKind)}RecyclerViewAdapter"
+        name="Adapter class name"
+        visible="false"/>
 
     <!-- 128x128 thumbnails relative to template.xml -->
     <thumbs>
