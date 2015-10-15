@@ -23,12 +23,13 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.api.AndroidSourceDirectorySet;
 import com.android.build.gradle.api.AndroidSourceFile;
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.android.build.gradle.api.VariantFilter;
 import com.android.build.gradle.internal.BuildTypeData;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.ProductFlavorData;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
-import com.android.build.gradle.internal.coverage.JacocoExtension;
+import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
@@ -36,7 +37,6 @@ import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.dsl.PreprocessingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
 import com.android.build.gradle.managed.BuildType;
@@ -44,6 +44,7 @@ import com.android.build.gradle.managed.ProductFlavor;
 import com.android.build.gradle.managed.SigningConfig;
 import com.android.build.gradle.model.AndroidComponentModelSourceSet;
 import com.android.build.gradle.managed.AndroidConfig;
+import com.android.build.transform.api.Transform;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.testing.api.DeviceProvider;
@@ -54,6 +55,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
+import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.language.base.FunctionalSourceSet;
@@ -63,8 +65,6 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-
-import groovy.lang.Closure;
 
 /**
  * An adaptor to convert a managed.AndroidConfig to an model.AndroidConfig.
@@ -121,6 +121,18 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
         return model.getTestServers();
     }
 
+    @NonNull
+    @Override
+    public List<Transform> getTransforms() {
+        return ImmutableList.of();
+    }
+
+    @NonNull
+    @Override
+    public List<List<Object>> getTransformsDependencies() {
+        return ImmutableList.of();
+    }
+
     @Override
     public String getDefaultPublishConfig() {
         return model.getDefaultPublishConfig();
@@ -132,7 +144,7 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
     }
 
     @Override
-    public Closure<Void> getVariantFilter() {
+    public Action<VariantFilter> getVariantFilter() {
         return model.getVariantFilter();
     }
 
@@ -149,11 +161,6 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
     @Override
     public boolean getGeneratePureSplits() {
         return model.getGeneratePureSplits();
-    }
-
-    @Override
-    public PreprocessingOptions getPreprocessingOptions() {
-        return model.getPreProcessingOptions();
     }
 
     @Override
@@ -232,7 +239,7 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
     }
 
     @Override
-    public JacocoExtension getJacoco() {
+    public JacocoOptions getJacoco() {
         return model.getJacoco();
     }
 

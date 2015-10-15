@@ -29,6 +29,7 @@ import com.google.common.base.Objects;
 @Immutable
 public final class SourcePosition {
 
+    @NonNull
     public static final SourcePosition UNKNOWN = new SourcePosition();
 
     private final int mStartLine, mStartColumn, mStartOffset, mEndLine, mEndColumn, mEndOffset;
@@ -153,4 +154,31 @@ public final class SourcePosition {
         return mEndOffset;
     }
 
+    /**
+     * Compares the start of this SourcePosition with another.
+     * @return 0 if they are the same, &lt; 0 if this &lt; other and &gt; 0 if this &gt; other
+     */
+    public int compareStart(@NonNull SourcePosition other) {
+        if (mStartOffset != -1 && other.mStartOffset != -1) {
+            return mStartOffset - other.mStartOffset;
+        }
+        if (mStartLine == other.mStartLine) {
+            return mStartColumn - other.mStartColumn;
+        }
+        return mStartLine - other.mStartLine;
+    }
+
+    /**
+     * Compares the end of this SourcePosition with another.
+     * @return 0 if they are the same, &lt; 0 if this &lt; other and &gt; 0 if this &gt; other
+     */
+    public int compareEnd(@NonNull SourcePosition other) {
+        if (mEndOffset != -1 && other.mEndOffset != -1) {
+            return mEndOffset - other.mEndOffset;
+        }
+        if (mEndLine == other.mEndLine) {
+            return mEndColumn - other.mEndColumn;
+        }
+        return mEndLine - other.mEndLine;
+    }
 }

@@ -1,24 +1,24 @@
 <?xml version="1.0"?>
 <recipe>
-    <instantiate from="build.gradle.ftl"
+    <instantiate from="root/build.gradle.ftl"
                    to="${escapeXmlAttribute(topOut)}/build.gradle" />
 
 <#if makeIgnore>
-    <copy from="project_ignore"
+    <copy from="root/project_ignore"
             to="${escapeXmlAttribute(topOut)}/.gitignore" />
 </#if>
 
-    <instantiate from="settings.gradle.ftl"
+    <instantiate from="root/settings.gradle.ftl"
                    to="${escapeXmlAttribute(topOut)}/settings.gradle" />
 
-    <instantiate from="gradle.properties.ftl"
+    <instantiate from="root/gradle.properties.ftl"
                    to="${escapeXmlAttribute(topOut)}/gradle.properties" />
 
     <copy from="${templateRoot}/gradle/wrapper"
         to="${escapeXmlAttribute(topOut)}/" />
 
 <#if sdkDir??>
-  <instantiate from="local.properties.ftl"
+  <instantiate from="root/local.properties.ftl"
            to="${escapeXmlAttribute(topOut)}/local.properties" />
 </#if>
 </recipe>

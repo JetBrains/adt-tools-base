@@ -6,6 +6,7 @@
     <section>
         <title>Introduction</title>
         <para>This is the DSL reference for Android Gradle Plugin.</para>
+        <para>Start reading by finding the right extension type for the plugin you are using, e.g. <code>AppExtension</code></para>
     </section>
 
     <!--
@@ -20,13 +21,26 @@
       -->
 
     <section>
-        <title>Android configuration structure</title>
+        <title>Extension types</title>
+        <para>Listed below are the Gradle extension types used by respective plugins:</para>
         <table>
-            <title>Android configuration blocks</title>
+            <title>Extension types</title>
+            <tr><td>com.android.build.gradle.AppExtension</td></tr>
+            <tr><td>com.android.build.gradle.LibraryExtension</td></tr>
+            <tr><td>com.android.build.gradle.TestExtension</td></tr>
+        </table>
+    </section>
+
+    <section>
+        <title>Configuration blocks</title>
+        <para>Listed below are the configuration blocks available within <code>android</code></para>
+        <table>
+            <title>Configuration blocks</title>
+            <tr><td>defaultConfig</td></tr>
             <tr><td>aaptOptions</td></tr>
+            <tr><td>adbOptions</td></tr>
             <tr><td>buildTypes</td></tr>
             <tr><td>compileOptions</td></tr>
-            <tr><td>defaultConfig</td></tr>
             <tr><td>dexOptions</td></tr>
             <tr><td>jacoco</td></tr>
             <tr><td>lintOptions</td></tr>
@@ -39,31 +53,4 @@
         </table>
     </section>
 
-    <section>
-        <title>DSL types</title>
-        <para>Listed below are some of the central types which are used in the Android plugin:</para>
-        <table>
-            <title>DSL types</title>
-            <tr><td>com.android.build.gradle.AppExtension</td></tr>
-            <tr><td>com.android.build.gradle.BaseExtension</td></tr>
-            <tr><td>com.android.build.gradle.LibraryExtension</td></tr>
-            <tr><td>com.android.build.gradle.TestExtension</td></tr>
-            <tr><td>com.android.build.gradle.api.AndroidSourceDirectorySet</td></tr>
-            <tr><td>com.android.build.gradle.api.AndroidSourceFile</td></tr>
-            <tr><td>com.android.build.gradle.api.AndroidSourceSet</td></tr>
-            <tr><td>com.android.build.gradle.internal.CompileOptions</td></tr>
-            <tr><td>com.android.build.gradle.internal.api.VariantFilter</td></tr>
-            <tr><td>com.android.build.gradle.internal.coverage.JacocoExtension</td></tr>
-            <tr><td>com.android.build.gradle.internal.dsl.AaptOptions</td></tr>
-            <tr><td>com.android.build.gradle.internal.dsl.BuildType</td></tr>
-            <tr><td>com.android.build.gradle.internal.dsl.DexOptions</td></tr>
-            <tr><td>com.android.build.gradle.internal.dsl.LintOptions</td></tr>
-            <tr><td>com.android.build.gradle.internal.dsl.PackagingOptions</td></tr>
-            <tr><td>com.android.build.gradle.internal.dsl.ProductFlavor</td></tr>
-            <tr><td>com.android.build.gradle.internal.dsl.SigningConfig</td></tr>
-            <tr><td>com.android.build.gradle.internal.dsl.Splits</td></tr>
-            <tr><td>com.android.build.gradle.internal.dsl.TestOptions.UnitTestOptions</td></tr>
-            <tr><td>com.android.build.gradle.internal.dsl.TestOptions</td></tr>
-        </table>
-    </section>
 </book>

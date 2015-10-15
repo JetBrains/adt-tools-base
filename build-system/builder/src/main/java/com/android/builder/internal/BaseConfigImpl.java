@@ -26,7 +26,6 @@ import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +35,7 @@ import java.util.Map;
 public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private static final long serialVersionUID = 1L;
 
+    private String mApplicationIdSuffix = null;
     private final Map<String, ClassField> mBuildConfigFields = Maps.newTreeMap();
     private final Map<String, ClassField> mResValues = Maps.newTreeMap();
     private final List<File> mProguardFiles = Lists.newArrayList();
@@ -53,6 +53,24 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
 
     @NonNull
     private List<File> mJarJarRuleFiles = Lists.newArrayList();
+
+    /**
+     * Application id suffix applied to this base config.
+     */
+    @NonNull
+    public BaseConfigImpl setApplicationIdSuffix(@Nullable String applicationIdSuffix) {
+        mApplicationIdSuffix = applicationIdSuffix;
+        return this;
+    }
+
+    /**
+     * Application id suffix applied to this base config.
+     */
+    @Override
+    @Nullable
+    public String getApplicationIdSuffix() {
+        return mApplicationIdSuffix;
+    }
 
     /**
      * Adds a BuildConfig field.
@@ -177,6 +195,8 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         setBuildConfigFields(that.getBuildConfigFields());
         setResValues(that.getResValues());
 
+        mApplicationIdSuffix = that.getApplicationIdSuffix();
+
         mProguardFiles.clear();
         mProguardFiles.addAll(that.getProguardFiles());
 
@@ -261,7 +281,8 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
 
         BaseConfigImpl that = (BaseConfigImpl) o;
 
-        return Objects.equal(mBuildConfigFields, that.mBuildConfigFields) &&
+        return Objects.equal(mApplicationIdSuffix, that.mApplicationIdSuffix) &&
+                Objects.equal(mBuildConfigFields, that.mBuildConfigFields) &&
                 Objects.equal(mConsumerProguardFiles, that.mConsumerProguardFiles) &&
                 Objects.equal(mManifestPlaceholders, that.mManifestPlaceholders) &&
                 Objects.equal(mMultiDexEnabled, that.mMultiDexEnabled) &&
@@ -276,6 +297,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     @Override
     public int hashCode() {
         return Objects.hashCode(
+                mApplicationIdSuffix,
                 mBuildConfigFields,
                 mResValues,
                 mProguardFiles,
@@ -290,7 +312,8 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     @Override
     public String toString() {
         return "BaseConfigImpl{" +
-                "mBuildConfigFields=" + mBuildConfigFields +
+                "applicationIdSuffix=" + mApplicationIdSuffix +
+                ", mBuildConfigFields=" + mBuildConfigFields +
                 ", mResValues=" + mResValues +
                 ", mProguardFiles=" + mProguardFiles +
                 ", mConsumerProguardFiles=" + mConsumerProguardFiles +

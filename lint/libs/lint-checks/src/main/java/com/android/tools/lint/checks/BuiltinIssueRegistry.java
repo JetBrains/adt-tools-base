@@ -30,7 +30,7 @@ import java.util.List;
 /** Registry which provides a list of checks to be performed on an Android project */
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
-    static final int INITIAL_CAPACITY = 220;
+    static final int INITIAL_CAPACITY = 224;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -39,7 +39,9 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(AddJavascriptInterfaceDetector.ISSUE);
         issues.add(AlarmDetector.ISSUE);
         issues.add(AlwaysShowActionDetector.ISSUE);
-        issues.add(AnnotationDetector.ISSUE);
+        issues.add(AnnotationDetector.FLAG_STYLE);
+        issues.add(AnnotationDetector.INSIDE_METHOD);
+        issues.add(AnnotationDetector.UNIQUE);
         issues.add(ApiDetector.INLINED);
         issues.add(ApiDetector.OVERRIDE);
         issues.add(ApiDetector.UNSUPPORTED);
@@ -67,6 +69,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(CustomViewDetector.ISSUE);
         issues.add(CutPasteDetector.ISSUE);
         issues.add(DateFormatDetector.DATE_FORMAT);
+        issues.add(SetTextDetector.SET_TEXT_I18N);
         issues.add(DeprecationDetector.ISSUE);
         issues.add(DetectMissingPrefix.MISSING_NAMESPACE);
         issues.add(DosLineEndingDetector.ISSUE);
@@ -241,6 +244,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(UselessViewDetector.USELESS_LEAF);
         issues.add(UselessViewDetector.USELESS_PARENT);
         issues.add(Utf8Detector.ISSUE);
+        issues.add(VectorDetector.ISSUE);
         issues.add(ViewConstructorDetector.ISSUE);
         issues.add(ViewHolderDetector.ISSUE);
         issues.add(ViewTagDetector.ISSUE);

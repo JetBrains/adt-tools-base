@@ -207,7 +207,7 @@ public class HardwareProperties {
             String line = null;
             HardwareProperty prop = null;
             while ((line = reader.readLine()) != null) {
-                if (line.length() > 0 && line.charAt(0) != '#') {
+                if (!line.isEmpty() && line.charAt(0) != '#') {
                     Matcher m = PATTERN_PROP.matcher(line);
                     if (m.matches()) {
                         String key = m.group(1);
@@ -249,7 +249,7 @@ public class HardwareProperties {
                             int n = 0;
                             for (int i = 0; i < v.length; i++) {
                                 String s = v[i] = v[i].trim();
-                                if (s.length() > 0) {
+                                if (!s.isEmpty()) {
                                     n++;
                                 }
                             }
@@ -257,7 +257,7 @@ public class HardwareProperties {
                             n = 0;
                             for (int i = 0; i < v.length; i++) {
                                 String s = v[i];
-                                if (s.length() > 0) {
+                                if (!s.isEmpty()) {
                                     prop.mEnum[n++] = s;
                                 }
                             }

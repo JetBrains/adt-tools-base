@@ -21,6 +21,8 @@ import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
 import static com.android.SdkConstants.VALUE_FALSE;
 import static com.android.SdkConstants.VALUE_TRUE;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.CHECK_RESULT_ANNOTATION;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -35,6 +37,7 @@ import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation.Value;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedPackage;
 import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -337,6 +340,29 @@ public class ExternalAnnotationRepository {
         return null;
     }
 
+    @Nullable
+    public ResolvedAnnotation getAnnotation(@NonNull ResolvedPackage pkg, @NonNull String type) {
+        for (AnnotationsDatabase database : mDatabases) {
+            ResolvedAnnotation annotation = database.getAnnotation(pkg, type);
+            if (annotation != null) {
+                return annotation;
+            }
+        }
+
+        return null;
+    }
+    @Nullable
+    public Collection<ResolvedAnnotation> getAnnotations(@NonNull ResolvedPackage pkg) {
+        for (AnnotationsDatabase database : mDatabases) {
+            Collection<ResolvedAnnotation> annotations = database.getAnnotations(pkg);
+            if (annotations != null) {
+                return annotations;
+            }
+        }
+
+        return null;
+    }
+
     // ---- Reading from storage ----
 
     private static final Pattern XML_SIGNATURE = Pattern.compile(
@@ -445,7 +471,7 @@ public class ExternalAnnotationRepository {
                 return m.parameterAnnotations.get(parameterIndex);
             }
 
-            return m.annotations;
+            return null;
         }
 
         @Nullable
@@ -479,6 +505,35 @@ public class ExternalAnnotationRepository {
         @Nullable
         public List<ResolvedAnnotation> getAnnotations(@NonNull ResolvedAnnotation cls) {
             ClassInfo c = findClass(cls);
+            if (c == null) {
+                return null;
+            }
+
+            return c.annotations;
+        }
+
+        @Nullable
+        public ResolvedAnnotation getAnnotation(@NonNull ResolvedPackage pkg, @NonNull String type) {
+            ClassInfo c = findPackage(pkg);
+
+            if (c == null) {
+                return null;
+            }
+
+            if (c.annotations != null) {
+                for (ResolvedAnnotation annotation : c.annotations) {
+                    if (type.equals(annotation.getSignature())) {
+                        return annotation;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        @Nullable
+        public List<ResolvedAnnotation> getAnnotations(@NonNull ResolvedPackage pkg) {
+            ClassInfo c = findPackage(pkg);
             if (c == null) {
                 return null;
             }
@@ -615,6 +670,10 @@ public class ExternalAnnotationRepository {
         @Nullable
         private ClassInfo findClass(@NonNull ResolvedAnnotation cls) {
             return mClassMap.get(cls.getName());
+        }
+
+        private ClassInfo findPackage(@NonNull ResolvedPackage pkg) {
+            return mClassMap.get(pkg.getName() +".package-info");
         }
 
         @Nullable
@@ -920,7 +979,13 @@ public class ExternalAnnotationRepository {
             annotation = new ResolvedExternalAnnotation(name);
 
             List<Element> valueElements = getChildren(annotationElement);
-            if (valueElements.isEmpty()) {
+            if (valueElements.isEmpty()
+                    // Permission annotations are sometimes used as marker annotations (on
+                    // parameters) but that shouldn't let us conclude that any future
+                    // permission annotations are. Ditto for @CheckResult, where we sometimes
+                    // specify a suggestion.
+                    && !name.startsWith(PERMISSION_ANNOTATION)
+                    && !name.equals(CHECK_RESULT_ANNOTATION)) {
                 mMarkerAnnotations.put(name, annotation);
                 return annotation;
             }
@@ -1102,7 +1167,6 @@ public class ExternalAnnotationRepository {
     /** For test usage only */
     @VisibleForTesting
     static synchronized void set(ExternalAnnotationRepository singleton) {
-        assert singleton == null || sSingleton == null;
         sSingleton = singleton;
     }
 }

@@ -21,6 +21,7 @@ import com.android.annotations.NonNull;
 import com.android.io.IAbstractFile;
 import com.android.io.IAbstractFolder;
 import com.android.io.StreamException;
+import com.android.utils.SdkUtils;
 import com.google.common.io.Closeables;
 
 import java.io.BufferedReader;
@@ -256,7 +257,7 @@ public class ProjectPropertiesWorkingCopy extends ProjectProperties {
             }
         }
 
-        writer.write(String.format("%s=%s\n", key, escape(value)));
+        writer.write(String.format("%s=%s\n", key, SdkUtils.escapePropertyValue(value)));
     }
 
     /**

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="48px" height="48px" viewBox="0 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.3.3 (12081) - http://www.bohemiancoding.com/sketch -->
+    <title>ic_qset_dnd_silence</title>
+    <desc>Created with Sketch.</desc>
+    <animate></animate>
+    <animateColor></animateColor>
+    <animateMotion></animateMotion>
+    <animateTransform></animateTransform>
+    <mpath></mpath>
+    <set></set>
+    <a></a>
+    <defs></defs>
+    <glyph></glyph>
+    <marker></marker>
+    <mask></mask>
+    <missing-glyph></missing-glyph>
+    <pattern></pattern>
+    <switch></switch>
+    <symbol></symbol>
+    <feBlend></feBlend>
+    <feColorMatrix></feColorMatrix>
+    <feComponentTransfer></feComponentTransfer>
+    <feComposite></feComposite>
+    <feConvolveMatrix></feConvolveMatrix>
+    <feDiffuseLighting></feDiffuseLighting>
+    <feDisplacementMap></feDisplacementMap>
+    <feFlood></feFlood>
+    <feFuncA></feFuncA>
+    <feFuncB></feFuncB>
+    <feFuncG></feFuncG>
+    <feFuncR></feFuncR>
+    <feGaussianBlur></feGaussianBlur>
+    <feImage></feImage>
+    <feMerge></feMerge>
+    <feMergeNode></feMergeNode>
+    <feMorphology></feMorphology>
+    <feOffset></feOffset>
+    <feSpecularLighting></feSpecularLighting>
+    <feTile></feTile>
+    <feTurbulence></feTurbulence>
+    <font></font>
+    <font-face></font-face>
+    <font-face-format></font-face-format>
+    <font-face-name></font-face-name>
+    <font-face-src></font-face-src>
+    <font-face-uri></font-face-uri>
+    <hkern></hkern>
+    <vkern></vkern>
+    <linearGradient></linearGradient>
+    <radialGradient></radialGradient>
+    <stop></stop>
+    <ellipse></ellipse>
+    <text></text>
+    <use></use>
+    <feDistantLight></feDistantLight>
+    <fePointLight></fePointLight>
+    <feSpotLight></feSpotLight>
+    <defs></defs>
+    <symbol></symbol>
+    <use></use>
+    <altGlyph></altGlyph>
+    <altGlyphDef></altGlyphDef>
+    <altGlyphItem></altGlyphItem>
+    <glyph></glyph>
+    <glyphRef></glyphRef>
+    <textPath></textPath>
+    <text></text>
+    <tref></tref>
+    <tspan></tspan>
+    <altGlyph></altGlyph>
+    <textPath></textPath>
+    <tref></tref>
+    <tspan></tspan>
+    <clipPath></clipPath>
+    <color-profile></color-profile>
+    <cursor></cursor>
+    <filter></filter>
+    <foreignObject></foreignObject>
+    <script></script>
+    <view></view>
+
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="ic_qset_dnd_silence" sketch:type="MSArtboardGroup">
+            <path d="M24,12 C17.4,12 12,17.4 12,24 C12,30.6 17.4,36 24,36 C30.6,36 36,30.6 36,24 C36,17.4 30.8,12 24,12 L24,12 Z M30,26 L18,26 L18,22 L30,22 L30,26 L30,26 Z" id="Shape" fill="#FF0000" sketch:type="MSShapeGroup"></path>
+        </g>
+    </g>
+</svg>

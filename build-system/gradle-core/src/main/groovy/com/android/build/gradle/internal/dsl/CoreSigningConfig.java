@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.dsl;
 
-import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.io.File;

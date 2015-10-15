@@ -127,7 +127,8 @@ public class SourceFilePositionJsonSerializerTest {
                             SourceFile.UNKNOWN,
                             new SourcePosition(11, 22, 33, 66, 77, 88)),
                             "{ position: {\"startLine\":11,\"startColumn\":22,\"startOffset\":33,"
-                                    + "\"endLine\":66,\"endColumn\":77,\"endOffset\":88" + "}}"},
+                                    + "\"endLine\":66,\"endColumn\":77,\"endOffset\":88" + "}, "
+                                    + "\"invalid_something\":[\"ignored tree\"]}"},
                     {new SourceFilePosition(SourceFile.UNKNOWN, SourcePosition.UNKNOWN), "{}"},});
         }
 

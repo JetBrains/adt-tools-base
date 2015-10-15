@@ -16,12 +16,15 @@
 package com.android.tools.rpclib.binary;
 
 import gnu.trove.TIntObjectHashMap;
+import gnu.trove.TObjectIntHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A decoder of various RPC primitive types.
@@ -29,12 +32,14 @@ import java.io.UnsupportedEncodingException;
  * https://android.googlesource.com/platform/tools/gpu/+/master/binary/doc.go
  */
 public class Decoder {
-  @NotNull private final TIntObjectHashMap<BinaryObject> mDecodedMap;
+  @NotNull private final TIntObjectHashMap<BinaryObject> mObjects;
+  @NotNull private final TIntObjectHashMap<BinaryID> mIDs;
   @NotNull private final InputStream mInputStream;
   @NotNull private final byte[] mBuffer;
 
   public Decoder(@NotNull InputStream in) {
-    mDecodedMap = new TIntObjectHashMap<BinaryObject>();
+    mObjects = new TIntObjectHashMap<BinaryObject>();
+    mIDs = new TIntObjectHashMap<BinaryID>();
     mInputStream = in;
     mBuffer = new byte[9];
   }
@@ -149,29 +154,51 @@ public class Decoder {
     }
   }
 
+  @NotNull
+  public BinaryID id() throws IOException {
+    int v = uint32();
+    int sid = v >> 1;
+    if ((v & 1) != 0) {
+      BinaryID id = new BinaryID(this);
+      mIDs.put(sid, id);
+      return id;
+    }
+    BinaryID id = mIDs.get(sid);
+    if (id == null) {
+      throw new RuntimeException("Unknown id: " + sid);
+    }
+    return id;
+  }
+
+  public void value(@NotNull BinaryObject obj) throws IOException {
+    obj.klass().decode(this, obj);
+  }
+
+  @Nullable
+  public BinaryObject variant() throws IOException {
+    BinaryID id = id();
+    BinaryClass c = Namespace.lookup(id);
+    if (c == null) {
+      throw new RuntimeException("Unknown type id: " + id);
+    }
+    BinaryObject obj = c.create();
+    c.decode(this, obj);
+    return obj;
+  }
+
   @Nullable
   public BinaryObject object() throws IOException {
-    int key = uint32();
-
-    if (key == BinaryObject.NULL_ID) {
+    int v = uint32();
+    if (v == BinaryObject.NULL_ID) {
       return null;
     }
-
-    BinaryObject obj = mDecodedMap.get(key);
-    if (obj != null) {
+    int sid = v >> 1;
+    if ((v & 1) != 0) {
+      BinaryObject obj = variant();
+      mObjects.put(sid, obj);
       return obj;
     }
-
-    ObjectTypeID type = new ObjectTypeID(this);
-    BinaryObjectCreator creator = ObjectTypeID.lookup(type);
-    if (creator == null) {
-      throw new RuntimeException("Unknown type id encountered: " + type);
-    }
-    obj = creator.create();
-    obj.decode(this);
-
-    mDecodedMap.put(key, obj);
-    return obj;
+    return mObjects.get(sid);
   }
 
   public InputStream stream() {

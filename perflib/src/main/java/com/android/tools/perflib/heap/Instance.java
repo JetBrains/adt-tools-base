@@ -18,7 +18,7 @@ package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.perflib.heap.io.HprofBuffer;
+import com.android.tools.perflib.captures.DataBuffer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.UnsignedBytes;
 
@@ -182,10 +182,12 @@ public abstract class Instance {
     /**
      * Add to the list of objects that references this Instance.
      *
+     * @param field the named variable in #reference pointing to this instance. If the name of the field is "referent", and #reference is a
+     *              soft reference type, then reference is counted as a soft reference instead of the usual hard reference.
      * @param reference another instance that references this instance
      */
-    public void addReference(@NonNull Instance reference) {
-        if (reference.getIsSoftReference()) {
+    public void addReference(@Nullable Field field, @NonNull Instance reference) {
+        if (reference.getIsSoftReference() && field != null && field.getName().equals("referent")) {
             if (mSoftReferences == null) {
                 mSoftReferences = new ArrayList<Instance>();
             }
@@ -264,8 +266,8 @@ public abstract class Instance {
         return getBuffer().readShort() & 0xffff;
     }
 
-    protected HprofBuffer getBuffer() {
-        return mHeap.mSnapshot.mBuffer;
+    protected DataBuffer getBuffer() {
+        return mHeap.mSnapshot.getBuffer();
     }
 
 
@@ -281,5 +283,9 @@ public abstract class Instance {
         public int getCompositeSize() {
             return mSize;
         }
+    }
+
+    public StackTrace getStack() {
+        return mStack;
     }
 }

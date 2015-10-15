@@ -22,9 +22,9 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -46,12 +46,17 @@ public class ProcessRecorderTest {
         ProcessRecorderFactory.sINSTANCE = new ProcessRecorderFactory();
     }
 
+    @After
+    public void shutdown() throws InterruptedException {
+        ProcessRecorderFactory.shutdown();
+    }
+
     @Test
     public void testBasicRecord() throws InterruptedException {
         StringWriter stringWriter = new StringWriter();
         ProcessRecorder.JsonRecordWriter jsonRecordWriter =
                 new ProcessRecorder.JsonRecordWriter(stringWriter);
-        ProcessRecorderFactory.sINSTANCE.setRecordWriter(jsonRecordWriter);
+        ProcessRecorderFactory.initializeForTests(jsonRecordWriter);
         ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
                 new Recorder.Block<Integer>() {
                     @Override
@@ -74,7 +79,7 @@ public class ProcessRecorderTest {
         StringWriter stringWriter = new StringWriter();
         ProcessRecorder.JsonRecordWriter jsonRecordWriter =
                 new ProcessRecorder.JsonRecordWriter(stringWriter);
-        ProcessRecorderFactory.sINSTANCE.setRecordWriter(jsonRecordWriter);
+        ProcessRecorderFactory.initializeForTests(jsonRecordWriter);
         ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
                 new Recorder.Block<Integer>() {
                     @Override
@@ -105,7 +110,7 @@ public class ProcessRecorderTest {
             }
         };
 
-        ProcessRecorderFactory.sINSTANCE.setRecordWriter(recorderWriter);
+        ProcessRecorderFactory.initializeForTests(recorderWriter);
         ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
                 new Recorder.Block<Integer>() {
                     @Override
@@ -122,6 +127,8 @@ public class ProcessRecorderTest {
 
         ProcessRecorder.get().finish();
         setExecutionRecords(records);
+        // delete the initial metadata record.
+        assertEquals(ExecutionType.INITIAL_METADATA, records.remove(0).type);
         assertEquals(2, records.size());
         assertTrue(records.get(1).parentId == records.get(0).id);
     }
@@ -142,7 +149,8 @@ public class ProcessRecorderTest {
 
             }
         };
-        ProcessRecorderFactory.sINSTANCE.setRecordWriter(recorderWriter);
+        ProcessRecorderFactory.initializeForTests(recorderWriter);
+
         Integer value = ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
                 new Recorder.Block<Integer>() {
                     @Override
@@ -197,6 +205,8 @@ public class ProcessRecorderTest {
         assertNotNull(value);
         assertEquals(16, value.intValue());
         ProcessRecorder.get().finish();
+        // delete the initial metadata record.
+        assertEquals(ExecutionType.INITIAL_METADATA, records.remove(0).type);
         assertEquals(6, records.size());
         // re-order by event id.
         setExecutionRecords(records);

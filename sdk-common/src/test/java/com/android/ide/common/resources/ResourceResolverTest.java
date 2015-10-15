@@ -1,5 +1,6 @@
 package com.android.ide.common.resources;
 
+import com.android.ide.common.rendering.api.ArrayResourceValue;
 import com.android.ide.common.rendering.api.DensityBasedResourceValue;
 import com.android.ide.common.rendering.api.LayoutLog;
 import com.android.ide.common.rendering.api.ResourceValue;
@@ -8,8 +9,6 @@ import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.Density;
 import com.android.resources.ResourceType;
 import com.google.common.collect.Lists;
-
-import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
 import java.io.IOException;
@@ -86,6 +85,10 @@ public class ResourceResolverTest extends TestCase {
                         + "    </style>"
                         + "    <style name=\"RandomStyle2\" parent=\"RandomStyle\">\n"
                         + "    </style>"
+                        + "    <style name=\"Theme.FakeTheme\" parent=\"\">\n"
+                        + "    </style>"
+                        + "    <style name=\"Theme\" parent=\"RandomStyle\">\n"
+                        + "    </style>"
                         + "</resources>\n",
 
                         "values/strings.xml", ""
@@ -106,6 +109,17 @@ public class ResourceResolverTest extends TestCase {
                         + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                         + "<resources>\n"
                         + "    <string name=\"show_all_apps\">Todo</string>\n"
+                        + "</resources>\n",
+
+                        "values/arrays.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources>\n"
+                        + "    <string name=\"first\">Item1</string>\n"
+                        + "    <string-array name=\"my_array\">\n"
+                        + "        <item>@string/first</item>\n"
+                        + "        <item>Item2</item>\n"
+                        + "        <item>Item3</item>\n"
+                        + "    </string-array>\n"
                         + "</resources>\n",
                 });
 
@@ -199,6 +213,8 @@ public class ResourceResolverTest extends TestCase {
         // isTheme
         assertFalse(resolver.isTheme(resolver.findResValue("@style/RandomStyle", false), null));
         assertFalse(resolver.isTheme(resolver.findResValue("@style/RandomStyle2", false), null));
+        assertFalse(resolver.isTheme(resolver.findResValue("@style/Theme.FakeTheme", false), null));
+        assertFalse(resolver.isTheme(resolver.findResValue("@style/Theme", false), null));
         //    check XML escaping in value resources
         StyleResourceValue randomStyle = (StyleResourceValue) resolver.findResValue(
                 "@style/RandomStyle", false);
@@ -259,10 +275,14 @@ public class ResourceResolverTest extends TestCase {
         try {
             val = resolver.resolveValue(ResourceType.STRING, "bright_foreground_dark",
                     "@color/background_light", false);
-        } catch (AssertionFailedError expected) {
+        } catch (AssertionError expected) {
             failed = true;
         }
         assertTrue("incorrect resource returned: " + val, failed);
+        ResourceValue array = resolver
+                .resolveResValue(resolver.getProjectResource(ResourceType.ARRAY, "my_array"));
+        assertTrue("array" + "my_array" + "resolved incorrectly as " + array.getResourceType()
+                .getName(), array instanceof ArrayResourceValue);
 
         // themeExtends
         assertTrue(resolver.themeExtends("@android:style/Theme", "@android:style/Theme"));

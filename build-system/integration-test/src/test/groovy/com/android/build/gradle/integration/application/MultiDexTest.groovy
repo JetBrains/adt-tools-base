@@ -26,6 +26,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
@@ -37,12 +38,13 @@ class MultiDexTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("multiDex")
+            .withHeap("2048M")
             .create()
 
     @BeforeClass
     static void setUp() {
         GradleTestProject.assumeBuildToolsAtLeast(21)
-        project.execute("clean", "assembleDebug")
+        project.execute("clean", "assembleDebug", "assembleAndroidTest")
     }
 
     @AfterClass
@@ -56,14 +58,24 @@ class MultiDexTest {
     }
 
     @Test
-    void "check classes.dex"() {
-        // manually inspcet the apk to ensure that the classes.dex that was created is the same
+    void "check main classes.dex"() {
+        // manually inspect the apk to ensure that the classes.dex that was created is the same
         // one in the apk. This tests that the packaging didn't rename the multiple dex files
         // around when we packaged them.
-        File classesDex = project.file("build/" + FD_INTERMEDIATES + "/dex/ics/debug/classes.dex")
+        File classesDex = project.file("build/" + FD_INTERMEDIATES + "/transforms/DEX/" +
+                "FULL_PROJECT/dex/ics/debug/classes.dex")
         File apk = project.getApk("ics", "debug")
 
         assertThatZip(apk).containsFileWithContent("classes.dex", Files.toByteArray(classesDex))
+    }
+
+    @Test
+    void "check test APKs"() {
+        // both test apk should contain a class from Junit
+        assertThatApk(project.getTestApk("ics", "debug")).containsClass("Lorg/junit/Assert;")
+        assertThatApk(project.getTestApk("lollipop", "debug")).containsClass("Lorg/junit/Assert;")
+        assertThatApk(project.getTestApk("ics", "debug")).containsClass("Landroid/support/multidex/MultiDexApplication;")
+        assertThatApk(project.getTestApk("lollipop", "debug")).doesNotContain("Landroid/support/multidex/MultiDexApplication;")
     }
 
     @Test

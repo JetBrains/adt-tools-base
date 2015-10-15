@@ -1,11 +1,12 @@
 <?xml version="1.0"?>
 <template
-    format="3"
-    revision="4"
+    format="5"
+    revision="6"
     name="Blank Activity"
     minApi="7"
     minBuildApi="14"
-    description="Creates a new blank activity with an action bar.">
+    requireAppTheme="true"
+    description="Creates a new blank activity with an app bar.">
 
     <category value="Activity" />
     <formfactor value="Mobile" />
@@ -43,6 +44,7 @@
         type="string"
         constraints="layout|unique|nonempty"
         suggest="menu_${classToResource(activityClass)}"
+        visibility="isNewProject!false"
         default="menu_main"
         help="The name of the resource file to create for the menu items" />
 
@@ -54,12 +56,39 @@
         help="If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher" />
 
     <parameter
+        id="useFragment"
+        name="Use a Fragment"
+        type="boolean"
+        default="false"
+        help="If true, the content will be a fragment" />
+
+    <parameter
+        id="contentLayoutName"
+        name="Content Layout Name"
+        type="string"
+        constraints="layout|unique"
+        suggest="${activityToLayout(activityClass, 'content')}"
+        default="content_main"
+        visibility="false"
+        help="The name of the App Bar layout to create for the activity" />
+
+    <parameter
         id="parentActivityClass"
         name="Hierarchical Parent"
         type="string"
         constraints="activity|exists|empty"
         default=""
         help="The hierarchical parent activity, used to provide a default implementation for the 'Up' button" />
+
+    <parameter
+        id="fragmentLayoutName"
+        name="Fragment Layout Name"
+        type="string"
+        constraints="layout|unique|nonempty"
+        suggest="${activityToLayout(activityClass, 'fragment')}"
+        default="fragment_main"
+        visibility="false"
+        help="The name of the layout to create for the activity's content fragment"/>
 
     <parameter
         id="packageName"
@@ -72,9 +101,12 @@
     <thumbs>
         <!-- default thumbnail is required -->
         <thumb>template_blank_activity.png</thumb>
+        <!-- attributes act as selectors based on chosen parameters -->
+        <thumb useFragment="true">template_blank_activity_fragment.png</thumb>
     </thumbs>
 
     <globals file="globals.xml.ftl" />
+    <globals file="extras.xml.ftl" />
     <execute file="recipe.xml.ftl" />
 
 </template>

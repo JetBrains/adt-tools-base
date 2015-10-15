@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import groovy.transform.CompileStatic
 
-import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.assertNotNull;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 

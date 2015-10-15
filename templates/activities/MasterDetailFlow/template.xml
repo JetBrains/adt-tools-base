@@ -1,9 +1,10 @@
 <?xml version="1.0"?>
 <template
-    format="4"
-    revision="5"
+    format="5"
+    revision="7"
     name="Master/Detail Flow"
-    minApi="4"
+    minApi="7"
+    requireAppTheme="true"
     description="Creates a new master/detail flow, allowing users to view a collection of objects as well as details for each object. This flow is presented using two columns on tablet-size screens and one column on handsets and smaller screens. This template creates two activities, a master fragment, and a detail fragment."
     category="Activity">
 

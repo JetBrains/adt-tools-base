@@ -103,6 +103,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             "Registered class is not instantiatable",
 
             "Activities, services, broadcast receivers etc. registered in the manifest file " +
+            "(or for custom views, in a layout file) " +
             "must be \"instantiatable\" by the system, which means that the class must be " +
             "public, it must have an empty public constructor, and if it's an inner class, " +
             "it must be a static inner class.",

@@ -912,7 +912,7 @@ public class XmlPrettyPrinterTest extends TestCase {
         Node text = doc.createTextNode("  This is my text  ");
         child3.appendChild(text);
 
-        String xml = XmlUtils.toXml(doc, true);
+        String xml = XmlUtils.toXml(doc);
         assertEquals(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                         "<myroot baz=\"baz\" foo=\"bar\"><mychild/><hasComment><!--This is my comment--></hasComment><hasText>  This is my text  </hasText></myroot>",
@@ -955,7 +955,7 @@ public class XmlPrettyPrinterTest extends TestCase {
         Document doc = parse(xml);
         assertNotNull(doc);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"
@@ -991,7 +991,7 @@ public class XmlPrettyPrinterTest extends TestCase {
         Document doc = parse(xml);
         assertNotNull(doc);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(xml, formatted);
 
         xml = XmlPrettyPrinter.prettyPrint(doc, false);
@@ -1019,7 +1019,7 @@ public class XmlPrettyPrinterTest extends TestCase {
         Document doc = parse(xml);
         assertNotNull(doc);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"
@@ -1055,7 +1055,7 @@ public class XmlPrettyPrinterTest extends TestCase {
         Document doc = parse(xml);
         assertNotNull(doc);
 
-        xml = XmlUtils.toXml(doc, true);
+        xml = XmlUtils.toXml(doc);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<!-- ============== --><!-- Generic styles --><!-- ============== --><root/>",

@@ -11,10 +11,10 @@ android {
 
     defaultConfig {
         minSdkVersion 19
-    }
-
-    preprocessingOptions {
-      preprocessResources = true
+        if (project.properties['checkDefaultDensities'] == null) {
+            generatedDensities = ["hdpi"]
+            generatedDensities += "xhdpi"
+        }
     }
 
     // Don't modify files when merging.

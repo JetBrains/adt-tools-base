@@ -1,0 +1,26 @@
+package test.pkg;
+
+import android.app.Activity;
+import android.content.Context;
+
+public class StringFormat4 extends Activity {
+    public final void test(Context context) {
+        // data_source takes 0 formatting arguments
+        // error_and_source takes two formatting arguments
+        // preferences_about_app_title takes two formatting arguments
+        getString(R.string.error_and_source, getString(R.string.data_source)); // ERROR
+        getString(R.string.error_and_source, getString(R.string.data_source), 5); // OK
+        getString(R.string.error_and_source, "data source"); // ERROR
+        getString(R.string.error_and_source, "data source", 5); // OK
+        String.format(getString(R.string.preferences_about_app_title), getString(R.string.app_name), ""); // OK
+    }
+
+    private static class R {
+        private static class string {
+            public static final int error_and_source = 1;
+            public static final int data_source = 2;
+            public static final int preferences_about_app_title = 3;
+            public static final int app_name = 4;
+        }
+    }
+}

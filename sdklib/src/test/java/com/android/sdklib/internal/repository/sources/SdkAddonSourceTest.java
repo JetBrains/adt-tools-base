@@ -24,7 +24,6 @@ import com.android.sdklib.internal.repository.packages.AddonPackage;
 import com.android.sdklib.internal.repository.packages.ExtraPackage;
 import com.android.sdklib.internal.repository.packages.IMinToolsDependency;
 import com.android.sdklib.internal.repository.packages.Package;
-import com.android.sdklib.internal.repository.sources.SdkAddonSource;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.utils.Pair;
 

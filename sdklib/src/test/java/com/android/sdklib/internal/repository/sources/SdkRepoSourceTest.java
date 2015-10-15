@@ -29,7 +29,6 @@ import com.android.sdklib.internal.repository.packages.PlatformToolPackage;
 import com.android.sdklib.internal.repository.packages.SourcePackage;
 import com.android.sdklib.internal.repository.packages.SystemImagePackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
-import com.android.sdklib.internal.repository.sources.SdkRepoSource;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.utils.Pair;
 

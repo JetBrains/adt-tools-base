@@ -16,7 +16,11 @@
 
 package com.android.build.gradle.integration.common.truth;
 
+import static com.android.SdkConstants.FN_APK_CLASSES_DEX;
+import static com.android.SdkConstants.FN_APK_CLASSES_N_DEX;
+
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.integration.common.utils.ApkHelper;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
@@ -26,18 +30,23 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.SubjectFactory;
 import com.google.common.truth.Truth;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * Truth support for apk files.
@@ -83,6 +92,19 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         }
 
         return Truth.assertThat(locales);
+    }
+
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void hasPackageName(@NonNull String packageName) throws ProcessException {
+        File apk = getSubject();
+
+        ApkInfoParser.ApkInfo apkInfo = getApkInfo(apk);
+
+        String actualPackageName = apkInfo.getPackageName();
+
+        if (!actualPackageName.equals(packageName)) {
+            failWithBadResults("has packageName", packageName, "is", actualPackageName);
+        }
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
@@ -134,20 +156,84 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     /**
      * Returns true if the provided class is present in the file.
      * @param expectedClassName the class name in the format Lpkg1/pk2/Name;
+     * @param scope the scope in which to search for the class.
      */
     @Override
     protected boolean checkForClass(
-            @NonNull String expectedClassName)
+            @NonNull String expectedClassName,
+            @NonNull ClassFileScope scope)
             throws ProcessException, IOException {
-        // get the dexdump exec
-        File dexDump = SdkHelper.getDexDump();
+        if (!expectedClassName.startsWith("L") || !expectedClassName.endsWith(";")) {
+            throw new RuntimeException("class name must be in the format Lcom/foo/Main;");
+        }
 
+        File apkFile = getSubject();
+
+        // get the dexdump exec
+        File dexDumpExe = SdkHelper.getDexDump();
+
+        switch (scope) {
+            case MAIN:
+                return checkFileForClassWithDexDump(expectedClassName, apkFile, dexDumpExe);
+            case ALL:
+                if (checkFileForClassWithDexDump(expectedClassName, apkFile, dexDumpExe)) {
+                    return true;
+                }
+                // intended fall-through
+            case SECONDARY:
+                // while dexdump supports receiving directly an apk, this doesn't work for
+                // multi-dex.
+                // We're going to extract all the classes<N>.dex we find until one of them
+                // contains the class we're searching for.
+                ZipFile zipFile = new ZipFile(getSubject());
+                try {
+                    InputStream classDexStream;
+                    int index = 2;
+
+                    while ((classDexStream = getLenientInputStream(zipFile,
+                            String.format(FN_APK_CLASSES_N_DEX, index))) != null) {
+
+                        byte[] content = ByteStreams.toByteArray(classDexStream);
+                        // write into tmp file
+                        File dexFile = File.createTempFile("dex", "");
+                        dexFile.deleteOnExit();
+                        Files.write(content, dexFile);
+
+                        // run dexDump on it
+                        if (checkFileForClassWithDexDump(expectedClassName, dexFile, dexDumpExe)) {
+                            return true;
+                        }
+
+                        // not found? switch to next index.
+                        index++;
+                    }
+                } finally {
+                    zipFile.close();
+                }
+                break;
+        }
+
+        return false;
+    }
+
+    /**
+     * Run dex dump on a file (apk or dex file) to check for the presence of a given class.
+     * @param expectedClassName the name of the class to search for
+     * @param file the file to search
+     * @param dexDumpExe the dex dump exe
+     * @return true if the class was found
+     * @throws ProcessException
+     */
+    private static boolean checkFileForClassWithDexDump(
+            @NonNull String expectedClassName,
+            @NonNull File file,
+            @NonNull File dexDumpExe) throws ProcessException {
         ProcessExecutor executor = new DefaultProcessExecutor(
                 new StdLogger(StdLogger.Level.ERROR));
 
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
-        builder.setExecutable(dexDump);
-        builder.addArgs(getSubject().getAbsolutePath());
+        builder.setExecutable(dexDumpExe);
+        builder.addArgs(file.getAbsolutePath());
 
         List<String> output = ApkHelper.runAndGetOutput(builder.createProcess(), executor);
 
@@ -194,5 +280,20 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         }
 
         failWithRawMessage("maxSdkVersion not found in badging output for %s", getDisplaySubject());
+    }
+
+    @Nullable
+    private static InputStream getLenientInputStream(
+            @NonNull ZipFile zipFile, @NonNull String path) throws IOException {
+        ZipEntry entry = zipFile.getEntry(path);
+        if (entry == null) {
+            return null;
+        }
+
+        if (entry.isDirectory()) {
+            return null;
+        }
+
+        return zipFile.getInputStream(entry);
     }
 }

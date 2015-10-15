@@ -16,6 +16,8 @@
 
 package com.android.assetstudiolib;
 
+import com.android.ide.common.util.AssetUtil;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -47,7 +49,7 @@ public class TextRenderUtil {
             options = new Options();
         }
 
-        BufferedImage tempImage = Util.newArgbBufferedImage(1, 1);
+        BufferedImage tempImage = AssetUtil.newArgbBufferedImage(1, 1);
         if (text == null || text.isEmpty()) {
             return tempImage;
         }
@@ -75,8 +77,8 @@ public class TextRenderUtil {
                     bounds.getWidth() + 2 * delta, bounds.getHeight() + 2 * delta);
         }
 
-        BufferedImage image = Util.newArgbBufferedImage(
-                Math.max(1, (int) bounds.getWidth()), Math.max(1, (int) bounds.getHeight()));
+        BufferedImage image = AssetUtil.newArgbBufferedImage(Math.max(1, (int)bounds.getWidth()),
+                                                             Math.max(1, (int)bounds.getHeight()));
         Graphics2D g = (Graphics2D) image.getGraphics();
         g.setColor(new Color(options.foregroundColor, true));
         g.setFont(font);

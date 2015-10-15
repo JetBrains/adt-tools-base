@@ -21,18 +21,15 @@ import static com.android.SdkConstants.FD_RES_RAW;
 import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApkVariantData;
-import com.android.build.gradle.tasks.AidlCompile;
 import com.android.builder.core.AndroidBuilder;
-import com.android.builder.core.VariantConfiguration;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.process.ProcessException;
-import com.android.utils.StringHelper;
+import com.android.utils.FileUtils;
 import com.google.common.io.Files;
 
 import org.gradle.api.artifacts.Configuration;
@@ -73,7 +70,7 @@ public class GenerateApkDataTask extends BaseTask {
             InterruptedException {
         // always empty output dir.
         File outDir = getResOutputDir();
-        emptyFolder(outDir);
+        FileUtils.emptyFolder(outDir);
 
         File apk = getApkFile();
         // copy the file into the destination, by sanitizing the name first.
@@ -172,11 +169,12 @@ public class GenerateApkDataTask extends BaseTask {
         }
 
         @Override
-        public void execute(GenerateApkDataTask task) {
+        public void execute(@NonNull GenerateApkDataTask task) {
             final ApkVariantData variantData = (ApkVariantData) scope.getVariantData();
             variantData.generateApkDataTask = task;
 
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            task.setVariantName(scope.getVariantConfiguration().getFullName());
             ConventionMappingHelper.map(task, "resOutputDir", new Callable<File>() {
                 @Override
                 public File call() throws Exception {

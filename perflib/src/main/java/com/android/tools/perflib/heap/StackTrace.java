@@ -70,4 +70,12 @@ public class StackTrace {
             System.out.println(mFrames[i].toString());
         }
     }
+
+    public StackFrame[] getFrames() {
+        return mFrames;
+    }
+
+    public int getSerialNumber() {
+        return mSerialNumber;
+    }
 }

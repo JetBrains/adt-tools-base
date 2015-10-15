@@ -67,6 +67,22 @@ public class StackFrame {
         }
     }
 
+    public String getMethodName() {
+        return mMethodName;
+    }
+
+    public String getSignature() {
+        return mSignature;
+    }
+
+    public String getFilename() {
+        return mFilename;
+    }
+
+    public int getLineNumber() {
+        return mLineNumber;
+    }
+
     @NonNull
     public final String toString() {
         return mMethodName

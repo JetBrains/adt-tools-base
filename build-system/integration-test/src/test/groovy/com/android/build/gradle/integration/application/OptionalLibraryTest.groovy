@@ -24,15 +24,13 @@ import com.android.sdklib.SdkManager
 import com.android.utils.NullLogger
 import groovy.transform.CompileStatic
 import org.junit.After
-import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 
 import static com.android.SdkConstants.FN_FRAMEWORK_LIBRARY
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 /**
- * Test for BuildConfig field declared in build type, flavors, and variant and how they
- * override each other
+ * Test for the new useLibrary mechanism
  */
 @CompileStatic
 class OptionalLibraryTest {
@@ -48,8 +46,6 @@ class OptionalLibraryTest {
 
     @Test
     void "test unknown useLibrary trigger sync issue"() {
-        Assume.assumeNotNull("Next platform missing", System.getenv("ANDROID_NEXT_PLATFORM"));
-
         project.getBuildFile() << """
             apply plugin: 'com.android.application'
 
@@ -72,8 +68,6 @@ class OptionalLibraryTest {
 
     @Test
     void "test using optional library"() {
-        Assume.assumeNotNull("Next platform missing", System.getenv("ANDROID_NEXT_PLATFORM"));
-
         project.getBuildFile() << """
             apply plugin: 'com.android.application'
 
@@ -97,15 +91,20 @@ class OptionalLibraryTest {
 
         File targetLocation = new File(target.getLocation())
 
+        // the files that the bootclasspath should contain.
+        File androidJar = new File(targetLocation, FN_FRAMEWORK_LIBRARY)
+        File httpJar = new File(targetLocation, "optional/org.apache.http.legacy.jar")
         assertThat(project.getBootClasspath()).containsExactly(
-                new File(targetLocation, FN_FRAMEWORK_LIBRARY).getAbsolutePath(),
-                new File(targetLocation, "optional/org.apache.http.legacy.jar").getAbsolutePath())
+                androidJar.getAbsolutePath(),
+                httpJar.getAbsolutePath())
+
+        // for safety, let's make sure these files actually exists.
+        assertThat(androidJar).isFile()
+        assertThat(httpJar).isFile()
     }
 
     @Test
     void "test not using optional library"() {
-        Assume.assumeNotNull("Next platform missing", System.getenv("ANDROID_NEXT_PLATFORM"));
-
         project.getBuildFile() << """
             apply plugin: 'com.android.application'
 

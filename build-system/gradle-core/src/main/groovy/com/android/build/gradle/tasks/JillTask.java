@@ -27,7 +27,9 @@ import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.builder.core.AndroidBuilder;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
+import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.sdklib.repository.FullRevision;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -64,7 +66,7 @@ public class JillTask extends BaseTask {
 
     @TaskAction
     public void taskAction(IncrementalTaskInputs taskInputs)
-            throws LoggedErrorException, InterruptedException {
+            throws LoggedErrorException, InterruptedException, IOException {
         FullRevision revision = getBuilder().getTargetInfo().getBuildTools().getRevision();
         if (revision.compareTo(JackTask.JACK_MIN_REV) < 0) {
             throw new RuntimeException(
@@ -77,7 +79,7 @@ public class JillTask extends BaseTask {
         // if we are not in incremental mode, then outOfDate will contain
         // all th files, but first we need to delete the previous output
         if (!taskInputs.isIncremental()) {
-            emptyFolder(outFolder);
+            FileUtils.emptyFolder(outFolder);
         }
 
         final Set<String> hashs = Sets.newHashSet();
@@ -183,7 +185,8 @@ public class JillTask extends BaseTask {
             //noinspection GroovyAssignabilityCheck
             File jackFile = getJackFileName(outFolder, fileToProcess);
             //noinspection GroovyAssignabilityCheck
-            builder.convertLibraryToJack(fileToProcess, jackFile, options);
+            builder.convertLibraryToJack(fileToProcess, jackFile, options,
+                    new LoggedProcessOutputHandler(builder.getLogger()));
 
             return null;
         }
@@ -254,12 +257,13 @@ public class JillTask extends BaseTask {
             final AndroidBuilder androidBuilder = globalScope.getAndroidBuilder();
 
             jillTask.setAndroidBuilder(androidBuilder);
+            jillTask.setVariantName(variantScope.getVariantConfiguration().getFullName());
             jillTask.setDexOptions(globalScope.getExtension().getDexOptions());
 
             ConventionMappingHelper.map(jillTask, "inputLibs", new Callable<List<File>>() {
                 @Override
                 public List<File> call() throws Exception {
-                    return androidBuilder.getBootClasspath();
+                    return androidBuilder.getBootClasspath(false);
                 }
             });
 
@@ -291,12 +295,13 @@ public class JillTask extends BaseTask {
             final AndroidBuilder androidBuilder = globalScope.getAndroidBuilder();
 
             jillTask.setAndroidBuilder(androidBuilder);
+            jillTask.setVariantName(variantScope.getVariantConfiguration().getFullName());
             jillTask.setDexOptions(globalScope.getExtension().getDexOptions());
 
             ConventionMappingHelper.map(jillTask, "inputLibs", new Callable<Set<File>>() {
                 @Override
                 public Set<File> call() throws Exception {
-                    return androidBuilder.getPackagedJars(variantScope.getVariantConfiguration());
+                    return androidBuilder.getAllPackagedJars(variantScope.getVariantConfiguration());
                 }
             });
 

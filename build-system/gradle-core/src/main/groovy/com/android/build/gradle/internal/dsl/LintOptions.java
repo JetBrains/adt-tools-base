@@ -34,6 +34,7 @@ import com.android.tools.lint.XmlReporter;
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Severity;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -590,14 +591,14 @@ public class LintOptions implements com.android.builder.model.LintOptions, Seria
 
     private static File createOutputPath(
             @NonNull org.gradle.api.Project project,
-            @NonNull String variantName,
+            @Nullable String variantName,
             @NonNull String extension,
             boolean fatalOnly) {
         StringBuilder base = new StringBuilder();
         base.append(FD_OUTPUTS);
         base.append(File.separator);
         base.append("lint-results");
-        if (variantName != null) {
+        if (!Strings.isNullOrEmpty(variantName)) {
             base.append("-");
             base.append(variantName);
         }
@@ -756,6 +757,22 @@ public class LintOptions implements com.android.builder.model.LintOptions, Seria
     public void ignore(String... ids) {
         for (String id : ids) {
             ignore(id);
+        }
+    }
+
+    /**
+     * Adds a severity override for the given issues.
+     */
+    public void informational(String id) {
+        severities.put(id, INFORMATIONAL);
+    }
+
+    /**
+     * Adds a severity override for the given issues.
+     */
+    public void informational(String... ids) {
+        for (String id : ids) {
+            informational(id);
         }
     }
 

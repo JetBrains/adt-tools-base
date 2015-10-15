@@ -17,7 +17,7 @@ import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
- * 'android' extension for 'com.android.library' project.
+ * {@code android} extension for {@code com.android.library} projects.
  */
 public class LibraryExtension extends TestedExtension {
 
@@ -49,20 +49,18 @@ public class LibraryExtension extends TestedExtension {
         libraryVariantList.add((LibraryVariant) variant);
     }
 
-    // ---------------
-    // TEMP for compatibility
-    // STOPSHIP Remove in 1.0
-
     public void packageBuildConfig(boolean value) {
         if (!value) {
             LoggingUtil.displayDeprecationWarning(logger, project,
-                    "Support for not packaging BuildConfig is deprecated and will be removed in 1.0");
+                    "Support for not packaging BuildConfig is deprecated.");
         }
 
         packageBuildConfig = value;
     }
 
+    @Deprecated
     public void setPackageBuildConfig(boolean value) {
+        // Remove when users stop requiring this setting.
         packageBuildConfig(value);
     }
 

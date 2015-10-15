@@ -18,6 +18,7 @@ package com.android.ide.common.blame;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -76,6 +77,8 @@ public class MessageJsonSerializerTest {
                             new Message(
                                     Message.Kind.ERROR,
                                     "errorText",
+                                    "",
+                                    null,
                                     new SourceFilePosition(
                                             new File("error/source"),
                                             new SourcePosition(1,2,3,4,5,6))
@@ -95,7 +98,13 @@ public class MessageJsonSerializerTest {
                             SourceFilePosition.UNKNOWN),
                     "{\"kind\":\"simple\",\"text\":\"Warning: AndroidManifest.xml already defines "
                             + "debuggable (in http://schemas.android.com/apk/res/android); using "
-                            + "existing value in manifest.\",\"sources\":[{}]}"
+                            + "existing value in manifest.\",\"sources\":\"\"}"
+            }, {
+                    new Message(
+                            Message.Kind.UNKNOWN,
+                            "Text.",
+                            SourceFilePosition.UNKNOWN),
+                    "{\"text\":\"Text.\"}",
 
             }});
         }
@@ -113,6 +122,59 @@ public class MessageJsonSerializerTest {
         @Test
         public void check() {
             assertEquals(message, sGson.fromJson(serializedMessage, Message.class));
+        }
+
+
+    }
+
+    @RunWith(Parameterized.class)
+    public static class RoundTripTest {
+
+        private static Gson sGson;
+
+        @Parameterized.Parameter
+        public Message message;
+
+
+        @Parameterized.Parameters(name = "{0}")
+        public static Collection<Object[]> data() {
+            return Arrays.asList(new Object[][]{{
+                    new Message(
+                            Message.Kind.ERROR,
+                            "some error text",
+                            "original error text",
+                            "tool name",
+                            new SourceFilePosition(
+                                    new SourceFile(new File("/path/file.java")),
+                                    new SourcePosition(1, 3, 5)))
+                    }, {
+                    new Message(
+                            Message.Kind.SIMPLE,
+                            "something else",
+                            new SourceFilePosition(SourceFile.UNKNOWN, SourcePosition.UNKNOWN))
+                    }, {
+                    new Message(
+                            Message.Kind.SIMPLE,
+                            "Warning: AndroidManifest.xml already defines debuggable (in http://"
+                                    + "schemas.android.com/apk/res/android); using existing value "
+                                    + "in manifest.",
+                            SourceFilePosition.UNKNOWN)
+            }});
+        }
+
+        @BeforeClass
+        public static void initGson() {
+            sGson = sGsonBuilder.create();
+        }
+
+        @AfterClass
+        public static void removeGson() {
+            sGson = null;
+        }
+
+        @Test
+        public void check() {
+            assertEquals(message, sGson.fromJson(sGson.toJson(message), Message.class));
         }
 
 

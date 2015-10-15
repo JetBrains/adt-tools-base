@@ -99,6 +99,8 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
             .newBuilder()
             .weakValues().build();
 
+    private static final String AAPT_TOOL_NAME = "AAPT";
+
     @VisibleForTesting
     public static File ourRootDir;
 
@@ -467,7 +469,8 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
         if (file != null && errorPosition.getStartLine() != -1) {
             errorPosition = findMessagePositionInFile(file, text, errorPosition.getStartLine(), logger);
         }
-        return new Message(kind, text, original, new SourceFilePosition(file, errorPosition));
+        return new Message(kind, text, original, AAPT_TOOL_NAME,
+                new SourceFilePosition(file, errorPosition));
     }
 
     private SourcePosition parseLineNumber(String lineNumberAsText) throws ParsingFailedException {

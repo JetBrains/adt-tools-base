@@ -37,95 +37,13 @@ import java.util.Map;
 /**
  * An adaptor to convert a BuildType to a CoreBuildType.
  */
-public class BuildTypeAdaptor implements CoreBuildType {
+public class BuildTypeAdaptor extends BaseConfigAdaptor implements CoreBuildType {
     @NonNull
     private final BuildType buildType;
 
     public BuildTypeAdaptor(@NonNull BuildType buildType) {
+        super(buildType);
         this.buildType = buildType;
-    }
-
-    @NonNull
-    @Override
-    public String getName() {
-        return buildType.getName();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, ClassField> getBuildConfigFields() {
-        ImmutableMap.Builder<String, ClassField> builder = ImmutableMap.builder();
-        for (com.android.build.gradle.managed.ClassField cf : buildType.getBuildConfigFields()) {
-            builder.put(
-                    cf.getName(),
-                    new ClassFieldImpl(
-                            cf.getType(),
-                            cf.getName(),
-                            cf.getValue(),
-                            Objects.firstNonNull(cf.getAnnotations(), ImmutableSet.<String>of()),
-                            Objects.firstNonNull(cf.getDocumentation(), "")));
-        }
-        return builder.build();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, ClassField> getResValues() {
-        ImmutableMap.Builder<String, ClassField> builder = ImmutableMap.builder();
-        for (com.android.build.gradle.managed.ClassField cf : buildType.getResValues()) {
-            builder.put(
-                    cf.getName(),
-                    new ClassFieldImpl(
-                            cf.getType(),
-                            cf.getName(),
-                            cf.getValue(),
-                            Objects.firstNonNull(cf.getAnnotations(), ImmutableSet.<String>of()),
-                            Objects.firstNonNull(cf.getDocumentation(), "")));
-        }
-        return builder.build();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getProguardFiles() {
-        return buildType.getProguardFiles();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getConsumerProguardFiles() {
-        return buildType.getConsumerProguardFiles();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getTestProguardFiles() {
-        return buildType.getTestProguardFiles();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, Object> getManifestPlaceholders() {
-        // TODO: To be implemented
-        return Maps.newHashMap();
-    }
-
-    @Nullable
-    @Override
-    public Boolean getMultiDexEnabled() {
-        return null;
-    }
-
-    @Nullable
-    @Override
-    public File getMultiDexKeepFile() {
-        return null;
-    }
-
-    @Nullable
-    @Override
-    public File getMultiDexKeepProguard() {
-        return null;
     }
 
     @Override
@@ -156,12 +74,6 @@ public class BuildTypeAdaptor implements CoreBuildType {
     @Override
     public int getRenderscriptOptimLevel() {
         return buildType.getRenderscriptOptimLevel();
-    }
-
-    @Nullable
-    @Override
-    public String getApplicationIdSuffix() {
-        return buildType.getApplicationIdSuffix();
     }
 
     @Nullable

@@ -18,14 +18,13 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.api.AndroidSourceSet;
-import com.android.build.gradle.internal.coverage.JacocoExtension;
+import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.dsl.PreprocessingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
 import com.android.build.gradle.managed.AndroidConfig;
@@ -52,7 +51,6 @@ public class AndroidConfigHelper {
         model.setDefaultPublishConfig(BuilderConstants.RELEASE);
         model.setPublishNonDefault(false);
         model.setGeneratePureSplits(false);
-        model.setPreProcessingOptions(instantiator.newInstance(PreprocessingOptions.class));
         model.setDeviceProviders(Lists.<DeviceProvider>newArrayList());
         model.setTestServers(Lists.<TestServer>newArrayList());
         model.setAaptOptions(instantiator.newInstance(AaptOptions.class));
@@ -61,7 +59,7 @@ public class AndroidConfigHelper {
         model.setTestOptions(instantiator.newInstance(TestOptions.class));
         model.setCompileOptions(instantiator.newInstance(CompileOptions.class));
         model.setPackagingOptions(instantiator.newInstance(PackagingOptions.class));
-        model.setJacoco(instantiator.newInstance(JacocoExtension.class));
+        model.setJacoco(instantiator.newInstance(JacocoOptions.class));
         model.setAdbOptions(instantiator.newInstance(AdbOptions.class));
         model.setSplits(instantiator.newInstance(Splits.class, instantiator));
         model.setLibraryRequests(Lists.<LibraryRequest>newArrayList());

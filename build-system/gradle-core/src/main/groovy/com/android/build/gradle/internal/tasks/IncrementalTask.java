@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 package com.android.build.gradle.internal.tasks;
+import com.android.annotations.NonNull;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.res2.SourceSet;
+import com.android.utils.FileUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 
 import org.gradle.api.Action;
 import org.gradle.api.tasks.Optional;
@@ -27,10 +30,13 @@ import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 import org.gradle.api.tasks.incremental.InputFileDetails;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 public abstract class IncrementalTask extends BaseTask {
+
+    public static final String MARKER_NAME = "build_was_incremental";
 
     private File incrementalFolder;
 
@@ -41,6 +47,19 @@ public abstract class IncrementalTask extends BaseTask {
     @OutputDirectory @Optional
     public File getIncrementalFolder() {
         return incrementalFolder;
+    }
+
+    public void setIncrementalMarker() throws IOException {
+        Files.touch(getIncrementalMarkerFile());
+    }
+
+    public void clearIncrementalMarker() throws IOException {
+        FileUtils.deleteIfExists(getIncrementalMarkerFile());
+    }
+
+    @NonNull
+    private File getIncrementalMarkerFile() {
+        return new File(getIncrementalFolder(), MARKER_NAME);
     }
 
     /**
@@ -57,7 +76,7 @@ public abstract class IncrementalTask extends BaseTask {
      * {@link #isIncremental()} returns false.
      *
      */
-    protected abstract void doFullTaskAction();
+    protected abstract void doFullTaskAction() throws IOException;
 
     /**
      * Optional incremental task action.
@@ -65,7 +84,7 @@ public abstract class IncrementalTask extends BaseTask {
      *
      * @param changedInputs the changed input files.
      */
-    protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) {
+    protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) throws IOException {
         // do nothing.
     }
 
@@ -74,7 +93,7 @@ public abstract class IncrementalTask extends BaseTask {
      * Calls out to the doTaskAction as needed.
      */
     @TaskAction
-    void taskAction(IncrementalTaskInputs inputs) {
+    void taskAction(IncrementalTaskInputs inputs) throws IOException {
         if (!isIncremental()) {
             doFullTaskAction();
             return;

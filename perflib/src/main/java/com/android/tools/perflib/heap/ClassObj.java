@@ -191,10 +191,11 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     @Override
     public final void accept(@NonNull Visitor visitor) {
         visitor.visitClassObj(this);
-        for (Object value : getStaticFieldValues().values()) {
+        for (Map.Entry<Field, Object> entry : getStaticFieldValues().entrySet()) {
+            Object value = entry.getValue();
             if (value instanceof Instance) {
                 if (!mReferencesAdded) {
-                    ((Instance)value).addReference(this);
+                    ((Instance)value).addReference(entry.getKey(), this);
                 }
                 visitor.visitLater(this, (Instance)value);
             }
@@ -204,7 +205,17 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     @Override
     public final int compareTo(@NonNull ClassObj o) {
-        return mClassName.compareTo(o.mClassName);
+        if (getId() == o.getId()) {
+            return 0;
+        }
+
+        int nameCompareResult = mClassName.compareTo(o.mClassName);
+        if (nameCompareResult != 0) {
+            return nameCompareResult;
+        }
+        else {
+            return getId() - o.getId() > 0 ? 1 : -1;
+        }
     }
 
     public final boolean equals(Object o) {
@@ -273,5 +284,23 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     @NonNull
     public static String getReferenceClassName() {
         return "java.lang.ref.Reference";
+    }
+
+    @NonNull
+    public List<ClassObj> getDescendantClasses() {
+        List<ClassObj> descendants = new ArrayList<ClassObj>();
+
+        Stack<ClassObj> searchStack = new Stack<ClassObj>();
+        searchStack.push(this);
+
+        while (!searchStack.isEmpty()) {
+            ClassObj classObj = searchStack.pop();
+            descendants.add(classObj);
+            for (ClassObj subClass : classObj.getSubclasses()) {
+                searchStack.push(subClass);
+            }
+        }
+
+        return descendants;
     }
 }

@@ -16,12 +16,11 @@
 
 package com.android.tools.perflib.heap;
 
-import com.android.tools.perflib.heap.io.MemoryMappedFileBuffer;
+import com.android.tools.perflib.captures.MemoryMappedFileBuffer;
 
 import junit.framework.TestCase;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -34,7 +33,7 @@ public class HprofParserTest extends TestCase {
         super.setUp();
 
         File file = new File(getClass().getResource("/dialer.android-hprof").getFile());
-        mSnapshot = (new HprofParser(new MemoryMappedFileBuffer(file))).parse();
+        mSnapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(file));
     }
 
     public void testHierarchy() {

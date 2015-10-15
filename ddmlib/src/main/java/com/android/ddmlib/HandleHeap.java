@@ -383,19 +383,23 @@ final class HandleHeap extends ChunkHandler {
      */
     private void handleREAL(Client client, ByteBuffer data) {
         Log.e("ddm-heap", "*** Received " + name(CHUNK_REAL));
+
+        byte[] stuff = new byte[data.capacity()];
+        data.get(stuff, 0, stuff.length);
+        data.rewind();
+
+        // Work with legacy global handler.
         ClientData.IAllocationTrackingHandler handler = ClientData.getAllocationTrackingHandler();
-
         if (handler != null) {
-          byte[] stuff = new byte[data.capacity()];
-          data.get(stuff, 0, stuff.length);
-
-          Log.d("ddm-prof", "got allocations file, size: " + stuff.length + " bytes");
-          handler.onSuccess(stuff, client);
-        } else {
-          // Allocation tracking did not start from Android Studio's device panel
-          client.getClientData().setAllocations(AllocationsParser.parse(data));
-          client.update(Client.CHANGE_HEAP_ALLOCATIONS);
+            Log.d("ddm-prof", "got allocations file, size: " + stuff.length + " bytes");
+            handler.onSuccess(stuff, client);
         }
+
+        client.getClientData().setAllocationsData(stuff);
+        client.update(Client.CHANGE_HEAP_ALLOCATIONS);
+
+        // Clean up after everything has been notified (synchronously).
+        client.getClientData().setAllocationsData(null);
     }
 }
 

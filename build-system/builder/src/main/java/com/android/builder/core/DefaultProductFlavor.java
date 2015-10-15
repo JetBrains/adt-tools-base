@@ -25,6 +25,7 @@ import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -79,6 +80,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     private SigningConfig mSigningConfig;
     @Nullable
     private Set<String> mResourceConfiguration;
+    @Nullable
+    private Set<String> mGeneratedDensities;
 
     /**
      * Creates a ProductFlavor with a given name.
@@ -195,7 +198,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
     /** Sets the targetSdkVersion to the given value. */
     @NonNull
-    public ProductFlavor setTargetSdkVersion(ApiVersion targetSdkVersion) {
+    public ProductFlavor setTargetSdkVersion(@Nullable ApiVersion targetSdkVersion) {
         mTargetSdkVersion = targetSdkVersion;
         return this;
     }
@@ -320,8 +323,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      * <p>Test runner arguments can also be specified from the command line:
      *
      * <p><pre>
-     * INSTRUMENTATION_TEST_RUNNER_ARGS=size=medium,foo=bar ./gradlew connectedAndroidTest
-     * ./gradlew connectedAndroidTest -Pcom.android.tools.instrumentationTestRunnerArgs=size=medium,foo=bar
+     * ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.size=medium
+     * ./gradlew connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.foo=bar
      * </pre>
      */
     @Override
@@ -377,6 +380,27 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         mSigningConfig = signingConfig;
         return this;
     }
+
+    /**
+     * Densities used when generating PNGs from vector drawables at build time. For the PNGs to be
+     * generated, minimum SDK has to be below 21.
+     *
+     * <p>See <a href="http://developer.android.com/guide/practices/screens_support.html">Supporting Multiple Screens</a>.
+     */
+    @Nullable
+    @Override
+    public Set<String> getGeneratedDensities() {
+        return mGeneratedDensities;
+    }
+
+    public void setGeneratedDensities(@Nullable Iterable<String> densities) {
+        if (densities == null) {
+            mGeneratedDensities = null;
+        } else {
+            mGeneratedDensities = Sets.newHashSet(densities);
+        }
+    }
+
 
     /**
      * Adds a res config filter (for instance 'hdpi')
@@ -464,6 +488,15 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         flavor.mApplicationId = chooseNotNull(overlay.getApplicationId(), base.getApplicationId());
 
+        if (!Strings.isNullOrEmpty(overlay.getApplicationIdSuffix())) {
+            String baseSuffix = chooseNotNull(base.getApplicationIdSuffix(), "");
+            if (overlay.getApplicationIdSuffix().charAt(0) == '.') {
+                flavor.setApplicationIdSuffix(baseSuffix + overlay.getApplicationIdSuffix());
+            } else {
+                flavor.setApplicationIdSuffix(baseSuffix + '.' + overlay.getApplicationIdSuffix());
+            }
+        }
+
         flavor.mTestApplicationId = chooseNotNull(
                 overlay.getTestApplicationId(),
                 base.getTestApplicationId());
@@ -514,6 +547,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 .addAll(base.getJarJarRuleFiles())
                 .build());
 
+        flavor.setGeneratedDensities(
+                chooseNotNull(overlay.getGeneratedDensities(), base.getGeneratedDensities()));
+
         return flavor;
     }
 
@@ -560,6 +596,11 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.setMultiDexKeepFile(productFlavor.getMultiDexKeepFile());
         flavor.setMultiDexKeepProguard(productFlavor.getMultiDexKeepProguard());
         flavor.setJarJarRuleFiles(ImmutableList.copyOf(productFlavor.getJarJarRuleFiles()));
+
+        flavor.setGeneratedDensities(
+                productFlavor.getGeneratedDensities() == null
+                        ? null
+                        : Sets.newHashSet(productFlavor.getGeneratedDensities()));
 
         return flavor;
     }

@@ -2,7 +2,13 @@ package ${packageName};
 
 import android.content.Intent;
 import android.os.Bundle;
-import <#if appCompat>android.support.v4.app.FragmentActivity<#else>android.app.Activity</#if>;
+import ${superClassFqcn};
+<#if hasAppBar>
+import android.support.v7.widget.Toolbar;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
+import android.view.View;
+</#if>
 <#if (parentActivityClass != "" && minApiLevel lt 16)>import android.support.v4.app.NavUtils;</#if>
 <#if parentActivityClass != "">import android.view.MenuItem;</#if>
 <#if applicationPackage??>
@@ -25,7 +31,7 @@ import ${applicationPackage}.R;
  * {@link ${CollectionName}Fragment.Callbacks} interface
  * to listen for item selections.
  */
-public class ${CollectionName}Activity extends ${(appCompat)?string('Fragment','')}Activity
+public class ${CollectionName}Activity extends ${superClass}
         implements ${CollectionName}Fragment.Callbacks {
 
     /**
@@ -37,11 +43,28 @@ public class ${CollectionName}Activity extends ${(appCompat)?string('Fragment','
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_${collection_name});
-        <#if parentActivityClass != "">
+<#if hasAppBar>
+        setContentView(R.layout.activity_${extractLetters(objectKind?lower_case)}_app_bar);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        toolbar.setTitle(getTitle());
+
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
+<#else>
+        setContentView(R.layout.activity_${extractLetters(objectKind?lower_case)}_list);
+</#if>
+<#if parentActivityClass != "">
         // Show the Up button in the action bar.
         get${Support}ActionBar().setDisplayHomeAsUpEnabled(true);
-        </#if>
+</#if>
 
         if (findViewById(R.id.${detail_name}_container) != null) {
             // The detail container view will be present only in the

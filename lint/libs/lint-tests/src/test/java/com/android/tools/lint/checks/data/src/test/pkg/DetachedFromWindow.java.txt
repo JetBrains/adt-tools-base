@@ -1,0 +1,46 @@
+package test.pkg;
+
+import android.view.View;
+
+public class DetachedFromWindow {
+    private static class Test1 extends ViewWithDefaultConstructor {
+        protected void onDetachedFromWindow() {
+            // Error
+        }
+    }
+
+    private static class Test2 extends ViewWithDefaultConstructor {
+        protected void onDetachedFromWindow(int foo) {
+            // OK: not overriding the right method
+        }
+    }
+
+    private static class Test3 extends ViewWithDefaultConstructor {
+        protected void onDetachedFromWindow() {
+            // OK: Calling super
+            super.onDetachedFromWindow();
+        }
+    }
+
+    private static class Test4 extends ViewWithDefaultConstructor {
+        protected void onDetachedFromWindow() {
+            // Error: missing detach call
+            int x = 1;
+            x++;
+            System.out.println(x);
+        }
+    }
+
+    private static class Test5 extends Object {
+        protected void onDetachedFromWindow() {
+            // OK - not in a view
+            // Regression test for http://b.android.com/73571
+        }
+    }
+
+    public class ViewWithDefaultConstructor extends View {
+        public ViewWithDefaultConstructor() {
+            super(null);
+        }
+    }
+}

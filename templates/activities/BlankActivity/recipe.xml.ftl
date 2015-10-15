@@ -1,26 +1,20 @@
 <?xml version="1.0"?>
 <recipe>
+    <execute file="../common/recipe_manifest.xml.ftl" />
 
-    <merge from="AndroidManifest.xml.ftl"
-             to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
+<#if useFragment>
+    <execute file="recipe_fragment.xml.ftl" />
+<#else>
+    <execute file="../common/recipe_simple.xml.ftl" />
+</#if>
 
-    <instantiate from="res/menu/main.xml.ftl"
-            to="${escapeXmlAttribute(resOut)}/menu/${menuName}.xml" />
+<#if hasAppBar>
+    <execute file="../common/recipe_app_bar.xml.ftl" />
+</#if>
 
-    <merge from="res/values/strings.xml.ftl"
-             to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
-
-    <merge from="res/values/dimens.xml.ftl"
-             to="${escapeXmlAttribute(resOut)}/values/dimens.xml" />
-    <merge from="res/values-w820dp/dimens.xml"
-             to="${escapeXmlAttribute(resOut)}/values-w820dp/dimens.xml" />
-
-    <instantiate from="res/layout/activity_simple.xml.ftl"
-                   to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
-
-    <instantiate from="src/app_package/SimpleActivity.java.ftl"
+    <instantiate from="root/src/app_package/SimpleActivity.java.ftl"
                    to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 
     <open file="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
-    <open file="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
+    <open file="${escapeXmlAttribute(resOut)}/layout/${simpleLayoutName}.xml" />
 </recipe>

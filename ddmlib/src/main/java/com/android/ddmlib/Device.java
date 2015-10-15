@@ -21,12 +21,14 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.ddmlib.log.LogReceiver;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Atomics;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -46,6 +48,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -85,6 +88,8 @@ final class Device implements IDevice {
     private static final String UNKNOWN_PACKAGE = "";   //$NON-NLS-1$
 
     private static final long GET_PROP_TIMEOUT_MS = 100;
+    private static final long INITIAL_GET_PROP_TIMEOUT_MS = 250;
+
     private static final long INSTALL_TIMEOUT_MINUTES;
 
     static {
@@ -276,34 +281,24 @@ final class Device implements IDevice {
         mState = state;
     }
 
-
-    /*
-     * (non-Javadoc)
-     * @see com.android.ddmlib.IDevice#getProperties()
-     */
     @Override
     public Map<String, String> getProperties() {
         return Collections.unmodifiableMap(mPropFetcher.getProperties());
     }
 
-    /*
-     * (non-Javadoc)
-     * @see com.android.ddmlib.IDevice#getPropertyCount()
-     */
     @Override
     public int getPropertyCount() {
         return mPropFetcher.getProperties().size();
     }
 
-    /*
-     * (non-Javadoc)
-     * @see com.android.ddmlib.IDevice#getProperty(java.lang.String)
-     */
     @Override
     public String getProperty(String name) {
+        Map<String, String> properties = mPropFetcher.getProperties();
+        long timeout = properties.isEmpty() ? INITIAL_GET_PROP_TIMEOUT_MS : GET_PROP_TIMEOUT_MS;
+
         Future<String> future = mPropFetcher.getProperty(name);
         try {
-            return future.get(GET_PROP_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            return future.get(timeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             // ignore
         } catch (ExecutionException e) {
@@ -372,7 +367,7 @@ final class Device implements IDevice {
     }
 
     // The full list of features can be obtained from /etc/permissions/features*
-    // However, since we only support the "watch" feature, we can determine that by simply
+    // However, the smaller set of features we are interested in can be obtained by
     // reading the build characteristics property.
     @Override
     public boolean supportsFeature(@NonNull HardwareFeature feature) {
@@ -392,7 +387,8 @@ final class Device implements IDevice {
         return mHardwareCharacteristics.contains(feature.getCharacteristic());
     }
 
-    private int getApiLevel() {
+    @Override
+    public int getApiLevel() {
         if (mApiLevel > 0) {
             return mApiLevel;
         }
@@ -410,7 +406,7 @@ final class Device implements IDevice {
         CountDownLatch latch = new CountDownLatch(1);
         CollectingOutputReceiver receiver = new CollectingOutputReceiver(latch);
         try {
-            executeShellCommand("ls " + path, receiver);
+            executeShellCommand("ls " + path, receiver, LS_TIMEOUT_SEC, TimeUnit.SECONDS);
         } catch (Exception e) {
             return false;
         }
@@ -425,11 +421,47 @@ final class Device implements IDevice {
         return !value.endsWith("No such file or directory");
     }
 
+    @Nullable
     @Override
-    public String getMountPoint(String name) {
-        return mMountPoints.get(name);
+    public String getMountPoint(@NonNull String name) {
+        String mount = mMountPoints.get(name);
+        if (mount == null) {
+            try {
+                mount = queryMountPoint(name);
+                mMountPoints.put(name, mount);
+            } catch (TimeoutException ignored) {
+            } catch (AdbCommandRejectedException ignored) {
+            } catch (ShellCommandUnresponsiveException ignored) {
+            } catch (IOException ignored) {
+            }
+        }
+        return mount;
     }
 
+    @Nullable
+    private String queryMountPoint(@NonNull final String name)
+            throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
+            IOException {
+
+        final AtomicReference<String> ref = Atomics.newReference();
+        executeShellCommand("echo $" + name, new MultiLineReceiver() { //$NON-NLS-1$
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+
+            @Override
+            public void processNewLines(String[] lines) {
+                for (String line : lines) {
+                    if (!line.isEmpty()) {
+                        // this should be the only one.
+                        ref.set(line);
+                    }
+                }
+            }
+        });
+        return ref.get();
+    }
 
     @Override
     public String toString() {
@@ -698,17 +730,17 @@ final class Device implements IDevice {
         removeClientInfo(client);
     }
 
-    /**
-     * Sets the client monitoring socket.
-     * @param socketChannel the sockets
-     */
-    void setClientMonitoringSocket(SocketChannel socketChannel) {
+    /** Sets the socket channel on which a track-jdwp command for this device has been sent. */
+    void setClientMonitoringSocket(@NonNull SocketChannel socketChannel) {
         mSocketChannel = socketChannel;
     }
 
     /**
-     * Returns the client monitoring socket.
+     * Returns the channel on which responses to the track-jdwp command will be available if it
+     * has been set, null otherwise. The channel is set via {@link #setClientMonitoringSocket(SocketChannel)},
+     * which is usually invoked when the device goes online.
      */
+    @Nullable
     SocketChannel getClientMonitoringSocket() {
         return mSocketChannel;
     }
@@ -837,14 +869,13 @@ final class Device implements IDevice {
     }
 
     @Override
-    public String installPackage(String packageFilePath, boolean reinstall,
+    public void installPackage(String packageFilePath, boolean reinstall,
             String... extraArgs)
             throws InstallException {
         try {
             String remoteFilePath = syncPackageToDevice(packageFilePath);
-            String result = installRemotePackage(remoteFilePath, reinstall, extraArgs);
+            installRemotePackage(remoteFilePath, reinstall, extraArgs);
             removeRemotePackage(remoteFilePath);
-            return result;
         } catch (IOException e) {
             throw new InstallException(e);
         } catch (AdbCommandRejectedException e) {
@@ -861,6 +892,7 @@ final class Device implements IDevice {
             String... extraArgs) throws InstallException {
 
         assert(!apkFilePaths.isEmpty());
+
         if (getApiLevel() < 21) {
             Log.w("Internal error : installPackages invoked with device < 21 for %s",
                     Joiner.on(",").join(apkFilePaths));
@@ -1001,6 +1033,9 @@ final class Device implements IDevice {
         return receiver.getSessionId();
     }
 
+    private static final CharMatcher UNSAFE_PM_INSTALL_SESSION_SPLIT_NAME_CHARS =
+            CharMatcher.inRange('a','z').or(CharMatcher.inRange('A','Z'))
+                    .or(CharMatcher.anyOf("_-")).negate();
 
     private boolean uploadAPK(final String sessionId, String apkFilePath, int uniqueId) {
         Log.d(sessionId, String.format("Uploading APK %1$s ", apkFilePath));
@@ -1016,6 +1051,8 @@ final class Device implements IDevice {
         String baseName = fileToUpload.getName().lastIndexOf('.') != -1
                 ? fileToUpload.getName().substring(0, fileToUpload.getName().lastIndexOf('.'))
                 : fileToUpload.getName();
+
+        baseName = UNSAFE_PM_INSTALL_SESSION_SPLIT_NAME_CHARS.replaceFrom(baseName, '_');
 
         String command = String.format("pm install-write -S %d %s %d_%s -",
                 fileToUpload.length(), sessionId, uniqueId, baseName);
@@ -1100,7 +1137,7 @@ final class Device implements IDevice {
     }
 
     @Override
-    public String installRemotePackage(String remoteFilePath, boolean reinstall,
+    public void installRemotePackage(String remoteFilePath, boolean reinstall,
             String... extraArgs) throws InstallException {
         try {
             InstallReceiver receiver = new InstallReceiver();
@@ -1114,7 +1151,10 @@ final class Device implements IDevice {
             String cmd = String.format("pm install %1$s \"%2$s\"", optionString.toString(),
                     remoteFilePath);
             executeShellCommand(cmd, receiver, INSTALL_TIMEOUT_MINUTES, TimeUnit.MINUTES);
-            return receiver.getErrorMessage();
+            String error = receiver.getErrorMessage();
+            if (error != null) {
+                throw new InstallException(error);
+            }
         } catch (TimeoutException e) {
             throw new InstallException(e);
         } catch (AdbCommandRejectedException e) {

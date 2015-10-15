@@ -27,8 +27,11 @@ import java.io.IOException;
 /**
  * JsonSerializer and Deserializer for {@link SourceFile}.
  *
- * The JsonDeserialiser accepts either a string of the file path or a JsonObject of the form
- * {"path":"/path/to/file.java", "description": "short human-readable description"} where both
+ * The JsonDeserialiser accepts either a string of the file path or a json object of the form
+ * <pre>{
+ *     "path":"/path/to/file.java",
+ *     "description": "short human-readable description"
+ * }</pre> where both
  * properties are optionally present, so unknown is represented by the empty object.
  */
 public class SourceFileJsonTypeAdapter extends TypeAdapter<SourceFile> {

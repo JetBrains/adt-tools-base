@@ -16,15 +16,28 @@
 
 package com.android.tools.perflib.heap.io;
 
+import com.android.annotations.NonNull;
+import com.android.tools.perflib.captures.DataBuffer;
+
 import java.nio.ByteBuffer;
 
-public class InMemoryBuffer implements HprofBuffer {
+public class InMemoryBuffer implements DataBuffer {
 
     private final ByteBuffer mBuffer;
 
     public InMemoryBuffer(int capacity) {
         mBuffer = ByteBuffer.allocateDirect(capacity);
     }
+
+    /**
+     * Create an in memory buffer from a raw array of bytes.
+     */
+    public InMemoryBuffer(byte[] data) {
+        mBuffer = ByteBuffer.wrap(data);
+    }
+
+    @Override
+    public void dispose() {}
 
     public ByteBuffer getDirectBuffer() {
         return mBuffer;
@@ -36,7 +49,12 @@ public class InMemoryBuffer implements HprofBuffer {
     }
 
     @Override
-    public void read(byte[] b) {
+    public void append(@NonNull byte[] data) {
+        // Do nothing, since this is not a streaming data buffer.
+    }
+
+    @Override
+    public void read(@NonNull byte[] b) {
         mBuffer.get(b);
     }
 

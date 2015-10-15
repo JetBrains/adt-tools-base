@@ -23,10 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A work queue that accepts jobs and treat them in order.
@@ -217,8 +214,7 @@ public class WorkQueue<T> implements Runnable {
                 final Job<T> job = queueTask.job;
                 if (job == null) {
                     // this clearly should not happen.
-                    Logger.getAnonymousLogger().severe(
-                            "I got a null pending job out of the priority queue");
+                    mLogger.error(null, "I got a null pending job out of the priority queue");
                     return;
                 }
                 verbose("Thread(%1$s): scheduling %2$s", threadName, job.getJobTitle());
@@ -226,13 +222,15 @@ public class WorkQueue<T> implements Runnable {
                 try {
                     mQueueThreadContext.runTask(job);
                 } catch (Exception e) {
-                    Logger.getAnonymousLogger().log(Level.WARNING, "Exception while processing task ", e);
-                    job.error();
+                    mLogger.warning("Exception while processing task %1$s", e);
+                    job.error(e);
                     return;
                 }
                 // wait for the job completion.
-                job.await();
-                verbose("Thread(%1$s): job %2$s finished", threadName, job.getJobTitle());
+                boolean result = job.await();
+                verbose("Thread(%1$s): job %2$s finished, result=%3$b",
+                        threadName, job.getJobTitle(), result);
+
                 // we could potentially reduce the workforce at this point if we have little
                 // queuing comparatively to the number of worker threads but at this point, the
                 // overall process (gradle activity) is fairly short lived so skipping at this

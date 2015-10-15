@@ -16,10 +16,10 @@
 
 package com.android.build.gradle.ndk.internal;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.NdkHandler;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ListMultimap;
 
 import org.gradle.api.Action;
@@ -27,12 +27,11 @@ import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
 import org.gradle.model.ModelMap;
-import org.gradle.nativeplatform.SharedLibraryBinarySpec;
+import org.gradle.nativeplatform.NativeBinarySpec;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Configuration to setup STL for NDK.
@@ -97,23 +96,33 @@ public class StlConfiguration {
         }
     }
 
-    public static void createStlCopyTask(NdkHandler ndkHandler, String stl,
-            ModelMap<Task> tasks, final File buildDir,
-            final SharedLibraryBinarySpec binary) {
+    public static void createStlCopyTask(
+            @NonNull ModelMap<Task> tasks,
+            @NonNull final NativeBinarySpec binary,
+            @NonNull final File buildDir,
+            @NonNull NdkHandler ndkHandler,
+            @NonNull String stl,
+            @NonNull String buildTaskName) {
         if (stl.endsWith("_shared")) {
             final StlNativeToolSpecification stlConfig = new StlNativeToolSpecification(ndkHandler,
                     stl, binary.getTargetPlatform());
 
-            String copyTaskName = NdkNamingScheme.getTaskName(binary, "copy", "StlSo");
+            final String copyTaskName = NdkNamingScheme.getTaskName(binary, "copy", "StlSo");
             tasks.create(copyTaskName, Copy.class, new Action<Copy>() {
                 @Override
                 public void execute(Copy copy) {
                     copy.from(stlConfig.getStlLib(binary.getTargetPlatform().getName()));
-                    copy.into(new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)));
+                    copy.into(new File(buildDir,
+                            NdkNamingScheme.getDebugLibraryDirectoryName(binary)));
 
                 }
             });
-            binary.getBuildTask().dependsOn(copyTaskName);
+            tasks.named(buildTaskName, new Action<Task>() {
+                @Override
+                public void execute(Task task) {
+                    task.dependsOn(copyTaskName);
+                }
+            });
         }
     }
 }

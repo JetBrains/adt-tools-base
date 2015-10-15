@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * with the specified lock being held.
  */
 @Documented
-@Retention(RetentionPolicy.CLASS)
+@Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface GuardedBy {
     String value();

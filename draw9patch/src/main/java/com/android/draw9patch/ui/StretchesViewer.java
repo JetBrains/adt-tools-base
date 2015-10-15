@@ -163,7 +163,7 @@ public class StretchesViewer extends JPanel {
         both.remainderVertical = both.scaledHeight - remainderVertical;
 
         horizontalPatchesSum = 0;
-        if (patchInfo.horizontalPatches.size() > 0) {
+        if (!patchInfo.horizontalPatches.isEmpty()) {
             int start = -1;
             for (Rectangle rect : patchInfo.horizontalPatches) {
                 if (rect.x > start) {
@@ -182,7 +182,7 @@ public class StretchesViewer extends JPanel {
         }
 
         verticalPatchesSum = 0;
-        if (patchInfo.verticalPatches.size() > 0) {
+        if (!patchInfo.verticalPatches.isEmpty()) {
             int start = -1;
             for (Rectangle rect : patchInfo.verticalPatches) {
                 if (rect.y > start) {

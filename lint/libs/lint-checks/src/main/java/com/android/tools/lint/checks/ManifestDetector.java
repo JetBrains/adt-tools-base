@@ -16,23 +16,73 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.ATTR_ALLOW_BACKUP;
+import static com.android.SdkConstants.ATTR_FULL_BACKUP_CONTENT;
+import static com.android.SdkConstants.ATTR_ICON;
+import static com.android.SdkConstants.ATTR_MIN_SDK_VERSION;
+import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_PACKAGE;
+import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
+import static com.android.SdkConstants.ATTR_VERSION_CODE;
+import static com.android.SdkConstants.ATTR_VERSION_NAME;
+import static com.android.SdkConstants.DRAWABLE_PREFIX;
+import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
+import static com.android.SdkConstants.TAG_ACTIVITY;
+import static com.android.SdkConstants.TAG_APPLICATION;
+import static com.android.SdkConstants.TAG_INTENT_FILTER;
+import static com.android.SdkConstants.TAG_PERMISSION;
+import static com.android.SdkConstants.TAG_PROVIDER;
+import static com.android.SdkConstants.TAG_RECEIVER;
+import static com.android.SdkConstants.TAG_SERVICE;
+import static com.android.SdkConstants.TAG_USES_FEATURE;
+import static com.android.SdkConstants.TAG_USES_LIBRARY;
+import static com.android.SdkConstants.TAG_USES_PERMISSION;
+import static com.android.SdkConstants.TAG_USES_SDK;
+import static com.android.SdkConstants.TOOLS_URI;
+import static com.android.SdkConstants.VALUE_FALSE;
+import static com.android.xml.AndroidManifest.NODE_ACTION;
+import static com.android.xml.AndroidManifest.NODE_DATA;
+import static com.android.xml.AndroidManifest.NODE_METADATA;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.model.*;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ApiVersion;
+import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.SourceProviderContainer;
+import com.android.builder.model.Variant;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.resources.ResourceUrl;
-import com.android.tools.lint.detector.api.*;
+import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Implementation;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.LintUtils;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.Scope;
+import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.collect.Maps;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
-import java.util.*;
-
-import static com.android.SdkConstants.*;
-import static com.android.xml.AndroidManifest.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Checks for issues in AndroidManifest files such as declaring elements in the
@@ -146,6 +196,15 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             Severity.FATAL,
             IMPLEMENTATION);
 
+    /**
+     * Documentation URL for app backup.
+     * <p>
+     * TODO: Replace with stable API doc reference once this moves out of preview
+     * (tracked in https://code.google.com/p/android/issues/detail?id=182113)
+     */
+    private static final String BACKUP_DOCUMENTATION_URL
+            = "https://developer.android.com/preview/backup/index.html";
+
     /** Not explicitly defining allowBackup */
     public static final Issue ALLOW_BACKUP = Issue.create(
             "AllowBackup", //$NON-NLS-1$
@@ -176,8 +235,9 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             Category.SECURITY,
             3,
             Severity.WARNING,
-            IMPLEMENTATION).addMoreInfo(
-            "http://developer.android.com/reference/android/R.attr.html#allowBackup");
+            IMPLEMENTATION)
+            .addMoreInfo(BACKUP_DOCUMENTATION_URL)
+            .addMoreInfo("http://developer.android.com/reference/android/R.attr.html#allowBackup");
 
     /** Conflicting permission names */
     public static final Issue UNIQUE_PERMISSION = Issue.create(
@@ -485,23 +545,19 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 ProductFlavor flavor = variant.getMergedFlavor();
                 String gradleValue = null;
                 if (ATTR_MIN_SDK_VERSION.equals(attributeName)) {
-                    try {
-                        ApiVersion minSdkVersion = flavor.getMinSdkVersion();
-                        gradleValue = minSdkVersion != null ? minSdkVersion.getApiString() : null;
-                    } catch (Throwable e) {
-                        // TODO: REMOVE ME
-                        // This method was added in the 0.11 model. We'll need to drop support
-                        // for 0.10 shortly but until 0.11 is available this is a stopgap measure
+                    if (element.hasAttributeNS(TOOLS_URI, "overrideLibrary")) {
+                        // The manifest may be setting a minSdkVersion here to deliberately
+                        // let the manifest merger know that a library dependency's manifest
+                        // with a higher value is okay: this value wins. The manifest merger
+                        // should really be taking the Gradle file into account instead,
+                        // but for now we filter these out; http://b.android.com/186762
+                        return;
                     }
+                    ApiVersion minSdkVersion = flavor.getMinSdkVersion();
+                    gradleValue = minSdkVersion != null ? minSdkVersion.getApiString() : null;
                 } else if (ATTR_TARGET_SDK_VERSION.equals(attributeName)) {
-                    try {
-                        ApiVersion targetSdkVersion = flavor.getTargetSdkVersion();
-                        gradleValue = targetSdkVersion != null ? targetSdkVersion.getApiString() : null;
-                    } catch (Throwable e) {
-                        // TODO: REMOVE ME
-                        // This method was added in the 0.11 model. We'll need to drop support
-                        // for 0.10 shortly but until 0.11 is available this is a stopgap measure
-                    }
+                    ApiVersion targetSdkVersion = flavor.getTargetSdkVersion();
+                    gradleValue = targetSdkVersion != null ? targetSdkVersion.getApiString() : null;
                 } else if (ATTR_VERSION_CODE.equals(attributeName)) {
                     Integer versionCode = flavor.getVersionCode();
                     if (versionCode != null) {
@@ -752,7 +808,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
         if (tag.equals(TAG_APPLICATION)) {
             mSeenApplication = true;
             boolean recordLocation = false;
-            if (element.hasAttributeNS(ANDROID_URI, ATTR_ALLOW_BACKUP)
+            String allowBackup = element.getAttributeNS(ANDROID_URI, ATTR_ALLOW_BACKUP);
+            if (allowBackup != null && !allowBackup.isEmpty()
                     || context.getDriver().isSuppressed(context, ALLOW_BACKUP, element)) {
                 mSeenAllowBackup = true;
             } else {
@@ -769,7 +826,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                     (mApplicationTagHandle == null || isMainManifest(context, context.file))) {
                 mApplicationTagHandle = context.createLocationHandle(element);
             }
-            Attr fullBackupNode = element.getAttributeNodeNS(ANDROID_URI, "fullBackupContent");
+            Attr fullBackupNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_FULL_BACKUP_CONTENT);
             if (fullBackupNode != null &&
                     fullBackupNode.getValue().startsWith(PREFIX_RESOURCE_REF) &&
                     context.getClient().supportsProjectResources()) {
@@ -780,21 +837,30 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                         && resources != null
                         && !resources.hasResourceItem(url.type, url.name)) {
                     Location location = context.getValueLocation(fullBackupNode);
-                    context.report(ALLOW_BACKUP, location,
+                    context.report(ALLOW_BACKUP, fullBackupNode, location,
                             "Missing `<full-backup-content>` resource");
                 }
-            } else if (fullBackupNode == null && context.getMainProject().getTargetSdk() >= 23) {
-                Location location = context.getLocation(element);
-                context.report(ALLOW_BACKUP, location,
-                        "Should explicitly set `android:fullBackupContent` to `true` or `false` "
-                                + "to opt-in to or out of full app data back-up and restore, or "
-                                + "alternatively to an `@xml` resource which specifies which "
-                                + "files to backup");
-            } else if (fullBackupNode == null && hasGcmReceiver(element)) {
-                Location location = context.getLocation(element);
-                context.report(ALLOW_BACKUP, location,
-                        "Should explicitly set `android:fullBackupContent` to avoid backing up "
-                                + "the GCM device specific regId.");
+            } else if (fullBackupNode == null && !VALUE_FALSE.equals(allowBackup)
+                    && context.getMainProject().getTargetSdk() >= 23) {
+                if (hasGcmReceiver(element)) {
+                    Location location = context.getLocation(element);
+                    context.report(ALLOW_BACKUP, element, location, ""
+                            + "On SDK version 23 and up, your app data will be automatically "
+                            + "backed up, and restored on app install. Your GCM regid will not "
+                            + "work across restores, so you must ensure that it is excluded "
+                            + "from the back-up set. Use the attribute "
+                            + "`android:fullBackupContent` to specify an `@xml` resource which "
+                            + "configures which files to backup. More info: "
+                            + BACKUP_DOCUMENTATION_URL);
+                } else {
+                    Location location = context.getLocation(element);
+                    context.report(ALLOW_BACKUP, element, location, ""
+                            + "On SDK version 23 and up, your app data will be automatically "
+                            + "backed up and restored on app install. Consider adding the "
+                            + "attribute `android:fullBackupContent` to specify an `@xml` "
+                            + "resource which configures which files to backup. More info: "
+                            + BACKUP_DOCUMENTATION_URL);
+                }
             }
         } else if (mSeenApplication) {
             if (context.isEnabled(ORDER)) {

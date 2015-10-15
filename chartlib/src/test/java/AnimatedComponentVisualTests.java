@@ -82,25 +82,6 @@ public class AnimatedComponentVisualTests extends JDialog {
         });
         controls.add(debug);
 
-        final JCheckBox update = new JCheckBox("Update");
-        update.setSelected(true);
-        update.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                for (AnimatedComponent component : mComponents) {
-                    component.setUpdateData(update.isSelected());
-                }
-            }
-        });
-        final JCheckBox dark = new JCheckBox("Dark");
-        dark.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                setDarkMode(dark.isSelected());
-            }
-        });
-        controls.add(dark);
-        controls.add(update);
         final JButton step = new JButton("Step");
         step.addActionListener(new ActionListener() {
             @Override
@@ -110,6 +91,27 @@ public class AnimatedComponentVisualTests extends JDialog {
                 }
             }
         });
+        final JCheckBox update = new JCheckBox("Update");
+        update.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                for (AnimatedComponent component : mComponents) {
+                    component.setUpdateData(update.isSelected());
+                }
+                step.setEnabled(!update.isSelected());
+            }
+        });
+        update.setSelected(true);
+        step.setEnabled(false);
+        final JCheckBox dark = new JCheckBox("Dark");
+        dark.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                setDarkMode(dark.isSelected());
+            }
+        });
+        controls.add(dark);
+        controls.add(update);
         controls.add(step);
         contentPane.add(controls, BorderLayout.WEST);
 

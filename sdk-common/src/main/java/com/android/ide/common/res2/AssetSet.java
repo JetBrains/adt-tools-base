@@ -17,7 +17,6 @@
 package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.packaging.PackagingUtils;
 import com.android.utils.ILogger;
 
 import org.w3c.dom.Attr;
@@ -54,7 +53,7 @@ public class AssetSet extends DataSet<AssetItem, AssetFile> {
     }
 
     @Override
-    protected AssetFile createFileAndItems(@NonNull File file, @NonNull Node fileNode) {
+    protected AssetFile createFileAndItemsFromXml(@NonNull File file, @NonNull Node fileNode) {
         Attr nameAttr = (Attr) fileNode.getAttributes().getNamedItem(ATTR_NAME);
         if (nameAttr == null) {
             return null;

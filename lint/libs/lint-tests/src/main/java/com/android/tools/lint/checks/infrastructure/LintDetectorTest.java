@@ -34,6 +34,7 @@ import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.sdklib.IAndroidTarget;
 import com.android.testutils.SdkTestCase;
+import com.android.tools.lint.EcjParser;
 import com.android.tools.lint.ExternalAnnotationRepository;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LintCliFlags;
@@ -44,18 +45,21 @@ import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
@@ -69,6 +73,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
+import org.eclipse.jdt.core.compiler.CategorizedProblem;
+import org.eclipse.jdt.core.compiler.IProblem;
+import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
 import org.intellij.lang.annotations.Language;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -77,10 +84,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -121,6 +125,10 @@ public abstract class LintDetectorTest extends SdkTestCase {
         }
 
         return mDetector;
+    }
+
+    protected boolean allowCompilationErrors() {
+        return false;
     }
 
     protected abstract List<Issue> getIssues();
@@ -341,7 +349,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
     @Override
     protected InputStream getTestResource(String relativePath, boolean expectExists) {
         String path = "data" + File.separator + relativePath; //$NON-NLS-1$
-        InputStream stream = LintDetectorTest.class.getResourceAsStream(path);
+        InputStream stream = getClass().getResourceAsStream(path);
         if (!expectExists && stream == null) {
             return null;
         }
@@ -469,6 +477,44 @@ public abstract class LintDetectorTest extends SdkTestCase {
         }
 
         @Override
+        public JavaParser getJavaParser(@Nullable Project project) {
+            return new EcjParser(this, project) {
+                @Override
+                public void prepareJavaParse(@NonNull List<JavaContext> contexts) {
+                    super.prepareJavaParse(contexts);
+                    if (!allowCompilationErrors() && mEcjResult != null) {
+                        StringBuilder sb = new StringBuilder();
+                        for (CompilationUnitDeclaration unit : mEcjResult.getCompilationUnits()) {
+                            // so maybe I don't need my map!!
+                            CategorizedProblem[] problems = unit.compilationResult()
+                                    .getAllProblems();
+                            if (problems != null) {
+                                for (IProblem problem : problems) {
+                                    if (problem == null || !problem.isError()) {
+                                        continue;
+                                    }
+                                    String filename = new File(new String(
+                                            problem.getOriginatingFileName())).getName();
+                                    sb.append(filename)
+                                            .append(":")
+                                            .append(problem.isError() ? "Error" : "Warning")
+                                            .append(": ").append(problem.getSourceLineNumber())
+                                            .append(": ").append(problem.getMessage())
+                                            .append('\n');
+                                }
+                            }
+                        }
+                        if (sb.length() > 0) {
+                            fail("Found compilation problems in lint test not overriding "
+                                    + "allowCompilationErrors():\n" + sb);
+                        }
+
+                    }
+                }
+            };
+        }
+
+        @Override
         public void report(
                 @NonNull Context context,
                 @NonNull Issue issue,
@@ -481,7 +527,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
             }
 
             // Use plain ascii in the test golden files for now. (This also ensures
-            // that the markup is wellformed, e.g. if we have a ` without a matching
+            // that the markup is well-formed, e.g. if we have a ` without a matching
             // closing `, the ` would show up in the plain text.)
             message = format.convertTo(message, TextFormat.TEXT);
 
@@ -540,8 +586,10 @@ public abstract class LintDetectorTest extends SdkTestCase {
             }
         }
 
+        @NonNull
         @Override
-        public Configuration getConfiguration(@NonNull Project project) {
+        public Configuration getConfiguration(@NonNull Project project,
+                @Nullable LintDriver driver) {
             return LintDetectorTest.this.getConfiguration(this, project);
         }
 
@@ -822,6 +870,11 @@ public abstract class LintDetectorTest extends SdkTestCase {
                     File lint = new File(dir, "lint");  //$NON-NLS-1$
                     if (lint.exists() && new File(lint, "cli").exists()) { //$NON-NLS-1$
                         return dir.getParentFile().getParentFile();
+                    }
+
+                    File tools = new File(dir, "tools");
+                    if (tools.exists() && FileUtils.join(tools, "base", "lint", "cli").exists()) {
+                        return dir;
                     }
                     dir = dir.getParentFile();
                 }

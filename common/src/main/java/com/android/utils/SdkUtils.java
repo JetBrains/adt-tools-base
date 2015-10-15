@@ -18,11 +18,9 @@ package com.android.utils;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 
@@ -31,12 +29,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.List;
+import java.util.Properties;
 
 import static com.android.SdkConstants.DOT_WEBP;
 import static com.android.SdkConstants.DOT_XML;
@@ -351,7 +351,12 @@ public class SdkUtils {
      * @throws MalformedURLException in very unexpected cases
      */
     public static String fileToUrlString(@NonNull File file) throws MalformedURLException {
-        return fileToUrl(file).toExternalForm();
+        String url = fileToUrl(file).toExternalForm();
+        // Use three slashes, which is the form most widely recognized by terminal emulators.
+        if (!url.startsWith("file:///")) {
+            url = url.replaceFirst("file:/", "file:///");
+        }
+        return url;
     }
 
     /**
@@ -393,44 +398,6 @@ public class SdkUtils {
             return ' ' + FILENAME_PREFIX + url + ' ';
         } else {
             return FILENAME_PREFIX + url;
-        }
-    }
-
-    /**
-     * Copies the given XML file to the given new path. It also inserts a comment at
-     * the end of the file which points to the original source location. This is intended
-     * for use with error parsers which can rewrite for example AAPT error messages in
-     * say layout or manifest files, which occur in the merged (copied) output, and present
-     * it as an error pointing to one of the user's original source files.
-     */
-    public static void copyXmlWithSourceReference(@NonNull File from, @NonNull File to)
-            throws IOException {
-        copyXmlWithComment(from, to, createPathComment(from, true));
-    }
-
-    /** Copies a given XML file, and appends a given comment to the end */
-    private static void copyXmlWithComment(@NonNull File from, @NonNull File to,
-            @Nullable String comment) throws IOException {
-        assert endsWithIgnoreCase(from.getPath(), DOT_XML) : from;
-
-        int successfulOps = 0;
-        InputStream in = new FileInputStream(from);
-        try {
-            FileOutputStream out = new FileOutputStream(to, false);
-            try {
-                ByteStreams.copy(in, out);
-                successfulOps++;
-                if (comment != null) {
-                    String commentText = "<!--" + XmlUtils.toXmlTextValue(comment) + "-->";
-                    byte[] suffix = commentText.getBytes(Charsets.UTF_8);
-                    out.write(suffix);
-                }
-            } finally {
-                Closeables.close(out, successfulOps < 1);
-                successfulOps++;
-            }
-        } finally {
-            Closeables.close(in, successfulOps < 2);
         }
     }
 
@@ -509,5 +476,39 @@ public class SdkUtils {
             }
         }
         return false;
+    }
+
+    /**
+     * Escapes the given property file value (right hand side of property assignment)
+     * as required by the property file format (e.g. escapes colons and backslashes)
+     *
+     * @param value the value to be escaped
+     * @return the escaped value
+     */
+    @NonNull
+    public static String escapePropertyValue(@NonNull String value) {
+        // Slow, stupid implementation, but is 100% compatible with Java's property file
+        // implementation
+        Properties properties = new Properties();
+        properties.setProperty("k", value); // key doesn't matter
+        StringWriter writer = new StringWriter();
+        try {
+            properties.store(writer, null);
+            String s = writer.toString();
+            int end = s.length();
+
+            // Writer inserts trailing newline
+            String lineSeparator = SdkUtils.getLineSeparator();
+            if (s.endsWith(lineSeparator)) {
+                end -= lineSeparator.length();
+            }
+
+            int start = s.indexOf('=');
+            assert start != -1 : s;
+            return s.substring(start + 1, end);
+        }
+        catch (IOException e) {
+            return value; // shouldn't happen; we're not going to disk
+        }
     }
 }

@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_PREFIX;
 import static com.android.SdkConstants.ANDROID_THEME_PREFIX;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_CLASS;
+import static com.android.SdkConstants.ATTR_FULL_BACKUP_CONTENT;
 import static com.android.SdkConstants.ATTR_ID;
 import static com.android.SdkConstants.ATTR_LABEL_FOR;
 import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
@@ -42,6 +43,7 @@ import static com.android.SdkConstants.TAG_STYLE;
 import static com.android.SdkConstants.TARGET_API;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VIEW_TAG;
+import static com.android.tools.lint.checks.RtlDetector.ATTR_SUPPORTS_RTL;
 import static com.android.tools.lint.detector.api.ClassContext.getFqcn;
 import static com.android.tools.lint.detector.api.ClassContext.getInternalName;
 import static com.android.tools.lint.detector.api.LintUtils.getNextInstruction;
@@ -53,9 +55,16 @@ import static com.android.utils.SdkUtils.getResourceFieldName;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
+import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.PkgType;
+import com.android.sdklib.repository.local.LocalPkgInfo;
+import com.android.sdklib.repository.local.LocalSdk;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintDriver;
@@ -103,6 +112,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -313,16 +323,70 @@ public class ApiDetector extends ResourceXmlDetector
 
     @Override
     public void beforeCheckProject(@NonNull Context context) {
-        mApiDatabase = ApiLookup.get(context.getClient());
-        // We can't look up the minimum API required by the project here:
-        // The manifest file hasn't been processed yet in the -before- project hook.
-        // For now it's initialized lazily in getMinSdk(Context), but the
-        // lint infrastructure should be fixed to parse manifest file up front.
+        if (mApiDatabase == null) {
+            mApiDatabase = ApiLookup.get(context.getClient());
+            // We can't look up the minimum API required by the project here:
+            // The manifest file hasn't been processed yet in the -before- project hook.
+            // For now it's initialized lazily in getMinSdk(Context), but the
+            // lint infrastructure should be fixed to parse manifest file up front.
 
-        if (mApiDatabase == null && !mWarnedMissingDb) {
-            mWarnedMissingDb = true;
-            context.report(IssueRegistry.LINT_ERROR, Location.create(context.file),
+            if (mApiDatabase == null && !mWarnedMissingDb) {
+                mWarnedMissingDb = true;
+                context.report(IssueRegistry.LINT_ERROR, Location.create(context.file),
                         "Can't find API database; API check not performed");
+            } else {
+                // See if you don't have at least version 23.0.1 of platform tools installed
+                LocalSdk sdk = context.getClient().getSdk();
+                if (sdk == null) {
+                    return;
+                }
+                LocalPkgInfo pkgInfo = sdk.getPkgInfo(PkgType.PKG_PLATFORM_TOOLS);
+                if (pkgInfo == null) {
+                    return;
+                }
+                IPkgDesc desc = pkgInfo.getDesc();
+                FullRevision revision = desc.getFullRevision();
+                if (revision == null) {
+                    return;
+                }
+                // The platform tools must be at at least the same revision
+                // as the compileSdkVersion!
+                // And as a special case, for 23, they must be at 23.0.1
+                // because 23.0.0 accidentally shipped without Android M APIs.
+                int compileSdkVersion = context.getProject().getBuildSdk();
+                if (compileSdkVersion == 23) {
+                    if (revision.getMajor() > 23 || revision.getMajor() == 23
+                      && (revision.getMinor() > 0 || revision.getMicro() > 0)) {
+                        return;
+                    }
+                } else if (compileSdkVersion <= revision.getMajor()) {
+                    return;
+                }
+
+                // Pick a location: when incrementally linting in the IDE, tie
+                // it to the current file
+                List<File> currentFiles = context.getProject().getSubset();
+                Location location;
+                if (currentFiles != null && currentFiles.size() == 1) {
+                    File file = currentFiles.get(0);
+                    String contents = context.getClient().readFile(file);
+                    int firstLineEnd = contents.indexOf('\n');
+                    if (firstLineEnd == -1) {
+                        firstLineEnd = contents.length();
+                    }
+                    location = Location.create(file,
+                        new DefaultPosition(0, 0, 0), new
+                        DefaultPosition(0, firstLineEnd, firstLineEnd));
+                } else {
+                    location = Location.create(context.file);
+                }
+                context.report(UNSUPPORTED,
+                        location,
+                        String.format("The SDK platform-tools version ((%1$s)) is too old "
+                                        + " to check APIs compiled with API %2$d; please update",
+                                revision.toShortString(),
+                                compileSdkVersion));
+            }
         }
     }
 
@@ -361,7 +425,7 @@ public class ApiDetector extends ResourceXmlDetector
                         && attributeApiLevel > getLocalMinSdk(attribute.getOwnerElement())
                         && !isBenignUnusedAttribute(name)
                         && !isAlreadyWarnedDrawableFile(context, attribute, attributeApiLevel)) {
-                    if (RtlDetector.isRtlAttributeName(name)) {
+                    if (RtlDetector.isRtlAttributeName(name) || ATTR_SUPPORTS_RTL.equals(name)) {
                         // No need to warn for example that
                         //  "layout_alignParentEnd will only be used in API level 17 and higher"
                         // since we have a dedicated RTL lint rule dealing with those attributes
@@ -370,8 +434,19 @@ public class ApiDetector extends ResourceXmlDetector
                         // when used on TextViews (and subclasses of TextViews), on some
                         // devices, because vendor specific attributes conflict with the
                         // later-added framework resources, and these are apparently read
-                        // by the text views:
+                        // by the text views.
+                        //
+                        // However, as of build tools 23.0.1 aapt works around this by packaging
+                        // the resources differently.
+
+                        BuildToolInfo buildToolInfo = context.getProject().getBuildTools();
+                        FullRevision buildTools = buildToolInfo != null
+                                ? buildToolInfo.getRevision() : null;
+                        boolean isOldBuildTools = buildTools != null &&
+                                (buildTools.getMajor() < 23 || buildTools.getMajor() == 23
+                                 && buildTools.getMinor() == 0 && buildTools.getMicro() == 0);
                         if (name.equals(ATTR_PADDING_START) &&
+                                (buildTools == null || isOldBuildTools) &&
                                 viewMayExtendTextView(attribute.getOwnerElement())) {
                             Location location = context.getLocation(attribute);
                             String message = String.format(
@@ -379,6 +454,14 @@ public class ApiDetector extends ResourceXmlDetector
                                             + "some specific devices older than API %2$d "
                                             + "(current min is %3$d)",
                                     attribute.getLocalName(), attributeApiLevel, minSdk);
+                            //noinspection VariableNotUsedInsideIf
+                            if (buildTools != null) {
+                                message = String.format("Upgrade `buildToolsVersion` from "
+                                        + "`%1$s` to at least `23.0.1`; if not, ",
+                                            buildTools.toShortString())
+                                        + Character.toLowerCase(message.charAt(0))
+                                        + message.substring(1);
+                            }
                             context.report(UNSUPPORTED, attribute, location, message);
                         }
                     } else {
@@ -534,8 +617,9 @@ public class ApiDetector extends ResourceXmlDetector
      * on older platforms.
      */
     public static boolean isBenignUnusedAttribute(@NonNull String name) {
-        return ATTR_LABEL_FOR.equals(name) || ATTR_TEXT_IS_SELECTABLE.equals(name);
-
+        return ATTR_LABEL_FOR.equals(name)
+               || ATTR_TEXT_IS_SELECTABLE.equals(name)
+               || ATTR_FULL_BACKUP_CONTENT.equals(name);
     }
 
     @Override
@@ -549,10 +633,10 @@ public class ApiDetector extends ResourceXmlDetector
         ResourceFolderType folderType = context.getResourceFolderType();
         if (folderType != ResourceFolderType.LAYOUT) {
             if (folderType == ResourceFolderType.DRAWABLE) {
-                checkElement(context, element, TAG_RIPPLE, 21, UNSUPPORTED);
-                checkElement(context, element, TAG_VECTOR, 21, UNSUPPORTED);
-                checkElement(context, element, TAG_ANIMATED_SELECTOR, 21, UNSUPPORTED);
-                checkElement(context, element, TAG_ANIMATED_VECTOR, 21, UNSUPPORTED);
+                checkElement(context, element, TAG_VECTOR, 21, "1.4", UNSUPPORTED);
+                checkElement(context, element, TAG_RIPPLE, 21, null, UNSUPPORTED);
+                checkElement(context, element, TAG_ANIMATED_SELECTOR, 21, null, UNSUPPORTED);
+                checkElement(context, element, TAG_ANIMATED_VECTOR, 21, null, UNSUPPORTED);
             }
             if (element.getParentNode().getNodeType() != Node.ELEMENT_NODE) {
                 // Root node
@@ -593,7 +677,7 @@ public class ApiDetector extends ResourceXmlDetector
                 }
             } else {
                 // TODO: Complain if <tag> is used at the root level!
-                checkElement(context, element, TAG, 21, UNUSED);
+                checkElement(context, element, TAG, 21, null, UNUSED);
             }
 
             // Check widgets to make sure they're available in this version of the SDK.
@@ -622,17 +706,24 @@ public class ApiDetector extends ResourceXmlDetector
     /** Checks whether the given element is the given tag, and if so, whether it satisfied
      * the minimum version that the given tag is supported in */
     private void checkElement(@NonNull XmlContext context, @NonNull Element element,
-            @NonNull String tag, int api, @NonNull Issue issue) {
+            @NonNull String tag, int api, @Nullable String gradleVersion, @NonNull Issue issue) {
         if (tag.equals(element.getTagName())) {
             int minSdk = getMinSdk(context);
-            if (api > minSdk && api > context.getFolderVersion()
-                    && api > getLocalMinSdk(element)) {
+            if (api > minSdk
+                    && api > context.getFolderVersion()
+                    && api > getLocalMinSdk(element)
+                    && !featureProvidedByGradle(context, gradleVersion)) {
                 Location location = context.getLocation(element);
                 String message;
                 if (issue == UNSUPPORTED) {
                     message = String.format(
                             "`<%1$s>` requires API level %2$d (current min is %3$d)", tag, api,
                             minSdk);
+                    if (gradleVersion != null) {
+                        message += String.format(
+                                " or building with Android Gradle plugin %1$s or higher",
+                                gradleVersion);
+                    }
                 } else {
                     assert issue == UNUSED : issue;
                     message = String.format(
@@ -1341,6 +1432,33 @@ public class ApiDetector extends ResourceXmlDetector
         return -1;
     }
 
+    /**
+     * Checks if the current project supports features added in {@code minGradleVersion} version of the
+     * Android gradle plugin.
+     *
+     * @param context Current context.
+     * @param minGradleVersion Version in which support for a given feature was added, or null if it's
+ *                      not supported at build time.
+     */
+    private static boolean featureProvidedByGradle(@NonNull XmlContext context,
+            @Nullable String minGradleVersion) {
+        if (minGradleVersion == null) {
+            return false;
+        }
+
+        AndroidProject gradleModel = context.getProject().getGradleProjectModel();
+        if (gradleModel != null) {
+            FullRevision gradleModelVersion =
+                    FullRevision.parseRevision(gradleModel.getModelVersion());
+            if (gradleModelVersion.compareTo(
+                    FullRevision.parseRevision(minGradleVersion),
+                    FullRevision.PreviewComparison.IGNORE) >= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static void report(final ClassContext context, String message, AbstractInsnNode node,
             MethodNode method, String patternStart, String patternEnd, SearchHints hints) {
         int lineNumber = node != null ? ClassContext.findLineNumber(node) : -1;
@@ -1386,7 +1504,7 @@ public class ApiDetector extends ResourceXmlDetector
         super.afterCheckProject(context);
     }
 
-// ---- Implements JavaScanner ----
+    // ---- Implements JavaScanner ----
 
     @Nullable
     @Override
@@ -1764,7 +1882,7 @@ public class ApiDetector extends ResourceXmlDetector
                                 + "API level %1$d (current min is %2$d)", api, minSdk);
                         LintDriver driver = mContext.getDriver();
                         if (!driver.isSuppressed(mContext, UNSUPPORTED, node)) {
-                            mContext.report(UNSUPPORTED, location, message);
+                            mContext.report(UNSUPPORTED, node, location, message);
                         }
                     }
                 } else {
@@ -1792,7 +1910,7 @@ public class ApiDetector extends ResourceXmlDetector
                                     api, minSdk, fqcn);
                                 LintDriver driver = mContext.getDriver();
                                 if (!driver.isSuppressed(mContext, UNSUPPORTED, typeReference)) {
-                                    mContext.report(UNSUPPORTED, location, message);
+                                    mContext.report(UNSUPPORTED, typeReference, location, message);
                                 }
                             }
                         }

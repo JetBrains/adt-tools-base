@@ -39,3 +39,10 @@ Java_com_example_simplejni_SimpleJni_productFlavorFromJni(JNIEnv* env, jobject t
 {
     return env->NewStringUTF(PRODUCT_FLAVOR);
 }
+
+extern "C"
+jstring
+Java_com_example_simplejni_SimpleJni_variantFromJni(JNIEnv* env, jobject thiz)
+{
+    return env->NewStringUTF(VARIANT);
+}

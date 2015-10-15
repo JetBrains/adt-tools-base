@@ -1,13 +1,12 @@
 package com.android.build.gradle.tasks;
 
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
-
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.annotations.ApkFile;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -17,11 +16,14 @@ import com.android.build.gradle.internal.tasks.ValidateSigningTask;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.transform.api.ScopedContent.ContentType;
+import com.android.build.transform.api.ScopedContent.Format;
+import com.android.build.transform.api.ScopedContent.Scope;
 import com.android.builder.packaging.DuplicateFileException;
+import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableSet;
 
-import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.gradle.api.Task;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.logging.Logger;
@@ -39,12 +41,30 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class PackageApplication extends IncrementalTask implements FileSupplier {
+
+    public static final TransformManager.StreamFilter sDexFilter =
+            new TransformManager.StreamFilter() {
+                @Override
+                public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
+                    return types.contains(ContentType.DEX);
+                }
+            };
+
+    public static final TransformManager.StreamFilter sResFilter =
+            new TransformManager.StreamFilter() {
+                @Override
+                public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
+                    return types.contains(ContentType.RESOURCES) &&
+                            !scopes.contains(Scope.PROVIDED_ONLY) &&
+                            !scopes.contains(Scope.TESTED_CODE);
+                }
+            };
 
     // ----- PUBLIC TASK API -----
 
@@ -57,32 +77,9 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         this.resourceFile = resourceFile;
     }
 
-    @InputDirectory
-    public File getDexFolder() {
-        return dexFolder;
-    }
-
-    public void setDexFolder(File dexFolder) {
-        this.dexFolder = dexFolder;
-    }
-
     @InputFiles
-    public Collection<File> getDexedLibraries() {
-        return dexedLibraries;
-    }
-
-    public void setDexedLibraries(Collection<File> dexedLibraries) {
-        this.dexedLibraries = dexedLibraries;
-    }
-
-    @InputDirectory
-    @Optional
-    public File getJavaResourceDir() {
-        return javaResourceDir;
-    }
-
-    public void setJavaResourceDir(File javaResourceDir) {
-        this.javaResourceDir = javaResourceDir;
+    public Collection<File> getDexFolderList() {
+        return getDexFolders().keySet();
     }
 
     public Set<File> getJniFolders() {
@@ -122,13 +119,29 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     // ----- PRIVATE TASK API -----
 
+    @InputDirectory
+    @Optional
+    public File getJavaResourceDir() {
+        return javaResourceDir;
+    }
+
+    @InputFile
+    @Optional
+    public File getJavaResourceJar() {
+        return javaResourceJar;
+    }
+
     private File resourceFile;
 
-    private File dexFolder;
+    private Map<File, Format> dexFolders;
+    public Map<File, Format> getDexFolders() {
+        return dexFolders;
+    }
 
-    private Collection<File> dexedLibraries;
-
+    /** directory for the merged java resources. only valid if the jar below is null  */
     private File javaResourceDir;
+    /** jar for the merged java resources. only valid if the folder above is null  */
+    private File javaResourceJar;
 
     private Set<File> jniFolders;
 
@@ -139,22 +152,13 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     private Set<String> abiFilters;
 
-    private Set<File> packagedJars;
-
     private boolean jniDebugBuild;
 
     private CoreSigningConfig signingConfig;
 
     private PackagingOptions packagingOptions;
 
-    @InputFiles
-    public Set<File> getPackagedJars() {
-        return packagedJars;
-    }
-
-    public void setPackagedJars(Set<File> packagedJars) {
-        this.packagedJars = packagedJars;
-    }
+    private SignedJarBuilder.IZipEntryFilter packagingOptionsFilter;
 
     @Input
     public boolean getJniDebugBuild() {
@@ -188,6 +192,14 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         this.packagingOptions = packagingOptions;
     }
 
+    public SignedJarBuilder.IZipEntryFilter getPackagingOptionsFilter() {
+        return packagingOptionsFilter;
+    }
+
+    public void setPackagingOptionsFilter(SignedJarBuilder.IZipEntryFilter filter) {
+        this.packagingOptionsFilter = filter;
+    }
+
     @InputFiles
     public FileTree getNativeLibraries() {
         FileTree src = null;
@@ -202,12 +214,22 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
     @Override
     protected void doFullTaskAction() {
         try {
-            final File dir = getJavaResourceDir();
-            getBuilder().packageApk(getResourceFile().getAbsolutePath(), getDexFolder(),
-                    getDexedLibraries(), getPackagedJars(),
-                    (dir == null ? null : dir.getAbsolutePath()), getJniFolders(),
-                    getMergingFolder(), getAbiFilters(), getJniDebugBuild(), getSigningConfig(),
-                    getPackagingOptions(), getOutputFile().getAbsolutePath());
+            File resourceLocation = getJavaResourceDir();
+            if (resourceLocation == null) {
+                resourceLocation = getJavaResourceJar();
+            }
+            getBuilder().packageApk(
+                    getResourceFile().getAbsolutePath(),
+                    getDexFolders(),
+                    resourceLocation,
+                    getJniFolders(),
+                    getMergingFolder(),
+                    getAbiFilters(),
+                    getJniDebugBuild(),
+                    getSigningConfig(),
+                    getPackagingOptions(),
+                    getPackagingOptionsFilter(),
+                    getOutputFile().getAbsolutePath());
         } catch (DuplicateFileException e) {
             Logger logger = getLogger();
             logger.error("Error: duplicate files during packaging of APK " + getOutputFile()
@@ -270,6 +292,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
             variantOutputData.packageApplicationTask = packageApp;
             packageApp.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            packageApp.setVariantName(
+                    scope.getVariantScope().getVariantConfiguration().getFullName());
 
             if (config.isMinifyEnabled() && config.getBuildType().isShrinkResources() && !config
                     .getUseJack()) {
@@ -288,54 +312,34 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 });
             }
 
-            ConventionMappingHelper.map(packageApp, "dexFolder", new Callable<File>() {
+            ConventionMappingHelper.map(packageApp, "dexFolders", new Callable< Map<File, Format>>() {
                 @Override
-                public File call() {
-                    return scope.getVariantScope().getDexOutputFolder();
+                public  Map<File, Format> call() {
+                    return scope.getVariantScope().getTransformManager().getPipelineOutput(
+                            sDexFilter, null);
                 }
             });
-            ConventionMappingHelper.map(packageApp, "dexedLibraries", new Callable<Collection<File>>() {
-                @Override
-                public Collection<File> call() {
-                    if (config.isMultiDexEnabled() && !config.isLegacyMultiDexMode()
-                            && variantData.preDexTask != null) {
-                        return scope.getGlobalScope().getProject()
-                                .fileTree(variantData.preDexTask.getOutputFolder()).getFiles();
-                    }
 
-                    return Collections.emptyList();
+            ConventionMappingHelper.map(packageApp, "javaResourceDir", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return scope.getVariantScope().getTransformManager().getSinglePipelineOutput(
+                            sResFilter, Format.SINGLE_FOLDER);
                 }
             });
-            ConventionMappingHelper.map(packageApp, "packagedJars", new Callable<Set<File>>() {
+
+            ConventionMappingHelper.map(packageApp, "javaResourceJar", new Callable<File>() {
                 @Override
-                public Set<File> call() {
-                    // when the application is obfuscated, the original resources may have been
-                    // adapted to match changing package names for instance, so we take the
-                    // resources from the obfuscation process results rather than the original
-                    // exploded library's classes.jar files.
-                    if (config.isMinifyEnabled() && variantData.obfuscationTask != null) {
-                        return variantData.obfuscationTask.getOutputs().getFiles().getFiles();
-                    }
-                    return scope.getGlobalScope().getAndroidBuilder().getPackagedJars(config);
+                public File call() throws Exception {
+                    return scope.getVariantScope().getTransformManager().getSinglePipelineOutput(
+                            sResFilter, Format.JAR);
                 }
             });
 
             packageApp.setMergingFolder(new File(scope.getGlobalScope().getIntermediatesDir(),
                     variantOutputData.getFullName() + "/merging"));
 
-            // when we use minification, the javaResources are given to the obfuscation task
-            // so it has a chance to rename java resources in sync with packages renaming,
-            // therefore the javaResources are located with the rest of the proguarded binary
-            // files, otherwise use the output of the Java resources processing task.
-            if (!config.isMinifyEnabled()) {
-                ConventionMappingHelper.map(packageApp, "javaResourceDir", new Callable<File>() {
-                    @Override
-                    public File call() {
-                        return getOptionalDir(
-                                variantData.processJavaResourcesTask.getDestinationDir());
-                    }
-                });
-            }
+
             ConventionMappingHelper.map(packageApp, "jniFolders", new Callable<Set<File>>() {
                 @Override
                 public Set<File> call() {
@@ -381,6 +385,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                                     "validate" + StringHelper.capitalize(sc.getName()) + "Signing",
                                     ValidateSigningTask.class);
                     validateSigningTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+                    validateSigningTask.setVariantName(
+                            scope.getVariantScope().getVariantConfiguration().getFullName());
                     validateSigningTask.setSigningConfig(sc);
                 }
 
@@ -394,42 +400,20 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 }
             });
 
+            ConventionMappingHelper.map(packageApp, "packagingOptionsFilter",
+                    new Callable<SignedJarBuilder.IZipEntryFilter>() {
+                @Override
+                public SignedJarBuilder.IZipEntryFilter call() throws Exception {
+                    return scope.getVariantScope().getPackagingOptionsFilter();
+                }
+            });
+
             ConventionMappingHelper.map(packageApp, "outputFile", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
                     return scope.getPackageApk();
                 }
             });
-        }
-
-        private ShrinkResources createShrinkResourcesTask(
-                final ApkVariantOutputData variantOutputData) {
-            BaseVariantData<?> variantData = (BaseVariantData<?>) variantOutputData.variantData;
-            ShrinkResources task = scope.getGlobalScope().getProject().getTasks()
-                    .create("shrink" + StringGroovyMethods
-                            .capitalize(variantOutputData.getFullName())
-                            + "Resources", ShrinkResources.class);
-            task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
-            task.variantOutputData = variantOutputData;
-
-            final String outputBaseName = variantOutputData.getBaseName();
-            task.setCompressedResources(new File(
-                    scope.getGlobalScope().getBuildDir() + "/" + FD_INTERMEDIATES + "/res/" +
-                            "resources-" + outputBaseName + "-stripped.ap_"));
-
-            ConventionMappingHelper.map(task, "uncompressedResources", new Callable<File>() {
-                @Override
-                public File call() {
-                    return variantOutputData.processResourcesTask.getPackageOutputFile();
-                }
-            });
-
-            task.dependsOn(
-                    scope.getVariantScope().getObfuscationTask().getName(),
-                    scope.getManifestProcessorTask().getName(),
-                    variantOutputData.processResourcesTask);
-
-            return task;
         }
 
         private static File getOptionalDir(File dir) {

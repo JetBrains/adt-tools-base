@@ -89,7 +89,7 @@ public abstract class AndroidTargetHash {
                     return new AndroidVersion(api, suffix);
                 }
             }
-        } else if (hashString.length() > 0 && Character.isDigit(hashString.charAt(0))) {
+        } else if (!hashString.isEmpty() && Character.isDigit(hashString.charAt(0))) {
             // For convenience, interpret a single integer as the proper "android-NN" form.
             try {
                 int api = Integer.parseInt(hashString);

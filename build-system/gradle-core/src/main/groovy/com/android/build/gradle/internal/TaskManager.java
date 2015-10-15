@@ -23,10 +23,7 @@ import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS;
 import static com.android.builder.core.BuilderConstants.FD_ANDROID_TESTS;
 import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
-import static com.android.builder.core.VariantType.DEFAULT;
-import static com.android.builder.core.VariantType.UNIT_TEST;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -35,9 +32,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.OutputFile;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
@@ -47,6 +44,9 @@ import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.pipeline.TransformStream;
+import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.publishing.ApkPublishArtifact;
 import com.android.build.gradle.internal.publishing.MappingPublishArtifact;
 import com.android.build.gradle.internal.publishing.MetadataPublishArtifact;
@@ -70,12 +70,19 @@ import com.android.build.gradle.internal.tasks.SigningReportTask;
 import com.android.build.gradle.internal.tasks.SourceSetsTask;
 import com.android.build.gradle.internal.tasks.TestServerTask;
 import com.android.build.gradle.internal.tasks.UninstallTask;
-import com.android.build.gradle.internal.tasks.multidex.CreateMainDexList;
 import com.android.build.gradle.internal.tasks.multidex.CreateManifestKeepList;
-import com.android.build.gradle.internal.tasks.multidex.JarMergingTask;
-import com.android.build.gradle.internal.tasks.multidex.RetraceMainDexList;
 import com.android.build.gradle.internal.test.TestDataImpl;
 import com.android.build.gradle.internal.test.report.ReportType;
+import com.android.build.gradle.internal.transforms.DexTransform;
+import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
+import com.android.build.gradle.internal.transforms.JacocoTransform;
+import com.android.build.gradle.internal.transforms.JarMergingTransform;
+import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
+import com.android.build.gradle.internal.transforms.MultiDexTransform;
+import com.android.build.gradle.internal.transforms.NewShrinkerTransform;
+import com.android.build.gradle.internal.transforms.ProGuardTransform;
+import com.android.build.gradle.internal.transforms.ProguardConfigurable;
+import com.android.build.gradle.internal.transforms.ShrinkResourcesTransform;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
@@ -85,9 +92,7 @@ import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.AndroidJarTask;
-import com.android.build.gradle.tasks.AndroidProGuardTask;
 import com.android.build.gradle.tasks.CompatibleScreensManifest;
-import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.GenerateSplitAbiRes;
@@ -101,37 +106,38 @@ import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.PackageSplitAbi;
 import com.android.build.gradle.tasks.PackageSplitRes;
-import com.android.build.gradle.tasks.PreDex;
-import com.android.build.gradle.tasks.PreprocessResourcesTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ProcessManifest;
 import com.android.build.gradle.tasks.ProcessTestManifest;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.build.gradle.tasks.ShrinkResources;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
 import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
-import com.android.build.gradle.tasks.factory.ProGuardTaskConfigAction;
 import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
+import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
+import com.android.build.transform.api.ScopedContent.ContentType;
+import com.android.build.transform.api.ScopedContent.Format;
+import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.Transform;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.internal.testing.SimpleTestCallable;
 import com.android.builder.sdk.TargetInfo;
+import com.android.builder.signing.SignedJarBuilder;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
-import com.android.sdklib.IAndroidTarget;
 import com.android.utils.StringHelper;
-import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
-import com.google.common.base.Predicate;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
@@ -140,38 +146,33 @@ import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.execution.TaskExecutionGraph;
-import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
-import org.gradle.api.internal.file.collections.DefaultConfigurableFileCollection;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
-import org.gradle.api.reporting.ConfigurableReport;
 import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.testing.Test;
-import org.gradle.api.tasks.testing.TestTaskReports;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
 import groovy.lang.Closure;
-import proguard.gradle.ProGuardTask;
+import proguard.ParseException;
 
 /**
  * Manages tasks creation.
@@ -190,9 +191,8 @@ public abstract class TaskManager {
 
     public static final String ANDROID_GROUP = "Android";
 
-    /** Property used to define extra instrumentation test runner arguments. */
-    public static final String TEST_RUNNER_ARGS_PROP =
-            "android.testInstrumentationRunnerArguments.";
+    public static final Set<Scope> POSSIBLE_LIB_PREDEX_SCOPES = ImmutableSet.of(
+            Scope.PROJECT_LOCAL_DEPS);
 
     protected Project project;
 
@@ -208,7 +208,7 @@ public abstract class TaskManager {
 
     private final GlobalScope globalScope;
 
-    private AndroidTaskRegistry androidTasks = new AndroidTaskRegistry();
+    private final AndroidTaskRegistry androidTasks = new AndroidTaskRegistry();
 
     private Logger logger;
 
@@ -235,7 +235,7 @@ public abstract class TaskManager {
     // Tasks
     private Copy jacocoAgentTask;
 
-    public MockableAndroidJarTask createMockableJar;
+    public AndroidTask<MockableAndroidJarTask> createMockableJar;
 
     public TaskManager(
             Project project,
@@ -255,7 +255,6 @@ public abstract class TaskManager {
         globalScope = new GlobalScope(
                 project,
                 androidBuilder,
-                (String) project.getProperties().get("archivesBaseName"),
                 extension,
                 sdkHandler,
                 toolingRegistry);
@@ -272,8 +271,27 @@ public abstract class TaskManager {
     /**
      * Creates the tasks for a given BaseVariantData.
      */
-    public abstract void createTasksForVariantData(@NonNull TaskFactory tasks,
+    public abstract void createTasksForVariantData(
+            @NonNull TaskFactory tasks,
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData);
+
+    /**
+     * Returns the scopes that must be extracted from jars to a folder of .class/resources.
+     * This maybe very close to the pre-dex list but this is not exactly the same.
+     *
+     * @param variantScope the variant scope
+     */
+    @NonNull
+    protected abstract Set<Scope> computeExtractResAndJavaFromJarScopes(
+            @NonNull VariantScope variantScope);
+
+    /**
+     * Returns the scopes that must be extracted from jars to a folder of *only* resources.
+     * @param variantScope the variant scope
+     */
+    @NonNull
+    protected abstract Set<Scope> computeExtractResFromJarScopes(
+            @NonNull VariantScope variantScope);
 
     public GlobalScope getGlobalScope() {
         return globalScope;
@@ -373,10 +391,12 @@ public abstract class TaskManager {
             @Override
             public void execute(Lint lintTask) {
                 lintTask.setDescription("Runs lint on all variants.");
+                lintTask.setVariantName("");
                 lintTask.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
                 lintTask.setLintOptions(getExtension().getLintOptions());
                 lintTask.setSdkHome(sdkHandler.getSdkFolder());
                 lintTask.setToolingRegistry(toolingRegistry);
+                lintTask.setAndroidBuilder(androidBuilder);
             }
         });
         tasks.named(JavaBasePlugin.CHECK_TASK_NAME, new Action<Task>() {
@@ -388,32 +408,130 @@ public abstract class TaskManager {
         createLintCompileTask(tasks);
     }
 
-    public void createMockableJarTask() {
-        createMockableJar =
-                project.getTasks().create("mockableAndroidJar", MockableAndroidJarTask.class);
-        createMockableJar.setGroup(BUILD_GROUP);
-        createMockableJar.setDescription(
-                "Creates a version of android.jar that's suitable for unit tests.");
+    public void createMockableJarTask(TaskFactory tasks) {
+        createMockableJar = androidTasks.create(tasks, new MockableAndroidJarTask.ConfigAction(globalScope));
+    }
 
-        ConventionMappingHelper.map(createMockableJar, "androidJar", new Callable<File>() {
-            @Override
-            public File call() throws Exception {
-                return new File(androidBuilder.getTarget().getPath(IAndroidTarget.ANDROID_JAR));
-            }
-        });
+    protected void createDependencyStreams(@NonNull final VariantScope variantScope) {
+        BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope.getVariantData();
+        final GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
-        CharMatcher safeCharacters = CharMatcher.JAVA_LETTER_OR_DIGIT.or(CharMatcher.anyOf("-."));
-        String sdkName = safeCharacters.negate().replaceFrom(extension.getCompileSdkVersion(), '-');
+        TransformManager transformManager = variantScope.getTransformManager();
 
-        createMockableJar.setOutputFile(
-                new File(globalScope.getIntermediatesDir(), "mockable-" + sdkName + ".jar"));
+        transformManager.addStream(TransformStream.builder()
+                .addContentTypes(ContentType.CLASSES, ContentType.RESOURCES)
+                .addScopes(Scope.PROJECT_LOCAL_DEPS)
+                .setFiles(new Supplier<Collection<File>>() {
+                    @Override
+                    public Collection<File> get() {
+                        return config.getLocalPackagedJars();
+                    }
 
-        ConventionMappingHelper.map(createMockableJar, "returnDefaultValues", new Callable<Boolean>() {
-            @Override
-            public Boolean call() {
-                return extension.getTestOptions().getUnitTests().isReturnDefaultValues();
-            }
-        });
+                })
+                .setFormat(Format.JAR)
+                .build());
+
+        ImmutableList<Object> dependencies = ImmutableList.of(variantData.prepareDependenciesTask,
+                variantData.getVariantDependency().getPackageConfiguration()
+                        .getBuildDependencies());
+
+        transformManager.addStream(TransformStream.builder()
+                .addContentTypes(ContentType.CLASSES, ContentType.RESOURCES)
+                .addScopes(Scope.EXTERNAL_LIBRARIES)
+                .setFiles(new Supplier<Collection<File>>() {
+                    @Override
+                    public Collection<File> get() {
+                        Set<File> files = config.getExternalPackagedJars();
+                        Set<File> additions = variantScope.getGlobalScope().getAndroidBuilder()
+                                .getAdditionalPackagedJars(config);
+
+                        if (!additions.isEmpty()) {
+                            ImmutableSet.Builder<File> builder = ImmutableSet.builder();
+                            return builder.addAll(files).addAll(additions).build();
+                        }
+
+                        return files;
+                    }
+                })
+                .setFormat(Format.JAR)
+                .setDependencies(dependencies)
+                .build());
+
+        transformManager.addStream(TransformStream.builder()
+                .addContentTypes(ContentType.CLASSES, ContentType.RESOURCES)
+                .addScopes(Scope.SUB_PROJECTS)
+                .setFiles(new Supplier<Collection<File>>() {
+                    @Override
+                    public Collection<File> get() {
+                        return config.getSubProjectPackagedJars();
+                    }
+
+                })
+                .setFormat(Format.JAR)
+                .setDependencies(dependencies)
+                .build());
+
+        transformManager.addStream(TransformStream.builder()
+                .addContentTypes(ContentType.CLASSES, ContentType.RESOURCES)
+                .addScopes(Scope.SUB_PROJECTS_LOCAL_DEPS)
+                .setFiles(new Supplier<Collection<File>>() {
+                    @Override
+                    public Collection<File> get() {
+                        return config.getSubProjectLocalPackagedJars();
+                    }
+
+                })
+                .setFormat(Format.JAR)
+                .setDependencies(dependencies)
+                .build());
+
+        // provided only scopes.
+        transformManager.addStream(TransformStream.builder()
+                .addContentTypes(ContentType.CLASSES, ContentType.RESOURCES)
+                .addScopes(Scope.PROVIDED_ONLY)
+                .setFiles(new Supplier<Collection<File>>() {
+                    @Override
+                    public Collection<File> get() {
+                        return config.getProvidedOnlyJars();
+                    }
+
+                })
+                .setFormat(Format.JAR)
+                .build());
+
+        if (variantScope.getTestedVariantData() != null) {
+            final BaseVariantData testedVariantData = variantScope.getTestedVariantData();
+
+            VariantScope testedVariantScope = testedVariantData.getScope();
+
+            // create two streams of different types.
+            transformManager.addStream(TransformStream.builder()
+                    .addContentTypes(ContentType.CLASSES)
+                    .addScopes(Scope.TESTED_CODE)
+                    .setFiles(
+                            Suppliers.ofInstance(
+                                    (Collection<File>) ImmutableList.of(
+                                            testedVariantScope.getJavaOutputDir())))
+                    .setDependency(testedVariantScope.getJavacTask().getName())
+                    .setFormat(Format.SINGLE_FOLDER)
+                    .build());
+
+            transformManager.addStream(TransformStream.builder()
+                    .addContentTypes(ContentType.CLASSES)
+                    .addScopes(Scope.TESTED_CODE)
+                    .setFiles(Suppliers.ofInstance(
+                            (Collection<File>) variantScope.getGlobalScope().getAndroidBuilder()
+                                    .getAllPackagedJars(
+                                            testedVariantData.getVariantConfiguration())))
+                    .setDependency(ImmutableList.of(
+                            testedVariantData.prepareDependenciesTask,
+                            testedVariantData.getVariantDependency().getPackageConfiguration()
+                                    .getBuildDependencies()))
+                    .setFormat(Format.JAR)
+                    .build());
+        }
+
+        handleJacocoDependencies(variantScope);
     }
 
     public void createMergeAppManifestsTask(
@@ -530,12 +648,14 @@ public abstract class TaskManager {
         scope.setMergeResourcesTask(mergeResourcesTask);
         scope.setResourceOutputDir(
                 Objects.firstNonNull(outputLocation, scope.getDefaultMergeResourcesOutputDir()));
+        scope.setMergeResourceOutputDir(outputLocation);
         return scope.getMergeResourcesTask();
     }
 
 
     public void createMergeAssetsTask(TaskFactory tasks, VariantScope scope) {
-        AndroidTask<MergeAssets> mergeAssetsTask = androidTasks.create(tasks, new MergeAssets.ConfigAction(scope));
+        AndroidTask<MergeAssets> mergeAssetsTask = androidTasks.create(tasks,
+                new MergeAssets.ConfigAction(scope));
         mergeAssetsTask.dependsOn(tasks,
                 scope.getVariantData().prepareDependenciesTask,
                 scope.getAssetGenTask());
@@ -567,61 +687,6 @@ public abstract class TaskManager {
         AndroidTask<GenerateResValues> generateResValuesTask = androidTasks.create(
                 tasks, new GenerateResValues.ConfigAction(scope));
         scope.getResourceGenTask().dependsOn(tasks, generateResValuesTask);
-    }
-
-    public void createPreprocessResourcesTask(
-            @NonNull TaskFactory tasks,
-            @NonNull final VariantScope scope) {
-        if (!"true".equals(
-                project.getProperties().get(
-                        "com.android.build.gradle.experimentalPreprocessResources"))) {
-            return;
-        }
-
-        final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
-        int minSdk = variantData.getVariantConfiguration().getMinSdkVersion().getApiLevel();
-
-        if (extension.getPreprocessingOptions().getPreprocessResources()
-                && minSdk < PreprocessResourcesTask.MIN_SDK) {
-            // Otherwise mergeResources will rename files when merging and it's hard to keep track
-            // of PNGs that the user wanted to use instead of the generated ones.
-            checkArgument(extension.getBuildToolsRevision().compareTo(
-                            MergeResources.NORMALIZE_RESOURCES_BUILD_TOOLS) >= 0,
-                    "To preprocess resources, you have to use build tools >= %1$s",
-                    MergeResources.NORMALIZE_RESOURCES_BUILD_TOOLS);
-
-            scope.setPreprocessResourcesTask(androidTasks.create(
-                    tasks,
-                    scope.getTaskName("preprocess", "Resources"),
-                    PreprocessResourcesTask.class,
-                    new Action<PreprocessResourcesTask>() {
-                        @Override
-                        public void execute(PreprocessResourcesTask preprocessResourcesTask) {
-                            variantData.preprocessResourcesTask = preprocessResourcesTask;
-
-                            preprocessResourcesTask.dependsOn(variantData.mergeResourcesTask);
-
-                            preprocessResourcesTask.setVariantName(variantData.getName());
-
-                            String variantDirName =
-                                    variantData.getVariantConfiguration().getDirName();
-                            preprocessResourcesTask.setMergedResDirectory(
-                                    scope.getMergeResourcesOutputDir());
-                            preprocessResourcesTask.setGeneratedResDirectory(new File(
-                                    scope.getGlobalScope().getGeneratedDir(),
-                                    "res/pngs/" + variantDirName));
-                            preprocessResourcesTask.setOutputResDirectory(
-                                    scope.getPreprocessResourceOutputDir());
-                            preprocessResourcesTask.setIncrementalFolder(new File(
-                                    scope.getGlobalScope().getIntermediatesDir(),
-                                    "incremental/preprocessResourcesTask/" + variantDirName));
-
-                            preprocessResourcesTask.setDensitiesToGenerate(
-                                    extension.getPreprocessingOptions().getTypedDensities());
-                        }
-                    }));
-        }
-
     }
 
     public void createProcessResTask(
@@ -657,10 +722,6 @@ public abstract class TaskManager {
                     variantOutputScope.getManifestProcessorTask(),
                     scope.getMergeResourcesTask(),
                     scope.getMergeAssetsTask());
-
-            // TODO: Make it non-optional once this is not behind a flag.
-            variantOutputScope.getProcessResourcesTask().optionalDependsOn(tasks,
-                    scope.getPreprocessResourcesTask());
 
             if (vod.getMainOutputFile().getFilter(DENSITY) == null) {
                 scope.setGenerateRClassTask(variantOutputScope.getProcessResourcesTask());
@@ -710,12 +771,14 @@ public abstract class TaskManager {
         variantOutputData.packageSplitResourcesTask.setOutputDirectory(new File(
                 scope.getGlobalScope().getIntermediatesDir(), "splits/" + config.getDirName()));
         variantOutputData.packageSplitResourcesTask.setAndroidBuilder(androidBuilder);
+        variantOutputData.packageSplitResourcesTask.setVariantName(config.getFullName());
         variantOutputData.packageSplitResourcesTask.dependsOn(
                 variantOutputScope.getProcessResourcesTask().getName());
 
         SplitZipAlign zipAlign = project.getTasks().create(
                 scope.getTaskName("zipAlign", "SplitPackages"),
                 SplitZipAlign.class);
+        zipAlign.setVariantName(config.getFullName());
         ConventionMappingHelper.map(zipAlign, "zipAlignExe", new Callable<File>() {
             @Override
             public File call() throws Exception {
@@ -777,6 +840,7 @@ public abstract class TaskManager {
                 scope.getTaskName("generate", "SplitAbiRes"),
                 GenerateSplitAbiRes.class);
         generateSplitAbiRes.setAndroidBuilder(androidBuilder);
+        generateSplitAbiRes.setVariantName(config.getFullName());
 
         generateSplitAbiRes.setOutputDirectory(new File(
                 scope.getGlobalScope().getIntermediatesDir(), "abi/" + config.getDirName()));
@@ -791,12 +855,13 @@ public abstract class TaskManager {
                 return config.getBuildType().isDebuggable();
             }
         });
-        ConventionMappingHelper.map(generateSplitAbiRes, "aaptOptions", new Callable<AaptOptions>() {
-            @Override
-            public AaptOptions call() throws Exception {
-                return getExtension().getAaptOptions();
-            }
-        });
+        ConventionMappingHelper.map(generateSplitAbiRes, "aaptOptions",
+                new Callable<AaptOptions>() {
+                    @Override
+                    public AaptOptions call() throws Exception {
+                        return getExtension().getAaptOptions();
+                    }
+                });
         generateSplitAbiRes.dependsOn(
                 variantOutputData.getScope().getProcessResourcesTask().getName());
 
@@ -813,6 +878,7 @@ public abstract class TaskManager {
                 new File(scope.getGlobalScope().getIntermediatesDir(),
                         "package-merge/" + variantOutputData.getDirName()));
         variantOutputData.packageSplitAbiTask.setAndroidBuilder(androidBuilder);
+        variantOutputData.packageSplitAbiTask.setVariantName(config.getFullName());
         variantOutputData.packageSplitAbiTask.dependsOn(generateSplitAbiRes);
         variantOutputData.packageSplitAbiTask.dependsOn(scope.getNdkBuildable());
 
@@ -836,6 +902,13 @@ public abstract class TaskManager {
                     @Override
                     public PackagingOptions call() throws Exception {
                         return getExtension().getPackagingOptions();
+                    }
+                });
+        ConventionMappingHelper.map(variantOutputData.packageSplitAbiTask, "packagingOptionsFilter",
+                new Callable<SignedJarBuilder.IZipEntryFilter>() {
+                    @Override
+                    public SignedJarBuilder.IZipEntryFilter call() throws Exception {
+                        return scope.getPackagingOptionsFilter();
                     }
                 });
 
@@ -883,9 +956,84 @@ public abstract class TaskManager {
         }
     }
 
-    public void createProcessJavaResTask(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
-        scope.setProcessJavaResourcesTask(
-                androidTasks.create(tasks, new ProcessJavaResConfigAction(scope)));
+
+    /**
+     * Creates the java resources processing tasks.
+     *
+     * The java processing will happen in three steps:
+     * <ul>
+     * <li>{@link ExtractJarsTransform} will extract all java resources from packaged jar files
+     * dependencies. This consumes the
+     * following streams:  PROJECT_LOCAL_DEPS, SUB_PROJECTS, SUB_PROJECTS_LOCAL_DEPS, and
+     * EXTERNAL_LIBRARIES. Each jar file will be extracted in a separate folder under its own
+     * stream.</li>
+     * <li>{@link Sync} task configured with {@link ProcessJavaResConfigAction} will sync all source
+     * folders into a single folder identified by
+     * {@link VariantScope#getSourceFoldersJavaResDestinationDir()}</li>
+     * <li>{@link MergeJavaResourcesTransform} will take all these folders and will create a single
+     * merged folder with the {@link PackagingOptions} settings applied.</li>
+     * </ul>
+     *
+     * the result of 3 is a combined stream containing all java resources, to be either directly
+     * embedded in the resulting APK or fed into the further transforms.
+     *
+     * @param tasks tasks factory to create tasks.
+     * @param variantScope the variant scope we are operating under.
+     */
+    public void createProcessJavaResTasks(
+            @NonNull TaskFactory tasks,
+            @NonNull VariantScope variantScope) {
+        TransformManager transformManager = variantScope.getTransformManager();
+
+        Set<Scope> resOnlyScopes = computeExtractResFromJarScopes(variantScope);
+        Set<Scope> fullExtractScopes = computeExtractResAndJavaFromJarScopes(variantScope);
+
+        // create up to two transforms, one for the scopes that need only res to be extracted.
+        // and the other for full extraction.
+        if (!resOnlyScopes.isEmpty()) {
+            ExtractJarsTransform preDexTransform = new ExtractJarsTransform(
+                    TransformManager.CONTENT_RESOURCES,
+                    resOnlyScopes);
+            transformManager.addTransform(tasks, variantScope, preDexTransform);
+        }
+
+        if (!fullExtractScopes.isEmpty()) {
+            ExtractJarsTransform notPreDexTransform = new ExtractJarsTransform(
+                    TransformManager.CONTENT_JARS,
+                    fullExtractScopes);
+            transformManager.addTransform(tasks, variantScope, notPreDexTransform);
+        }
+
+        // now copy the source folders java resources into the temporary location, mainly to
+        // maintain the PluginDsl COPY semantics.
+        AndroidTask<Sync> processJavaResourcesTask =
+                androidTasks.create(tasks, new ProcessJavaResConfigAction(variantScope));
+        variantScope.setProcessJavaResourcesTask(processJavaResourcesTask);
+
+        // create the stream generated from this task
+        variantScope.getTransformManager().addStream(TransformStream.builder()
+                .addContentType(ContentType.RESOURCES)
+                .addScope(Scope.PROJECT)
+                .setFiles(variantScope.getSourceFoldersJavaResDestinationDir())
+                .setFormat(Format.SINGLE_FOLDER)
+                .setDependency(processJavaResourcesTask.getName())
+                .build());
+
+        if (!resOnlyScopes.isEmpty() || !fullExtractScopes.isEmpty()) {
+            // compute the scopes that need to be merged.
+            EnumSet<Scope> mergeScopes = EnumSet.of(Scope.PROJECT);
+            mergeScopes.addAll(resOnlyScopes);
+            mergeScopes.addAll(fullExtractScopes);
+
+            // Create the merge transform
+            MergeJavaResourcesTransform mergeTransform = new MergeJavaResourcesTransform(
+                    variantScope,
+                    variantScope.getGlobalScope().getExtension().getPackagingOptions(),
+                    mergeScopes);
+
+            variantScope.setMergeJavaResourcesTask(
+                    transformManager.addTransform(tasks, variantScope, mergeTransform));
+        }
     }
 
     public void createAidlTask(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
@@ -908,15 +1056,21 @@ public abstract class TaskManager {
         scope.setJavacTask(javacTask);
 
         javacTask.optionalDependsOn(tasks, scope.getSourceGenTask());
-        javacTask.dependsOn(tasks,
-                scope.getVariantData().prepareDependenciesTask,
-                scope.getProcessJavaResourcesTask());
+        javacTask.dependsOn(tasks, scope.getVariantData().prepareDependenciesTask);
 
         // TODO - dependency information for the compile classpath is being lost.
         // Add a temporary approximation
         javacTask.dependsOn(tasks,
                 scope.getVariantData().getVariantDependency().getCompileConfiguration()
                         .getBuildDependencies());
+
+        // create the output stream from this task
+        scope.getTransformManager().addStream(TransformStream.builder()
+                .addContentType(ContentType.CLASSES)
+                .addScope(Scope.PROJECT)
+                .setFiles(scope.getJavaOutputDir())
+                .setFormat(Format.SINGLE_FOLDER)
+                .setDependency(javacTask.getName()).build());
 
         if (variantData.getType().isForTesting()) {
             BaseVariantData testedVariantData =
@@ -967,7 +1121,6 @@ public abstract class TaskManager {
             // keeps working.
             scope.getVariantData().javaCompilerTask =  (AbstractCompile) tasks.named(javaCompilerTask.getName());
         }
-
     }
 
     public void createGenerateMicroApkDataTask(
@@ -991,6 +1144,7 @@ public abstract class TaskManager {
         ndkCompile.dependsOn(variantData.preBuildTask);
 
         ndkCompile.setAndroidBuilder(androidBuilder);
+        ndkCompile.setVariantName(variantData.getName());
         ndkCompile.setNdkDirectory(sdkHandler.getNdkFolder());
         ndkCompile.setIsForTesting(variantData.getType().isForTesting());
         variantData.ndkCompileTask = ndkCompile;
@@ -1050,16 +1204,30 @@ public abstract class TaskManager {
     public void createUnitTestVariantTasks(
             @NonNull TaskFactory tasks,
             @NonNull TestVariantData variantData) {
-        variantData.assembleVariantTask.dependsOn(createMockableJar);
         VariantScope variantScope = variantData.getScope();
+        BaseVariantData testedVariantData = variantScope.getTestedVariantData();
+        checkState(testedVariantData != null);
 
-        createPreBuildTasks(tasks, variantScope);
-        createProcessJavaResTask(tasks, variantScope);
+        createPreBuildTasks(variantScope);
+
+        // Create all current streams (dependencies mostly at this point)
+        createDependencyStreams(variantScope);
+
+        createProcessJavaResTasks(tasks, variantScope);
         createCompileAnchorTask(tasks, variantScope);
+
+        // :app:compileDebugUnitTestSources should be enough for running tests from AS, so add an
+        // explicit dependency on resource copying tasks.
+        variantScope.getCompileTask().dependsOn(
+                tasks,
+                variantScope.getProcessJavaResourcesTask(),
+                testedVariantData.getScope().getProcessJavaResourcesTask());
+
         AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
         setJavaCompilerTask(javacTask, tasks, variantScope);
-        createUnitTestTask(tasks, variantData);
+        createRunUnitTestTask(tasks, variantScope);
 
+        variantData.assembleVariantTask.dependsOn(createMockableJar.getName());
         // This hides the assemble unit test task from the task list.
         variantData.assembleVariantTask.setGroup(null);
     }
@@ -1080,6 +1248,9 @@ public abstract class TaskManager {
                 baseTestedVariantData.getOutputs().get(0);
 
         createAnchorTasks(tasks, variantScope);
+
+        // Create all current streams (dependencies mostly at this point)
+        createDependencyStreams(variantScope);
 
         // Add a task to process the manifest
         createProcessTestManifestTask(tasks, variantScope);
@@ -1105,19 +1276,16 @@ public abstract class TaskManager {
                 variantScope.getMergeResourcesTask().dependsOn(
                         tasks, testedVariantOutputData.assembleTask);
             }
-
         }
 
         // Add a task to create the BuildConfig class
         createBuildConfigTask(tasks, variantScope);
 
-        createPreprocessResourcesTask(tasks, variantScope);
-
         // Add a task to generate resource source files
         createProcessResTask(tasks, variantScope, true /*generateResourcePackage*/);
 
         // process java resources
-        createProcessJavaResTask(tasks, variantScope);
+        createProcessJavaResTasks(tasks, variantScope);
 
         createAidlTask(tasks, variantScope);
 
@@ -1221,17 +1389,20 @@ public abstract class TaskManager {
             String capitalizedVariantName = StringHelper.capitalize(variantName);
             String taskName = "lintVital" + capitalizedVariantName;
             final Lint lintReleaseCheck = project.getTasks().create(taskName, Lint.class);
+            lintReleaseCheck.setAndroidBuilder(androidBuilder);
             // TODO: Make this task depend on lintCompile too (resolve initialization order first)
             optionalDependsOn(lintReleaseCheck, variantData.javacTask);
             lintReleaseCheck.setLintOptions(getExtension().getLintOptions());
-            lintReleaseCheck.setSdkHome(sdkHandler.getSdkFolder());
+            lintReleaseCheck.setSdkHome(
+                    checkNotNull(sdkHandler.getSdkFolder(), "SDK not set up."));
             lintReleaseCheck.setVariantName(variantName);
             lintReleaseCheck.setToolingRegistry(toolingRegistry);
             lintReleaseCheck.setFatalOnly(true);
             lintReleaseCheck.setDescription(
                     "Runs lint on just the fatal issues in the " + capitalizedVariantName
                             + " build.");
-            //variantData.assembleVariantTask.dependsOn lintReleaseCheck
+
+            variantData.assembleVariantTask.dependsOn(lintReleaseCheck);
 
             // If lint is being run, we do not need to run lint vital.
             // TODO: Find a better way to do this.
@@ -1245,86 +1416,24 @@ public abstract class TaskManager {
         }
     }
 
-    private void createUnitTestTask(@NonNull TaskFactory tasks,
-            @NonNull final TestVariantData variantData) {
-        final BaseVariantData testedVariantData =
-                (BaseVariantData) variantData.getTestedVariantData();
-
-        final Test runTestsTask = project.getTasks().create(
-                variantData.getScope().getTaskName(UNIT_TEST.getPrefix()),
-                Test.class);
-        runTestsTask.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
-        runTestsTask.setDescription(
-                "Run unit tests for the " +
-                        testedVariantData.getVariantConfiguration().getFullName() + " build.");
-
-        fixTestTaskSources(runTestsTask);
-
-        runTestsTask.dependsOn(variantData.assembleVariantTask);
-
-        final AbstractCompile testCompileTask = variantData.javacTask;
-        runTestsTask.setTestClassesDir(testCompileTask.getDestinationDir());
-
-        ConventionMappingHelper.map(runTestsTask, "classpath",
-                new Callable<ConfigurableFileCollection>() {
-                    @Override
-                    public ConfigurableFileCollection call() throws Exception {
-                        Iterable<File> filteredBootClasspath = Iterables.filter(
-                                androidBuilder.getBootClasspath(),
-                                new Predicate<File>() {
-                                    @Override
-                                    public boolean apply(@Nullable File file) {
-                                        return file != null &&
-                                                !SdkConstants.FN_FRAMEWORK_LIBRARY
-                                                        .equals(file.getName());
-                                    }
-                                });
-
-                        return project.files(
-                                testCompileTask.getClasspath(),
-                                testCompileTask.getOutputs().getFiles(),
-                                variantData.processJavaResourcesTask.getOutputs(),
-                                testedVariantData.processJavaResourcesTask.getOutputs(),
-                                filteredBootClasspath,
-                                // Mockable JAR is last, to make sure you can shadow the classes
-                                // withdependencies.
-                                createMockableJar.getOutputFile());
-                    }
-                });
-
-        // Put the variant name in the report path, so that different testing tasks don't
-        // overwrite each other's reports.
-        TestTaskReports testTaskReports = runTestsTask.getReports();
-
-        for (ConfigurableReport report : new ConfigurableReport[] {
-                testTaskReports.getJunitXml(), testTaskReports.getHtml()}) {
-            report.setDestination(new File(report.getDestination(), testedVariantData.getName()));
-        }
+    private void createRunUnitTestTask(
+            @NonNull TaskFactory tasks,
+            @NonNull final VariantScope variantScope) {
+        final AndroidTask<Test> runtTestsTask =
+                androidTasks.create(tasks, new UnitTestConfigAction(variantScope));
+        runtTestsTask.dependsOn(tasks, variantScope.getVariantData().assembleVariantTask);
 
         tasks.named(JavaPlugin.TEST_TASK_NAME, new Action<Task>() {
             @Override
             public void execute(Task test) {
-                test.dependsOn(runTestsTask);
+                test.dependsOn(runtTestsTask.getName());
             }
-
         });
-
-        extension.getTestOptions().getUnitTests().applyConfiguration(runTestsTask);
-    }
-
-    private static void fixTestTaskSources(@NonNull Test testTask) {
-        // We are running in afterEvaluate, so the JavaBasePlugin has already added a
-        // callback to add test classes to the list of source files of the newly created task.
-        // The problem is that we haven't configured the test classes yet (JavaBasePlugin
-        // assumes all Test tasks are fully configured at this point), so we have to remove the
-        // "directory null" entry from source files and add the right value.
-        //
-        // This is an ugly hack, since we assume sourceFiles is an instance of
-        // DefaultConfigurableFileCollection.
-        ((DefaultConfigurableFileCollection) testTask.getInputs().getSourceFiles()).getFrom().clear();
     }
 
     public void createTopLevelTestTasks(final TaskFactory tasks, boolean hasFlavors) {
+        createMockableJarTask(tasks);
+
         final List<String> reportTasks = Lists.newArrayListWithExpectedSize(2);
 
         List<DeviceProvider> providers = getExtension().getDeviceProviders();
@@ -1347,6 +1456,7 @@ public abstract class TaskManager {
                             mainConnectedTask.setDescription("Installs and runs instrumentation "
                                     + "tests for all flavors on connected devices.");
                             mainConnectedTask.setReportType(ReportType.MULTI_FLAVOR);
+                            mainConnectedTask.setVariantName("");
                             ConventionMappingHelper.map(mainConnectedTask, "resultsDir",
                                     new Callable<File>() {
                                         @Override
@@ -1514,7 +1624,8 @@ public abstract class TaskManager {
         String connectedRootName = CONNECTED + ANDROID_TEST.getSuffix();
 
         TestDataImpl testData = new TestDataImpl(testVariantData);
-        testData.setExtraInstrumentationTestRunnerArgs(getExtraInstrumentationTestRunnerArgsMap());
+        testData.setExtraInstrumentationTestRunnerArgs(
+                AndroidGradleOptions.getExtraInstrumentationTestRunnerArgs(project));
 
         // create the check tasks for this test
         // first the connected one.
@@ -1540,52 +1651,77 @@ public abstract class TaskManager {
 
         if (baseVariantData.getVariantConfiguration().getBuildType().isTestCoverageEnabled()
                 && !baseVariantData.getVariantConfiguration().getUseJack()) {
-            final JacocoReportTask reportTask = project.getTasks().create(
+            final AndroidTask<JacocoReportTask> reportTask = androidTasks.create(
+                    tasks,
                     variantScope.getTaskName("create", "CoverageReport"),
-                    JacocoReportTask.class);
-            reportTask.setReportName(baseVariantData.getVariantConfiguration().getFullName());
-            ConventionMappingHelper.map(reportTask, "jacocoClasspath",
-                    new Callable<FileCollection>() {
+                    JacocoReportTask.class,
+                    new Action<JacocoReportTask>() {
                         @Override
-                        public FileCollection call() throws Exception {
-                            return project.getConfigurations().getAt(
-                                    JacocoPlugin.ANT_CONFIGURATION_NAME);
+                        public void execute(JacocoReportTask reportTask) {
+                            reportTask.setDescription("Creates JaCoCo test coverage report from "
+                                    + "data gathered on the device.");
+
+                            reportTask.setReportName(
+                                    baseVariantData.getVariantConfiguration().getFullName());
+
+                            ConventionMappingHelper.map(reportTask, "jacocoClasspath",
+                                    new Callable<FileCollection>() {
+                                        @Override
+                                        public FileCollection call() throws Exception {
+                                            return project.getConfigurations().getAt(
+                                                    JacocoPlugin.ANT_CONFIGURATION_NAME);
+                                        }
+                                    });
+                            ConventionMappingHelper
+                                    .map(reportTask, "coverageFile", new Callable<File>() {
+                                        @Override
+                                        public File call() {
+                                            return new File(
+                                                    ((TestVariantData) testVariantData.getScope()
+                                                            .getVariantData()).connectedTestTask
+                                                            .getCoverageDir(),
+                                                    SimpleTestCallable.FILE_COVERAGE_EC);
+                                        }
+                                    });
+                            ConventionMappingHelper
+                                    .map(reportTask, "classDir", new Callable<File>() {
+                                        @Override
+                                        public File call() {
+                                            return baseVariantData.javacTask.getDestinationDir();
+                                        }
+                                    });
+                            ConventionMappingHelper
+                                    .map(reportTask, "sourceDir", new Callable<List<File>>() {
+                                        @Override
+                                        public List<File> call() {
+                                            return baseVariantData
+                                                    .getJavaSourceFoldersForCoverage();
+                                        }
+                                    });
+
+                            ConventionMappingHelper
+                                    .map(reportTask, "reportDir", new Callable<File>() {
+                                        @Override
+                                        public File call() {
+                                            return new File(
+                                                    variantScope.getGlobalScope().getReportsDir(),
+                                                    "/coverage/" + baseVariantData
+                                                            .getVariantConfiguration()
+                                                            .getDirName());
+                                        }
+                                    });
+
+                            reportTask.dependsOn(connectedTask.getName());
                         }
                     });
-            ConventionMappingHelper.map(reportTask, "coverageFile", new Callable<File>() {
-                @Override
-                public File call() {
-                    return new File(((TestVariantData) testVariantData.getScope()
-                            .getVariantData()).connectedTestTask.getCoverageDir(),
-                            SimpleTestCallable.FILE_COVERAGE_EC);
-                }
-            });
-            ConventionMappingHelper.map(reportTask, "classDir", new Callable<File>() {
-                @Override
-                public File call() {
-                    return baseVariantData.javacTask.getDestinationDir();
-                }
-            });
-            ConventionMappingHelper.map(reportTask, "sourceDir", new Callable<List<File>>() {
-                @Override
-                public List<File> call() {
-                    return baseVariantData.getJavaSourceFoldersForCoverage();
-                }
-            });
 
-            ConventionMappingHelper.map(reportTask, "reportDir", new Callable<File>() {
-                @Override
-                public File call() {
-                    return new File(variantScope.getGlobalScope().getReportsDir(),
-                            "/coverage/" + baseVariantData.getVariantConfiguration().getDirName());
-                }
-            });
+            variantScope.setCoverageReportTask(reportTask);
+            baseVariantData.getScope().getCoverageReportTask().dependsOn(tasks, reportTask);
 
-            reportTask.dependsOn(connectedTask.getName());
             tasks.named(connectedRootName, new Action<Task>() {
                 @Override
                 public void execute(Task it) {
-                    it.dependsOn(reportTask);
+                    it.dependsOn(reportTask.getName());
                 }
             });
         }
@@ -1627,6 +1763,8 @@ public abstract class TaskManager {
                             .getFullName() + "\' to Test Server \'" +
                             StringHelper.capitalize(testServer.getName()) + "\'.");
             serverTask.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
+            serverTask.setVariantName(
+                    baseVariantData.getScope().getVariantConfiguration().getFullName());
             serverTask.dependsOn(testVariantOutputData.assembleTask,
                     variantOutputData.assembleTask);
 
@@ -1667,20 +1805,6 @@ public abstract class TaskManager {
         }
     }
 
-    private Map<String, String> getExtraInstrumentationTestRunnerArgsMap() {
-        Map<String, String> argsMap = Maps.newHashMap();
-        for (Map.Entry<String, ?> entry : project.getProperties().entrySet()) {
-            if (entry.getKey().startsWith(TEST_RUNNER_ARGS_PROP)) {
-                String argName = entry.getKey().substring(TEST_RUNNER_ARGS_PROP.length());
-                String argValue = entry.getValue().toString();
-
-                argsMap.put(argName, argValue);
-            }
-        }
-
-        return argsMap;
-    }
-
     public static void createJarTask(@NonNull TaskFactory tasks, @NonNull final VariantScope scope) {
         final BaseVariantData variantData = scope.getVariantData();
 
@@ -1701,7 +1825,7 @@ public abstract class TaskManager {
                                 "packaged/" + config.getDirName() + "/"));
                         jarTask.from(scope.getJavaOutputDir());
                         jarTask.dependsOn(scope.getJavacTask().getName());
-                        variantData.binayFileProviderTask = jarTask;
+                        variantData.binaryFileProviderTask = jarTask;
                     }
 
                 });
@@ -1714,211 +1838,150 @@ public abstract class TaskManager {
      * proguard and jacoco
      *
      */
-    public void createPostCompilationTasks(TaskFactory tasks, @NonNull final VariantScope scope) {
-        checkNotNull(scope.getJavacTask());
+    public void createPostCompilationTasks(TaskFactory tasks, @NonNull final VariantScope variantScope) {
+        checkNotNull(variantScope.getJavacTask());
 
-        final ApkVariantData variantData = (ApkVariantData) scope.getVariantData();
+        final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
         final GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
-        // data holding dependencies and input for the dex. This gets updated as new
-        // post-compilation steps are inserted between the compilation and dx.
-        PostCompilationData pcData = new PostCompilationData();
-        pcData.setClassGeneratingTasks(Collections.singletonList(scope.getJavacTask().getName()));
-        pcData.setLibraryGeneratingTasks(ImmutableList.of(variantData.prepareDependenciesTask,
-                variantData.getVariantDependency().getPackageConfiguration()
-                        .getBuildDependencies()));
-        pcData.setInputFilesCallable(new Callable<List<File>>() {
-            @Override
-            public List<File> call() {
-                return new ArrayList<File>(
-                        variantData.javacTask.getOutputs().getFiles().getFiles());
-            }
+        TransformManager transformManager = variantScope.getTransformManager();
 
-        });
-        pcData.setInputDir(scope.getJavaOutputDir());
-
-        pcData.setJavaResourcesInputDir(scope.getJavaResourcesDestinationDir());
-
-        pcData.setInputLibrariesCallable(new Callable<List<File>>() {
-            @Override
-            public List<File> call() {
-                return new ArrayList<File>(
-                        scope.getGlobalScope().getAndroidBuilder().getPackagedJars(config));
-            }
-
-        });
-
-        // ---- Code Coverage first -----
+        // ----- Code Coverage first -----
         boolean isTestCoverageEnabled = config.getBuildType().isTestCoverageEnabled() && !config
                 .getType().isForTesting();
         if (isTestCoverageEnabled) {
-            pcData = createJacocoTask(tasks, scope, pcData);
+            createJacocoTransform(tasks, variantScope);
         }
 
-        boolean isTestForApp = config.getType().isForTesting() &&
-                ((TestVariantData) variantData).getTestedVariantData().getVariantConfiguration()
-                        .getType().equals(DEFAULT);
         boolean isMinifyEnabled = config.isMinifyEnabled();
-        boolean isMultiDexEnabled = config.isMultiDexEnabled() && !isTestForApp;
+        boolean isMultiDexEnabled = config.isMultiDexEnabled();
         boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode();
 
-        // ----- Minify next ----
-        File outFile = maybeCreateProguardTasks(tasks, scope, pcData);
-        if (outFile != null) {
-            pcData.setInputFiles(Collections.singletonList(outFile));
-            pcData.setInputLibraries(Collections.<File>emptyList());
-        } else if ((getExtension().getDexOptions().getPreDexLibraries() && !isMultiDexEnabled) || (
-                isMultiDexEnabled && !isLegacyMultiDexMode)) {
+        AndroidConfig extension = variantScope.getGlobalScope().getExtension();
 
-            AndroidTask<PreDex> preDexTask = androidTasks
-                    .create(tasks, new PreDex.ConfigAction(scope, pcData));
+        // ----- External Transforms -----
+        // apply all the external transforms.
+        List<Transform> customTransforms = extension.getTransforms();
+        List<List<Object>> customTransformsDependencies = extension.getTransformsDependencies();
 
-            // update dependency.
-            preDexTask.dependsOn(tasks, pcData.getLibraryGeneratingTasks());
-            pcData.setLibraryGeneratingTasks(Collections.singletonList(preDexTask.getName()));
-
-            // update inputs
-            if (isMultiDexEnabled) {
-                pcData.setInputLibraries(Collections.<File>emptyList());
-
-            } else {
-                pcData.setInputLibrariesCallable(new Callable<List<File>>() {
-                    @Override
-                    public List<File> call() {
-                        return new ArrayList<File>(
-                                project.fileTree(scope.getPreDexOutputDir()).getFiles());
-                    }
-
-                });
+        for (int i = 0, count = customTransforms.size() ; i < count ; i++) {
+            Transform transform = customTransforms.get(i);
+            AndroidTask<TransformTask> task = transformManager
+                    .addTransform(tasks, variantScope, transform);
+            List<Object> deps = customTransformsDependencies.get(i);
+            if (!deps.isEmpty()) {
+                task.dependsOn(tasks, deps);
             }
         }
 
-        AndroidTask<CreateMainDexList> createMainDexListTask = null;
-        AndroidTask<RetraceMainDexList> retraceTask = null;
+        // ----- Minify next -----
+
+        if (isMinifyEnabled) {
+            boolean outputToJarFile = isMultiDexEnabled && isLegacyMultiDexMode;
+            createMinifyTransform(tasks, variantScope, outputToJarFile);
+        }
 
         // ----- Multi-Dex support
+
+        AndroidTask<TransformTask> multiDexClassListTask = null;
+        // non Library test are running as native multi-dex
         if (isMultiDexEnabled && isLegacyMultiDexMode) {
+            if (AndroidGradleOptions.useNewShrinker(project)) {
+                throw new IllegalStateException("New shrinker + multidex not supported yet.");
+            }
+
+            // ----------
+            // create a transform to jar the inputs into a single jar.
             if (!isMinifyEnabled) {
-                // create a task that will convert the output of the compilation
-                // into a jar. This is needed by the multi-dex input.
-                AndroidTask<JarMergingTask> jarMergingTask = androidTasks.create(tasks,
-                        new JarMergingTask.ConfigAction(scope, pcData));
-
-                // update dependencies
-                jarMergingTask.optionalDependsOn(tasks,
-                        pcData.getClassGeneratingTasks(),
-                        pcData.getLibraryGeneratingTasks());
-                pcData.setLibraryGeneratingTasks(
-                        Collections.singletonList(jarMergingTask.getName()));
-                pcData.setClassGeneratingTasks(Collections.singletonList(jarMergingTask.getName()));
-
-                // Update the inputs
-                pcData.setInputFiles(Collections.singletonList(scope.getJarMergingOutputFile()));
-                pcData.setInputDirCallable(null);
-                pcData.setInputLibraries(Collections.<File>emptyList());
+                // merge the classes only, no need to package the resources since they are
+                // not used during the computation.
+                JarMergingTransform jarMergingTransform = new JarMergingTransform(
+                        TransformManager.SCOPE_FULL_PROJECT,
+                        TransformManager.CONTENT_CLASS);
+                transformManager.addTransform(tasks, variantScope, jarMergingTransform);
             }
 
             // ----------
             // Create a task to collect the list of manifest entry points which are
             // needed in the primary dex
             AndroidTask<CreateManifestKeepList> manifestKeepListTask = androidTasks.create(tasks,
-                    new CreateManifestKeepList.ConfigAction(scope, pcData));
+                    new CreateManifestKeepList.ConfigAction(variantScope));
             manifestKeepListTask.dependsOn(tasks,
                     variantData.getOutputs().get(0).getScope().getManifestProcessorTask());
 
-            // ----------
-            // Create a proguard task to shrink the classes to manifest components
-            AndroidTask<ProGuardTask> proguardComponentsTask =
-                    androidTasks.create(tasks, new ProGuardTaskConfigAction(scope, pcData));
-
-            // update dependencies
-            proguardComponentsTask.dependsOn(tasks, manifestKeepListTask);
-            proguardComponentsTask.optionalDependsOn(tasks,
-                    pcData.getClassGeneratingTasks(),
-                    pcData.getLibraryGeneratingTasks());
-
-            // ----------
-            // Compute the full list of classes for the main dex file
-            createMainDexListTask =
-                    androidTasks.create(tasks, new CreateMainDexList.ConfigAction(scope, pcData));
-            createMainDexListTask.dependsOn(tasks, proguardComponentsTask);
-            //createMainDexListTask.dependsOn { proguardMainDexTask }
-
-            // ----------
-            // If proguard is enabled, create a de-obfuscated list to aid debugging.
-            if (isMinifyEnabled) {
-                retraceTask = androidTasks.create(tasks,
-                        new RetraceMainDexList.ConfigAction(scope, pcData));
-                retraceTask.dependsOn(tasks, scope.getObfuscationTask(), createMainDexListTask);
-            }
-
+            // ---------
+            // create the transform that's going to take the code and the proguard keep list
+            // from above and compute the main class list.
+            MultiDexTransform multiDexTransform = new MultiDexTransform(
+                    variantScope.getManifestKeepListFile(),
+                    variantScope,
+                    null);
+            multiDexClassListTask = transformManager.addTransform(
+                    tasks, variantScope, multiDexTransform);
+            multiDexClassListTask.dependsOn(tasks, manifestKeepListTask);
         }
 
-        AndroidTask<Dex> dexTask = androidTasks.create(tasks, new Dex.ConfigAction(scope, pcData));
-        scope.setDexTask(dexTask);
-
-        // dependencies, some of these could be null
-        dexTask.optionalDependsOn(tasks,
-                pcData.getClassGeneratingTasks(),
-                pcData.getLibraryGeneratingTasks(),
-                createMainDexListTask,
-                retraceTask);
+        // create dex transform
+        DexTransform dexTransform = new DexTransform(
+                extension.getDexOptions(),
+                config.getBuildType().isDebuggable(),
+                isMultiDexEnabled,
+                isMultiDexEnabled && isLegacyMultiDexMode ? variantScope.getMainDexListFile() : null,
+                variantScope.getPreDexOutputDir(),
+                variantScope.getGlobalScope().getAndroidBuilder(),
+                getLogger());
+        AndroidTask<TransformTask> dexTask = transformManager.addTransform(
+                tasks, variantScope, dexTransform);
+        // need to manually make dex task depend on MultiDexTransform since there's no stream
+        // consumption making this automatic
+        dexTask.optionalDependsOn(tasks, multiDexClassListTask);
     }
 
-    public PostCompilationData createJacocoTask(
-            @NonNull TaskFactory tasks,
-            @NonNull final VariantScope scope,
-            @NonNull final PostCompilationData pcData) {
-        AndroidTask<JacocoInstrumentTask> jacocoTask =
-                androidTasks.create(tasks, new JacocoInstrumentTask.ConfigAction(scope, pcData));
+    protected void handleJacocoDependencies(@NonNull VariantScope variantScope) {
+        GradleVariantConfiguration config = variantScope.getVariantConfiguration();
+        // we add the jacoco jar if coverage is enabled, but we don't add it
+        // for test apps as it's already part of the tested app.
+        // For library project, since we cannot use the local jars of the library,
+        // we add it as well.
+        boolean isTestCoverageEnabled = config.getBuildType().isTestCoverageEnabled() &&
+                (!config.getType().isForTesting() ||
+                        (config.getTestedConfig() != null &&
+                                config.getTestedConfig().getType() == VariantType.LIBRARY));
+        if (isTestCoverageEnabled) {
+            Copy agentTask = getJacocoAgentTask();
 
-        jacocoTask.optionalDependsOn(tasks, pcData.getClassGeneratingTasks());
+            // the scope of the jacoco library depends on the type of the project.
+            // if the project is a library then it must be a local dependency since libraries
+            // don't consume their external libs but jacoco needs to be consumed since it's not
+            // a remote dependency.
+            Scope scope = variantScope.getVariantData() instanceof LibraryVariantData ?
+                    Scope.PROJECT_LOCAL_DEPS : Scope.EXTERNAL_LIBRARIES;
 
-        final Copy agentTask = getJacocoAgentTask();
-        jacocoTask.dependsOn(tasks, agentTask);
+            // also add a new stream for the jacoco agent Jar
+            variantScope.getTransformManager().addStream(TransformStream.builder()
+                    .addContentTypes(TransformManager.CONTENT_JARS)
+                    .addScope(scope)
+                    .setFiles(new File(agentTask.getDestinationDir(), FILE_JACOCO_AGENT))
+                    .setDependency(agentTask)
+                    .setFormat(Format.JAR)
+                    .build());
+        }
+    }
 
-        // update dependency.
-        PostCompilationData pcData2 = new PostCompilationData();
-        pcData2.setClassGeneratingTasks(Collections.singletonList(jacocoTask.getName()));
-        pcData2.setLibraryGeneratingTasks(
-                Arrays.asList(pcData.getLibraryGeneratingTasks(), agentTask));
+    public void createJacocoTransform(
+            @NonNull TaskFactory taskFactory,
+            @NonNull final VariantScope variantScope) {
 
-        // update inputs
-        pcData2.setInputFilesCallable(new Callable<List<File>>() {
-            @Override
-            public List<File> call() {
-                return new ArrayList<File>(
-                        project.files(scope.getVariantData().jacocoInstrumentTask.getOutputDir())
-                                .getFiles());
-            }
+        AndroidTask<?> task = variantScope.getTransformManager().addTransform(taskFactory,
+                variantScope, new JacocoTransform(project.getConfigurations()));
 
-        });
-        pcData2.setInputDirCallable(new Callable<File>() {
-            @Override
-            public File call() {
-                return scope.getVariantData().jacocoInstrumentTask.getOutputDir();
-            }
-
-        });
-        pcData2.setInputLibrariesCallable(new Callable<List<File>>() {
-            @Override
-            public List<File> call() throws Exception {
-                List<File> files = null;
-                files = new ArrayList<File>(pcData.getInputLibrariesCallable().call());
-                files.add(new File(agentTask.getDestinationDir(), FILE_JACOCO_AGENT));
-                return files;
-            }
-
-        });
-
-        return pcData2;
+        Copy agentTask = getJacocoAgentTask();
+        task.dependsOn(taskFactory, agentTask);
     }
 
     public void createJackTask(
             @NonNull TaskFactory tasks,
             @NonNull VariantScope scope) {
-
-        final GradleVariantConfiguration config = scope.getVariantData().getVariantConfiguration();
 
         // ----- Create Jill tasks -----
         final AndroidTask<JillTask> jillRuntimeTask = androidTasks.create(tasks,
@@ -1938,6 +2001,7 @@ public abstract class TaskManager {
 
         // Jack is compiling and also providing the binary and mapping files.
         setJavaCompilerTask(jackTask, tasks, scope);
+        jackTask.optionalDependsOn(tasks, scope.getMergeJavaResourcesTask());
         jackTask.dependsOn(tasks,
                 scope.getVariantData().sourceGenTask,
                 jillRuntimeTask,
@@ -1971,38 +2035,31 @@ public abstract class TaskManager {
 
             final String outputName = variantOutputData.getFullName();
 
-            // When shrinking resources, rather than having the packaging task
-            // directly map to the packageOutputFile of ProcessAndroidResources,
-            // we insert the ShrinkResources task into the chain, such that its
-            // input is the ProcessAndroidResources packageOutputFile, and its
-            // output is what the PackageApplication task reads.
-            AndroidTask<ShrinkResources> shrinkTask = null;
-
-            if (config.isMinifyEnabled() && config.getBuildType().isShrinkResources() &&
-                    !config.getUseJack()) {
-                shrinkTask = androidTasks.create(
-                        tasks, new ShrinkResources.ConfigAction(variantOutputScope));
-                shrinkTask.dependsOn(tasks, variantScope.getObfuscationTask(),
-                        variantOutputScope.getManifestProcessorTask(),
-                        variantOutputScope.getProcessResourcesTask());
-            }
-
             AndroidTask<PackageApplication> packageApp = androidTasks.create(
                     tasks, new PackageApplication.ConfigAction(variantOutputScope));
 
-            packageApp.dependsOn(tasks, variantOutputScope.getProcessResourcesTask(),
-                    variantOutputScope.getVariantScope().getProcessJavaResourcesTask(),
+            packageApp.dependsOn(tasks,
+                    variantOutputScope.getProcessResourcesTask(),
                     variantOutputScope.getVariantScope().getNdkBuildable());
 
             packageApp.optionalDependsOn(
                     tasks,
-                    shrinkTask,
+                    variantOutputScope.getShrinkResourcesTask(),
                     // TODO: When Jack is converted, add activeDexTask to VariantScope.
-                    variantOutputScope.getVariantScope().getDexTask(),
                     variantOutputScope.getVariantScope().getJavaCompilerTask(),
                     variantData.javaCompilerTask, // TODO: Remove when Jack is converted to AndroidTask.
                     variantOutputData.packageSplitResourcesTask,
                     variantOutputData.packageSplitAbiTask);
+
+            TransformManager transformManager = variantScope.getTransformManager();
+            for (TransformStream stream : transformManager.getStreams(PackageApplication.sDexFilter)) {
+                // TODO Optimize to avoid creating too many actions
+                packageApp.dependsOn(tasks, stream.getDependencies());
+            }
+            for (TransformStream stream : transformManager.getStreams(PackageApplication.sResFilter)) {
+                // TODO Optimize to avoid creating too many actions
+                packageApp.dependsOn(tasks, stream.getDependencies());
+            }
 
             AndroidTask appTask = packageApp;
 
@@ -2242,32 +2299,157 @@ public abstract class TaskManager {
         return zipAlignTask;
     }
 
+    protected void createMinifyTransform(
+            @NonNull TaskFactory taskFactory,
+            @NonNull final VariantScope variantScope,
+            boolean createJarFile) {
+        doCreateMinifyTransform(taskFactory,
+                variantScope,
+                null /*mappingConfiguration*/, // No mapping in non-test modules.
+                createJarFile);
+    }
+
     /**
-     * Creates the proguarding task for the given Variant if necessary.
-     *
-     * @return null if the proguard task was not created, otherwise the expected outputFile.
+     * Actually creates the minify transform, using the given mapping configuration. The mapping is
+     * only used by test-only modules.
      */
-    @Nullable
-    public File maybeCreateProguardTasks(
-            @NonNull TaskFactory tasks,
-            @NonNull VariantScope scope,
-            @NonNull final PostCompilationData pcData) {
-        if (!scope.getVariantData().getVariantConfiguration().isMinifyEnabled()) {
-            return null;
+    protected final void doCreateMinifyTransform(
+            @NonNull TaskFactory taskFactory,
+            @NonNull final VariantScope variantScope,
+            @Nullable Configuration mappingConfiguration,
+            boolean createJarFile) {
+        if (AndroidGradleOptions.useNewShrinker(project)) {
+            createNewShrinkerTransform(variantScope, taskFactory);
+        } else {
+            createProguardTransform(taskFactory, variantScope, mappingConfiguration, createJarFile);
         }
+    }
 
-        AndroidTask<AndroidProGuardTask> proguardTask = androidTasks.create(
-                tasks, new AndroidProGuardTask.ConfigAction(scope, pcData));
-        scope.setObfuscationTask(proguardTask);
+    private void createNewShrinkerTransform(VariantScope scope, TaskFactory taskFactory) {
+        NewShrinkerTransform transform = new NewShrinkerTransform(scope);
+        addProguardConfigFiles(transform, scope.getVariantData());
+        scope.getTransformManager().addTransform(taskFactory, scope, transform);
+    }
 
-        // update dependency.
-        proguardTask.optionalDependsOn(tasks, pcData.getClassGeneratingTasks(),
-                pcData.getLibraryGeneratingTasks());
-        pcData.setLibraryGeneratingTasks(Collections.singletonList(proguardTask.getName()));
-        pcData.setClassGeneratingTasks(Collections.singletonList(proguardTask.getName()));
+    private void createProguardTransform(
+            @NonNull TaskFactory taskFactory,
+            @NonNull VariantScope variantScope,
+            @Nullable Configuration mappingConfiguration,
+            boolean createJarFile) {
+        try {
+            final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope
+                    .getVariantData();
+            final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
+            final BaseVariantData testedVariantData = variantScope.getTestedVariantData();
 
-        // Return output file.
-        return scope.getProguardOutputFile();
+            ProGuardTransform transform = new ProGuardTransform(variantScope, createJarFile);
+
+            if (testedVariantData != null) {
+                // Don't remove any code in tested app.
+                transform.dontshrink();
+                transform.dontoptimize();
+
+                // We can't call dontobfuscate, since that would make ProGuard ignore the mapping file.
+                transform.keep("class * {*;}")
+                        .keep("interface * {*;}")
+                        .keep("enum * {*;}")
+                        .keepattributes();
+
+                // All -dontwarn rules for test dependencies should go in here:
+                transform.configurationFiles(
+                        Suppliers.ofInstance(
+                                testedVariantData.getVariantConfiguration().getTestProguardFiles()));
+
+                // register the mapping file which may or may not exists (only exist if obfuscation)
+                // is enabled.
+                transform.applyTestedMapping(testedVariantData.getMappingFile());
+
+            } else {
+                if (variantConfig.isTestCoverageEnabled()) {
+                    // when collecting coverage, don't remove the JaCoCo runtime
+                    transform.keep("class com.vladium.** {*;}")
+                            .keep("class org.jacoco.** {*;}")
+                            .keep("interface org.jacoco.** {*;}")
+                            .dontwarn("org.jacoco.**");
+                }
+
+                addProguardConfigFiles(transform, variantData);
+
+                if (mappingConfiguration != null) {
+                    transform.applyTestedMapping(mappingConfiguration);
+                }
+            }
+
+            AndroidTask<?> task = variantScope.getTransformManager().addTransform(taskFactory,
+                    variantScope, transform, new TransformTask.ConfigActionCallback<ProGuardTransform>() {
+                        @Override
+                        public void callback(
+                                @NonNull final ProGuardTransform transform,
+                                @NonNull final TransformTask task) {
+                            variantData.mappingFileProviderTask = new FileSupplier() {
+                                @NonNull
+                                @Override
+                                public Task getTask() {
+                                    return task;
+                                }
+
+                                @Override
+                                public File get() {
+                                    return transform.getMappingFile();
+                                }
+                            };
+                        }
+                    });
+
+            if (mappingConfiguration != null) {
+                task.dependsOn(taskFactory, mappingConfiguration);
+            }
+
+            if (variantConfig.getBuildType().isShrinkResources()) {
+                // if resources are shrink, insert a no-op transform per variant output
+                // to transform the res package into a stripped res package
+                for (final BaseVariantOutputData variantOutputData : variantData.getOutputs()) {
+                    VariantOutputScope variantOutputScope = variantOutputData.getScope();
+
+                    ShrinkResourcesTransform shrinkResTransform = new ShrinkResourcesTransform(
+                            variantOutputData,
+                            variantOutputData.processResourcesTask.getPackageOutputFile(),
+                            variantOutputScope.getCompressedResourceFile(),
+                            androidBuilder,
+                            logger);
+                    AndroidTask<TransformTask> shrinkTask = variantScope.getTransformManager()
+                            .addTransform(taskFactory, variantOutputScope, shrinkResTransform);
+                    // need to record this task since the package task will not depend
+                    // on it through the transform manager.
+                    variantOutputScope.setShrinkResourcesTask(shrinkTask);
+                }
+            }
+
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void addProguardConfigFiles(
+            ProguardConfigurable transform,
+            final BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
+        transform.configurationFiles(new Supplier<List<File>>() {
+            @Override
+            public List<File> get() {
+                List<File> proguardFiles = variantConfig.getProguardFiles(
+                        true,
+                        Collections.singletonList(getDefaultProguardFile(
+                                TaskManager.DEFAULT_PROGUARD_CONFIG_FILE)));
+
+                // use the first output when looking for the proguard rule output of
+                // the aapt task. The different outputs are not different in a way that
+                // makes this rule file different per output.
+                BaseVariantOutputData outputData = variantData.getOutputs().get(0);
+                proguardFiles.add(outputData.processResourcesTask.getProguardOutputFile());
+                return proguardFiles;
+            }
+        });
     }
 
     public void createReportTasks(
@@ -2286,7 +2468,7 @@ public abstract class TaskManager {
     }
 
     public void createAnchorTasks(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
-        createPreBuildTasks(tasks, scope);
+        createPreBuildTasks(scope);
 
         // also create sourceGenTask
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
@@ -2301,7 +2483,7 @@ public abstract class TaskManager {
                 }));
         // and resGenTask
         scope.setResourceGenTask(androidTasks.create(tasks,
-                scope.getTaskName("generate","Resources"),
+                scope.getTaskName("generate", "Resources"),
                 Task.class,
                 new Action<Task>() {
                     @Override
@@ -2321,11 +2503,27 @@ public abstract class TaskManager {
                     }
                 }));
 
+        if (!variantData.getType().isForTesting()
+                && variantData.getVariantConfiguration().getBuildType().isTestCoverageEnabled()) {
+            scope.setCoverageReportTask(androidTasks.create(tasks,
+                    scope.getTaskName("create", "CoverageReport"),
+                    Task.class,
+                    new Action<Task>() {
+                        @Override
+                        public void execute(Task task) {
+                            task.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
+                            task.setDescription(String.format(
+                                    "Creates test coverage reports for the %s variant.",
+                                    variantData.getName()));
+                        }
+                    }));
+        }
+
         // and compile task
         createCompileAnchorTask(tasks, scope);
     }
 
-    private void createPreBuildTasks(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
+    private void createPreBuildTasks(@NonNull VariantScope scope) {
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         variantData.preBuildTask = project.getTasks().create(scope.getTaskName("pre", "Build"));
         variantData.preBuildTask.dependsOn(MAIN_PREBUILD);
@@ -2337,6 +2535,7 @@ public abstract class TaskManager {
         prepareDependenciesTask.dependsOn(variantData.preBuildTask);
 
         prepareDependenciesTask.setAndroidBuilder(androidBuilder);
+        prepareDependenciesTask.setVariantName(scope.getVariantConfiguration().getFullName());
         prepareDependenciesTask.setVariant(variantData);
 
         // for all libraries required by the configurations of this variant, make this task
@@ -2347,24 +2546,25 @@ public abstract class TaskManager {
         for (LibraryDependencyImpl lib : configurationDependencies.getLibraries()) {
             dependencyManager.addDependencyToPrepareTask(variantData, prepareDependenciesTask, lib);
         }
-
     }
 
     private void createCompileAnchorTask(@NonNull TaskFactory tasks, @NonNull final VariantScope scope) {
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         scope.setCompileTask(androidTasks.create(tasks, new TaskConfigAction<Task>() {
+            @NonNull
             @Override
             public String getName() {
                 return scope.getTaskName("compile", "Sources");
             }
 
+            @NonNull
             @Override
             public Class<Task> getType() {
                 return Task.class;
             }
 
             @Override
-            public void execute(Task task) {
+            public void execute(@NonNull Task task) {
                 variantData.compileTask = task;
                 variantData.compileTask.setGroup(BUILD_GROUP);
             }
@@ -2439,7 +2639,7 @@ public abstract class TaskManager {
     }
 
     @NonNull
-    protected AndroidTaskRegistry getAndroidTasks() {
+    public AndroidTaskRegistry getAndroidTasks() {
         return androidTasks;
     }
 

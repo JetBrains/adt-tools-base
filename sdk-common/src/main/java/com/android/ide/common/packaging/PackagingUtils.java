@@ -16,6 +16,10 @@
 
 package com.android.ide.common.packaging;
 
+import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.google.common.collect.ImmutableList;
+
 /**
  * Utility class for packaging.
  */
@@ -28,7 +32,7 @@ public class PackagingUtils {
      *
      * @return true if the folder is valid for packaging.
      */
-    public static boolean checkFolderForPackaging(String folderName) {
+    public static boolean checkFolderForPackaging(@NonNull String folderName) {
         return !folderName.equalsIgnoreCase("CVS") &&
                 !folderName.equalsIgnoreCase(".svn") &&
                 !folderName.equalsIgnoreCase("SCCS") &&
@@ -38,16 +42,43 @@ public class PackagingUtils {
     /**
      * Checks a file to make sure it should be packaged as standard resources.
      * @param fileName the name of the file (including extension)
+     * @param allowClassFiles whether to allow java class files
      * @return true if the file should be packaged as standard java resources.
      */
-    public static boolean checkFileForPackaging(String fileName) {
+    public static boolean checkFileForPackaging(@NonNull String fileName, boolean allowClassFiles) {
         String[] fileSegments = fileName.split("\\.");
         String fileExt = "";
         if (fileSegments.length > 1) {
             fileExt = fileSegments[fileSegments.length-1];
         }
 
-        return checkFileForPackaging(fileName, fileExt);
+        return checkFileForPackaging(fileName, fileExt, allowClassFiles);
+    }
+
+    /**
+     * Checks a file to make sure it should be packaged as standard resources.
+     * @param fileName the name of the file (including extension)
+     * @return true if the file should be packaged as standard java resources.
+     */
+    public static boolean checkFileForPackaging(@NonNull String fileName) {
+        return checkFileForPackaging(fileName, false);
+    }
+
+    /**
+     * Checks a file to make sure it should be packaged as standard resources.
+     * @param fileName the name of the file (including extension)
+     * @param extension the extension of the file (excluding '.')
+     * @param allowClassFiles whether to allow java class files
+     * @return true if the file should be packaged as standard java resources.
+     */
+    public static boolean checkFileForPackaging(
+            @NonNull String fileName,
+            @NonNull String extension,
+            boolean allowClassFiles) {
+        // ignore hidden files and backup files
+        return !(fileName.charAt(0) == '.' || fileName.charAt(fileName.length() - 1) == '~') &&
+                !isOfNonResourcesExtensions(extension, allowClassFiles) &&
+                !isNotAResourceFile(fileName);
     }
 
     /**
@@ -56,23 +87,62 @@ public class PackagingUtils {
      * @param extension the extension of the file (excluding '.')
      * @return true if the file should be packaged as standard java resources.
      */
-    public static boolean checkFileForPackaging(String fileName, String extension) {
+    public static boolean checkFileForPackaging(
+            @NonNull String fileName,
+            @NonNull String extension) {
         // ignore hidden files and backup files
         return !(fileName.charAt(0) == '.' || fileName.charAt(fileName.length() - 1) == '~') &&
-                !"aidl".equalsIgnoreCase(extension) &&        // Aidl files
-                !"rs".equalsIgnoreCase(extension) &&          // RenderScript files
-                !"fs".equalsIgnoreCase(extension) &&          // FilterScript files
-                !"rsh".equalsIgnoreCase(extension) &&         // RenderScript header files
-                !"d".equalsIgnoreCase(extension) &&           // Dependency files
-                !"java".equalsIgnoreCase(extension) &&        // Java files
-                !"scala".equalsIgnoreCase(extension) &&       // Scala files
-                !"class".equalsIgnoreCase(extension) &&       // Java class files
-                !"scc".equalsIgnoreCase(extension) &&         // VisualSourceSafe
-                !"swp".equalsIgnoreCase(extension) &&         // vi swap file
-                !"thumbs.db".equalsIgnoreCase(fileName) &&    // image index file
-                !"picasa.ini".equalsIgnoreCase(fileName) &&   // image index file
-                !"about.html".equalsIgnoreCase(fileName) &&   // Javadoc
-                !"package.html".equalsIgnoreCase(fileName) && // Javadoc
-                !"overview.html".equalsIgnoreCase(fileName);  // Javadoc
+                !isOfNonResourcesExtensions(extension, false) &&
+                !isNotAResourceFile(fileName);
     }
+
+    private static boolean isOfNonResourcesExtensions(
+            @NonNull String extension,
+            boolean allowClassFiles) {
+        for (String ext : NON_RESOURCES_EXTENSIONS) {
+            if (ext.equalsIgnoreCase(extension)) {
+                return true;
+            }
+        }
+
+        return !allowClassFiles && SdkConstants.EXT_CLASS.equals(extension);
+    }
+
+    private static boolean isNotAResourceFile(@NonNull String fileName) {
+        for (String name : NON_RESOURCES_FILENAMES) {
+            if (name.equalsIgnoreCase(fileName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the list of file extensions that represents non resources files.
+     */
+    public static final ImmutableList<String> NON_RESOURCES_EXTENSIONS =
+            ImmutableList.<String>builder()
+                    .add("aidl")            // Aidl files
+                    .add("rs")              // RenderScript files
+                    .add("fs")              // FilterScript files
+                    .add("rsh")             // RenderScript header files
+                    .add("d")               // Dependency files
+                    .add("java")            // Java files
+                    .add("scala")           // Scala files
+                    .add("so")              // native .so libraries
+                    .add("scc")             // VisualSourceSafe
+                    .add("swp")             // vi swap file
+                    .build();
+
+    /**
+     * Return file names that are not resource files.
+     */
+    public static final ImmutableList<String> NON_RESOURCES_FILENAMES =
+            ImmutableList.<String>builder()
+                    .add("thumbs.db")       // image index file
+                    .add("picasa.ini")      // image index file
+                    .add("about.html")      // Javadoc
+                    .add("package.html")    // Javadoc
+                    .add("overview.html")   // Javadoc
+                    .build();
 }

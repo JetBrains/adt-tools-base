@@ -114,12 +114,12 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
                 LocationType.IN_IMAGES_SUBFOLDER,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_ARMEABI_V7A,
-                FileOp.EMPTY_FILE_ARRAY));
+                FileOp.EMPTY_FILE_ARRAY), null);
         makeSystemImageFolder(new SystemImage(mSdkMan, t,
                 LocationType.IN_IMAGES_SUBFOLDER,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_INTEL_ATOM,
-                FileOp.EMPTY_FILE_ARRAY));
+                FileOp.EMPTY_FILE_ARRAY), null);
 
         mSdkMan.reloadSdk(getLog());
         t = mSdkMan.getTargets()[0];
@@ -142,12 +142,12 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
                 LocationType.IN_SYSTEM_IMAGE,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_ARMEABI,
-                FileOp.EMPTY_FILE_ARRAY));
+                FileOp.EMPTY_FILE_ARRAY), null);
         makeSystemImageFolder(new SystemImage(mSdkMan, t,
                 LocationType.IN_SYSTEM_IMAGE,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_ARMEABI_V7A,
-                FileOp.EMPTY_FILE_ARRAY));
+                FileOp.EMPTY_FILE_ARRAY), null);
 
         mSdkMan.reloadSdk(getLog());
 
@@ -171,7 +171,7 @@ public class LocalSdkParserTest extends SdkManagerTestCase {
                 LocationType.IN_SYSTEM_IMAGE,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_INTEL_ATOM,
-                FileOp.EMPTY_FILE_ARRAY));
+                FileOp.EMPTY_FILE_ARRAY), null);
 
         assertEquals(
                 "[Android SDK Tools, revision 1.0.1, " +

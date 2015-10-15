@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
-    format="4"
-    revision="2"
+    format="5"
+    revision="3"
     name="Notification"
     description="Creates a new helper class that can show or cancel a status bar notification."
     minApi="4">

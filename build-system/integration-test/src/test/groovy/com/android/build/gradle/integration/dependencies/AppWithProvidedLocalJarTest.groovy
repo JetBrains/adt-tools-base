@@ -21,6 +21,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.JavaLibrary
 import com.android.builder.model.Variant
+import com.google.common.collect.Iterables
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -29,6 +30,8 @@ import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertTrue
+
 /**
  * test for provided local jar in app
  */
@@ -79,6 +82,8 @@ dependencies {
         Collection<JavaLibrary> javaLibs = deps.getJavaLibraries()
 
         assertEquals("Check there is 1 dependency", 1, javaLibs.size())
+        assertTrue("Check the dependency is provided",
+                Iterables.getOnlyElement(javaLibs).isProvided())
     }
 
     @Test

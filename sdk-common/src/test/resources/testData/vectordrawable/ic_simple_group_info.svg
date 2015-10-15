@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="48px" height="48px" viewBox="0 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.3.3 (12081) - http://www.bohemiancoding.com/sketch -->
+    <title>ic_qset_dnd_silence</title>
+    <desc>Created with Sketch.</desc>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="ic_qset_dnd_silence" sketch:type="MSArtboardGroup">
+            <path d="M0,0 L48,0 L48,48 L0,48 L0,0 L0,0 Z" id="Shape" sketch:type="MSShapeGroup"></path>
+            <path d="M24,12 C17.4,12 12,17.4 12,24 C12,30.6 17.4,36 24,36 C30.6,36 36,30.6 36,24 C36,17.4 30.8,12 24,12 L24,12 Z M30,26 L18,26 L18,22 L30,22 L30,26 L30,26 Z" id="Shape" fill="#FF0000" sketch:type="MSShapeGroup"></path>
+        </g>
+    </g>
+</svg>

@@ -23,6 +23,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.ProductFlavorContainer
 import com.android.builder.model.Variant
+import com.google.common.base.Joiner
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -88,7 +89,8 @@ class FlavoredlibTest {
         assertEquals("flavor1Release", androidLibrary.getProjectVariant())
         // TODO: right now we can only test the folder name efficiently
         String path = androidLibrary.getFolder().getPath()
-        assertTrue(path, path.endsWith("/flavoredlib/lib/unspecified/flavor1Release"))
+        assertTrue(path, path.endsWith(File.separator + "flavoredlib" + File.separatorChar + "lib"
+                + File.separatorChar + "unspecified" + File.separatorChar + "flavor1Release"))
 
         ProductFlavorContainer flavor2 = ModelHelper.getProductFlavor(productFlavors, "flavor2")
         assertNotNull(flavor2)
@@ -107,7 +109,8 @@ class FlavoredlibTest {
         assertEquals("flavor2Release", androidLibrary.getProjectVariant())
         // TODO: right now we can only test the folder name efficiently
         path = androidLibrary.getFolder().getPath()
-        assertTrue(path, path.endsWith("/flavoredlib/lib/unspecified/flavor2Release"))
+        assertTrue(path, path.endsWith(Joiner.on(File.separatorChar).join(
+                "flavoredlib", "lib", "unspecified", "flavor2Release")))
     }
 
     @Test

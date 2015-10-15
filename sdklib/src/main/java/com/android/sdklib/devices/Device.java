@@ -276,6 +276,13 @@ public final class Device {
         return getDefaultHardware().getScreen().getScreenRound() == ScreenRound.ROUND;
     }
 
+    /**
+     * A convenience method to get the chin size for this device.
+     */
+    public int getChinSize() {
+        return getDefaultHardware().getScreen().getChin();
+    }
+
     public static class Builder {
         private String mName;
         private String mId;

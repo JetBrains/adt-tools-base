@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <recipe>
 
-    <#if appCompat><dependency mavenUrl="com.android.support:appcompat-v7:${targetApi}.+"/></#if>
+    <dependency mavenUrl="com.android.support:appcompat-v7:${buildApi}.+"/>
 
 <#if !createActivity>
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
@@ -9,44 +9,52 @@
 
     <mkdir at="${escapeXmlAttribute(projectOut)}/libs" />
 
-    <merge from="settings.gradle.ftl"
+    <merge from="root/settings.gradle.ftl"
              to="${escapeXmlAttribute(topOut)}/settings.gradle" />
-    <instantiate from="build.gradle.ftl"
+    <instantiate from="root/build.gradle.ftl"
                    to="${escapeXmlAttribute(projectOut)}/build.gradle" />
-    <instantiate from="AndroidManifest.xml.ftl"
+    <instantiate from="root/AndroidManifest.xml.ftl"
                    to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
 
 <mkdir at="${escapeXmlAttribute(resOut)}/drawable" />
 <#if copyIcons && !isLibraryProject>
-    <copy from="res/mipmap-hdpi"
+    <copy from="root/res/mipmap-hdpi"
             to="${escapeXmlAttribute(resOut)}/mipmap-hdpi" />
-    <copy from="res/mipmap-mdpi"
+    <copy from="root/res/mipmap-mdpi"
             to="${escapeXmlAttribute(resOut)}/mipmap-mdpi" />
-    <copy from="res/mipmap-xhdpi"
+    <copy from="root/res/mipmap-xhdpi"
             to="${escapeXmlAttribute(resOut)}/mipmap-xhdpi" />
-    <copy from="res/mipmap-xxhdpi"
+    <copy from="root/res/mipmap-xxhdpi"
             to="${escapeXmlAttribute(resOut)}/mipmap-xxhdpi" />
+    <copy from="root/res/mipmap-xxxhdpi"
+            to="${escapeXmlAttribute(resOut)}/mipmap-xxxhdpi" />
 </#if>
 <#if makeIgnore>
-    <copy from="module_ignore"
+    <copy from="root/module_ignore"
             to="${escapeXmlAttribute(projectOut)}/.gitignore" />
 </#if>
 <#if enableProGuard>
-    <instantiate from="proguard-rules.txt.ftl"
+    <instantiate from="root/proguard-rules.txt.ftl"
                    to="${escapeXmlAttribute(projectOut)}/proguard-rules.pro" />
 </#if>
 <#if !(isLibraryProject??) || !isLibraryProject>
-    <instantiate from="res/values/styles.xml.ftl"
+    <instantiate from="root/res/values/styles.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/styles.xml" />
-<#if buildApi gte 21 && !(appCompat)>
-    <copy from="res/values-v21/styles.xml"
-          to="${escapeXmlAttribute(resOut)}/values-v21/styles.xml" />
+<#if buildApi gte 22>
+    <copy from="root/res/values/colors.xml"
+          to="${escapeXmlAttribute(resOut)}/values/colors.xml" />
 </#if>
 </#if>
 
-    <instantiate from="res/values/strings.xml.ftl"
+    <instantiate from="root/res/values/strings.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
 
-    <instantiate from="test/app_package/ApplicationTest.java.ftl"
-                   to="${testOut}/ApplicationTest.java" />
+    <instantiate from="root/test/app_package/ApplicationTest.java.ftl"
+                   to="${escapeXmlAttribute(testOut)}/ApplicationTest.java" />
+
+<#if unitTestsSupported>
+    <instantiate from="root/test/app_package/ExampleUnitTest.java.ftl"
+                   to="${escapeXmlAttribute(unitTestOut)}/ExampleUnitTest.java" />
+</#if>
+
 </recipe>

@@ -35,9 +35,11 @@ import static java.io.File.separator;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
+import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.local.LocalSdk;
 import com.android.tools.lint.client.api.LintListener.EventType;
@@ -103,7 +105,6 @@ import lombok.ast.Annotation;
 import lombok.ast.AnnotationElement;
 import lombok.ast.AnnotationValue;
 import lombok.ast.ArrayInitializer;
-import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
 import lombok.ast.Expression;
 import lombok.ast.MethodDeclaration;
@@ -111,6 +112,7 @@ import lombok.ast.Modifiers;
 import lombok.ast.Node;
 import lombok.ast.StrictListAccessor;
 import lombok.ast.StringLiteral;
+import lombok.ast.TypeDeclaration;
 import lombok.ast.TypeReference;
 import lombok.ast.VariableDefinition;
 
@@ -409,7 +411,7 @@ public class LintDriver {
             return;
         }
 
-        registerCustomRules(projects);
+        registerCustomDetectors(projects);
 
         if (mScope == null) {
             mScope = Scope.infer(projects);
@@ -441,7 +443,21 @@ public class LintDriver {
         fireEvent(mCanceled ? EventType.CANCELED : EventType.COMPLETED, null);
     }
 
-    private void registerCustomRules(Collection<Project> projects) {
+    @Nullable
+    private Set<Issue> myCustomIssues;
+
+    /**
+     * Returns true if the given issue is an issue that was loaded as a custom rule
+     * (e.g. a 3rd-party library provided the detector, it's not built in)
+     *
+     * @param issue the issue to be looked up
+     * @return true if this is a custom (non-builtin) check
+     */
+    public boolean isCustomIssue(@NonNull Issue issue) {
+        return myCustomIssues != null && myCustomIssues.contains(issue);
+    }
+
+    private void registerCustomDetectors(Collection<Project> projects) {
         // Look at the various projects, and if any of them provide a custom
         // lint jar, "add" them (this will replace the issue registry with
         // a CompositeIssueRegistry containing the original issue registry
@@ -449,6 +465,9 @@ public class LintDriver {
         Set<File> jarFiles = Sets.newHashSet();
         for (Project project : projects) {
             jarFiles.addAll(mClient.findRuleJars(project));
+            for (Project library : project.getAllLibraries()) {
+                jarFiles.addAll(mClient.findRuleJars(library));
+            }
         }
 
         jarFiles.addAll(mClient.findGlobalRuleJars());
@@ -458,7 +477,12 @@ public class LintDriver {
             registries.add(mRegistry);
             for (File jarFile : jarFiles) {
                 try {
-                    registries.add(JarFileIssueRegistry.get(mClient, jarFile));
+                    IssueRegistry registry = JarFileIssueRegistry.get(mClient, jarFile);
+                    if (myCustomIssues == null) {
+                        myCustomIssues = Sets.newHashSet();
+                    }
+                    myCustomIssues.addAll(registry.getIssues());
+                    registries.add(registry);
                 } catch (Throwable e) {
                     mClient.log(e, "Could not load custom rule jar file %1$s", jarFile);
                 }
@@ -545,7 +569,7 @@ public class LintDriver {
         // and simultaneously build up the detectorToScope map which tracks
         // the scopes each detector is affected by (this is used to populate
         // the mScopeDetectors map which is used during iteration).
-        Configuration configuration = project.getConfiguration();
+        Configuration configuration = project.getConfiguration(this);
         for (Detector detector : detectors) {
             Class<? extends Detector> detectorClass = detector.getClass();
             Collection<Issue> detectorIssues = issueMap.get(detectorClass);
@@ -602,7 +626,7 @@ public class LintDriver {
         mCurrentFolderType = null;
         mCurrentVisitor = null;
 
-        Configuration configuration = project.getConfiguration();
+        Configuration configuration = project.getConfiguration(this);
         mScopeDetectors = new EnumMap<Scope, List<Detector>>(Scope.class);
         mApplicableDetectors = mRegistry.createDetectors(mClient, configuration,
                 mScope, mScopeDetectors);
@@ -1232,7 +1256,7 @@ public class LintDriver {
         // the parent chains (such that for example for a virtual dispatch, we can
         // also check the super classes).
 
-        List<File> libraries = project.getJavaLibraries();
+        List<File> libraries = project.getJavaLibraries(false);
         List<ClassEntry> libraryEntries = ClassEntry.fromClassPath(mClient, libraries, true);
 
         List<File> classFolders = project.getJavaClassFolders();
@@ -1244,7 +1268,7 @@ public class LintDriver {
             Location location = Location.create(project.getDir());
             mClient.report(new Context(this, project, main, project.getDir()),
                     IssueRegistry.LINT_ERROR,
-                    project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
+                    project.getConfiguration(this).getSeverity(IssueRegistry.LINT_ERROR),
                     location, message, TextFormat.RAW);
             classEntries = Collections.emptyList();
         } else {
@@ -1449,7 +1473,7 @@ public class LintDriver {
             }
         }
         // Search in the libraries
-        for (File root : mClient.getJavaLibraries(project)) {
+        for (File root : mClient.getJavaLibraries(project, true)) {
             // TODO: Handle .jar files!
             //if (root.getPath().endsWith(DOT_JAR)) {
             //}
@@ -1848,10 +1872,10 @@ public class LintDriver {
 
         @Override
         @NonNull
-        public Configuration getConfiguration(@NonNull Project project) {
-            return mDelegate.getConfiguration(project);
+        public Configuration getConfiguration(@NonNull Project project,
+          @Nullable LintDriver driver) {
+            return mDelegate.getConfiguration(project, driver);
         }
-
 
         @Override
         public void log(@NonNull Severity severity, @Nullable Throwable exception,
@@ -1885,8 +1909,37 @@ public class LintDriver {
 
         @NonNull
         @Override
-        public List<File> getJavaLibraries(@NonNull Project project) {
-            return mDelegate.getJavaLibraries(project);
+        public List<File> getJavaLibraries(@NonNull Project project, boolean includeProvided) {
+            return mDelegate.getJavaLibraries(project, includeProvided);
+        }
+
+        @NonNull
+        @Override
+        public List<File> getTestSourceFolders(@NonNull Project project) {
+            return mDelegate.getTestSourceFolders(project);
+        }
+
+        @Override
+        public Collection<Project> getKnownProjects() {
+            return mDelegate.getKnownProjects();
+        }
+
+        @Nullable
+        @Override
+        public BuildToolInfo getBuildTools(@NonNull Project project) {
+            return mDelegate.getBuildTools(project);
+        }
+
+        @NonNull
+        @Override
+        public Map<String, String> createSuperClassMap(@NonNull Project project) {
+            return mDelegate.createSuperClassMap(project);
+        }
+
+        @NonNull
+        @Override
+        public ResourceVisibilityLookup.Provider getResourceVisibilityProvider() {
+            return mDelegate.getResourceVisibilityProvider();
         }
 
         @Override
@@ -2374,9 +2427,9 @@ public class LintDriver {
                 if (isSuppressed(issue, declaration.astModifiers())) {
                     return true;
                 }
-            } else if (type == ClassDeclaration.class) {
-                // Class
-                ClassDeclaration declaration = (ClassDeclaration) scope;
+            } else if (TypeDeclaration.class.isAssignableFrom(type)) {
+                // Class, annotation, enum, interface
+                TypeDeclaration declaration = (TypeDeclaration) scope;
                 if (isSuppressed(issue, declaration.astModifiers())) {
                     return true;
                 }

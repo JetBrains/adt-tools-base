@@ -284,7 +284,10 @@ public class ControlFlowGraph {
         AbstractInsnNode curr = start;
         Node handlerNode = getNode(tcb.handler);
         while (curr != end && curr != null) {
-            if (curr.getType() == AbstractInsnNode.METHOD_INSN) {
+            // A method can throw can exception, or a throw instruction directly
+            if (curr.getType() == AbstractInsnNode.METHOD_INSN
+                    || (curr.getType() == AbstractInsnNode.INSN
+                    && curr.getOpcode() == Opcodes.ATHROW)) {
                 // Method call; add exception edge to handler
                 if (tcb.type == null) {
                     // finally block: not an exception path

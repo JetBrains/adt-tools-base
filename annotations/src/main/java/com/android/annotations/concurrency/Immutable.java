@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * is immutable.
  */
 @Documented
-@Retention(RetentionPolicy.CLASS)
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 public @interface Immutable {
 }

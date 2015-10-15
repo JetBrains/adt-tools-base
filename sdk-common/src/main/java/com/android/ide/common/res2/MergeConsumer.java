@@ -19,8 +19,11 @@ package com.android.ide.common.res2;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.blame.Message;
+import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
+import com.google.common.base.Objects;
+import com.google.common.base.Throwables;
 
 import java.io.File;
 
@@ -32,18 +35,27 @@ import javax.xml.parsers.DocumentBuilderFactory;
 public interface MergeConsumer<I extends DataItem> {
 
     /**
-     * An exception thrown during by the consumer. It always contains the original exception as its
-     * cause.
+     * An exception thrown during resource merging by the consumer. It always contains the original
+     * exception as its cause.
      */
     class ConsumerException extends MergingException {
 
-        public ConsumerException(Throwable cause) {
-            super(cause, new Message(Message.Kind.ERROR, cause.getLocalizedMessage(),
-                    SourceFilePosition.UNKNOWN));
+        public ConsumerException(@NonNull Throwable cause) {
+            this(cause, SourceFile.UNKNOWN);
         }
 
-        public ConsumerException(Throwable cause, @NonNull File file) {
-            super(cause, new Message(Message.Kind.ERROR, cause.getLocalizedMessage(),
+        public ConsumerException(@NonNull Throwable cause, @NonNull File file) {
+            this(cause, new SourceFile(file));
+        }
+
+        private ConsumerException(@NonNull Throwable cause, @NonNull SourceFile file) {
+            super(cause, new Message(
+                    Message.Kind.ERROR,
+                    Objects.firstNonNull(
+                            cause.getLocalizedMessage(),
+                            cause.getClass().getCanonicalName()),
+                    Throwables.getStackTraceAsString(cause),
+                    RESOURCE_ASSET_MERGER_TOOL_NAME,
                     new SourceFilePosition(file, SourcePosition.UNKNOWN)));
         }
     }
@@ -77,4 +89,5 @@ public interface MergeConsumer<I extends DataItem> {
     void removeItem(@NonNull I removedItem, @Nullable I replacedBy) throws ConsumerException;
 
     boolean ignoreItemInMerge(I item);
+
 }

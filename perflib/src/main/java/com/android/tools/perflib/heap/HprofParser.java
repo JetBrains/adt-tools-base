@@ -17,7 +17,7 @@
 package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
-import com.android.tools.perflib.heap.io.HprofBuffer;
+import com.android.tools.perflib.captures.DataBuffer;
 import com.google.common.primitives.UnsignedBytes;
 import com.google.common.primitives.UnsignedInts;
 
@@ -26,7 +26,7 @@ import java.io.IOException;
 
 import gnu.trove.TLongObjectHashMap;
 
-public class HprofParser {
+class HprofParser {
 
     private static final int STRING_IN_UTF8 = 0x01;
 
@@ -120,7 +120,7 @@ public class HprofParser {
     private static final int ROOT_PRIMITIVE_ARRAY_NODATA = 0xc3;
 
     @NonNull
-    private final HprofBuffer mInput;
+    private final DataBuffer mInput;
 
     int mIdSize;
 
@@ -136,15 +136,16 @@ public class HprofParser {
     @NonNull
     TLongObjectHashMap<String> mClassNames = new TLongObjectHashMap<String>();
 
-    public HprofParser(@NonNull HprofBuffer buffer) {
-        mInput = buffer;
+    static void parseBuffer(@NonNull Snapshot snapshot, @NonNull DataBuffer buffer) {
+        new HprofParser(snapshot, buffer).parse();
     }
 
-    @NonNull
-    public final Snapshot parse() {
-        Snapshot snapshot = new Snapshot(mInput);
+    private HprofParser(@NonNull Snapshot snapshot, @NonNull DataBuffer buffer) {
+        mInput = buffer;
         mSnapshot = snapshot;
+    }
 
+    private void parse() {
         try {
             try {
                 readNullTerminatedString();  // Version, ignored for now.
@@ -205,7 +206,6 @@ public class HprofParser {
 
         mClassNames.clear();
         mStrings.clear();
-        return snapshot;
     }
 
     @NonNull

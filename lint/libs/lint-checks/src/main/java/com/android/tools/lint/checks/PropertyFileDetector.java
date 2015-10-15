@@ -30,6 +30,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
+import com.android.utils.SdkUtils;
 import com.google.common.base.Splitter;
 
 import java.io.File;
@@ -175,7 +176,7 @@ public class PropertyFileDetector extends Detector {
     @NonNull
     static String suggestEscapes(@NonNull String value) {
         value = value.replace("\\:", ":").replace("\\\\", "\\");
-        return LintUtils.escapePropertyValue(value);
+        return SdkUtils.escapePropertyValue(value);
     }
 
     /**

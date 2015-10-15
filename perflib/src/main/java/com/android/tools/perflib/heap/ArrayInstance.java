@@ -17,7 +17,7 @@
 package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
-import com.android.tools.perflib.heap.io.HprofBuffer;
+import com.android.tools.perflib.captures.DataBuffer;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -63,7 +63,7 @@ public class ArrayInstance extends Instance {
     public char[] asCharArray(int offset, int length) {
         assert mType == Type.CHAR;
         // TODO: Make this copy less by supporting offset in asRawByteArray.
-        CharBuffer charBuffer = ByteBuffer.wrap(asRawByteArray(offset, length)).order(HprofBuffer.HPROF_BYTE_ORDER).asCharBuffer();
+        CharBuffer charBuffer = ByteBuffer.wrap(asRawByteArray(offset, length)).order(DataBuffer.HPROF_BYTE_ORDER).asCharBuffer();
         char[] result = new char[length];
         charBuffer.get(result);
         return result;
@@ -82,7 +82,7 @@ public class ArrayInstance extends Instance {
             for (Object value : getValues()) {
                 if (value instanceof Instance) {
                     if (!mReferencesAdded) {
-                        ((Instance)value).addReference(this);
+                        ((Instance)value).addReference(null, this);
                     }
                     visitor.visitLater(this, (Instance)value);
                 }

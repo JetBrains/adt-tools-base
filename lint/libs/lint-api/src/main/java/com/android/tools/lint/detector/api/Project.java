@@ -26,11 +26,13 @@ import com.android.ide.common.repository.ResourceVisibilityLookup;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.tools.lint.client.api.CircularDependencyException;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.LintClient;
+import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.SdkInfo;
 import com.google.common.annotations.Beta;
 import com.google.common.base.CharMatcher;
@@ -93,6 +95,7 @@ public class Project {
     protected List<File> mManifestFiles;
     protected List<File> mJavaSourceFolders;
     protected List<File> mJavaClassFolders;
+    protected List<File> mNonProvidedJavaLibraries;
     protected List<File> mJavaLibraries;
     protected List<File> mTestSourceFolders;
     protected List<File> mResourceFolders;
@@ -406,20 +409,29 @@ public class Project {
      * library projects which are processed in a separate pass with their own
      * source and class folders.
      *
+     * @param includeProvided If true, included provided libraries too (libraries
+     *                        that are not packaged with the app, but are provided
+     *                        for compilation purposes and are assumed to be present
+     *                        in the running environment)
      * @return a list of .jar files (or class folders) that this project depends
      *         on.
      */
     @NonNull
-    public List<File> getJavaLibraries() {
-        if (mJavaLibraries == null) {
-            // AOSP builds already merge libraries and class folders into
-            // the single classes.jar file, so these have already been processed
-            // in getJavaClassFolders.
-
-            mJavaLibraries = mClient.getJavaLibraries(this);
+    public List<File> getJavaLibraries(boolean includeProvided) {
+        if (includeProvided) {
+            if (mJavaLibraries == null) {
+                // AOSP builds already merge libraries and class folders into
+                // the single classes.jar file, so these have already been processed
+                // in getJavaClassFolders.
+                mJavaLibraries = mClient.getJavaLibraries(this, true);
+            }
+            return mJavaLibraries;
+        } else {
+            if (mNonProvidedJavaLibraries == null) {
+                mNonProvidedJavaLibraries = mClient.getJavaLibraries(this, false);
+            }
+            return mNonProvidedJavaLibraries;
         }
-
-        return mJavaLibraries;
     }
 
     /**
@@ -536,12 +548,13 @@ public class Project {
     /**
      * Gets the configuration associated with this project
      *
+     * @param driver the current driver, if any
      * @return the configuration associated with this project
      */
     @NonNull
-    public Configuration getConfiguration() {
+    public Configuration getConfiguration(@Nullable LintDriver driver) {
         if (mConfiguration == null) {
-            mConfiguration = mClient.getConfiguration(this);
+            mConfiguration = mClient.getConfiguration(this, driver);
         }
         return mConfiguration;
     }
@@ -611,6 +624,16 @@ public class Project {
      */
     public int getBuildSdk() {
         return mBuildSdk;
+    }
+
+    /**
+     * Returns the specific version of the build tools being used, if known
+     *
+     * @return the build tools version in use, or null if not known
+     */
+    @Nullable
+    public BuildToolInfo getBuildTools() {
+        return mClient.getBuildTools(this);
     }
 
     /**
@@ -1137,7 +1160,7 @@ public class Project {
     public Boolean dependsOn(@NonNull String artifact) {
         if (SUPPORT_LIB_ARTIFACT.equals(artifact)) {
             if (mSupportLib == null) {
-                for (File file : getJavaLibraries()) {
+                for (File file : getJavaLibraries(true)) {
                     String name = file.getName();
                     if (name.equals("android-support-v4.jar")      //$NON-NLS-1$
                             || name.startsWith("support-v4-")) {   //$NON-NLS-1$
@@ -1162,7 +1185,7 @@ public class Project {
             return mSupportLib;
         } else if (APPCOMPAT_LIB_ARTIFACT.equals(artifact)) {
             if (mAppCompat == null) {
-                for (File file : getJavaLibraries()) {
+                for (File file : getJavaLibraries(true)) {
                     String name = file.getName();
                     if (name.startsWith("appcompat-v7-")) { //$NON-NLS-1$
                         mAppCompat = true;

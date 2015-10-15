@@ -98,7 +98,7 @@ public class ArchiveInfo extends ArchiveReplacement implements Comparable<Archiv
      * want to install.
      */
     public boolean isDependencyFor() {
-        return mDependencyFor.size() > 0;
+        return !mDependencyFor.isEmpty();
     }
 
     /**

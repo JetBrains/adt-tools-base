@@ -182,8 +182,9 @@ public class LintCliClient extends LintClient {
         return new LintCliXmlParser();
     }
 
+    @NonNull
     @Override
-    public Configuration getConfiguration(@NonNull Project project) {
+    public Configuration getConfiguration(@NonNull Project project, @Nullable LintDriver driver) {
         return new CliConfiguration(getConfiguration(), project, mFlags.isFatalOnly());
     }
 
@@ -380,10 +381,10 @@ public class LintCliClient extends LintClient {
                 classes = classPath.getClassFolders();
             }
             if (libraries == null) {
-                libraries = classPath.getLibraries();
+                libraries = classPath.getLibraries(true);
             }
 
-            info = new ClassPathInfo(sources, classes, libraries,
+            info = new ClassPathInfo(sources, classes, libraries, classPath.getLibraries(false),
                     classPath.getTestSourceFolders());
             mProjectInfo.put(project, info);
         }
@@ -545,7 +546,7 @@ public class LintCliClient extends LintClient {
             if (!isSuppressed(IssueRegistry.LINT_ERROR)) {
                 report(new Context(mDriver, project, project, project.getDir()),
                         IssueRegistry.LINT_ERROR,
-                        project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
+                        project.getConfiguration(mDriver).getSeverity(IssueRegistry.LINT_ERROR),
                         location, message, TextFormat.RAW);
             }
         } else {

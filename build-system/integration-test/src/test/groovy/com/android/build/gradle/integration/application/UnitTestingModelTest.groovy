@@ -19,12 +19,13 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.JavaArtifact
+import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
 import org.junit.Rule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.builder.model.AndroidProject.ARTIFACT_UNIT_TEST
-import static com.google.common.truth.Truth.assertThat
 /**
  * Tests for the unit-tests related parts of the builder model.
  */
@@ -38,6 +39,9 @@ class UnitTestingModelTest {
 
     @Test
     public void "Unit testing artifacts are included in the model"() {
+        // Build the project, so we can verify paths in the model exist.
+        project.execute("test")
+
         AndroidProject model = project.allModels[":app"]
 
         assertThat(model.extraArtifacts*.name).containsExactly(
@@ -66,10 +70,15 @@ class UnitTestingModelTest {
             assertThat(unitTestArtifact.variantSourceProvider).isNull()
             assertThat(unitTestArtifact.multiFlavorSourceProvider).isNull()
 
-            assertThat(variant.mainArtifact.javaResourcesFolder.path)
-                    .endsWith("intermediates/javaResources/" + variant.name)
-            assertThat(unitTestArtifact.javaResourcesFolder.path)
-                    .endsWith("intermediates/javaResources/test/" + variant.name)
+            assertThat(variant.mainArtifact.classesFolder).isDirectory()
+            assertThat(variant.mainArtifact.javaResourcesFolder).isDirectory()
+            assertThat(unitTestArtifact.classesFolder).isDirectory()
+            assertThat(unitTestArtifact.javaResourcesFolder).isDirectory()
+
+            assertThat(unitTestArtifact.classesFolder)
+                    .isNotEqualTo(variant.mainArtifact.classesFolder)
+            assertThat(unitTestArtifact.javaResourcesFolder)
+                    .isNotEqualTo(variant.mainArtifact.javaResourcesFolder)
         }
 
         def sourceProvider = model.defaultConfig
@@ -78,7 +87,8 @@ class UnitTestingModelTest {
                 .sourceProvider
 
         assertThat(sourceProvider.javaDirectories).hasSize(1)
-        assertThat(sourceProvider.javaDirectories.first().absolutePath).endsWith("test/java")
+        assertThat(sourceProvider.javaDirectories.first().absolutePath).endsWith(
+                FileUtils.join("test", "java"))
     }
 
     @Test
@@ -99,7 +109,8 @@ android {
 
             assertThat(sourceProvider.javaDirectories).hasSize(1)
             assertThat(sourceProvider.javaDirectories.first().absolutePath)
-                    .endsWith("test${flavor.productFlavor.name.capitalize()}/java")
+                    .endsWith("test${flavor.productFlavor.name.capitalize()}" +
+                            "${File.separatorChar}java")
         }
     }
 }

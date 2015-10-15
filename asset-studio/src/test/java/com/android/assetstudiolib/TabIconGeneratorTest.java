@@ -19,7 +19,7 @@ package com.android.assetstudiolib;
 import java.io.IOException;
 
 @SuppressWarnings("javadoc")
-public class TabIconGeneratorTest extends GeneratorTest {
+public class TabIconGeneratorTest extends BitmapGeneratorTest {
     private void checkGraphic(String folderName, String baseName, int minSdk,
             int expectedFileCount) throws IOException {
         TabIconGenerator generator = new TabIconGenerator();

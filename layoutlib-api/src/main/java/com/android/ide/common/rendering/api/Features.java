@@ -93,7 +93,7 @@ public class Features {
      */
     public static final int RENDER_ALL_DRAWABLE_STATES = 15;
     /**
-     * Ability to provide a fake Adapter for RecyclerView. This is an IDE feature.
+     * Ability to use custom layouts for RecyclerView$Adapter.
      */
     public static final int RECYCLER_VIEW_ADAPTER = 16;
     /**

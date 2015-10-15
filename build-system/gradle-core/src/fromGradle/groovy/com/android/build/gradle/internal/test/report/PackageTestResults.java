@@ -30,7 +30,7 @@ class PackageTestResults extends CompositeTestResults {
 
     public PackageTestResults(String name, AllTestResults model) {
         super(model);
-        this.name = name.length() == 0 ? DEFAULT_PACKAGE : name;
+        this.name = name.isEmpty() ? DEFAULT_PACKAGE : name;
     }
 
     @Override

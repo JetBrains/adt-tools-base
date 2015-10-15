@@ -22,9 +22,6 @@ import static com.android.SdkConstants.DOT_XSD;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.blame.Message;
-import com.android.ide.common.blame.SourceFilePosition;
-import com.android.ide.common.blame.SourcePosition;
 import com.android.resources.ResourceType;
 import com.android.utils.SdkUtils;
 

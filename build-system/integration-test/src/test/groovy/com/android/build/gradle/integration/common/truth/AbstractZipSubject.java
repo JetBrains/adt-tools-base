@@ -19,9 +19,13 @@ package com.android.build.gradle.integration.common.truth;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
+import com.google.common.io.CharStreams;
 import com.google.common.primitives.Bytes;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.IterableSubject;
@@ -30,6 +34,7 @@ import com.google.common.truth.Subject;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -40,34 +45,43 @@ import java.util.zip.ZipFile;
  * Truth support for zip files.
  */
 public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Subject<T, File> {
-    private ZipFile zip;
-
+    private final File subject;
     public AbstractZipSubject(@NonNull FailureStrategy failureStrategy, @NonNull File subject) {
         super(failureStrategy, subject);
+        this.subject = subject;
         new FileSubject(failureStrategy, subject).exists();
-        try {
-            zip = new ZipFile(subject);
-        } catch (IOException e) {
-            failWithRawMessage("IOException thrown when creating ZipFile: '%s'.", e.toString());
-        }
+    }
+
+    private ZipFile getZip() throws IOException {
+        return new ZipFile(subject);
     }
 
     /**
      * Asserts the zip file contains a file with the specified path.
      */
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void contains(@NonNull String path) {
-        if (zip.getEntry(path) == null) {
-            failWithRawMessage("'%s' does not contain '%s'", zip.getName(), path);
+    public void contains(@NonNull String path) throws IOException {
+        ZipFile zip=getZip();
+        try {
+            if (zip.getEntry(path) == null) {
+                failWithRawMessage("'%s' does not contain '%s'", zip.getName(), path);
+            }
+        } finally {
+            zip.close();
         }
     }
 
     /**
      * Asserts the zip file does not contains a file with the specified path.
      */
-    public void doesNotContain(@NonNull String path) {
-        if (zip.getEntry(path) != null) {
-            failWithRawMessage("'%s' unexpectedly contains '%s'", zip.getName(), path);
+    public void doesNotContain(@NonNull String path) throws IOException {
+        ZipFile zip = getZip();
+        try {
+            if (zip.getEntry(path) != null) {
+                failWithRawMessage("'%s' unexpectedly contains '%s'", zip.getName(), path);
+            }
+        } finally {
+            zip.close();
         }
     }
 
@@ -131,40 +145,68 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
     }
 
     protected String extractContentAsString(@NonNull String path) {
-        InputStream stream = getInputStream(path);
         try {
-            return new String(ByteStreams.toByteArray(stream), Charsets.UTF_8).trim();
+            ZipFile zip = new ZipFile(subject);
+            try {
+                InputStream stream = getInputStream(zip, path);
+                try {
+                    // standardize on \n no matter which OS wrote the file.
+                    return Joiner.on('\n').join(
+                            CharStreams.readLines(new InputStreamReader(stream, Charsets.UTF_8)));
+                } finally {
+                    stream.close();
+                }
+            } finally {
+                zip.close();
+            }
         } catch (IOException e) {
-            failWithRawMessage("IOException when extracting zip: %s", e.toString());
+            failWithRawMessage("IOException when extracting %1$s from zip %2$s: %3$s",
+                    subject.getAbsolutePath(),
+                    e.toString());
             return null;
         }
     }
 
+    @Nullable
     protected byte[] extractContentAsByte(@NonNull String path) {
-        InputStream stream = getInputStream(path);
         try {
-            return ByteStreams.toByteArray(stream);
+            ZipFile zip = new ZipFile(subject);
+            try {
+                InputStream stream = getInputStream(zip, path);
+                try {
+                    return ByteStreams.toByteArray(stream);
+                } finally {
+                    stream.close();
+                }
+            } finally {
+                zip.close();
+            }
         } catch (IOException e) {
-            failWithRawMessage("IOException when extracting zip: %s", e.toString());
+            failWithRawMessage("IOException when extracting %1$s from zip %2$s: %3$s",
+                    path,
+                    subject.getAbsolutePath(),
+                    e.toString());
             return null;
         }
     }
 
-    protected InputStream getInputStream(@NonNull String path) {
-        ZipEntry entry = zip.getEntry(path);
-        if (entry == null) {
-            failWithRawMessage("'%s' does not contain '%s'", zip.getName(), path);
-            return null;
-        }
-
-        if (entry.isDirectory()) {
-            failWithRawMessage("Unable to compare content, '%s' is a directory.", path);
-        }
-
+    protected InputStream getInputStream(@NonNull ZipFile zip, @NonNull String path) {
         try {
+            ZipEntry entry = zip.getEntry(path);
+            if (entry == null) {
+                failWithRawMessage("'%s' does not contain '%s'", zip.getName(), path);
+                return null;
+            }
+
+            if (entry.isDirectory()) {
+                failWithRawMessage("Unable to compare content, '%s' is a directory.", path);
+            }
             return zip.getInputStream(entry);
         } catch (IOException e) {
-            failWithRawMessage("IOException when extracting zip: %s", e.toString());
+            failWithRawMessage("IOException when extracting %1$s from zip %2$s: %3$s",
+                    path,
+                    zip.getName(),
+                    e.toString());
             return null;
         }
     }

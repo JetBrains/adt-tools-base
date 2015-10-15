@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="custom_scope" pattern="(src:*..*||test:*..*)&amp;&amp;!test[manifest-merger-base]:com.android.manifmerger.data..*&amp;&amp;!test[manifest-merger-base]:com.android.manifmerger.data2..*&amp;&amp;!test[lint-cli]:com.android.tools.lint.checks.data..*&amp;&amp;!test[sdk-common-base]:testData..*&amp;&amp;!test[builder]:testData..*&amp;&amp;!test[assetstudio-base]:com.android.assetstudiolib.testdata..*&amp;&amp;!src[assetstudio-base]:images..*" />
+</component>

@@ -15,6 +15,8 @@
  */
 
 package com.android.build.gradle
+
+import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.api.ApkVariantOutput
@@ -23,8 +25,8 @@ import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
+import com.android.build.gradle.internal.tasks.MockableAndroidJarTask
 import com.android.build.gradle.internal.test.BaseTest
-import com.android.resources.Density
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
@@ -540,8 +542,11 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(false)
 
-        def mockableJarFile = plugin.taskManager.createMockableJar.outputFile
-        assertFalse(mockableJarFile.absolutePath.contains(":"))
+        def mockableJarFile = ((MockableAndroidJarTask) project.tasks.mockableAndroidJar).outputFile
+        if (SdkConstants.CURRENT_PLATFORM != SdkConstants.PLATFORM_WINDOWS) {
+            // windows path contain : to identify drives.
+            assertFalse(mockableJarFile.absolutePath.contains(":"))
+        }
         assertEquals("mockable-Google-Inc.-Google-APIs-21.jar", mockableJarFile.name)
     }
 
@@ -565,30 +570,6 @@ public class AppPluginDslTest extends BaseTest {
         assertEquals(
                 "foo",
                 project.compileReleaseJavaWithJavac.options.encoding)
-    }
-
-    public void testPreprocessResourcesDsl() throws Exception {
-        Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
-
-        project.ext['com.android.build.gradle.experimentalPreprocessResources'] = 'true'
-
-        project.apply plugin: 'com.android.application'
-
-        project.android {
-            compileSdkVersion 15
-            buildToolsVersion '21.0.0'
-
-            preprocessingOptions {
-                preprocessResources = true
-                densities += "ldpi"
-            }
-        }
-
-        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
-        plugin.createAndroidTasks(false)
-
-        assert project.preprocessDebugResources.densitiesToGenerate.contains(Density.LOW)
     }
 
     public void testInstrumentationRunnerArguments_merging() throws Exception {
@@ -643,6 +624,44 @@ public class AppPluginDslTest extends BaseTest {
         }
     }
 
+    public void testGeneratedDensities() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
+
+            productFlavors {
+                f1 {
+                }
+
+                f2  {
+                    generatedDensities = ["ldpi"]
+                    generatedDensities += ["mdpi"]
+                }
+
+                f3 {
+                    generatedDensities = defaultConfig.generatedDensities - ["ldpi", "mdpi"]
+                }
+            }
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        assert project.mergeF1DebugResources.generatedDensities ==
+                ["ldpi", "mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"] as Set
+
+        assert project.mergeF2DebugResources.generatedDensities ==
+                ["ldpi", "mdpi"] as Set
+
+        assert project.mergeF3DebugResources.generatedDensities ==
+                ["hdpi", "xhdpi", "xxhdpi", "xxxhdpi"] as Set
+    }
+
     private static void checkTestedVariant(@NonNull String variantName,
                                            @NonNull String testedVariantName,
                                            @NonNull Collection<ApplicationVariant> variants,
@@ -669,9 +688,8 @@ public class AppPluginDslTest extends BaseTest {
         assertNotNull(variant.mergeResources)
         assertNotNull(variant.mergeAssets)
         assertNotNull(variant.generateBuildConfig)
-        assertNotNull(variant.javaCompile)
+        assertNotNull(variant.javaCompiler)
         assertNotNull(variant.processJavaResources)
-        assertNotNull(variant.dex)
         assertNotNull(variant.assemble)
         assertNotNull(variant.uninstall)
 

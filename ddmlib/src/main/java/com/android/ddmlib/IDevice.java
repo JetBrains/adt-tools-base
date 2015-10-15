@@ -66,7 +66,8 @@ public interface IDevice extends IShellEnabledDevice {
 
     /** Device level hardware features. */
     enum HardwareFeature {
-        WATCH("watch");                   // supports feature watch
+        WATCH("watch"),
+        TV("tv");
 
         private final String mCharacteristic;
 
@@ -95,7 +96,9 @@ public interface IDevice extends IShellEnabledDevice {
         OFFLINE("offline"), //$NON-NLS-1$
         ONLINE("device"), //$NON-NLS-1$
         RECOVERY("recovery"), //$NON-NLS-1$
-        UNAUTHORIZED("unauthorized"); //$NON-NLS-1$
+        UNAUTHORIZED("unauthorized"), //$NON-NLS-1$
+        DISCONNECTED("disconnected"), //$NON-NLS-1$
+        ;
 
         private String mState;
 
@@ -177,7 +180,10 @@ public interface IDevice extends IShellEnabledDevice {
 
     /**
      * Convenience method that attempts to retrieve a property via
-     * {@link #getSystemProperty(String)} with minimal wait time, and swallows exceptions.
+     * {@link #getSystemProperty(String)} with a very short wait time, and swallows exceptions.
+     *
+     * <p><em>Note: Prefer using {@link #getSystemProperty(String)} if you want control over the
+     * timeout.</em>
      *
      * @param name the name of the value to return.
      * @return the value or <code>null</code> if the property value was not immediately available
@@ -241,7 +247,8 @@ public interface IDevice extends IShellEnabledDevice {
      * @see #MNT_ROOT
      * @see #MNT_DATA
      */
-    String getMountPoint(String name);
+    @Nullable
+    String getMountPoint(@NonNull String name);
 
     /**
      * Returns if the device is ready.
@@ -478,10 +485,9 @@ public interface IDevice extends IShellEnabledDevice {
      * @param reinstall set to <code>true</code> if re-install of app should be performed
      * @param extraArgs optional extra arguments to pass. See 'adb shell pm install --help' for
      *            available options.
-     * @return a {@link String} with an error code, or <code>null</code> if success.
      * @throws InstallException if the installation fails.
      */
-    String installPackage(String packageFilePath, boolean reinstall, String... extraArgs)
+    void installPackage(String packageFilePath, boolean reinstall, String... extraArgs)
             throws InstallException;
 
     /**
@@ -519,7 +525,7 @@ public interface IDevice extends IShellEnabledDevice {
      *            available options.
      * @throws InstallException if the installation fails.
      */
-    String installRemotePackage(String remoteFilePath, boolean reinstall,
+    void installRemotePackage(String remoteFilePath, boolean reinstall,
             String... extraArgs) throws InstallException;
 
     /**
@@ -634,4 +640,11 @@ public interface IDevice extends IShellEnabledDevice {
      * @return the user's region, or null if it's unknown
      */
     String getRegion();
+
+    /**
+     * Returns the API level of the device.
+     *
+     * @return the API level of the device, or -1 if it cannot be determined ().
+     */
+    int getApiLevel();
 }

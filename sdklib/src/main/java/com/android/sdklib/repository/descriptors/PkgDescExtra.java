@@ -90,7 +90,7 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
      */
     @NonNull
     public static String[] convertOldPaths(@Nullable String oldPathsProperty) {
-        if (oldPathsProperty == null || oldPathsProperty.length() == 0) {
+        if (oldPathsProperty == null || oldPathsProperty.isEmpty()) {
             return new String[0];
         }
         return oldPathsProperty.split(";");  //$NON-NLS-1$
@@ -147,7 +147,7 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
         if (otherPath != null && thisPath != null && thisVendor != null) {
             if (otherPath.equals(thisVendor + '-' + thisPath) &&
                     (otherVendor == null ||
-                     otherVendor.length() == 0 ||
+                            otherVendor.isEmpty() ||
                      otherVendor.equals(thisVendor))) {
                 return true;
             }
@@ -155,7 +155,7 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
         if (thisPath != null && otherPath != null && otherVendor != null) {
             if (thisPath.equals(otherVendor + '-' + otherPath) &&
                     (thisVendor == null ||
-                     thisVendor.length() == 0 ||
+                            thisVendor.isEmpty() ||
                      thisVendor.equals(otherVendor))) {
                 return true;
             }

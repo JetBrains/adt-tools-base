@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <template
-    format="3"
-    revision="4"
+    format="5"
+    revision="6"
     name="Tabbed Activity"
-    minApi="7"
+    minApi="13"
     minBuildApi="14"
+    requireAppTheme="true"
     description="Creates a new blank activity, with an action bar and navigational elements such as tabs or horizontal swipe.">
 
     <category value="Activity" />

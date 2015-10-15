@@ -472,7 +472,7 @@ public class HtmlReporter extends Reporter {
 
                 // See if any projects disable this warning
                 for (Project project : projects) {
-                    if (!project.getConfiguration().isEnabled(issue)) {
+                    if (!project.getConfiguration(null).isEnabled(issue)) {
                         map.put(issue, "Project lint.xml file");
                         break;
                     }

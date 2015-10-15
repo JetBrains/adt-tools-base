@@ -17,17 +17,22 @@
 package com.android.ide.common.res2;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 
 import org.junit.Test;
 import org.xml.sax.SAXParseException;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 @SuppressWarnings({"ThrowableInstanceNeverThrown", "ThrowableResultOfMethodCallIgnored"})
@@ -90,18 +95,30 @@ public class MergingExceptionTest {
         SAXParseException saxParseException = new SAXParseException("message", "", "", 5, 7);
         List<Message> messages = MergingException
                 .wrapException(saxParseException).withFile(file).build().getMessages();
-        assertEquals(new Message(Message.Kind.ERROR, "message",
-                new SourceFilePosition(file, new SourcePosition(4, 6, -1))), messages.get(0));
+        Message message = Iterables.getOnlyElement(messages);
+        assertEquals("message.getKind()", Message.Kind.ERROR, message.getKind());
+        assertEquals("message.getText()", "message", message.getText());
+        assertTrue("message.getRawMessage()",
+                message.getRawMessage().startsWith("org.xml.sax.SAXParseException: message\n"));
+        assertEquals("message.getSourceFilePositions()",
+                new SourceFilePosition(file, new SourcePosition(4, 6, -1)),
+                Iterables.getOnlyElement(message.getSourceFilePositions()));
     }
 
     @Test
     public void testWrapSaxParseExceptionWithoutLocation() {
-        SAXParseException saxParseException = new SAXParseException("message", "", "", -1, -1);
+        SAXParseException saxParseException = new SAXParseException("message2", "", "", -1, -1);
 
         List<Message> messages = MergingException
                 .wrapException(saxParseException).withFile(file).build().getMessages();
-        assertEquals(new Message(Message.Kind.ERROR, "message",
-                new SourceFilePosition(file, SourcePosition.UNKNOWN)), messages.get(0));
+        Message message = Iterables.getOnlyElement(messages);
+        assertEquals("message.getKind()", Message.Kind.ERROR, message.getKind());
+        assertEquals("message.getText()", "message2", message.getText());
+        assertTrue("message.getRawMessage()",
+                message.getRawMessage().startsWith("org.xml.sax.SAXParseException: message2\n"));
+        assertEquals("message.getSourceFilePositions()",
+                new SourceFilePosition(file, SourcePosition.UNKNOWN),
+                Iterables.getOnlyElement(message.getSourceFilePositions()));
     }
 
     @Test
@@ -114,5 +131,22 @@ public class MergingExceptionTest {
         } catch (MergingException e) {
             // ok
         }
+    }
+
+
+    @Test
+    public void testMergingExceptionWithNullMessage() {
+        MergingException exception = MergingException.wrapException(new IOException()).build();
+        Message message = Iterables.getOnlyElement(exception.getMessages());
+        assertNotNull(message.getText());
+        assertNotNull(message.getRawMessage());
+    }
+
+    @Test
+    public void testConsumerExceptionWithNullMessage() {
+        MergingException exception = new MergeConsumer.ConsumerException(new IOException());
+        Message message = Iterables.getOnlyElement(exception.getMessages());
+        assertNotNull(message.getText());
+        assertNotNull(message.getRawMessage());
     }
 }

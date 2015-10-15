@@ -455,7 +455,7 @@ public class LocalSdk {
         synchronized (mLocalPackages) {
             Collection<LocalPkgInfo> existing = mLocalPackages.get(filter);
             assert existing.size() <= 1;
-            if (existing.size() > 0) {
+            if (!existing.isEmpty()) {
                 return existing.iterator().next();
             }
 
@@ -660,12 +660,23 @@ public class LocalSdk {
 
         // LocalBuildToolPkgInfo's comparator sorts on its FullRevision so we just
         // need to take the latest element.
-        LocalPkgInfo pkg = pkgs[pkgs.length - 1];
-        if (pkg instanceof LocalBuildToolPkgInfo) {
-            return ((LocalBuildToolPkgInfo) pkg).getBuildToolInfo();
+
+        LocalBuildToolPkgInfo preview = null;
+        for (int i = pkgs.length - 1; i >= 0; i--) {
+            LocalPkgInfo pkg = pkgs[i];
+            // Don't want to include preview build tools
+            if (pkg instanceof LocalBuildToolPkgInfo) {
+                if (!pkg.getDesc().isPreview()) {
+                    return ((LocalBuildToolPkgInfo)pkg).getBuildToolInfo();
+                }
+                else if (preview == null) {
+                    preview = (LocalBuildToolPkgInfo)pkg;
+                }
+            }
         }
 
-        return null;
+        // fall back to preview if we didn't find a non-preview
+        return preview != null ? preview.getBuildToolInfo() : null;
     }
 
     @NonNull
@@ -1220,7 +1231,7 @@ public class LocalSdk {
                 props.load(fis);
 
                 // To be valid, there must be at least one property in it.
-                if (props.size() > 0) {
+                if (!props.isEmpty()) {
                     return props;
                 }
             }

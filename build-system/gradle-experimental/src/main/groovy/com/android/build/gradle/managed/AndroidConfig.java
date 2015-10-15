@@ -16,14 +16,14 @@
 
 package com.android.build.gradle.managed;
 
+import com.android.build.gradle.api.VariantFilter;
 import com.android.build.gradle.internal.CompileOptions;
-import com.android.build.gradle.internal.coverage.JacocoExtension;
+import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.dsl.PreprocessingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
 import com.android.build.gradle.model.AndroidComponentModelSourceSet;
@@ -32,15 +32,13 @@ import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.sdklib.repository.FullRevision;
 
+import org.gradle.api.Action;
 import org.gradle.model.Managed;
 import org.gradle.model.ModelMap;
 import org.gradle.model.Unmanaged;
-import org.gradle.model.ModelSet;
 
 import java.util.Collection;
 import java.util.List;
-
-import groovy.lang.Closure;
 
 /**
  * Component model for all Android plugin.
@@ -64,6 +62,9 @@ public interface AndroidConfig {
     /** Default config, shared by all flavors. */
     ProductFlavor getDefaultConfig();
 
+    /** NDK config for specific ABI. */
+    ModelMap<NdkAbiOptions> getAbis();
+
     /** List of device providers */
     @Unmanaged
     List<DeviceProvider> getDeviceProviders();
@@ -84,8 +85,8 @@ public interface AndroidConfig {
 
     /** Filter to determine which variants to build */
     @Unmanaged
-    Closure<Void> getVariantFilter();
-    void setVariantFilter(Closure<Void> filter);
+    Action<VariantFilter> getVariantFilter();
+    void setVariantFilter(Action<VariantFilter> filter);
 
     /** A prefix to be used when creating new resources. Used by Studio */
     String getResourcePrefix();
@@ -94,11 +95,6 @@ public interface AndroidConfig {
     /** Whether to generate pure splits or multi apk */
     Boolean getGeneratePureSplits();
     void setGeneratePureSplits(Boolean generateSplits);
-
-    /** Whether to preprocess resources */
-    @Unmanaged
-    PreprocessingOptions getPreProcessingOptions();
-    void setPreProcessingOptions(PreprocessingOptions preprocessingOptions);
 
     /** Build types used by this project. */
     ModelMap<BuildType> getBuildTypes();
@@ -137,8 +133,8 @@ public interface AndroidConfig {
 
     /** JaCoCo options. */
     @Unmanaged
-    JacocoExtension getJacoco();
-    void setJacoco(JacocoExtension jacoco);
+    JacocoOptions getJacoco();
+    void setJacoco(JacocoOptions jacoco);
 
     /** Lint options. */
     @Unmanaged

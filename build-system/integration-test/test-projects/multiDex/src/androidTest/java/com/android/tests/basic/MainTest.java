@@ -40,5 +40,10 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
     public void testBuildConfig() {
         assertEquals("bar", BuildConfig.FOO);
     }
+
+    public void testDependency() {
+      // Make sure JUnit 4 is on the classpath, which means multidex works.
+      org.junit.Assert.assertEquals(4, 2+2);
+    }
 }
 

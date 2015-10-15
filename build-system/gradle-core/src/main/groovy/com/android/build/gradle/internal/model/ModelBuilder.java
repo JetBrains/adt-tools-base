@@ -134,7 +134,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         Collection<? extends SigningConfig> signingConfigs = config.getSigningConfigs();
 
         // Get the boot classpath. This will ensure the target is configured.
-        List<String> bootClasspath = androidBuilder.getBootClasspathAsStrings();
+        List<String> bootClasspath = androidBuilder.getBootClasspathAsStrings(false);
 
         List<File> frameworkSource = Collections.emptyList();
 
@@ -311,15 +311,15 @@ public class ModelBuilder implements ToolingModelBuilder {
         return new JavaArtifactImpl(
                 variantType.getArtifactName(),
                 variantData.assembleVariantTask.getName(),
-                variantData.compileTask.getName(),
+                variantData.getScope().getCompileTask().getName(),
                 Sets.newHashSet(variantData.prepareDependenciesTask.getName(),
                         taskManager.createMockableJar.getName()),
                 extraGeneratedSourceFolders != null ? extraGeneratedSourceFolders : Collections.<File>emptyList(),
                 (variantData.javacTask != null) ?
                         variantData.javacTask.getDestinationDir() :
                         variantData.getScope().getJavaOutputDir(),
-                variantData.processJavaResourcesTask.getDestinationDir(),
-                taskManager.createMockableJar.getOutputFile(),
+                variantData.getJavaResourcesForUnitTesting(),
+                taskManager.getGlobalScope().getMockableAndroidJarFile(),
                 dependencies,
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider);
@@ -364,7 +364,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         List<AndroidArtifactOutput> outputs = Lists.newArrayListWithCapacity(variantOutputs.size());
 
         CoreNdkOptions ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
-        Collection<NativeLibrary> nativeLibraries = ImmutableList.of();;
+        Collection<NativeLibrary> nativeLibraries = ImmutableList.of();
         if (ndkHandler.getNdkDirectory() != null) {
             if (config.getSplits().getAbi().isEnable()) {
                 nativeLibraries = createNativeLibraries(
@@ -433,7 +433,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 (variantData.javacTask != null) ?
                         variantData.javacTask.getDestinationDir() :
                         scope.getJavaOutputDir(),
-                scope.getJavaResourcesDestinationDir(),
+                scope.getVariantData().getJavaResourcesForUnitTesting(),
                 DependenciesImpl.cloneDependencies(variantData, androidBuilder),
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider,

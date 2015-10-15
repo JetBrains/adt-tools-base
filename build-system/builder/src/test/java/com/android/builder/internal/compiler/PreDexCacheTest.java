@@ -36,8 +36,6 @@ import com.android.ide.common.process.ProcessResult;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import junit.framework.TestCase;

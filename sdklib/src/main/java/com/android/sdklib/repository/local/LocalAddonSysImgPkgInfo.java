@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.repository.MajorRevision;
+import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
@@ -37,28 +38,42 @@ import java.util.Properties;
 public class LocalAddonSysImgPkgInfo extends LocalPkgInfo {
 
 
-    private final @NonNull IPkgDesc mDesc;
+  @NonNull private final IPkgDesc mDesc;
 
-    public LocalAddonSysImgPkgInfo(@NonNull LocalSdk localSdk,
-                              @NonNull File localDir,
-                              @NonNull Properties sourceProps,
-                              @NonNull AndroidVersion version,
-                              @Nullable IdDisplay addonVendor,
-                              @Nullable IdDisplay addonName,
-                              @NonNull String abi,
-                              @NonNull MajorRevision revision) {
-        super(localSdk, localDir, sourceProps);
-        mDesc = PkgDesc.Builder.newAddonSysImg(version, addonVendor, addonName, abi, revision)
-                               .create();
+  public LocalAddonSysImgPkgInfo(@NonNull LocalSdk localSdk,
+                                 @NonNull File localDir,
+                                 @NonNull Properties sourceProps,
+                                 @NonNull AndroidVersion version,
+                                 @Nullable IdDisplay addonVendor,
+                                 @Nullable IdDisplay addonName,
+                                 @NonNull String abi,
+                                 @NonNull MajorRevision revision) {
+    super(localSdk, localDir, sourceProps);
+    IdDisplay tag = new IdDisplay(sourceProps.getProperty(PkgProps.SYS_IMG_TAG_ID),
+                                  sourceProps.getProperty(PkgProps.SYS_IMG_TAG_DISPLAY));
+    String listDisplay = sourceProps.getProperty(PkgProps.PKG_LIST_DISPLAY);
+    if (listDisplay == null) {
+      listDisplay = "";
     }
+    mDesc = PkgDesc.Builder.newAddonSysImg(version, addonVendor, addonName, abi, revision)
+            .setDescriptionShort(LocalSysImgPkgInfo
+                    .createShortDescription(listDisplay, abi,
+                            addonVendor,
+                            tag, version, revision,
+                            sourceProps.containsKey(PkgProps.PKG_OBSOLETE)))
+            .setListDisplay(LocalSysImgPkgInfo
+                    .createListDescription(listDisplay, tag,
+                            LocalSysImgPkgInfo.getAbiDisplayNameInternal(abi),
+                            sourceProps.containsKey(PkgProps.PKG_OBSOLETE))).create();
+  }
 
-    @NonNull
-    @Override
-    public IPkgDesc getDesc() {
-        return mDesc;
-    }
+  @NonNull
+  @Override
+  public IPkgDesc getDesc() {
+    return mDesc;
+  }
 
-    public ISystemImage getSystemImage() {
-        return LocalSysImgPkgInfo.getSystemImage(mDesc, getLocalDir(), getLocalSdk().getFileOp());
-    }
+  public ISystemImage getSystemImage() {
+    return LocalSysImgPkgInfo.getSystemImage(mDesc, getLocalDir(), getLocalSdk().getFileOp());
+  }
 }

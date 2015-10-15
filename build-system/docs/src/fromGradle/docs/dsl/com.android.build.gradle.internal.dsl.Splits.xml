@@ -9,6 +9,8 @@
             <tr><td>densityFilters</td></tr>
             <tr><td>abi</td></tr>
             <tr><td>abiFilters</td></tr>
+            <tr><td>language</td></tr>
+            <tr><td>languageFilters</td></tr>
         </table>
     </section>
     <section>
@@ -19,6 +21,7 @@
             </thead>
             <tr><td>abi</td></tr>
             <tr><td>density</td></tr>
+            <tr><td>language</td></tr>
         </table>
     </section>
 </section>

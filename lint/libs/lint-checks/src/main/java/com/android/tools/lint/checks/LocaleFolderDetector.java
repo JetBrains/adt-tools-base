@@ -386,6 +386,7 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                 }
 
                 if (candidates.size() > 1) {
+                    Collections.sort(candidates); // ensure stable test output
                     Location location = null;
                     List<String> folderNames = Lists.newArrayList();
                     for (int i = candidates.size() - 1; i >= 0; i--) {

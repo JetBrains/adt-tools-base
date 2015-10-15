@@ -38,6 +38,15 @@ import java.util.Locale;
 
 @SuppressWarnings("javadoc")
 public class SdkUtilsTest extends TestCase {
+
+    @Override
+    public void setUp() throws Exception {
+        // TODO: Use Files.createTempDir() to avoid this.
+        if (new File("/tmp/foo").isDirectory()) {
+            fail("This test will fail if /tmp/foo exists and is a directory. Please remove it.");
+        }
+    }
+
     public void testEndsWithIgnoreCase() {
         assertTrue(SdkUtils.endsWithIgnoreCase("foo", "foo"));
         assertTrue(SdkUtils.endsWithIgnoreCase("foo", "Foo"));
@@ -239,10 +248,10 @@ public class SdkUtilsTest extends TestCase {
         String uDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "/C:" : "";
 
         assertEquals(
-                "file:" + uDrive + "/tmp/foo/bar",
+                "file://" + uDrive + "/tmp/foo/bar",
                 fileToUrlString(new File(pDrive + "/tmp/foo/bar")));
         assertEquals(
-                "file:" + uDrive + "/tmp/$&+,:;=%3F@/foo%20bar%25",
+                "file://" + uDrive + "/tmp/$&+,:;=%3F@/foo%20bar%25",
                 fileToUrlString(new File(pDrive + "/tmp/$&+,:;=?@/foo bar%")));
     }
 
@@ -274,13 +283,13 @@ public class SdkUtilsTest extends TestCase {
         String uDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "/C:" : "";
 
         assertEquals(
-                "From: file:" + uDrive + "/tmp/foo",
+                "From: file://" + uDrive + "/tmp/foo",
                 createPathComment(new File(pDrive + "/tmp/foo"), false));
         assertEquals(
-                " From: file:" + uDrive + "/tmp/foo ",
+                " From: file://" + uDrive + "/tmp/foo ",
                 createPathComment(new File(pDrive + "/tmp/foo"), true));
         assertEquals(
-                "From: file:" + uDrive + "/tmp-/%2D%2D/a%2D%2Da/foo",
+                "From: file://" + uDrive + "/tmp-/%2D%2D/a%2D%2Da/foo",
                 createPathComment(new File(pDrive + "/tmp-/--/a--a/foo"), false));
 
         String path = "/tmp/foo";
@@ -319,11 +328,11 @@ public class SdkUtilsTest extends TestCase {
         Element root = document.getDocumentElement();
         assertNotNull(root);
         root.appendChild(document.createComment(comment));
-        String xml = XmlUtils.toXml(document, false);
+        String xml = XmlUtils.toXml(document);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<root>"
-                + "<!-- From: file:" + uDrive + "/My%20Program%20Files/%2D%2D/Q&A/X%3CY/foo -->"
+                + "<!-- From: file://" + uDrive + "/My%20Program%20Files/%2D%2D/Q&A/X%3CY/foo -->"
                 + "</root>",
                 xml);
         int index = xml.indexOf(FILENAME_PREFIX);
@@ -333,36 +342,6 @@ public class SdkUtilsTest extends TestCase {
         assertEquals(
                 path.replace('/', File.separatorChar),
                 urlToFile(new URL(urlString)).getPath());
-    }
-
-    public void testCopyXmlWithSourceReference() throws IOException {
-        File source = File.createTempFile("source", SdkConstants.DOT_XML);
-        File dest = File.createTempFile("dest", SdkConstants.DOT_XML);
-        Files.write(""
-                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                + "<resources>\n"
-                + "    <string name=\"description_search\">Search</string>\n"
-                + "    <string name=\"description_map\">Map</string>\n"
-                + "    <string name=\"description_refresh\">Refresh</string>\n"
-                + "    <string name=\"description_share\">Share</string>\n"
-                + "</resources>",
-                source, Charsets.UTF_8);
-        SdkUtils.copyXmlWithSourceReference(source, dest);
-
-        String sourceUrl = SdkUtils.fileToUrlString(source);
-        assertEquals(""
-                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                + "<resources>\n"
-                + "    <string name=\"description_search\">Search</string>\n"
-                + "    <string name=\"description_map\">Map</string>\n"
-                + "    <string name=\"description_refresh\">Refresh</string>\n"
-                + "    <string name=\"description_share\">Share</string>\n"
-                + "</resources><!-- From: " + sourceUrl + " -->",
-                Files.toString(dest, Charsets.UTF_8));
-        boolean deleted = source.delete();
-        assertTrue(deleted);
-        deleted = dest.delete();
-        assertTrue(deleted);
     }
 
     public void testNameConversionRoutines() {

@@ -672,9 +672,7 @@ public class ResourceItem extends DataItem<ResourceFile>
     }
 
     @Override
-    Node getAdoptedNode(Document document) {
+    Node getDetailsXml(Document document) {
         return NodeUtils.adoptNode(document, mValue);
     }
-
-
 }

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.utils;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.process.CachedProcessOutputHandler;
@@ -30,6 +31,7 @@ import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,7 +76,8 @@ public class ApkHelper {
             throws ProcessException {
         CachedProcessOutputHandler handler = new CachedProcessOutputHandler();
         processExecutor.execute(processInfo, handler).rethrowFailure().assertNormalExitValue();
-        return Splitter.on('\n').splitToList(handler.getProcessOutput().getStandardOutputAsString());
+        return Splitter.on(System.getProperty("line.separator")).splitToList(
+                handler.getProcessOutput().getStandardOutputAsString());
     }
 
     @NonNull

@@ -26,6 +26,10 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_FULL
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.EVALUATION
+
 /**
  * Performance test on gradle plugin with multiple subprojects and multiple variants.
  */
@@ -77,12 +81,12 @@ class MultiProjectsAndroidTest {
     }
 
     @Test
-    void "performance test - help"() {
-        project.execute("help")
+    void "performance test - projects"() {
+        project.executeWithBenchmark("MultiProjectsAndroid", EVALUATION, "projects")
     }
 
     @Test
     void "performance test - single variant"() {
-        project.execute(":app0:assembleProductFlavor0BuildType0")
+        project.executeWithBenchmark("MultiProjectsAndroid", BUILD_FULL, ":app0:assembleProductFlavor0BuildType0")
     }
 }

@@ -32,6 +32,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.tasks.Job;
 import com.android.builder.tasks.JobContext;
 import com.android.builder.tasks.Task;
+import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
@@ -81,6 +82,7 @@ public class JackTask extends AbstractAndroidCompile
 
     private File tempFolder;
     private File jackFile;
+    private File javaResourcesFolder;
 
     private File mappingFile;
 
@@ -121,20 +123,21 @@ public class JackTask extends AbstractAndroidCompile
 
     private void doMinification() throws ProcessException, IOException {
 
-        if (System.getenv("USE_JACK_API") != null ||
-                !androidBuilder.convertByteCodeUsingJackApis(
-                        getDestinationDir(),
-                        getJackFile(),
-                        getClasspath().getFiles(),
-                        getPackagedLibraries(),
-                        getSource().getFiles(),
-                        getProguardFiles(),
-                        getMappingFile(),
-                        getJarJarRuleFiles(),
-                        getIncrementalDir(),
-                        isMultiDexEnabled(),
-                        getMinSdkVersion())) {
-
+        if (System.getenv("USE_JACK_API") != null) {
+            androidBuilder.convertByteCodeUsingJackApis(
+                    getDestinationDir(),
+                    getJackFile(),
+                    getClasspath().getFiles(),
+                    getPackagedLibraries(),
+                    getSource().getFiles(),
+                    getProguardFiles(),
+                    getMappingFile(),
+                    getJarJarRuleFiles(),
+                    getIncrementalDir(),
+                    getJavaResourcesFolder(),
+                    isMultiDexEnabled(),
+                    getMinSdkVersion());
+        } else {
             // no incremental support through command line so far.
             androidBuilder.convertByteCodeWithJack(
                     getDestinationDir(),
@@ -148,7 +151,8 @@ public class JackTask extends AbstractAndroidCompile
                     isMultiDexEnabled(),
                     getMinSdkVersion(),
                     isDebugLog,
-                    getJavaMaxHeapSize());
+                    getJavaMaxHeapSize(),
+                    new LoggedProcessOutputHandler(androidBuilder.getLogger()));
         }
 
     }
@@ -319,6 +323,16 @@ public class JackTask extends AbstractAndroidCompile
         this.incrementalDir = incrementalDir;
     }
 
+    @Input
+    @Optional
+    public File getJavaResourcesFolder() {
+        return javaResourcesFolder;
+    }
+
+    public void setJavaResourcesFolder(File javaResourcesFolder) {
+        this.javaResourcesFolder = javaResourcesFolder;
+    }
+
     @Override
     @NonNull
     public BinaryFileProviderTask.Artifact getArtifact() {
@@ -419,7 +433,7 @@ public class JackTask extends AbstractAndroidCompile
             jackTask.setTempFolder(new File(scope.getGlobalScope().getIntermediatesDir(),
                     "/tmp/jack/" + scope.getVariantConfiguration().getDirName()));
 
-
+            jackTask.setJavaResourcesFolder(scope.getJavaResourcesDestinationDir());
 
             if (config.isMinifyEnabled()) {
                 ConventionMappingHelper.map(jackTask, "proguardFiles", new Callable<List<File>>() {
@@ -475,7 +489,7 @@ public class JackTask extends AbstractAndroidCompile
             scope.getVariantData().jackTask = jackTask;
             scope.getVariantData().javaCompilerTask = jackTask;
             scope.getVariantData().mappingFileProviderTask = jackTask;
-            scope.getVariantData().binayFileProviderTask = jackTask;
+            scope.getVariantData().binaryFileProviderTask = jackTask;
         }
     }
 }

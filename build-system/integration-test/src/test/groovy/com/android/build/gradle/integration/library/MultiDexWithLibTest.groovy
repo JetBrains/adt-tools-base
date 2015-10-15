@@ -33,12 +33,13 @@ class MultiDexWithLibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("multiDexWithLib")
+            .withHeap("2048M")
             .create()
 
     @BeforeClass
     static void setUp() {
         GradleTestProject.assumeBuildToolsAtLeast(21)
-        project.execute("clean", "assembleDebug")
+        project.execute("clean", "assembleDebug", "assembleDebugAndroidTest")
     }
 
     @AfterClass

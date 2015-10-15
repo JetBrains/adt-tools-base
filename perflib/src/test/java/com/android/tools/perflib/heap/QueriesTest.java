@@ -16,7 +16,7 @@
 
 package com.android.tools.perflib.heap;
 
-import com.android.tools.perflib.heap.io.MemoryMappedFileBuffer;
+import com.android.tools.perflib.captures.MemoryMappedFileBuffer;
 
 import junit.framework.TestCase;
 
@@ -27,10 +27,10 @@ public class QueriesTest extends TestCase {
 
     public void testCommonClassesQuery() throws Exception {
         File basic = new File(getClass().getResource("/basic.android-hprof").getFile());
-        Snapshot basicSnapshot = (new HprofParser(new MemoryMappedFileBuffer(basic))).parse();
+        Snapshot basicSnapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(basic));
 
         File dialer = new File(getClass().getResource("/dialer.android-hprof").getFile());
-        Snapshot dialerSnapshot = (new HprofParser(new MemoryMappedFileBuffer(dialer))).parse();
+        Snapshot dialerSnapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(dialer));
 
         Collection<ClassObj> classes = Queries.commonClasses(basicSnapshot, dialerSnapshot);
         assertEquals(3521, classes.size());

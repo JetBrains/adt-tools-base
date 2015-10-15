@@ -35,7 +35,10 @@ import com.android.builder.model.SourceProvider;
 import com.android.ide.common.res2.AssetSet;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.utils.StringHelper;
+import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -87,6 +90,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      *
      */
     private String mDirName;
+    private List<String> mDirSegments;
 
     @NonNull
     private final D mDefaultConfig;
@@ -395,8 +399,10 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             }
 
             if (!mFlavors.isEmpty()) {
+                boolean first = true;
                 for (F flavor : mFlavors) {
-                    sb.append(flavor.getName());
+                    sb.append(first ? flavor.getName() : StringHelper.capitalize(flavor.getName()));
+                    first = false;
                 }
 
                 sb.append('/').append(mBuildType.getName());
@@ -412,6 +418,39 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return mDirName;
     }
 
+    /**
+     * Returns a unique directory name (can include multiple folders) for the variant,
+     * based on build type, flavor and test.
+     *
+     * @return the directory name for the variant
+     */
+    @NonNull
+    public Collection<String> getDirectorySegments() {
+        if (mDirSegments == null) {
+            ImmutableList.Builder<String> builder = ImmutableList.builder();
+
+            if (mType.isForTesting()) {
+                builder.add(mType.getPrefix());
+            }
+
+            if (!mFlavors.isEmpty()) {
+                StringBuilder sb = new StringBuilder(mFlavors.size() * 10);
+                for (F flavor : mFlavors) {
+                    StringHelper.appendCamelCase(sb, flavor.getName());
+                }
+                builder.add(sb.toString());
+
+                builder.add(mBuildType.getName());
+
+            } else {
+                builder.add(mBuildType.getName());
+            }
+
+            mDirSegments = builder.build();
+        }
+
+        return mDirSegments;
+    }
     /**
      * Returns a unique directory name (can include multiple folders) for the variant,
      * based on build type, flavor and test, and splits.
@@ -804,9 +843,18 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @Nullable
     public String getIdOverride() {
         String idName = mMergedFlavor.getApplicationId();
-        String idSuffix = mBuildType.getApplicationIdSuffix();
+        String idSuffix = Objects.firstNonNull(mMergedFlavor.getApplicationIdSuffix(), "");
 
-        if (idSuffix != null && !idSuffix.isEmpty()) {
+        String buildTypeIdSuffix = mBuildType.getApplicationIdSuffix();
+        if (!Strings.isNullOrEmpty(buildTypeIdSuffix)) {
+            if (buildTypeIdSuffix.charAt(0) == '.') {
+                idSuffix = idSuffix + buildTypeIdSuffix;
+            } else {
+                idSuffix = idSuffix + '.' + buildTypeIdSuffix;
+            }
+        }
+
+        if (!idSuffix.isEmpty()) {
             if (idName == null) {
                 idName = getPackageFromManifest();
             }
@@ -833,16 +881,12 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         String versionName = mMergedFlavor.getVersionName();
         String versionSuffix = mBuildType.getVersionNameSuffix();
 
-        if (versionSuffix != null && !versionSuffix.isEmpty()) {
-            if (versionName == null) {
-                if (!mType.isForTesting()) {
-                    versionName = getVersionNameFromManifest();
-                } else {
-                    versionName = "";
-                }
-            }
+        if (versionName == null && !mType.isForTesting()) {
+            versionName = getVersionNameFromManifest();
+        }
 
-            versionName = versionName + versionSuffix;
+        if (versionSuffix != null && !versionSuffix.isEmpty()) {
+            versionName = Strings.nullToEmpty(versionName) + versionSuffix;
         }
 
         return versionName;
@@ -867,6 +911,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     private static final String DEFAULT_TEST_RUNNER = "android.test.InstrumentationTestRunner";
+    private static final String MULTIDEX_TEST_RUNNER = "com.android.test.runner.MultiDexTestRunner";
     private static final Boolean DEFAULT_HANDLE_PROFILING = false;
     private static final Boolean DEFAULT_FUNCTIONAL_TEST = false;
 
@@ -883,7 +928,15 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             checkState(config != null);
         }
         String runner = config.mMergedFlavor.getTestInstrumentationRunner();
-        return runner != null ? runner : DEFAULT_TEST_RUNNER;
+        if (runner != null) {
+            return runner;
+        }
+
+        if (isMultiDexEnabled() && isLegacyMultiDexMode()) {
+            return MULTIDEX_TEST_RUNNER;
+        }
+
+        return DEFAULT_TEST_RUNNER;
     }
 
     /**
@@ -1406,7 +1459,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @return a non null, but possibly empty list.
      */
     @NonNull
-    public Set<File> getPackagedJars() {
+    public Set<File> getAllPackagedJars() {
         Set<File> jars = Sets.newHashSetWithExpectedSize(
                 mExternalJars.size() + mLocalJars.size() + mFlatLibraries.size());
 
@@ -1442,13 +1495,115 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
+     * Returns the list of packaged jars for this config. If the config tests a library, this
+     * will include the jars of the tested config
+     *
+     * @return a non null, but possibly empty list.
+     */
+    @NonNull
+    public ImmutableSet<File> getExternalPackagedJars() {
+        ImmutableSet.Builder<File> jars = ImmutableSet.builder();
+
+        for (JarDependency jar : mExternalJars) {
+            File jarFile = jar.getJarFile();
+            if (jar.isPackaged() && jarFile.exists()) {
+                jars.add(jarFile);
+            }
+        }
+
+        for (LibraryDependency libraryDependency : mFlatLibraries) {
+            // only take the external android libraries.
+            if (!libraryDependency.isOptional() && libraryDependency.getProject() == null) {
+                File libJar = libraryDependency.getJarFile();
+                if (libJar.exists()) {
+                    jars.add(libJar);
+                }
+
+                // also grab the local jars
+                for (File jarFile : libraryDependency.getLocalJars()) {
+                    if (jarFile.isFile()) {
+                        jars.add(jarFile);
+                    }
+                }
+            }
+        }
+
+        return jars.build();
+    }
+
+    /**
+     * Returns the packaged local Jars
+     *
+     * @return a non null, but possibly empty immutable set.
+     */
+    @NonNull
+    public ImmutableSet<File> getLocalPackagedJars() {
+        ImmutableSet.Builder<File> jars = ImmutableSet.builder();
+
+        for (JarDependency jar : mLocalJars) {
+            File jarFile = jar.getJarFile();
+            if (jar.isPackaged() && jarFile.exists()) {
+                jars.add(jarFile);
+            }
+        }
+
+        return jars.build();
+    }
+
+    /**
+     * Returns the packaged sub-project Jars
+     *
+     * @return a non null, but possibly empty immutable set.
+     */
+    @NonNull
+    public ImmutableSet<File> getSubProjectPackagedJars() {
+        ImmutableSet.Builder<File> jars = ImmutableSet.builder();
+
+        for (LibraryDependency libraryDependency : mFlatLibraries) {
+            // only take the sub-project android libraries.
+            if (!libraryDependency.isOptional() && libraryDependency.getProject() != null) {
+                File libJar = libraryDependency.getJarFile();
+                if (libJar.exists()) {
+                    jars.add(libJar);
+                }
+            }
+        }
+
+        return jars.build();
+    }
+
+    /**
+     * Returns the packaged sub-project local Jars
+     *
+     * @return a non null, but possibly empty immutable set.
+     */
+    @NonNull
+    public ImmutableSet<File> getSubProjectLocalPackagedJars() {
+        ImmutableSet.Builder<File> jars = ImmutableSet.builder();
+
+        for (LibraryDependency libraryDependency : mFlatLibraries) {
+            // only take the sub-project android libraries.
+            if (!libraryDependency.isOptional() && libraryDependency.getProject() != null) {
+                for (File jarFile : libraryDependency.getLocalJars()) {
+                    if (jarFile.isFile()) {
+                        jars.add(jarFile);
+                    }
+                }
+            }
+        }
+
+        return jars.build();
+    }
+
+    /**
      * Returns the list of provided-only jars for this config.
      *
      * @return a non null, but possibly empty list.
      */
     @NonNull
     public List<File> getProvidedOnlyJars() {
-        Set<File> jars = Sets.newHashSetWithExpectedSize(mExternalJars.size() + mLocalJars.size());
+        Set<File> jars = Sets.newHashSetWithExpectedSize(
+                mExternalJars.size() + mLocalJars.size() + mFlatLibraries.size());
 
         for (JarDependency jar : mExternalJars) {
             File jarFile = jar.getJarFile();
@@ -1478,9 +1633,49 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             }
         }
 
-
         return Lists.newArrayList(jars);
     }
+
+    @Nullable
+    public String resolveLibraryName(@NonNull File jarFile) {
+
+        for (JarDependency jar : mExternalJars) {
+            if (jarFile.equals(jar.getJarFile())) {
+                if (jar.getResolvedCoordinates() != null) {
+                    return jar.getResolvedCoordinates().toString();
+                }
+
+                return "unresolved-ext-jar-" + jarFile.getName() + "-" + jarFile.getPath().hashCode();
+            }
+        }
+
+        for (JarDependency jar : mLocalJars) {
+            if (jarFile.equals(jar.getJarFile())) {
+                return "local-jar-"  + jarFile.getName() + "-" + jarFile.getPath().hashCode();
+            }
+        }
+
+        for (LibraryDependency libraryDependency : mFlatLibraries) {
+            if (jarFile.equals(libraryDependency.getJarFile())) {
+                if (libraryDependency.getResolvedCoordinates() != null) {
+                    return libraryDependency.getResolvedCoordinates().toString();
+                }
+
+                return "unresolved-lib-"  + jarFile.getName() + "-" + jarFile.getPath().hashCode();
+            }
+
+            for (File localjar : libraryDependency.getLocalJars()) {
+                if (jarFile.equals(localjar)) {
+                    if (libraryDependency.getResolvedCoordinates() != null) {
+                        return libraryDependency.getResolvedCoordinates().toString() + ":" + jarFile.getName();
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
 
     /**
      * Adds a variant-specific BuildConfig field.
@@ -1846,8 +2041,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return false;
     }
 
+    @NonNull
     public Collection<File> getJarJarRuleFiles() {
-
         ImmutableList.Builder<File> jarjarRuleFiles = ImmutableList.builder();
         jarjarRuleFiles.addAll(getMergedFlavor().getJarJarRuleFiles());
         jarjarRuleFiles.addAll(mBuildType.getJarJarRuleFiles());

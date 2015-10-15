@@ -18,7 +18,7 @@ package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.repository.PreciseRevision;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import junit.framework.TestCase;
 
 import java.util.Arrays;

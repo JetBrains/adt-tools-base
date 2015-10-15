@@ -33,7 +33,10 @@ import com.android.resources.ScreenRound;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
 import com.android.resources.UiMode;
+import com.google.common.base.Splitter;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -56,10 +59,11 @@ import javax.xml.validation.Schema;
 public class DeviceParser {
 
     private static class DeviceHandler extends DefaultHandler {
-        private static final String sSpaceRegex = "[\\s]+";
+        private static final Splitter sSpaceSplitter = Splitter.on(' ').omitEmptyStrings();
         private static final String ROUND_BOOT_PROP = "ro.emulator.circular";
+        private static final String CHIN_BOOT_PROP = "ro.emu.win_outset_bottom_px";
 
-        private final List<Device> mDevices = new ArrayList<Device>();
+        private final Table<String, String, Device> mDevices = HashBasedTable.create();
         private final StringBuilder mStringAccumulator = new StringBuilder();
         private final File mParentFolder;
         private Meta mMeta;
@@ -76,7 +80,7 @@ public class DeviceParser {
         }
 
         @NonNull
-        public List<Device> getDevices() {
+        public Table<String, String, Device> getDevices() {
             return mDevices;
         }
 
@@ -132,7 +136,8 @@ public class DeviceParser {
         @Override
         public void endElement(String uri, String localName, String name) throws SAXException {
             if (DeviceSchema.NODE_DEVICE.equals(localName)) {
-                mDevices.add(mBuilder.build());
+                Device device = mBuilder.build();
+                mDevices.put(device.getId(), device.getManufacturer(), device);
             } else if (DeviceSchema.NODE_NAME.equals(localName)) {
                 mBuilder.setName(getString(mStringAccumulator));
             } else if (DeviceSchema.NODE_ID.equals(localName)) {
@@ -367,15 +372,21 @@ public class DeviceParser {
                 } else if (VALUE_FALSE.equals(bootPropValue)) {
                     roundness = ScreenRound.NOTROUND;
                 }
+                for (State state : mBuilder.getAllStates()) {
+                    state.getHardware().getScreen().setScreenRound(roundness);
+                }
             }
-            for (State state : mBuilder.getAllStates()) {
-                state.getHardware().getScreen().setScreenRound(roundness);
+            if (CHIN_BOOT_PROP.equals(bootPropKey)) {
+                int chin = Integer.parseInt(bootPropValue);
+                for (State state : mBuilder.getAllStates()) {
+                    state.getHardware().getScreen().setChin(chin);
+                }
             }
         }
 
-        private List<String> getStringList(StringBuilder stringAccumulator) {
+        private static List<String> getStringList(StringBuilder stringAccumulator) {
             List<String> filteredStrings = new ArrayList<String>();
-            for (String s : getString(mStringAccumulator).split(sSpaceRegex)) {
+            for (String s : sSpaceSplitter.split(stringAccumulator)) {
                 if (s != null && !s.isEmpty()) {
                     filteredStrings.add(s.trim());
                 }
@@ -436,40 +447,46 @@ public class DeviceParser {
     }
 
     @NonNull
-    public static List<Device> parse(@NonNull File devicesFile)
+    public static Table<String, String, Device> parse(@NonNull File devicesFile)
             throws SAXException, ParserConfigurationException, IOException {
-        InputStream stream = null;
-        try {
-            stream = new FileInputStream(devicesFile);
-            return parseImpl(stream, devicesFile.getAbsoluteFile().getParentFile());
-        } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException ignore) {}
-            }
-        }
+        // stream closed by parseImpl.
+        @SuppressWarnings("IOResourceOpenedButNotSafelyClosed")
+        InputStream stream = new FileInputStream(devicesFile);
+        return parseImpl(stream, devicesFile.getAbsoluteFile().getParentFile());
     }
 
+    /**
+     * This method closes the stream.
+     */
     @NonNull
-    public static List<Device> parse(@NonNull InputStream devices)
+    public static Table<String, String, Device> parse(@NonNull InputStream devices)
             throws SAXException, IOException, ParserConfigurationException {
         return parseImpl(devices, null);
     }
 
+    /**
+     * After parsing, this method closes the stream.
+     */
     @NonNull
-    private static List<Device> parseImpl(@NonNull InputStream devices, @Nullable File parentDir)
+    private static Table<String, String, Device> parseImpl(@NonNull InputStream devices, @Nullable File parentDir)
             throws SAXException, IOException, ParserConfigurationException {
-        if (!devices.markSupported()) {
-            devices = new BufferedInputStream(devices);
+        try {
+            if (!devices.markSupported()) {
+                //noinspection IOResourceOpenedButNotSafelyClosed
+                devices = new BufferedInputStream(devices);  // closed in the finally block.
+            }
+            devices.mark(500000);
+            int version = DeviceSchema.getXmlSchemaVersion(devices);
+            SAXParser parser = getParser(version);
+            DeviceHandler dHandler = new DeviceHandler(parentDir);
+            devices.reset();
+            parser.parse(devices, dHandler);
+            return dHandler.getDevices();
         }
-        devices.mark(500000);
-        int version = DeviceSchema.getXmlSchemaVersion(devices);
-        SAXParser parser = getParser(version);
-        DeviceHandler dHandler = new DeviceHandler(parentDir);
-        devices.reset();
-        parser.parse(devices, dHandler);
-        return dHandler.getDevices();
+        finally {
+            // It's better to close the stream here since we may have created it above.
+            devices.close();
+        }
     }
 
     @NonNull

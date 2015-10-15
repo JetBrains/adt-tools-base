@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
-    format="4"
-    revision="1"
+    format="5"
+    revision="2"
     name="Android TV Module"
     description="Creates a new Android TV module."
     minApi="21"

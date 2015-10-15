@@ -16,6 +16,11 @@
 
 package com.android.ide.common.blame.parser;
 
+import static com.android.SdkConstants.DOT_XML;
+import static com.android.SdkConstants.PLATFORM_WINDOWS;
+import static com.android.SdkConstants.currentPlatform;
+import static com.android.utils.SdkUtils.createPathComment;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.blame.Message;
@@ -24,10 +29,11 @@ import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.blame.parser.aapt.AaptOutputParser;
 import com.android.ide.common.blame.parser.aapt.AbstractAaptOutputParser;
 import com.android.utils.StdLogger;
+import com.android.utils.StringHelper;
 import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
-import junit.framework.AssertionFailedError;
+
 import junit.framework.TestCase;
 
 import java.io.BufferedWriter;
@@ -37,9 +43,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-
-import static com.android.SdkConstants.*;
-import static com.android.utils.SdkUtils.createPathComment;
 
 /**
  * Tests for {@link ToolOutputParser}.
@@ -69,7 +72,7 @@ public class AaptOutputParserTest extends TestCase {
             Message message = messages.get(i);
             sb.append(Integer.toString(i)).append(':').append(' ');
             sb.append(
-                    message.getKind().toString().toLowerCase(Locale.US))
+                    StringHelper.capitalize(message.getKind().toString().toLowerCase(Locale.US)))
                     .append(':'); // INFO => Info
             sb.append(message.getText());
             if (!message.getSourceFilePositions().isEmpty() &&
@@ -83,14 +86,6 @@ public class AaptOutputParserTest extends TestCase {
         }
 
         return sb.toString();
-    }
-
-    public static void assertEquals(String expected, String actual) {
-        if (expected != null || actual != null) {
-            if (expected == null || !expected.equals(actual)) {
-                throw new ComparisonFailure(null, expected, actual);
-            }
-        }
     }
 
     @Override
@@ -795,24 +790,5 @@ public class AaptOutputParserTest extends TestCase {
                         "9: Simple::AudioPlayer:processDebugResources FAILED\n",
                 toString(parser.parseToolOutput(output)));
         sourceFile.delete();
-    }
-
-    private static class ComparisonFailure extends AssertionFailedError {
-
-        private final String fExpected;
-
-        private final String fActual;
-
-        public ComparisonFailure(String message, String expected, String actual) {
-            super(message);
-            this.fExpected = expected;
-            this.fActual = actual;
-        }
-
-        @Override
-        public String getMessage() {
-            return "expected:<" + fExpected + "> but was:<" + fActual + ">";
-
-        }
     }
 }

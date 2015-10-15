@@ -37,7 +37,6 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     private boolean pseudoLocalesEnabled;
     private boolean renderscriptDebuggable;
     private int renderscriptOptimLevel;
-    private String applicationIdSuffix;
     private String versionNameSuffix;
     private boolean minifyEnabled;
     private boolean zipAlignEnabled;
@@ -53,7 +52,6 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
         clonedBuildType.jniDebuggable = buildType.isJniDebuggable();
         clonedBuildType.renderscriptDebuggable = buildType.isRenderscriptDebuggable();
         clonedBuildType.renderscriptOptimLevel = buildType.getRenderscriptOptimLevel();
-        clonedBuildType.applicationIdSuffix = buildType.getApplicationIdSuffix();
         clonedBuildType.versionNameSuffix = buildType.getVersionNameSuffix();
         clonedBuildType.minifyEnabled = buildType.isMinifyEnabled();
         clonedBuildType.zipAlignEnabled = buildType.isZipAlignEnabled();
@@ -105,12 +103,6 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
 
     @Nullable
     @Override
-    public String getApplicationIdSuffix() {
-        return applicationIdSuffix;
-    }
-
-    @Nullable
-    @Override
     public String getVersionNameSuffix() {
         return versionNameSuffix;
     }
@@ -145,7 +137,6 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
                 ", jniDebuggable=" + jniDebuggable +
                 ", renderscriptDebuggable=" + renderscriptDebuggable +
                 ", renderscriptOptimLevel=" + renderscriptOptimLevel +
-                ", applicationIdSuffix='" + applicationIdSuffix + '\'' +
                 ", versionNameSuffix='" + versionNameSuffix + '\'' +
                 ", minifyEnabled=" + minifyEnabled +
                 ", zipAlignEnabled=" + zipAlignEnabled +

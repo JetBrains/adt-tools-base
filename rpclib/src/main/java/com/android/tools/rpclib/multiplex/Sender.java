@@ -209,8 +209,8 @@ class Sender {
           }
           if (item != null) {
             map.add(item);
-            map.flush(mEncoder);
           }
+          map.flush(mEncoder);
         }
         // Drain map
         while (map.size() > 0) {
@@ -235,7 +235,7 @@ class Sender {
 
     SendData(long channel, byte[] data, int off, int len) {
       super(channel);
-      mData = data;
+      mData = data.clone();
       mOffset = off;
       mLength = len;
     }

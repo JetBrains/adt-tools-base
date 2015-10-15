@@ -317,6 +317,9 @@ public class SystemImage implements ISystemImage {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(mTag, mAbiType, mAddonVendor, mLocation, mSkins);
+        int hashCode = Objects.hashCode(mTag, mAbiType, mAddonVendor, mLocation);
+        hashCode *= 37;
+        hashCode += Arrays.hashCode(mSkins);
+        return hashCode;
     }
 }

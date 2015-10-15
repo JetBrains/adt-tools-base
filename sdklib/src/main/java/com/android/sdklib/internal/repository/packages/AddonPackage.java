@@ -162,17 +162,17 @@ public class AddonPackage extends MajorRevisionPackage
                                                           SdkRepoConstants.NODE_NAME);
 
         // The old <name> is equivalent to the new <name-display>
-        if (nameDisp.length() == 0) {
+        if (nameDisp.isEmpty()) {
             nameDisp = name;
         }
 
         // For a missing id, we simply use a sanitized version of the display name
-        if (nameId.length() == 0) {
-            nameId = LocalAddonPkgInfo.sanitizeDisplayToNameId(name.length() > 0 ? name : nameDisp);
+        if (nameId.isEmpty()) {
+            nameId = LocalAddonPkgInfo.sanitizeDisplayToNameId(!name.isEmpty() ? name : nameDisp);
         }
 
-        assert nameId.length() > 0;
-        assert nameDisp.length() > 0;
+        assert !nameId.isEmpty();
+        assert !nameDisp.isEmpty();
 
         mNameId = nameId.trim();
         mDisplayName = nameDisp.trim();
@@ -188,18 +188,18 @@ public class AddonPackage extends MajorRevisionPackage
                                                             SdkAddonConstants.NODE_VENDOR);
 
         // The old <vendor> is equivalent to the new <vendor-display>
-        if (vendorDisp.length() == 0) {
+        if (vendorDisp.isEmpty()) {
             vendorDisp = vendor;
         }
 
         // For a missing id, we simply use a sanitized version of the display vendor
-        if (vendorId.length() == 0) {
-            boolean hasVendor = vendor.length() > 0;
+        if (vendorId.isEmpty()) {
+            boolean hasVendor = !vendor.isEmpty();
             vendorId = LocalAddonPkgInfo.sanitizeDisplayToNameId(hasVendor ? vendor : vendorDisp);
         }
 
-        assert vendorId.length() > 0;
-        assert vendorDisp.length() > 0;
+        assert !vendorId.isEmpty();
+        assert !vendorDisp.isEmpty();
 
         mVendorId      = vendorId.trim();
         mVendorDisplay = vendorDisp.trim();
@@ -269,7 +269,7 @@ public class AddonPackage extends MajorRevisionPackage
         // For a missing id, we simply use a sanitized version of the display name
         //noinspection ConstantConditions
         if (nameId.isEmpty()) {
-            nameId = LocalAddonPkgInfo.sanitizeDisplayToNameId(name.length() > 0 ? name : nameDisp);
+            nameId = LocalAddonPkgInfo.sanitizeDisplayToNameId(!name.isEmpty() ? name : nameDisp);
         }
 
         assert !nameId.isEmpty();
@@ -596,7 +596,7 @@ public class AddonPackage extends MajorRevisionPackage
                 getDisplayVendor());
 
         String d = getDescription();
-        if (d != null && d.length() > 0) {
+        if (d != null && !d.isEmpty()) {
             s += '\n' + d;
         }
 

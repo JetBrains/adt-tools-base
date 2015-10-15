@@ -99,6 +99,24 @@ public class SdkMavenRepositoryTest extends TestCase {
         assertEquals("google", SdkMavenRepository.GOOGLE.getDirName());
     }
 
+    @SuppressWarnings("ConstantConditions")
+    public void testGetByGroupId() {
+        assertSame(SdkMavenRepository.ANDROID, SdkMavenRepository.getByGroupId(
+                GradleCoordinate.parseCoordinateString(
+                        "com.android.support:appcompat-v7:13.0.0").getGroupId()));
+        assertSame(SdkMavenRepository.ANDROID, SdkMavenRepository.getByGroupId(
+                GradleCoordinate.parseCoordinateString(
+                        "com.android.support.test:espresso:0.2").getGroupId()));
+        assertSame(SdkMavenRepository.GOOGLE, SdkMavenRepository.getByGroupId(
+                GradleCoordinate.parseCoordinateString(
+                        "com.google.android.gms:play-services:5.2.08").getGroupId()));
+        assertSame(SdkMavenRepository.GOOGLE, SdkMavenRepository.getByGroupId(
+                GradleCoordinate.parseCoordinateString(
+                        "com.google.android.gms:play-services-wearable:5.0.77").getGroupId()));
+        assertNull(SdkMavenRepository.getByGroupId(GradleCoordinate.parseCoordinateString(
+                "com.google.guava:guava:11.0.2").getGroupId()));
+    }
+
     /**
      * Environment variable or system property containing the full path to an SDK install
      */

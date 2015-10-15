@@ -17,12 +17,12 @@
 package com.android.build.gradle.ndk.internal;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
+import static com.android.utils.StringHelper.appendCamelCase;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.core.BuilderConstants;
-import com.android.builder.model.AndroidProject;
-import com.android.utils.StringHelper;
-import com.google.common.base.Joiner;
+import com.android.utils.FileUtils;
 
 import org.gradle.nativeplatform.NativeBinarySpec;
 
@@ -33,10 +33,11 @@ import java.io.File;
  */
 public class NdkNamingScheme {
 
+    @NonNull
     public static File getObjectFilesOutputDirectory(
-            NativeBinarySpec binary,
-            File buildDir,
-            String sourceSetName) {
+            @NonNull NativeBinarySpec binary,
+            @NonNull File buildDir,
+            @NonNull String sourceSetName) {
         return new File(
                 buildDir,
                 String.format(
@@ -46,12 +47,14 @@ public class NdkNamingScheme {
                         sourceSetName));
     }
 
-    public static String getTaskName(NativeBinarySpec binary, @Nullable String verb) {
+    @NonNull
+    public static String getTaskName(@NonNull NativeBinarySpec binary, @Nullable String verb) {
         return getTaskName(binary, verb, null);
     }
 
+    @NonNull
     public static String getTaskName(
-            NativeBinarySpec binary,
+            @NonNull NativeBinarySpec binary,
             @Nullable String verb,
             @Nullable String target) {
         StringBuilder sb = new StringBuilder();
@@ -61,21 +64,20 @@ public class NdkNamingScheme {
         return sb.toString();
     }
 
-    private static void appendCamelCase(StringBuilder sb, @Nullable String word) {
-        if (word != null) {
-            if (sb.length() == 0) {
-                sb.append(word);
-            } else {
-                sb.append(StringHelper.capitalize(word));
-            }
-        }
+    @NonNull
+    public static String getNdkBuildTaskName(@NonNull NativeBinarySpec binary) {
+        return getTaskName(binary, "ndkBuild");
     }
 
     /**
      * Return the name of the directory that will contain the final output of the native binary.
      */
-    public static String getOutputDirectoryName(String buildType, String productFlavor, String abi) {
-        return Joiner.on(File.separator).join(
+    @NonNull
+    public static String getOutputDirectoryName(
+            @NonNull String buildType,
+            @NonNull String productFlavor,
+            @NonNull String abi) {
+        return FileUtils.join(
                 FD_INTERMEDIATES,
                 "binaries",
                 buildType,
@@ -84,7 +86,20 @@ public class NdkNamingScheme {
                 abi);
     }
 
-    public static String getOutputDirectoryName(NativeBinarySpec binary) {
+
+    @NonNull
+    public static String getStandaloneOutputDirectoryName(@NonNull NativeBinarySpec binary) {
+        return FileUtils.join(
+                FD_OUTPUTS,
+                "native",
+                binary.getBuildType().getName(),
+                binary.getFlavor().getName(),
+                "lib",
+                binary.getTargetPlatform().getName());
+    }
+
+    @NonNull
+    public static String getOutputDirectoryName(@NonNull NativeBinarySpec binary) {
         return getOutputDirectoryName(
                 binary.getBuildType().getName(),
                 binary.getFlavor().getName(),
@@ -94,8 +109,12 @@ public class NdkNamingScheme {
     /**
      * Return the name of the directory that will contain the native library with debug symbols.
      */
-    public static String getDebugLibraryDirectoryName(String buildType, String productFlavor, String abi) {
-        return Joiner.on(File.separator).join(
+    @NonNull
+    public static String getDebugLibraryDirectoryName(
+            @NonNull String buildType,
+            @NonNull String productFlavor,
+            @NonNull String abi) {
+        return FileUtils.join(
                 FD_INTERMEDIATES,
                 "binaries",
                 buildType,
@@ -104,14 +123,41 @@ public class NdkNamingScheme {
                 abi);
     }
 
-    public static String getDebugLibraryDirectoryName(NativeBinarySpec binary) {
+    @NonNull
+    public static String getDebugLibraryDirectoryName(@NonNull NativeBinarySpec binary) {
         return getDebugLibraryDirectoryName(
                 binary.getBuildType().getName(),
                 binary.getFlavor().getName(),
                 binary.getTargetPlatform().getName());
     }
 
-    public static String getSharedLibraryFileName(String moduleName) {
+    /**
+     * Return the name of the directory that will contain the native library from dependent
+     * libraries.
+     */
+    @NonNull
+    public static String getDependencyLibraryDirectoryName(
+            @NonNull String buildType,
+            @NonNull String productFlavor,
+            @NonNull String abi) {
+        return FileUtils.join(
+                FD_INTERMEDIATES,
+                "binaries",
+                buildType,
+                productFlavor,
+                "dependency",
+                abi);
+    }
+
+    /**
+     * Return the name of the output shared library.
+     */
+    @NonNull
+    public static String getSharedLibraryFileName(@NonNull String moduleName) {
         return "lib" + moduleName + ".so";
+    }
+
+    public static String getStaticLibraryFileName(String moduleName) {
+        return "lib" + moduleName + ".a";
     }
 }

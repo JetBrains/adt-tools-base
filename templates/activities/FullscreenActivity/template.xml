@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <template
-    format="4"
-    revision="4"
+    format="5"
+    revision="6"
     name="Fullscreen Activity"
     description="Creates a new activity that toggles the visibility of the system UI (status and navigation bars) and action bar upon user interaction."
-    minApi="4"
+    requireAppTheme="true"
+    minApi="11"
     minBuildApi="16">
     <dependency name="android-support-v4" revision="8" />
     <category value="Activity" />

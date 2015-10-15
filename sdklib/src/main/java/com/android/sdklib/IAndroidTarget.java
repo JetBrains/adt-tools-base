@@ -18,9 +18,7 @@ package com.android.sdklib;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.concurrency.Immutable;
 import com.android.sdklib.repository.descriptors.IdDisplay;
-import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.List;

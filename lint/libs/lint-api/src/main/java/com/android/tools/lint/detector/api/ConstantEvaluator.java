@@ -419,6 +419,9 @@ public class ConstantEvaluator {
             }
         }
 
+        // TODO: Check for MethodInvocation and perform some common operations -
+        // Math.* methods, String utility methods like notNullize, etc
+
         return null;
     }
 

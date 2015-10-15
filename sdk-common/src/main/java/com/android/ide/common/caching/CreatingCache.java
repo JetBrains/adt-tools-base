@@ -22,7 +22,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 import java.util.Map;
@@ -166,7 +165,8 @@ public class CreatingCache<K, V> {
      * State of values.
      */
     @VisibleForTesting
-    enum State { EXISTING_VALUE, NEW_VALUE, PROCESSED_VALUE; }
+    enum State { EXISTING_VALUE, NEW_VALUE, PROCESSED_VALUE
+    }
 
     /**
      * A Value State. This contains the Type as {@link State}, and a optional value {@link V}

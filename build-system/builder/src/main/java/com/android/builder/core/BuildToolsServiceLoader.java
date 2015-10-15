@@ -17,7 +17,6 @@
 package com.android.builder.core;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.jack.api.JackProvider;
 import com.android.jill.api.JillProvider;
 import com.android.sdklib.BuildToolInfo;
@@ -36,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 /**

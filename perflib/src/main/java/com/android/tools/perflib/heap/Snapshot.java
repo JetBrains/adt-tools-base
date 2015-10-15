@@ -18,12 +18,16 @@ package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
+import com.android.tools.perflib.analyzer.Capture;
 import com.android.tools.perflib.heap.analysis.Dominators;
 import com.android.tools.perflib.heap.analysis.ShortestDistanceVisitor;
 import com.android.tools.perflib.heap.analysis.TopologicalSort;
-import com.android.tools.perflib.heap.io.HprofBuffer;
+import com.android.tools.perflib.captures.DataBuffer;
 import com.google.common.collect.ImmutableList;
 import gnu.trove.THashSet;
+import gnu.trove.TIntObjectHashMap;
+import gnu.trove.TLongObjectHashMap;
 
 import java.util.*;
 
@@ -34,7 +38,8 @@ import java.util.*;
  * default heap, and they are simply references to objects living in the zygote or the app heap.
  * During parsing of the HPROF file HEAP_DUMP_INFO chunks change which heap is being referenced.
  */
-public class Snapshot {
+public class Snapshot extends Capture {
+    public static final String TYPE_NAME = "hprof";
 
     private static final String JAVA_LANG_CLASS = "java.lang.Class";
 
@@ -44,13 +49,21 @@ public class Snapshot {
     private static final int DEFAULT_HEAP_ID = 0;
 
     @NonNull
-    final HprofBuffer mBuffer;
+    private final DataBuffer mBuffer;
 
     @NonNull
     ArrayList<Heap> mHeaps = new ArrayList<Heap>();
 
     @NonNull
     Heap mCurrentHeap;
+
+    //  List stack traces, which are lists of stack frames
+    @NonNull
+    TIntObjectHashMap<StackTrace> mTraces = new TIntObjectHashMap<StackTrace>();
+
+    //  List of individual stack frames
+    @NonNull
+    TLongObjectHashMap<StackFrame> mFrames = new TLongObjectHashMap<StackFrame>();
 
     private ImmutableList<Instance> mTopSort;
 
@@ -63,9 +76,26 @@ public class Snapshot {
 
     private long mIdSizeMask = 0x00000000ffffffffl;
 
-    public Snapshot(@NonNull HprofBuffer buffer) {
+    @NonNull
+    public static Snapshot createSnapshot(@NonNull DataBuffer buffer) {
+        Snapshot snapshot = new Snapshot(buffer);
+        HprofParser.parseBuffer(snapshot, buffer);
+        return snapshot;
+    }
+
+    @VisibleForTesting
+    public Snapshot(@NonNull DataBuffer buffer) {
         mBuffer = buffer;
         setToDefaultHeap();
+    }
+
+    public void dispose() {
+        mBuffer.dispose();
+    }
+
+    @NonNull
+    DataBuffer getBuffer() {
+        return mBuffer;
     }
 
     @NonNull
@@ -126,23 +156,29 @@ public class Snapshot {
     }
 
     public final void addStackFrame(@NonNull StackFrame theFrame) {
-        mCurrentHeap.addStackFrame(theFrame);
+        mFrames.put(theFrame.mId, theFrame);
     }
 
     public final StackFrame getStackFrame(long id) {
-        return mCurrentHeap.getStackFrame(id);
+        return mFrames.get(id);
     }
 
     public final void addStackTrace(@NonNull StackTrace theTrace) {
-        mCurrentHeap.addStackTrace(theTrace);
+        mTraces.put(theTrace.mSerialNumber, theTrace);
     }
 
     public final StackTrace getStackTrace(int traceSerialNumber) {
-        return mCurrentHeap.getStackTrace(traceSerialNumber);
+        return mTraces.get(traceSerialNumber);
     }
 
     public final StackTrace getStackTraceAtDepth(int traceSerialNumber, int depth) {
-        return mCurrentHeap.getStackTraceAtDepth(traceSerialNumber, depth);
+        StackTrace trace = mTraces.get(traceSerialNumber);
+
+        if (trace != null) {
+            trace = trace.fromDepth(depth);
+        }
+
+        return trace;
     }
 
     public final void addRoot(@NonNull RootObj root) {
@@ -288,20 +324,21 @@ public class Snapshot {
     }
 
     public void resolveReferences() {
-        Stack<ClassObj> referenceSubclasses = new Stack<ClassObj>();
-        Collection<ClassObj> references = findClasses(ClassObj.getReferenceClassName());
-        for (ClassObj classObj : references) {
-            referenceSubclasses.push(classObj);
-        }
-
-        while (!referenceSubclasses.isEmpty()) {
-            ClassObj classObj = referenceSubclasses.pop();
+        List<ClassObj> referenceDescendants = findAllDescendantClasses(ClassObj.getReferenceClassName());
+        for (ClassObj classObj : referenceDescendants) {
             classObj.setIsSoftReference();
             mReferenceClasses.add(classObj);
-            for (ClassObj subClass : classObj.getSubclasses()) {
-                referenceSubclasses.push(subClass);
-            }
         }
+    }
+
+    @NonNull
+    public List<ClassObj> findAllDescendantClasses(@NonNull String className) {
+        Collection<ClassObj> ancestorClasses = findClasses(className);
+        List<ClassObj> descendants = new ArrayList<ClassObj>();
+        for (ClassObj ancestor : ancestorClasses) {
+            descendants.addAll(ancestor.getDescendantClasses());
+        }
+        return descendants;
     }
 
     // TODO: Break dominator computation into fixed chunks, because it can be unbounded/expensive.
@@ -353,5 +390,20 @@ public class Snapshot {
                     "+------------------ subclasses for heap: " + heap.getName());
             heap.dumpSubclasses();
         }
+    }
+
+    @Nullable
+    @Override
+    public <T> T getRepresentation(Class<T> asClass) {
+        if (asClass.isAssignableFrom(getClass())) {
+            return asClass.cast(this);
+        }
+        return null;
+    }
+
+    @NonNull
+    @Override
+    public String getTypeName() {
+        return TYPE_NAME;
     }
 }

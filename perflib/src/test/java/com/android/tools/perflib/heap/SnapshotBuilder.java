@@ -17,10 +17,18 @@
 package com.android.tools.perflib.heap;
 
 import com.android.tools.perflib.heap.io.InMemoryBuffer;
+import com.android.tools.perflib.heap.hprof.*;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Utility for creating Snapshot objects to be used in tests.
@@ -33,74 +41,45 @@ import java.util.Map;
 public class SnapshotBuilder {
     public static final int SOFT_REFERENCE_ID = 99;
 
-    private final Snapshot mSnapshot;
+    public static final int SOFT_AND_HARD_REFERENCE_ID = 98;
 
-    private final ClassInstance[] mNodes;
+    private int mNextAvailableSoftReferenceNodeId;
 
-    private final int[] mOffsets;
+    private int mNextAvailableSoftAndHardReferenceNodeId;
 
-    private final ByteBuffer mDirectBuffer;
+    private int mNumNodes;
+    private int mNumSoftNodes;
+    private int mNumSoftAndHardNodes;
+    private int mMaxTotalNodes;
 
-    private final int mMaxTotalNodes;
+    // Map from node id to the list of nodes it references.
+    private List<Integer>[] mReferences;
 
-    private short mNextAvailableSoftReferenceNodeId;
+    private List<Integer> mRoots;
 
     public SnapshotBuilder(int numNodes) {
-        this(numNodes, 0);
+        this(numNodes, 0, 0);
     }
 
-    public SnapshotBuilder(int numNodes, int numSoftNodes) {
-        mMaxTotalNodes = numNodes + numSoftNodes;
-        InMemoryBuffer buffer = new InMemoryBuffer(2 * mMaxTotalNodes * mMaxTotalNodes);
-        mDirectBuffer = buffer.getDirectBuffer();
-        mOffsets = new int[mMaxTotalNodes + 1];
-
-        mSnapshot = new Snapshot(buffer);
-        mSnapshot.setHeapTo(13, "testHeap");
-        mSnapshot.setIdSize(2);
-
-        ClassObj softClazz = new ClassObj(SOFT_REFERENCE_ID, null, ClassObj.getReferenceClassName(), 0);
-        softClazz.setClassLoaderId(0);
-        softClazz.setFields(new Field[]{new Field(Type.OBJECT, "referent")});
-        softClazz.setIsSoftReference();
-        mSnapshot.addClass(SOFT_REFERENCE_ID, softClazz);
-
-        mNodes = new ClassInstance[mMaxTotalNodes + 1];
-        for (int i = 1; i <= numNodes; i++) {
-            // Use same name classes on different loaders to extend test coverage
-            ClassObj clazz = new ClassObj(100 + i, null, "Class" + (i / 2), 0);
-            clazz.setClassLoaderId(i % 2);
-            clazz.setFields(new Field[0]);
-            mSnapshot.addClass(100 + i, clazz);
-
-            mOffsets[i] = 2 * (i - 1) * mMaxTotalNodes;
-            mNodes[i] = new ClassInstance(i, null, mOffsets[i]);
-            mNodes[i].setClassId(100 + i);
-            mNodes[i].setSize(i);
-            mSnapshot.addInstance(i, mNodes[i]);
+    public SnapshotBuilder(int numNodes, int numSoftNodes, int numSoftAndHardNodes) {
+        mNextAvailableSoftReferenceNodeId = numNodes + 1;
+        mNextAvailableSoftAndHardReferenceNodeId = numNodes + numSoftNodes + 1;
+        mNumNodes = numNodes;
+        mNumSoftNodes = numSoftNodes;
+        mNumSoftAndHardNodes = numSoftAndHardNodes;
+        mMaxTotalNodes = numNodes + numSoftNodes + numSoftAndHardNodes;
+        mReferences = (List<Integer>[])new List[mMaxTotalNodes+1];
+        for (int i = 0; i < mReferences.length; i++) {
+            mReferences[i] = new ArrayList<Integer>();
         }
-
-        mNextAvailableSoftReferenceNodeId = (short)(numNodes + 1);
-        for (int i = mNextAvailableSoftReferenceNodeId; i <= mMaxTotalNodes; ++i) {
-            mOffsets[i] = 2 * (i - 1) * mMaxTotalNodes;
-            mNodes[i] = new ClassInstance(i, null, mOffsets[i]);
-            mNodes[i].setClassId(SOFT_REFERENCE_ID);
-            mNodes[i].setSize(i);
-            mSnapshot.addInstance(i, mNodes[i]);
-        }
+        mRoots = new ArrayList<Integer>();
     }
 
     public SnapshotBuilder addReferences(int nodeFrom, int... nodesTo) {
-        assert mNodes[nodeFrom].getClassObj().getFields().length == 0;
-
-        Field[] fields = new Field[nodesTo.length];
+        assertEquals(mReferences[nodeFrom].size(), 0);
         for (int i = 0; i < nodesTo.length; i++) {
-            mDirectBuffer.putShort(mOffsets[nodeFrom] + i * 2, (short) nodesTo[i]);
-            // Fields should support duplicated field names due to inheritance of private fields
-            fields[i] = new Field(Type.OBJECT, "duplicated_name");
+            mReferences[nodeFrom].add(nodesTo[i]);
         }
-
-        mNodes[nodeFrom].getClassObj().setFields(fields);
         return this;
     }
 
@@ -111,28 +90,125 @@ public class SnapshotBuilder {
      * @param nodeTo the child node
      * @return this
      */
-    public SnapshotBuilder insertSoftRefences(int nodeFrom, int... nodesTo) {
-        Field[] nodeFromFields = mNodes[nodeFrom].getClassObj().getFields();
-        Field[] newFields = Arrays.copyOf(nodeFromFields, nodeFromFields.length + nodesTo.length);
-        for (int i = 0; i < nodesTo.length; ++i) {
-            short softReferenceId = mNextAvailableSoftReferenceNodeId++;
-            assert softReferenceId <= mMaxTotalNodes;
-            mDirectBuffer.putShort(mOffsets[nodeFrom] + (nodeFromFields.length + i) * 2, softReferenceId);
-            newFields[nodeFromFields.length + i] = new Field(Type.OBJECT, "fSoftReference" + nodesTo[i]);
-        }
+    public SnapshotBuilder insertSoftReference(int nodeFrom, int nodeToSoftReference) {
+        int softReferenceId = mNextAvailableSoftReferenceNodeId++;
+        assert softReferenceId <= mNumNodes + mNumSoftNodes;
+        mReferences[nodeFrom].add(softReferenceId);
+        mReferences[softReferenceId].add(nodeToSoftReference);
+        return this;
+    }
 
-        mNodes[nodeFrom].getClassObj().setFields(newFields);
+    public SnapshotBuilder insertSoftAndHardReference(int nodeFrom,
+            int nodeToSoftReference, int nodeToHardReference) {
+        int softReferenceId = mNextAvailableSoftAndHardReferenceNodeId++;
+        assert softReferenceId <= mMaxTotalNodes;
+        mReferences[nodeFrom].add(softReferenceId);
+        mReferences[softReferenceId].add(nodeToSoftReference);
+        mReferences[softReferenceId].add(nodeToHardReference);
         return this;
     }
 
     public SnapshotBuilder addRoot(int node) {
-        RootObj root = new RootObj(RootType.JAVA_LOCAL, node);
-        mSnapshot.setToDefaultHeap();
-        mSnapshot.addRoot(root);
+        mRoots.add(node);
         return this;
     }
 
     public Snapshot build() {
-        return mSnapshot;
+        HprofStringBuilder strings = new HprofStringBuilder(0);
+        List<HprofRecord> records = new ArrayList<HprofRecord>();
+        List<HprofDumpRecord> dump = new ArrayList<HprofDumpRecord>();
+        byte objType = HprofType.TYPE_OBJECT;
+
+        // Roots go in the default heap. Add those first.
+        for (Integer id : mRoots) {
+            dump.add(new HprofRootUnknown(id));
+        }
+
+        // Everything else goes in "testHeap" with id 13.
+        dump.add(new HprofHeapDumpInfo(13, strings.get("testHeap")));
+
+        // The SoftReference class
+        records.add(new HprofLoadClass( 0, 0, SOFT_REFERENCE_ID, 0,
+                    strings.get("java.lang.ref.Reference")));
+        dump.add(new HprofClassDump(SOFT_REFERENCE_ID, 0, 0, 0, 0, 0, 0, 0, 0,
+                    new HprofConstant[0], new HprofStaticField[0],
+                    new HprofInstanceField[]{
+                        new HprofInstanceField(strings.get("referent"), objType)}));
+
+        // The SoftAndHardReference class
+        records.add(new HprofLoadClass(0, 1, SOFT_AND_HARD_REFERENCE_ID, 0,
+                    strings.get("SoftAndHardReference")));
+        dump.add(new HprofClassDump(SOFT_AND_HARD_REFERENCE_ID, 0, 0, 0, 0, 0, 0, 0, 0,
+                    new HprofConstant[0], new HprofStaticField[0],
+                    new HprofInstanceField[]{
+                        new HprofInstanceField(strings.get("referent"), objType),
+                        new HprofInstanceField(strings.get("hardReference"), objType)}));
+
+        // Regular nodes and their classes
+        for (int i = 1; i <= mNumNodes; i++) {
+            HprofInstanceField[] fields = new HprofInstanceField[mReferences[i].size()];
+            HprofValuesBuilder values = new HprofValuesBuilder(2);
+            for (int j = 0; j < fields.length; j++) {
+                fields[j] = new HprofInstanceField(strings.get("field" + j), objType);
+                values.addObject(mReferences[i].get(j));
+            }
+
+            // Use same name classes on different loaders to extend test coverage
+            records.add(new HprofLoadClass(0, 0, 100+i, 0, strings.get("Class" + (i/2))));
+            dump.add(new HprofClassDump(100+i, 0, 0, i%2, 0, 0, 0, 0, i,
+                        new HprofConstant[0], new HprofStaticField[0], fields));
+
+            dump.add(new HprofInstanceDump(i, 0, 100+i, values.build()));
+        }
+
+        // Soft reference nodes.
+        for (int i = mNumNodes + 1; i <= mNumNodes + mNumSoftNodes; ++i) {
+            assertEquals(1, mReferences[i].size());
+            HprofValuesBuilder values = new HprofValuesBuilder(2);
+            values.addObject(mReferences[i].get(0));
+            dump.add(new HprofInstanceDump(i, 0, SOFT_REFERENCE_ID, values.build()));
+        }
+
+        // Soft and hard reference nodes.
+        for (int i = mNumNodes + mNumSoftNodes + 1; i <= mMaxTotalNodes; ++i) {
+            assertEquals(2, mReferences[i].size());
+            HprofValuesBuilder values = new HprofValuesBuilder(2);
+            values.addObject(mReferences[i].get(0));
+            values.addObject(mReferences[i].get(1));
+            dump.add(new HprofInstanceDump(i, 0, SOFT_AND_HARD_REFERENCE_ID, values.build()));
+        }
+
+        records.add(new HprofHeapDump(0, dump.toArray(new HprofDumpRecord[0])));
+
+        // TODO: Should perflib handle the case where strings are referred to
+        // before they are defined?
+        List<HprofRecord> actualRecords = new ArrayList<HprofRecord>();
+        actualRecords.addAll(strings.getStringRecords());
+        actualRecords.addAll(records);
+
+        Snapshot snapshot = null;
+        try {
+            Hprof hprof = new Hprof("JAVA PROFILE 1.0.3", 2, new Date(), actualRecords);
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            hprof.write(os);
+            InMemoryBuffer buffer = new InMemoryBuffer(os.toByteArray());
+            snapshot = Snapshot.createSnapshot(buffer);
+        } catch (IOException e) {
+            fail("IOException when writing to byte output stream: " + e);
+        }
+
+        // TODO: Should the parser be setting isSoftReference, not the builder?
+        for (Heap heap : snapshot.getHeaps()) {
+            ClassObj softClass = heap.getClass(SOFT_REFERENCE_ID);
+            if (softClass != null) {
+                softClass.setIsSoftReference();
+            }
+
+            ClassObj softAndHardClass = heap.getClass(SOFT_AND_HARD_REFERENCE_ID);
+            if (softAndHardClass != null) {
+                softAndHardClass.setIsSoftReference();
+            }
+        }
+        return snapshot;
     }
 }

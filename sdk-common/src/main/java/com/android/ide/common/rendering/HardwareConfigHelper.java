@@ -315,6 +315,12 @@ public class HardwareConfigHelper {
         if (id.equals("Nexus 6")) {        //$NON-NLS-1$
             return 10;
         }
+        if (id.equals("Nexus 6P")) {        //$NON-NLS-1$
+            return 11;
+        }
+        if (id.equals("Nexus 5X")) {        //$NON-NLS-1$
+            return 12;
+        }
 
         return 100; // devices released in the future?
     }

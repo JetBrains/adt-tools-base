@@ -1,0 +1,37 @@
+package com.company.something;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.webkit.WebView;
+
+public class SetJavaScriptEnabled extends Activity {
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+        WebView webView = (WebView)findViewById(R.id.webView);
+        webView.getSettings().setJavaScriptEnabled(true); // bad
+        webView.getSettings().setJavaScriptEnabled(false); // good
+        webView.loadUrl("file:///android_asset/www/index.html");
+    }
+
+    // Test Suppress
+    // Constructor: See issue 35588
+    @android.annotation.SuppressLint("SetJavaScriptEnabled")
+    public void HelloWebApp() {
+        WebView webView = (WebView)findViewById(R.id.webView);
+        webView.getSettings().setJavaScriptEnabled(true); // bad
+        webView.getSettings().setJavaScriptEnabled(false); // good
+        webView.loadUrl("file:///android_asset/www/index.html");
+    }
+
+    public static final class R {
+        public static final class layout {
+            public static final int main = 0x7f0a0000;
+        }
+        public static final class id {
+            public static final int webView = 0x7f0a0001;
+        }
+    }
+}

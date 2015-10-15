@@ -1,0 +1,34 @@
+apply plugin: 'java'
+apply plugin: 'jacoco'
+apply plugin: 'clone-artifacts'
+
+configurations {
+    provided
+}
+
+dependencies {
+    compile project(':base:annotations')
+    compile 'com.google.guava:guava:17.0'
+
+    provided gradleApi()
+
+    testCompile 'junit:junit:4.12'
+}
+
+sourceSets {
+    main {
+        compileClasspath += configurations.provided
+    }
+}
+
+group = 'com.android.tools.build'
+archivesBaseName = 'transform-api'
+version = rootProject.ext.buildVersion
+
+project.ext.pomName = 'Android Transform API'
+project.ext.pomDesc = 'API for transforms during build'
+
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
+

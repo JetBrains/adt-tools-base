@@ -510,7 +510,7 @@ public class CommandLineParser {
      */
     public void printHelpAndExitForAction(String verb, String directObject,
             String errorFormat, Object... args) {
-        if (errorFormat != null && errorFormat.length() > 0) {
+        if (errorFormat != null && !errorFormat.isEmpty()) {
             stderr(errorFormat, args);
         }
 
@@ -518,17 +518,18 @@ public class CommandLineParser {
          * usage should fit in 80 columns
          *   12345678901234567890123456789012345678901234567890123456789012345678901234567890
          */
-        stdout("\n" +
-            "Usage:\n" +
-            "  android [global options] %s [action options]\n" +
-            "\n" +
-            "Global options:",
-            verb == null ? "action" :
-                verb + (directObject == null ? "" : " " + directObject));           //$NON-NLS-1$
+        stdout("");
+        stdout("Usage:\n" +
+                        "  android [global options] %s [action options]\n" +
+                        "\n" +
+                        "Global options:",
+                verb == null ? (acceptLackOfVerb() ? "[action]" : "action") :
+                        verb + (directObject == null ? "" : " " + directObject));           //$NON-NLS-1$
         listOptions(GLOBAL_FLAG_VERB, NO_VERB_OBJECT);
 
         if (verb == null || directObject == null) {
-            stdout("\nValid actions are composed of a verb and an optional direct object:");
+            stdout("");
+            stdout("Valid actions are composed of a verb and an optional direct object:");
             for (String[] action : mActions) {
                 if (verb == null || verb.equals(action[ACTION_VERB_INDEX])) {
                     stdout("- %1$6s %2$-13s: %3$s",
@@ -538,13 +539,18 @@ public class CommandLineParser {
                 }
             }
         }
+        if (verb == null && acceptLackOfVerb() && getDefaultVerb() != null) {
+            stdout("");
+            stdout("If a verb is not specified, the default is '%s'", getDefaultVerb());
+        }
 
         // Only print details if a verb/object is requested
         if (verb != null) {
             for (String[] action : mActions) {
                 if (verb == null || verb.equals(action[ACTION_VERB_INDEX])) {
                     if (directObject == null || directObject.equals(action[ACTION_OBJECT_INDEX])) {
-                        stdout("\nAction \"%1$s %2$s\":",
+                        stdout("");
+                        stdout("Action \"%1$s %2$s\":",
                                 action[ACTION_VERB_INDEX],
                                 action[ACTION_OBJECT_INDEX]);
                         stdout("  %1$s", action[ACTION_DESC_INDEX]);
@@ -556,6 +562,15 @@ public class CommandLineParser {
         }
 
         exit();
+    }
+
+    /**
+      @return The default verb name to show in the help message. Should only return non-null if
+      {@link #acceptLackOfVerb} is true.
+     */
+    @Nullable
+    protected String getDefaultVerb() {
+        return null;
     }
 
     /**
@@ -587,7 +602,7 @@ public class CommandLineParser {
                 } else {
                     if (arg.getDefaultValue() instanceof String[]) {
                         for (String v : (String[]) arg.getDefaultValue()) {
-                            if (value.length() > 0) {
+                            if (!value.isEmpty()) {
                                 value += ", ";
                             }
                             value += v;
@@ -598,7 +613,7 @@ public class CommandLineParser {
                             value = v.toString();
                         }
                     }
-                    if (value.length() > 0) {
+                    if (!value.isEmpty()) {
                         value = " [Default: " + value + "]";
                     }
                 }
@@ -611,10 +626,10 @@ public class CommandLineParser {
                 // where either the 1-letter arg or the long arg are optional.
                 String output = String.format(
                         "  %1$-2s %2$-" + longArgWidth + "s: %3$s%4$s%5$s", //$NON-NLS-1$ //$NON-NLS-2$
-                        arg.getShortArg().length() > 0 ?
+                        !arg.getShortArg().isEmpty() ?
                                 "-" + arg.getShortArg() :                              //$NON-NLS-1$
                                 "",                                                    //$NON-NLS-1$
-                        arg.getLongArg().length() > 0 ?
+                        !arg.getLongArg().isEmpty() ?
                                 "--" + arg.getLongArg() :                              //$NON-NLS-1$
                                 "",                                                    //$NON-NLS-1$
                         arg.getDescription(),
@@ -923,7 +938,7 @@ public class CommandLineParser {
         // We should always have at least a short or long name, ideally both but never none.
         assert shortName != null;
         assert longName != null;
-        assert shortName.length() > 0 || longName.length()  > 0;
+        assert !shortName.isEmpty() || !longName.isEmpty();
 
         if (directObject == null) {
             directObject = NO_VERB_OBJECT;

@@ -16,6 +16,7 @@
 
 package com.android.builder.png;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.builder.tasks.Job;
 import com.android.builder.tasks.JobContext;
@@ -29,7 +30,6 @@ import com.google.common.base.Objects;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -78,6 +78,9 @@ public class QueuedCruncher implements PngCruncher {
     // list of outstanding jobs.
     @NonNull private final Map<Integer, ConcurrentLinkedQueue<Job<AaptProcess>>> mOutstandingJobs =
             new ConcurrentHashMap<Integer, ConcurrentLinkedQueue<Job<AaptProcess>>>();
+    // list of finished jobs.
+    @NonNull private final Map<Integer, ConcurrentLinkedQueue<Job<AaptProcess>>> mDoneJobs =
+            new ConcurrentHashMap<Integer, ConcurrentLinkedQueue<Job<AaptProcess>>>();
     // ref count of active users, if it drops to zero, that means there are no more active users
     // and the queue should be shutdown.
     @NonNull private final AtomicInteger refCount = new AtomicInteger(0);
@@ -87,7 +90,7 @@ public class QueuedCruncher implements PngCruncher {
 
 
     private QueuedCruncher(
-            @NonNull String aaptLocation,
+            @NonNull final String aaptLocation,
             @NonNull ILogger iLogger) {
         mAaptLocation = aaptLocation;
         mLogger = iLogger;
@@ -100,10 +103,10 @@ public class QueuedCruncher implements PngCruncher {
             @Override
             public void creation(@NonNull Thread t) throws IOException {
                 try {
-                    mLogger.verbose("Thread(%1$s): create aapt slave",
-                            Thread.currentThread().getName());
                     AaptProcess aaptProcess = new AaptProcess.Builder(mAaptLocation, mLogger).start();
                     assert aaptProcess != null;
+                    mLogger.verbose("Thread(%1$s): created aapt slave, Process(%2$s)",
+                            Thread.currentThread().getName(), aaptProcess.hashCode());
                     aaptProcess.waitForReady();
                     mAaptProcesses.put(t.getName(), aaptProcess);
                 } catch (InterruptedException e) {
@@ -118,6 +121,7 @@ public class QueuedCruncher implements PngCruncher {
                         new JobContext<AaptProcess>(
                                 mAaptProcesses.get(Thread.currentThread().getName())));
                 mOutstandingJobs.get(((QueuedJob) job).key).remove(job);
+                mDoneJobs.get(((QueuedJob) job).key).add(job);
             }
 
             @Override
@@ -125,12 +129,14 @@ public class QueuedCruncher implements PngCruncher {
 
                 AaptProcess aaptProcess = mAaptProcesses.get(Thread.currentThread().getName());
                 if (aaptProcess != null) {
-                    mLogger.verbose("Thread(%1$s): notify aapt slave shutdown",
-                            Thread.currentThread().getName());
+                    mLogger.verbose("Thread(%1$s): notify aapt slave shutdown, Process(%2$s)",
+                            Thread.currentThread().getName(), aaptProcess.hashCode());
                     aaptProcess.shutdown();
                     mAaptProcesses.remove(t.getName());
-                    mLogger.verbose("Thread(%1$s): after shutdown queue_size=%2$d",
-                            Thread.currentThread().getName(), mAaptProcesses.size());
+                    mLogger.verbose("Thread(%1$s): Process(%2$d), after shutdown queue_size=%3$d",
+                            Thread.currentThread().getName(),
+                            aaptProcess.hashCode(),
+                            mAaptProcesses.size());
                 }
             }
 
@@ -168,6 +174,17 @@ public class QueuedCruncher implements PngCruncher {
     public void crunchPng(int key, @NonNull final File from, @NonNull final File to)
             throws PngException {
 
+        if (from.getAbsolutePath().length() > 240
+                && SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+            throw new PngException("File path too long on Windows, keep below 240 characters : "
+                + from.getAbsolutePath());
+        }
+        if (to.getAbsolutePath().length() > 240
+                && SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+            throw new PngException("File path too long on Windows, keep below 240 characters : "
+                    + to.getAbsolutePath());
+        }
+
         try {
             final Job<AaptProcess> aaptProcessJob = new QueuedJob(
                     key,
@@ -176,17 +193,26 @@ public class QueuedCruncher implements PngCruncher {
                         @Override
                         public void run(@NonNull Job<AaptProcess> job,
                                 @NonNull JobContext<AaptProcess> context) throws IOException {
-                            mLogger.verbose("Thread(%1$s): begin executing job %2$s",
-                                    Thread.currentThread().getName(), job.getJobTitle());
-                            context.getPayload().crunch(from, to, job);
-                            mLogger.verbose("Thread(%1$s): done executing job %2$s",
+                            AaptProcess aapt = context.getPayload();
+                            if (aapt == null) {
+                                mLogger.error(null /* throwable */,
+                                        "Thread(%1$s) has a null payload",
+                                        Thread.currentThread().getName());
+                                return;
+                            }
+                            mLogger.verbose("Thread(%1$s): submitting job %2$s to %3$d",
+                                    Thread.currentThread().getName(),
+                                    job.getJobTitle(),
+                                    aapt.hashCode());
+                            aapt.crunch(from, to, job);
+                            mLogger.verbose("Thread(%1$s): submitted job %2$s",
                                     Thread.currentThread().getName(), job.getJobTitle());
                         }
 
                         @Override
                         public String toString() {
                             return Objects.toStringHelper(this)
-                                    .add("from", from.getAbsolutePath())
+                                    .add("from", from.getName())
                                     .add("to", to.getAbsolutePath())
                                     .toString();
                         }
@@ -204,6 +230,7 @@ public class QueuedCruncher implements PngCruncher {
         mLogger.verbose("Thread(%1$s): begin waitForAll", Thread.currentThread().getName());
         ConcurrentLinkedQueue<Job<AaptProcess>> jobs = mOutstandingJobs.get(key);
         Job<AaptProcess> aaptProcessJob = jobs.poll();
+        boolean hasExceptions = false;
         while (aaptProcessJob != null) {
             mLogger.verbose("Thread(%1$s) : wait for {%2$s)", Thread.currentThread().getName(),
                     aaptProcessJob.toString());
@@ -211,7 +238,26 @@ public class QueuedCruncher implements PngCruncher {
                 throw new RuntimeException(
                         "Crunching " + aaptProcessJob.getJobTitle() + " failed, see logs");
             }
+            if (aaptProcessJob.getFailureReason() != null) {
+                mLogger.verbose("Exception while crunching png : " + aaptProcessJob.toString()
+                        + " : " + aaptProcessJob.getFailureReason());
+                hasExceptions = true;
+            }
             aaptProcessJob = jobs.poll();
+        }
+        // process done jobs to retrieve potential issues.
+        jobs = mDoneJobs.get(key);
+        aaptProcessJob = jobs.poll();
+        while(aaptProcessJob != null) {
+            if (aaptProcessJob.getFailureReason() != null) {
+                mLogger.verbose("Exception while crunching png : " + aaptProcessJob.toString()
+                        + " : " + aaptProcessJob.getFailureReason());
+                hasExceptions = true;
+            }
+            aaptProcessJob = jobs.poll();
+        }
+        if (hasExceptions) {
+            throw new RuntimeException("Some file crunching failed, see logs for details");
         }
         mLogger.verbose("Thread(%1$s): end waitForAll", Thread.currentThread().getName());
     }
@@ -223,6 +269,7 @@ public class QueuedCruncher implements PngCruncher {
         // get a unique key for the lifetime of this process.
         int key = keyProvider.incrementAndGet();
         mOutstandingJobs.put(key, new ConcurrentLinkedQueue<Job<AaptProcess>>());
+        mDoneJobs.put(key, new ConcurrentLinkedQueue<Job<AaptProcess>>());
         return key;
     }
 

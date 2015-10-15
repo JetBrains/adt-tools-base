@@ -29,6 +29,7 @@ import java.io.File;
 @Immutable
 public final class SourceFile {
 
+    @NonNull
     public static final SourceFile UNKNOWN = new SourceFile();
 
     @Nullable
@@ -94,14 +95,17 @@ public final class SourceFile {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(mSourceFile, mDescription);
+        String filePath = mSourceFile != null ? mSourceFile.getPath() : null;
+        return Objects.hashCode(filePath, mDescription);
     }
 
     @Override
+    @NonNull
     public String toString() {
         return print(false /* shortFormat */);
     }
 
+    @NonNull
     public String print(boolean shortFormat) {
         if (mSourceFile == null) {
             if (mDescription == null) {

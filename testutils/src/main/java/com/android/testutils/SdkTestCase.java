@@ -184,7 +184,7 @@ public abstract class SdkTestCase extends TestCase {
             // cannot happen
         }
 
-        assertTrue(xml.length() > 0);
+        assertTrue(!xml.isEmpty());
 
         // Remove any references to the project name such that we are isolated from
         // that in golden file.
@@ -426,6 +426,23 @@ public abstract class SdkTestCase extends TestCase {
             }
 
             return makeTestFile(targetDir, name, relative, stream);
+        }
+
+        @Nullable
+        public String getContents() {
+            if (contents != null) {
+                return contents;
+            } else if (sourceRelativePath != null) {
+                InputStream stream = getTestResource(sourceRelativePath, true);
+                if (stream != null) {
+                    try {
+                        return new String(ByteStreams.toByteArray(stream), Charsets.UTF_8);
+                    } catch (IOException ignore) {
+                        return "<couldn't open test file " + sourceRelativePath + ">";
+                    }
+                }
+            }
+            return null;
         }
     }
 

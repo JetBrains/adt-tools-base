@@ -19,7 +19,11 @@ import static com.android.SdkConstants.XMLNS;
 
 import com.android.SdkConstants;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Maps;
 
 import junit.framework.TestCase;
 
@@ -38,6 +42,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -176,7 +181,7 @@ public class XmlUtilsTest extends TestCase {
         Node text = doc.createTextNode("  This is my text  ");
         child3.appendChild(text);
 
-        String xml = XmlUtils.toXml(doc, true);
+        String xml = XmlUtils.toXml(doc);
         assertEquals(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                         "<myroot baz=\"baz\" foo=\"bar\"><mychild/><hasComment><!--This is my comment--></hasComment><hasText>  This is my text  </hasText></myroot>",
@@ -199,7 +204,7 @@ public class XmlUtilsTest extends TestCase {
 
         Document doc = parse(xml);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"
@@ -221,7 +226,7 @@ public class XmlUtilsTest extends TestCase {
                 + "</root>";
         Document doc = parse(xml);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(xml, formatted);
     }
 
@@ -236,7 +241,7 @@ public class XmlUtilsTest extends TestCase {
                 + "</resources>";
         Document doc = parse(xml);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"
@@ -258,7 +263,7 @@ public class XmlUtilsTest extends TestCase {
                 + "<root/>";
         Document doc = parse(xml);
 
-        xml = XmlUtils.toXml(doc, true);
+        xml = XmlUtils.toXml(doc);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<!-- ============== --><!-- Generic styles --><!-- ============== --><root/>",
@@ -273,7 +278,7 @@ public class XmlUtilsTest extends TestCase {
                 + "</root>";
         Document doc = parse(xml);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(xml, formatted);
     }
 
@@ -293,7 +298,7 @@ public class XmlUtilsTest extends TestCase {
 
         Document doc = parse(xml);
 
-        String formatted = XmlUtils.toXml(doc, true);
+        String formatted = XmlUtils.toXml(doc);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                 + "<resources>\n"
@@ -307,7 +312,54 @@ public class XmlUtilsTest extends TestCase {
                 formatted);
     }
 
+    public void testPositionAwareXmlXmlBuilder() throws Exception {
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "    <string \n"
+                + "        name=\"description_search\">Search</string>\n"
+                + "    <string \n"
+                + "        name=\"description_map\">Map</string>\n"
+                + "    <string\n"
+                + "         name=\"description_refresh\">Refresh</string>\n"
+                + "    <string \n"
+                + "        name=\"description_share\">Share</string>\n"
+                + "</resources>";
 
+        Document doc = PositionXmlParser.parse(xml);
+
+        Node string1 = doc.getFirstChild().getFirstChild().getNextSibling();
+        XmlUtils.attachSourceFile(string1, new SourceFile("source for first string"));
+
+        Node string2 = string1.getNextSibling().getNextSibling();
+        XmlUtils.attachSourceFile(string2, new SourceFile("source for second string"));
+
+        Map<SourcePosition, SourceFilePosition> positions = Maps.newLinkedHashMap();
+
+        String formatted = XmlUtils.toXml(doc, positions);
+        assertEquals(""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources>\n"
+                        + "    <string name=\"description_search\">Search</string>\n"
+                        + "    <string name=\"description_map\">Map</string>\n"
+                        + "    <string name=\"description_refresh\">Refresh</string>\n"
+                        + "    <string name=\"description_share\">Share</string>\n"
+                        + "</resources>",
+                formatted);
+
+        assertEquals(
+                new SourceFilePosition(
+                        new SourceFile("source for first string"),
+                        new SourcePosition(2, 4, 55, 3, 49, 113)),
+                positions.get(new SourcePosition(2, 4, 55, 2, 53, 104)));
+
+        assertEquals(
+                new SourceFilePosition(
+                        new SourceFile("source for second string"),
+                        new SourcePosition(4, 4, 118, 5, 43, 170)),
+                positions.get(new SourcePosition(3, 4, 109, 3, 47, 152)));
+
+    }
 
     @Nullable
     private static Document createEmptyPlainDocument() throws Exception {

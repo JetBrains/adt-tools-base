@@ -47,14 +47,15 @@ public class ResourceUrl {
     public final boolean create;
 
     /** Whether this is a theme resource reference */
-    public boolean theme;
+    public final boolean theme;
 
     private ResourceUrl(@NonNull ResourceType type, @NonNull String name,
-            boolean framework, boolean create) {
+            boolean framework, boolean create, boolean theme) {
         this.type = type;
         this.name = name;
         this.framework = framework;
         this.create = create;
+        this.theme = theme;
     }
 
     /**
@@ -67,7 +68,7 @@ public class ResourceUrl {
      */
     public static ResourceUrl create(@NonNull ResourceType type, @NonNull String name,
             boolean framework, boolean create) {
-        return new ResourceUrl(type, name, framework, create);
+        return new ResourceUrl(type, name, framework, create, false);
     }
 
     public static ResourceUrl create(@NonNull ResourceValue value) {
@@ -94,27 +95,27 @@ public class ResourceUrl {
      */
     @Nullable
     public static ResourceUrl parse(@NonNull String url, boolean forceFramework) {
+        boolean isTheme = false;
         // Handle theme references
         if (url.startsWith(PREFIX_THEME_REF)) {
+            isTheme = true;
             String remainder = url.substring(PREFIX_THEME_REF.length());
             if (url.startsWith(ATTR_REF_PREFIX)) {
                 url = PREFIX_RESOURCE_REF + url.substring(PREFIX_THEME_REF.length());
-                return setTheme(parse(url, forceFramework));
-            }
-            int colon = url.indexOf(':');
-            if (colon != -1) {
-                // Convert from ?android:progressBarStyleBig to ?android:attr/progressBarStyleBig
-                if (remainder.indexOf('/', colon) == -1) {
-                    remainder = remainder.substring(0, colon) + RESOURCE_CLZ_ATTR + '/'
-                            + remainder.substring(colon);
-                }
-                url = PREFIX_RESOURCE_REF + remainder;
-                return setTheme(parse(url, forceFramework));
             } else {
-                int slash = url.indexOf('/');
-                if (slash == -1) {
-                    url = PREFIX_RESOURCE_REF + RESOURCE_CLZ_ATTR + '/' + remainder;
-                    return setTheme(parse(url, forceFramework));
+                int colon = url.indexOf(':');
+                if (colon != -1) {
+                    // Convert from ?android:progressBarStyleBig to ?android:attr/progressBarStyleBig
+                    if (remainder.indexOf('/', colon) == -1) {
+                        remainder = remainder.substring(0, colon) + RESOURCE_CLZ_ATTR + '/'
+                                + remainder.substring(colon);
+                    }
+                    url = PREFIX_RESOURCE_REF + remainder;
+                } else {
+                    int slash = url.indexOf('/');
+                    if (slash == -1) {
+                        url = PREFIX_RESOURCE_REF + RESOURCE_CLZ_ATTR + '/' + remainder;
+                    }
                 }
             }
         }
@@ -147,16 +148,7 @@ public class ResourceUrl {
             return null;
         }
         String name = url.substring(nameBegin);
-        return new ResourceUrl(type, name, framework, create);
-    }
-
-    /** Marks the given url, if any, as corresponding to a theme attribute */
-    @Nullable
-    private static ResourceUrl setTheme(@Nullable ResourceUrl url) {
-        if (url != null) {
-            url.theme = true;
-        }
-        return url;
+        return new ResourceUrl(type, name, framework, create, isTheme);
     }
 
     /** Returns if the resource url is @null, @empty or @undefined. */

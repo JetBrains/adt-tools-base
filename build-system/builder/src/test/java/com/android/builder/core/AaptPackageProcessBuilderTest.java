@@ -57,7 +57,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
         MockitoAnnotations.initMocks(this);
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        mBuildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        mBuildToolInfo = sdkManager.getLatestBuildTool();
         if (mBuildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -83,7 +83,8 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
+        assertTrue(virtualAndroidManifestFile.getAbsolutePath().equals(
+                command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
         assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
     }
@@ -112,7 +113,8 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
+        assertTrue(virtualAndroidManifestFile.getAbsolutePath().equals(
+                command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
         assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
         assertTrue("/path/to/res/folder".equals(command.get(command.indexOf("-S") + 1)));
@@ -150,7 +152,8 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
+        assertTrue(virtualAndroidManifestFile.getAbsolutePath().equals(
+                command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
         assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
         assertTrue("/path/to/res/folder".equals(command.get(command.indexOf("-S") + 1)));
@@ -188,7 +191,8 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
+        assertTrue(virtualAndroidManifestFile.getAbsolutePath().equals(
+                command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
         assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
         assertTrue("/path/to/res/folder".equals(command.get(command.indexOf("-S") + 1)));
@@ -229,7 +233,8 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
+        assertTrue(virtualAndroidManifestFile.getAbsolutePath().equals(
+                command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
         assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
         assertTrue("/path/to/res/folder".equals(command.get(command.indexOf("-S") + 1)));
@@ -283,7 +288,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
             }
         }
         if (androidTarget == null) {
-            throw new RuntimeException("Test requires pre android-21");
+            throw new RuntimeException("Test requires pre android-20");
         }
 
         ProcessInfo processInfo = aaptPackageProcessBuilder
@@ -528,7 +533,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
                 .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList
-                        .of("en", "fr", "es", "de", "it", "mdpi", "hdpi", "xhdpi", "xxhdpi"));
+                        .of("en", "fr", "es", "de", "it", "hdpi"));
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
@@ -554,10 +559,10 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         assertEquals("en,fr,es,de,it",
                 command.get(command.indexOf("-c") + 1));
-        assertTrue("--preferred-density".equals(command.get(command.indexOf("mdpi") - 1)));
-        assertTrue("--preferred-density".equals(command.get(command.indexOf("hdpi") -1 )));
-        assertTrue("--preferred-density".equals(command.get(command.indexOf("xhdpi") -1 )));
-        assertTrue("--preferred-density".equals(command.get(command.indexOf("xxhdpi") -1 )));
+        assertEquals(-1, command.indexOf("mdpi"));
+        assertTrue("--preferred-density".equals(command.get(command.indexOf("hdpi") - 1)));
+        assertEquals(-1, command.indexOf("xhdpi"));
+        assertEquals(-1, command.indexOf("xxhdpi"));
         assertEquals(-1, command.indexOf("xxxhdpi"));
     }
 
@@ -580,8 +585,8 @@ public class AaptPackageProcessBuilderTest extends TestCase {
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
                 .setType(VariantType.DEFAULT)
-                .setResourceConfigs(ImmutableList.of( "en", "fr", "es", "de", "it", "mdpi", "hdpi", "xhdpi", "xxhdpi"))
-                .setSplits(ImmutableList.of("mdpi", "hdpi", "xhdpi", "xxhdpi"))
+                .setResourceConfigs(ImmutableList.of( "en", "fr", "es", "de", "it", "hdpi"))
+                .setSplits(ImmutableList.of("hdpi"))
                 .setPreferredDensity("hdpi");
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
@@ -605,7 +610,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
             aaptPackageProcessBuilder.build(buildToolInfo, androidTarget, mLogger);
         } catch (Exception expected) {
             assertEquals("When using splits in tools 21 and above, resConfigs should not contain "
-                    + "any densities. Right now, it contains \"mdpi\",\"hdpi\",\"xhdpi\",\"xxhdpi\"\n"
+                    + "any densities. Right now, it contains \"hdpi\"\n"
                     + "Suggestion: remove these from resConfigs from build.gradle", expected.getMessage());
         }
     }

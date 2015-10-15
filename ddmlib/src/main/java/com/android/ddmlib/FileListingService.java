@@ -88,13 +88,20 @@ public final class FileListingService {
     /**
      * Regexp pattern to parse the result from ls.
      */
-    private static final Pattern LS_L_PATTERN = Pattern.compile(
-            "^([bcdlsp-][-r][-w][-xsS][-r][-w][-xsS][-r][-w][-xstST])\\s+(\\S+)\\s+(\\S+)\\s+" +
+    public static final Pattern LS_L_PATTERN = Pattern.compile(
+            "^([bcdlsp-][-r][-w][-xsS][-r][-w][-xsS][-r][-w][-xstST])\\s+" +
+            "(?:\\d+\\s+)?" + // toolbox ls (<=M) didn't have nlink; toybox's POSIX ls does.
+            "(\\S+)\\s+(\\S+)\\s+" +
             "([\\d\\s,]*)\\s+(\\d{4}-\\d\\d-\\d\\d)\\s+(\\d\\d:\\d\\d)\\s+(.*)$"); //$NON-NLS-1$
 
-    private static final Pattern LS_LD_PATTERN = Pattern.compile(
-                    "d[rwx-]{9}\\s+\\S+\\s+\\S+\\s+[0-9-]{10}\\s+\\d{2}:\\d{2}$"); //$NON-NLS-1$
-
+    public static final Pattern LS_LD_PATTERN = Pattern.compile(
+            "d[rwx-]{9}\\s+" + // We only use this to match directories!
+            "(\\d+\\s+)?" + // toolbox ls (<=M) didn't have nlink; toybox's POSIX ls does.
+            "\\S+\\s+\\S+\\s+" +
+            "(\\d+\\s+)?" + // toolbox ls (<=M) didn't have size; toybox's POSIX ls does.
+            "[0-9-]{10}\\s+\\d{2}:\\d{2}" +
+            ".*" + // toolbox ls (<=M) didn't have the filename in the "/sdcard/" case!
+            "$"); //$NON-NLS-1$
 
     private Device mDevice;
     private FileEntry mRoot;

@@ -25,17 +25,16 @@ import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ClassField
 import com.android.builder.model.Variant
-import com.google.common.base.Charsets
+import com.android.utils.FileUtils
 import com.google.common.collect.Maps
-import com.google.common.io.Files
 import groovy.transform.CompileStatic
-import junit.framework.Assert
+import org.junit.Assert
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static junit.framework.Assert.assertEquals
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 
@@ -119,16 +118,15 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from the variant -->
-    <string name="VALUE_VARIANT">1000</string>
+    <string name="VALUE_VARIANT" translatable="false">1000</string>
     <!-- Values from build type: debug -->
-    <string name="VALUE_DEBUG">100</string>
+    <string name="VALUE_DEBUG" translatable="false">100</string>
     <!-- Values from product flavor: flavor1 -->
-    <string name="VALUE_FLAVOR">10</string>
+    <string name="VALUE_FLAVOR" translatable="false">10</string>
     <!-- Values from default config. -->
-    <string name="VALUE_DEFAULT">1</string>
+    <string name="VALUE_DEFAULT" translatable="false">1</string>
 
-</resources>
-"""
+</resources>"""
         checkBuildConfig(expected, 'flavor1/debug')
     }
 
@@ -151,16 +149,15 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from the variant -->
-    <string name="VALUE_VARIANT">1000</string>
+    <string name="VALUE_VARIANT" translatable="false">1000</string>
     <!-- Values from build type: debug -->
-    <string name="VALUE_DEBUG">100</string>
+    <string name="VALUE_DEBUG" translatable="false">100</string>
     <!-- Values from product flavor: flavor2 -->
-    <string name="VALUE_FLAVOR">20</string>
+    <string name="VALUE_FLAVOR" translatable="false">20</string>
     <!-- Values from default config. -->
-    <string name="VALUE_DEFAULT">1</string>
+    <string name="VALUE_DEFAULT" translatable="false">1</string>
 
-</resources>
-"""
+</resources>"""
         checkBuildConfig(expected, 'flavor2/debug')
     }
 
@@ -183,14 +180,13 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from product flavor: flavor1 -->
-    <string name="VALUE_DEBUG">10</string>
-    <string name="VALUE_FLAVOR">10</string>
-    <string name="VALUE_VARIANT">10</string>
+    <string name="VALUE_DEBUG" translatable="false">10</string>
+    <string name="VALUE_FLAVOR" translatable="false">10</string>
+    <string name="VALUE_VARIANT" translatable="false">10</string>
     <!-- Values from default config. -->
-    <string name="VALUE_DEFAULT">1</string>
+    <string name="VALUE_DEFAULT" translatable="false">1</string>
 
-</resources>
-"""
+</resources>"""
         checkBuildConfig(expected, 'flavor1/release')
     }
 
@@ -213,14 +209,13 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from product flavor: flavor2 -->
-    <string name="VALUE_DEBUG">20</string>
-    <string name="VALUE_FLAVOR">20</string>
-    <string name="VALUE_VARIANT">20</string>
+    <string name="VALUE_DEBUG" translatable="false">20</string>
+    <string name="VALUE_FLAVOR" translatable="false">20</string>
+    <string name="VALUE_VARIANT" translatable="false">20</string>
     <!-- Values from default config. -->
-    <string name="VALUE_DEFAULT">1</string>
+    <string name="VALUE_DEFAULT" translatable="false">1</string>
 
-</resources>
-"""
+</resources>"""
         checkBuildConfig(expected, 'flavor2/release')
     }
 
@@ -237,8 +232,8 @@ class ResValueTest {
     private static void checkBuildConfig(@NonNull String expected, @NonNull String variantDir) {
         File outputFile = new File(project.getTestDir(),
                 "build/generated/res/resValues/$variantDir/values/generated.xml")
-        Assert.assertTrue("Missing file: " + outputFile, outputFile.isFile())
-        assertEquals(expected, Files.asByteSource(outputFile).asCharSource(Charsets.UTF_8).read())
+        assertThat(outputFile).isFile();
+        assertThat(outputFile).contentWithUnixLineSeparatorsIsExactly(expected);
     }
 
     private static void checkVariant(

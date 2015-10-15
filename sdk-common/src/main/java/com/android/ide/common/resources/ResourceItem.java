@@ -197,7 +197,7 @@ public class ResourceItem implements Comparable<ResourceItem> {
         }
 
         // We only want to return false if there's no default and more than 0 items.
-        return (mFiles.size() == 0);
+        return (mFiles.isEmpty());
     }
 
     /**

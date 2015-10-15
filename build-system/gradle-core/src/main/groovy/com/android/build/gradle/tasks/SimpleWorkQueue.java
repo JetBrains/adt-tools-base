@@ -52,7 +52,7 @@ public class SimpleWorkQueue {
                     new EmptyThreadContext(), "Tasks limiter", 4);
 
 
-    static void push(Job<Void> job) throws InterruptedException {
+    public static void push(Job<Void> job) throws InterruptedException {
         WORK_QUEUE.push(job);
     }
 }

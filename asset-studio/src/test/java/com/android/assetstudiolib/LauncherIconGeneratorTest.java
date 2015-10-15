@@ -21,7 +21,7 @@ import com.android.assetstudiolib.LauncherIconGenerator.LauncherOptions;
 import java.io.IOException;
 
 @SuppressWarnings("javadoc")
-public class LauncherIconGeneratorTest extends GeneratorTest {
+public class LauncherIconGeneratorTest extends BitmapGeneratorTest {
     private void checkGraphic(String baseName,
             GraphicGenerator.Shape shape, GraphicGenerator.Style style,
             boolean crop, int background, boolean isWebGraphic) throws IOException {

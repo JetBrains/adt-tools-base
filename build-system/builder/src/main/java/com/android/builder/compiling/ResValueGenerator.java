@@ -16,10 +16,11 @@
 package com.android.builder.compiling;
 
 import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_TRANSLATABLE;
 import static com.android.SdkConstants.ATTR_TYPE;
-import static com.android.SdkConstants.TAG_STRING;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_RESOURCES;
+import static com.android.SdkConstants.VALUE_FALSE;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
@@ -148,6 +149,12 @@ public class ResValueGenerator {
                     itemNode.getAttributes().setNamedItem(typeAttr);
                 }
 
+                if (type == ResourceType.STRING) {
+                    Attr translatable = document.createAttribute(ATTR_TRANSLATABLE);
+                    translatable.setValue(VALUE_FALSE);
+                    itemNode.getAttributes().setNamedItem(translatable);
+                }
+
                 if (!field.getValue().isEmpty()) {
                     itemNode.appendChild(document.createTextNode(field.getValue()));
                 }
@@ -164,7 +171,7 @@ public class ResValueGenerator {
         try {
             content = XmlPrettyPrinter.prettyPrint(document, true);
         } catch (Throwable t) {
-            content = XmlUtils.toXml(document, false);
+            content = XmlUtils.toXml(document);
         }
 
         Files.write(content, resFile, Charsets.UTF_8);

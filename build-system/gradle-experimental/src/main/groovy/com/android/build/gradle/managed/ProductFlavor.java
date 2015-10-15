@@ -28,9 +28,10 @@ import org.gradle.model.Managed;
 import org.gradle.model.ModelSet;
 import org.gradle.model.Unmanaged;
 
-import java.io.File;
 import java.util.List;
 import java.util.Set;
+
+import java.io.File;
 
 /**
  * A Managed product flavor.
@@ -38,93 +39,7 @@ import java.util.Set;
  * TODO: Convert Unmanaged Collection to Managed type when Gradle provides ModelSet for basic class.
  */
 @Managed
-public interface ProductFlavor extends Named, DimensionAware {
-
-    /**
-     * Map of Build Config Fields where the key is the field name.
-     *
-     * @return a non-null map of class fields (possibly empty).
-     */
-    @NonNull
-    ModelSet<ClassField> getBuildConfigFields();
-
-    /**
-     * Map of generated res values where the key is the res name.
-     *
-     * @return a non-null map of class fields (possibly empty).
-     */
-    @NonNull
-    ModelSet<ClassField> getResValues();
-
-    /**
-     * Returns the collection of proguard rule files.
-     *
-     * <p>These files are only applied to the production code.
-     *
-     * @return a non-null collection of files.
-     * @see #getTestProguardFiles()
-     */
-    @Unmanaged
-    Set<File> getProguardFiles();
-    void setProguardFiles(Set<File> files);
-
-    /**
-     * Returns the collection of proguard rule files for consumers of the library to use.
-     *
-     * @return a non-null collection of files.
-     */
-    @Unmanaged
-    Set<File> getConsumerProguardFiles();
-    void setConsumerProguardFiles(Set<File> files);
-
-    /**
-     * Returns the collection of proguard rule files to use for the test APK.
-     *
-     * @return a non-null collection of files.
-     */
-    @Unmanaged
-    Set<File> getTestProguardFiles();
-    void setTestProguardFiles(Set<File> files);
-
-    /**
-     * Returns the map of key value pairs for placeholder substitution in the android manifest file.
-     *
-     * This map will be used by the manifest merger.
-     * @return the map of key value pairs.
-     */
-    // TODO: Add the commented fields.
-    //Map<String, Object> getManifestPlaceholders();
-
-    /**
-     * Returns whether multi-dex is enabled.
-     *
-     * This can be null if the flag is not set, in which case the default value is used.
-     */
-    @Nullable
-    Boolean getMultiDexEnabled();
-    void setMultiDexEnabled(Boolean multiDexEnabled);
-
-    @Nullable
-    File getMultiDexKeepFile();
-    void setMultiDexKeepFile(File multiDexKeepFile);
-
-    @Nullable
-    File getMultiDexKeepProguard();
-    void setMultiDexKeepProguard(File multiDexKeepProguard);
-
-    /**
-     * Returns the optional jarjar rule files, or empty if jarjar should be skipped.
-     *
-     * <p>If more than one file is provided, the rule files will be merged in order with last one
-     * win in case of rule redefinition.
-     *
-     * <p>Can only be used with Jack toolchain.
-     *
-     * @return the optional jarjar rule file.
-     */
-    @Unmanaged
-    List<File> getJarJarRuleFiles();
-    void setJarJarRuleFiles(List<File> jarJarRuleFiles);
+public interface ProductFlavor extends DimensionAware, BaseConfig {
 
     /**
      * Returns the flavor dimension or null if not applicable.
@@ -281,4 +196,9 @@ public interface ProductFlavor extends Named, DimensionAware {
     void setUseJack(Boolean useJack);
 
     NdkOptions getNdk();
+
+    @Unmanaged
+    @Nullable
+    Set<String> getGeneratedDensities();
+    void setGeneratedDensities(@Nullable Set<String> densities);
 }

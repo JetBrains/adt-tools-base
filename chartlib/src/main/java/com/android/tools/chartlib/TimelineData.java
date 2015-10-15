@@ -15,10 +15,11 @@
  */
 package com.android.tools.chartlib;
 
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * A group of streams of data sampled over time. This object is thread safe as it can be
@@ -58,13 +59,100 @@ public class TimelineData {
     }
 
     public synchronized void add(long time, int type, float... values) {
+        add(new Sample((time - mStart) / 1000.0f, type, values));
+    }
+
+    /**
+     * Converts stream area values to stream samples. All streams have different starting values from last sample, different areas,
+     * and result in different sample shapes. The conversion may break into multiple samples time points to make the shapes' areas are
+     * correct. For example, every stream flow is a triangle when not stacked with each other; it need four time points for all streams,
+     * one triangle is split into four parts at every time point, each part's shape may be changed while the area size is the same.
+     *
+     * @param time The current time in seconds from the start timestamp.
+     * @param areas The streams' area sizes.
+     * @param lastSample The last recent sample, which may be null.
+     * @param type The timeline data type.
+     */
+    private static List<Sample> convertAreasToSamples(float time, int type, float[] areas, @Nullable Sample lastSample) {
+        int streamSize = areas.length;
+        // The starting time and value are from last sample, to be consecutive.
+        float startTime = lastSample != null ? lastSample.time : 0.0f;
+        float[] startValues = lastSample != null ? lastSample.values : new float[streamSize];
+        assert streamSize == startValues.length;
+
+        // Computes how long every stream's value is non-zero and the ending value at last.
+        float maxInterval = time - startTime;
+        if (maxInterval <= 0) {
+            return new ArrayList<Sample>();
+        }
+        float[] nonZeroIntervalsForStreams = new float[streamSize];
+        float[] endValuesForStreams = new float[streamSize];
+        for (int i = 0; i < streamSize; i++) {
+            if (startValues[i] * maxInterval / 2 < areas[i]) {
+                nonZeroIntervalsForStreams[i] = maxInterval;
+                endValuesForStreams[i] = areas[i] * 2 / maxInterval - startValues[i];
+            }
+            else if (areas[i] == 0) {
+                nonZeroIntervalsForStreams[i] = maxInterval;
+                endValuesForStreams[i] = 0;
+            }
+            else {
+                // startValues[i] should be non-zero to be greater than areas[i].
+                nonZeroIntervalsForStreams[i] = areas[i] * 2 / startValues[i];
+                endValuesForStreams[i] = 0;
+            }
+        }
+
+        // Sorts the intervals, every different interval should be a sample.
+        float[] ascendingIntervals = Arrays.copyOf(nonZeroIntervalsForStreams, streamSize);
+        Arrays.sort(ascendingIntervals);
+        List<Sample> sampleList = new ArrayList<Sample>();
+        for (float interval : ascendingIntervals) {
+            float[] sampleValues = new float[streamSize];
+            for (int j = 0; j < streamSize; j++) {
+                sampleValues[j] = startValues[j] - (startValues[j] - endValuesForStreams[j]) * interval / nonZeroIntervalsForStreams[j];
+                if (sampleValues[j] < 0) {
+                    sampleValues[j] = 0.0f;
+                }
+            }
+            sampleList.add(new Sample(interval + startTime, type, sampleValues));
+            if (interval == maxInterval) {
+                break;
+            }
+        }
+        if (ascendingIntervals[streamSize - 1] < maxInterval) {
+            // Adds the ending sample that all stream values are zero.
+            sampleList.add(new Sample(time, type, new float[streamSize]));
+        }
+        return sampleList;
+    }
+
+
+    /**
+     * Adds the stream values which are values converted from the areas values. The values depends on both last sample values and
+     * the current areas' sizes. It should be a synchronized method to let the last recent sample be accurate.
+     *
+     * @param timeMills The current time in mills.
+     * @param type Sample data type.
+     * @param areas Value multiple time area sizes for all streams.
+     */
+    public synchronized void addFromArea(long timeMills, int type, float... areas) {
+        float timeForStart = (timeMills - mStart) / 1000.0f;
+        Sample lastSample = mSamples.isEmpty() ? null : mSamples.get(mSamples.size() - 1);
+        for (Sample sample : convertAreasToSamples(timeForStart, type, areas, lastSample)) {
+            add(sample);
+        }
+    }
+
+    private void add(Sample sample) {
+        float[] values = sample.values;
         assert values.length == myStreams;
         float total = 0.0f;
         for (float value : values) {
             total += value;
         }
         mMaxTotal = Math.max(mMaxTotal, total);
-        mSamples.add(new Sample((time - mStart) / 1000.0f, type, values));
+        mSamples.add(sample);
     }
 
     public synchronized void clear() {

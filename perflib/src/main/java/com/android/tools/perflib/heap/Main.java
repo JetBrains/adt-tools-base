@@ -16,8 +16,8 @@
 
 package com.android.tools.perflib.heap;
 
-import com.android.tools.perflib.heap.io.HprofBuffer;
-import com.android.tools.perflib.heap.io.MemoryMappedFileBuffer;
+import com.android.tools.perflib.captures.DataBuffer;
+import com.android.tools.perflib.captures.MemoryMappedFileBuffer;
 
 import java.io.File;
 import java.util.Map;
@@ -28,8 +28,8 @@ public class Main {
     public static void main(String argv[]) {
         try {
             long start = System.nanoTime();
-            HprofBuffer buffer = new MemoryMappedFileBuffer(new File(argv[0]));
-            Snapshot snapshot = (new HprofParser(buffer)).parse();
+            DataBuffer buffer = new MemoryMappedFileBuffer(new File(argv[0]));
+            Snapshot snapshot = Snapshot.createSnapshot(buffer);
 
             testClassesQuery(snapshot);
             testAllClassesQuery(snapshot);

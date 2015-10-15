@@ -103,7 +103,7 @@ public class Context {
         mDriver = driver;
         mProject = project;
         mMainProject = main;
-        mConfiguration = project.getConfiguration();
+        mConfiguration = project.getConfiguration(driver);
     }
 
     /**
@@ -263,7 +263,7 @@ public class Context {
         if (location != null && location.getFile() != null) {
             Project project = mDriver.findProjectFor(location.getFile());
             if (project != null) {
-                configuration = project.getConfiguration();
+                configuration = project.getConfiguration(mDriver);
             }
         }
 

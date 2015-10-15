@@ -24,9 +24,6 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourceFile;
 import com.google.common.base.Optional;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;

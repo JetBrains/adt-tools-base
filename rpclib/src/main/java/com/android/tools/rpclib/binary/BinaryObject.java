@@ -15,15 +15,17 @@
  */
 package com.android.tools.rpclib.binary;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
- * An object that can be encoded and decoded with calls to {@link Encoder#object} and
- * {@link Decoder#object}, respectively.
+ * An object that can be encoded and decoded using its {@link class}.
  */
-public interface BinaryObject extends Decodable, Encodable {
+public interface BinaryObject {
   int NULL_ID = 0;
 
   /**
-   * @return the object's unique type identifier.
+   * @return the object's type class.
    */
-  ObjectTypeID type();
+  @NotNull
+  BinaryClass klass();
 }

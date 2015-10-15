@@ -13,6 +13,18 @@ dependencies {
     testCompile project(':base:sdk-common')
     testCompile 'com.google.truth:truth:0.26'
     testCompile 'org.jacoco:org.jacoco.agent:0.7.4.201502262128'
+
+    // Add dependency on plugin code.  Exclude transitive dependencies to avoid conflict due to
+    // Groovy versions.
+    testCompile(project(':base:gradle-core')) {
+        transitive = false
+    }
+    testCompile(project(':base:gradle')) {
+        transitive = false
+    }
+    testCompile(project(':base:gradle-experimental')) {
+        transitive = false
+    }
 }
 
 def testEnvironment = [
@@ -26,6 +38,7 @@ def testEnvironment = [
     CUSTOM_JACK: System.env.CUSTOM_JACK,
     DEBUG_INNER_TEST: System.env.DEBUG_INNER_TEST,
     RECORD_SPANS: System.env.RECORD_SPANS,
+    INTEGRATION_TEST: "true",
 ].findAll { it.value != null }
 
 // These tasks will not depend on publishLocal, so they will run integration
@@ -49,6 +62,12 @@ configure([test, testPrebuilts]) {
     maxParallelForks = Runtime.runtime.availableProcessors() / 2
 
     useJUnit {
+        if (System.properties['test.includeCategories'] != null) {
+            def categories = System.properties['test.includeCategories'].split(',')
+            String defaultPackage = "com.android.build.gradle.integration.common.category."
+            categories = categories.collect { it.charAt(0).isUpperCase() ? defaultPackage + it : it }
+            includeCategories categories as String[]
+        }
         excludeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
     }
     exclude "com/android/build/gradle/integration/performance/**"
@@ -75,7 +94,7 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
     outputs.upToDateWhen { false }
 
     forkEvery= 1
-    maxParallelForks = System.env.containsKey("REMOTE_TEST_PROVIDER") ? 50 : 1
+    maxParallelForks = System.env.containsKey("REMOTE_TEST_PROVIDER") ? Runtime.runtime.availableProcessors() : 1
 
     useJUnit {
         includeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
@@ -106,9 +125,12 @@ connectedIntegrationTest.dependsOn ':publishLocal'
 performanceTest.dependsOn ':publishLocal'
 
 jacocoTestReport {
+    sourceSets project(':base:gradle-experimental').sourceSets.main
     sourceSets project(':base:gradle').sourceSets.main
+    sourceSets project(':base:gradle-core').sourceSets.main
     sourceSets project(':base:builder').sourceSets.main
     sourceSets project(':base:builder-model').sourceSets.main
+    sourceSets project(':base:builder-test-api').sourceSets.main
 }
 
 // Due to memory constraints, apply jacoco only when jacocoTestReport is invoked.  Make sure to

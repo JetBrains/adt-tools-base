@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <template
-    format="3"
-    revision="4"
+    format="5"
+    revision="5"
     name="Google AdMob Ads Activity"
     minApi="7"
     minBuildApi="14"

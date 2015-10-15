@@ -31,6 +31,7 @@ import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.model.ModelBuilder;
 import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.managed.NdkAbiOptions;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.AndroidProject;
 
@@ -74,6 +75,26 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
         return modelBuilder.buildAll(modelName, project);
     }
 
+    /**
+     * A method for creating ModelType<ModelMap<NdkAbiOptions>> using ModelType.returnType.
+     * Used by getAbiOptionModelType().  The method is public to allow Gradle's reflection to work.
+     */
+    public static ModelMap<NdkAbiOptions> abiOptionType() {
+        return null;
+    }
+
+    /**
+     * A hack to create a ModelType with parameterized type.  Note that this won't be necessary when
+     * Gradle release a public API for creating tooling model in the component model plugin.
+     */
+    private ModelType<ModelMap<NdkAbiOptions>> getAbiOptionModelType() {
+        try {
+            return ModelType.returnType(getClass().getMethod("abiOptionType"));
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Should not happen.");
+        }
+    }
+
     private ModelBuilder createModelBuilder() {
         AndroidBuilder androidBuilder = registry.realize(
                 new ModelPath(ANDROID_BUILDER),
@@ -101,11 +122,14 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
         BinaryContainer binaries = registry.realize(
                 new ModelPath(BINARIES),
                 ModelType.of(BinaryContainer.class));
+        ModelMap<NdkAbiOptions> abiOptions = registry.realize(
+                new ModelPath(ModelConstants.ABI_OPTIONS),
+                getAbiOptionModelType());
 
         return new ModelBuilder(
                 androidBuilder, variantManager, taskManager,
                 extension, extraModelInfo, ndkHandler,
-                new ComponentNativeLibraryFactory(binaries, ndkHandler),
+                new ComponentNativeLibraryFactory(binaries, ndkHandler, abiOptions),
                 !isApplication);
     }
 }

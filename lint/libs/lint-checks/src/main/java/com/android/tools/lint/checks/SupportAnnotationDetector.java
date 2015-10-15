@@ -19,16 +19,22 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_VALUE;
+import static com.android.SdkConstants.CLASS_INTENT;
 import static com.android.SdkConstants.INT_DEF_ANNOTATION;
 import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.STRING_DEF_ANNOTATION;
 import static com.android.SdkConstants.SUPPORT_ANNOTATIONS_PREFIX;
 import static com.android.SdkConstants.TAG_PERMISSION;
 import static com.android.SdkConstants.TAG_USES_PERMISSION;
+import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_23;
+import static com.android.SdkConstants.TAG_USES_PERMISSION_SDK_M;
 import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.resources.ResourceType.COLOR;
 import static com.android.resources.ResourceType.DRAWABLE;
 import static com.android.resources.ResourceType.MIPMAP;
+import static com.android.tools.lint.checks.PermissionFinder.Operation.ACTION;
+import static com.android.tools.lint.checks.PermissionFinder.Operation.READ;
+import static com.android.tools.lint.checks.PermissionFinder.Operation.WRITE;
 import static com.android.tools.lint.checks.PermissionRequirement.ATTR_PROTECTION_LEVEL;
 import static com.android.tools.lint.checks.PermissionRequirement.VALUE_DANGEROUS;
 import static com.android.tools.lint.detector.api.JavaContext.findSurroundingMethod;
@@ -37,6 +43,9 @@ import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
+import com.android.sdklib.AndroidVersion;
+import com.android.tools.lint.checks.PermissionFinder.Operation;
+import com.android.tools.lint.checks.PermissionFinder.Result;
 import com.android.tools.lint.checks.PermissionHolder.SetPermissionLookup;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
@@ -55,7 +64,7 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.XmlUtils;
-import com.google.common.collect.Lists;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 
 import org.w3c.dom.Document;
@@ -63,7 +72,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -76,6 +88,8 @@ import lombok.ast.AstVisitor;
 import lombok.ast.BinaryExpression;
 import lombok.ast.BinaryOperator;
 import lombok.ast.Catch;
+import lombok.ast.ConstructorInvocation;
+import lombok.ast.EnumConstant;
 import lombok.ast.Expression;
 import lombok.ast.ExpressionStatement;
 import lombok.ast.FloatingPointLiteral;
@@ -241,6 +255,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     public static final String MAIN_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "MainThread"; //$NON-NLS-1$
     public static final String WORKER_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "WorkerThread"; //$NON-NLS-1$
     public static final String BINDER_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "BinderThread"; //$NON-NLS-1$
+    public static final String PERMISSION_ANNOTATION_READ = PERMISSION_ANNOTATION + ".Read"; //$NON-NLS-1$
+    public static final String PERMISSION_ANNOTATION_WRITE = PERMISSION_ANNOTATION + ".Write"; //$NON-NLS-1$
 
     public static final String RES_SUFFIX = "Res";
     public static final String THREAD_SUFFIX = "Thread";
@@ -273,55 +289,126 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     private void checkMethodAnnotation(
             @NonNull JavaContext context,
             @NonNull ResolvedMethod method,
-            @NonNull MethodInvocation node,
+            @NonNull Node node,
             @NonNull ResolvedAnnotation annotation) {
         String signature = annotation.getSignature();
         if (CHECK_RESULT_ANNOTATION.equals(signature)
                 || signature.endsWith(".CheckReturnValue")) { // support findbugs annotation too
             checkResult(context, node, annotation);
         } else if (signature.equals(PERMISSION_ANNOTATION)) {
-            checkPermission(context, node, method, annotation);
+            PermissionRequirement requirement = PermissionRequirement.create(context, annotation);
+            checkPermission(context, node, method, null, requirement);
         } else if (signature.endsWith(THREAD_SUFFIX)
                 && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
             checkThreading(context, node, method, signature);
         }
     }
 
-    private static void checkParameterAnnotation(
+    private void checkParameterAnnotations(
             @NonNull JavaContext context,
             @NonNull Node argument,
-            @NonNull ResolvedAnnotation annotation) {
-        String signature = annotation.getSignature();
+            @NonNull Node call,
+            @NonNull ResolvedMethod method,
+            @NonNull Iterable<ResolvedAnnotation> annotations) {
+        boolean handledResourceTypes = false;
+        for (ResolvedAnnotation annotation : annotations) {
+            String signature = annotation.getSignature();
 
-        if (COLOR_INT_ANNOTATION.equals(signature)) {
-            checkColor(context, argument);
-        } else if (signature.equals(INT_RANGE_ANNOTATION)) {
-            checkIntRange(context, annotation, argument);
-        } else if (signature.equals(FLOAT_RANGE_ANNOTATION)) {
-            checkFloatRange(context, annotation, argument);
-        } else if (signature.equals(SIZE_ANNOTATION)) {
-            checkSize(context, annotation, argument);
-        } else {
-            // We only run @IntDef, @StringDef and @<Type>Res checks if we're not
-            // running inside Android Studio / IntelliJ where there are already inspections
-            // covering the same warnings (using IntelliJ's own data flow analysis); we
-            // don't want to (a) create redundant warnings or (b) work harder than we
-            // have to
-            if (signature.equals(INT_DEF_ANNOTATION)) {
-                boolean flag = annotation.getValue(TYPE_DEF_FLAG_ATTRIBUTE) == Boolean.TRUE;
-                checkTypeDefConstant(context, annotation, argument, null, flag);
-            } else if (signature.equals(STRING_DEF_ANNOTATION)) {
-                checkTypeDefConstant(context, annotation, argument, null, false);
-            } else if (signature.endsWith(RES_SUFFIX)) {
-                String typeString = signature.substring(SUPPORT_ANNOTATIONS_PREFIX.length(),
-                        signature.length() - RES_SUFFIX.length()).toLowerCase(Locale.US);
-                ResourceType type = ResourceType.getEnum(typeString);
-                if (type != null) {
-                    checkResourceType(context, argument, type);
-                } else if (typeString.equals("any")) { // @AnyRes
-                    checkResourceType(context, argument, null);
+            if (COLOR_INT_ANNOTATION.equals(signature)) {
+                checkColor(context, argument);
+            } else if (signature.equals(INT_RANGE_ANNOTATION)) {
+                checkIntRange(context, annotation, argument, annotations);
+            } else if (signature.equals(FLOAT_RANGE_ANNOTATION)) {
+                checkFloatRange(context, annotation, argument);
+            } else if (signature.equals(SIZE_ANNOTATION)) {
+                checkSize(context, annotation, argument);
+            } else if (signature.startsWith(PERMISSION_ANNOTATION)) {
+                // PERMISSION_ANNOTATION, PERMISSION_ANNOTATION_READ, PERMISSION_ANNOTATION_WRITE
+                // When specified on a parameter, that indicates that we're dealing with
+                // a permission requirement on this *method* which depends on the value
+                // supplied by this parameter
+                checkParameterPermission(context, signature, call, method, argument);
+            } else {
+                // We only run @IntDef, @StringDef and @<Type>Res checks if we're not
+                // running inside Android Studio / IntelliJ where there are already inspections
+                // covering the same warnings (using IntelliJ's own data flow analysis); we
+                // don't want to (a) create redundant warnings or (b) work harder than we
+                // have to
+                if (signature.equals(INT_DEF_ANNOTATION)) {
+                    boolean flag = annotation.getValue(TYPE_DEF_FLAG_ATTRIBUTE) == Boolean.TRUE;
+                    checkTypeDefConstant(context, annotation, argument, null, flag,
+                            annotations);
+                } else if (signature.equals(STRING_DEF_ANNOTATION)) {
+                    checkTypeDefConstant(context, annotation, argument, null, false,
+                            annotations);
+                } else if (signature.endsWith(RES_SUFFIX)) {
+                    if (handledResourceTypes) {
+                        continue;
+                    }
+                    handledResourceTypes = true;
+                    EnumSet<ResourceType> types = null;
+                    // Handle all resource type annotations in one go: there could be multiple
+                    // resource type annotations specified on the same element; we need to
+                    // know about them all up front.
+                    for (ResolvedAnnotation a : annotations) {
+                        String s = a.getSignature();
+                        if (s.endsWith(RES_SUFFIX)) {
+                            String typeString = s.substring(SUPPORT_ANNOTATIONS_PREFIX.length(),
+                                    s.length() - RES_SUFFIX.length()).toLowerCase(Locale.US);
+                            ResourceType type = ResourceType.getEnum(typeString);
+                            if (type != null) {
+                                if (types == null) {
+                                    types = EnumSet.of(type);
+                                } else {
+                                    types.add(type);
+                                }
+                            } else if (typeString.equals("any")) { // @AnyRes
+                                types = getAnyRes();
+                                break;
+                            }
+                        }
+                    }
+
+                    if (types != null) {
+                        checkResourceType(context, argument, types);
+                    }
                 }
             }
+        }
+    }
+
+    private static EnumSet<ResourceType> getAnyRes() {
+        EnumSet<ResourceType> types = EnumSet.allOf(ResourceType.class);
+        types.remove(COLOR_INT_MARKER_TYPE);
+        return types;
+    }
+
+    private void checkParameterPermission(
+            @NonNull JavaContext context,
+            @NonNull String signature,
+            @NonNull Node call,
+            @NonNull ResolvedMethod method,
+            @NonNull Node argument) {
+        Operation operation = null;
+        if (signature.equals(PERMISSION_ANNOTATION_READ)) {
+            operation = READ;
+        } else if (signature.equals(PERMISSION_ANNOTATION_WRITE)) {
+            operation = WRITE;
+        } else {
+            TypeDescriptor type = context.getType(argument);
+            if (type == null) {
+                return;
+            }
+            if (type.matchesSignature(CLASS_INTENT)) {
+                operation = ACTION;
+            }
+        }
+        if (operation == null) {
+            return;
+        }
+        Result result = PermissionFinder.findRequiredPermissions(operation, context, argument);
+        if (result != null) {
+            checkPermission(context, call, method, result, result.requirement);
         }
     }
 
@@ -333,7 +420,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             return;
         }
 
-        List<ResourceType> types = getResourceTypes(context, argument);
+        EnumSet<ResourceType> types = getResourceTypes(context, argument);
 
         if (types != null && types.contains(ResourceType.COLOR)) {
             String message = String.format(
@@ -345,10 +432,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private void checkPermission(
             @NonNull JavaContext context,
-            @NonNull MethodInvocation node,
-            @NonNull ResolvedMethod method,
-            @NonNull ResolvedAnnotation annotation) {
-        PermissionRequirement requirement = PermissionRequirement.create(context, annotation);
+            @NonNull Node node,
+            @Nullable ResolvedMethod method,
+            @Nullable Result result,
+            @NonNull PermissionRequirement requirement) {
         if (requirement.isConditional()) {
             return;
         }
@@ -358,8 +445,18 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             // annotations in the surrounding context
             permissions  = addLocalPermissions(context, permissions, node);
             if (!requirement.isSatisfied(permissions)) {
-                String name = method.getContainingClass().getSimpleName() + "." + method.getName();
-                String message = getMissingPermissionMessage(requirement, name, permissions);
+                Operation operation;
+                String name;
+                if (result != null) {
+                    name = result.name;
+                    operation = result.operation;
+                } else {
+                    assert method != null;
+                    name = method.getContainingClass().getSimpleName() + "." + method.getName();
+                    operation = Operation.CALL;
+                }
+                String message = getMissingPermissionMessage(requirement, name, permissions,
+                        operation);
                 context.report(MISSING_PERMISSION, node, context.getLocation(node), message);
             }
         } else if (requirement.isRevocable(permissions) &&
@@ -456,16 +553,17 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     /** Returns the error message shown when a given call is missing one or more permissions */
     public static String getMissingPermissionMessage(@NonNull PermissionRequirement requirement,
-            @NonNull String callName, @NonNull PermissionHolder permissions) {
-        return String.format("Missing permissions required by %1$s: %2$s", callName,
-                requirement.describeMissingPermissions(permissions));
+            @NonNull String callName, @NonNull PermissionHolder permissions,
+            @NonNull Operation operation) {
+        return String.format("Missing permissions required %1$s %2$s: %3$s", operation.prefix(),
+                callName, requirement.describeMissingPermissions(permissions));
     }
 
     /** Returns the error message shown when a revocable permission call is not properly handled */
     public static String getUnhandledPermissionMessage() {
         return "Call requires permission which may be rejected by user: code should explicitly "
-                + "check to see if permission is available (with `checkPermission`) or handle "
-                + "a potential `SecurityException`";
+                + "check to see if permission is available (with `checkPermission`) or explicitly "
+                + "handle a potential `SecurityException`";
     }
 
     /**
@@ -518,10 +616,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             @NonNull JavaContext context,
             @NonNull TypeReference typeReference) {
         TypeDescriptor type = context.getType(typeReference);
-        return type != null && (type.matchesSignature("java.lang.SecurityException") ||
-                type.matchesSignature("java.lang.RuntimeException") ||
-                type.matchesSignature("java.lang.Exception") ||
-                type.matchesSignature("java.lang.Throwable"));
+        // In earlier versions we checked not just for java.lang.SecurityException but
+        // any super type as well, however that probably hides warnings in cases where
+        // users don't want that; see http://b.android.com/182165
+        return type != null && type.matchesSignature("java.lang.SecurityException");
     }
 
     private PermissionHolder mPermissions;
@@ -544,7 +642,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 }
             }
 
-            mPermissions = new SetPermissionLookup(permissions, revocable);
+            AndroidVersion minSdkVersion = mainProject.getMinSdkVersion();
+            AndroidVersion targetSdkVersion = mainProject.getTargetSdkVersion();
+            mPermissions = new SetPermissionLookup(permissions, revocable, minSdkVersion,
+                targetSdkVersion);
         }
 
         return mPermissions;
@@ -569,7 +670,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 continue;
             }
             String nodeName = item.getNodeName();
-            if (nodeName.equals(TAG_USES_PERMISSION)) {
+            if (nodeName.equals(TAG_USES_PERMISSION)
+                || nodeName.equals(TAG_USES_PERMISSION_SDK_23)
+                || nodeName.equals(TAG_USES_PERMISSION_SDK_M)) {
                 Element element = (Element)item;
                 String name = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
                 if (!name.isEmpty()) {
@@ -589,10 +692,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
     }
 
-    private static void checkResult(@NonNull JavaContext context, @NonNull MethodInvocation node,
+    private static void checkResult(@NonNull JavaContext context, @NonNull Node node,
             @NonNull ResolvedAnnotation annotation) {
         if (node.getParent() instanceof ExpressionStatement) {
-            String methodName = node.astName().astValue();
+            String methodName = JavaContext.getMethodName(node);
             Object suggested = annotation.getValue(ATTR_SUGGEST);
 
             // Failing to check permissions is a potential security issue (and had an existing
@@ -600,7 +703,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             // custom severity in their LintOptions etc) so continue to use that issue
             // (which also has category Security rather than Correctness) for these:
             Issue issue = CHECK_RESULT;
-            if (methodName.startsWith("check") && methodName.contains("Permission")) {
+            if (methodName != null && methodName.startsWith("check")
+                    && methodName.contains("Permission")) {
                 issue = CHECK_PERMISSION;
             }
 
@@ -619,7 +723,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private static void checkThreading(
             @NonNull JavaContext context,
-            @NonNull MethodInvocation node,
+            @NonNull Node node,
             @NonNull ResolvedMethod method,
             @NonNull String annotation) {
         String threadContext = getThreadContext(context, node);
@@ -671,7 +775,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     /** Attempts to infer the current thread context at the site of the given method call */
     @Nullable
     private static String getThreadContext(@NonNull JavaContext context,
-            @NonNull MethodInvocation methodCall) {
+            @NonNull Node methodCall) {
         Node node = findSurroundingMethod(methodCall);
         if (node != null) {
             ResolvedNode resolved = context.resolve(node);
@@ -735,25 +839,25 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     private static void checkResourceType(
             @NonNull JavaContext context,
             @NonNull Node argument,
-            @Nullable ResourceType expectedType) {
-        List<ResourceType> actual = getResourceTypes(context, argument);
+            @NonNull EnumSet<ResourceType> expectedType) {
+        EnumSet<ResourceType> actual = getResourceTypes(context, argument);
         if (actual == null && (!isNumber(argument) || isZero(argument) || isMinusOne(argument)) ) {
             return;
-        } else if (actual != null && (expectedType == null
-                || actual.contains(expectedType)
-                || expectedType == DRAWABLE && (actual.contains(COLOR) || actual.contains(MIPMAP)))) {
+        } else if (actual != null && (!Sets.intersection(actual, expectedType).isEmpty()
+                || expectedType.contains(DRAWABLE)
+                && (actual.contains(COLOR) || actual.contains(MIPMAP)))) {
             return;
         }
 
         String message;
-        if (actual != null && actual.size() == 1 && actual.get(0) == COLOR_INT_MARKER_TYPE) {
+        if (actual != null && actual.size() == 1 && actual.contains(COLOR_INT_MARKER_TYPE)) {
             message = "Expected a color resource id (`R.color.`) but received an RGB integer";
-        } else if (expectedType == COLOR_INT_MARKER_TYPE) {
+        } else if (expectedType.contains(COLOR_INT_MARKER_TYPE)) {
             message = String.format("Should pass resolved color instead of resource id here: " +
                     "`getResources().getColor(%1$s)`", argument.toString());
-        } else if (expectedType != null) {
-            message = String.format(
-                    "Expected resource of type %1$s", expectedType.getName());
+        } else if (expectedType.size() < ResourceType.getNames().length - 1) {
+            message = String.format("Expected resource of type %1$s",
+                    Joiner.on(" or ").join(expectedType));
         } else {
             message = "Expected resource identifier (`R`.type.`name`)";
         }
@@ -761,7 +865,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     }
 
     @Nullable
-    private static List<ResourceType> getResourceTypes(@NonNull JavaContext context,
+    private static EnumSet<ResourceType> getResourceTypes(@NonNull JavaContext context,
             @NonNull Node argument) {
         if (argument instanceof Select) {
             Select node = (Select) argument;
@@ -772,7 +876,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     if (innerSelect.astIdentifier().astValue().equals(R_CLASS)) {
                         String typeName = select.astIdentifier().astValue();
                         ResourceType type = ResourceType.getEnum(typeName);
-                        return type != null ? Collections.singletonList(type) : null;
+                        return type != null ? EnumSet.of(type) : null;
                     }
                 }
                 if (select.astOperand() instanceof VariableReference) {
@@ -780,7 +884,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     if (reference.astIdentifier().astValue().equals(R_CLASS)) {
                         String typeName = select.astIdentifier().astValue();
                         ResourceType type = ResourceType.getEnum(typeName);
-                        return type != null ? Collections.singletonList(type) : null;
+                        return type != null ? EnumSet.of(type) : null;
                     }
                 }
             }
@@ -797,7 +901,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                             Select typeSelect = (Select) typeOperand;
                             String typeName = typeSelect.astIdentifier().astValue();
                             ResourceType type = ResourceType.getEnum(typeName);
-                            return type != null ? Collections.singletonList(type) : null;
+                            return type != null ? EnumSet.of(type) : null;
                         }
                     }
                 }
@@ -848,7 +952,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 for (ResolvedAnnotation annotation : resolved.getAnnotations()) {
                     String signature = annotation.getSignature();
                     if (signature.equals(COLOR_INT_ANNOTATION)) {
-                        return Collections.singletonList(COLOR_INT_MARKER_TYPE);
+                        return EnumSet.of(COLOR_INT_MARKER_TYPE);
                     }
                     if (signature.endsWith(RES_SUFFIX)
                             && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
@@ -856,18 +960,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                                 signature.length() - RES_SUFFIX.length()).toLowerCase(Locale.US);
                         ResourceType type = ResourceType.getEnum(typeString);
                         if (type != null) {
-                            return Collections.singletonList(type);
+                            return EnumSet.of(type);
                         } else if (typeString.equals("any")) { // @AnyRes
-                            ResourceType[] types = ResourceType.values();
-                            List<ResourceType> result = Lists.newArrayListWithExpectedSize(
-                                    types.length);
-                            for (ResourceType t : types) {
-                                if (t != COLOR_INT_MARKER_TYPE) {
-                                    result.add(t);
-                                }
-                            }
-
-                            return result;
+                            return getAnyRes();
                         }
                     }
                 }
@@ -880,19 +975,35 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     private static void checkIntRange(
             @NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation,
+            @NonNull Node argument,
+            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
+        String message = getIntRangeError(context, annotation, argument);
+        if (message != null) {
+            if (findIntDef(allAnnotations) != null) {
+                // Don't flag int range errors if there is an int def annotation there too;
+                // there could be a valid @IntDef constant. (The @IntDef check will
+                // perform range validation by calling getIntRange.)
+                return;
+            }
+
+            context.report(RANGE, argument, context.getLocation(argument), message);
+        }
+    }
+
+    @Nullable
+    private static String getIntRangeError(
+            @NonNull JavaContext context,
+            @NonNull ResolvedAnnotation annotation,
             @NonNull Node argument) {
         Object object = ConstantEvaluator.evaluate(context, argument);
         if (!(object instanceof Number)) {
-            return;
+            return null;
         }
         long value = ((Number)object).longValue();
         long from = getLongAttribute(annotation, ATTR_FROM, Long.MIN_VALUE);
         long to = getLongAttribute(annotation, ATTR_TO, Long.MAX_VALUE);
 
-        String message = getIntRangeError(value, from, to);
-        if (message != null) {
-            context.report(RANGE, argument, context.getLocation(argument), message);
-        }
+        return getIntRangeError(value, from, to);
     }
 
     /**
@@ -1083,12 +1194,37 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         return message;
     }
 
+    @Nullable
+    private static ResolvedAnnotation findIntRange(
+            @NonNull Iterable<ResolvedAnnotation> annotations) {
+        for (ResolvedAnnotation annotation : annotations) {
+            if (INT_RANGE_ANNOTATION.equals(annotation.getName())) {
+                return annotation;
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    private static ResolvedAnnotation findIntDef(
+            @NonNull Iterable<ResolvedAnnotation> annotations) {
+        for (ResolvedAnnotation annotation : annotations) {
+            if (INT_DEF_ANNOTATION.equals(annotation.getName())) {
+                return annotation;
+            }
+        }
+
+        return null;
+    }
+
     private static void checkTypeDefConstant(
             @NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation,
             @NonNull Node argument,
             @Nullable Node errorNode,
-            boolean flag) {
+            boolean flag,
+            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
         if (argument instanceof NullLiteral) {
             // Accepted for @StringDef
             return;
@@ -1096,7 +1232,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
         if (argument instanceof StringLiteral) {
             StringLiteral string = (StringLiteral) argument;
-            checkTypeDefConstant(context, annotation, argument, errorNode, false, string.astValue());
+            checkTypeDefConstant(context, annotation, argument, errorNode, false, string.astValue(),
+                    allAnnotations);
         } else if (argument instanceof IntegralLiteral) {
             IntegralLiteral literal = (IntegralLiteral) argument;
             int value = literal.astIntValue();
@@ -1104,35 +1241,68 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 // Accepted for a flag @IntDef
                 return;
             }
-            checkTypeDefConstant(context, annotation, argument, errorNode, flag, value);
+
+            ResolvedAnnotation rangeAnnotation = findIntRange(allAnnotations);
+            if (rangeAnnotation != null) {
+                // Allow @IntRange on this number
+                if (getIntRangeError(context, rangeAnnotation, literal) == null) {
+                    return;
+                }
+            }
+
+            checkTypeDefConstant(context, annotation, argument, errorNode, flag, value,
+                    allAnnotations);
         } else if (isMinusOne(argument)) {
             // -1 is accepted unconditionally for flags
             if (!flag) {
-                reportTypeDef(context, annotation, argument, errorNode);
+                ResolvedAnnotation rangeAnnotation = findIntRange(allAnnotations);
+                if (rangeAnnotation != null) {
+                    // Allow @IntRange on this number
+                    if (getIntRangeError(context, rangeAnnotation, argument) == null) {
+                        return;
+                    }
+                }
+
+                reportTypeDef(context, annotation, argument, errorNode, allAnnotations);
             }
         } else if (argument instanceof InlineIfExpression) {
             InlineIfExpression expression = (InlineIfExpression) argument;
             if (expression.astIfTrue() != null) {
-                checkTypeDefConstant(context, annotation, expression.astIfTrue(), errorNode, flag);
+                checkTypeDefConstant(context, annotation, expression.astIfTrue(), errorNode, flag,
+                        allAnnotations);
             }
             if (expression.astIfFalse() != null) {
-                checkTypeDefConstant(context, annotation, expression.astIfFalse(), errorNode, flag);
+                checkTypeDefConstant(context, annotation, expression.astIfFalse(), errorNode, flag,
+                        allAnnotations);
             }
         } else if (argument instanceof UnaryExpression) {
             UnaryExpression expression = (UnaryExpression) argument;
             UnaryOperator operator = expression.astOperator();
             if (flag) {
-                checkTypeDefConstant(context, annotation, expression.astOperand(), errorNode, true);
+                checkTypeDefConstant(context, annotation, expression.astOperand(), errorNode, true,
+                        allAnnotations);
             } else if (operator == UnaryOperator.BINARY_NOT) {
                 context.report(TYPE_DEF, expression, context.getLocation(expression),
                         "Flag not allowed here");
+            } else if (operator == UnaryOperator.UNARY_MINUS) {
+                ResolvedAnnotation rangeAnnotation = findIntRange(allAnnotations);
+                if (rangeAnnotation != null) {
+                    // Allow @IntRange on this number
+                    if (getIntRangeError(context, rangeAnnotation, argument) == null) {
+                        return;
+                    }
+                }
+
+                reportTypeDef(context, annotation, argument, errorNode, allAnnotations);
             }
         } else if (argument instanceof BinaryExpression) {
             // If it's ?: then check both the if and else clauses
             BinaryExpression expression = (BinaryExpression) argument;
             if (flag) {
-                checkTypeDefConstant(context, annotation, expression.astLeft(), errorNode, true);
-                checkTypeDefConstant(context, annotation, expression.astRight(), errorNode, true);
+                checkTypeDefConstant(context, annotation, expression.astLeft(), errorNode, true,
+                        allAnnotations);
+                checkTypeDefConstant(context, annotation, expression.astRight(), errorNode, true,
+                        allAnnotations);
             } else {
                 BinaryOperator operator = expression.astOperator();
                 if (operator == BinaryOperator.BITWISE_AND
@@ -1145,7 +1315,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         } else {
             ResolvedNode resolved = context.resolve(argument);
             if (resolved instanceof ResolvedField) {
-                checkTypeDefConstant(context, annotation, argument, errorNode, flag, resolved);
+                checkTypeDefConstant(context, annotation, argument, errorNode, flag, resolved,
+                        allAnnotations);
             } else if (argument instanceof VariableReference) {
                 Statement statement = getParentOfType(argument, Statement.class, false);
                 if (statement != null) {
@@ -1171,7 +1342,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                                         && entry.astName().astValue().equals(targetName)) {
                                     checkTypeDefConstant(context, annotation,
                                             entry.astInitializer(),
-                                            errorNode != null ? errorNode : argument, flag);
+                                            errorNode != null ? errorNode : argument, flag,
+                                            allAnnotations);
                                     return;
                                 }
                             }
@@ -1185,7 +1357,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                                 if (targetName.equals(binaryExpression.astLeft().toString())) {
                                     checkTypeDefConstant(context, annotation,
                                             binaryExpression.astRight(),
-                                            errorNode != null ? errorNode : argument, flag);
+                                            errorNode != null ? errorNode : argument, flag,
+                                            allAnnotations);
                                     return;
                                 }
                             }
@@ -1198,7 +1371,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private static void checkTypeDefConstant(@NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation, @NonNull Node argument,
-            @Nullable Node errorNode, boolean flag, Object value) {
+            @Nullable Node errorNode, boolean flag, Object value,
+            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
         Object allowed = annotation.getValue();
         if (allowed instanceof Object[]) {
             Object[] allowedValues = (Object[]) allowed;
@@ -1207,22 +1381,23 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     return;
                 }
             }
-            reportTypeDef(context, argument, errorNode, flag, allowedValues);
+            reportTypeDef(context, argument, errorNode, flag, allowedValues, allAnnotations);
         }
     }
 
     private static void reportTypeDef(@NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation, @NonNull Node argument,
-            @Nullable Node errorNode) {
+            @Nullable Node errorNode, @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
         Object allowed = annotation.getValue();
         if (allowed instanceof Object[]) {
             Object[] allowedValues = (Object[]) allowed;
-            reportTypeDef(context, argument, errorNode, false, allowedValues);
+            reportTypeDef(context, argument, errorNode, false, allowedValues, allAnnotations);
         }
     }
 
     private static void reportTypeDef(@NonNull JavaContext context, @NonNull Node node,
-            @Nullable Node errorNode, boolean flag, @NonNull Object[] allowedValues) {
+            @Nullable Node errorNode, boolean flag, @NonNull Object[] allowedValues,
+            @NonNull Iterable<ResolvedAnnotation> allAnnotations) {
         String values = listAllowedValues(allowedValues);
         String message;
         if (flag) {
@@ -1230,6 +1405,17 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         } else {
             message = "Must be one of: " + values;
         }
+
+        ResolvedAnnotation rangeAnnotation = findIntRange(allAnnotations);
+        if (rangeAnnotation != null) {
+            // Allow @IntRange on this number
+            String rangeError = getIntRangeError(context, rangeAnnotation, node);
+            if (rangeError != null && !rangeError.isEmpty()) {
+                message += " or " + Character.toLowerCase(rangeError.charAt(0))
+                        + rangeError.substring(1);
+            }
+        }
+
         if (errorNode == null) {
             errorNode = node;
         }
@@ -1293,42 +1479,66 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         return defaultValue;
     }
 
-    @Nullable
-    static ResolvedAnnotation getRelevantAnnotation(@NonNull ResolvedAnnotation annotation) {
-        String signature = annotation.getSignature();
-        if (signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
-            // Bail on the nullness annotations early since they're the most commonly
-            // defined ones. They're not analyzed in lint yet.
-            if (signature.endsWith(".Nullable") || signature.endsWith(".NonNull")) {
-                return null;
+    @NonNull
+    static Iterable<ResolvedAnnotation> filterRelevantAnnotations(
+            @NonNull Iterable<ResolvedAnnotation> annotations) {
+        List<ResolvedAnnotation> result = null;
+        Iterator<ResolvedAnnotation> iterator = annotations.iterator();
+        int index = 0;
+        while (iterator.hasNext()) {
+            ResolvedAnnotation annotation = iterator.next();
+            index++;
+
+            String signature = annotation.getSignature();
+            if (signature.startsWith("java.")) {
+                // @Override, @SuppressWarnings etc. Ignore
+                continue;
             }
 
+            if (signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
+                // Bail on the nullness annotations early since they're the most commonly
+                // defined ones. They're not analyzed in lint yet.
+                if (signature.endsWith(".Nullable") || signature.endsWith(".NonNull")) {
+                    continue;
+                }
 
-            return annotation;
-        }
+                // Common case: there's just one annotation; no need to create a list copy
+                if (!iterator.hasNext() && index == 1) {
+                    return annotations;
+                }
+                if (result == null) {
+                    result = new ArrayList<ResolvedAnnotation>(2);
+                }
+                result.add(annotation);
+            }
 
-        if (signature.startsWith("java.")) {
-            // @Override, @SuppressWarnings etc. Ignore
-            return null;
-        }
-
-        // Special case @IntDef and @StringDef: These are used on annotations
-        // themselves. For example, you create a new annotation named @foo.bar.Baz,
-        // annotate it with @IntDef, and then use @foo.bar.Baz in your signatures.
-        // Here we want to map from @foo.bar.Baz to the corresponding int def.
-        // Don't need to compute this if performing @IntDef or @StringDef lookup
-        ResolvedClass type = annotation.getClassType();
-        if (type != null) {
-            for (ResolvedAnnotation inner : type.getAnnotations()) {
-                if (inner.matches(INT_DEF_ANNOTATION)
-                        || inner.matches(STRING_DEF_ANNOTATION)
-                        || inner.matches(PERMISSION_ANNOTATION)) {
-                    return inner;
+            // Special case @IntDef and @StringDef: These are used on annotations
+            // themselves. For example, you create a new annotation named @foo.bar.Baz,
+            // annotate it with @IntDef, and then use @foo.bar.Baz in your signatures.
+            // Here we want to map from @foo.bar.Baz to the corresponding int def.
+            // Don't need to compute this if performing @IntDef or @StringDef lookup
+            ResolvedClass type = annotation.getClassType();
+            if (type != null) {
+                Iterator<ResolvedAnnotation> iterator2 = type.getAnnotations().iterator();
+                while (iterator2.hasNext()) {
+                    ResolvedAnnotation inner = iterator2.next();
+                    if (inner.matches(INT_DEF_ANNOTATION)
+                            || inner.matches(PERMISSION_ANNOTATION)
+                            || inner.matches(INT_RANGE_ANNOTATION)
+                            || inner.matches(STRING_DEF_ANNOTATION)) {
+                        if (!iterator.hasNext() && !iterator2.hasNext() && index == 1) {
+                            return annotations;
+                        }
+                        if (result == null) {
+                            result = new ArrayList<ResolvedAnnotation>(2);
+                        }
+                        result.add(inner);
+                    }
                 }
             }
         }
 
-        return null;
+        return result != null ? result : Collections.<ResolvedAnnotation>emptyList();
     }
 
     // ---- Implements JavaScanner ----
@@ -1336,7 +1546,11 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     @Override
     public
     List<Class<? extends Node>> getApplicableNodeTypes() {
-        return Collections.<Class<? extends Node>>singletonList(MethodInvocation.class);
+        //noinspection unchecked
+        return Arrays.<Class<? extends Node>>asList(
+          MethodInvocation.class,
+          ConstructorInvocation.class,
+          EnumConstant.class);
     }
 
     @Nullable
@@ -1357,42 +1571,60 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             ResolvedNode resolved = mContext.resolve(call);
             if (resolved instanceof ResolvedMethod) {
                 ResolvedMethod method = (ResolvedMethod) resolved;
-                Iterable<ResolvedAnnotation> annotations = method.getAnnotations();
-                for (ResolvedAnnotation annotation : annotations) {
-                    annotation = getRelevantAnnotation(annotation);
-                    if (annotation != null) {
-                        checkMethodAnnotation(mContext, method, call, annotation);
-                    }
-                }
-
-                // Look for annotations on the class as well: these trickle
-                // down to all the methods in the class
-                ResolvedClass containingClass = method.getContainingClass();
-                annotations = containingClass.getAnnotations();
-                for (ResolvedAnnotation annotation : annotations) {
-                    annotation = getRelevantAnnotation(annotation);
-                    if (annotation != null) {
-                        checkMethodAnnotation(mContext, method, call, annotation);
-                    }
-                }
-
-                Iterator<Expression> arguments = call.astArguments().iterator();
-                for (int i = 0, n = method.getArgumentCount();
-                        i < n && arguments.hasNext();
-                        i++) {
-                    Expression argument = arguments.next();
-
-                    annotations = method.getParameterAnnotations(i);
-                    for (ResolvedAnnotation annotation : annotations) {
-                        annotation = getRelevantAnnotation(annotation);
-                        if (annotation != null) {
-                            checkParameterAnnotation(mContext, argument, annotation);
-                        }
-                    }
-                }
+                checkCall(call, method);
             }
 
             return false;
+        }
+
+        @Override
+        public boolean visitConstructorInvocation(@NonNull ConstructorInvocation call) {
+            ResolvedNode resolved = mContext.resolve(call);
+            if (resolved instanceof ResolvedMethod) {
+                ResolvedMethod method = (ResolvedMethod) resolved;
+                checkCall(call, method);
+            }
+
+            return false;
+        }
+
+        @Override
+        public boolean visitEnumConstant(EnumConstant node) {
+            ResolvedNode resolved = mContext.resolve(node);
+            if (resolved instanceof ResolvedMethod) {
+                ResolvedMethod method = (ResolvedMethod) resolved;
+                checkCall(node, method);
+            }
+
+            return false;
+        }
+
+        private void checkCall(@NonNull Node call, ResolvedMethod method) {
+            Iterable<ResolvedAnnotation> annotations = method.getAnnotations();
+            annotations = filterRelevantAnnotations(annotations);
+            for (ResolvedAnnotation annotation : annotations) {
+                checkMethodAnnotation(mContext, method, call, annotation);
+            }
+
+            // Look for annotations on the class as well: these trickle
+            // down to all the methods in the class
+            ResolvedClass containingClass = method.getContainingClass();
+            annotations = containingClass.getAnnotations();
+            annotations = filterRelevantAnnotations(annotations);
+            for (ResolvedAnnotation annotation : annotations) {
+                checkMethodAnnotation(mContext, method, call, annotation);
+            }
+
+            Iterator<Expression> arguments = JavaContext.getParameters(call);
+            for (int i = 0, n = method.getArgumentCount();
+                    i < n && arguments.hasNext();
+                    i++) {
+                Expression argument = arguments.next();
+
+                annotations = method.getParameterAnnotations(i);
+                annotations = filterRelevantAnnotations(annotations);
+                checkParameterAnnotations(mContext, argument, call, method, annotations);
+            }
         }
     }
 }

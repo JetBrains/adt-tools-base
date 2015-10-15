@@ -15,22 +15,25 @@
  */
 
 package com.android.build.gradle.integration.component
+
+import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+import org.junit.experimental.categories.Category
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 
 /**
  * Basic integration test for LibraryComponentModelPlugin.
  */
+@Category(SmokeTests.class)
 @CompileStatic
 class LibraryComponentPluginTest {
     private static HelloWorldLibraryApp testApp = new HelloWorldLibraryApp()
@@ -40,10 +43,6 @@ class LibraryComponentPluginTest {
         app.addFile(new TestSourceFile("", "build.gradle",
 """
 apply plugin: "com.android.model.application"
-
-configurations {
-    compile
-}
 
 dependencies {
     compile project(":lib")
@@ -96,6 +95,6 @@ model {
     @Test
     void "check build config file is included"() {
         File releaseAar = project.getSubproject("lib").getAar("release");
-        assertThatAar(releaseAar).containsClass("com/example/helloworld/BuildConfig.class");
+        assertThatAar(releaseAar).containsClass("Lcom/example/helloworld/BuildConfig;");
     }
 }

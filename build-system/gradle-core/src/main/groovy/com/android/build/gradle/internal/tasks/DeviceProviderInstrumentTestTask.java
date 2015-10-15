@@ -24,6 +24,7 @@ import static com.android.builder.core.BuilderConstants.FD_REPORTS;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -41,6 +42,7 @@ import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestException;
 import com.android.ide.common.process.ProcessExecutor;
+import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableList;
 
@@ -85,10 +87,10 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
             TestRunner.NoAuthorizedDeviceFoundException, TestException {
 
         File resultsOutDir = getResultsDir();
-        emptyFolder(resultsOutDir);
+        FileUtils.emptyFolder(resultsOutDir);
 
         File coverageOutDir = getCoverageDir();
-        emptyFolder(coverageOutDir);
+        FileUtils.emptyFolder(coverageOutDir);
 
         boolean success = false;
         // If there are tests to run, and the test runner returns with no results, we fail (since
@@ -102,7 +104,8 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         } else {
             File testApk = testData.getTestApk();
             String flavor = getFlavorName();
-            TestRunner testRunner = new SimpleTestRunner(getAdbExec(), getSplitSelectExec(),
+            TestRunner testRunner = new SimpleTestRunner(
+                    getSplitSelectExec(),
                     getProcessExecutor());
             deviceProvider.init();
 
@@ -127,7 +130,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
 
         // run the report from the results.
         File reportOutDir = getReportsDir();
-        emptyFolder(reportOutDir);
+        FileUtils.emptyFolder(reportOutDir);
 
         TestReport report = new TestReport(ReportType.SINGLE_FLAVOR, resultsOutDir, reportOutDir);
         report.generateReport();
@@ -260,28 +263,36 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
 
     public static class ConfigAction implements TaskConfigAction<DeviceProviderInstrumentTestTask> {
 
+        @NonNull
         private final VariantScope scope;
+        @NonNull
         private final DeviceProvider deviceProvider;
+        @NonNull
         private final TestData testData;
 
-        public ConfigAction(VariantScope scope, DeviceProvider deviceProvider, TestData testData) {
+        public ConfigAction(
+                @NonNull VariantScope scope,
+                @NonNull DeviceProvider deviceProvider,
+                @NonNull TestData testData) {
             this.scope = scope;
             this.deviceProvider = deviceProvider;
             this.testData = testData;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return scope.getTaskName(deviceProvider.getName());
         }
 
+        @NonNull
         @Override
         public Class<DeviceProviderInstrumentTestTask> getType() {
             return DeviceProviderInstrumentTestTask.class;
         }
 
         @Override
-        public void execute(DeviceProviderInstrumentTestTask task) {
+        public void execute(@NonNull DeviceProviderInstrumentTestTask task) {
             final boolean connected = deviceProvider instanceof ConnectedDeviceProvider;
             String variantName = scope.getTestedVariantData() != null ?
                     scope.getTestedVariantData().getName() : scope.getVariantData().getName();
@@ -295,6 +306,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
             }
             task.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
             task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            task.setVariantName(variantName);
             task.setTestData(testData);
             task.setFlavorName(testData.getFlavorName());
             task.setDeviceProvider(deviceProvider);

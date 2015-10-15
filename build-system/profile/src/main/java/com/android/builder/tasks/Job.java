@@ -22,6 +22,7 @@ import com.google.common.base.Objects;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Definition of a queued job. A job has a title, a task to execute, a latch to signal its
@@ -33,11 +34,13 @@ public class Job<T> {
     private final Task<T> mTask;
     private final BooleanLatch mBooleanLatch;
     private final AtomicBoolean mResult = new AtomicBoolean(false);
+    private final AtomicReference<Exception> mException;
 
     public Job(String jobTile, Task<T> task) {
         mJobTitle = jobTile;
         mTask = task;
         mBooleanLatch = new BooleanLatch();
+        mException = new AtomicReference(null);
     }
 
     public String getJobTitle() {
@@ -53,9 +56,15 @@ public class Job<T> {
         mBooleanLatch.signal();
     }
 
-    public void error() {
+    public void error(@Nullable Exception e) {
         mResult.set(false);
+        mException.set(e);
         mBooleanLatch.signal();
+    }
+
+    @Nullable
+    public Exception getFailureReason() {
+        return mException.get();
     }
 
     public boolean await() throws InterruptedException {
@@ -64,13 +73,25 @@ public class Job<T> {
         return mResult.get();
     }
 
+    public boolean awaitRethrowExceptions() throws InterruptedException, RuntimeException {
+        boolean result = await();
+        if (!result && mException.get() != null) {
+            throw new RuntimeException(mException.get());
+        }
+        return result;
+    }
+
+    public boolean failed() {
+        return !mResult.get();
+    }
+
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-                .add("title", mJobTitle)
-                .add("task", mTask)
-                .add("latch", mBooleanLatch)
-                .add("result", mResult.get())
+                .add("\ntitle", mJobTitle)
+                .add("\ntask", mTask)
+                .add("\nlatch", mBooleanLatch)
+                .add("\nresult", mResult.get())
                 .toString();
     }
 }

@@ -24,9 +24,11 @@ import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.AndroidConfigHelper;
 import com.android.build.gradle.internal.ExecutionConfigurationUtil;
 import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.JniLibsLanguageTransform;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.NdkOptionsHelper;
@@ -34,11 +36,13 @@ import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
+import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
 import com.android.build.gradle.internal.tasks.SigningReportTask;
+import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
@@ -51,18 +55,19 @@ import com.android.build.gradle.managed.adaptor.AndroidConfigAdaptor;
 import com.android.build.gradle.managed.adaptor.BuildTypeAdaptor;
 import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor;
 import com.android.build.gradle.tasks.JillTask;
-import com.android.build.gradle.tasks.PreDex;
+import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.profile.ProcessRecorderFactory;
+import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.ide.common.internal.ExecutorSingleton;
-import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
+import com.android.resources.Density;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -82,6 +87,7 @@ import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.language.base.internal.registry.LanguageTransformContainer;
 import org.gradle.model.Defaults;
 import org.gradle.model.Model;
 import org.gradle.model.ModelMap;
@@ -99,6 +105,7 @@ import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -124,10 +131,25 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
     public void apply(Project project) {
         ExecutionConfigurationUtil.setThreadPoolSize(project);
         try {
+            List<Recorder.Property> propertyList = Lists.newArrayList(
+                    new Recorder.Property("plugin_version", Version.ANDROID_GRADLE_PLUGIN_VERSION),
+                    new Recorder.Property("next_gen_plugin", "true"),
+                    new Recorder.Property("gradle_version", project.getGradle().getGradleVersion())
+            );
+            String benchmarkName = AndroidGradleOptions.getBenchmarkName(project);
+            if (benchmarkName != null) {
+                propertyList.add(new Recorder.Property("benchmark_name", benchmarkName));
+            }
+            String benchmarkMode = AndroidGradleOptions.getBenchmarkMode(project);
+            if (benchmarkMode != null) {
+                propertyList.add(new Recorder.Property("benchmark_mode", benchmarkMode));
+            }
+
             ProcessRecorderFactory.initialize(
                     new LoggerWrapper(project.getLogger()),
                     project.getRootProject()
-                            .file("profiler" + System.currentTimeMillis() + ".json"));
+                            .file("profiler" + System.currentTimeMillis() + ".json"),
+                    propertyList);
         } catch (IOException e) {
             throw new RuntimeException("Unable to initialize ProcessRecorderFactory");
         }
@@ -137,10 +159,17 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         project.getPlugins().apply(JavaBasePlugin.class);
         project.getPlugins().apply(JacocoPlugin.class);
 
-        // TODO: Create configurations for build types and flavors, or migrate to new dependency
-        // management if it's ready.
+        // Create default configurations.  ConfigurationContainer is not part of the component
+        // model, making it difficult to define proper rules to create configurations based on
+        // build types and product flavors.  We just create the default configurations for now
+        // which should handle the majority of the use cases.
+        // Users can still use variant specific configurations, they just have to be manually
+        // created.
+        // TODO: Migrate to new dependency management if it's ready.
         ConfigurationContainer configurations = project.getConfigurations();
-        createConfiguration(configurations, "compile", "Classpath for default sources.");
+        createConfiguration(configurations, "compile", "Classpath for compiling the default sources.");
+        createConfiguration(configurations, "testCompile", "Classpath for compiling the test sources.");
+        createConfiguration(configurations, "androidTestCompile", "Classpath for compiling the androidTest sources.");
         createConfiguration(configurations, "default-metadata", "Metadata for published APKs");
         createConfiguration(configurations, "default-mapping", "Metadata for published APKs");
 
@@ -174,22 +203,39 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
     @SuppressWarnings("MethodMayBeStatic")
     public static class Rules extends RuleSource {
 
+        @Mutate
+        void registerLanguageTransform(
+                LanguageTransformContainer languages,
+                ServiceRegistry serviceRegistry) {
+            languages.add(new JniLibsLanguageTransform());
+        }
+
         @Defaults
         public void configureAndroidModel(
                 AndroidConfig androidModel,
                 ServiceRegistry serviceRegistry) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
             AndroidConfigHelper.configure(androidModel, instantiator);
+        }
 
-            androidModel.getSigningConfigs().create(DEBUG, new Action<SigningConfig>() {
+        @Defaults
+        public void initSigningConfigs(
+                @Path("android.signingConfigs") ModelMap<SigningConfig> signingConfigs) {
+            signingConfigs.beforeEach(new Action<SigningConfig>() {
+                @Override
+                public void execute(SigningConfig signingConfig) {
+                    signingConfig.setStoreType(KeyStore.getDefaultType());
+                }
+            });
+            signingConfigs.create(DEBUG, new Action<SigningConfig>() {
                 @Override
                 public void execute(SigningConfig signingConfig) {
                     try {
-                        signingConfig.setStoreFile(KeystoreHelper.defaultDebugKeystoreLocation());
+                        signingConfig.setStoreFile(
+                                new File(KeystoreHelper.defaultDebugKeystoreLocation()));
                         signingConfig.setStorePassword(DefaultSigningConfig.DEFAULT_PASSWORD);
                         signingConfig.setKeyAlias(DefaultSigningConfig.DEFAULT_ALIAS);
                         signingConfig.setKeyPassword(DefaultSigningConfig.DEFAULT_PASSWORD);
-                        signingConfig.setStoreType(KeyStore.getDefaultType());
                     } catch (AndroidLocation.AndroidLocationException e) {
                         throw new RuntimeException(e);
                     }
@@ -249,11 +295,13 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             project.getGradle().getTaskGraph().whenReady(new Closure<Void>(this, this) {
                 public void doCall(TaskExecutionGraph taskGraph) {
                     for (Task task : taskGraph.getAllTasks()) {
-                        if (task instanceof PreDex) {
-                            PreDexCache.getCache().load(project.getRootProject()
-                                    .file(String.valueOf(project.getRootProject().getBuildDir())
-                                            + "/" + FD_INTERMEDIATES + "/dex-cache/cache.xml"));
-                            break;
+                        if (task instanceof TransformTask) {
+                            if (((TransformTask) task).getTransform() instanceof DexTransform) {
+                                PreDexCache.getCache().load(project.getRootProject()
+                                        .file(String.valueOf(project.getRootProject().getBuildDir())
+                                                + "/" + FD_INTERMEDIATES + "/dex-cache/cache.xml"));
+                                break;
+                            }
                         } else if (task instanceof JillTask) {
                             JackConversionCache.getCache().load(project.getRootProject()
                                     .file(String.valueOf(project.getRootProject().getBuildDir())
@@ -284,12 +332,12 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
             return new AndroidBuilder(project.equals(project.getRootProject()) ? project.getName()
                     : project.getPath(), creator, new GradleProcessExecutor(project),
-                    new GradleJavaProcessExecutor(project), new LoggedProcessOutputHandler(logger),
+                    new GradleJavaProcessExecutor(project),
                     extraModelInfo, logger, project.getLogger().isEnabled(LogLevel.INFO));
 
         }
 
-        @Mutate
+        @Defaults
         public void initDebugBuildTypes(
                 @Path("android.buildTypes") ModelMap<BuildType> buildTypes,
                 @Path("android.signingConfigs") final ModelMap<SigningConfig> signingConfigs) {
@@ -324,12 +372,19 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             buildType.setTestProguardFiles(Sets.<File>newHashSet());
         }
 
-        @Mutate
+        @Defaults
         public void initDefaultConfig(@Path("android.defaultConfig") ProductFlavor defaultConfig) {
             initProductFlavor(defaultConfig);
+
+            Set<Density> densities = Density.getRecommendedValuesForDevice();
+            Set<String> strings = Sets.newHashSetWithExpectedSize(densities.size());
+            for (Density density : densities) {
+                strings.add(density.getResourceValue());
+            }
+            defaultConfig.setGeneratedDensities(strings);
         }
 
-        @Mutate
+        @Defaults
         public void initProductFlavors(
                 @Path("android.productFlavors") final ModelMap<ProductFlavor> productFlavors) {
             productFlavors.beforeEach(new Action<ProductFlavor>() {
@@ -370,7 +425,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             sources.addDefaultSourceSet("assets", AndroidLanguageSourceSet.class);
             sources.addDefaultSourceSet("aidl", AndroidLanguageSourceSet.class);
             sources.addDefaultSourceSet("renderscript", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("jniLibs", AndroidLanguageSourceSet.class);
+            sources.addDefaultSourceSet("jniLibs", JniLibsSourceSet.class);
 
             sources.all(new Action<FunctionalSourceSet>() {
                 @Override
@@ -419,6 +474,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
             VariantManager variantManager = new VariantManager(project, androidBuilder,
                     adaptedModel, variantFactory, taskManager, instantiator);
+
+            variantFactory.validateModel(variantManager);
 
             for (BuildType buildType : buildTypes.values()) {
                 variantManager.addBuildType(new BuildTypeAdaptor(buildType));

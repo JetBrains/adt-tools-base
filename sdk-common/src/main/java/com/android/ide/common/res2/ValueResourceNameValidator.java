@@ -18,7 +18,6 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.blame.SourceFilePosition;
 import com.android.resources.ResourceType;
 
 import java.io.File;
@@ -44,7 +43,11 @@ public final class ValueResourceNameValidator {
         String error = getErrorText(resourceName, resourceType);
         if (error != null) {
             // TODO find location in file.
-            throw MergingException.withMessage( error).withFile(file).build();
+            MergingException.Builder exception = MergingException.withMessage(error);
+            if (file != null) {
+                exception.withFile(file);
+            }
+            throw exception.build();
         }
     }
 

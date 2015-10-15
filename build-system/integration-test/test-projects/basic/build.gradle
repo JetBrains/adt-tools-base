@@ -50,7 +50,7 @@ android {
         resValue "string", "foo", "foo"
 
         resConfig "en"
-        resConfigs "nodpi", "hdpi"
+        resConfigs "hdpi"
 
         manifestPlaceholders = [ "someKey":12 ]
     }
@@ -118,6 +118,8 @@ android {
         htmlReport true
         // optional path to report (default will be lint-results.html in the builddir)
         htmlOutput file("lint-report.html")
+        // Reduce severity of this check to just informational
+        informational 'LogConditional'
     }
 
     // Override the versionCode of the release version

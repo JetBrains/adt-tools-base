@@ -201,6 +201,7 @@ public class ClientData {
         new ArrayList<NativeAllocationInfo>();
     private int mNativeTotalMemory;
 
+    private byte[] mAllocationsData;
     private AllocationInfo[] mAllocations;
     private AllocationTrackingStatus mAllocationStatus = AllocationTrackingStatus.UNKNOWN;
 
@@ -332,7 +333,7 @@ public class ClientData {
     }
 
     public static class HprofData {
-        public static enum Type {
+        public enum Type {
             FILE,
             DATA
         }
@@ -469,13 +470,19 @@ public class ClientData {
         return sMethodProfilingHandler;
     }
 
+    /**
+     * This method is deprecated. Please register an {@link com.android.ddmlib.AndroidDebugBridge.IClientChangeListener} with
+     * {@link AndroidDebugBridge#addClientChangeListener(AndroidDebugBridge.IClientChangeListener)}
+     */
+    @Deprecated
     public static void setAllocationTrackingHandler(@NonNull IAllocationTrackingHandler handler) {
-      sAllocationTrackingHandler = handler;
+        sAllocationTrackingHandler = handler;
     }
 
+    @Deprecated
     @Nullable
     static IAllocationTrackingHandler getAllocationTrackingHandler() {
-      return sAllocationTrackingHandler;
+        return sAllocationTrackingHandler;
     }
 
     /**
@@ -762,6 +769,19 @@ public class ClientData {
         return mAllocationStatus;
     }
 
+    synchronized void setAllocationsData(byte[] data) {
+        mAllocationsData = data;
+    }
+
+    /**
+     * Returns the raw data for tracked allocations.
+     * @see Client#requestAllocationDetails()
+     */
+    public synchronized byte[] getAllocationsData() {
+        return mAllocationsData;
+    }
+
+    @Deprecated
     synchronized void setAllocations(AllocationInfo[] allocs) {
         mAllocations = allocs;
     }
@@ -772,7 +792,10 @@ public class ClientData {
      */
     @Nullable
     public synchronized AllocationInfo[] getAllocations() {
-      return mAllocations;
+        if (mAllocationsData != null) {
+            return AllocationsParser.parse(ByteBuffer.wrap(mAllocationsData));
+        }
+        return null;
     }
 
     void addFeature(String feature) {

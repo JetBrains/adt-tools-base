@@ -105,7 +105,7 @@ public class HandlerDetector extends Detector implements Detector.JavaScanner {
         Node locationNode = node instanceof ClassDeclaration
                 ? ((ClassDeclaration) node).astName() : node;
         Location location = context.getLocation(locationNode);
-        context.report(ISSUE, location, String.format(
+        context.report(ISSUE, locationNode, location, String.format(
                 "This Handler class should be static or leaks might occur (%1$s)",
                 cls.getName()));
     }

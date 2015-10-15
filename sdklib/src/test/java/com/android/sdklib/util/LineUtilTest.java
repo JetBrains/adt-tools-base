@@ -16,8 +16,6 @@
 
 package com.android.sdklib.util;
 
-import com.android.sdklib.util.LineUtil;
-
 import junit.framework.TestCase;
 
 

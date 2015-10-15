@@ -18,8 +18,9 @@ package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.android.build.gradle.api.VariantFilter;
 import com.android.build.gradle.internal.CompileOptions;
-import com.android.build.gradle.internal.coverage.JacocoExtension;
+import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
@@ -27,21 +28,20 @@ import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.dsl.PreprocessingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
+import com.android.build.transform.api.Transform;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.sdklib.repository.FullRevision;
 
+import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 
 import java.util.Collection;
 import java.util.List;
-
-import groovy.lang.Closure;
 
 /**
  * User configuration settings for all android plugins.
@@ -64,7 +64,7 @@ public interface AndroidConfig {
     boolean getPublishNonDefault();
 
     /** Filter to determine which variants to build */
-    Closure<Void> getVariantFilter();
+    Action<VariantFilter> getVariantFilter();
 
     /** Adb options */
     AdbOptions getAdbOptions();
@@ -77,9 +77,6 @@ public interface AndroidConfig {
 
     /** Whether to generate pure splits or multi apk */
     boolean getGeneratePureSplits();
-
-    /** Preprocessing Options */
-    PreprocessingOptions getPreprocessingOptions();
 
     @Deprecated
     boolean getEnforceUniquePackageName();
@@ -97,7 +94,7 @@ public interface AndroidConfig {
     DexOptions getDexOptions();
 
     /** JaCoCo options. */
-    JacocoExtension getJacoco();
+    JacocoOptions getJacoco();
 
     /** Lint options. */
     LintOptions getLintOptions();
@@ -118,6 +115,11 @@ public interface AndroidConfig {
     /** List of remote CI servers */
     @NonNull
     List<TestServer> getTestServers();
+
+    @NonNull
+    List<Transform> getTransforms();
+    @NonNull
+    List<List<Object>> getTransformsDependencies();
 
     /** All product flavors used by this project. */
     Collection<? extends CoreProductFlavor> getProductFlavors();

@@ -16,651 +16,293 @@
 
 package com.android.build.gradle.internal.scope;
 
-import static com.android.builder.model.AndroidProject.FD_GENERATED;
-import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.Abi;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
+import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
-import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
-import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.internal.variant.LibraryVariantData;
-import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
-import com.android.build.gradle.tasks.BinaryFileProviderTask;
-import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
-import com.android.build.gradle.tasks.NdkCompile;
-import com.android.build.gradle.tasks.PreprocessResourcesTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.core.VariantConfiguration;
-import com.android.builder.core.VariantType;
-import com.android.utils.StringHelper;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.android.builder.signing.SignedJarBuilder;
 
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * A scope containing data for a specific variant.
  */
-public class VariantScope {
+public interface VariantScope extends BaseScope {
 
     @NonNull
-    private GlobalScope globalScope;
+    BaseVariantData<? extends BaseVariantOutputData> getVariantData();
+
     @NonNull
-    private BaseVariantData<? extends BaseVariantOutputData> variantData;
+    TransformManager getTransformManager();
 
     @Nullable
-    private Collection<Object> ndkBuildable;
-    @Nullable
-    private Collection<File> ndkSoFolder;
-    @Nullable
-    private File ndkObjFolder;
-    @NonNull
-    private Map<Abi, File> ndkDebuggableLibraryFolders = Maps.newHashMap();
+    Collection<Object> getNdkBuildable();
+
+    void setNdkBuildable(@NonNull Collection<Object> ndkBuildable);
 
     @Nullable
-    private File mergeResourceOutputDir;
+    Collection<File> getNdkSoFolder();
 
-    // Tasks
-    private AndroidTask<Task> preBuildTask;
-    private AndroidTask<PrepareDependenciesTask> prepareDependenciesTask;
-    private AndroidTask<ProcessAndroidResources> generateRClassTask;
-
-    private AndroidTask<Task> sourceGenTask;
-    private AndroidTask<Task> resourceGenTask;
-    private AndroidTask<Task> assetGenTask;
-    private AndroidTask<CheckManifest> checkManifestTask;
-
-    private AndroidTask<RenderscriptCompile> renderscriptCompileTask;
-    private AndroidTask<AidlCompile> aidlCompileTask;
-    @Nullable
-    private AndroidTask<MergeResources> mergeResourcesTask;
-    @Nullable
-    private AndroidTask<MergeAssets> mergeAssetsTask;
-    private AndroidTask<GenerateBuildConfig> generateBuildConfigTask;
-    private AndroidTask<GenerateResValues> generateResValuesTask;
+    void setNdkSoFolder(@NonNull Collection<File> ndkSoFolder);
 
     @Nullable
-    private AndroidTask<Dex> dexTask;
-    @Nullable
-    private AndroidTask jacocoIntrumentTask;
+    File getNdkObjFolder();
 
-    /**
-     * Anchor task for post-processing the merged resources to backport some features to earlier
-     * API versions, e.g. generate PNGs from vector drawables (vector drawables were added in 21).
-     */
-    @Nullable
-    private AndroidTask<PreprocessResourcesTask> preprocessResourcesTask;
-
-    private AndroidTask<Copy> processJavaResourcesTask;
-    private AndroidTask<NdkCompile> ndkCompileTask;
-
-    /** @see BaseVariantData#javaCompilerTask */
-    @Nullable
-    private AndroidTask<? extends AbstractCompile> javaCompilerTask;
-    @Nullable
-    private AndroidTask<JavaCompile> javacTask;
-    @Nullable
-    private AndroidTask<JackTask> jackTask;
-
-    // empty anchor compile task to set all compilations tasks as dependents.
-    private AndroidTask<Task> compileTask;
-    private AndroidTask<JacocoInstrumentTask> jacocoInstrumentTask;
-
-    private FileSupplier mappingFileProviderTask;
-    private AndroidTask<BinaryFileProviderTask> binayFileProviderTask;
-
-    // TODO : why is Jack not registered as the obfuscationTask ???
-    private AndroidTask<? extends Task> obfuscationTask;
-
-    private File resourceOutputDir;
-
-
-    public VariantScope(
-            @NonNull GlobalScope globalScope,
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
-        this.globalScope = globalScope;
-        this.variantData = variantData;
-    }
-
-    @NonNull
-    public GlobalScope getGlobalScope() {
-        return globalScope;
-    }
-
-    @NonNull
-    public BaseVariantData<? extends BaseVariantOutputData> getVariantData() {
-        return variantData;
-    }
-
-    @NonNull
-    public GradleVariantConfiguration getVariantConfiguration() {
-        return variantData.getVariantConfiguration();
-    }
-
-    @NonNull
-    public String getTaskName(@NonNull String prefix) {
-        return getTaskName(prefix, "");
-    }
-
-    @NonNull
-    public String getTaskName(@NonNull String prefix, @NonNull String suffix) {
-        return prefix + StringHelper.capitalize(getVariantConfiguration().getFullName()) + suffix;
-    }
+    void setNdkObjFolder(@NonNull File ndkObjFolder);
 
     @Nullable
-    public Collection<Object> getNdkBuildable() {
-        return ndkBuildable;
-    }
+    File getNdkDebuggableLibraryFolders(@NonNull Abi abi);
 
-    public void setNdkBuildable(@NonNull Collection<Object> ndkBuildable) {
-        this.ndkBuildable = ndkBuildable;
-    }
+    void addNdkDebuggableLibraryFolders(@NonNull Abi abi, @NonNull File searchPath);
+
+    @NonNull
+    Set<File> getJniFolders();
 
     @Nullable
-    public Collection<File> getNdkSoFolder() {
-        return ndkSoFolder;
-    }
+    BaseVariantData getTestedVariantData();
 
-    public void setNdkSoFolder(@NonNull Collection<File> ndkSoFolder) {
-        this.ndkSoFolder = ndkSoFolder;
-    }
+    @NonNull
+    FileCollection getJavaClasspath();
+
+    @NonNull
+    File getJavaOutputDir();
+
+    @NonNull
+    Iterable<File> getJavaOuptuts();
+
+    @NonNull
+    File getJavaDependencyCache();
+
+    @NonNull
+    File getPreDexOutputDir();
+
+    @NonNull
+    File getProguardOutputFile();
+
+    @NonNull
+    File getProguardComponentsJarFile();
+
+    @NonNull
+    File getJarMergingOutputFile();
+
+    @NonNull
+    File getManifestKeepListFile();
+
+    @NonNull
+    File getMainDexListFile();
+
+    @NonNull
+    File getRenderscriptSourceOutputDir();
+
+    @NonNull
+    File getRenderscriptLibOutputDir();
+
+    @NonNull
+    File getSymbolLocation();
+
+    @NonNull
+    File getFinalResourcesDir();
+
+    void setResourceOutputDir(@NonNull File resourceOutputDir);
+
+    @NonNull
+    File getDefaultMergeResourcesOutputDir();
+
+    @NonNull
+    File getMergeResourcesOutputDir();
+
+    void setMergeResourceOutputDir(@Nullable File mergeResourceOutputDir);
+
+    @NonNull
+    File getResourceBlameLogDir();
+
+    @NonNull
+    File getMergeAssetsOutputDir();
+
+    @NonNull
+    File getBuildConfigSourceOutputDir();
+
+    @NonNull
+    File getGeneratedResOutputDir();
+
+    @NonNull
+    File getGeneratedPngsOutputDir();
+
+    @NonNull
+    File getRenderscriptResOutputDir();
+
+    @NonNull
+    File getPackagedJarsJavaResDestinationDir();
+
+    @NonNull
+    File getSourceFoldersJavaResDestinationDir();
+
+    @NonNull
+    File getJavaResourcesDestinationDir();
+
+    @NonNull
+    File getRClassSourceOutputDir();
+
+    @NonNull
+    File getAidlSourceOutputDir();
+
+    @NonNull
+    File getAidlIncrementalDir();
+
+    @NonNull
+    File getAidlParcelableDir();
+
+    @NonNull
+    File getJackIncrementalDir();
+
+    @NonNull
+    File getJackTempDir();
+
+    @NonNull
+    File getJillPackagedLibrariesDir();
+
+    @NonNull
+    File getJillRuntimeLibrariesDir();
+
+    @NonNull
+    File getJackDestinationDir();
+
+    @NonNull
+    File getJackClassesZip();
+
+    @NonNull
+    File getProguardOutputFolder();
+
+    @NonNull
+    File getProcessAndroidResourcesProguardOutputFile();
+
+    File getMappingFile();
+
+    AndroidTask<Task> getPreBuildTask();
+
+    void setPreBuildTask(
+            AndroidTask<Task> preBuildTask);
+
+    AndroidTask<PrepareDependenciesTask> getPrepareDependenciesTask();
+
+    void setPrepareDependenciesTask(
+            AndroidTask<PrepareDependenciesTask> prepareDependenciesTask);
+
+    AndroidTask<ProcessAndroidResources> getGenerateRClassTask();
+
+    void setGenerateRClassTask(
+            AndroidTask<ProcessAndroidResources> generateRClassTask);
+
+    AndroidTask<Task> getSourceGenTask();
+
+    void setSourceGenTask(
+            AndroidTask<Task> sourceGenTask);
+
+    AndroidTask<Task> getResourceGenTask();
+
+    void setResourceGenTask(
+            AndroidTask<Task> resourceGenTask);
+
+    AndroidTask<Task> getAssetGenTask();
+
+    void setAssetGenTask(
+            AndroidTask<Task> assetGenTask);
+
+    AndroidTask<CheckManifest> getCheckManifestTask();
+
+    void setCheckManifestTask(
+            AndroidTask<CheckManifest> checkManifestTask);
+
+    AndroidTask<RenderscriptCompile> getRenderscriptCompileTask();
+
+    void setRenderscriptCompileTask(
+            AndroidTask<RenderscriptCompile> renderscriptCompileTask);
+
+    AndroidTask<AidlCompile> getAidlCompileTask();
+
+    void setAidlCompileTask(
+            AndroidTask<AidlCompile> aidlCompileTask);
 
     @Nullable
-    public File getNdkObjFolder() {
-        return ndkObjFolder;
-    }
+    AndroidTask<MergeResources> getMergeResourcesTask();
 
-    public void setNdkObjFolder(@NonNull File ndkObjFolder) {
-        this.ndkObjFolder = ndkObjFolder;
-    }
-
-    /**
-     * Return the folder containing the shared object with debugging symbol for the specified ABI.
-     */
-    @Nullable
-    public File getNdkDebuggableLibraryFolders(@NonNull Abi abi) {
-        return ndkDebuggableLibraryFolders.get(abi);
-    }
-
-    public void addNdkDebuggableLibraryFolders(@NonNull Abi abi, @NonNull File searchPath) {
-        this.ndkDebuggableLibraryFolders.put(abi, searchPath);
-    }
-
-    @NonNull
-    public Set<File> getJniFolders() {
-        assert getNdkSoFolder() != null;
-
-        VariantConfiguration config = getVariantConfiguration();
-        ApkVariantData apkVariantData = (ApkVariantData) variantData;
-        // for now only the project's compilation output.
-        Set<File> set = Sets.newHashSet();
-        set.addAll(getNdkSoFolder());
-        set.add(getRenderscriptLibOutputDir());
-        set.addAll(config.getLibraryJniFolders());
-        set.addAll(config.getJniLibsList());
-
-        if (config.getMergedFlavor().getRenderscriptSupportModeEnabled() != null &&
-                config.getMergedFlavor().getRenderscriptSupportModeEnabled()) {
-            File rsLibs = globalScope.getAndroidBuilder().getSupportNativeLibFolder();
-            if (rsLibs != null && rsLibs.isDirectory()) {
-                set.add(rsLibs);
-            }
-        }
-        return set;
-    }
+    void setMergeResourcesTask(
+            @Nullable AndroidTask<MergeResources> mergeResourcesTask);
 
     @Nullable
-    public BaseVariantData getTestedVariantData() {
-        return variantData instanceof TestVariantData ?
-                (BaseVariantData) ((TestVariantData) variantData).getTestedVariantData() :
-                null;
-    }
+    AndroidTask<MergeAssets> getMergeAssetsTask();
 
+    void setMergeAssetsTask(
+            @Nullable AndroidTask<MergeAssets> mergeAssetsTask);
 
-    // Precomputed file paths.
+    AndroidTask<GenerateBuildConfig> getGenerateBuildConfigTask();
 
-    @NonNull
-    public File getDexOutputFolder() {
-        return new File(globalScope.getIntermediatesDir(), "/dex/" + getVariantConfiguration().getDirName());
-    }
+    void setGenerateBuildConfigTask(
+            AndroidTask<GenerateBuildConfig> generateBuildConfigTask);
 
-    @NonNull
-    public FileCollection getJavaClasspath() {
-        return getGlobalScope().getProject().files(
-                getGlobalScope().getAndroidBuilder().getCompileClasspath(
-                        getVariantData().getVariantConfiguration()));
-    }
+    AndroidTask<GenerateResValues> getGenerateResValuesTask();
 
-    @NonNull
-    public File getJavaOutputDir() {
-        return new File(globalScope.getIntermediatesDir(), "/classes/" +
-                variantData.getVariantConfiguration().getDirName());
-    }
+    void setGenerateResValuesTask(
+            AndroidTask<GenerateResValues> generateResValuesTask);
 
-    @NonNull
-    public File getJavaDependencyCache() {
-        return new File(globalScope.getIntermediatesDir(), "/dependency-cache/" +
-                variantData.getVariantConfiguration().getDirName());
-    }
+    AndroidTask<Sync> getProcessJavaResourcesTask();
 
-    @NonNull
-    public File getPreDexOutputDir() {
-        return new File(globalScope.getIntermediatesDir(), "/pre-dexed/" +
-                getVariantConfiguration().getDirName());
-    }
+    void setProcessJavaResourcesTask(
+            AndroidTask<Sync> processJavaResourcesTask);
 
-    @NonNull
-    public File getProguardOutputFile() {
-        return (variantData instanceof LibraryVariantData) ?
-                new File(globalScope.getIntermediatesDir(),
-                        TaskManager.DIR_BUNDLES + "/" + getVariantConfiguration().getDirName()
-                                + "/classes.jar") :
-                new File(globalScope.getIntermediatesDir(),
-                        "/classes-proguard/" + getVariantConfiguration().getDirName()
-                                + "/classes.jar");
-    }
+    void setPackagingOptionsFilter(SignedJarBuilder.IZipEntryFilter filter);
 
-    @NonNull
-    public File getProguardComponentsJarFile() {
-        return new File(globalScope.getIntermediatesDir(), "multi-dex/" + getVariantConfiguration().getDirName()
-                + "/componentClasses.jar");
-    }
+    SignedJarBuilder.IZipEntryFilter getPackagingOptionsFilter();
 
-    @NonNull
-    public File getJarMergingOutputFile() {
-        return new File(globalScope.getIntermediatesDir(), "multi-dex/" + getVariantConfiguration().getDirName()
-                + "/allclasses.jar");
-    }
+    void setMergeJavaResourcesTask(AndroidTask<TransformTask> mergeJavaResourcesTask);
 
-    @NonNull
-    public File getManifestKeepListFile() {
-        return new File(globalScope.getIntermediatesDir(), "multi-dex/" + getVariantConfiguration().getDirName()
-                + "/manifest_keep.txt");
-    }
-
-    @NonNull
-    public File getMainDexListFile() {
-        return new File(globalScope.getIntermediatesDir(), "multi-dex/" + getVariantConfiguration().getDirName()
-                + "/maindexlist.txt");
-    }
-
-    @NonNull
-    public File getRenderscriptSourceOutputDir() {
-        return new File(globalScope.getGeneratedDir(),
-                "source/rs/" + variantData.getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getRenderscriptLibOutputDir() {
-        return new File(globalScope.getGeneratedDir(),
-                "rs/" + variantData.getVariantConfiguration().getDirName() + "/lib");
-    }
-
-    @NonNull
-    public File getSymbolLocation() {
-        return new File(globalScope.getIntermediatesDir() + "/symbols/" +
-                variantData.getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getFinalResourcesDir() {
-        if (preprocessResourcesTask != null) {
-            return getPreprocessResourceOutputDir();
-        } else {
-            return resourceOutputDir;
-        }
-    }
-
-    public void setResourceOutputDir(@NonNull File resourceOutputDir) {
-        this.resourceOutputDir = resourceOutputDir;
-    }
-
-    @NonNull
-    public File getPreprocessResourceOutputDir() {
-        return new File(getGlobalScope().getIntermediatesDir(),
-                "res/preprocessed/" + getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getDefaultMergeResourcesOutputDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "/res/merged/" + getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getMergeResourcesOutputDir() {
-        if (mergeResourceOutputDir == null) {
-            return getDefaultMergeResourcesOutputDir();
-        }
-        return mergeResourceOutputDir;
-    }
-
-    public void setMergeResourceOutputDir(@Nullable File mergeResourceOutputDir) {
-        this.mergeResourceOutputDir = mergeResourceOutputDir;
-    }
-
-    @NonNull
-    public File getMergeAssetsOutputDir() {
-        return getVariantConfiguration().getType() == VariantType.LIBRARY ?
-                new File(globalScope.getIntermediatesDir(),
-                        TaskManager.DIR_BUNDLES + "/" + getVariantConfiguration().getDirName() +
-                                "/assets") :
-                new File(globalScope.getIntermediatesDir(),
-                        "/assets/" + getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getBuildConfigSourceOutputDir() {
-        return new File(globalScope.getBuildDir() + "/"  + FD_GENERATED + "/source/buildConfig/"
-                + variantData.getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getGeneratedResOutputDir() {
-        return new File(globalScope.getGeneratedDir(),
-                "res/resValues/" + getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getRenderscriptResOutputDir() {
-        return new File(globalScope.getGeneratedDir(),
-                "res/rs/" + getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getJavaResourcesDestinationDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "javaResources/" + getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getRClassSourceOutputDir() {
-        return new File(globalScope.getGeneratedDir(),
-                "source/r/" + getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getAidlSourceOutputDir() {
-        return new File(globalScope.getGeneratedDir(),
-                "source/aidl/" + getVariantConfiguration().getDirName());
-    }
-
-    /**
-     * Returns the location of an intermediate directory that can be used by the Jack toolchain
-     * to store states necessary to support incremental compilation.
-     * @return a variant specific directory.
-     */
-    @NonNull
-    public File getJackIncrementalDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "incremental/jack/" + getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getJackTempDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "tmp/jack/" + getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getJillPackagedLibrariesDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "jill/" + getVariantConfiguration().getDirName() + "/packaged");
-    }
-
-    @NonNull
-    public File getJillRuntimeLibrariesDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "jill/" + getVariantConfiguration().getDirName() + "/runtime");
-    }
-
-    @NonNull
-    public File getJackDestinationDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "dex/" + getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getJackClassesZip() {
-        return new File(globalScope.getIntermediatesDir(),
-                "packaged/" + getVariantConfiguration().getDirName() + "/classes.zip");
-    }
-
-    @NonNull
-    public File getProguardOutputFolder() {
-        return new File(globalScope.getBuildDir(), "/" + FD_OUTPUTS + "/mapping/" +
-                getVariantConfiguration().getDirName());
-    }
-
-    @NonNull
-    public File getProcessAndroidResourcesProguardOutputFile() {
-        return new File(globalScope.getIntermediatesDir(),
-                "/proguard-rules/" + getVariantConfiguration().getDirName() + "/aapt_rules.txt");
-    }
-
-    public File getMappingFile() {
-        return new File(globalScope.getOutputsDir(),
-                "/mapping/" + getVariantConfiguration().getDirName() + "/mapping.txt");
-    }
-
-    // Tasks getters/setters.
-
-    public AndroidTask<Task> getPreBuildTask() {
-        return preBuildTask;
-    }
-
-    public void setPreBuildTask(
-            AndroidTask<Task> preBuildTask) {
-        this.preBuildTask = preBuildTask;
-    }
-
-    public AndroidTask<PrepareDependenciesTask> getPrepareDependenciesTask() {
-        return prepareDependenciesTask;
-    }
-
-    public void setPrepareDependenciesTask(
-            AndroidTask<PrepareDependenciesTask> prepareDependenciesTask) {
-        this.prepareDependenciesTask = prepareDependenciesTask;
-    }
-
-    public AndroidTask<ProcessAndroidResources> getGenerateRClassTask() {
-        return generateRClassTask;
-    }
-
-    public void setGenerateRClassTask(
-            AndroidTask<ProcessAndroidResources> generateRClassTask) {
-        this.generateRClassTask = generateRClassTask;
-    }
-
-    public AndroidTask<Task> getSourceGenTask() {
-        return sourceGenTask;
-    }
-
-    public void setSourceGenTask(
-            AndroidTask<Task> sourceGenTask) {
-        this.sourceGenTask = sourceGenTask;
-    }
-
-    public AndroidTask<Task> getResourceGenTask() {
-        return resourceGenTask;
-    }
-
-    public void setResourceGenTask(
-            AndroidTask<Task> resourceGenTask) {
-        this.resourceGenTask = resourceGenTask;
-    }
-
-    public AndroidTask<Task> getAssetGenTask() {
-        return assetGenTask;
-    }
-
-    public void setAssetGenTask(
-            AndroidTask<Task> assetGenTask) {
-        this.assetGenTask = assetGenTask;
-    }
-
-    public AndroidTask<CheckManifest> getCheckManifestTask() {
-        return checkManifestTask;
-    }
-
-    public void setCheckManifestTask(
-            AndroidTask<CheckManifest> checkManifestTask) {
-        this.checkManifestTask = checkManifestTask;
-    }
-
-    public AndroidTask<RenderscriptCompile> getRenderscriptCompileTask() {
-        return renderscriptCompileTask;
-    }
-
-    public void setRenderscriptCompileTask(
-            AndroidTask<RenderscriptCompile> renderscriptCompileTask) {
-        this.renderscriptCompileTask = renderscriptCompileTask;
-    }
-
-    public AndroidTask<AidlCompile> getAidlCompileTask() {
-        return aidlCompileTask;
-    }
-
-    public void setAidlCompileTask(
-            AndroidTask<AidlCompile> aidlCompileTask) {
-        this.aidlCompileTask = aidlCompileTask;
-    }
+    AndroidTask<TransformTask> getMergeJavaResourcesTask();
 
     @Nullable
-    public AndroidTask<MergeResources> getMergeResourcesTask() {
-        return mergeResourcesTask;
-    }
-
-    public void setMergeResourcesTask(
-            @Nullable AndroidTask<MergeResources> mergeResourcesTask) {
-        this.mergeResourcesTask = mergeResourcesTask;
-    }
+    AndroidTask<? extends AbstractCompile> getJavaCompilerTask();
 
     @Nullable
-    public AndroidTask<MergeAssets> getMergeAssetsTask() {
-        return mergeAssetsTask;
-    }
+    AndroidTask<JackTask> getJackTask();
 
-    public void setMergeAssetsTask(
-            @Nullable AndroidTask<MergeAssets> mergeAssetsTask) {
-        this.mergeAssetsTask = mergeAssetsTask;
-    }
-
-    public AndroidTask<GenerateBuildConfig> getGenerateBuildConfigTask() {
-        return generateBuildConfigTask;
-    }
-
-    public void setGenerateBuildConfigTask(
-            AndroidTask<GenerateBuildConfig> generateBuildConfigTask) {
-        this.generateBuildConfigTask = generateBuildConfigTask;
-    }
-
-    public AndroidTask<GenerateResValues> getGenerateResValuesTask() {
-        return generateResValuesTask;
-    }
-
-    public void setGenerateResValuesTask(
-            AndroidTask<GenerateResValues> generateResValuesTask) {
-        this.generateResValuesTask = generateResValuesTask;
-    }
+    void setJackTask(
+            @Nullable AndroidTask<JackTask> jackTask);
 
     @Nullable
-    public AndroidTask<Dex> getDexTask() {
-        return dexTask;
-    }
+    AndroidTask<JavaCompile> getJavacTask();
 
-    public void setDexTask(@Nullable AndroidTask<Dex> dexTask) {
-        this.dexTask = dexTask;
-    }
+    void setJavacTask(
+            @Nullable AndroidTask<JavaCompile> javacTask);
 
-    @Nullable
-    public AndroidTask<PreprocessResourcesTask> getPreprocessResourcesTask() {
-        return preprocessResourcesTask;
-    }
+    void setJavaCompilerTask(
+            @NonNull AndroidTask<? extends AbstractCompile> javaCompileTask);
 
-    public void setPreprocessResourcesTask(
-            @Nullable AndroidTask<PreprocessResourcesTask> preprocessResourcesTask) {
-        this.preprocessResourcesTask = preprocessResourcesTask;
-    }
+    AndroidTask<Task> getCompileTask();
 
-    public AndroidTask<Copy> getProcessJavaResourcesTask() {
-        return processJavaResourcesTask;
-    }
+    void setCompileTask(
+            AndroidTask<Task> compileTask);
 
-    public void setProcessJavaResourcesTask(
-            AndroidTask<Copy> processJavaResourcesTask) {
-        this.processJavaResourcesTask = processJavaResourcesTask;
-    }
+    AndroidTask<?> getCoverageReportTask();
 
-    @Nullable
-    public AndroidTask<? extends AbstractCompile> getJavaCompilerTask() {
-        return javaCompilerTask;
-    }
-
-    @Nullable
-    public AndroidTask<JackTask> getJackTask() {
-        return jackTask;
-    }
-
-    public void setJackTask(
-            @Nullable AndroidTask<JackTask> jackTask) {
-        this.jackTask = jackTask;
-    }
-
-    @Nullable
-    public AndroidTask<JavaCompile> getJavacTask() {
-        return javacTask;
-    }
-
-    public void setJavacTask(
-            @Nullable AndroidTask<JavaCompile> javacTask) {
-        this.javacTask = javacTask;
-    }
-
-    public void setJavaCompilerTask(
-            @NonNull AndroidTask<? extends AbstractCompile> javaCompileTask) {
-        this.javaCompilerTask = javaCompileTask;
-    }
-
-    public AndroidTask<Task> getCompileTask() {
-        return compileTask;
-    }
-
-    public void setCompileTask(
-            AndroidTask<Task> compileTask) {
-        this.compileTask = compileTask;
-    }
-
-    public AndroidTask<? extends Task> getObfuscationTask() {
-        return obfuscationTask;
-    }
-
-    public void setObfuscationTask(
-            AndroidTask<? extends Task> obfuscationTask) {
-        this.obfuscationTask = obfuscationTask;
-    }
+    void setCoverageReportTask(AndroidTask<?> coverageReportTask);
 }
