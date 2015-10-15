@@ -191,7 +191,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             addedMethods.add(constructor.body);
             return null;
         } else {
-            String newName = computeOverrideMethodName(name, desc);
+            String newName = isStatic ? computeOverrideMethodName(name, desc) : name;
             MethodVisitor original = super.visitMethod(access, newName, newDesc, signature, exceptions);
             return new ISVisitor(Opcodes.ASM5, original, access, newName, newDesc, isStatic);
         }
