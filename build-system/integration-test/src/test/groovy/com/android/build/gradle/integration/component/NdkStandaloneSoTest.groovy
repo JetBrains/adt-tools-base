@@ -129,7 +129,7 @@ model {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(base)
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create()
 
     @AfterClass

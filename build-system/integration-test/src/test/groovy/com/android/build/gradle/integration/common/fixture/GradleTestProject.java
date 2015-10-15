@@ -208,7 +208,7 @@ public class GradleTestProject implements TestRule {
         /**
          * Use experimental plugin for the test project.
          */
-        public Builder forExpermimentalPlugin(boolean mode) {
+        public Builder forExperimentalPlugin(boolean mode) {
             this.experimentalMode = mode;
             return this;
         }

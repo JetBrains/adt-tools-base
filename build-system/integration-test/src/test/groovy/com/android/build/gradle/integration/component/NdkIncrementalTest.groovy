@@ -16,9 +16,7 @@
 
 package com.android.build.gradle.integration.component
 
-import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.utils.FileHelper
 import com.android.build.gradle.integration.common.utils.IncrementalTaskOutputVerifier
@@ -26,7 +24,6 @@ import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
 import java.util.regex.Pattern
 
@@ -41,7 +38,7 @@ class NdkIncrementalTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp())
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .captureStdOut(true)
             .create();
 
