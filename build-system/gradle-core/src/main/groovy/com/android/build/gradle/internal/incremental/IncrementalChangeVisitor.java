@@ -887,8 +887,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     "(Ljava/lang/Object;)Z", false);
             Label l0 = new Label();
             mv.visitJumpInsn(Opcodes.IFEQ, l0);
+            boolean isStatic = (methodNode.access & Opcodes.ACC_STATIC) != 0;
             String newDesc =
-                    computeOverrideMethodDesc(methodNode.desc, (methodNode.access & Opcodes.ACC_STATIC) != 0);
+                    computeOverrideMethodDesc(methodNode.desc, isStatic);
 
             if (TRACING_ENABLED) {
                 trace(mv, "M: " + name + " P:" + newDesc);
@@ -903,7 +904,8 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 argc++;
             }
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override",
-                    computeOverrideMethodName(name, methodNode.desc), newDesc, false);
+                    isStatic ? computeOverrideMethodName(name, methodNode.desc) : name,
+                    newDesc, false);
             Type ret = Type.getReturnType(methodNode.desc);
             if (ret.getSort() == Type.VOID) {
                 mv.visitInsn(Opcodes.ACONST_NULL);
