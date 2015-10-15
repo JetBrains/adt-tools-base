@@ -16,35 +16,39 @@
 
 package com.android.builder.shrinker.parser;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 /**
  * Method part of a ProGuard class specification.
  */
 public class MethodSpecification {
 
-    private final NameSpecification mNameSpecification;
-
-    private final ModifierSpecification mModifier;
-
-    private final AnnotationSpecification mAnnotationType;
+    @NonNull private final NameSpecification mNameSpecification;
+    @Nullable private final ModifierSpecification mModifiers;
+    @Nullable private final AnnotationSpecification mAnnotationType;
 
     public MethodSpecification(
-            NameSpecification nameSpecification,
-            ModifierSpecification modifier,
-            AnnotationSpecification annotationType) {
+            @NonNull NameSpecification nameSpecification,
+            @Nullable ModifierSpecification modifiers,
+            @Nullable AnnotationSpecification annotationType) {
         mNameSpecification = nameSpecification;
-        mModifier = modifier;
+        mModifiers = modifiers;
         mAnnotationType = annotationType;
     }
 
-    public ModifierSpecification getModifier() {
-        return mModifier;
+    @Nullable
+    public ModifierSpecification getModifiers() {
+        return mModifiers;
     }
 
-    public AnnotationSpecification getAnnotationType() {
+    @Nullable
+    public AnnotationSpecification getAnnotations() {
         return mAnnotationType;
     }
 
-    public NameSpecification getNameSpecification() {
+    @NonNull
+    public NameSpecification getName() {
         return mNameSpecification;
     }
 }

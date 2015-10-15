@@ -43,21 +43,21 @@ public class ClassStructureVisitor<T> extends ClassVisitor {
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
         mName = name;
-        mGraph.addClass(name, superName, interfaces, mClassFile);
+        mGraph.addClass(name, superName, interfaces, access, mClassFile);
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
-        mGraph.addMember(mName, name, desc);
+        mGraph.addMember(mName, name, desc, access);
         return super.visitMethod(access, name, desc, signature, exceptions);
     }
 
     @Override
     public FieldVisitor visitField(int access, String name, String desc, String signature,
             Object value) {
-        mGraph.addMember(mName, name, desc);
+        mGraph.addMember(mName, name, desc, access);
         return super.visitField(access, name, desc, signature, value);
     }
 }
