@@ -17,6 +17,7 @@
 package com.android.builder.shrinker;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -43,6 +44,8 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,6 +56,9 @@ import java.util.concurrent.ExecutionException;
  * Simple {@link ShrinkerGraph} implementation that uses strings, maps and Java serialization.
  */
 public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
+
+    /** Checks if the phase of adding nodes is done. */
+    private boolean allNodesAdded = false;
 
     private final File mStateDir;
 
@@ -89,6 +95,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @Override
     public String addMember(String owner, String name, String desc) {
+        checkState(!allNodesAdded, "allNodesAdded() has already been called.");
         String fullName = getFullMethodName(owner, name, desc);
         mMembers.put(owner, fullName);
         return fullName;
@@ -116,8 +123,31 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public Set<String> getMembers(String klass) {
-        return Sets.newHashSet(mMembers.get(klass));
+    public Set<String> getMethods(String klass) {
+        HashSet<String> members = Sets.newHashSet(mMembers.get(klass));
+        for (Iterator<String> iterator = members.iterator(); iterator.hasNext(); ) {
+            String member = iterator.next();
+            if (!isMethod(member)) {
+                iterator.remove();
+            }
+        }
+        return members;
+    }
+
+    @Override
+    public Set<String> getFields(String klass) {
+        HashSet<String> members = Sets.newHashSet(mMembers.get(klass));
+        for (Iterator<String> iterator = members.iterator(); iterator.hasNext(); ) {
+            String member = iterator.next();
+            if (isMethod(member)) {
+                iterator.remove();
+            }
+        }
+        return members;
+    }
+
+    private static boolean isMethod(String member) {
+        return member.contains("(");
     }
 
     @Override
@@ -173,6 +203,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @Override
     public String getSuperclass(String klass) {
+        checkState(allNodesAdded, "allNodesAdded() not called yet.");
         return mClasses.get(klass).superclass;
     }
 
@@ -320,10 +351,39 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @Override
     public String addClass(String name, String superName, String[] interfaces, File classFile) {
+        checkState(!allNodesAdded, "allNodesAdded() has already been called.");
         //noinspection unchecked - ASM API
         ClassInfo classInfo = new ClassInfo(classFile, superName, interfaces);
         mClasses.put(name, classInfo);
         return name;
+    }
+
+    @Override
+    public void allNodesAdded() {
+        this.allNodesAdded = true;
+    }
+
+    @Override
+    public Iterable<String> getAllProgramClasses() {
+        List<String> classes = Lists.newArrayList();
+        for (Map.Entry<String, ClassInfo> entry : mClasses.entrySet()) {
+            boolean isProgramClass = entry.getValue().classFile != null;
+            if (isProgramClass) {
+                classes.add(entry.getKey());
+            }
+        }
+
+        return classes;
+    }
+
+    @Override
+    public String getClassName(String classOrMember) {
+        return classOrMember;
+    }
+
+    @Override
+    public String getMethodName(String method) {
+        return method.substring(method.indexOf('.') + 1);
     }
 
     private static final class ClassInfo implements Serializable {

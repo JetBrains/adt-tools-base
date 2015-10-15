@@ -16,12 +16,17 @@
 
 package com.android.builder.shrinker;
 
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
+import java.util.Set;
 
 /**
- * Temporary interface that models ProGuard config files. Will be replaced with a more robust type.
+ * Represents the -keep* flags from a ProGuard config file.
  */
 public interface KeepRules {
-    boolean keep(ClassNode classNode, MethodNode methodNode);
+
+    /**
+     * Given a program class and the whole {@link ShrinkerGraph}, decides which symbols should be
+     * kept in the output. The result can contain methods and fields from {@code klass} as well as
+     * {@code klass} itself (in case of -keep rules).
+     */
+    <T> Set<T> getSymbolsToKeep(T klass, ShrinkerGraph<T> graph);
 }

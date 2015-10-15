@@ -30,5 +30,6 @@
     <orderEntry type="module" module-name="jill-api" exported="" />
     <orderEntry type="module" module-name="transform-api" exported="" />
     <orderEntry type="library" exported="" name="guava-tools" level="project" />
+    <orderEntry type="library" name="antlr" level="project" />
   </component>
 </module>
