@@ -40,5 +40,7 @@ public enum IncompatibleChange {
 
     // changes in fields.
     FIELD_ADDED,
+    FIELD_REMOVED,
+    // change of field type or kind (static | instance)
     FIELD_TYPE_CHANGE
 }

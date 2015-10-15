@@ -27,6 +27,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
@@ -56,6 +57,28 @@ public class InstantRunVerifier {
         }
     };
 
+    /**
+     * describe the difference between two collections of the same elements.
+     */
+    private enum Diff {
+        /**
+         * no change, the collections are equals
+         */
+        NONE,
+        /**
+         * an element was added to the first collection.
+         */
+        ADDITION,
+        /**
+         * an element was removed from the first collection.
+         */
+        REMOVAL,
+        /**
+         * an element was changed.
+         */
+        CHANGE
+    }
+
     private InstantRunVerifier() {
     }
 
@@ -71,20 +94,58 @@ public class InstantRunVerifier {
             return IncompatibleChange.PARENT_CLASS_CHANGED;
         }
 
-        if (!compareList(originalClass.interfaces, updatedClass.interfaces,
-                OBJECT_COMPARATOR)) {
+        if (diffList(originalClass.interfaces, updatedClass.interfaces,
+                OBJECT_COMPARATOR) != Diff.NONE) {
             return IncompatibleChange.IMPLEMENTED_INTERFACES_CHANGE;
         }
 
         // ASM API here and below.
         //noinspection unchecked
-        if (!compareList(originalClass.visibleAnnotations,
+        if (diffList(originalClass.visibleAnnotations,
                 updatedClass.visibleAnnotations,
-                ANNOTATION_COMPARATOR)) {
+                ANNOTATION_COMPARATOR) != Diff.NONE) {
             return IncompatibleChange.CLASS_ANNOTATION_CHANGE;
         }
 
+        IncompatibleChange fieldChange = verifyFields(originalClass, updatedClass);
+        if (fieldChange != null) {
+            return fieldChange;
+        }
+
         return verifyMethods(originalClass, updatedClass);
+    }
+
+    @Nullable
+    private static IncompatibleChange verifyFields(
+            @NonNull ClassNode originalClass,
+            @NonNull ClassNode updatedClass) {
+
+        Diff diff = diffList(originalClass.fields, updatedClass.fields, new Comparator<FieldNode>() {
+
+            @Override
+            public boolean areEqual(@Nullable FieldNode first, @Nullable FieldNode second) {
+                if ((first == null) && (second == null)) {
+                    return true;
+                }
+                if (first == null || second == null) {
+                    return true;
+                }
+                return first.name.equals(second.name) && first.desc.equals(second.desc)
+                        && first.access == second.access;
+            }
+        });
+        switch (diff) {
+            case NONE:
+                return null;
+            case ADDITION:
+                return IncompatibleChange.FIELD_ADDED;
+            case REMOVAL:
+                return IncompatibleChange.FIELD_REMOVED;
+            case CHANGE:
+                return IncompatibleChange.FIELD_TYPE_CHANGE;
+            default:
+                throw new RuntimeException("Unhandled action : " + diff);
+        }
     }
 
     @Nullable
@@ -142,9 +203,9 @@ public class InstantRunVerifier {
             MethodNode updatedMethod) {
 
         //noinspection unchecked
-        if (!compareList(methodNode.visibleAnnotations,
+        if (diffList(methodNode.visibleAnnotations,
                 updatedMethod.visibleAnnotations,
-                new AnnotationNodeComparator())) {
+                new AnnotationNodeComparator()) != Diff.NONE) {
             return IncompatibleChange.METHOD_ANNOTATION_CHANGE;
         }
         return null;
@@ -220,21 +281,25 @@ public class InstantRunVerifier {
             // probably deep compare for values...
             //noinspection unchecked
             return (first == null && second == null) || (first != null && second != null)
-                && OBJECT_COMPARATOR.areEqual(first.desc, second.desc) &&
-                    compareList(first.values, second.values, OBJECT_COMPARATOR);
+                && (OBJECT_COMPARATOR.areEqual(first.desc, second.desc) &&
+                    diffList(first.values, second.values, OBJECT_COMPARATOR) == Diff.NONE);
         }
     }
 
-    public static <T> boolean compareList(
+    @NonNull
+    public static <T> Diff diffList(
             @Nullable List<T> one,
             @Nullable List<T> two,
             @NonNull  Comparator<T> comparator) {
 
         if (one == null && two == null) {
-            return true;
+            return Diff.NONE;
         }
-        if (one == null || two == null) {
-            return false;
+        if (one == null) {
+            return Diff.ADDITION;
+        }
+        if (two == null) {
+            return Diff.REMOVAL;
         }
         List<T> copyOfOne = new ArrayList<T>(one);
         for (T elementOfTwo : two) {
@@ -244,16 +309,19 @@ public class InstantRunVerifier {
             }
         }
 
-        if (!copyOfOne.isEmpty()) {
-            return false;
-        }
         for (T elementOfOne : one) {
             T elementOfTwo = getElementOf(two, elementOfOne, comparator);
             if (elementOfTwo != null) {
                 two.remove(elementOfTwo);
             }
         }
-        return two.isEmpty();
+        if ((!copyOfOne.isEmpty()) && (copyOfOne.size() == two.size())) {
+            return Diff.CHANGE;
+        }
+        if (!copyOfOne.isEmpty()) {
+            return Diff.REMOVAL;
+        }
+        return two.isEmpty() ? Diff.NONE : Diff.ADDITION;
     }
 
     @Nullable

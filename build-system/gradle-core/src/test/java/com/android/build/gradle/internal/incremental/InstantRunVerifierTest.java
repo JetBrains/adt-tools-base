@@ -21,9 +21,15 @@ import static org.junit.Assert.assertNull;
 
 import com.android.build.gradle.internal.incremental.fixture.VerifierHarness;
 import com.verifier.tests.AddClassAnnotation;
+import com.verifier.tests.AddInstanceField;
 import com.verifier.tests.AddInterfaceImplementation;
 import com.verifier.tests.AddMethodAnnotation;
 import com.verifier.tests.AddNotRuntimeClassAnnotation;
+import com.verifier.tests.ChangeFieldType;
+import com.verifier.tests.ChangeInstanceFieldToStatic;
+import com.verifier.tests.ChangeInstanceFieldVisibility;
+import com.verifier.tests.ChangeStaticFieldToInstance;
+import com.verifier.tests.ChangeStaticFieldVisibility;
 import com.verifier.tests.ChangeSuperClass;
 import com.verifier.tests.ChangedClassInitializer1;
 import com.verifier.tests.ChangedClassInitializer2;
@@ -157,5 +163,53 @@ public class InstantRunVerifierTest {
                 harness.verify(ChangedClassInitializer2.class, "verifier"));
         assertEquals(IncompatibleChange.STATIC_INITIALIZER_CHANGE,
                 harness.verify(ChangedClassInitializer3.class, "verifier"));
+    }
+
+    @Test
+    public void testAddingInstanceField() throws IOException {
+        // not adding an instance field should be ok.
+        assertNull(harness.verify(AddInstanceField.class, null));
+        assertEquals(IncompatibleChange.FIELD_ADDED,
+                harness.verify(AddInstanceField.class, "verifier"));
+    }
+
+    @Test
+    public void testChangingAnInstanceFieldIntoStatic() throws IOException {
+        // not changing anything in an instance field should be ok.
+        assertNull(harness.verify(ChangeInstanceFieldToStatic.class, null));
+        assertEquals(IncompatibleChange.FIELD_TYPE_CHANGE,
+                harness.verify(ChangeInstanceFieldToStatic.class, "verifier"));
+    }
+
+    @Test
+    public void testChangingStaticFieldIntoAnInstance() throws IOException {
+        // not changing anything in a static field should be ok.
+        assertNull(harness.verify(ChangeStaticFieldToInstance.class, null));
+        assertEquals(IncompatibleChange.FIELD_TYPE_CHANGE,
+                harness.verify(ChangeStaticFieldToInstance.class, "verifier"));
+    }
+
+    @Test
+    public void testChangingFieldType() throws IOException {
+        // not changing a field type should be ok.
+        assertNull(harness.verify(ChangeFieldType.class, null));
+        assertEquals(IncompatibleChange.FIELD_TYPE_CHANGE,
+                harness.verify(ChangeFieldType.class, "verifier"));
+    }
+
+    @Test
+    public void testChangingInstanceFieldVisibility() throws IOException {
+        // not changing a field type should be ok.
+        assertNull(harness.verify(ChangeInstanceFieldVisibility.class, null));
+        assertEquals(IncompatibleChange.FIELD_TYPE_CHANGE,
+                harness.verify(ChangeInstanceFieldVisibility.class, "verifier"));
+    }
+
+    @Test
+    public void testChangingStaticFieldVisibility() throws IOException {
+        // not changing a field type should be ok.
+        assertNull(harness.verify(ChangeStaticFieldVisibility.class, null));
+        assertEquals(IncompatibleChange.FIELD_TYPE_CHANGE,
+                harness.verify(ChangeStaticFieldVisibility.class, "verifier"));
     }
 }
