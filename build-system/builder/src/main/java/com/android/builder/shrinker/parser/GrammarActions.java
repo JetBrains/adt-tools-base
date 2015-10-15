@@ -16,9 +16,10 @@
 
 package com.android.builder.shrinker.parser;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.shrinker.parser.ClassTypeSpecification.TypeEnum;
 
 import org.antlr.runtime.ANTLRFileStream;
 import org.antlr.runtime.CharStream;
@@ -100,7 +101,7 @@ public class GrammarActions {
             @NonNull String name,
             boolean hasNameNegator,
             @NonNull ClassTypeSpecification classType,
-            @NonNull AnnotationSpecification annotation,
+            @Nullable AnnotationSpecification annotation,
             @NonNull ModifierSpecification modifier) {
         NameSpecification nameSpec;
         if (name.equals("*")) {
@@ -115,7 +116,7 @@ public class GrammarActions {
     }
 
     @NonNull
-    static ClassTypeSpecification classType(@NonNull TypeEnum type, boolean hasNegator) {
+    static ClassTypeSpecification classType(int type, boolean hasNegator) {
         ClassTypeSpecification classSpec = new ClassTypeSpecification(type);
         classSpec.setNegator(hasNegator);
         return classSpec;
@@ -133,16 +134,17 @@ public class GrammarActions {
     static void field(
             @NonNull ClassSpecification classSpec,
             @Nullable AnnotationSpecification annotationType,
-            @Nullable String typeSig,
+            @Nullable String typeSignature,
             @NonNull String name,
             @NonNull ModifierSpecification modifier) {
-        NameSpecification typeSignature = null;
-        if (typeSig != null) {
-            typeSignature = name(typeSig);
+        NameSpecification typeSignatureSpec = null;
+        if (typeSignature != null) {
+            typeSignatureSpec = name(typeSignature);
         } else {
-            assert name.equals("*");
+            checkState(name.equals("<fields>"), "No type signature, but name is not <fields>.");
+            name = "*";
         }
-        classSpec.add(new FieldSpecification(name(name), modifier, typeSignature, annotationType));
+        classSpec.add(new FieldSpecification(name(name), modifier, typeSignatureSpec, annotationType));
     }
 
     static void fieldOrAnyMember(@NonNull ClassSpecification classSpec,
@@ -210,7 +212,8 @@ public class GrammarActions {
         return sig.toString();
     }
 
-    static void method(@NonNull ClassSpecification classSpec,
+    static void method(
+            @NonNull ClassSpecification classSpec,
             @Nullable AnnotationSpecification annotationType,
             @Nullable String typeSig,
             @NonNull String name,
@@ -226,13 +229,15 @@ public class GrammarActions {
         }
         fullName += "$";
         Pattern pattern = Pattern.compile(fullName);
-        classSpec.add(new MethodSpecification(new NameSpecification(pattern),
-                modifier, annotationType));
+        classSpec.add(
+                new MethodSpecification(
+                        new NameSpecification(pattern),
+                        modifier,
+                        annotationType));
     }
 
     @NonNull
-    static NameSpecification name(/*@NonNull*/ String name) {
-        assert name != null;
+    static NameSpecification name(@NonNull String name) {
         String transformedName = "^" +
                 convertNameToPattern(name) + "$";
 

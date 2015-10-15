@@ -41,9 +41,9 @@ interface ShrinkerGraph<T> {
 
     Set<T> getFields(T klass);
 
-    T addClass(String name, String superName, String[] interfaces, File classFile);
+    T addClass(String name, String superName, String[] interfaces, int access, File classFile);
 
-    T addMember(String owner, String name, String desc);
+    T addMember(String owner, String name, String desc, int modifiers);
 
     T getClassForMember(T member);
 
@@ -88,4 +88,12 @@ interface ShrinkerGraph<T> {
     String getClassName(T classOrMember);
 
     String getMethodName(T method);
+
+    String getFieldName(T field);
+
+    String getFieldDesc(T field);
+
+    int getClassModifiers(T klass);
+
+    int getMemberModifiers(T member);
 }

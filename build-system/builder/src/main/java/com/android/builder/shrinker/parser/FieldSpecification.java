@@ -16,37 +16,47 @@
 
 package com.android.builder.shrinker.parser;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 /**
  * Represents field part of a ProGuard class specification.
  */
 public class FieldSpecification {
 
-    private final NameSpecification mName;
-    private final ModifierSpecification mModifier;
-    private final NameSpecification mTypeSignature;
-    private final AnnotationSpecification mAnnotationType;
+    @NonNull private final NameSpecification mName;
+    @NonNull private final ModifierSpecification mModifier;
+    @Nullable private final NameSpecification mTypeSignature;
+    @Nullable private final AnnotationSpecification mAnnotationType;
 
-    public FieldSpecification(NameSpecification name, ModifierSpecification modifier,
-            NameSpecification typeSignature, AnnotationSpecification annotationType) {
+    public FieldSpecification(
+            @NonNull NameSpecification name,
+            @NonNull ModifierSpecification modifier,
+            @Nullable NameSpecification typeSignature,
+            @Nullable AnnotationSpecification annotationType) {
         mName = name;
         mModifier = modifier;
         mTypeSignature = typeSignature;
         mAnnotationType = annotationType;
     }
 
+    @NonNull
     public NameSpecification getName() {
         return mName;
     }
 
+    @NonNull
     public ModifierSpecification getModifier() {
         return mModifier;
     }
 
+    @Nullable
     public NameSpecification getTypeSignature() {
         return mTypeSignature;
     }
 
-    public AnnotationSpecification getAnnotationType() {
+    @Nullable
+    public AnnotationSpecification getAnnotations() {
         return mAnnotationType;
     }
 }

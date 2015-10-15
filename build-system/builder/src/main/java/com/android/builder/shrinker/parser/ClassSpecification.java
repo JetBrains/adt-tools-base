@@ -16,6 +16,8 @@
 
 package com.android.builder.shrinker.parser;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.collect.Lists;
 
 import java.util.List;
@@ -25,37 +27,38 @@ import java.util.List;
  */
 public class ClassSpecification {
 
-    private final NameSpecification mNameSpec;
-    private final ClassTypeSpecification mClassType;
-    private final AnnotationSpecification mAnnotation;
-    private KeepModifier mKeepModifier;
-    private ModifierSpecification mModifier;
-    private List<FieldSpecification> mFieldSpecifications = Lists.newArrayList();
-    private List<MethodSpecification> mMethodSpecifications = Lists.newArrayList();
-
-    private InheritanceSpecification mInheritanceSpecification;
+    @NonNull private final NameSpecification mNameSpec;
+    @NonNull private final ClassTypeSpecification mClassType;
+    @Nullable private final AnnotationSpecification mAnnotation;
+    @Nullable private KeepModifier mKeepModifier;
+    @Nullable private ModifierSpecification mModifier;
+    @NonNull private List<FieldSpecification> mFieldSpecifications = Lists.newArrayList();
+    @NonNull private List<MethodSpecification> mMethodSpecifications = Lists.newArrayList();
+    @Nullable private InheritanceSpecification mInheritanceSpecification;
 
     public ClassSpecification(
-            NameSpecification nameSpec,
-            ClassTypeSpecification classType,
-            AnnotationSpecification annotation) {
+            @NonNull NameSpecification nameSpec,
+            @NonNull ClassTypeSpecification classType,
+            @Nullable AnnotationSpecification annotation) {
         mNameSpec = nameSpec;
         mClassType = classType;
         mAnnotation = annotation;
     }
 
-    public void setKeepModifier(KeepModifier keepModifier) {
+    public void setKeepModifier(@Nullable KeepModifier keepModifier) {
         mKeepModifier = keepModifier;
     }
 
+    @Nullable
     public KeepModifier getKeepModifier() {
         return mKeepModifier;
     }
 
-    public void setModifier(ModifierSpecification modifier) {
+    public void setModifier(@Nullable ModifierSpecification modifier) {
         mModifier = modifier;
     }
 
+    @Nullable
     public ModifierSpecification getModifier() {
         return mModifier;
     }
@@ -68,31 +71,36 @@ public class ClassSpecification {
         mMethodSpecifications.add(methodSpecification);
     }
 
+    @NonNull
     public List<MethodSpecification> getMethodSpecifications() {
         return mMethodSpecifications;
     }
 
-    public NameSpecification getNameSpec() {
+    public NameSpecification getName() {
         return mNameSpec;
     }
 
+    @NonNull
     public ClassTypeSpecification getClassType() {
         return mClassType;
     }
 
+    @Nullable
     public AnnotationSpecification getAnnotation() {
         return mAnnotation;
     }
 
+    @NonNull
     public List<FieldSpecification> getFieldSpecifications() {
         return mFieldSpecifications;
     }
 
-    public void setInheritance(InheritanceSpecification inheritanceSpecification) {
+    public void setInheritance(@Nullable InheritanceSpecification inheritanceSpecification) {
         mInheritanceSpecification = inheritanceSpecification;
     }
 
-    public InheritanceSpecification getInheritanceSpecification() {
+    @Nullable
+    public InheritanceSpecification getInheritance() {
         return mInheritanceSpecification;
     }
 }

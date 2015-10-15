@@ -75,6 +75,8 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     private SetMultimap<String, String> mMembers =
             Multimaps.synchronizedSetMultimap(HashMultimap.<String, String>create());
 
+    private Map<String, Integer> mModifiers = Maps.newConcurrentMap();
+
     private EnumMap<ShrinkType, LoadingCache<String, Counter>> mReferenceCounters;
 
     private SetMultimap<String, Dependency<String>> mDependencies =
@@ -94,10 +96,11 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public String addMember(String owner, String name, String desc) {
+    public String addMember(String owner, String name, String desc, int modifiers) {
         checkState(!allNodesAdded, "allNodesAdded() has already been called.");
         String fullName = getFullMethodName(owner, name, desc);
         mMembers.put(owner, fullName);
+        mModifiers.put(fullName, modifiers);
         return fullName;
     }
 
@@ -350,11 +353,17 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public String addClass(String name, String superName, String[] interfaces, File classFile) {
+    public String addClass(
+            String name,
+            String superName,
+            String[] interfaces,
+            int access,
+            File classFile) {
         checkState(!allNodesAdded, "allNodesAdded() has already been called.");
         //noinspection unchecked - ASM API
         ClassInfo classInfo = new ClassInfo(classFile, superName, interfaces);
         mClasses.put(name, classInfo);
+        mModifiers.put(name, access);
         return name;
     }
 
@@ -384,6 +393,26 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     @Override
     public String getMethodName(String method) {
         return method.substring(method.indexOf('.') + 1);
+    }
+
+    @Override
+    public String getFieldName(String field) {
+        return field.substring(field.indexOf('.') + 1, field.indexOf(':'));
+    }
+
+    @Override
+    public String getFieldDesc(String field) {
+        return field.substring(field.indexOf(':') + 1);
+    }
+
+    @Override
+    public int getClassModifiers(String klass) {
+        return mModifiers.get(klass);
+    }
+
+    @Override
+    public int getMemberModifiers(String member) {
+        return mModifiers.get(member);
     }
 
     private static final class ClassInfo implements Serializable {

@@ -10,7 +10,7 @@ tokens {
 
 @header {
 package com.android.builder.shrinker.parser;
-import com.android.builder.shrinker.parser.ClassTypeSpecification.TypeEnum;
+import static org.objectweb.asm.Opcodes.*;
 }
 
 @lexer::header {
@@ -29,7 +29,8 @@ prog [Flags flags, String baseDirectory]
     | ('-dontoptimize'  {$flags.setOptimize(false);})
     | ('-dontpreverify'  {$flags.setPreverify(false);})
     | ('-dontobfuscate' {$flags.setObfuscate(false);})
-    | unFlag=unsupportedFlag {GrammarActions.unsupportedFlag($unFlag.text);}
+    | ignoredFlag
+    | (unFlag=unsupportedFlag {GrammarActions.unsupportedFlag($unFlag.text);})
   )*
   EOF
   ;
@@ -37,11 +38,28 @@ prog [Flags flags, String baseDirectory]
     throw e;
   }
 
+private ignoredFlag
+  :
+  (   '-keepparameternames'
+    | ('-keepattributes' {FilterSpecification attribute_filter = new FilterSpecification();} filter[attribute_filter] )
+    | ('-keepclassmembernames' classSpec=classSpecification  )
+    | ('-keepclasseswithmembernames' classSpec=classSpecification  )
+    | ('-keepnames' classSpec=classSpecification )
+    | '-verbose'
+    | '-dontusemixedcaseclassnames'
+    | '-useuniqueclassmembernames'
+    // TODO: implement
+    | ('-dontnote' {FilterSpecification class_filter = new FilterSpecification();} filter[class_filter])
+    | ('-dontwarn' {FilterSpecification class_filter = new FilterSpecification();} filter[class_filter])
+    // TODO: do we need to handle these?
+    | '-dontskipnonpubliclibraryclasses'
+    | '-dontskipnonpubliclibraryclassmembers'
+  )
+  ;
+
 private unsupportedFlag
   :
   ('-skipnonpubliclibraryclasses'
-    | '-dontskipnonpubliclibraryclasses'
-    | '-dontskipnonpubliclibraryclassmembers'
     | ('-keepdirectories' {FilterSpecification directory_filter = new FilterSpecification();} filter[directory_filter])
     | ('-target' NAME) //version
     | '-forceprocessing'
@@ -54,17 +72,12 @@ private unsupportedFlag
     | '-mergeinterfacesaggressively'
     | '-overloadaggressively'
     | '-microedition'
-    | '-verbose'
-    | ('-dontnote' {FilterSpecification class_filter = new FilterSpecification();} filter[class_filter])
-    | ('-dontwarn' {FilterSpecification class_filter = new FilterSpecification();} filter[class_filter])
     | ('-renamesourcefileattribute' sourceFile=NAME?)
     | '-ignorewarnings'
     | ('-printconfiguration' NAME?) //[filename]
     | ('-dump' NAME?) //[filename]
     | ('-adaptclassstrings' {FilterSpecification filter = new FilterSpecification();} filter[filter])
     | ('-applymapping' mapping=NAME )
-    | ('-keepattributes' {FilterSpecification attribute_filter = new FilterSpecification();} filter[attribute_filter] )
-    | '-keepparameternames'
     | '-obfuscationdictionary' obfuscationDictionary=NAME
     | '-classobfuscationdictionary' classObfuscationDictionary=NAME
     | '-packageobfuscationdictionary' packageObfuscationDictionary=NAME
@@ -72,17 +85,12 @@ private unsupportedFlag
     | ('-keeppackagenames' {FilterSpecification package_filter = new FilterSpecification();} filter[package_filter] )
     | ('-repackageclasses' ('\'' newPackage=NAME? '\'')? )
     | ('-flattenpackagehierarchy' ('\'' newPackage=NAME? '\'')? )
-    | '-dontusemixedcaseclassnames'
-    | '-useuniqueclassmembernames'
     | ('-printseeds' seedOutputFile=NAME? )
     | ('-adaptresourcefilenames' {FilterSpecification file_filter = new FilterSpecification();} filter[file_filter] )
     | ('-adaptresourcefilecontents' {FilterSpecification file_filter = new FilterSpecification();} filter[file_filter] )
     | '-injars' inJars=classpath
     | '-outjars' outJars=classpath
     | '-libraryjars' libraryJars=classpath
-    | ('-keepclassmembernames' classSpec=classSpecification  )
-    | ('-keepclasseswithmembernames' classSpec=classSpecification  )
-    | ('-keepnames' classSpec=classSpecification )
   )
   ;
 
@@ -125,18 +133,18 @@ private classModifierAndType[ModifierSpecification modifier] returns [ClassTypeS
   :
   (NEGATOR {hasNegator = true;})?
   (
-  'public' {GrammarActions.addModifier(modifier, Modifier.PUBLIC, hasNegator);} cmat=classModifierAndType[modifier] {cType = $cmat.cType;}
-  | 'abstract' {GrammarActions.addModifier(modifier, Modifier.ABSTRACT, hasNegator);} cmat=classModifierAndType[modifier] {cType = $cmat.cType;}
-  | 'final' {GrammarActions.addModifier(modifier, Modifier.FINAL, hasNegator);} cmat=classModifierAndType[modifier] {cType = $cmat.cType;}
+  'public' {GrammarActions.addModifier(modifier, ACC_PUBLIC, hasNegator);} cmat=classModifierAndType[modifier] {cType = $cmat.cType;}
+  | 'abstract' {GrammarActions.addModifier(modifier, ACC_ABSTRACT, hasNegator);} cmat=classModifierAndType[modifier] {cType = $cmat.cType;}
+  | 'final' {GrammarActions.addModifier(modifier, ACC_FINAL, hasNegator);} cmat=classModifierAndType[modifier] {cType = $cmat.cType;}
   | classType {cType=GrammarActions.classType($classType.type, hasNegator); }
   )
   ;
 
-private classType returns [TypeEnum type]
+private classType returns [int type]
   :
-    'interface' {$type = TypeEnum.INTERFACE;}
-  | 'enum' {$type = TypeEnum.ENUM;}
-  | 'class' {$type = TypeEnum.CLASS;}
+    'interface' {$type = ACC_INTERFACE;}
+  | 'enum' {$type = ACC_ENUM;}
+  | 'class' {$type = 0;}
   ;
 
 private members [ClassSpecification classSpec]
@@ -155,7 +163,7 @@ private member [ClassSpecification classSpec]
       | '<methods>' {GrammarActions.method(classSpec, $annotation.annotSpec,
           GrammarActions.getSignature("***", 0), "*", "("+ GrammarActions.getSignature("...", 0) + ")",
           $modifiers.modifiers);}
-      | '<fields>' {GrammarActions.field(classSpec, $annotation.annotSpec, null, "*", $modifiers.modifiers);}
+      | '<fields>' {GrammarActions.field(classSpec, $annotation.annotSpec, null, "<fields>", $modifiers.modifiers);}
     ) ';'
   ;
 
@@ -180,20 +188,20 @@ private modifier [ModifierSpecification modifiers]
   :
   (NEGATOR {hasNegator = true;})?
   (
-    'public' {modifiers.addModifier(Modifier.PUBLIC, hasNegator);}
-    | 'private' {modifiers.addModifier(Modifier.PRIVATE, hasNegator);}
-    | 'protected' {modifiers.addModifier(Modifier.PROTECTED, hasNegator);}
-    | 'static' {modifiers.addModifier(Modifier.STATIC, hasNegator);}
-    | 'synchronized' {modifiers.addModifier(Modifier.SYNCHRONIZED, hasNegator);}
-    | 'volatile' {modifiers.addModifier(Modifier.VOLATILE, hasNegator);}
-    | 'native' {modifiers.addModifier(Modifier.NATIVE, hasNegator);}
-    | 'abstract' {modifiers.addModifier(Modifier.ABSTRACT, hasNegator);}
-    | 'strictfp' {modifiers.addModifier(Modifier.STRICTFP, hasNegator);}
-    | 'final' {modifiers.addModifier(Modifier.FINAL, hasNegator);}
-    | 'transient' {modifiers.addModifier(Modifier.TRANSIENT, hasNegator);}
-    | 'synthetic' {modifiers.addModifier(Modifier.SYNTHETIC, hasNegator);}
-    | 'bridge' {modifiers.addModifier(Modifier.BRIDGE, hasNegator);}
-    | 'varargs' {modifiers.addModifier(Modifier.VARARGS, hasNegator);}
+    'public' {modifiers.addModifier(ACC_PUBLIC, hasNegator);}
+    | 'private' {modifiers.addModifier(ACC_PRIVATE, hasNegator);}
+    | 'protected' {modifiers.addModifier(ACC_PROTECTED, hasNegator);}
+    | 'static' {modifiers.addModifier(ACC_STATIC, hasNegator);}
+    | 'synchronized' {modifiers.addModifier(ACC_SYNCHRONIZED, hasNegator);}
+    | 'volatile' {modifiers.addModifier(ACC_VOLATILE, hasNegator);}
+    | 'native' {modifiers.addModifier(ACC_NATIVE, hasNegator);}
+    | 'abstract' {modifiers.addModifier(ACC_ABSTRACT, hasNegator);}
+    | 'strictfp' {modifiers.addModifier(ACC_STRICT, hasNegator);}
+    | 'final' {modifiers.addModifier(ACC_FINAL, hasNegator);}
+    | 'transient' {modifiers.addModifier(ACC_TRANSIENT, hasNegator);}
+    | 'synthetic' {modifiers.addModifier(ACC_SYNTHETIC, hasNegator);}
+    | 'bridge' {modifiers.addModifier(ACC_BRIDGE, hasNegator);}
+    | 'varargs' {modifiers.addModifier(ACC_VARARGS, hasNegator);}
   )
   ;
 
