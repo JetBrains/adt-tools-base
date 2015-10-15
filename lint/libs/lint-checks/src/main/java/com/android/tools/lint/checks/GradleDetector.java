@@ -586,12 +586,12 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         } else if (issue == STRING_INTEGER) {
             return findSubstring(errorMessage, "replace ", " with ");
         } else if (issue == DEPRECATED) {
-            if (errorMessage.contains(GradleDetector.APP_PLUGIN_ID) &&
-                    errorMessage.contains(GradleDetector.OLD_APP_PLUGIN_ID)) {
-                return GradleDetector.OLD_APP_PLUGIN_ID;
-            } else if (errorMessage.contains(GradleDetector.LIB_PLUGIN_ID) &&
-                    errorMessage.contains(GradleDetector.OLD_LIB_PLUGIN_ID)) {
-                return GradleDetector.OLD_LIB_PLUGIN_ID;
+            if (errorMessage.contains(APP_PLUGIN_ID) &&
+                errorMessage.contains(OLD_APP_PLUGIN_ID)) {
+                return OLD_APP_PLUGIN_ID;
+            } else if (errorMessage.contains(LIB_PLUGIN_ID) &&
+                       errorMessage.contains(OLD_LIB_PLUGIN_ID)) {
+                return OLD_LIB_PLUGIN_ID;
             }
             // "Deprecated: Replace 'packageNameSuffix' with 'applicationIdSuffix'"
             return findSubstring(errorMessage, "Replace '", "'");
@@ -635,12 +635,12 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         } else if (issue == STRING_INTEGER) {
             return findSubstring(errorMessage, " just ", ")");
         } else if (issue == DEPRECATED) {
-            if (errorMessage.contains(GradleDetector.APP_PLUGIN_ID) &&
-                    errorMessage.contains(GradleDetector.OLD_APP_PLUGIN_ID)) {
-                return GradleDetector.APP_PLUGIN_ID;
-            } else if (errorMessage.contains(GradleDetector.LIB_PLUGIN_ID) &&
-                    errorMessage.contains(GradleDetector.OLD_LIB_PLUGIN_ID)) {
-                return GradleDetector.LIB_PLUGIN_ID;
+            if (errorMessage.contains(APP_PLUGIN_ID) &&
+                errorMessage.contains(OLD_APP_PLUGIN_ID)) {
+                return APP_PLUGIN_ID;
+            } else if (errorMessage.contains(LIB_PLUGIN_ID) &&
+                       errorMessage.contains(OLD_LIB_PLUGIN_ID)) {
+                return LIB_PLUGIN_ID;
             }
             // "Deprecated: Replace 'packageNameSuffix' with 'applicationIdSuffix'"
             return findSubstring(errorMessage, " with '", "'");
@@ -717,7 +717,11 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             sMajorBuildTools = major;
 
             List<PreciseRevision> revisions = Lists.newArrayList();
-            if (major == 21) {
+            if (major == 23) {
+                revisions.add(new PreciseRevision(23, 0, 1));
+            } else if (major == 22) {
+                revisions.add(new PreciseRevision(22, 0, 1));
+            } else if (major == 21) {
                 revisions.add(new PreciseRevision(21, 1, 2));
             } else if (major == 20) {
                 revisions.add(new PreciseRevision(20));
@@ -854,7 +858,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             version = getNewerRevision(dependency, new PreciseRevision(18, 0));
         } else if ("com.google.code.gson".equals(dependency.getGroupId()) &&
                 "gson".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, new PreciseRevision(2, 3));
+            version = getNewerRevision(dependency, new PreciseRevision(2, 4));
         } else if ("org.apache.httpcomponents".equals(dependency.getGroupId()) &&
                 "httpclient".equals(dependency.getArtifactId())) {
             version = getNewerRevision(dependency, new PreciseRevision(4, 3, 5));
