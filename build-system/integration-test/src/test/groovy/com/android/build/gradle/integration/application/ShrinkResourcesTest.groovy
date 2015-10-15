@@ -45,7 +45,7 @@ import static org.junit.Assert.assertTrue
  * Assemble tests for shrink.
  */
 @CompileStatic
-class ShrinkTest {
+class ShrinkResourcesTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

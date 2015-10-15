@@ -21,6 +21,8 @@ import static com.google.common.base.Preconditions.checkState;
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
+import com.android.build.api.transform.JarInput;
+import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.ide.common.internal.LoggedErrorException;
@@ -29,7 +31,9 @@ import com.android.utils.FileUtils;
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
 import org.objectweb.asm.ClassReader;
@@ -44,6 +48,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Common code for both types of shrinker runs, {@link FullRunShrinker} and
@@ -68,24 +74,27 @@ public abstract class AbstractShrinker<T> {
      * shrink (e.g. comes from a platform JAR).
      */
     @NonNull
-    protected static Optional<File> chooseOutputFile(
+    protected Optional<File> chooseOutputFile(
+            @NonNull T klass,
             @NonNull File classFile,
             @NonNull Collection<TransformInput> inputs,
             @NonNull TransformOutputProvider output) {
-        String absolutePath = classFile.getAbsolutePath();
+        String classFilePath = classFile.getAbsolutePath();
 
         for (TransformInput input : inputs) {
-            for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
-                File directory = directoryInput.getFile();
-                if (absolutePath.startsWith(directory.getAbsolutePath())) {
+            Iterable<QualifiedContent> directoriesAndJars =
+                    Iterables.concat(input.getDirectoryInputs(), input.getJarInputs());
+
+            for (QualifiedContent directoryOrJar : directoriesAndJars) {
+                File file = directoryOrJar.getFile();
+                if (classFilePath.startsWith(file.getAbsolutePath())) {
                     File outputDir = output.getContentLocation(
-                            directoryInput.getName(),
-                            directoryInput.getContentTypes(),
-                            directoryInput.getScopes(),
+                            FileUtils.getDirectoryNameForJar(file),
+                            directoryOrJar.getContentTypes(),
+                            directoryOrJar.getScopes(),
                             Format.DIRECTORY);
 
-                    String relativePath = FileUtils.relativePath(classFile, directory);
-                    return Optional.of(new File(outputDir, relativePath));
+                    return Optional.of(new File(outputDir, mGraph.getClassName(klass) + ".class"));
                 }
             }
         }
@@ -102,6 +111,20 @@ public abstract class AbstractShrinker<T> {
         List<File> files = Lists.newArrayList();
         for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
             files.add(directoryInput.getFile());
+        }
+
+        return files;
+    }
+
+    /**
+     * Determines all directories where class files can be found in the given
+     * {@link TransformInput}.
+     */
+    @NonNull
+    protected static Collection<File> getAllJars(@NonNull TransformInput input) {
+        List<File> files = Lists.newArrayList();
+        for (JarInput jarInput : input.getJarInputs()) {
+            files.add(jarInput.getFile());
         }
 
         return files;
@@ -190,10 +213,24 @@ public abstract class AbstractShrinker<T> {
      */
     @NonNull
     protected static byte[] rewrite(
+            @NonNull String className,
             @NonNull File classFile,
             @NonNull Set<String> membersToKeep,
             @NonNull Predicate<String> keepInterface) throws IOException {
-        ClassReader classReader = new ClassReader(Files.toByteArray(classFile));
+        byte[] bytes;
+        if (Files.getFileExtension(classFile.getName()).equals("class")) {
+            bytes = Files.toByteArray(classFile);
+        } else {
+            JarFile jarFile = new JarFile(classFile);
+            try {
+                JarEntry jarEntry = jarFile.getJarEntry(className + ".class");
+                bytes = ByteStreams.toByteArray(jarFile.getInputStream(jarEntry));
+            } finally {
+                jarFile.close();
+            }
+        }
+
+        ClassReader classReader = new ClassReader(bytes);
         // Don't pass the reader as an argument to the writer. This forces the writer to recompute
         // the constant pool, which we want, since it can contain unused entries that end up in the
         // dex file.
@@ -228,14 +265,16 @@ public abstract class AbstractShrinker<T> {
             @NonNull TransformOutputProvider output) throws IOException {
         for (T klass : classesToWrite) {
             File classFile = mGraph.getClassFile(klass);
-            Optional<File> outputFile = chooseOutputFile(classFile, inputs, output);
+            Optional<File> outputFile = chooseOutputFile(klass, classFile, inputs, output);
             if (!outputFile.isPresent()) {
                 // The class is from code we don't control.
                 continue;
             }
             Files.createParentDirs(outputFile.get());
             Files.write(
-                    rewrite(classFile,
+                    rewrite(
+                            mGraph.getClassName(klass),
+                            classFile,
                             mGraph.getReachableMembers(klass, CounterSet.SHRINK),
                             new Predicate<String>() {
                                 @Override
