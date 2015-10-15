@@ -24,6 +24,7 @@ import com.google.common.base.Strings;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
+import java.awt.geom.AffineTransform;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
@@ -54,6 +55,14 @@ class SvgTree {
         mHasLeafNode = hasLeafNode;
     }
 
+    /**
+     * From the root, top down, pass the transformation (TODO: attributes)
+     * down the children.
+     */
+    public void flattern() {
+        mRoot.flattern(new AffineTransform());
+    }
+
     public enum SvgLogLevel {
         ERROR,
         WARNING
@@ -77,7 +86,7 @@ class SvgTree {
     }
 
     private void transform(float a, float b, float c, float d, float e, float f) {
-        mRoot.transform(a, b, c, d, e, f);
+        mRoot.transformIfNeeded(a, b, c, d, e, f);
     }
 
     public void dump(SvgGroupNode root) {

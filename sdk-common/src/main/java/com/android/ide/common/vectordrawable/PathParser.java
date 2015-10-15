@@ -181,14 +181,24 @@ public class PathParser {
     public static VdPath.Node[] parsePath(String value) {
         int start = 0;
         int end = 1;
-
+        value = value.trim();
         List<VdPath.Node> list = new ArrayList<VdPath.Node>();
+
         while (end < value.length()) {
             end = nextStart(value, end);
             String s = value.substring(start, end);
             float[] val = getFloats(s);
+            char currentCommand = s.charAt(0);
 
-            addNode(list, s.charAt(0), val);
+            if (start == 0) {
+                // For the starting command, special handling:
+                // add M 0 0 if there is none.
+                // This is good for transformation.
+                if (currentCommand != 'M' && currentCommand != 'm'){
+                    addNode(list, 'M', new float[2]);
+                }
+            }
+            addNode(list, currentCommand, val);
 
             start = end;
             end++;

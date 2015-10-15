@@ -16,14 +16,12 @@
 
 package com.android.ide.common.vectordrawable;
 
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,24 +31,11 @@ import java.util.logging.Logger;
 class SvgGroupNode extends SvgNode {
     private static Logger logger = Logger.getLogger(SvgGroupNode.class.getSimpleName());
     private static final String INDENT_LEVEL = "    ";
+
     private ArrayList<SvgNode> mChildren = new ArrayList<SvgNode>();
 
     public SvgGroupNode(SvgTree svgTree, Node docNode, String name) {
         super(svgTree, docNode, name);
-        // Parse and generate a presentation map.
-        NamedNodeMap a = docNode.getAttributes();
-        int len = a.getLength();
-
-        for (int itemIndex = 0; itemIndex < len; itemIndex++) {
-            Node n = a.item(itemIndex);
-            String nodeName = n.getNodeName();
-            String nodeValue = n.getNodeValue();
-            // TODO: Handle style here. Refer to Svg2Vector::addStyleToPath().
-            if (Svg2Vector.presentationMap.containsKey(nodeName)) {
-                fillPresentationAttributes(nodeName, nodeValue, logger);
-            }
-        }
-
     }
 
     public void addChild(SvgNode child) {
@@ -78,9 +63,18 @@ class SvgGroupNode extends SvgNode {
     }
 
     @Override
-    public void transform(float a, float b, float c, float d, float e, float f) {
+    public void transformIfNeeded(float a, float b, float c, float d, float e, float f) {
         for (SvgNode p : mChildren) {
-            p.transform(a, b, c, d, e, f);
+            p.transformIfNeeded(a, b, c, d, e, f);
+        }
+    }
+
+    @Override
+    public void flattern(AffineTransform transform) {
+        for (SvgNode n : mChildren) {
+            mStackedTransform.setTransform(transform);
+            mStackedTransform.concatenate(mLocalTransform);
+            n.flattern(mStackedTransform);
         }
     }
 

@@ -34,8 +34,8 @@ class VdNodeRender {
         float[] current = new float[6];
         char lastCmd = ' ';
         for (int i = 0; i < node.length; i++) {
-            addCommand(path, current, node[i].type, lastCmd,node[i].params);
-            lastCmd = node[i].type;
+            addCommand(path, current, node[i].getType(), lastCmd,node[i].getmParams());
+            lastCmd = node[i].getType();
         }
     }
 
