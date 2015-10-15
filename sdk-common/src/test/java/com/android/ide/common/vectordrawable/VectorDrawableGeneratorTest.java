@@ -18,7 +18,6 @@ package com.android.ide.common.vectordrawable;
 
 import com.android.SdkConstants;
 import com.android.ide.common.util.GeneratorTest;
-import com.android.testutils.SdkTestCase;
 import com.android.testutils.TestUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -46,7 +45,7 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
     };
 
     private void checkVectorConversion(String testFileName, FileType type,
-                                       boolean dumpXml) throws IOException {
+                                       boolean dumpXml, String expectedError) throws IOException {
         String incomingFileName;
         if (type == FileType.SVG) {
             incomingFileName = testFileName + ".svg";
@@ -64,6 +63,11 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
             try {
                 OutputStream outStream = new ByteArrayOutputStream();
                 String errorLog = Svg2Vector.parseSvgToXml(incomingFile, outStream);
+                if (expectedError != null) {
+                    TestCase.assertNotNull(errorLog);
+                    TestCase.assertFalse(errorLog.isEmpty());
+                    TestCase.assertTrue(errorLog.contains(expectedError));
+                }
                 xmlContent = outStream.toString();
                 if (xmlContent == null || xmlContent.isEmpty()) {
                     TestCase.fail("Empty Xml file.");
@@ -106,15 +110,19 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
     }
 
     private void checkSvgConversion(String fileName) throws IOException {
-        checkVectorConversion(fileName, FileType.SVG, false);
+        checkVectorConversion(fileName, FileType.SVG, false, null);
     }
 
     private void checkXmlConversion(String filename) throws IOException {
-        checkVectorConversion(filename, FileType.XML, false);
+        checkVectorConversion(filename, FileType.XML, false, null);
+    }
+
+    private void checkSvgConversionAndContainsError(String filename, String errorLog) throws IOException {
+        checkVectorConversion(filename, FileType.SVG, false, errorLog);
     }
 
     private void checkSvgConversionDebug(String fileName) throws IOException {
-        checkVectorConversion(fileName, FileType.SVG, true);
+        checkVectorConversion(fileName, FileType.SVG, true, null);
     }
 
     //////////////////////////////////////////////////////////
@@ -171,6 +179,12 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         checkSvgConversion("ic_polyline_strokewidth");
     }
 
+    // Preview broken on linux, fine on chrome browser
+    public void testSvgStrokeWidthTransform() throws Exception {
+        checkSvgConversionAndContainsError("ic_strokewidth_transform",
+                "We don't scale the stroke width!");
+    }
+
     public void testSvgEmptyAttributes() throws Exception {
         checkSvgConversion("ic_empty_attributes");
     }
@@ -180,7 +194,9 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
     }
 
     public void testSvgContainsError() throws Exception {
-        checkSvgConversion("ic_contains_ignorable_error");
+        checkSvgConversionAndContainsError("ic_contains_ignorable_error",
+                "ERROR@ line 16 <switch> is not supported\n"
+                        + "ERROR@ line 17 <foreignObject> is not supported");
     }
 
     public void testSvgLineToMoveTo() throws Exception {
