@@ -166,8 +166,11 @@ public class Server {
 
                     int message = input.readInt();
                     if (message == MESSAGE_PING) {
-                        // Send an "ack" back to the IDE
-                        output.writeBoolean(true);
+                        // Send an "ack" back to the IDE.
+                        // The value of the boolean is true only when the app is in the
+                        // foreground.
+                        boolean active = Restarter.getForegroundActivity() != null;
+                        output.writeBoolean(active);
                         return;
                     }
                     if (message != MESSAGE_PATCHES) {
