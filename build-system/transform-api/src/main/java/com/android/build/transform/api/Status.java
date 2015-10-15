@@ -16,28 +16,12 @@
 
 package com.android.build.transform.api;
 
-import com.android.annotations.NonNull;
 import com.google.common.annotations.Beta;
 
-import java.util.Collection;
-
 /**
- * The input to a Transform.
- * <p/>
- * It is mostly composed of a list of {@link JarInput} and a list of {@link DirectoryInput}.
+ * The file changed status for incremental execution.
  */
 @Beta
-public interface TransformInput {
-
-    /**
-     * Returns a collection of {@link JarInput}.
-     */
-    @NonNull
-    Collection<JarInput> getJarInputs();
-
-    /**
-     * Returns a collection of {@link DirectoryInput}.
-     */
-    @NonNull
-    Collection<DirectoryInput> getDirectoryInputs();
+public enum Status {
+    NOTCHANGED, ADDED, CHANGED, REMOVED
 }

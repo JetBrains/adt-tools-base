@@ -14,30 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.build.transform.api;
+package com.android.build.gradle.internal.pipeline;
 
-import com.android.annotations.NonNull;
-import com.google.common.annotations.Beta;
-
-import java.util.Collection;
+import org.junit.Test;
 
 /**
- * The input to a Transform.
- * <p/>
- * It is mostly composed of a list of {@link JarInput} and a list of {@link DirectoryInput}.
+ * TODO
  */
-@Beta
-public interface TransformInput {
+public class IntermediateFolderUtilsTest {
 
-    /**
-     * Returns a collection of {@link JarInput}.
-     */
-    @NonNull
-    Collection<JarInput> getJarInputs();
+    @Test
+    public void testGetContentLocation() throws Exception {
 
-    /**
-     * Returns a collection of {@link DirectoryInput}.
-     */
-    @NonNull
-    Collection<DirectoryInput> getDirectoryInputs();
+    }
+
+    @Test
+    public void testComputeNonIncrementalInputFromFolder() throws Exception {
+
+    }
+
+    @Test
+    public void testComputeIncrementalInputFromFolder() throws Exception {
+
+    }
 }

@@ -16,19 +16,19 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.transform.api.AsInputTransform;
 import com.android.build.transform.api.Context;
-import com.android.build.transform.api.ScopedContent;
-import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.QualifiedContent;
+import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.builder.core.VariantType;
 import com.android.builder.shrinker.JavaSerializationShrinkerGraph;
 import com.android.builder.shrinker.ProguardConfigKeepRulesBuilder;
@@ -42,14 +42,13 @@ import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Transform that performs shrinking - only reachable methods in reachable class files are copied
  * into the output folders (one per stream).
  */
-public class NewShrinkerTransform extends ProguardConfigurable implements AsInputTransform {
+public class NewShrinkerTransform extends ProguardConfigurable {
 
     private static final String NAME = "newClassShrinker";
 
@@ -73,7 +72,7 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
 
     @NonNull
     @Override
-    public Set<ScopedContent.ContentType> getInputTypes() {
+    public Set<QualifiedContent.ContentType> getInputTypes() {
         return TransformManager.CONTENT_CLASS;
     }
 
@@ -106,12 +105,6 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
         return Sets.immutableEnumSet(set);
     }
 
-    @Nullable
-    @Override
-    public ScopedContent.Format getOutputFormat() {
-        return null;
-    }
-
     @NonNull
     @Override
     public Collection<File> getSecondaryFileInputs() {
@@ -130,9 +123,12 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
     @Override
     public void transform(
             @NonNull Context context,
-            @NonNull Map<TransformInput, TransformOutput> inputs,
+            @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
+            @Nullable TransformOutputProvider outputProvider,
             boolean isIncremental) throws IOException, TransformException, InterruptedException {
+        checkNotNull(outputProvider, "Missing output object for transform " + getName());
+
         Shrinker<String> shrinker = new Shrinker<String>(
                 new WaitableExecutor<Void>(),
                 new JavaSerializationShrinkerGraph(incrementalDir),
@@ -147,8 +143,9 @@ public class NewShrinkerTransform extends ProguardConfigurable implements AsInpu
         shrinker.run(
                 inputs,
                 referencedInputs,
+                outputProvider,
                 // TODO: Multidex class list.
                 ImmutableMap.of(Shrinker.ShrinkType.SHRINK, parser.getKeepRules()),
-                this.isIncremental());
+                isIncremental);
     }
 }

@@ -19,6 +19,7 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.google.common.collect.ImmutableList
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
@@ -83,6 +84,12 @@ class JackTest {
     @Category(DeviceTests.class)
     void "multiDex connectedCheck"() {
         multiDex.executeConnectedCheck(JACK_OPTIONS)
+    }
+
+    @Test
+    void "check classes.dex is packaged"() {
+        basic.execute("clean", "assembleDebug");
+        TruthHelper.assertThatApk(basic.getApk("debug")).contains("classes.dex");
     }
 
     @Test

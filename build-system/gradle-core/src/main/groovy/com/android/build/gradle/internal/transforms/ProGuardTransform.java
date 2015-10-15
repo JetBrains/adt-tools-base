@@ -16,43 +16,41 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import static com.android.SdkConstants.DOT_JAR;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 import static com.android.utils.FileUtils.mkdirs;
+import static com.android.utils.FileUtils.renameTo;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.tasks.SimpleWorkQueue;
-import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.Context;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Format;
-import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.DirectoryInput;
+import com.android.build.transform.api.Format;
+import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.QualifiedContent;
+import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.builder.tasks.Job;
 import com.android.builder.tasks.JobContext;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-import org.gradle.tooling.BuildException;
-
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import proguard.ClassPath;
@@ -60,7 +58,7 @@ import proguard.ClassPath;
 /**
  * ProGuard support as a transform
  */
-public class ProGuardTransform extends BaseProguardAction implements CombinedTransform {
+public class ProGuardTransform extends BaseProguardAction {
 
     private final VariantScope variantScope;
     private final boolean asJar;
@@ -158,16 +156,6 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
 
     @NonNull
     @Override
-    public Format getOutputFormat() {
-        if (asJar) {
-            return Format.JAR;
-        }
-
-        return Format.SINGLE_FOLDER;
-    }
-
-    @NonNull
-    @Override
     public Collection<File> getSecondaryFileInputs() {
         final List<File> files = Lists.newArrayList();
 
@@ -199,7 +187,7 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
             @NonNull Context context,
             @NonNull final Collection<TransformInput> inputs,
             @NonNull final Collection<TransformInput> referencedInputs,
-            @NonNull final TransformOutput combinedOutput,
+            @Nullable final TransformOutputProvider outputProvider,
             boolean isIncremental) throws TransformException {
         // only run one minification at a time (across projects)
         final Job<Void> job = new Job<Void>(getName(),
@@ -207,7 +195,7 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
                     @Override
                     public void run(@NonNull Job<Void> job,
                             @NonNull JobContext<Void> context) throws IOException {
-                        doMinification(inputs, referencedInputs, combinedOutput);
+                        doMinification(inputs, referencedInputs, outputProvider);
                     }
                 });
         try {
@@ -226,10 +214,17 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
     private void doMinification(
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
-            @NonNull TransformOutput combinedOutput) throws IOException {
-        // all the output will be the same since the transform type is COMBINED.
-        checkNotNull(combinedOutput, "Found no output in transform with Type=COMBINED");
-        File outFile = combinedOutput.getOutFile();
+            @Nullable TransformOutputProvider output) throws IOException {
+        checkNotNull(output, "Missing output object for transform " + getName());
+        Set<ContentType> outputTypes = getOutputTypes();
+        Set<Scope> scopes = getScopes();
+        File outFile = output.getContentLocation("main", outputTypes, scopes,
+                asJar ? Format.JAR : Format.DIRECTORY);
+        if (asJar) {
+            mkdirs(outFile.getParentFile());
+        } else {
+            mkdirs(outFile);
+        }
 
         try {
             GlobalScope globalScope = variantScope.getGlobalScope();
@@ -252,12 +247,6 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
             // --- Out files ---
             outJar(outFile);
 
-            if (asJar) {
-                mkdirs(outFile.getParentFile());
-            } else {
-                mkdirs(outFile);
-            }
-
             // proguard doesn't verify that the seed/mapping/usage folders exist and will fail
             // if they don't so create them.
             mkdirs(proguardOut);
@@ -274,6 +263,28 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
             forceprocessing();
             runProguard();
 
+            if (!asJar) {
+                // if the output of proguard is a folder (rather than a single jar), the
+                // dependencies will be written as jar in the same folder output.
+                // So we move it to their normal location as new jar outputs.
+                File[] jars = outFile.listFiles(new FilenameFilter() {
+                    @Override
+                    public boolean accept(File file, String name) {
+                        return name.endsWith(DOT_JAR);
+                    }
+                });
+                if (jars != null) {
+                    for (File jarFile : jars) {
+                        String jarFileName = jarFile.getName();
+                        File to = output.getContentLocation(
+                                jarFileName.substring(0, jarFileName.length() - DOT_JAR.length()),
+                                outputTypes, scopes, Format.JAR);
+                        mkdirs(to.getParentFile());
+                        renameTo(jarFile, to);
+                    }
+                }
+            }
+
         } catch (Exception e) {
             if (e instanceof IOException) {
                 throw (IOException) e;
@@ -284,7 +295,8 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
     }
 
     private void addInputsToConfiguration(
-            @NonNull Collection<TransformInput> streamList, boolean referencedOnly) {
+            @NonNull Collection<TransformInput> inputs,
+            boolean referencedOnly) {
         ClassPath classPath;
         List<String> baseFilter;
 
@@ -296,30 +308,39 @@ public class ProGuardTransform extends BaseProguardAction implements CombinedTra
             baseFilter = null;
         }
 
-        for (TransformInput transformInput : streamList) {
-            List<String> filter = baseFilter;
-            if (!transformInput.getContentTypes().contains(ContentType.CLASSES)) {
-                ImmutableList.Builder<String> builder = ImmutableList.builder();
-                if (filter != null) {
-                    builder.addAll(filter);
-                }
-                builder.add("!**/*.class");
-                filter = builder.build();
+        for (TransformInput transformInput : inputs) {
+            for (JarInput jarInput : transformInput.getJarInputs()) {
+                handleQualifiedContent(classPath, jarInput, baseFilter);
             }
 
-            switch (transformInput.getFormat()) {
-                case SINGLE_FOLDER:
-                case JAR:
-                    for (File file : transformInput.getFiles()) {
-                        inputJar(classPath, file, filter);
-                    }
-                    break;
-                case MULTI_FOLDER:
-                    throw new RuntimeException("MULTI_FOLDER format received in Transform method");
-                default:
-                    throw new RuntimeException("Unsupported ScopedContent.Format value: " + transformInput.getFormat().name());
+            for (DirectoryInput directoryInput : transformInput.getDirectoryInputs()) {
+                handleQualifiedContent(classPath, directoryInput, baseFilter);
             }
         }
+    }
+
+    private static void handleQualifiedContent(
+            @NonNull ClassPath classPath,
+            @NonNull QualifiedContent content,
+            @Nullable List<String> baseFilter) {
+        List<String> filter = baseFilter;
+
+        if (!content.getContentTypes().contains(ContentType.CLASSES)) {
+            // if the content is not meant to contain classes, we ignore them
+            // in case they are present.
+            ImmutableList.Builder<String> builder = ImmutableList.builder();
+            if (filter != null) {
+                builder.addAll(filter);
+            }
+            builder.add("!**/*.class");
+            filter = builder.build();
+        } else if (!content.getContentTypes().contains(ContentType.RESOURCES)) {
+            // if the content is not meant to contain resources, we ignore them
+            // in case they are present (by accepting only classes.)
+            filter = ImmutableList.of("**/*.class");
+        }
+
+        inputJar(classPath, content.getFile(), filter);
     }
 
     @Nullable

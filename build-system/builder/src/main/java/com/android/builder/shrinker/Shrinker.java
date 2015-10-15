@@ -22,14 +22,16 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.DirectoryInput;
+import com.android.build.transform.api.Format;
+import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.Status;
 import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.utils.FileUtils;
 import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableMap;
@@ -50,7 +52,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -79,22 +80,18 @@ public class Shrinker<T> {
     @NonNull
     private static Optional<File> chooseOutputFile(
             @NonNull File classFile,
-            @NonNull Map<TransformInput, TransformOutput> inputOutputs) {
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull TransformOutputProvider output) {
         String absolutePath = classFile.getAbsolutePath();
 
-        for (Map.Entry<TransformInput, TransformOutput> entry : inputOutputs.entrySet()) {
-            TransformInput input = entry.getKey();
-            TransformOutput output = entry.getValue();
-            for (File inputDir : getAllDirectories(input)) {
-                if (absolutePath.startsWith(inputDir.getAbsolutePath())) {
-                    File outputDir;
-                    if (input.getFormat() == ScopedContent.Format.MULTI_FOLDER) {
-                        outputDir = new File(output.getOutFile(), inputDir.getName());
-                    } else {
-                        outputDir = output.getOutFile();
-                    }
+        for (TransformInput input : inputs) {
+            for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
+                File folder = directoryInput.getFile();
+                if (absolutePath.startsWith(folder.getAbsolutePath())) {
+                    File outputDir = output.getContentLocation(directoryInput.getName(), directoryInput
+                            .getContentTypes(), directoryInput.getScopes(), Format.DIRECTORY);
 
-                    String relativePath = FileUtils.relativePath(classFile, inputDir);
+                    String relativePath = FileUtils.relativePath(classFile, folder);
                     return Optional.of(new File(outputDir, relativePath));
                 }
             }
@@ -190,20 +187,12 @@ public class Shrinker<T> {
     }
 
     private static Collection<File> getAllDirectories(TransformInput input) {
-        switch (input.getFormat()) {
-            case SINGLE_FOLDER:
-                return input.getFiles();
-            case MULTI_FOLDER:
-                List<File> folders = Lists.newArrayList();
-                for (File topLevel : input.getFiles()) {
-                    File[] files = topLevel.listFiles();
-                    Preconditions.checkArgument(files != null, "Invalid input %s", topLevel);
-                    Collections.addAll(folders, files);
-                }
-                return folders;
-            default:
-                throw new IllegalStateException("Unsupported input type " + input.getFormat());
+        List<File> files = Lists.newArrayList();
+        for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
+            files.add(directoryInput.getFile());
         }
+
+        return files;
     }
 
     private static FluentIterable<File> getClassFiles(File dir) {
@@ -453,42 +442,53 @@ public class Shrinker<T> {
     }
 
     public void handleFileChanges(
-            Map<TransformInput, TransformOutput> inputOutputs,
+            Collection<TransformInput> inputs,
+            @NonNull TransformOutputProvider output,
             final ImmutableMap<ShrinkType, KeepRules> keepRules) throws IOException {
         mGraph.loadState();
 
         final ImmutableMap<ShrinkType, Set<T>> modifiedClasses = buildMapPerShrinkType(keepRules);
 
-        for (final Map.Entry<TransformInput, TransformOutput> entry : inputOutputs.entrySet()) {
-            TransformInput input = entry.getKey();
-            Set<Map.Entry<File, TransformInput.FileStatus>> changedFiles =
-                    input.getChangedFiles().entrySet();
-            for (final Map.Entry<File, TransformInput.FileStatus> changedFile : changedFiles) {
-                mExecutor.execute(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        switch (changedFile.getValue()) {
-                            case ADDED:
-                                throw todo("new file added");
-                            case REMOVED:
-                                throw todo("removed file");
-                            case CHANGED:
-                                processChangedClassFile(
-                                        changedFile.getKey(),
-                                        keepRules,
-                                        modifiedClasses);
-                                break;
+        for (final TransformInput input : inputs) {
+            for (JarInput jarInput : input.getJarInputs()) {
+                switch (jarInput.getStatus()) {
+                    case ADDED:
+                        break;
+                    case REMOVED:
+                        break;
+                    case CHANGED:
+                        break;
+                }
+            }
+
+            for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
+                for (final Map.Entry<File, Status> changedFile : directoryInput.getChangedFiles().entrySet()) {
+                    mExecutor.execute(new Callable<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            switch (changedFile.getValue()) {
+                                case ADDED:
+                                    throw todo("new file added");
+                                case REMOVED:
+                                    throw todo("removed file");
+                                case CHANGED:
+                                    processChangedClassFile(
+                                            changedFile.getKey(),
+                                            keepRules,
+                                            modifiedClasses);
+                                    break;
+                            }
+                            return null;
                         }
-                        return null;
-                    }
-                });
+                    });
+                }
             }
         }
 
         waitForAllTasks();
 
         for (ShrinkType shrinkType : keepRules.keySet()) {
-            updateClassFiles(modifiedClasses.get(shrinkType), inputOutputs);
+            updateClassFiles(modifiedClasses.get(shrinkType), inputs, output);
         }
 
         waitForAllTasks();
@@ -585,27 +585,28 @@ public class Shrinker<T> {
     }
 
     public void run(
-            @NonNull Map<TransformInput, TransformOutput> inputOutputs,
+            @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedClasses,
+            @NonNull TransformOutputProvider output,
             @NonNull ImmutableMap<ShrinkType, KeepRules> keepRules,
             boolean saveState) throws IOException {
         mGraph.removeStoredState();
 
-        for (TransformOutput output : inputOutputs.values()) {
-            FileUtils.emptyFolder(output.getOutFile());
-        }
+        output.deleteAll();
 
-        buildGraph(inputOutputs.keySet(), referencedClasses);
+        buildGraph(inputs, referencedClasses);
         setCounters(keepRules);
-        writeOutput(inputOutputs);
+        writeOutput(inputs, output);
 
         if (saveState) {
             mGraph.saveState();
         }
     }
 
-    private void writeOutput(Map<TransformInput, TransformOutput> inputOutputs) throws IOException {
-        updateClassFiles(mGraph.getClassesToKeep(ShrinkType.SHRINK), inputOutputs);
+    private void writeOutput(
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull TransformOutputProvider output) throws IOException {
+        updateClassFiles(mGraph.getClassesToKeep(ShrinkType.SHRINK), inputs, output);
         // TODO: Produce main dex list.
     }
 
@@ -628,10 +629,12 @@ public class Shrinker<T> {
 
     private void updateClassFiles(
             Iterable<T> classesToWrite,
-            Map<TransformInput, TransformOutput> inputOutputs) throws IOException {
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull TransformOutputProvider output) throws IOException {
         for (T klass : classesToWrite) {
             File classFile = mGraph.getClassFile(klass);
-            Optional<File> outputFile = chooseOutputFile(classFile, inputOutputs);
+
+            Optional<File> outputFile = chooseOutputFile(classFile, inputs, output);
             if (!outputFile.isPresent()) {
                 // The class is from code we don't control.
                 continue;

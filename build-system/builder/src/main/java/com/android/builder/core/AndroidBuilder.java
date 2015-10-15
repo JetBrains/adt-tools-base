@@ -30,7 +30,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.transform.api.ScopedContent.Format;
+import com.android.build.transform.api.Format;
 import com.android.builder.compiling.DependencyFileProcessor;
 import com.android.builder.core.BuildToolsServiceLoader.BuildToolServiceLoader;
 import com.android.builder.dependency.ManifestDependency;
@@ -1804,7 +1804,7 @@ public class AndroidBuilder {
      *
      * @param androidResPkgLocation the location of the packaged resource file
      * @param dexFolders the folder(s) with the dex file(s).
-     * @param javaResourcesLocation the processed Java resource folder
+     * @param javaResourcesLocations the processed Java resource folders and/or jars
      * @param jniLibsFolders the folders containing jni shared libraries
      * @param mergingFolder folder to contain files that are being merged
      * @param abiFilters optional ABI filter
@@ -1821,8 +1821,8 @@ public class AndroidBuilder {
      */
     public void packageApk(
             @NonNull String androidResPkgLocation,
-            @NonNull Map<File, Format> dexFolders,
-            @Nullable File javaResourcesLocation,
+            @NonNull Set<File> dexFolders,
+            @NonNull Collection<File> javaResourcesLocations,
             @Nullable Collection<File> jniLibsFolders,
             @NonNull File mergingFolder,
             @Nullable Set<String> abiFilters,
@@ -1856,7 +1856,7 @@ public class AndroidBuilder {
 
             packager.setJniDebugMode(jniDebugBuild);
 
-            if (javaResourcesLocation != null) {
+            for (File javaResourcesLocation : javaResourcesLocations) {
                 packager.addResources(javaResourcesLocation);
             }
 

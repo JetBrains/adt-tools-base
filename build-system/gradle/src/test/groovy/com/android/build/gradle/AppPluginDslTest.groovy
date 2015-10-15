@@ -453,7 +453,7 @@ public class AppPluginDslTest extends BaseTest {
         ]
 
         expectedFiles.each { name, expected ->
-            List<File> actual = variantMap[name].testProguardFiles
+            Set<File> actual = variantMap[name].testProguardFiles
             assert (actual*.name as Set) == (expected as Set), name
         }
     }

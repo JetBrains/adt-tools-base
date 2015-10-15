@@ -18,12 +18,15 @@ package com.android.build.transform.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.Scope;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -37,55 +40,24 @@ import java.util.Set;
  * tasks get automatically linked together.
  * <p/>
  * The Transform indicates what it applies to (content, scope) and what it generates (content,
- * format):
- * <ul>
- *     <li>The {@link com.android.build.transform.api.ScopedContent.ContentType} is the type
- *     of the artifact that is consumed (via {@link #getInputTypes()}.) The output type
- *     can be different and specified through {@link #getOutputTypes()}.). A transform
- *     may process more than one type, and each type may show up in a different input. However,
- *     all outputs will be of the type(s) indicated in {@link #getOutputTypes()}.</li>
- *     <li>The {@link com.android.build.transform.api.ScopedContent.Scope} indicates
- *     (via {@link #getScopes()}) the scope that this transform applies to. It is possible to
- *     apply a transform only to the project's code, or only to the external libraries for
- *     instance.</li>
- *     <li>The referenced scopes {@link #getReferencedScopes()} allows receiving additional
- *     scopes for reference only. These scopes are not consumed by the transform and further
- *     transforms will receive them untouched. This can be useful when the transform need to
- *     see the rest of the classes but only applies to a subset of the scopes.</li>
- *     <li>The {@link com.android.build.transform.api.ScopedContent.Format} indicates (via
- *     {@link #getOutputFormat()}) what the output will be. In general,
- *     {@link com.android.build.transform.api.ScopedContent.Format#SINGLE_FOLDER} is the
- *     preferred format as it allows Gradle to provide incremental information.</li>
- * </ul>
- *
+ * format).
  * <p/>
- * A transform indicates how it transforms the content based on the interface it implements:
- * <ul>
- *     <li>{@link AsInputTransform}: This transform reads multiple scopes and outputs the
- *     transformed data in separate output for each scope. This allows later transforms
- *     to be applied to a smaller number of scopes. This is the preferred type for
- *     interoperability with other transforms.</li>
- *     <li>{@link CombinedTransform}: This transform reads multiple scopes and outputs the
- *     transformed data in a single folder. This folder is now tied to all the scopes it
- *     contain and later transforms can only process this data if they declare that they apply
- *     to all these scopes (or more).
- *     Applying such a transform will restrict the ability to add more transforms.</li>
- *     <li>{@link ForkTransform}: This transform works similarly to {@link AsInputTransform}
- *     when it comes to scopes (each input as a matching output to write to). However this
- *     transform must indicate a single {@link #getInputTypes()}), and several
- *     {@link #getOutputTypes()}. For each input, the transform will receive one output per
- *     declared output type.</li>
- *     <li>{@link NoOpTransform}: This transform does not have any normal output. Instead it
- *     can output data using the secondary outputs.</li>
- * </ul>
- *
- * <p/>
- * A transform receives input as {@link TransformInput}, which contains both file and scope/type
- * information. This is typically the output of a previous transform.
- * The output is handled by {@link TransformOutput} which has similar information. This can be
- * consumed by a later transform.
+ * A transform receives input as a collection {@link TransformInput}, which is composed of
+ * {@link JarInput} and {@link DirectoryInput}.
+ * Both provide information about the {@link Scope} and {@link ContentType} associated with their
+ * particular content.
+ *<p/>
+ * The output is handled by {@link TransformOutputProvider} which allows creating new self-contained
+ * content, each associated with their own Scopes and Content Types.
  * The content handled by TransformInput/Output is managed by the transform system, and their
  * location is not configurable.
+ * <p/>
+ * It is best practice to write into as many outputs as Jar/Folder Inputs received by the
+ * transform. Combining all the inputs into a single output prevents downstream transform from
+ * processing limited scopes.<br>
+ * While it's possible to differentiate different Content Types by file extension, it's not possible
+ * to do so for Scopes. Therefore if a transform request a Scope but the only available Output
+ * contains more than the requested Scope, the build will fail.
  *
  * <p/>
  * Additionally, a transform can indicate secondary inputs/outputs. These are not handled by
@@ -115,7 +87,7 @@ public abstract class Transform {
      * one type.
      */
     @NonNull
-    public abstract Set<ScopedContent.ContentType> getInputTypes();
+    public abstract Set<ContentType> getInputTypes();
 
     /**
      * Returns the type(s) of data that is generated by the Transform. This may be more than
@@ -125,7 +97,7 @@ public abstract class Transform {
      * The default implementation returns {@link #getInputTypes()}.
      */
     @NonNull
-    public Set<ScopedContent.ContentType> getOutputTypes() {
+    public Set<ContentType> getOutputTypes() {
         return getInputTypes();
     }
 
@@ -134,7 +106,7 @@ public abstract class Transform {
      * term of content types, but in term of which streams it consumes.
      */
     @NonNull
-    public abstract Set<ScopedContent.Scope> getScopes();
+    public abstract Set<Scope> getScopes();
 
     /**
      * Returns the referenced scope(s) for the Transform. These scopes are not consumed by
@@ -145,17 +117,9 @@ public abstract class Transform {
      * The default implementation returns an empty Set.
      */
     @NonNull
-    public Set<ScopedContent.Scope> getReferencedScopes() {
+    public Set<Scope> getReferencedScopes() {
         return ImmutableSet.of();
     }
-
-    /**
-     * Returns the format of the output stream(s) that this Transform writes into. Null can be used
-     * to indicate that every output stream uses the same format as the corresponding input stream
-     * (only applicable to some transform types).
-     */
-    @Nullable
-    public abstract ScopedContent.Format getOutputFormat();
 
     /**
      * Returns a list of additional file(s) that this Transform needs to run.
@@ -178,8 +142,8 @@ public abstract class Transform {
      * Returns a list of additional (out of streams) file(s) that this Transform creates.
      *
      * <p/>
-     * These File instances can only represent files, not folders. For folders, use
-     * {@link #getSecondaryFolderOutputs()}
+     * These File instances can only represent files, not directories. For directories, use
+     * {@link #getSecondaryDirectoryOutputs()}
      *
      * <p/>
      * Changes to files returned in this list will trigger a new execution of the Transform
@@ -196,23 +160,23 @@ public abstract class Transform {
     }
 
     /**
-     * Returns a list of additional (out of streams) folder(s) that this Transform creates.
+     * Returns a list of additional (out of streams) directory(ies) that this Transform creates.
      *
      * <p/>
-     * These File instances can only represent folders. For files, use
+     * These File instances can only represent directories. For files, use
      * {@link #getSecondaryFileOutputs()}
      *
      * <p/>
-     * Changes to folders returned in this list will trigger a new execution of the Transform
+     * Changes to directories returned in this list will trigger a new execution of the Transform
      * even if the streams haven't been touched.
      * <p/>
-     * Changes to these output folders force a non incremental execution.
+     * Changes to these output directories force a non incremental execution.
      *
      * <p/>
      * The default implementation returns an empty collection.
      */
     @NonNull
-    public Collection<File> getSecondaryFolderOutputs() {
+    public Collection<File> getSecondaryDirectoryOutputs() {
         return ImmutableList.of();
     }
 
@@ -240,4 +204,61 @@ public abstract class Transform {
      * If it does, then the TransformInput will contains a list of changed/removed/added files.
      */
     public abstract boolean isIncremental();
+
+    /**
+     * Executes the Transform.
+     *
+     * <p/>
+     * The inputs are
+     * <ul>
+     *     <li>The <var>inputs</var> collection of {@link TransformInput}. These are the inputs
+     *     that are consumed by this Transform. A transformed version of these inputs must
+     *     be written into the output. What is received is controlled through
+     *     {@link #getInputTypes()}, and {@link #getScopes()}.</li>
+     *     <li>The <var>referencedInputs</var> collection of {@link TransformInput}. This is
+     *     for reference only and should be not be transformed. What is received is controlled
+     *     through {@link #getReferencedScopes()}.</li>
+     * </ul>
+     *
+     * The inputs are provided as a collection of {@link TransformInput}, which then gives access
+     * to the inputs either as {@link JarInput} or {@link DirectoryInput}.
+     * <p/>
+     * A transform that does not want to consume anything but instead just wants to see the content
+     * of some inputs should return an empty set in {@link #getScopes()}, and what it wants to
+     * see in {@link #getReferencedScopes()}.
+     *
+     * <p/>
+     * Even though a transform's {@link Transform#isIncremental()} returns true, this method may
+     * be receive <code>false</code> in <var>isIncremental</var>. This can be due to
+     * <ul>
+     *     <li>a change in secondary files ({@link #getSecondaryFileInputs()},
+     *     {@link #getSecondaryFileOutputs()}, {@link #getSecondaryDirectoryOutputs()})</li>
+     *     <li>a change to a non file input ({@link #getParameterInputs()}</li>
+     *     <li>a change to the output files/directories</li>
+     *     <li>a file deletion that the transform mechanism could not match to a previous input.</li>
+     * </ul>
+     * In such an event, when <var>isIncremental</var> is false, the inputs will not have any
+     * incremental change information:
+     * <ul>
+     *     <li>{@link JarInput#getStatus()} will return {@link Status#NOTCHANGED} even though
+     *     the file may be added/changed.</li>
+     *     <li>{@link DirectoryInput#getChangedFiles()} will return an empty map even though
+     *     some files may be added/changed.</li>
+     * </ul>
+     *
+     * @param context the context in which the transform is run.
+     * @param inputs the inputs/outputs of the transform.
+     * @param referencedInputs the referenced-only inputs.
+     * @param outputProvider the output provider allowing to create content.
+     * @param isIncremental whether the transform execution is incremental.
+     * @throws IOException if an IO error occurs.
+     * @throws InterruptedException
+     * @throws TransformException Generic exception encapsulating the cause.
+     */
+    public abstract void transform(
+            @NonNull Context context,
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull Collection<TransformInput> referencedInputs,
+            @Nullable TransformOutputProvider outputProvider,
+            boolean isIncremental) throws IOException, TransformException, InterruptedException;
 }

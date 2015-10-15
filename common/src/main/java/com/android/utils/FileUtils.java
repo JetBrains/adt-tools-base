@@ -100,7 +100,10 @@ public final class FileUtils {
     }
 
     public static void mkdirs(@NonNull File folder) {
-        if (!folder.exists() && !folder.mkdirs()) {
+        // attempt to create first.
+        // if failure only throw if folder does not exist.
+        // This makes this method able to create the same folder(s) from different thread
+        if (!folder.mkdirs() && !folder.exists()) {
             throw new RuntimeException("Cannot create directory " + folder);
         }
     }
@@ -116,6 +119,13 @@ public final class FileUtils {
         boolean result = file.delete();
         if (!result && file.exists()) {
             throw new IOException("Failed to delete " + file.getAbsolutePath());
+        }
+    }
+
+    public static void renameTo(@NonNull File file, @NonNull File to) throws IOException {
+        boolean result = file.renameTo(to);
+        if (!result) {
+            throw new IOException("Failed to rename " + file.getAbsolutePath() + " to " + to);
         }
     }
 
@@ -155,6 +165,17 @@ public final class FileUtils {
      */
     @NonNull
     public static String join(@NonNull String... paths) {
+        return PATH_JOINER.join(paths);
+    }
+
+    /**
+     * Joins a set of segment into a string, separating each segments with a host-specific
+     * path separator.
+     * @param paths the segments.
+     * @return a string with the segments.
+     */
+    @NonNull
+    public static String join(@NonNull Iterable<String> paths) {
         return PATH_JOINER.join(paths);
     }
 

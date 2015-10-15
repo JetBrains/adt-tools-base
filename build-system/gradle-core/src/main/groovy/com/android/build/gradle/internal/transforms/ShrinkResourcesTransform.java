@@ -17,28 +17,26 @@
 package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.ResourceUsageAnalyzer;
 import com.android.build.transform.api.Context;
-import com.android.build.transform.api.NoOpTransform;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Format;
-import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.builder.core.AaptPackageProcessBuilder;
 import com.android.builder.core.AndroidBuilder;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
@@ -46,17 +44,16 @@ import org.gradle.api.logging.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.EnumSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Implementation of Resource Shrinking as a transform.
  *
  * Since this transform only reads the data from the stream but does not output anything
- * back into the stream, it is a {@link Type#NO_OP} transform.
+ * back into the stream, it is a no-op transform, asking only for referenced scopes, and not
+ * "consumed" scopes.
  */
-public class ShrinkResourcesTransform extends Transform implements NoOpTransform {
+public class ShrinkResourcesTransform extends Transform {
 
     /** Whether we've already warned about how to turn off shrinking. Used to avoid
      * repeating the same multi-line message for every repeated abi split. */
@@ -144,13 +141,13 @@ public class ShrinkResourcesTransform extends Transform implements NoOpTransform
     @NonNull
     @Override
     public Set<Scope> getScopes() {
-        return TransformManager.SCOPE_FULL_PROJECT;
+        return TransformManager.EMPTY_SCOPES;
     }
 
     @NonNull
     @Override
-    public Format getOutputFormat() {
-        return Format.SINGLE_FOLDER;
+    public Set<Scope> getReferencedScopes() {
+        return TransformManager.SCOPE_FULL_PROJECT;
     }
 
     @NonNull
@@ -174,12 +171,14 @@ public class ShrinkResourcesTransform extends Transform implements NoOpTransform
     public void transform(
             @NonNull Context context,
             @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
-            throws IOException, TransformException, InterruptedException {
+            @NonNull Collection<TransformInput> referencedInputs,
+            @Nullable TransformOutputProvider outputProvider,
+            boolean isIncremental) throws IOException, TransformException, InterruptedException {
+
         // there should be only one input since this transform is always applied after
         // proguard.
-        TransformInput input = Iterables.getOnlyElement(inputs);
-        File minifiedOutFolder = Iterables.getOnlyElement(input.getFiles());
+        TransformInput input = Iterables.getOnlyElement(referencedInputs);
+        File minifiedOutFolder = Iterables.getOnlyElement(input.getDirectoryInputs()).getFile();
 
         BaseVariantData<?> variantData = variantOutputData.variantData;
         ProcessAndroidResources processResourcesTask = variantData.generateRClassTask;

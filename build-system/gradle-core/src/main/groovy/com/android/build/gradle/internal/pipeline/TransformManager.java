@@ -16,49 +16,32 @@
 
 package com.android.build.gradle.internal.pipeline;
 
-import static com.android.build.transform.api.ScopedContent.ContentType.CLASSES;
-import static com.android.build.transform.api.ScopedContent.ContentType.DEX;
-import static com.android.build.transform.api.ScopedContent.ContentType.RESOURCES;
+import static com.android.build.transform.api.QualifiedContent.ContentType.CLASSES;
+import static com.android.build.transform.api.QualifiedContent.ContentType.DEX;
+import static com.android.build.transform.api.QualifiedContent.ContentType.RESOURCES;
 import static com.android.utils.StringHelper.capitalize;
-import static com.google.common.base.Objects.firstNonNull;
-import static com.google.common.base.Preconditions.checkArgument;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.BaseScope;
-import com.android.build.transform.api.AsInputTransform;
-import com.android.build.transform.api.CombinedTransform;
-import com.android.build.transform.api.ForkTransform;
-import com.android.build.transform.api.NoOpTransform;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Format;
-import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
 import com.android.builder.model.AndroidProject;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
-import com.google.common.base.Joiner;
-import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -68,7 +51,7 @@ import java.util.Set;
  * Instead it's a mean to more easily configure a series of transforms that consume each other's
  * inputs when several of these transform are optional.
  */
-public class TransformManager {
+public class TransformManager extends FilterableStreamCollection {
 
     private static final boolean DEBUG = false;
 
@@ -122,14 +105,6 @@ public class TransformManager {
         streams.add(stream);
     }
 
-    public void addStreams(@NonNull TransformStream... streams) {
-        this.streams.addAll(Arrays.asList(streams));
-    }
-
-    public void addStreams(@NonNull Collection<TransformStream> streams) {
-        this.streams.addAll(streams);
-    }
-
     public <T extends Transform> AndroidTask<TransformTask> addTransform(
             @NonNull TaskFactory taskFactory,
             @NonNull BaseScope variantScope,
@@ -158,31 +133,28 @@ public class TransformManager {
             @NonNull BaseScope scope,
             @NonNull T transform,
             @Nullable TransformTask.ConfigActionCallback<T> callback) {
-        validateTransform(transform);
 
         List<TransformStream> inputStreams = Lists.newArrayList();
-        List<TransformStream> outputStreams = Lists.newArrayList();
         String taskName = scope.getTaskName(getTaskNamePrefix(transform));
 
+        // get referenced-only streams
+        List<TransformStream> referencedStreams = grabReferencedStreams(transform);
+
         // find input streams, and compute output streams for the transform.
-        findTransformStreams(
+        IntermediateStream outputStream = findTransformStreams(
                 transform,
                 scope,
                 inputStreams,
-                outputStreams,
                 taskName,
                 scope.getGlobalScope().getBuildDir());
 
-        if (inputStreams.isEmpty()) {
+        if (inputStreams.isEmpty() && referencedStreams.isEmpty()) {
             // didn't find any match. Means there is a broken order somewhere in the streams.
             throw new RuntimeException(String.format(
-                    "Unable to add Transform '%s' on variant '%s': requested streams not available: %s/%s",
+                    "Unable to add Transform '%s' on variant '%s': requested streams not available: %s+%s / %s",
                     transform.getName(), scope.getVariantConfiguration().getFullName(),
-                    transform.getScopes(), transform.getInputTypes()));
+                    transform.getScopes(), transform.getReferencedScopes(), transform.getInputTypes()));
         }
-
-        // add referenced-only streams
-        List<TransformStream> referencedStreams = grabReferencedStreams(transform);
 
         if (DEBUG) {
             System.out.println(
@@ -196,8 +168,8 @@ public class TransformManager {
             for (TransformStream sd : referencedStreams) {
                 System.out.println("\tRef'edStream: " + sd);
             }
-            for (TransformStream sd : outputStreams) {
-                System.out.println("\tOutputStream: " + sd);
+            if (outputStream != null) {
+                System.out.println("\tOutputStream: " + outputStream);
             }
         }
 
@@ -212,7 +184,7 @@ public class TransformManager {
                         transform,
                         inputStreams,
                         referencedStreams,
-                        outputStreams,
+                        outputStream,
                         callback));
 
         for (TransformStream s : inputStreams) {
@@ -225,152 +197,13 @@ public class TransformManager {
         return task;
     }
 
-    private static <T extends Transform> void validateTransform(T transform) {
-        if (!(transform instanceof AsInputTransform) &&
-                !(transform instanceof CombinedTransform) &&
-                !(transform instanceof ForkTransform) &&
-                !(transform instanceof NoOpTransform)) {
-            throw new UnsupportedOperationException(String.format(
-                    "Transform type '%s' must implement one of: [AsInputTransform, CombinedTransform, ForkTransform, NoOpTransform]",
-                    transform.getClass().getName()));
-        }
-
-        if (transform instanceof ForkTransform) {
-            if (transform.getInputTypes().size() > 1) {
-                throw new RuntimeException(String.format(
-                        "ForkTransform only works with single input type. Transform '%s' declared with %s",
-                        transform.getName(), transform.getInputTypes()));
-            }
-        }
-    }
-
+    @Override
     @NonNull
     public List<TransformStream> getStreams() {
         return streams;
     }
 
-    @NonNull
-    public ImmutableList<TransformStream> getStreamsByContent(
-            @NonNull ContentType contentType) {
-        return getStreamsByContent(EnumSet.of(contentType));
-    }
 
-    @NonNull
-    public ImmutableList<TransformStream> getStreamsByContent(@NonNull ContentType type1,
-            @NonNull ContentType... otherTypes) {
-        return getStreamsByContent(EnumSet.of(type1, otherTypes));
-    }
-
-    @NonNull
-    public ImmutableList<TransformStream> getStreamsByContent(
-            @NonNull Set<ContentType> contentTypes) {
-        ImmutableList.Builder<TransformStream> streamsByType = ImmutableList.builder();
-        for (TransformStream s : streams) {
-            if (contentTypes.containsAll(s.getContentTypes())) {
-                streamsByType.add(s);
-            }
-        }
-
-        return streamsByType.build();
-    }
-
-    public interface StreamFilter {
-        boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes);
-    }
-
-    @NonNull
-    public ImmutableList<TransformStream> getStreams(@NonNull StreamFilter streamFilter) {
-        ImmutableList.Builder<TransformStream> streamsByType = ImmutableList.builder();
-        for (TransformStream s : streams) {
-            if (streamFilter.accept(s.getContentTypes(), s.getScopes())) {
-                streamsByType.add(s);
-            }
-        }
-
-        return streamsByType.build();
-    }
-
-    @NonNull
-    public TransformStream getSingleStream(@NonNull StreamFilter streamFilter) {
-        List<TransformStream> streamMatches = Lists.newArrayListWithExpectedSize(streams.size());
-        for (TransformStream s : streams) {
-            if (streamFilter.accept(s.getContentTypes(), s.getScopes())) {
-                streamMatches.add(s);
-            }
-        }
-
-        return Iterables.getOnlyElement(streamMatches);
-    }
-
-    public List<TransformStream> getStreamsByContentAndScope(
-            @NonNull ContentType contentType,
-            @NonNull Set<Scope> allowedScopes) {
-        ImmutableList.Builder<TransformStream> streamsByType = ImmutableList.builder();
-        for (TransformStream s : streams) {
-            if (s.getContentTypes().equals(EnumSet.of(contentType)) &&
-                    allowedScopes.containsAll(s.getScopes())) {
-                streamsByType.add(s);
-            }
-        }
-
-        return streamsByType.build();
-    }
-
-    /**
-     * Returns a single file that is the output of the pipeline for the scope/content indicated
-     * via the {@link StreamFilter}.
-     *
-     * An optional {@link Format} indicate what the format of the output should be like.
-     *
-     * This will throw an exception if there is more than one matching Stream or if
-     * the stream has more than one files.
-     *
-     * @param streamFilter the filter
-     * @param requiredFormat an optional format
-     * @return the file or null if there's no match (no stream or wrong format)
-     */
-    @Nullable
-    public File getSinglePipelineOutput(
-            @NonNull StreamFilter streamFilter,
-            @Nullable Format requiredFormat) {
-
-        ImmutableList<TransformStream> streams = getStreams(streamFilter);
-        if (streams.isEmpty()) {
-            return null;
-        }
-
-        // get the single stream.
-        TransformStream transformStream = Iterables.getOnlyElement(streams);
-
-        if (requiredFormat != null &&
-                requiredFormat != transformStream.getFormat()) {
-            return null;
-        }
-
-        return Iterables.getOnlyElement(transformStream.getFiles().get());
-    }
-
-    @NonNull
-    public Map<File, Format> getPipelineOutput(
-            @NonNull StreamFilter streamFilter,
-            @Nullable Format requiredFormat) {
-        ImmutableList<TransformStream> streams = getStreams(streamFilter);
-        if (streams.isEmpty()) {
-            return ImmutableMap.of();
-        }
-
-        ImmutableMap.Builder<File, Format> builder = ImmutableMap.builder();
-        for (TransformStream stream : streams) {
-            Format format = stream.getFormat();
-            if (requiredFormat == null || requiredFormat == format) {
-                for (File file : stream.getFiles().get()) {
-                    builder.put(file, format);
-                }
-            }
-        }
-
-        return builder.build();
-    }
 
     @NonNull
     private static String getTaskNamePrefix(@NonNull Transform transform) {
@@ -390,249 +223,103 @@ public class TransformManager {
         return sb.toString();
     }
 
-    private static final class StreamKey {
-        @NonNull
-        private final Set<ContentType> types;
-        @NonNull
-        private final Set<Scope> scopes;
-
-        StreamKey(@NonNull TransformStream stream) {
-            this.types = stream.getContentTypes();
-            this.scopes = stream.getScopes();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            StreamKey that = (StreamKey) o;
-            return Objects.equal(types, that.types) &&
-                    Objects.equal(scopes, that.scopes);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(types, scopes);
-        }
-    }
-
     /**
      * Finds the stream the transform consumes, and return them.
      *
      * This also removes them from the instance list. They will be replaced with the output
      * stream(s) from the transform.
      *
+     * This returns an optional output stream.
+     *
      * @param transform the transform.
      * @param scope the scope the transform is applied to.
      * @param inputStreams the out list of input streams for the transform.
-     * @param outputStreams the out list of output streams for the transform.
      * @param taskName the name of the task that will run the transform
      * @param buildDir the build dir of the project.
+     * @return the output stream if any.
      */
-    private void findTransformStreams(
+    @Nullable
+    private IntermediateStream findTransformStreams(
             @NonNull Transform transform,
             @NonNull BaseScope scope,
             @NonNull List<TransformStream> inputStreams,
-            @NonNull List<TransformStream> outputStreams,
             @NonNull String taskName,
             @NonNull File buildDir) {
 
-        Set<ContentType> requestedTypes = transform.getInputTypes();
         Set<Scope> requestedScopes = transform.getScopes();
-        EnumSet<ContentType> foundTypes = EnumSet.noneOf(ContentType.class);
-
-        String transformName = transform.getName();
-        Format outputFormat = transform.getOutputFormat();
-        checkArgument(
-                outputFormat != null || transform instanceof AsInputTransform,
-                "Only AsInputTransforms can omit specifying the output format.");
-
-        // map to handle multi stream sharing the same type/scope
-        Map<StreamKey, Integer> dupCounter = Maps
-                .newHashMapWithExpectedSize(inputStreams.size());
-
-        boolean consumesInputs = !(transform instanceof NoOpTransform);
-
-        Collection<String> variantDirSegments = null;
-        if (consumesInputs) {
-            variantDirSegments = scope.getDirectorySegments();
+        if (requestedScopes.isEmpty()) {
+            // this is a no-op transform.
+            return null;
         }
+
+        Set<ContentType> requestedTypes = transform.getInputTypes();
 
         // list to hold the list of unused streams in the manager after everything is done.
         // they'll be put back in the streams collection, along with the new outputs.
         List<TransformStream> oldStreams = Lists.newArrayListWithExpectedSize(streams.size());
 
         for (TransformStream stream : streams) {
+            // streams may contain more than we need. In this case, we'll make a copy of the stream
+            // with the remaining types/scopes. It'll be up to the TransformTask to make
+            // sure that the content of the stream is usable (for instance when a stream
+            // may contain two scopes, these scopes could be combined or not, impacting consumption)
+            Set<ContentType> availableTypes = stream.getContentTypes();
+            Set<Scope> availableScopes = stream.getScopes();
 
-            // The stream must contain only the required scopes, not any other.
-            // If the stream contains more types, it's not a problem since the transform
-            // can disambiguate (unlike on scopes)
-            Set<ContentType> contentTypes = stream.getContentTypes();
-            if (requestedScopes.containsAll(stream.getScopes())
-                    && hasMatchIn(requestedTypes, contentTypes)) {
-                inputStreams.add(stream);
+            Set<ContentType> commonTypes = Sets.intersection(requestedTypes,
+                    availableTypes);
+            Set<Scope> commonScopes = Sets.intersection(requestedScopes, availableScopes);
+            if (!commonTypes.isEmpty() && !commonScopes.isEmpty()) {
 
-                foundTypes.addAll(contentTypes);
-                if (consumesInputs) {
-                    // if the stream has more types than the requested types, create a copy
-                    // ot if with the remaining streams, so that other transforms can still
-                    // consume the other types in this scope.
-                    // However don't do this if the transform type is no_op since it doesn't
-                    // consume its streams anyway.
-                    if (!requestedTypes.equals(contentTypes)) {
-                        EnumSet<ContentType> diff = EnumSet.copyOf(contentTypes);
-                        diff.removeAll(requestedTypes);
-                        if (!diff.isEmpty()) {
-                            // create a copy of the stream with only the remaining type.
-                            oldStreams.add(TransformStream.builder()
-                                    .copyWithRestrictedTypes(stream, diff)
-                                    .build());
+                // check if we need to make another stream from this one with less scopes/types.
+                if (!commonScopes.equals(availableScopes) || !commonTypes.equals(availableTypes)) {
+                    // first the stream that gets consumed. It consumes only the common types/scopes
+                    inputStreams.add(stream.makeRestrictedCopy(commonTypes, commonScopes));
 
-                        }
-                    }
+                    // now we'll have a second stream, that's left for consumption later on.
+                    // compute remaining scopes/types.
+                    Sets.SetView<ContentType> remainingTypes = Sets.difference(availableTypes, commonTypes);
+                    Sets.SetView<Scope> remainingScopes = Sets.difference(availableScopes, commonScopes);
+
+                    oldStreams.add(stream.makeRestrictedCopy(
+                            remainingTypes.isEmpty() ? availableTypes : remainingTypes.immutableCopy(),
+                            remainingScopes.isEmpty() ? availableScopes : remainingScopes.immutableCopy()));
                 } else {
-                    // if stream is not consumed, put it back in the list.
-                    oldStreams.add(stream);
+                    // stream is an exact match (or at least subset) for the request,
+                    // so we add it as it.
+                    inputStreams.add(stream);
                 }
-
-                // now handle the output.
-                if (transform instanceof AsInputTransform) {
-                    //noinspection ConstantConditions
-                    outputStreams.add(createMatchingOutput(
-                            stream,
-                            transform.getOutputTypes(),
-                            // Stream can preserve or change the format.
-                            firstNonNull(outputFormat, stream.getFormat()),
-                            transformName,
-                            taskName,
-                            variantDirSegments,
-                            buildDir,
-                            dupCounter));
-                } else if (transform instanceof ForkTransform) {
-                    // for this case, loop on all the output types, and create a matching
-                    // stream for each
-                    for (ContentType outputType : transform.getOutputTypes()) {
-                        //noinspection ConstantConditions
-                        outputStreams.add(createMatchingOutput(
-                                stream,
-                                EnumSet.of(outputType),
-                                outputFormat,
-                                transformName,
-                                taskName,
-                                variantDirSegments,
-                                buildDir,
-                                dupCounter));
-                    }
-                }
-
             } else {
+                // stream is not used, keep it around.
                 oldStreams.add(stream);
             }
         }
 
-        // special combined output.
-        if (transform instanceof CombinedTransform) {
-            // create single combined output stream for all types and scopes
-            Set<ContentType> types = transform.getOutputTypes();
-            Set<Scope> scopes = transform.getScopes();
+        // create the output stream.
+        // create single combined output stream for all types and scopes
+        Set<ContentType> outputTypes = transform.getOutputTypes();
 
-            File destinationFile = FileUtils.join(buildDir, StringHelper.toStrings(
-                    AndroidProject.FD_INTERMEDIATES,
-                    FD_TRANSFORMS,
-                    combineTypesForName(types),
-                    combineScopesForName(scopes),
-                    transform.getName(),
-                    variantDirSegments));
-
-            if (transform.getOutputFormat() == Format.JAR) {
-                destinationFile = new File(destinationFile, SdkConstants.FN_CLASSES_JAR);
-            }
-
-            outputStreams.add(TransformStream.builder()
-                    .addContentTypes(types)
-                    .addScopes(scopes)
-                    .setFormat(transform.getOutputFormat())
-                    .setDependency(taskName)
-                    .setFiles(destinationFile)
-                    .build());
-        }
+        File outRootFolder = FileUtils.join(buildDir, StringHelper.toStrings(
+                AndroidProject.FD_INTERMEDIATES,
+                FD_TRANSFORMS,
+                transform.getName(),
+                scope.getDirectorySegments()));
 
         // update the list of available streams.
         streams.clear();
         streams.addAll(oldStreams);
-        streams.addAll(outputStreams);
-    }
 
-    private static boolean hasMatchIn(
-            @NonNull Set<ContentType> requestedTypes,
-            @NonNull Set<ContentType> types) {
-        for (ContentType type : requestedTypes) {
-            if (types.contains(type)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static TransformStream createMatchingOutput(
-            @NonNull TransformStream input,
-            @NonNull Set<ContentType> types,
-            @NonNull Format format,
-            @NonNull String transformName,
-            @NonNull String taskName,
-            @NonNull Collection<String> variantDirSegments,
-            @NonNull File buildDir,
-            @NonNull Map<StreamKey, Integer> dupCounter) {
-        // because we need a matching output for each input, but we can be in a case
-        // where we have 2 similar inputs (same types/scopes), we want to append an
-        // integer somewhere in the path. So we record each inputs to detect dups.
-        StreamKey key = new StreamKey(input);
-        String deDupedName = transformName;
-        Integer count = dupCounter.get(key);
-        if (count == null) {
-            dupCounter.put(key, 1);
-        } else {
-            deDupedName = deDupedName + "-" + count;
-            dupCounter.put(key, count + 1);
-        }
-
-        // copy with new location.
-        File destinationFile = FileUtils.join(buildDir, StringHelper.toStrings(
-                AndroidProject.FD_INTERMEDIATES,
-                FD_TRANSFORMS,
-                combineTypesForName(types),
-                combineScopesForName(input.getScopes()),
-                deDupedName,
-                variantDirSegments));
-
-        if (format == Format.JAR) {
-            destinationFile = new File(destinationFile, SdkConstants.FN_CLASSES_JAR);
-        }
-
-        return TransformStream.builder()
-                .copyWithRestrictedTypes(input, types)
-                .setFiles(destinationFile)
+        // create the output
+        IntermediateStream outputStream = IntermediateStream.builder()
+                .addContentTypes(outputTypes)
+                .addScopes(requestedScopes)
+                .setRootLocation(outRootFolder)
                 .setDependency(taskName)
-                .setParentStream(input)
-                .setFormat(format)
                 .build();
-    }
+        // and add it to the list of available streams for next transforms.
+        streams.add(outputStream);
 
-    private static String combineTypesForName(@NonNull Set<ContentType> types) {
-        return Joiner.on("_and_").join(types);
-    }
-
-    private static String combineScopesForName(@NonNull Set<Scope> types) {
-        if (SCOPE_FULL_PROJECT.equals(types)) {
-            return "FULL_PROJECT";
-        }
-
-        return Joiner.on("_and_").join(types);
+        return outputStream;
     }
 
     @NonNull
@@ -646,8 +333,19 @@ public class TransformManager {
 
         Set<ContentType> requestedTypes = transform.getInputTypes();
         for (TransformStream stream : streams) {
-            if (requestedScopes.containsAll(stream.getScopes()) &&
-                    requestedTypes.containsAll(stream.getContentTypes())) {
+            // streams may contain more than we need. In this case, we'll provide the whole
+            // stream as-is since it's not actually consumed.
+            // It'll be up to the TransformTask to make sure that the content of the stream is
+            // usable (for instance when a stream
+            // may contain two scopes, these scopes could be combined or not, impacting consumption)
+            Set<ContentType> availableTypes = stream.getContentTypes();
+            Set<Scope> availableScopes = stream.getScopes();
+
+            Set<ContentType> commonTypes = Sets.intersection(requestedTypes,
+                    availableTypes);
+            Set<Scope> commonScopes = Sets.intersection(requestedScopes, availableScopes);
+
+            if (!commonTypes.isEmpty() && !commonScopes.isEmpty()) {
                 streamMatches.add(stream);
             }
         }

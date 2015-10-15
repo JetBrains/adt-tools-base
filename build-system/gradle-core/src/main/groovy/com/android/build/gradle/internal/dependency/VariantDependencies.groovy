@@ -26,7 +26,6 @@ import com.google.common.base.Objects
 import com.google.common.collect.Sets
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
-
 /**
  * Object that represents the dependencies of a "config", in the sense of defaultConfigs, build
  * type and flavors.

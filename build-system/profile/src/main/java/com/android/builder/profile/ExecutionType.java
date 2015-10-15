@@ -107,7 +107,8 @@ public enum ExecutionType {
     TASK_ZIP_ALIGN(3021),
     TASK_COPY(3022),
     TASK_LINT(3023),
-    TASK_TRANSFORM(3024);
+    TASK_TRANSFORM_PREPARATION(3024),
+    TASK_TRANSFORM(3025);
 
     int getId() {
         return id;

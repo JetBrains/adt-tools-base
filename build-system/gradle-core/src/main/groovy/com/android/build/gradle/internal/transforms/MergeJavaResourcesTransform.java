@@ -16,46 +16,55 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import static com.android.utils.FileUtils.mkdirs;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.Context;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Format;
-import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.DirectoryInput;
+import com.android.build.transform.api.Format;
+import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.QualifiedContent;
+import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformInput.FileStatus;
-import com.android.build.transform.api.TransformOutput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.builder.model.PackagingOptions;
+import com.android.builder.packaging.DuplicateFileException;
+import com.android.builder.signing.SignedJarBuilder;
 import com.android.ide.common.packaging.PackagingUtils;
-import com.android.utils.FileUtils;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * Transform to merge all the Java resources
  */
-public class MergeJavaResourcesTransform extends Transform implements CombinedTransform {
+public class MergeJavaResourcesTransform extends Transform {
 
-    @NonNull
-    private final VariantScope scope;
     @NonNull
     private final PackagingOptions packagingOptions;
 
@@ -63,10 +72,8 @@ public class MergeJavaResourcesTransform extends Transform implements CombinedTr
     private final Set<Scope> mergeScopes;
 
     public MergeJavaResourcesTransform(
-            @NonNull VariantScope scope,
             @NonNull PackagingOptions packagingOptions,
             @NonNull Set<Scope> mergeScopes) {
-        this.scope = scope;
         this.packagingOptions = packagingOptions;
         this.mergeScopes = Sets.immutableEnumSet(mergeScopes);
     }
@@ -91,12 +98,6 @@ public class MergeJavaResourcesTransform extends Transform implements CombinedTr
 
     @NonNull
     @Override
-    public Format getOutputFormat() {
-        return Format.SINGLE_FOLDER;
-    }
-
-    @NonNull
-    @Override
     public Map<String, Object> getParameterInputs() {
         // TODO the inputs that controls the merge.
         return ImmutableMap.of();
@@ -104,30 +105,8 @@ public class MergeJavaResourcesTransform extends Transform implements CombinedTr
 
     @Override
     public boolean isIncremental() {
-        return true;
-    }
-
-    @NonNull
-    public static List<FileFilter.SubStream> getExpandedFolders(@NonNull Collection<TransformInput> inputs) {
-        ImmutableList.Builder<FileFilter.SubStream> builder = ImmutableList.builder();
-        for (TransformInput stream : inputs) {
-            switch (stream.getFormat()) {
-                case SINGLE_FOLDER:
-                    for (File file : stream.getFiles()) {
-                        // TODO find name for this stream more properly. (ie support true SINGLE_FOLDER)
-                        builder.add(new FileFilter.SubStream(file, file.getName()));
-                    }
-                    break;
-                case MULTI_FOLDER:
-                    throw new RuntimeException("MULTI_FOLDER format received in Transform method");
-                case JAR:
-                    throw new RuntimeException("Merge Java Res Transform does not support JAR stream types as inputs");
-                default:
-                    throw new RuntimeException("Unsupported ScopedContent.Format value: " + stream.getFormat().name());
-            }
-        }
-
-        return builder.build();
+        // FIXME
+        return false;
     }
 
     @Override
@@ -135,82 +114,317 @@ public class MergeJavaResourcesTransform extends Transform implements CombinedTr
             @NonNull Context context,
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
-            @NonNull TransformOutput combinedOutput,
+            @Nullable TransformOutputProvider outputProvider,
             boolean isIncremental) throws IOException, TransformException {
 
-        // all the output will be the same since the transform type is COMBINED.
-        checkNotNull(combinedOutput, "Found no output in transform with Type=COMBINED");
-        File outFolder = combinedOutput.getOutFile();
+        checkNotNull(outputProvider, "Missing output object for transform " + getName());
 
-        FileFilter packagingOptionsFilter =
-                new FileFilter(getExpandedFolders(inputs), packagingOptions);
+        // folder to copy the files that were originally in folders.
+        File outFolder = null;
+        // jar to copy the files that came from jars.
+        File outJar = null;
 
-        // TODO We need to fix this and merge the native jni libs either with a different filter or in this task.
-        scope.setPackagingOptionsFilter(packagingOptionsFilter);
+        Set<String> excludes = ImmutableSet.copyOf(packagingOptions.getExcludes());
+        Set<String> pickFirsts = ImmutableSet.copyOf(packagingOptions.getPickFirsts());
+        Set<String> merges = ImmutableSet.copyOf(packagingOptions.getMerges());
 
         if (!isIncremental) {
-            for (TransformInput input : inputs) {
-                boolean handleClassFiles = input.getContentTypes().contains(ContentType.CLASSES);
+            outputProvider.deleteAll();
 
-                for (File file : input.getFiles()) {
-                    if (file.isFile()) {
-                        handleAddedOrChangedFile(packagingOptionsFilter, outFolder, file, handleClassFiles);
-                    } else if (file.isDirectory()) {
-                        for (File contentFile : Files.fileTreeTraverser().postOrderTraversal(file).toList()) {
-                            if (contentFile.isFile()) {
-                                handleAddedOrChangedFile(packagingOptionsFilter, outFolder,
-                                        contentFile, handleClassFiles);
-                            }
+            // gather all the inputs.
+            ListMultimap<String, QualifiedContent> resFileList = ArrayListMultimap.create();
+            for (TransformInput input : inputs) {
+                for (JarInput jarInput : input.getJarInputs()) {
+                    gatherResListFromJar(jarInput, resFileList);
+                }
+
+                for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
+                    gatherResListFromFolder(directoryInput, resFileList);
+                }
+            }
+
+            // at this point we have what we need, write the output.
+
+            // we're recording all the files that must be merged.
+            // this is a map of (archive path -> source folder/jar)
+            ListMultimap<String, File> mergedFiles = ArrayListMultimap.create();
+
+            // we're also going to record for each jar which files comes from it.
+            ListMultimap<File, String> jarSources = ArrayListMultimap.create();
+
+            for (String key : resFileList.keySet()) {
+                // first thing we do is check if it's excluded.
+                if (excludes.contains(key)) {
+                    // skip, no need to do anything else.
+                    continue;
+                }
+
+                List<QualifiedContent> contentSourceList = resFileList.get(key);
+
+                // if there is only one content or if one of the source is PROJECT then it wins.
+                // This is similar behavior as the other merger (assets, res, manifest).
+                QualifiedContent selectedContent = findUniqueOrProjectContent(contentSourceList);
+
+                // otherwise search for a selection
+                if (selectedContent == null) {
+                    if (pickFirsts.contains(key)) {
+                        // if pickFirst then just pick the first one.
+                        selectedContent = contentSourceList.get(0);
+                    } else if (merges.contains(key)) {
+                        // if it's selected for merging, we need to record this for later where
+                        // we'll merge all the files we've found.
+                        for (QualifiedContent content : contentSourceList) {
+                            mergedFiles.put(key, content.getFile());
                         }
+                    } else {
+                        // finally if it's not excluded, then this is an error.
+                        // collect the sources.
+                        List<File> sources = Lists
+                                .newArrayListWithCapacity(contentSourceList.size());
+                        for (QualifiedContent content : contentSourceList) {
+                            sources.add(content.getFile());
+                        }
+                        throw new TransformException(new DuplicateFileException(key, sources));
+                    }
+                }
+
+                // if a file was selected, write it here.
+                if (selectedContent != null) {
+                    if (selectedContent instanceof JarInput) {
+                        // just record it for now.
+                        jarSources.put(selectedContent.getFile(), key);
+                    } else {
+                        if (outFolder == null) {
+                            outFolder = outputProvider.getContentLocation(
+                                    "main",
+                                    getOutputTypes(), getScopes(),
+                                    Format.DIRECTORY);
+                            mkdirs(outFolder);
+                        }
+                        copyFromFolder(selectedContent.getFile(), outFolder, key);
                     }
                 }
             }
-        } else {
-            for (TransformInput stream : inputs) {
-                boolean filterOutClassFiles = stream.getContentTypes().contains(ContentType.CLASSES);
 
-                final File expansionFolder = stream.getFiles().iterator().next();
+            // now copy all the non-merged files into the jar.
+            JarMerger jarMerger = null;
+            if (!jarSources.isEmpty()) {
+                outJar = outputProvider.getContentLocation(
+                        "main", getOutputTypes(), getScopes(), Format.JAR);
+                mkdirs(outJar.getParentFile());
+                jarMerger = copyIntoJar(jarSources, outJar);
+            }
 
-                for (Entry<File, FileStatus> entry : stream.getChangedFiles().entrySet()) {
-                    switch (entry.getValue()) {
-                        case ADDED:
-                        case CHANGED:
-                            handleAddedOrChangedFile(packagingOptionsFilter, outFolder,
-                                    entry.getKey(), filterOutClassFiles);
+            // then handle the merged files.
+            if (!mergedFiles.isEmpty()) {
+                // if we haven't written into the outjar, create it.
+                if (outJar == null) {
+                    outJar = outputProvider.getContentLocation(
+                            "main", getOutputTypes(), getScopes(), Format.JAR);
+                    mkdirs(outJar.getParentFile());
+                    jarMerger = new JarMerger(outJar);
+                }
+
+                for (String key : mergedFiles.keySet()) {
+                    List<File> sourceFiles = mergedFiles.get(key);
+
+                    // first check if we have a jar source
+                    boolean hasJarSource = false;
+                    for (File sourceFile : sourceFiles) {
+                        if (sourceFile.isDirectory()) {
+                            hasJarSource = true;
                             break;
-                        case REMOVED:
+                        }
+                    }
+
+                    // merge the content into a ByteArrayOutputStream.
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    for (File sourceFile : sourceFiles) {
+                        if (sourceFile.isDirectory()) {
+                            File actualFile = getFile(sourceFile, key);
+                            baos.write(Files.toByteArray(actualFile));
+                        } else {
+                            ZipFile zipFile = new ZipFile(sourceFile);
                             try {
-                                String relativeRemovedPath =
-                                        FileUtils.relativePossiblyNonExistingPath(
-                                                entry.getKey(), expansionFolder);
-                                packagingOptionsFilter.handleRemoved(
-                                        outFolder, relativeRemovedPath);
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
+                                ByteStreams.copy(
+                                        zipFile.getInputStream(zipFile.getEntry(key)), baos);
+                            } finally {
+                                zipFile.close();
                             }
-                            break;
+                        }
+                    }
+
+                    if (hasJarSource) {
+                        jarMerger.addEntry(key, baos.toByteArray());
+                    } else {
+                        if (outFolder == null) {
+                            outFolder = outputProvider.getContentLocation(
+                                    "main",
+                                    getOutputTypes(), getScopes(),
+                                    Format.DIRECTORY);
+                            mkdirs(outFolder);
+                        }
+
+                        Files.write(baos.toByteArray(), getFile(outFolder, key));
                     }
                 }
+            }
+
+            if (jarMerger != null) {
+                jarMerger.close();
             }
         }
     }
 
-    private static void handleAddedOrChangedFile(
-            @NonNull FileFilter packagingOptionsFilter,
-            @NonNull File outFolder,
-            @NonNull File file,
-            boolean filterOutClassFiles) throws IOException {
-        if (filterOutClassFiles) {
-            String fileName = file.getName().toLowerCase(Locale.getDefault());
-            if (fileName.endsWith(SdkConstants.DOT_CLASS)) {
-                return;
+    @Nullable
+    private static QualifiedContent findUniqueOrProjectContent(
+            @NonNull List<QualifiedContent> contentSourceList) {
+        if (contentSourceList.size() == 1) {
+            return contentSourceList.get(0);
+        }
+
+        for (QualifiedContent content : contentSourceList) {
+            if (content.getScopes().contains(Scope.PROJECT)) {
+                return content;
             }
         }
 
-        if (file.isFile() && !PackagingUtils.checkFileForPackaging(file.getName())) {
-            return;
+        return null;
+    }
+
+    private static void copyFromFolder(
+            @NonNull File fromFolder,
+            @NonNull File toFolder,
+            @NonNull String path)
+            throws IOException {
+        File from = getFile(fromFolder, path);
+        File to = getFile(toFolder, path);
+        mkdirs(to.getParentFile());
+        Files.copy(from, to);
+    }
+
+    private static File getFile(@NonNull File rootFolder, @NonNull String path) {
+        path = path.replace('/', File.separatorChar);
+        return new File(rootFolder, path);
+    }
+
+    private static class JarFilter implements SignedJarBuilder.IZipEntryFilter {
+        private final Set<String> allowedPath = Sets.newHashSet();
+
+        void resetList(@NonNull List<String> paths) {
+            allowedPath.clear();
+            allowedPath.addAll(paths);
         }
 
-        packagingOptionsFilter.handleChanged(outFolder, file);
+        @Override
+        public boolean checkEntry(String archivePath) throws ZipAbortException {
+            return allowedPath.contains(archivePath);
+        }
+    }
+
+    private static JarMerger copyIntoJar(@NonNull ListMultimap<File, String> jarSources,
+            @NonNull File outJar)
+            throws IOException {
+        JarMerger jarMerger = new JarMerger(outJar);
+
+        JarFilter filter = new JarFilter();
+        jarMerger.setFilter(filter);
+
+        for (File jarFile : jarSources.keySet()) {
+            // reset filter to allow the expected list of files for that particular jar file.
+            filter.resetList(jarSources.get(jarFile));
+
+            // copy the jar file
+            jarMerger.addJar(jarFile);
+        }
+
+        return jarMerger;
+    }
+
+    private static void gatherResListFromJar(
+            @NonNull JarInput jarInput,
+            @NonNull ListMultimap<String, QualifiedContent> content) throws IOException {
+
+        ZipFile zipFile = new ZipFile(jarInput.getFile());
+        try {
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+
+                String path = entry.getName();
+                if (skipEntry(entry, path)) {
+                    continue;
+                }
+
+                content.put(path, jarInput);
+            }
+
+        } finally {
+            zipFile.close();
+        }
+    }
+
+    private static boolean skipEntry(ZipEntry entry, String path) {
+        if (entry.isDirectory() ||
+                path.endsWith(SdkConstants.DOT_CLASS) ||
+                JarFile.MANIFEST_NAME.equals(path)) {
+            return true;
+        }
+
+        // split the path into segments.
+        String[] segments = path.split("/");
+
+        // empty path? skip to next entry.
+        if (segments.length == 0) {
+            return true;
+        }
+
+        // Check each folders to make sure they should be included.
+        // Folders like CVS, .svn, etc.. should already have been excluded from the
+        // jar file, but we need to exclude some other folder (like /META-INF) so
+        // we check anyway.
+        for (int i = 0 ; i < segments.length - 1; i++) {
+            if (!PackagingUtils.checkFolderForPackaging(segments[i])) {
+                return true;
+            }
+        }
+
+        return !PackagingUtils.checkFileForPackaging(segments[segments.length-1],
+                false /*allowClassFiles*/);
+    }
+
+    private static void gatherResListFromFolder(
+            @NonNull DirectoryInput directoryInput,
+            @NonNull ListMultimap<String, QualifiedContent> content) {
+        gatherResListFromFolder(directoryInput.getFile(), "", directoryInput, content);
+    }
+
+    private static void gatherResListFromFolder(
+            @NonNull File file,
+            @NonNull String path,
+            @NonNull DirectoryInput directoryInput,
+            @NonNull ListMultimap<String, QualifiedContent> content) {
+        File[] children = file.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File file, String name) {
+
+                return file.isDirectory() || !name.endsWith(SdkConstants.DOT_CLASS);
+            }
+        });
+
+        if (children != null) {
+            for (File child : children) {
+                String newPath = path.isEmpty() ? child.getName() : path + '/' + child.getName();
+                if (child.isDirectory()) {
+                    gatherResListFromFolder(
+                            child,
+                            newPath,
+                            directoryInput,
+                            content);
+                } else {
+                    content.put(newPath, directoryInput);
+                }
+            }
+        }
     }
 }

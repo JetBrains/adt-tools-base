@@ -23,12 +23,13 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.Context;
-import com.android.build.transform.api.NoOpTransform;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Format;
-import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.DirectoryInput;
+import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
@@ -43,7 +44,6 @@ import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -55,7 +55,7 @@ import proguard.ParseException;
  * This does not actually consume anything, rather it only reads streams and extract information
  * from them.
  */
-public class MultiDexTransform extends BaseProguardAction implements NoOpTransform {
+public class MultiDexTransform extends BaseProguardAction {
 
     @NonNull
     private final File manifestKeepListFile;
@@ -103,13 +103,13 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
     @NonNull
     @Override
     public Set<Scope> getScopes() {
-        return TransformManager.SCOPE_FULL_PROJECT;
+        return TransformManager.EMPTY_SCOPES;
     }
 
     @NonNull
     @Override
-    public Format getOutputFormat() {
-        return Format.SINGLE_FOLDER;
+    public Set<Scope> getReferencedScopes() {
+        return TransformManager.SCOPE_FULL_PROJECT;
     }
 
     @NonNull
@@ -137,9 +137,11 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
             @NonNull Context context,
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
-            boolean isIncremental) throws IOException, TransformException {
+            @Nullable TransformOutputProvider outputProvider,
+            boolean isIncremental) throws IOException, TransformException, InterruptedException {
+
         try {
-            File input = verifyInputs(inputs);
+            File input = verifyInputs(referencedInputs);
             shrinkWithProguard(input);
             computeList(input);
         } catch (ParseException e) {
@@ -154,17 +156,12 @@ public class MultiDexTransform extends BaseProguardAction implements NoOpTransfo
         List<File> inputFiles = Lists.newArrayList();
 
         for (TransformInput transformInput : inputs) {
-            switch (transformInput.getFormat()) {
-                case SINGLE_FOLDER:
-                    inputFiles.addAll(transformInput.getFiles());
-                    break;
-                case JAR:
-                    inputFiles.addAll(transformInput.getFiles());
-                    break;
-                case MULTI_FOLDER:
-                    throw new RuntimeException("MULTI_FOLDER format received in Transform method");
-                default:
-                    throw new RuntimeException("Unsupported ScopedContent.Format value: " + transformInput.getFormat().name());
+            for (JarInput jarInput : transformInput.getJarInputs()) {
+                inputFiles.add(jarInput.getFile());
+            }
+
+            for (DirectoryInput directoryInput : transformInput.getDirectoryInputs()) {
+                inputFiles.add(directoryInput.getFile());
             }
         }
 

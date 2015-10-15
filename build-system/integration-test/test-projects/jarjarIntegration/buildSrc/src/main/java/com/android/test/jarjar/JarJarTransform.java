@@ -1,24 +1,36 @@
 package com.android.test.jarjar;
 
 import com.android.annotations.NonNull;
-import com.android.build.transform.api.*;
+import com.android.annotations.Nullable;
+import com.android.build.transform.api.Context;
+import com.android.build.transform.api.DirectoryInput;
+import com.android.build.transform.api.Format;
+import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.Scope;
+import com.android.build.transform.api.Transform;
+import com.android.build.transform.api.TransformException;
+import com.android.build.transform.api.TransformInput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 import com.google.common.io.Closer;
 import com.google.common.io.Files;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-public class JarJarTransform extends Transform implements CombinedTransform {
+public class JarJarTransform extends Transform {
 
     @Override
     public String getName() {
@@ -26,24 +38,19 @@ public class JarJarTransform extends Transform implements CombinedTransform {
     }
 
     @Override
-    public Set<ScopedContent.ContentType> getInputTypes() {
-        return EnumSet.of(ScopedContent.ContentType.CLASSES);
+    public Set<ContentType> getInputTypes() {
+        return EnumSet.of(ContentType.CLASSES);
     }
 
     @Override
-    public Set<ScopedContent.Scope> getScopes() {
+    public Set<Scope> getScopes() {
         // needs to run on everything to rename what is using gson
         return EnumSet.of(
-                ScopedContent.Scope.PROJECT,
-                ScopedContent.Scope.PROJECT_LOCAL_DEPS,
-                ScopedContent.Scope.SUB_PROJECTS,
-                ScopedContent.Scope.SUB_PROJECTS_LOCAL_DEPS,
-                ScopedContent.Scope.EXTERNAL_LIBRARIES);
-    }
-
-    @Override
-    public ScopedContent.Format getOutputFormat() {
-        return ScopedContent.Format.JAR;
+                Scope.PROJECT,
+                Scope.PROJECT_LOCAL_DEPS,
+                Scope.SUB_PROJECTS,
+                Scope.SUB_PROJECTS_LOCAL_DEPS,
+                Scope.EXTERNAL_LIBRARIES);
     }
 
     @Override
@@ -56,12 +63,17 @@ public class JarJarTransform extends Transform implements CombinedTransform {
             @NonNull Context context,
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedStreams,
-            @NonNull TransformOutput combinedOutput,
+            @Nullable TransformOutputProvider output,
             boolean isIncremental) throws TransformException, IOException {
 
-        checkNotNull(combinedOutput, "Found no output in transform with Type=COMBINED");
-        File jarFile = combinedOutput.getOutFile();
-        deleteIfExists(jarFile);
+        if (output == null) {
+            throw new RuntimeException("Missing output object for transform " + getName());
+        }
+        output.deleteAll();
+        File outputJar = output.getContentLocation("main", getOutputTypes(), getScopes(),
+                Format.JAR);
+		// create the parent folder
+		outputJar.getParentFile().mkdirs();
 
         // create intermediate files to handle the jar input and the rule file.
         File mergedInputs = File.createTempFile("jajar", "jar");
@@ -80,7 +92,7 @@ public class JarJarTransform extends Transform implements CombinedTransform {
                     "process",
                     jarjarRules.getAbsolutePath(),
                     mergedInputs.getAbsolutePath(),
-                    jarFile.getAbsolutePath()
+                    outputJar.getAbsolutePath()
             ).toArray(new String[4]);
             com.tonicsystems.jarjar.Main.main(args);
 
@@ -105,35 +117,12 @@ public class JarJarTransform extends Transform implements CombinedTransform {
             final byte[] buffer = new byte[8192];
 
             for (TransformInput input : inputs) {
-                switch (input.getFormat()) {
-                    case SINGLE_FOLDER:
-                        for (File inputFile : input.getFiles()) {
-                            if (inputFile.isFile()) {
-                                processJarFile(jos, inputFile, buffer);
-                            } else if (inputFile.isDirectory()) {
-                                processFolder(jos, "", inputFile, buffer);
-                            }
+                for (JarInput jarInput : input.getJarInputs()) {
+                    processJarFile(jos, jarInput.getFile(), buffer);
+                }
 
-                        }
-                        break;
-                    case MULTI_FOLDER:
-                        for (File file : input.getFiles()) {
-                            File[] subStreams = file.listFiles();
-                            if (subStreams != null) {
-                                for (File subStream : subStreams) {
-                                    processFolder(jos, "", subStream, buffer);
-                                }
-                            }
-                        }
-
-                        break;
-                    case JAR:
-                        for (File f : input.getFiles()) {
-                            processJarFile(jos, f, buffer);
-                        }
-                        break;
-                    default:
-                        throw new RuntimeException("Unsupported ScopedContent.Format value: " + input.getFormat().name());
+                for (DirectoryInput dirInput : input.getDirectoryInputs()) {
+                    processFolder(jos, "", dirInput.getFile(), buffer);
                 }
             }
 
@@ -143,13 +132,6 @@ public class JarJarTransform extends Transform implements CombinedTransform {
             throw new TransformException(e);
         } finally {
             closer.close();
-        }
-    }
-
-    private static void deleteIfExists(File file) throws IOException {
-        boolean result = file.delete();
-        if (!result && file.exists()) {
-            throw new IOException("Failed to delete " + file.getAbsolutePath());
         }
     }
 
