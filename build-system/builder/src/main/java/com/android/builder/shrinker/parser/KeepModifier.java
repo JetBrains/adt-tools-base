@@ -14,22 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.utils;
+package com.android.builder.shrinker.parser;
 
 /**
- * Utilities for working with ASM.
+ * Modifier for keep rules.
  */
-public class AsmUtils {
-    private AsmUtils() {}
-
-    public static final String CONSTRUCTOR = "<init>";
-    public static final String CLASS_INITIALIZER = "<clinit>";
-
-    /**
-     * Converts a class name from the Java language naming convention (foo.bar.baz) to the JVM
-     * internal naming convention (foo/bar/baz).
-     */
-    public static String toInternalName(String className) {
-        return className.replace('.', '/');
-    }
+public enum KeepModifier {
+    ALLOW_SHRINKING, ALLOW_OBFUSCATION, NONE
 }
+

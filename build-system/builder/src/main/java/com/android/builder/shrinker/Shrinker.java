@@ -134,9 +134,7 @@ public class Shrinker<T> {
 
     private void buildGraph(
             Iterable<TransformInput> programInputs,
-            Iterable<TransformInput> libraryInputs,
-            final Map<ShrinkType, KeepRules> keepRules,
-            final ImmutableMap<ShrinkType, Set<T>> toIncrement) throws IOException {
+            Iterable<TransformInput> libraryInputs) throws IOException {
         final Set<T> virtualMethods = Sets.newConcurrentHashSet();
         final Set<UnresolvedReference<T>> unresolvedReferences = Sets.newConcurrentHashSet();
 
@@ -164,8 +162,6 @@ public class Shrinker<T> {
                         public Void call() throws Exception {
                             processNewClassFile(
                                     classFile,
-                                    keepRules,
-                                    toIncrement,
                                     virtualMethods,
                                     unresolvedReferences);
                             return null;
@@ -176,6 +172,7 @@ public class Shrinker<T> {
         }
 
         waitForAllTasks();
+        mGraph.allNodesAdded();
 
         handleOverrides(virtualMethods);
         resolveReferences(unresolvedReferences);
@@ -406,14 +403,10 @@ public class Shrinker<T> {
     private void incrementCounter(
             T member,
             DependencyType dependencyType,
-            ShrinkType shrinkType,
-            @Nullable ImmutableMap<ShrinkType, Set<T>> modifiedClasses) {
+            ShrinkType shrinkType) {
         if (mGraph.incrementAndCheck(member, dependencyType, shrinkType)) {
-            if (modifiedClasses != null) {
-                modifiedClasses.get(shrinkType).add(mGraph.getClassForMember(member));
-            }
             for (Dependency<T> dependency : mGraph.getDependencies(member)) {
-                incrementCounter(dependency.target, dependency.type, shrinkType, modifiedClasses);
+                incrementCounter(dependency.target, dependency.type, shrinkType);
             }
         }
     }
@@ -433,7 +426,7 @@ public class Shrinker<T> {
             }
         }
 
-        Set<T> oldMembers = mGraph.getMembers(klass);
+        Set<T> oldMembers = mGraph.getMethods(klass);
 
         //noinspection unchecked - ASM doesn't use generics.
         for (MethodNode methodNode : (List<MethodNode>) classNode.methods) {
@@ -449,7 +442,7 @@ public class Shrinker<T> {
                     mGraph.addDependency(method, addedDep.target, addedDep.type);
                     for (ShrinkType shrinkType : keepRules.keySet()) {
                         if (mGraph.isReachable(method, shrinkType)) {
-                            incrementCounter(addedDep.target, addedDep.type, shrinkType, modifiedClasses);
+                            incrementCounter(addedDep.target, addedDep.type, shrinkType);
                         }
                     }
                 }
@@ -477,8 +470,6 @@ public class Shrinker<T> {
 
     private void processNewClassFile(
             File classFile,
-            Map<ShrinkType, KeepRules> keepRules,
-            ImmutableMap<ShrinkType, Set<T>> toIncrement,
             Set<T> virtualMethods,
             Set<UnresolvedReference<T>> unresolvedReferences) throws IOException {
         // TODO: Can we run keep rules in a visitor?
@@ -496,19 +487,6 @@ public class Shrinker<T> {
                 new ClassStructureVisitor<T>(mGraph, classFile, depsFinder);
         ClassReader classReader = new ClassReader(Files.toByteArray(classFile));
         classReader.accept(structureVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-
-        T klass = mGraph.getClassReference(classNode.name);
-        //noinspection unchecked - ASM doesn't use generics.
-        for (MethodNode methodNode : (List<MethodNode>) classNode.methods) {
-            T method = mGraph.getMemberReference(classNode.name, methodNode.name, methodNode.desc);
-
-            for (Map.Entry<ShrinkType, KeepRules> entry : keepRules.entrySet()) {
-                if (entry.getValue().keep(classNode, methodNode)) {
-                    toIncrement.get(entry.getKey()).add(method);
-                    toIncrement.get(entry.getKey()).add(klass);
-                }
-            }
-        }
     }
 
     public void run(
@@ -522,10 +500,8 @@ public class Shrinker<T> {
             FileUtils.emptyFolder(output.getOutFile());
         }
 
-        ImmutableMap<ShrinkType, Set<T>> toIncrement = buildMapPerShrinkType(keepRules);
-
-        buildGraph(inputOutputs.keySet(), referencedClasses, keepRules, toIncrement);
-        setCounters(keepRules, toIncrement);
+        buildGraph(inputOutputs.keySet(), referencedClasses);
+        setCounters(keepRules);
         writeOutput(inputOutputs);
 
         if (saveState) {
@@ -533,19 +509,25 @@ public class Shrinker<T> {
         }
     }
 
-    private void writeOutput(
-            Map<TransformInput, TransformOutput> inputOutputs) throws IOException {
+    private void writeOutput(Map<TransformInput, TransformOutput> inputOutputs) throws IOException {
         updateClassFiles(mGraph.getClassesToKeep(ShrinkType.SHRINK), inputOutputs);
+        // TODO: Produce main dex list.
     }
 
-    private void setCounters(ImmutableMap<ShrinkType, KeepRules> keepRules,
-            ImmutableMap<ShrinkType, Set<T>> toIncrement) {
-        // TODO: Parallelize.
-        for (ShrinkType shrinkType : keepRules.keySet()) {
-            for (T member : toIncrement.get(shrinkType)) {
-                incrementCounter(member, DependencyType.REQUIRED, shrinkType, null);
-            }
+    private void setCounters(ImmutableMap<ShrinkType, KeepRules> allKeepRules) {
+        for (Map.Entry<ShrinkType, KeepRules> entry : allKeepRules.entrySet()) {
+            ShrinkType shrinkType = entry.getKey();
+            KeepRules keepRules = entry.getValue();
 
+            for (T klass : mGraph.getAllProgramClasses()) {
+                Set<T> symbolsToKeep = keepRules.getSymbolsToKeep(klass, mGraph);
+                if (!symbolsToKeep.isEmpty()) {
+                    symbolsToKeep.add(klass);
+                }
+                for (T symbol : symbolsToKeep) {
+                    incrementCounter(symbol, DependencyType.REQUIRED, shrinkType);
+                }
+            }
         }
     }
 
