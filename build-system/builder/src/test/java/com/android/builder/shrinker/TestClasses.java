@@ -25,7 +25,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 /**
- * Code for generating test classes for the {@link Shrinker}. This were created using the ASM
+ * Code for generating test classes for the {@link FullRunShrinker}. This were created using the ASM
  * bytecode outliner plugin for IJ.
  */
 @SuppressWarnings("unused") // Outliner plugin generates some unused visitors.
@@ -75,45 +75,6 @@ public class TestClasses implements Opcodes {
                 mv.visitCode();
                 mv.visitInsn(RETURN);
                 mv.visitMaxs(0, 1);
-                mv.visitEnd();
-            }
-            cw.visitEnd();
-
-            return cw.toByteArray();
-        }
-
-        /**
-         * Same as the Bbb class, but the bbb method calls A.ccc instead of A.aaa. For testing
-         * incremental updates.
-         */
-        static byte[] bbb2() throws Exception {
-
-            ClassWriter cw = new ClassWriter(0);
-            FieldVisitor fv;
-            MethodVisitor mv;
-            AnnotationVisitor av0;
-
-            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Bbb", null,
-                    "java/lang/Object", null);
-
-            {
-                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-                mv.visitCode();
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-                mv.visitInsn(RETURN);
-                mv.visitMaxs(1, 1);
-                mv.visitEnd();
-            }
-            {
-                mv = cw.visitMethod(ACC_PUBLIC, "bbb", "(Ltest/Aaa;)V", null,
-                        null);
-                mv.visitCode();
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "test/Aaa", "ccc", "()V",
-                        false);
-                mv.visitInsn(RETURN);
-                mv.visitMaxs(1, 2);
                 mv.visitEnd();
             }
             cw.visitEnd();

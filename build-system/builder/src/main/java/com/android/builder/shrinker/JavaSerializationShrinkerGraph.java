@@ -17,16 +17,16 @@
 package com.android.builder.shrinker;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.shrinker.Shrinker.ShrinkType;
+import com.android.builder.shrinker.AbstractShrinker.CounterSet;
 import com.android.utils.FileUtils;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimaps;
@@ -43,7 +43,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -56,45 +55,85 @@ import java.util.concurrent.ExecutionException;
  * Simple {@link ShrinkerGraph} implementation that uses strings, maps and Java serialization.
  */
 public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
+    private final SetMultimap<String, String> mAnnotations;
 
-    /** Checks if the phase of adding classes is done. */
-    private boolean allClassesAdded = false;
+    private final ConcurrentMap<String, ClassInfo> mClasses;
+
+    private final SetMultimap<String, Dependency<String>> mDependencies;
+
+    private final SetMultimap<String, String> mMembers;
+
+    private final ConcurrentMap<String, Integer> mModifiers;
+
+    private final Counters mMultidexCounters;
+
+    private final Counters mShrinkCounters;
 
     private final File mStateDir;
 
-    private static final CacheLoader<String, Counter> CACHE_LOADER =
-            new CacheLoader<String, Counter>() {
-                @Override
-                public Counter load(@NonNull String unused) throws Exception {
-                    return new Counter();
-                }
-            };
 
-    private ConcurrentMap<String, ClassInfo> mClasses = Maps.newConcurrentMap();
-
-    private SetMultimap<String, String> mMembers =
-            Multimaps.synchronizedSetMultimap(HashMultimap.<String, String>create());
-
-    private SetMultimap<String, String> mAnnotations =
-            Multimaps.synchronizedSetMultimap(HashMultimap.<String, String>create());
-
-    private Map<String, Integer> mModifiers = Maps.newConcurrentMap();
-
-    private EnumMap<ShrinkType, LoadingCache<String, Counter>> mReferenceCounters;
-
-    private SetMultimap<String, Dependency<String>> mDependencies =
-            Multimaps.synchronizedSetMultimap(HashMultimap.<String, Dependency<String>>create());
-
-    public JavaSerializationShrinkerGraph(File stateDir) {
+    private JavaSerializationShrinkerGraph(File stateDir) {
         mStateDir = checkNotNull(stateDir);
-        mReferenceCounters =
-                new EnumMap<ShrinkType, LoadingCache<String, Counter>>(ShrinkType.class);
-        for (ShrinkType shrinkType : ShrinkType.values()) {
-            LoadingCache<String, Counter> counters = CacheBuilder.newBuilder()
-                    .concurrencyLevel(Runtime.getRuntime().availableProcessors())
-                    .build(CACHE_LOADER);
+        mShrinkCounters = new Counters(
+                Maps.<String, DependencyType>newConcurrentMap(),
+                ImmutableMap.<String, Counter>of());
+        mMultidexCounters = new Counters(
+                Maps.<String, DependencyType>newConcurrentMap(),
+                ImmutableMap.<String, Counter>of());
+        mMembers = Multimaps.synchronizedSetMultimap(HashMultimap.<String, String>create());
+        mAnnotations = Multimaps.synchronizedSetMultimap(HashMultimap.<String, String>create());
+        mClasses = Maps.newConcurrentMap();
+        mModifiers = Maps.newConcurrentMap();
+        mDependencies =
+                Multimaps.synchronizedSetMultimap(HashMultimap.<String, Dependency<String>>create());
+    }
 
-            mReferenceCounters.put(shrinkType, counters);
+    private JavaSerializationShrinkerGraph(
+            File stateDir,
+            SetMultimap<String, String> annotations,
+            ConcurrentMap<String, ClassInfo> classes,
+            SetMultimap<String, Dependency<String>> dependencies,
+            SetMultimap<String, String> members,
+            ConcurrentMap<String, Integer> modifiers,
+            ConcurrentMap<String, DependencyType> multidexRoots,
+            Map<String, Counter> multidexCounters,
+            ConcurrentMap<String, DependencyType> shrinkRoots,
+            Map<String, Counter> shrinkCounters) {
+        mStateDir = stateDir;
+        mAnnotations = annotations;
+        mClasses = classes;
+        mDependencies = dependencies;
+        mMembers = members;
+        mModifiers = modifiers;
+        mMultidexCounters = new Counters(multidexRoots, multidexCounters);
+        mShrinkCounters = new Counters(shrinkRoots, shrinkCounters);
+    }
+
+    public static JavaSerializationShrinkerGraph empty(File stateDir) {
+        return new JavaSerializationShrinkerGraph(stateDir);
+    }
+
+    @SuppressWarnings("unchecked") // readObject() returns an Object, we need to cast it.
+    public static JavaSerializationShrinkerGraph readFromDir(File dir) throws IOException {
+        File stateFile = getStateFile(dir);
+        ObjectInputStream stream =
+                new ObjectInputStream(new BufferedInputStream(new FileInputStream(stateFile)));
+        try {
+            return new JavaSerializationShrinkerGraph(
+                    dir,
+                    (SetMultimap) stream.readObject(),
+                    (ConcurrentMap) stream.readObject(),
+                    (SetMultimap) stream.readObject(),
+                    (SetMultimap) stream.readObject(),
+                    (ConcurrentMap) stream.readObject(),
+                    (ConcurrentMap) stream.readObject(),
+                    (Map) stream.readObject(),
+                    (ConcurrentMap) stream.readObject(),
+                    (Map) stream.readObject());
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        } finally {
+            stream.close();
         }
     }
 
@@ -109,11 +148,6 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     @Override
     public String getMemberReference(String className, String memberName, String methodDesc) {
         return getFullMethodName(className, memberName, methodDesc);
-    }
-
-    @NonNull
-    private static String getFullMethodName(String className, String methodName, String typeDesc) {
-        return className + "." + methodName + ":" + typeDesc;
     }
 
     @Override
@@ -151,14 +185,11 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         return members;
     }
 
-    private static boolean isMethod(String member) {
-        return member.contains("(");
-    }
-
     @Override
-    public boolean incrementAndCheck(String member, DependencyType type, ShrinkType shrinkType) {
+    public boolean incrementAndCheck(String member, DependencyType type, CounterSet counterSet) {
         try {
-            return mReferenceCounters.get(shrinkType).get(member).incrementAndCheck(type);
+
+            return getCounters(counterSet).mReferenceCounters.get(member).incrementAndCheck(type);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -167,48 +198,46 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     @Override
     public void saveState() throws IOException {
         ObjectOutputStream stream =
-                new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(getStateFile())));
+                new ObjectOutputStream(
+                        new BufferedOutputStream(
+                                new FileOutputStream(
+                                        getStateFile(mStateDir))));
         try {
+            stream.writeObject(mAnnotations);
             stream.writeObject(mClasses);
-            stream.writeObject(mMembers);
             stream.writeObject(mDependencies);
-            Map<ShrinkType, Map<String, Counter>> countersMap = Maps.newHashMap();
-            for (Map.Entry<ShrinkType, LoadingCache<String, Counter>> entry
-                    : mReferenceCounters.entrySet()) {
-                countersMap.put(entry.getKey(), Maps.newHashMap(entry.getValue().asMap()));
-            }
-            stream.writeObject(countersMap);
+            stream.writeObject(mMembers);
+            stream.writeObject(mModifiers);
+            stream.writeObject(mMultidexCounters.mRoots);
+            stream.writeObject(ImmutableMap.copyOf(mMultidexCounters.mReferenceCounters.asMap()));
+            stream.writeObject(mShrinkCounters.mRoots);
+            stream.writeObject(ImmutableMap.copyOf(mShrinkCounters.mReferenceCounters.asMap()));
         } finally {
             stream.close();
         }
     }
 
     @Override
-    public boolean isReachable(String member, ShrinkType shrinkType) {
+    public boolean isReachable(String memberOrClass, CounterSet counterSet) {
         try {
-            return mReferenceCounters.get(shrinkType).get(member).isReachable();
+            return getCounters(counterSet).mReferenceCounters.get(memberOrClass).isReachable();
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void removeDependency(String source, Dependency<String> dep) {
-        mDependencies.remove(source, dep);
-    }
-
-    @Override
-    public boolean decrementAndCheck(String member, DependencyType type, ShrinkType shrinkType) {
-        try {
-            return mReferenceCounters.get(shrinkType).get(member).decrementAndCheck(type);
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
+    public void removeAllCodeDependencies(String source) {
+        Set<Dependency<String>> dependencies = mDependencies.get(source);
+        for (Iterator<Dependency<String>> iterator = dependencies.iterator(); iterator.hasNext(); ) {
+            if (iterator.next().type == DependencyType.REQUIRED_CODE_REFERENCE) {
+                iterator.remove();
+            }
         }
     }
 
     @Override
     public String getSuperclass(String klass) throws ClassLookupException {
-        checkState(allClassesAdded, "allNodesAdded() not called yet.");
         ClassInfo classInfo = mClasses.get(klass);
         if (classInfo == null) {
             throw new ClassLookupException(klass);
@@ -277,47 +306,8 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public boolean keepClass(String klass, ShrinkType shrinkType) {
-        try {
-            if (mClasses.get(klass).isLibraryClass()) {
-                return true;
-            }
-            LoadingCache<String, Counter> counters = mReferenceCounters.get(shrinkType);
-            Counter counter = counters.get(klass);
-            return counter.isReachable();
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @NonNull
-    private File getStateFile() {
-        return new File(mStateDir, "shrinker.bin");
-    }
-
-    @SuppressWarnings("unchecked") // readObject() returns an Object, we need to cast it.
-    @Override
-    public void loadState() throws IOException {
-        ObjectInputStream stream =
-                new ObjectInputStream(new BufferedInputStream(new FileInputStream(getStateFile())));
-
-        try {
-            mClasses = (ConcurrentMap<String, ClassInfo>) stream.readObject();
-            mMembers = (SetMultimap<String, String>) stream.readObject();
-            mDependencies = (SetMultimap<String, Dependency<String>>) stream.readObject();
-            Map<ShrinkType, Map<String, Counter>> countersMap =
-                    (Map<ShrinkType, Map<String, Counter>>) stream.readObject();
-
-            for (Map.Entry<ShrinkType, Map<String, Counter>> entry : countersMap.entrySet()) {
-                LoadingCache<String, Counter> cache = mReferenceCounters.get(entry.getKey());
-                cache.invalidateAll();
-                cache.putAll(entry.getValue());
-            }
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } finally {
-            stream.close();
-        }
+    public boolean keepInterface(String iface, CounterSet counterSet) {
+        return mClasses.get(iface).isLibraryClass() || isReachable(iface, counterSet);
     }
 
     @Override
@@ -326,25 +316,19 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public Collection<String> getClassesToKeep(ShrinkType shrinkType) {
-        try {
-            List<String> classesToKeep = Lists.newArrayList();
-            for (Map.Entry<String, ClassInfo> entry : mClasses.entrySet()) {
-                if (entry.getValue().isLibraryClass()) {
-                    // Skip lib
-                    continue;
-                }
-                LoadingCache<String, Counter> counters = mReferenceCounters.get(shrinkType);
-                Counter counter = counters.get(entry.getKey());
-                if (counter.isReachable()) {
-                    classesToKeep.add(entry.getKey());
-                }
+    public Collection<String> getReachableClasses(CounterSet counterSet) {
+        List<String> classesToKeep = Lists.newArrayList();
+        for (Map.Entry<String, ClassInfo> entry : mClasses.entrySet()) {
+            if (entry.getValue().isLibraryClass()) {
+                // Skip lib
+                continue;
             }
-
-            return classesToKeep;
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
+            if (isReachable(entry.getKey(), counterSet)) {
+                classesToKeep.add(entry.getKey());
+            }
         }
+
+        return classesToKeep;
     }
 
     @Override
@@ -353,25 +337,16 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public Set<String> getMembersToKeep(String klass, ShrinkType shrinkType) {
-        try {
-            Set<String> memberIds = Sets.newHashSet();
-            for (String member : mMembers.get(klass)) {
-                if (mReferenceCounters.get(shrinkType).get(member).isReachable()) {
-                    String memberId = getMemberId(member);
-                    memberIds.add(memberId);
-                }
+    public Set<String> getReachableMembers(String klass, CounterSet counterSet) {
+        Set<String> memberIds = Sets.newHashSet();
+        for (String member : mMembers.get(klass)) {
+            if (isReachable(member, counterSet)) {
+                String memberId = getMemberId(member);
+                memberIds.add(memberId);
             }
-
-            return memberIds;
-        } catch (ExecutionException e) {
-            throw new RuntimeException(e);
         }
-    }
 
-    @NonNull
-    private static String getMemberId(String member) {
-        return member.substring(member.indexOf('.') + 1);
+        return memberIds;
     }
 
     @Override
@@ -391,17 +366,11 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
             String[] interfaces,
             int access,
             File classFile) {
-        checkState(!allClassesAdded, "allNodesAdded() has already been called.");
         //noinspection unchecked - ASM API
         ClassInfo classInfo = new ClassInfo(classFile, superName, interfaces);
         mClasses.put(name, classInfo);
         mModifiers.put(name, access);
         return name;
-    }
-
-    @Override
-    public void allClassesAdded() {
-        this.allClassesAdded = true;
     }
 
     @Override
@@ -457,6 +426,49 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         return mAnnotations.get(classOrMember);
     }
 
+    @Override
+    public void addRoots(Map<String, DependencyType> symbolsToKeep, CounterSet counterSet) {
+        getCounters(counterSet).mRoots.putAll(symbolsToKeep);
+    }
+
+    @Override
+    public Map<String, DependencyType> getRoots(CounterSet counterSet) {
+        return ImmutableMap.copyOf(getCounters(counterSet).mRoots);
+    }
+
+    @Override
+    public void clearCounters() {
+        getCounters(CounterSet.SHRINK).mReferenceCounters.invalidateAll();
+        getCounters(CounterSet.LEGACY_MULTIDEX).mReferenceCounters.invalidateAll();
+    }
+
+    private Counters getCounters(CounterSet counterSet) {
+        if (counterSet == CounterSet.SHRINK) {
+            return mShrinkCounters;
+        } else {
+            return mMultidexCounters;
+        }
+    }
+
+    @NonNull
+    private static String getFullMethodName(String className, String methodName, String typeDesc) {
+        return className + "." + methodName + ":" + typeDesc;
+    }
+
+    @NonNull
+    private static String getMemberId(String member) {
+        return member.substring(member.indexOf('.') + 1);
+    }
+
+    @NonNull
+    private static File getStateFile(File dir) {
+        return new File(dir, "shrinker.bin");
+    }
+
+    private static boolean isMethod(String member) {
+        return member.contains("(");
+    }
+
     private static final class ClassInfo implements Serializable {
         final File classFile;
         final String superclass;
@@ -473,32 +485,39 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         }
     }
 
+    private static final class Counters implements Serializable {
+
+        private final LoadingCache<String, Counter> mReferenceCounters;
+        private final ConcurrentMap<String, DependencyType> mRoots;
+
+        public Counters(
+                ConcurrentMap<String, DependencyType> roots,
+                Map<String, Counter> counters) {
+            mRoots = roots;
+
+            mReferenceCounters = CacheBuilder.newBuilder()
+                    // TODO: set concurrency level?
+                    .build(new CacheLoader<String, Counter>() {
+                        @Override
+                        public Counter load(@NonNull String unused) throws Exception {
+                            return new Counter();
+                        }
+                    });
+
+            mReferenceCounters.putAll(counters);
+        }
+    }
+
     private static final class Counter implements Serializable {
         int required = 0;
         int ifClassKept = 0;
         int classIsKept = 0;
 
-        synchronized boolean decrementAndCheck(DependencyType type) {
-            boolean before = isReachable();
-            switch (type) {
-                case REQUIRED:
-                    required--;
-                    break;
-                case IF_CLASS_KEPT:
-                    ifClassKept--;
-                    break;
-                case CLASS_IS_KEPT:
-                    classIsKept--;
-                    break;
-            }
-            boolean after = isReachable();
-            return before != after;
-        }
-
         synchronized boolean incrementAndCheck(DependencyType type) {
             boolean before = isReachable();
             switch (type) {
-                case REQUIRED:
+                case REQUIRED_CLASS_STRUCTURE:
+                case REQUIRED_CODE_REFERENCE:
                     required++;
                     break;
                 case IF_CLASS_KEPT:

@@ -17,13 +17,15 @@
 package com.android.builder.shrinker;
 
 import com.android.annotations.Nullable;
+import com.android.builder.shrinker.AbstractShrinker.CounterSet;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * State the {@link Shrinker} needs to keep during and between invocations.
+ * State the {@link FullRunShrinker} needs to keep during and between invocations.
  *
  * @param <T> Reference to a class member.
  */
@@ -31,9 +33,9 @@ interface ShrinkerGraph<T> {
 
     File getClassFile(T klass);
 
-    Iterable<T> getClassesToKeep(Shrinker.ShrinkType shrinkType);
+    Iterable<T> getReachableClasses(CounterSet counterSet);
 
-    Set<String> getMembersToKeep(T klass, Shrinker.ShrinkType shrinkType);
+    Set<String> getReachableMembers(T klass, CounterSet counterSet);
 
     Set<Dependency<T>> getDependencies(T member);
 
@@ -51,21 +53,17 @@ interface ShrinkerGraph<T> {
 
     T getMemberReference(String className, String memberName, String methodDesc);
 
-    boolean incrementAndCheck(T member, DependencyType dependencyType, Shrinker.ShrinkType shrinkType);
+    boolean incrementAndCheck(T member, DependencyType dependencyType, CounterSet counterSet);
 
     void addDependency(T source, T target, DependencyType type);
-
-    void loadState() throws IOException;
 
     void removeStoredState() throws IOException;
 
     void saveState() throws IOException;
 
-    boolean isReachable(T member, Shrinker.ShrinkType shrinkType);
+    boolean isReachable(T member, CounterSet counterSet);
 
-    void removeDependency(T source, Dependency<T> dep);
-
-    boolean decrementAndCheck(T member, DependencyType dependencyType, Shrinker.ShrinkType shrinkType);
+    void removeAllCodeDependencies(T source);
 
     @Nullable
     T getSuperclass(T klass) throws ClassLookupException;
@@ -81,9 +79,7 @@ interface ShrinkerGraph<T> {
 
     void checkDependencies();
 
-    boolean keepClass(String klass, Shrinker.ShrinkType shrinkType);
-
-    void allClassesAdded();
+    boolean keepInterface(String klass, CounterSet counterSet);
 
     Iterable<T> getAllProgramClasses();
 
@@ -102,4 +98,10 @@ interface ShrinkerGraph<T> {
     void addAnnotation(T klass, String desc);
 
     Iterable<String> getAnnotations(T classOrMember);
+
+    void addRoots(Map<T, DependencyType> symbolsToKeep, CounterSet counterSet);
+
+    Map<T,DependencyType> getRoots(CounterSet counterSet);
+
+    void clearCounters();
 }

@@ -37,15 +37,17 @@ public class AndroidGradleOptions {
     private static final String PROPERTY_THREAD_POOL_SIZE_OLD = "com.android.build.threadPoolSize";
 
     private static final String PROPERTY_NEW_SHRINKER = "android.newShrinker";
+
+    private static final String PROPERTY_NEW_SHRINKER_INCREMENTAL = "android.newShrinker.incremental";
+
     public static final String USE_DEPRECATED_NDK = "android.useDeprecatedNdk";
+
     private static final String PROPERTY_DISABLE_RESOURCE_VALIDATION =
             "android.disableResourceValidation";
 
     // TODO: Drop the "com." prefix, for consistency.
     private static final String PROPERTY_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String PROPERTY_BENCHMARK_MODE = "com.android.benchmark.mode";
-
-
 
     @NonNull
     public static Map<String, String> getExtraInstrumentationTestRunnerArgs(@NonNull Project project) {
@@ -142,6 +144,10 @@ public class AndroidGradleOptions {
 
     public static boolean isResourceValidationEnabled(@NonNull Project project) {
         return !getBoolean(project, PROPERTY_DISABLE_RESOURCE_VALIDATION);
+    }
+
+    public static boolean newShrinkerIncremental(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_NEW_SHRINKER_INCREMENTAL);
     }
 
     @Nullable

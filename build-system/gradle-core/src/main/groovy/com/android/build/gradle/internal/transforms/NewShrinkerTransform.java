@@ -21,22 +21,29 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.api.transform.Context;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.JarInput;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.builder.core.VariantType;
+import com.android.builder.shrinker.AbstractShrinker.CounterSet;
+import com.android.builder.shrinker.FullRunShrinker;
+import com.android.builder.shrinker.IncrementalShrinker;
 import com.android.builder.shrinker.JavaSerializationShrinkerGraph;
 import com.android.builder.shrinker.ProguardConfigKeepRulesBuilder;
-import com.android.builder.shrinker.Shrinker;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import java.io.File;
@@ -53,15 +60,18 @@ public class NewShrinkerTransform extends ProguardConfigurable {
     private static final String NAME = "newClassShrinker";
 
     private final VariantType variantType;
-    private final File platformJar;
+    private final Set<File> platformJars;
     private final File incrementalDir;
+    private final boolean incrementalEnabled;
 
     public NewShrinkerTransform(VariantScope scope) {
         IAndroidTarget target = scope.getGlobalScope().getAndroidBuilder().getTarget();
         checkState(target != null, "SDK target not ready.");
-        this.platformJar = new File(target.getPath(IAndroidTarget.ANDROID_JAR));
+        this.platformJars = ImmutableSet.of(new File(target.getPath(IAndroidTarget.ANDROID_JAR)));
         this.variantType = scope.getVariantData().getType();
         this.incrementalDir = scope.getIncrementalDir(scope.getTaskName(NAME));
+        this.incrementalEnabled =
+                AndroidGradleOptions.newShrinkerIncremental(scope.getGlobalScope().getProject());
     }
 
     @NonNull
@@ -116,8 +126,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
 
     @Override
     public boolean isIncremental() {
-        // TODO: Make it incremental.
-        return false;
+        return this.incrementalEnabled;
     }
 
     @Override
@@ -125,27 +134,82 @@ public class NewShrinkerTransform extends ProguardConfigurable {
             @NonNull Context context,
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
-            @Nullable TransformOutputProvider outputProvider,
+            @Nullable TransformOutputProvider output,
             boolean isIncremental) throws IOException, TransformException, InterruptedException {
-        checkNotNull(outputProvider, "Missing output object for transform " + getName());
+        checkNotNull(output, "Missing output object for transform " + getName());
 
-        Shrinker<String> shrinker = new Shrinker<String>(
-                new WaitableExecutor<Void>(),
-                new JavaSerializationShrinkerGraph(incrementalDir),
-                platformJar);
+        if (isIncrementalRun(isIncremental, referencedInputs)) {
+            incrementalRun(inputs, referencedInputs, output);
+        } else {
+            fullRun(inputs, referencedInputs, output);
+        }
 
+    }
+
+    private void fullRun(
+            Collection<TransformInput> inputs,
+            Collection<TransformInput> referencedInputs,
+            TransformOutputProvider output) throws IOException {
         ProguardConfigKeepRulesBuilder parser = new ProguardConfigKeepRulesBuilder();
 
         for (File configFile : getAllConfigurationFiles()) {
             parser.parse(configFile);
         }
 
+        JavaSerializationShrinkerGraph graph =
+                JavaSerializationShrinkerGraph.empty(incrementalDir);
+        FullRunShrinker<String> shrinker =
+                new FullRunShrinker<String>(new WaitableExecutor<Void>(), graph, platformJars);
+
+        // Only save state if incremental mode is enabled.
+        boolean saveState = this.isIncremental();
+
         shrinker.run(
                 inputs,
                 referencedInputs,
-                outputProvider,
-                // TODO: Multidex class list.
-                ImmutableMap.of(Shrinker.ShrinkType.SHRINK, parser.getKeepRules()),
-                isIncremental);
+                output,
+                ImmutableMap.of(CounterSet.SHRINK, parser.getKeepRules()),
+                saveState);
+    }
+
+    private void incrementalRun(
+            Collection<TransformInput> inputs,
+            Collection<TransformInput> referencedInputs,
+            TransformOutputProvider output) throws IOException {
+        JavaSerializationShrinkerGraph graph =
+                JavaSerializationShrinkerGraph.readFromDir(incrementalDir);
+        IncrementalShrinker<String> shrinker =
+                new IncrementalShrinker<String>(new WaitableExecutor<Void>(), graph);
+
+        try {
+            shrinker.incrementalRun(inputs, output);
+        } catch (IncrementalShrinker.IncrementalRunImpossibleException e) {
+            fullRun(inputs, referencedInputs, output);
+        }
+    }
+
+
+    private boolean isIncrementalRun(
+            boolean isIncremental,
+            Collection<TransformInput> referencedInputs) {
+        if (!this.incrementalEnabled || !isIncremental) {
+            return false;
+        }
+
+        for (TransformInput referencedInput : referencedInputs) {
+            for (JarInput jarInput : referencedInput.getJarInputs()) {
+                if (jarInput.getStatus() != Status.NOTCHANGED) {
+                    return false;
+                }
+            }
+
+            for (DirectoryInput directoryInput : referencedInput.getDirectoryInputs()) {
+                if (!directoryInput.getChangedFiles().isEmpty()) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }

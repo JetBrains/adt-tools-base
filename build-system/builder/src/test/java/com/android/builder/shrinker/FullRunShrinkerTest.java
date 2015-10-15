@@ -16,18 +16,7 @@
 
 package com.android.builder.shrinker;
 
-import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.build.api.transform.DirectoryInput;
-import com.android.build.api.transform.Format;
 import com.android.build.api.transform.TransformInput;
-import com.android.build.api.transform.TransformOutputProvider;
 import com.android.builder.shrinker.TestClasses.AbstractClasses;
 import com.android.builder.shrinker.TestClasses.Annotations;
 import com.android.builder.shrinker.TestClasses.Fields;
@@ -43,71 +32,29 @@ import com.android.builder.shrinker.TestClasses.SuperCalls;
 import com.android.builder.shrinker.TestClasses.TryCatch;
 import com.android.builder.shrinker.TestClasses.VirtualCalls;
 import com.android.ide.common.internal.WaitableExecutor;
-import com.android.utils.FileUtils;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.mockito.Mockito;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.MethodNode;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 
 /**
- * Tests for {@link Shrinker}.
+ * Tests for {@link FullRunShrinker}.
  */
-public class ShrinkerTest {
-    @Rule
-    public TemporaryFolder tmpDir = new TemporaryFolder();
+public class FullRunShrinkerTest extends AbstractShrinkerTest {
 
-    private File mTestPackageDir;
-
-    private File mOutDir;
-
-    private Collection<TransformInput> mInputs;
-    private TransformOutputProvider mOutput;
-
-    private Shrinker<String> mShrinker;
+    private FullRunShrinker<String> mShrinker;
 
     @Before
-    public void setUp() throws Exception {
-        mTestPackageDir = tmpDir.newFolder("app-classes", "test");
-        File classDir = new File(tmpDir.getRoot(), "app-classes");
-        mOutDir = tmpDir.newFolder("out");
-        File incrementalDir = tmpDir.newFolder("incremental");
-
-        DirectoryInput directoryInput = mock(DirectoryInput.class);
-        when(directoryInput.getFile()).thenReturn(classDir);
-        TransformInput transformInput = mock(TransformInput.class);
-        when(transformInput.getDirectoryInputs()).thenReturn(ImmutableList.of(directoryInput));
-        mOutput = mock(TransformOutputProvider.class);
-        // we probably want a better mock that than so that we can return different dir depending
-        // on inputs.
-        when(mOutput.getContentLocation(
-                Mockito.anyString(), Mockito.anySet(), Mockito.anySet(), Mockito.any(Format.class)))
-                .thenReturn(mOutDir);
-
-        mInputs = ImmutableList.of(transformInput);
-
-        mShrinker = new Shrinker<String>(
+    public void createShrinker() throws Exception {
+        mShrinker = new FullRunShrinker<String>(
                 new WaitableExecutor<Void>(),
-                new JavaSerializationShrinkerGraph(incrementalDir),
-                getAndroidJar());
+                JavaSerializationShrinkerGraph.empty(mIncrementalDir),
+                getPlatformJars());
     }
 
     @Test
@@ -134,32 +81,6 @@ public class ShrinkerTest {
 
         // Then:
         assertMembersLeft("Aaa", "aaa:()V", "bbb:()V");
-        assertMembersLeft("Bbb", "bbb:(Ltest/Aaa;)V");
-        assertClassSkipped("Ccc");
-    }
-
-    @Ignore
-    @Test
-    public void simple_testIncrementalUpdate() throws Exception {
-        // Given:
-        File bbbFile = new File(mTestPackageDir, "Bbb.class");
-        Files.write(SimpleScenario.bbb(), bbbFile);
-        Files.write(SimpleScenario.aaa(), new File(mTestPackageDir, "Aaa.class"));
-        Files.write(SimpleScenario.ccc(), new File(mTestPackageDir, "Ccc.class"));
-
-        run("Bbb", "bbb:(Ltest/Aaa;)V");
-
-        Files.write(SimpleScenario.bbb2(), bbbFile);
-
-        // When:
-        mShrinker.handleFileChanges(
-                mInputs,
-                mOutput,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK, new TestKeepRules("Bbb", "bbb")));
-
-        // Then:
-        assertMembersLeft("Aaa", "ccc:()V");
         assertMembersLeft("Bbb", "bbb:(Ltest/Aaa;)V");
         assertClassSkipped("Ccc");
     }
@@ -942,71 +863,13 @@ public class ShrinkerTest {
         assertMembersLeft("AbstractImpl", "helper:()V");
     }
 
-    private void assertClassSkipped(String className) {
-        assertFalse(
-                "Class " + className + " exists in output.",
-                getOutputClassFile(className).exists());
-    }
-
-    private void assertMembersLeft(String className, String... members) throws IOException {
-        File outFile = getOutputClassFile(className);
-
-        assertTrue(
-                String.format("Class %s does not exist in output.", className),
-                outFile.exists());
-
-        assertThat(getMembers(outFile))
-                .named("Members in class " + className)
-                .containsExactly(members);
-    }
-
-    @NonNull
-    private static File getAndroidJar() {
-        File androidHome = new File(System.getenv(SdkConstants.ANDROID_HOME_ENV));
-        File androidJar = FileUtils.join(
-                androidHome,
-                SdkConstants.FD_PLATFORMS,
-                "android-22",
-                "android.jar");
-        assertTrue(androidJar.getAbsolutePath(), androidJar.exists());
-
-        return androidJar;
-    }
-
-    @NonNull
-    private File getOutputClassFile(String className) {
-        return FileUtils.join(mOutDir, "test", className + ".class");
-    }
-
     private void run(String className, String... methods) throws IOException {
         mShrinker.run(
                 mInputs,
                 Collections.<TransformInput>emptyList(),
                 mOutput,
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
-                        Shrinker.ShrinkType.SHRINK, new TestKeepRules(className, methods)),
+                ImmutableMap.<AbstractShrinker.CounterSet, KeepRules>of(
+                        AbstractShrinker.CounterSet.SHRINK, new TestKeepRules(className, methods)),
                 false);
-    }
-
-
-    private static Set<String> getMembers(File classFile) throws IOException {
-        ClassReader classReader = new ClassReader(Files.toByteArray(classFile));
-        ClassNode classNode = new ClassNode(Opcodes.ASM5);
-        classReader.accept(
-                classNode,
-                ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-
-        Set<String> methods = Sets.newHashSet();
-        //noinspection unchecked - ASM API
-        for (MethodNode methodNode : (List<MethodNode>) classNode.methods) {
-            methods.add(methodNode.name + ":" + methodNode.desc);
-        }
-
-        //noinspection unchecked - ASM API
-        for (FieldNode fieldNode : (List<FieldNode>) classNode.fields) {
-            methods.add(fieldNode.name + ":" + fieldNode.desc);
-        }
-
-        return methods;
     }
 }

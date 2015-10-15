@@ -19,7 +19,7 @@ package com.android.builder.shrinker;
 /**
  * Type of the dependency (edge) between two nodes in the shrinker graph.
  *
- * <p>A node is considered "reachable" if it can be reached with a {@link #REQUIRED} edge, or
+ * <p>A node is considered "reachable" if it can be reached with a required edge, or
  * at least one {@link #IF_CLASS_KEPT} and at least one {@link #CLASS_IS_KEPT} edge.
  *
  * <p>The second case models the situation where a method implements an interface method. The only
@@ -28,7 +28,8 @@ package com.android.builder.shrinker;
  * and the class (not 1) or the whole implementation class can be removed (not 2).
  */
 public enum DependencyType {
-    REQUIRED,
+    REQUIRED_CODE_REFERENCE,
+    REQUIRED_CLASS_STRUCTURE,
     IF_CLASS_KEPT,
     CLASS_IS_KEPT,;
 }
