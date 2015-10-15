@@ -32,7 +32,7 @@ class LargeVariantAndroidComponentTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldApp())
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create()
 
 

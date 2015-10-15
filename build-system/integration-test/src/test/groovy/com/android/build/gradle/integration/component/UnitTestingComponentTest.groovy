@@ -66,7 +66,7 @@ public class UnitTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(app)
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .withoutNdk()
             .create();
 

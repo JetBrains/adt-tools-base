@@ -68,7 +68,7 @@ class MultiProjectsAndroidComponentTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(baseProject)
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create()
 
     @BeforeClass
