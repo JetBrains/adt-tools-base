@@ -32,6 +32,13 @@ import java.util.logging.Logger;
 
 /**
  * Converts SVG to VectorDrawable's XML
+ *
+ * There are 2 major functions:
+ * 1. parse(file)
+ *   This include parse the .svg file and build an internal tree. The optimize this tree.
+ *
+ * 2. writeFile()
+ *   This is traversing the whole tree, and write the group / path info into the XML.
  */
 public class Svg2Vector {
     private static Logger logger = Logger.getLogger(Svg2Vector.class.getSimpleName());
@@ -71,7 +78,8 @@ public class Svg2Vector {
             .put(SVG_STROKE_WIDTH, "android:strokeWidth")
             .put(SVG_FILL_COLOR, "android:fillColor")
             .put(SVG_FILL_OPACITY, "android:fillAlpha")
-            .put(SVG_CLIP, "android:clip").put(SVG_OPACITY, "android:fillAlpha")
+            .put(SVG_CLIP, "android:clip")
+            .put(SVG_OPACITY, "android:fillAlpha")
             .build();
 
     // List all the Svg nodes that we don't support. Categorized by the types.
@@ -128,11 +136,6 @@ public class Svg2Vector {
             return svgTree;
         }
 
-        if ((svgTree.w == 0 || svgTree.h == 0) && svgTree.viewBox[2] > 0 && svgTree.viewBox[3] > 0) {
-            svgTree.w = svgTree.viewBox[2];
-            svgTree.h = svgTree.viewBox[3];
-        }
-
         // Parse transformation information.
         // TODO: Properly handle transformation in the group level. In the "use" case, we treat
         // it as global for now.
@@ -154,7 +157,7 @@ public class Svg2Vector {
 
         // Parse all the group and path node recursively.
         traverseSVGAndExtract(svgTree, root, rootNode);
-
+        svgTree.flattern();
         svgTree.dump(root);
 
         return svgTree;
@@ -255,6 +258,8 @@ public class Svg2Vector {
                 }
             }
         }
+        // If there is no viewbox, then set it up according to w, h.
+        // From now on, viewport should be read from viewBox, and size should be from w and h.
         if (avg.viewBox == null && avg.w != 0 && avg.h != 0) {
             avg.viewBox = new float[4];
             avg.viewBox[2] = avg.w;
@@ -621,13 +626,17 @@ public class Svg2Vector {
 
         OutputStreamWriter fw = new OutputStreamWriter(outStream);
         fw.write(head);
-        float finalWidth = svgTree.w;
-        float finalHeight = svgTree.h;
+        float viewportWidth = svgTree.viewBox[2];
+        float viewportHeight = svgTree.viewBox[3];
 
-        fw.write(getSizeString(finalWidth, finalHeight, svgTree.mScaleFactor));
+        if (svgTree.w == 0 || svgTree.h == 0) {
+            svgTree.w = viewportWidth;
+            svgTree.h = viewportHeight;
+        }
+        fw.write(getSizeString(svgTree.w, svgTree.h, svgTree.mScaleFactor));
 
-        fw.write("        android:viewportWidth=\"" + svgTree.w + "\"\n");
-        fw.write("        android:viewportHeight=\"" + svgTree.h + "\">\n");
+        fw.write("        android:viewportWidth=\"" + viewportWidth + "\"\n");
+        fw.write("        android:viewportHeight=\"" + viewportHeight + "\">\n");
 
         svgTree.normalize();
         // TODO: this has to happen in the tree mode!!!

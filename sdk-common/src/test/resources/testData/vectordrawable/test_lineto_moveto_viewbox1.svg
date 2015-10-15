@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<svg width="64" height="64" xmlns="http://www.w3.org/2000/svg"
+ x="0px" y="0px" viewBox="16 16 32 32">
+ <g>
+  <title>Layer 1</title>
+  <g id="svg_1">
+   <path d="m0,0 32,0 0,32 -32,0 0,-32z"
+   style="fill: #CC33cc"/>
+   <path d="m32 32 32,0 0,32 -32,0 0,-32z"
+   style="fill: #CCddcc"/>
+  </g>
+ </g>
+</svg>
