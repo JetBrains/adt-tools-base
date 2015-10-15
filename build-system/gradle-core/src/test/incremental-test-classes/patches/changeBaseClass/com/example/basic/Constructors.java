@@ -16,6 +16,8 @@
 
 package com.example.basic;
 
+import java.util.List;
+
 public class Constructors {
 
     public String value;
@@ -29,6 +31,10 @@ public class Constructors {
 
         public Base(double a, String b, int c) {
             baseFinal = a + b + c + ":patched_base";
+        }
+
+        protected Base() {
+            baseFinal = "base:";
         }
 
         public String getBaseFinal() {
@@ -63,12 +69,90 @@ public class Constructors {
             value = "Sub(" + x + ", " + y + ", " + z + ")";
         }
 
+        public Sub(String string, boolean condition) {
+            super(10d, string, 20);
+            subFinal = "updated sub";
+            try {
+                Utility.doSomething(!condition);
+            } catch(ArithmeticException e) {
+                throw new IllegalArgumentException("updated iae " + e.getMessage());
+            }
+        }
+
+        public Sub(String string, String exceptionMessage, boolean condition) {
+            super(11d, string, 20);
+            subFinal = "updated sub";
+            try {
+                Utility.doSomething(false);
+            } catch(ArithmeticException e) {
+                throw new IllegalArgumentException("iae " + e.getMessage());
+            }
+            try {
+                Utility.doSomething(!condition);
+            } catch(ArithmeticException e) {
+                throw new IllegalArgumentException(exceptionMessage + " " + e.getMessage());
+            }
+        }
+
+        public Sub(String string, boolean condition, String exceptionMessage) {
+            super(1d, string, 2);
+            subFinal = "subFinal";
+            try {
+                try {
+                    Utility.doSomething(!condition);
+                } catch (ArithmeticException e) {
+                    throw new IllegalArgumentException("updated iae " + e.getMessage());
+                }
+            } catch(IllegalArgumentException e) {
+                throw new RuntimeException(e.getMessage() + " " + exceptionMessage);
+            }
+        }
+
+        public Sub() {
+            super(100d, "updated sub", 30);
+            throw new IllegalArgumentException("pass me an updated string !");
+        }
+
+        public Sub(List<String> params, boolean condition) {
+            super(101d, params.get(0), 33);
+            try {
+                Utility.doSomething(!condition);
+            } catch(ArithmeticException e) {
+                throw new RuntimeException(e.getMessage() + " " + params.get(1));
+            } finally {
+                subFinal = "updated subFinal";
+            }
+        }
+
+        public Sub(boolean condition, List<String> params) {
+            super(1d, params.get(0), 2);
+            try {
+                Utility.doSomething(false);
+                subFinal = "updated success";
+            } catch(ArithmeticException e) {
+                throw new IllegalArgumentException(e.getMessage() + " updated " + params.get(1));
+            } finally {
+                if (condition) {
+                    throw new RuntimeException("updated " + params.get(1));
+                }
+            }
+        }
+
         public String getSubFinal() {
             return subFinal;
         }
 
         public static String callMeBefore(String s){
             return "(" + s + ")";
+        }
+    }
+
+
+    private static class Utility {
+        private static void doSomething(boolean raise) throws ArithmeticException {
+            if (raise) {
+                throw new ArithmeticException("underflow");
+            }
         }
     }
 
