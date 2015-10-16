@@ -75,6 +75,9 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     private SetMultimap<String, String> mMembers =
             Multimaps.synchronizedSetMultimap(HashMultimap.<String, String>create());
 
+    private SetMultimap<String, String> mAnnotations =
+            Multimaps.synchronizedSetMultimap(HashMultimap.<String, String>create());
+
     private Map<String, Integer> mModifiers = Maps.newConcurrentMap();
 
     private EnumMap<ShrinkType, LoadingCache<String, Counter>> mReferenceCounters;
@@ -205,9 +208,13 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public String getSuperclass(String klass) {
+    public String getSuperclass(String klass) throws ClassLookupException {
         checkState(allNodesAdded, "allNodesAdded() not called yet.");
-        return mClasses.get(klass).superclass;
+        ClassInfo classInfo = mClasses.get(klass);
+        if (classInfo == null) {
+            throw new ClassLookupException(klass);
+        }
+        return classInfo.superclass;
     }
 
     @Nullable
@@ -233,17 +240,28 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @Override
     public void checkDependencies() {
-        for (Dependency<String> dep : mDependencies.values()) {
+        Map<String, Dependency<String>> invalidDeps = Maps.newHashMap();
+
+        for (Map.Entry<String, Dependency<String>> entry : mDependencies.entries()) {
+            Dependency<String> dep = entry.getValue();
             String target = dep.target;
             if (!target.contains(".")) {
                 if (!mClasses.containsKey(target)) {
-                    throw new IllegalStateException("Invalid dependency target: " + target);
+                    // TODO: Warning system.
+                    System.out.println("Invalid dependency target: " + target);
+                    invalidDeps.put(entry.getKey(), entry.getValue());
                 }
             } else {
                 if (!mMembers.containsEntry(getClassForMember(target), target)) {
-                    throw new IllegalStateException("Invalid dependency target: " + target);
+                    // TODO: Warning system.
+                    System.out.println("Invalid dependency target: " + target);
+                    invalidDeps.put(entry.getKey(), entry.getValue());
                 }
             }
+        }
+
+        for (Map.Entry<String, Dependency<String>> entry : invalidDeps.entrySet()) {
+            mDependencies.remove(entry.getKey(), entry.getValue());
         }
     }
 
@@ -415,6 +433,16 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         return mModifiers.get(member);
     }
 
+    @Override
+    public void addAnnotation(String classOrMember, String desc) {
+        mAnnotations.put(classOrMember, desc);
+    }
+
+    @Override
+    public Iterable<String> getAnnotations(String classOrMember) {
+        return mAnnotations.get(classOrMember);
+    }
+
     private static final class ClassInfo implements Serializable {
         final File classFile;
         final String superclass;
@@ -433,8 +461,8 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     private static final class Counter implements Serializable {
         int required = 0;
-        int isOverridden = 0;
-        int neededForInheritance = 0;
+        int ifClassKept = 0;
+        int classIsKept = 0;
 
         synchronized boolean decrementAndCheck(DependencyType type) {
             boolean before = isReachable();
@@ -442,11 +470,11 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
                 case REQUIRED:
                     required--;
                     break;
-                case IS_OVERRIDDEN:
-                    isOverridden--;
+                case IF_CLASS_KEPT:
+                    ifClassKept--;
                     break;
-                case NEEDED_FOR_INHERITANCE:
-                    neededForInheritance--;
+                case CLASS_IS_KEPT:
+                    classIsKept--;
                     break;
             }
             boolean after = isReachable();
@@ -459,11 +487,11 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
                 case REQUIRED:
                     required++;
                     break;
-                case IS_OVERRIDDEN:
-                    isOverridden++;
+                case IF_CLASS_KEPT:
+                    ifClassKept++;
                     break;
-                case NEEDED_FOR_INHERITANCE:
-                    neededForInheritance++;
+                case CLASS_IS_KEPT:
+                    classIsKept++;
                     break;
             }
             boolean after = isReachable();
@@ -471,7 +499,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         }
 
         synchronized boolean isReachable() {
-            return required > 0 || (isOverridden > 0 && neededForInheritance > 0);
+            return required > 0 || (ifClassKept > 0 && classIsKept > 0);
         }
     }
 }

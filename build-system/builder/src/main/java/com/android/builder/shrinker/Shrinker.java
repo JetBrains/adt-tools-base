@@ -179,7 +179,6 @@ public class Shrinker<T> {
 
         waitForAllTasks();
 
-        // TODO - remove in production.
         mGraph.checkDependencies();
     }
 
@@ -228,7 +227,19 @@ public class Shrinker<T> {
                             break;
                         }
 
-                        currentClass = mGraph.getSuperclass(currentClass);
+                        try {
+                            currentClass = mGraph.getSuperclass(currentClass);
+                        } catch (ClassLookupException e) {
+                            // TODO: Check -dontwarn.
+                            System.out.println(
+                                    String.format(
+                                            "Unresolved reference: %s.%s",
+                                            mGraph.getClassName(
+                                                    mGraph.getClassForMember(
+                                                            unresolvedReference.target)),
+                                            mGraph.getMethodName(unresolvedReference.target)));
+                            break;
+                        }
                     }
 
                     return null;
@@ -244,43 +255,37 @@ public class Shrinker<T> {
             mExecutor.execute(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    walkTypeHierarchy(mGraph.getClassForMember(method));
+                    FluentIterable<T> superTypes =
+                            new TypeHierarchyTraverser<T>(mGraph).preOrderTraversal(
+                                    mGraph.getClassForMember(method));
+
+                    for (T klass : superTypes) {
+                        T superMethod = mGraph.findMatchingMethod(klass, method);
+                        if (superMethod != null && !superMethod.equals(method)) {
+                            if (mGraph.isLibraryMember(superMethod)) {
+                                // If we override an SDK method, it just has to be there at runtime
+                                // (if the class itself is kept).
+                                mGraph.addDependency(
+                                        mGraph.getClassForMember(method),
+                                        method,
+                                        DependencyType.REQUIRED);
+                            } else {
+                                // If we override a program method, there's a chance this method is
+                                // never called and we will get rid of it. Set up the dependencies
+                                // appropriately.
+                                mGraph.addDependency(
+                                        mGraph.getClassForMember(method),
+                                        method,
+                                        DependencyType.CLASS_IS_KEPT);
+                                mGraph.addDependency(
+                                        superMethod,
+                                        method,
+                                        DependencyType.IF_CLASS_KEPT);
+                            }
+                            break;
+                        }
+                    }
                     return null;
-                }
-
-                private void walkTypeHierarchy(@Nullable T klass) {
-                    if (klass == null) {
-                        return;
-                    }
-
-                    T superMethod = mGraph.findMatchingMethod(klass, method);
-                    if (superMethod != null && !superMethod.equals(method)) {
-                        if (mGraph.isLibraryMember(superMethod)) {
-                            // If we override an SDK method, it just has to be there at runtime
-                            // (if the class itself is kept).
-                            mGraph.addDependency(
-                                    mGraph.getClassForMember(method),
-                                    method,
-                                    DependencyType.REQUIRED);
-                        } else {
-                            // If we override a program method, there's a chance this method is
-                            // never called and we will get rid of it. Set up the dependencies
-                            // appropriately.
-                            mGraph.addDependency(
-                                    mGraph.getClassForMember(method),
-                                    method,
-                                    DependencyType.NEEDED_FOR_INHERITANCE);
-                            mGraph.addDependency(
-                                    superMethod,
-                                    method,
-                                    DependencyType.IS_OVERRIDDEN);
-                        }
-                    } else {
-                        walkTypeHierarchy(mGraph.getSuperclass(klass));
-                        for (T iface : mGraph.getInterfaces(klass)) {
-                            walkTypeHierarchy(iface);
-                        }
-                    }
                 }
             });
         }
@@ -520,12 +525,9 @@ public class Shrinker<T> {
             KeepRules keepRules = entry.getValue();
 
             for (T klass : mGraph.getAllProgramClasses()) {
-                Set<T> symbolsToKeep = keepRules.getSymbolsToKeep(klass, mGraph);
-                if (!symbolsToKeep.isEmpty()) {
-                    symbolsToKeep.add(klass);
-                }
-                for (T symbol : symbolsToKeep) {
-                    incrementCounter(symbol, DependencyType.REQUIRED, shrinkType);
+                Map<T, DependencyType> symbolsToKeep = keepRules.getSymbolsToKeep(klass, mGraph);
+                for (Map.Entry<T, DependencyType> toIncrement : symbolsToKeep.entrySet()) {
+                    incrementCounter(toIncrement.getKey(), toIncrement.getValue(), shrinkType);
                 }
             }
         }
