@@ -293,7 +293,7 @@ public class FileFilterTest {
         // remove one...
         assertTrue(secondFile.delete());
 
-        fileFilter.handleRemoved(sMergedFolder, "foo/text.properties");
+        fileFilter.handleRemoved(sMergedFolder, FileUtils.join("foo", "text.properties"));
 
         assertTrue(mergedFile.exists());
         assertContentInAnyOrder(
