@@ -47,16 +47,16 @@ public class AppComponentModelPlugin implements Plugin<Project> {
         project.getPluginManager().apply(AndroidComponentModelTestPlugin.class);
     }
 
-    @SuppressWarnings("MethodMayBeStatic")
     public static class Rules extends RuleSource {
+
         @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
         @Model(IS_APPLICATION)
-        public Boolean isApplication() {
+        public static Boolean isApplication() {
             return true;
         }
 
         @Model(TASK_MANAGER)
-        public TaskManager createTaskManager(
+        public static TaskManager createTaskManager(
                 AndroidConfig androidExtension,
                 Project project,
                 AndroidBuilder androidBuilder,
@@ -75,7 +75,7 @@ public class AppComponentModelPlugin implements Plugin<Project> {
         }
 
         @Model
-        public VariantFactory createVariantFactory(
+        public static VariantFactory createVariantFactory(
                 ServiceRegistry serviceRegistry,
                 AndroidBuilder androidBuilder,
                 AndroidConfig extension) {
