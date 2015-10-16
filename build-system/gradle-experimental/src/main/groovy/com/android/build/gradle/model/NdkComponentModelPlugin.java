@@ -92,11 +92,10 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         project.getPluginManager().apply(CppPlugin.class);
     }
 
-    @SuppressWarnings({"MethodMayBeStatic", "unused"})
     public static class Rules extends RuleSource {
 
         @Defaults
-        public void initializeNdkConfig(@Path("android.ndk") NdkConfig ndk) {
+        public static void initializeNdkConfig(@Path("android.ndk") NdkConfig ndk) {
             ndk.setModuleName("");
             ndk.setToolchain("");
             ndk.setToolchainVersion("");
@@ -105,12 +104,14 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Finalize
-        public void setDefaultNdkExtensionValue(@Path("android.ndk") NdkConfig ndkConfig) {
+        public static void setDefaultNdkExtensionValue(@Path("android.ndk") NdkConfig ndkConfig) {
             NdkExtensionConvention.setExtensionDefault(ndkConfig);
         }
 
         @Validate
-        public void checkNdkDir(NdkHandler ndkHandler, @Path("android.ndk") NdkConfig ndkConfig) {
+        public static void checkNdkDir(
+                NdkHandler ndkHandler,
+                @Path("android.ndk") NdkConfig ndkConfig) {
             if (!ndkConfig.getModuleName().isEmpty() && !ndkHandler.isNdkDirConfigured()) {
                 throw new InvalidUserDataException(
                         "NDK location not found. Define location with ndk.dir in the "
@@ -118,6 +119,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                 + "variable.");
             }
             if (ndkHandler.isNdkDirConfigured()) {
+                //noinspection ConstantConditions - isNdkDirConfigured ensures getNdkDirectory is not null
                 if (!ndkHandler.getNdkDirectory().exists()) {
                     throw new InvalidUserDataException(
                             "Specified NDK location does not exists.  Please ensure ndk.dir in "
@@ -129,7 +131,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Defaults
-        public void addDefaultNativeSourceSet(
+        public static void addDefaultNativeSourceSet(
                 @Path("android.sources") ModelMap<FunctionalSourceSet> sources,
                 final LanguageRegistry languageRegistry) {
             final LanguageRegistration languageRegistration =
@@ -146,7 +148,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Model(ModelConstants.NDK_HANDLER)
-        public NdkHandler ndkHandler(
+        public static NdkHandler ndkHandler(
                 ProjectIdentifier projectId,
                 @Path("android.compileSdkVersion") String compileSdkVersion,
                 @Path("android.ndk") NdkConfig ndkConfig) {
@@ -162,7 +164,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Defaults
-        public void initBuildTypeNdk(@Path("android.buildTypes") ModelMap<BuildType> buildTypes) {
+        public static void initBuildTypeNdk(
+                @Path("android.buildTypes") ModelMap<BuildType> buildTypes) {
             buildTypes.named(
                     BuilderConstants.DEBUG,
                     new Action<BuildType>() {
@@ -176,7 +179,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createAndroidPlatforms(PlatformContainer platforms, NdkHandler ndkHandler) {
+        public static void createAndroidPlatforms(PlatformContainer platforms,
+                NdkHandler ndkHandler) {
             if (!ndkHandler.isNdkDirConfigured()) {
                 return;
             }
@@ -185,7 +189,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Validate
-        public void validateAbi(@Path("android.abis") ModelMap<NdkAbiOptions> abiConfigs) {
+        public static void validateAbi(@Path("android.abis") ModelMap<NdkAbiOptions> abiConfigs) {
             abiConfigs.afterEach(new Action<NdkAbiOptions>() {
                 @Override
                 public void execute(NdkAbiOptions abiOptions) {
@@ -198,7 +202,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createToolchains(
+        public static void createToolchains(
                 NativeToolChainRegistry toolchainRegistry,
                 @Path("android.abis") ModelMap<NdkAbiOptions> abis,
                 @Path("android.ndk") NdkConfig ndkConfig,
@@ -215,7 +219,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createNativeBuildTypes(BuildTypeContainer nativeBuildTypes,
+        public static void createNativeBuildTypes(BuildTypeContainer nativeBuildTypes,
                 @Path("android.buildTypes") ModelMap<BuildType> androidBuildTypes) {
             for (BuildType buildType : androidBuildTypes.values()) {
                 nativeBuildTypes.maybeCreate(buildType.getName());
@@ -223,7 +227,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createNativeFlavors(FlavorContainer nativeFlavors,
+        public static void createNativeFlavors(
+                FlavorContainer nativeFlavors,
                 List<ProductFlavorCombo<ProductFlavor>> androidFlavorGroups) {
             if (androidFlavorGroups.isEmpty()) {
                 // Create empty native flavor to override Gradle's default name.
@@ -236,7 +241,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createNativeLibrary(
+        public static void createNativeLibrary(
                 final ComponentSpecContainer specs,
                 @Path("android.ndk") final NdkConfig ndkConfig,
                 final NdkHandler ndkHandler,
@@ -271,7 +276,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createAdditionalTasksForNatives(
+        public static void createAdditionalTasksForNatives(
                 final ModelMap<Task> tasks,
                 ModelMap<AndroidComponentSpec> specs,
                 @Path("android.ndk") final NdkConfig ndkConfig,
@@ -301,7 +306,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void configureNativeBinary(
+        public static void configureNativeBinary(
                 BinaryContainer binaries,
                 ComponentSpecContainer specs,
                 @Path("android.ndk") final NdkConfig ndkConfig,
@@ -352,7 +357,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Finalize
-        public void attachNativeTasksToAndroidBinary(ModelMap<AndroidBinary> binaries) {
+        public static void attachNativeTasksToAndroidBinary(ModelMap<AndroidBinary> binaries) {
             binaries.afterEach(new Action<AndroidBinary>() {
                 @Override
                 public void execute(AndroidBinary androidBinary) {
@@ -360,7 +365,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                     for (NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
                         if (binary.getTargetAbi().isEmpty() || binary.getTargetAbi().contains(
                                 nativeBinary.getTargetPlatform().getName())) {
-                            binary.getBuildTask().dependsOn(NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
+                            binary.getBuildTask().dependsOn(
+                                    NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
                         }
                     }
                 }
@@ -374,11 +380,11 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
          * them to avoid cluttering the task list.
          */
         @Mutate
-        public void hideNativeTasks(TaskContainer tasks, BinaryContainer binaries) {
-            // Gradle do not support a way to remove created tasks.  The best workaround is to clear the
-            // group of the task and have another task depends on it.  Therefore, we have to create
-            // a dummy task to depend on all the tasks that we do not want to show up on the task
-            // list. The dummy task dependsOn itself, effectively making it non-executable and
+        public static void hideNativeTasks(TaskContainer tasks, BinaryContainer binaries) {
+            // Gradle do not support a way to remove created tasks.  The best workaround is to clear
+            // the group of the task and have another task depends on it.  Therefore, we have to
+            // create a dummy task to depend on all the tasks that we do not want to show up on the
+            // task list. The dummy task dependsOn itself, effectively making it non-executable and
             // invisible unless the --all option is use.
             final Task nonExecutableTask = tasks.create("nonExecutableTask");
             nonExecutableTask.dependsOn(nonExecutableTask);

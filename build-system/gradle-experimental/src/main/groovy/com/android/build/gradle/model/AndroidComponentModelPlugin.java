@@ -103,23 +103,23 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         }
     }
 
-    @SuppressWarnings("MethodMayBeStatic")
     public static class Rules extends RuleSource {
 
         @LanguageType
-        public void registerAndroidLanguageSourceSet(LanguageTypeBuilder<AndroidLanguageSourceSet> builder) {
+        public static void registerAndroidLanguageSourceSet(
+                LanguageTypeBuilder<AndroidLanguageSourceSet> builder) {
             builder.setLanguageName("android");
             builder.defaultImplementation(AndroidLanguageSourceSet.class);
         }
 
         @LanguageType
-        public void registerJniLibsSourceSet(LanguageTypeBuilder<JniLibsSourceSet> builder) {
+        public static void registerJniLibsSourceSet(LanguageTypeBuilder<JniLibsSourceSet> builder) {
             builder.setLanguageName("jniLibs");
             builder.defaultImplementation(JniLibsSourceSet.class);
         }
 
         @LanguageType
-        public void registerNativeSourceSet(LanguageTypeBuilder<NativeSourceSet> builder) {
+        public static void registerNativeSourceSet(LanguageTypeBuilder<NativeSourceSet> builder) {
             builder.setLanguageName("jni");
             builder.defaultImplementation(NativeSourceSet.class);
         }
@@ -132,7 +132,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         }
 
         @Finalize
-        public void finalizeAndroidModel(AndroidConfig androidModel) {
+        public static void finalizeAndroidModel(AndroidConfig androidModel) {
             if (androidModel.getBuildToolsRevision() == null
                     && androidModel.getBuildToolsVersion() != null) {
                 androidModel.setBuildToolsRevision(
@@ -148,7 +148,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         }
 
         @Defaults
-        public void createDefaultBuildTypes(
+        public static void createDefaultBuildTypes(
                 @Path("android.buildTypes") ModelMap<BuildType> buildTypes) {
             buildTypes.create(BuilderConstants.DEBUG, new Action<BuildType>() {
                 @Override
@@ -161,7 +161,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         }
 
         @Model
-        public List<ProductFlavorCombo<ProductFlavor>> createProductFlavorCombo(
+        public static List<ProductFlavorCombo<ProductFlavor>> createProductFlavorCombo(
                 @Path("android.productFlavors") ModelMap<ProductFlavor> productFlavors) {
             // TODO: Create custom product flavor container to manually configure flavor dimensions.
             Set<String> flavorDimensionList = Sets.newHashSet();
@@ -177,12 +177,13 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         }
 
         @ComponentType
-        public void defineComponentType(ComponentTypeBuilder<AndroidComponentSpec> builder) {
+        public static void defineComponentType(ComponentTypeBuilder<AndroidComponentSpec> builder) {
             builder.defaultImplementation(DefaultAndroidComponentSpec.class);
         }
 
         @Mutate
-        public void createAndroidComponents(ModelMap<AndroidComponentSpec> androidComponents) {
+        public static void createAndroidComponents(
+                ModelMap<AndroidComponentSpec> androidComponents) {
             androidComponents.create(COMPONENT_NAME);
         }
 
@@ -190,11 +191,12 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
          * Create all source sets for each AndroidBinary.
          */
         @Mutate
-        public void createVariantSourceSet(
+        public static void createVariantSourceSet(
                 @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 @Path("android.buildTypes") final ModelMap<BuildType> buildTypes,
                 @Path("android.productFlavors") ModelMap<ProductFlavor> flavors,
-                List<ProductFlavorCombo<ProductFlavor>> flavorGroups, ProjectSourceSet projectSourceSet,
+                List<ProductFlavorCombo<ProductFlavor>> flavorGroups,
+                ProjectSourceSet projectSourceSet,
                 LanguageRegistry languageRegistry) {
 
             // Create main source set.
@@ -244,12 +246,12 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         }
 
         @BinaryType
-        public void defineBinaryType(BinaryTypeBuilder<AndroidBinary> builder) {
+        public static void defineBinaryType(BinaryTypeBuilder<AndroidBinary> builder) {
             builder.defaultImplementation(DefaultAndroidBinary.class);
         }
 
         @ComponentBinaries
-        public void createBinaries(
+        public static void createBinaries(
                 final ModelMap<AndroidBinary> binaries,
                 @Path("android") final AndroidConfig androidConfig,
                 @Path("android.buildTypes") final ModelMap<BuildType> buildTypes,

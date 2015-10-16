@@ -267,18 +267,17 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         configuration.setDescription(configurationDescription);
     }
 
-    @SuppressWarnings("MethodMayBeStatic")
     public static class Rules extends RuleSource {
 
         @Mutate
-        void registerLanguageTransform(
+        public static void registerLanguageTransform(
                 LanguageTransformContainer languages,
                 ServiceRegistry serviceRegistry) {
             languages.add(new JniLibsLanguageTransform());
         }
 
         @Defaults
-        public void configureAndroidModel(
+        public static void configureAndroidModel(
                 AndroidConfig androidModel,
                 ServiceRegistry serviceRegistry) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
@@ -286,7 +285,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Defaults
-        public void initSigningConfigs(
+        public static void initSigningConfigs(
                 @Path("android.signingConfigs") ModelMap<SigningConfig> signingConfigs) {
             signingConfigs.beforeEach(new Action<SigningConfig>() {
                 @Override
@@ -313,7 +312,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         // com.android.build.gradle.AndroidConfig do not contain an NdkConfig.  Copy it to the
         // defaultConfig for now.
         @Defaults
-        public void copyNdkConfig(
+        public static void copyNdkConfig(
                 @Path("android.defaultConfig.ndk") NdkOptions defaultNdkConfig,
                 @Path("android.ndk") NdkConfig pluginNdkConfig) {
             NdkOptionsHelper.merge(defaultNdkConfig, pluginNdkConfig);
@@ -321,7 +320,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
        // TODO: Remove code duplicated from BasePlugin.
         @Model(EXTRA_MODEL_INFO)
-        public ExtraModelInfo createExtraModelInfo(
+        public static ExtraModelInfo createExtraModelInfo(
                 Project project,
                 @NonNull @Path("isApplication") Boolean isApplication) {
             return new ExtraModelInfo(project, isApplication);
@@ -329,7 +328,9 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
 
         @Model(ANDROID_BUILDER)
-        public AndroidBuilder createAndroidBuilder(Project project, ExtraModelInfo extraModelInfo) {
+        public static AndroidBuilder createAndroidBuilder(
+                Project project,
+                ExtraModelInfo extraModelInfo) {
             String creator = "Android Gradle";
             ILogger logger = new LoggerWrapper(project.getLogger());
 
@@ -341,7 +342,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Defaults
-        public void initDebugBuildTypes(
+        public static void initDebugBuildTypes(
                 @Path("android.buildTypes") ModelMap<BuildType> buildTypes,
                 @Path("android.signingConfigs") final ModelMap<SigningConfig> signingConfigs) {
             buildTypes.beforeEach(new Action<BuildType>() {
@@ -373,7 +374,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Defaults
-        public void initDefaultConfig(@Path("android.defaultConfig") ProductFlavor defaultConfig) {
+        public static void initDefaultConfig(
+                @Path("android.defaultConfig") ProductFlavor defaultConfig) {
 
             Set<Density> densities = Density.getRecommendedValuesForDevice();
             Set<String> strings = Sets.newHashSetWithExpectedSize(densities.size());
@@ -383,7 +385,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Defaults
-        public void addDefaultAndroidSourceSet(
+        public static void addDefaultAndroidSourceSet(
                 @Path("android.sources") ModelMap<FunctionalSourceSet> sources,
                 final LanguageRegistry languageRegistry) {
             final LanguageRegistration androidLanguageRegistration =
@@ -416,7 +418,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Model(ANDROID_CONFIG_ADAPTOR)
-        public com.android.build.gradle.AndroidConfig createModelAdaptor(
+        public static com.android.build.gradle.AndroidConfig createModelAdaptor(
                 ServiceRegistry serviceRegistry,
                 AndroidConfig androidExtension,
                 Project project,
@@ -427,7 +429,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createAndroidComponents(
+        public static void createAndroidComponents(
                 ComponentSpecContainer androidSpecs,
                 ServiceRegistry serviceRegistry, AndroidConfig androidExtension,
                 com.android.build.gradle.AndroidConfig adaptedModel,
@@ -471,7 +473,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createVariantData(
+        public static void createVariantData(
                 ModelMap<AndroidBinary> binaries,
                 ModelMap<AndroidComponentSpec> specs,
                 TaskManager taskManager) {
@@ -495,12 +497,12 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createLifeCycleTasks(ModelMap<Task> tasks, TaskManager taskManager) {
+        public static void createLifeCycleTasks(ModelMap<Task> tasks, TaskManager taskManager) {
             taskManager.createTasksBeforeEvaluate(new TaskModelMapAdaptor(tasks));
         }
 
         @Mutate
-        public void createAndroidTasks(
+        public static void createAndroidTasks(
                 ModelMap<Task> tasks,
                 ModelMap<AndroidComponentSpec> androidSpecs,
                 TaskManager taskManager,
@@ -521,7 +523,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         // TODO: Use @BinaryTasks after figuring how to configure non-binary specific tasks.
         @Mutate
-        public void createBinaryTasks(
+        public static void createBinaryTasks(
                 final ModelMap<Task> tasks,
                 BinaryContainer binaries,
                 ModelMap<AndroidComponentSpec> specs,
@@ -543,7 +545,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
          * Create tasks that must be created after other tasks for variants are created.
          */
         @Mutate
-        public void createRemainingTasks(
+        public static void createRemainingTasks(
                 ModelMap<Task> tasks,
                 TaskManager taskManager,
                 ModelMap<AndroidComponentSpec> spec) {
@@ -556,7 +558,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createReportTasks(
+        public static void createReportTasks(
                 ModelMap<Task> tasks,
                 ModelMap<AndroidComponentSpec> specs) {
             final VariantManager variantManager =
@@ -587,7 +589,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void modifyAssembleTaskDescription(@Path("tasks.assemble") Task assembleTask) {
+        public static void modifyAssembleTaskDescription(
+                @Path("tasks.assemble") Task assembleTask) {
             assembleTask.setDescription(
                     "Assembles all variants of all applications and secondary packages.");
         }
