@@ -141,7 +141,7 @@ public class GrammarActions {
         if (typeSignature != null) {
             typeSignatureSpec = name(typeSignature);
         } else {
-            checkState(name.equals("<fields>"), "No type signature, but name is not <fields>.");
+            checkState(name.equals("*"), "No type signature, but name is not <fields> or *.");
             name = "*";
         }
         classSpec.add(new FieldSpecification(name(name), modifier, typeSignatureSpec, annotationType));

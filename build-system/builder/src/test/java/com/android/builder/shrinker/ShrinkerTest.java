@@ -104,7 +104,7 @@ public class ShrinkerTest {
         Files.write(SimpleScenario.aaa(), new File(mTestPackageDir, "Aaa.class"));
 
         // When:
-        run(new TestKeepRules("Aaa", "aaa"));
+        run("Aaa", "aaa:()V");
 
         // Then:
         assertMembersLeft("Aaa", "aaa:()V", "bbb:()V");
@@ -118,7 +118,7 @@ public class ShrinkerTest {
         Files.write(SimpleScenario.ccc(), new File(mTestPackageDir, "Ccc.class"));
 
         // When:
-        run(new TestKeepRules("Bbb", "bbb"));
+        run("Bbb", "bbb:(Ltest/Aaa;)V");
 
         // Then:
         assertMembersLeft("Aaa", "aaa:()V", "bbb:()V");
@@ -135,7 +135,7 @@ public class ShrinkerTest {
         Files.write(SimpleScenario.aaa(), new File(mTestPackageDir, "Aaa.class"));
         Files.write(SimpleScenario.ccc(), new File(mTestPackageDir, "Ccc.class"));
 
-        run(new TestKeepRules("Bbb", "bbb"));
+        run("Bbb", "bbb:(Ltest/Aaa;)V");
 
         Files.write(SimpleScenario.bbb2(), bbbFile);
 
@@ -158,7 +158,7 @@ public class ShrinkerTest {
         Files.write(VirtualCalls.impl(1), new File(mTestPackageDir, "Impl1.class"));
 
         // When:
-        run(new TestKeepRules("Impl1", "abstractMethod"));
+        run("Impl1", "abstractMethod:()V");
 
         // Then:
         assertMembersLeft("Impl1", "abstractMethod:()V");
@@ -175,7 +175,7 @@ public class ShrinkerTest {
         Files.write(VirtualCalls.impl(3), new File(mTestPackageDir, "Impl3.class"));
 
         // When:
-        run(new TestKeepRules("Main", "main"));
+        run("Main", "main:([Ljava/lang/String;)V");
 
         // Then:
         assertMembersLeft("Main", "main:([Ljava/lang/String;)V");
@@ -195,7 +195,7 @@ public class ShrinkerTest {
         Files.write(VirtualCalls.impl(3), new File(mTestPackageDir, "Impl3.class"));
 
         // When:
-        run(new TestKeepRules("Main", "main"));
+        run("Main", "main:([Ljava/lang/String;)V");
 
         // Then:
         assertMembersLeft("Main", "main:([Ljava/lang/String;)V");
@@ -213,7 +213,7 @@ public class ShrinkerTest {
         Files.write(VirtualCalls.child(), new File(mTestPackageDir, "Child.class"));
 
         // When:
-        run(new TestKeepRules("Main", "main"));
+        run("Main", "main:()V");
 
         // Then:
         assertMembersLeft("Main", "main:()V");
@@ -228,7 +228,7 @@ public class ShrinkerTest {
         Files.write(SdkTypes.myException(), new File(mTestPackageDir, "MyException.class"));
 
         // When:
-        run(new TestKeepRules("Main", "main"));
+        run("Main", "main:([Ljava/lang/String;)V");
 
         // Then:
         assertMembersLeft("Main", "main:([Ljava/lang/String;)V");
@@ -248,7 +248,10 @@ public class ShrinkerTest {
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
 
         // When:
-        run(new TestKeepRules("Main", "callCallable", "buildMyCallable"));
+        run(
+                "Main",
+                "buildMyCallable:()Ltest/MyCallable;",
+                "callCallable:(Ljava/util/concurrent/Callable;)V");
 
         // Then:
         assertMembersLeft(
@@ -275,7 +278,10 @@ public class ShrinkerTest {
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
 
         // When:
-        run(new TestKeepRules("Main", "callMyCallable", "buildMyCallable"));
+        run(
+                "Main",
+                "buildMyCallable:()Ltest/MyCallable;",
+                "callMyCallable:(Ltest/MyCallable;)V");
 
         // Then:
         assertMembersLeft(
@@ -302,7 +308,9 @@ public class ShrinkerTest {
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
 
         // When:
-        run(new TestKeepRules("Main", "callCallable"));
+        run(
+                "Main",
+                "callCallable:(Ljava/util/concurrent/Callable;)V");
 
         // Then:
         assertMembersLeft(
@@ -322,7 +330,10 @@ public class ShrinkerTest {
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
 
         // When:
-        run(new TestKeepRules("Main", "useMyInterface", "buildMyImpl"));
+        run(
+                "Main",
+                "buildMyImpl:()Ltest/MyImpl;",
+                "useMyInterface:(Ltest/MyInterface;)V");
 
         // Then:
         assertMembersLeft(
@@ -350,7 +361,7 @@ public class ShrinkerTest {
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
 
         // When:
-        run(new TestKeepRules("Main", "useMyImpl_interfaceMethod"));
+        run("Main", "useMyImpl_interfaceMethod:(Ltest/MyImpl;)V");
 
         // Then:
         assertMembersLeft(
@@ -373,7 +384,7 @@ public class ShrinkerTest {
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
 
         // When:
-        run(new TestKeepRules("Main", "useMyImpl_otherMethod"));
+        run("Main", "useMyImpl_otherMethod:(Ltest/MyImpl;)V");
 
         // Then:
         assertMembersLeft(
@@ -396,7 +407,7 @@ public class ShrinkerTest {
         Files.write(TestClasses.emptyClass("MyFieldType"), new File(mTestPackageDir, "MyFieldType.class"));
 
         // When:
-        run(new TestKeepRules("Main", "main"));
+        run("Main", "main:()I");
 
         // Then:
         assertMembersLeft(
@@ -423,7 +434,7 @@ public class ShrinkerTest {
         Files.write(TestClasses.emptyClass("MyFieldType"), new File(mTestPackageDir, "MyFieldType.class"));
 
         // When:
-        run(new TestKeepRules("Main", "main_subclass"));
+        run("Main", "main_subclass:()I");
 
         // Then:
         assertMembersLeft(
@@ -451,7 +462,7 @@ public class ShrinkerTest {
         Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
-        run(new TestKeepRules("Main", "buildImplementation"));
+        run("Main", "buildImplementation:()V");
 
         // Then:
         assertMembersLeft(
@@ -471,7 +482,10 @@ public class ShrinkerTest {
         Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
-        run(new TestKeepRules("Main", "useInterfaceOne", "useInterfaceTwo"));
+        run(
+                "Main",
+                "useInterfaceOne:(Ltest/InterfaceOne;)V",
+                "useInterfaceTwo:(Ltest/InterfaceTwo;)V");
 
         // Then:
         assertMembersLeft(
@@ -492,7 +506,10 @@ public class ShrinkerTest {
         Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
-        run(new TestKeepRules("Main", "useInterfaceOne", "buildImplementation"));
+        run(
+                "Main",
+                "useInterfaceOne:(Ltest/InterfaceOne;)V",
+                "buildImplementation:()V");
 
         // Then:
         assertMembersLeft(
@@ -513,11 +530,11 @@ public class ShrinkerTest {
         Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
-        run(new TestKeepRules(
+        run(
                 "Main",
-                "useInterfaceOne",
-                "useInterfaceTwo",
-                "buildImplementation"));
+                "useInterfaceOne:(Ltest/InterfaceOne;)V",
+                "useInterfaceTwo:(Ltest/InterfaceTwo;)V",
+                "buildImplementation:()V");
 
         // Then:
         assertMembersLeft(
@@ -539,10 +556,10 @@ public class ShrinkerTest {
         Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
-        run(new TestKeepRules(
+        run(
                 "Main",
-                "useImplementation",
-                "buildImplementation"));
+                "useImplementation:(Ltest/Implementation;)V",
+                "buildImplementation:()V");
 
         // Then:
         assertMembersLeft(
@@ -565,9 +582,7 @@ public class ShrinkerTest {
         Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
 
         // When:
-        run(new TestKeepRules(
-                "Main",
-                "main"));
+        run("Main", "main:()V");
 
         // Then:
         assertMembersLeft(
@@ -595,9 +610,7 @@ public class ShrinkerTest {
         Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
 
         // When:
-        run(new TestKeepRules(
-                "Main",
-                "main"));
+        run("Main", "main:()V");
 
         // Then:
         assertMembersLeft(
@@ -625,9 +638,7 @@ public class ShrinkerTest {
         Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
 
         // When:
-        run(new TestKeepRules(
-                "Main",
-                "notAnnotated"));
+        run("Main", "notAnnotated:()V");
 
         // Then:
         assertMembersLeft(
@@ -648,9 +659,7 @@ public class ShrinkerTest {
         Files.write(Signatures.hasAge(), new File(mTestPackageDir, "HasAge.class"));
 
         // When:
-        run(new TestKeepRules(
-                "Main",
-                "main"));
+        run("Main", "main:(Ltest/NamedMap;)V");
 
         // Then:
         assertMembersLeft(
@@ -670,9 +679,7 @@ public class ShrinkerTest {
         Files.write(Signatures.hasAge(), new File(mTestPackageDir, "HasAge.class"));
 
         // When:
-        run(new TestKeepRules(
-                "Main",
-                "callMethod"));
+        run("Main", "callMethod:(Ltest/NamedMap;)V");
 
         // Then:
         assertMembersLeft(
@@ -691,9 +698,7 @@ public class ShrinkerTest {
         Files.write(SuperCalls.ccc(), new File(mTestPackageDir, "Ccc.class"));
 
         // When:
-        run(new TestKeepRules(
-                "Ccc",
-                "callBbbMethod"));
+        run("Ccc", "callBbbMethod:()V");
 
         // Then:
         assertMembersLeft("Aaa");
@@ -709,9 +714,7 @@ public class ShrinkerTest {
         Files.write(SuperCalls.ccc(), new File(mTestPackageDir, "Ccc.class"));
 
         // When:
-        run(new TestKeepRules(
-                "Ccc",
-                "callAaaMethod"));
+        run("Ccc", "callAaaMethod:()V");
 
         // Then:
         assertMembersLeft("Aaa", "onlyInAaa:()V");
@@ -727,9 +730,7 @@ public class ShrinkerTest {
         Files.write(SuperCalls.ccc(), new File(mTestPackageDir, "Ccc.class"));
 
         // When:
-        run(new TestKeepRules(
-                "Ccc",
-                "callOverriddenMethod"));
+        run("Ccc", "callOverriddenMethod:()V");
 
         // Then:
         assertMembersLeft("Aaa");
@@ -745,7 +746,7 @@ public class ShrinkerTest {
         Files.write(InnerClasses.staticInnerClass(), new File(mTestPackageDir, "HasInnerClass$StaticInnerClass.class"));
 
         // When:
-        run(new TestKeepRules("Main", "main"));
+        run("Main", "main:()V");
 
         // Then:
         assertMembersLeft("Main", "main:()V");
@@ -789,11 +790,12 @@ public class ShrinkerTest {
         return FileUtils.join(mOutDir, "test", className + ".class");
     }
 
-    private void run(TestKeepRules rules) throws IOException {
+    private void run(String className, String... methods) throws IOException {
         mShrinker.run(
                 mInputOutputs,
                 Collections.<TransformInput>emptyList(),
-                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(Shrinker.ShrinkType.SHRINK, rules),
+                ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
+                        Shrinker.ShrinkType.SHRINK, new TestKeepRules(className, methods)),
                 false);
     }
 
