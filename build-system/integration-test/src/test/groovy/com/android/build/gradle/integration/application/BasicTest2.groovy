@@ -97,7 +97,6 @@ class BasicTest2 {
         assertEquals("Debug package name", "com.android.tests.basic.debug",
                 debugMainInfo.getApplicationId())
         assertTrue("Debug signed check", debugMainInfo.isSigned())
-        assertEquals("Debug signingConfig name", "myConfig", debugMainInfo.getSigningConfigName())
         assertEquals("Debug sourceGenTask", "generateDebugSources", debugMainInfo.getSourceGenTaskName())
         assertEquals("Debug compileTask", "compileDebugSources", debugMainInfo.getCompileTaskName())
 
@@ -154,7 +153,6 @@ class BasicTest2 {
         assertEquals("Test package name", "com.android.tests.basic.debug.test",
                 debugTestInfo.getApplicationId())
         assertTrue("Test signed check", debugTestInfo.isSigned())
-        assertEquals("Test signingConfig name", "myConfig", debugTestInfo.getSigningConfigName())
         assertEquals("Test sourceGenTask", "generateDebugAndroidTestSources", debugTestInfo.getSourceGenTaskName())
         assertEquals("Test compileTask", "compileDebugAndroidTestSources", debugTestInfo.getCompileTaskName())
 
@@ -231,7 +229,6 @@ class BasicTest2 {
         assertEquals("Release package name", "com.android.tests.basic",
                 relMainInfo.getApplicationId())
         assertFalse("Release signed check", relMainInfo.isSigned())
-        assertNull("Release signingConfig name", relMainInfo.getSigningConfigName())
         assertEquals("Release sourceGenTask", "generateReleaseSources", relMainInfo.getSourceGenTaskName())
         assertEquals("Release javaCompileTask", "compileReleaseSources", relMainInfo.getCompileTaskName())
 
