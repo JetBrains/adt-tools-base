@@ -325,7 +325,7 @@ public class InstantRunTransform extends Transform implements ForkTransform {
         File outputFile = IncrementalVisitor.instrumentClass(
                 inputDir, inputFile, outputDir, IncrementalSupportVisitor.VISITOR_BUILDER);
 
-        if (recordingPolicy == RecordingPolicy.RECORD) {
+        if (outputFile != null && recordingPolicy == RecordingPolicy.RECORD) {
             generatedClasses2Files.add(outputFile.getAbsolutePath());
         }
     }
@@ -361,6 +361,12 @@ public class InstantRunTransform extends Transform implements ForkTransform {
         File outputFile = IncrementalVisitor.instrumentClass(
                 inputDir, inputFile, outputDir, IncrementalChangeVisitor.VISITOR_BUILDER);
 
+        // if the visitor returned null, that means the class not be hot swapped or more likely
+        // that it was disabled for InstantRun, we don't add it to our collection of generated
+        // classes and it will not be part of the Patch class that apply changes.
+        if (outputFile == null) {
+            return;
+        }
         generatedClasses3Names.add(
                 inputFile.getAbsolutePath().substring(
                     inputDir.getAbsolutePath().length() + 1,

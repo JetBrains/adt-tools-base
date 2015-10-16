@@ -17,7 +17,9 @@
 package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
+import com.android.tools.ir.api.DisableInstantRun;
 
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -68,6 +70,12 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             // Remove .class (length 6) and replace with $override.class
             return path.substring(0, path.length() - 6) + OVERRIDE_SUFFIX + ".class";
         }
+
+        @NonNull
+        @Override
+        public OutputType getOutputType() {
+            return OutputType.OVERRIDE;
+        }
     };
 
     // todo : find a better way to specify logging and append to a log file.
@@ -77,6 +85,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     private static final String METHOD_MANGLE_PREFIX = "$";
 
     private MachineState state = MachineState.NORMAL;
+    private boolean instantRunDisabled = false;
 
     // Description prefix used to add fake "this" as the first argument to each instance method
     // when converted to a static method.
@@ -131,6 +140,14 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         mv.visitEnd();
     }
 
+    @Override
+    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+        if (Type.getDescriptor(DisableInstantRun.class).equals(desc)) {
+            instantRunDisabled = true;
+        }
+        return super.visitAnnotation(desc, visible);
+    }
+
     /**
      * Generates new delegates for all 'patchable' methods in the visited class. Delegates
      * are static methods that do the same thing the visited code does, but from outside the class.
@@ -146,7 +163,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
 
-        if (!canBeInstantRunEnabled(access)) {
+        if (instantRunDisabled || !canBeInstantRunEnabled(access)) {
             // Nothing to generate.
             return null;
         }
@@ -893,9 +910,14 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         }
 
         List<MethodNode> methods = new ArrayList<MethodNode>();
-        //noinspection unchecked
-        methods.addAll(classNode.methods);
-        methods.addAll(addedMethods);
+
+        // if we are disabled, do not generate any dispatch, the method will throw an exception
+        // if invoked which should never happen.
+        if (!instantRunDisabled) {
+            //noinspection unchecked
+            methods.addAll(classNode.methods);
+            methods.addAll(addedMethods);
+        }
 
         for (MethodNode methodNode : methods) {
             if (methodNode.name.equals("<clinit>") || methodNode.name.equals("<init>")) {

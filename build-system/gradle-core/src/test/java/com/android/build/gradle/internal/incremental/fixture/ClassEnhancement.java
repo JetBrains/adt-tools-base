@@ -171,15 +171,21 @@ public class ClassEnhancement implements TestRule {
 
 
     private void patchClass(@NonNull String name, @Nullable String patch)
-            throws ClassNotFoundException, IllegalAccessException, InstantiationException,
-            NoSuchFieldException {
+            throws ClassNotFoundException, IllegalAccessException, InstantiationException {
 
         Class<?> originalEnhancedClass = getClass().getClassLoader().loadClass(name);
         if (originalEnhancedClass.isInterface()) {
             // we don't patch interfaces.
             return;
         }
-        Field newImplementationField = originalEnhancedClass.getField("$change");
+        Field newImplementationField = null;
+        try {
+            newImplementationField = originalEnhancedClass.getField("$change");
+        } catch (NoSuchFieldException e) {
+            // the original class does not contain the $change field which mean that InstantRun
+            // was disabled for it, we should ignore and not try to patch it.
+            return;
+        }
         // class might not be accessible from there
         newImplementationField.setAccessible(true);
 

@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.ir.api.DisableInstantRun;
 import com.android.utils.FileUtils;
 import com.google.common.io.Files;
 
@@ -28,6 +29,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
+import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -43,6 +45,20 @@ import java.util.Iterator;
 import java.util.List;
 
 public class IncrementalVisitor extends ClassVisitor {
+
+    /**
+     * Defines the output type from this visitor.
+     */
+    public enum OutputType {
+        /**
+         * provide instrumented classes that can be hot swapped at runtime with an override class.
+         */
+        INSTRUMENT,
+        /**
+         * provide override classes that be be used to hot swap an instrumented class.
+         */
+        OVERRIDE
+    }
 
     protected static final String PACKAGE =
             IncrementalVisitor.class.getPackage().getName().replace('.', '/');
@@ -183,10 +199,14 @@ public class IncrementalVisitor extends ClassVisitor {
 
         @NonNull
         String getMangledRelativeClassFilePath(@NonNull String originalClassFilePath);
+
+        @NonNull
+        OutputType getOutputType();
     }
 
-    protected static void main(@NonNull String[] args, @NonNull VisitorBuilder visitorBuilder)
-            throws IOException {
+    protected static void main(
+            @NonNull String[] args,
+            @NonNull VisitorBuilder visitorBuilder) throws IOException {
 
         if (args.length != 2) {
             throw new IllegalArgumentException("Needs to be given an input and output directory");
@@ -199,7 +219,9 @@ public class IncrementalVisitor extends ClassVisitor {
                 baseInstrumentedCompileOutputFolder, visitorBuilder);
     }
 
-    private static void instrumentClasses(@NonNull File rootLocation, @NonNull File outLocation,
+    private static void instrumentClasses(
+            @NonNull File rootLocation,
+            @NonNull File outLocation,
             @NonNull VisitorBuilder visitorBuilder) throws IOException {
 
         Iterable<File> files =
@@ -224,7 +246,7 @@ public class IncrementalVisitor extends ClassVisitor {
         return ((access & Opcodes.ACC_ABSTRACT) == 0) && ((access & Opcodes.ACC_BRIDGE) == 0);
     }
 
-    @NonNull
+    @Nullable
     public static File instrumentClass(
             @NonNull File inputRootDirectory,
             @NonNull File inputFile,
@@ -275,19 +297,33 @@ public class IncrementalVisitor extends ClassVisitor {
         // when dealing with interface, we just copy the inputFile over without any changes unless
         // this is a package private interface.
         AccessRight accessRight = AccessRight.fromNodeAccess(classNode.access);
+        File outputFile = new File(outputDirectory, path);
         if ((classNode.access & Opcodes.ACC_INTERFACE) != 0) {
-            // don't change the name of interfaces.
-            File outputFile = new File(outputDirectory, path);
-            Files.createParentDirs(outputFile);
-            if (accessRight == AccessRight.PACKAGE_PRIVATE) {
-                classNode.access = classNode.access | Opcodes.ACC_PUBLIC;
-                classNode.accept(classWriter);
-                Files.write(classWriter.toByteArray(), outputFile);
+            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
+                // don't change the name of interfaces.
+                Files.createParentDirs(outputFile);
+                if (accessRight == AccessRight.PACKAGE_PRIVATE) {
+                    classNode.access = classNode.access | Opcodes.ACC_PUBLIC;
+                    classNode.accept(classWriter);
+                    Files.write(classWriter.toByteArray(), outputFile);
+                } else {
+                    // just copy the input file over, no change.
+                    Files.write(classBytes, outputFile);
+                }
+                return outputFile;
             } else {
-                // just copy the input file over, no change.
-                Files.write(classBytes, outputFile);
+                return null;
             }
-            return outputFile;
+        }
+
+        if (isPackageInstantRunDisabled(inputFile, classNode)) {
+            if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
+                Files.createParentDirs(outputFile);
+                Files.write(classBytes, outputFile);
+                return outputFile;
+            } else {
+                return null;
+            }
         }
 
         List<ClassNode> parentsNodes;
@@ -296,7 +332,7 @@ public class IncrementalVisitor extends ClassVisitor {
         } else {
             parentsNodes = Collections.emptyList();
         }
-        File outputFile = new File(outputDirectory, visitorBuilder.getMangledRelativeClassFilePath(path));
+        outputFile = new File(outputDirectory, visitorBuilder.getMangledRelativeClassFilePath(path));
         Files.createParentDirs(outputFile);
         IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
         classNode.accept(visitor);
@@ -306,10 +342,15 @@ public class IncrementalVisitor extends ClassVisitor {
     }
 
     @NonNull
+    private static File getBinaryFolder(@NonNull File inputFile, @NonNull ClassNode classNode) {
+        return new File(inputFile.getAbsolutePath().substring(0,
+                inputFile.getAbsolutePath().length() - (classNode.name.length() + ".class".length())));
+    }
+
+    @NonNull
     private static List<ClassNode> parseParents(
             @NonNull File inputFile, @NonNull ClassNode classNode) throws IOException {
-        File binaryFolder = new File(inputFile.getAbsolutePath().substring(0,
-                inputFile.getAbsolutePath().length() - (classNode.name.length() + ".class".length())));
+        File binaryFolder = getBinaryFolder(inputFile, classNode);
         List<ClassNode> parentNodes = new ArrayList<ClassNode>();
         String currentParentName = classNode.superName;
 
@@ -342,5 +383,40 @@ public class IncrementalVisitor extends ClassVisitor {
             }
         }
         return parentNodes;
+    }
+
+    @Nullable
+    private static ClassNode parsePackageInfo(
+            @NonNull File inputFile, @NonNull ClassNode classNode) throws IOException {
+
+        File packageFolder = inputFile.getParentFile();
+        File packageInfoClass = new File(packageFolder, "package-info.class");
+        if (packageInfoClass.exists()) {
+            InputStream reader = new BufferedInputStream(new FileInputStream(packageInfoClass));
+            ClassReader classReader = new ClassReader(reader);
+            ClassNode packageInfo = new ClassNode();
+            classReader.accept(packageInfo, ClassReader.EXPAND_FRAMES);
+            return packageInfo;
+        }
+        return null;
+    }
+
+    private static boolean isPackageInstantRunDisabled(
+            @NonNull File inputFile, @NonNull ClassNode classNode) throws IOException {
+
+        ClassNode packageInfoClass = parsePackageInfo(inputFile, classNode);
+        if (packageInfoClass != null) {
+            //noinspection unchecked
+            List<AnnotationNode> annotations = packageInfoClass.invisibleAnnotations;
+            if (annotations == null) {
+                return false;
+            }
+            for (AnnotationNode annotation : annotations) {
+                if (annotation.desc.equals(Type.getDescriptor(DisableInstantRun.class))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

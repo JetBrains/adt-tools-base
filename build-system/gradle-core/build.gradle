@@ -38,7 +38,7 @@ dependencies {
     compile 'org.ow2.asm:asm-commons:5.0.3'
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
     compile "org.jacoco:org.jacoco.core:0.7.4.201502262128"
-    testCompile project(':base:fdr')
+    compile project(':base:fdr')
 
 
     // Add gradleApi to classpath for compilation, but use provided configuration so that groovy is
@@ -128,6 +128,7 @@ Task instrumentIncrementalTestBaseClasses = tasks.create(
         name: "instrumentIncrementalTestBaseClasses",
         type: org.gradle.api.tasks.JavaExec) {
     main = 'com.android.build.gradle.internal.incremental.IncrementalSupportVisitor'
+//    jvmArgs = [ '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005']
     classpath = sourceSets.main.runtimeClasspath + sourceSets.test.compileClasspath
     args baseClasses, baseInstrumentedClasses
 }
@@ -158,6 +159,7 @@ for (File f: new File(project.projectDir, "src/test/incremental-test-classes/pat
             name: "instrumentIncrementalTestPatch${f.getName().capitalize()}",
             type: org.gradle.api.tasks.JavaExec) {
         main = 'com.android.build.gradle.internal.incremental.IncrementalChangeVisitor'
+//        jvmArgs = [ '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005']
         classpath = sourceSets.main.runtimeClasspath + sourceSets.test.compileClasspath
         args incrementalPatchClassFileDir, new File(instrumentedIncrementalTestOutDir, f.getName())
     }

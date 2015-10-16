@@ -17,9 +17,10 @@
 package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import com.android.tools.ir.api.DisableInstantRun;
 import com.android.utils.AsmUtils;
 
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -54,6 +55,7 @@ import java.util.Map;
  */
 public class IncrementalSupportVisitor extends IncrementalVisitor {
 
+    private boolean disableRedirection = false;
 
     private static final class VisitorBuilder implements IncrementalVisitor.VisitorBuilder {
 
@@ -81,6 +83,12 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         @NonNull
         public String getMangledRelativeClassFilePath(@NonNull String originalClassFilePath) {
             return originalClassFilePath;
+        }
+
+        @NonNull
+        @Override
+        public OutputType getOutputType() {
+            return OutputType.INSTRUMENT;
         }
     }
 
@@ -117,6 +125,14 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
+    @Override
+    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+        if (desc.equals(Type.getDescriptor(DisableInstantRun.class))) {
+            disableRedirection = true;
+        }
+        return super.visitAnnotation(desc, visible);
+    }
+
     /**
      * Insert Constructor specific logic({@link ConstructorArgsRedirection} and
      * {@link ConstructorDelegationDetector}) for constructor redirecting or
@@ -126,11 +142,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
 
-        if (!canBeInstantRunEnabled(access)) {
-            return super.visitMethod(access, name, desc, signature, exceptions);
-        }
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
-        if (name.equals("<clinit>")) {
+        if (disableRedirection || !canBeInstantRunEnabled(access) || name.equals("<clinit>")) {
             return defaultVisitor;
         } else {
             ISMethodVisitor mv = new ISMethodVisitor(Opcodes.ASM5, defaultVisitor, access, name, desc);
@@ -164,6 +177,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
     private class ISMethodVisitor extends GeneratorAdapter {
 
+        private boolean disableRedirection = false;
         private int change;
         private final List<Type> args;
         private final Map<Label, Redirection> redirections;
@@ -183,6 +197,14 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             }
         }
 
+        @Override
+        public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+            if (desc.equals(Type.getDescriptor(DisableInstantRun.class))) {
+                disableRedirection = true;
+            }
+            return super.visitAnnotation(desc, visible);
+        }
+
         /**
          * inserts a new local '$change' in each method that contains a reference to the type's
          * IncrementalChange dispatcher, this is done to avoid threading issues.
@@ -194,12 +216,15 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
          */
         @Override
         public void visitCode() {
-            super.visitLabel(start);
-            change = newLocal(CHANGE_TYPE);
-            visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change", getRuntimeTypeName(CHANGE_TYPE));
-            storeLocal(change);
+            if (!disableRedirection) {
+                super.visitLabel(start);
+                change = newLocal(CHANGE_TYPE);
+                visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
+                        getRuntimeTypeName(CHANGE_TYPE));
+                storeLocal(change);
 
-            redirectAt(start);
+                redirectAt(start);
+            }
             super.visitCode();
         }
 
@@ -210,6 +235,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         }
 
         private void redirectAt(Label label) {
+            if (disableRedirection) return;
             Redirection redirection = redirections.get(label);
             if (redirection != null) {
                 redirection.redirect(this, change, args);
@@ -229,7 +255,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             // the methods for dex to pick that up. By inserting code before the first label we
             // break that. In Java this is fine, and the debugger shows the right thing. However
             // if we don't readjust the local variables, we just don't see the arguments.
-            if (index < args.size()) {
+            if (!disableRedirection && index < args.size()) {
                 start = this.start;
             }
             super.visitLocalVariable(name, desc, signature, start, end, index);
