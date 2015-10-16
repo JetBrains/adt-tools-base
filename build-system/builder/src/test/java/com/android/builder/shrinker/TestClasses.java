@@ -1928,6 +1928,125 @@ public class TestClasses implements Opcodes {
         }
     }
 
+    public static class StaticMembers {
+        public static byte[] main() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main",
+                    null, "java/lang/Object", null);
+
+            cw.visitSource("Main.java", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(22, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null,
+                        l0, l1, 0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "callStaticMethod", "()Ljava/lang/Object;", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(24, l0);
+                mv.visitMethodInsn(INVOKESTATIC, "test/Utils",
+                        "staticMethod", "()Ljava/lang/Object;", false);
+                mv.visitInsn(ARETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null,
+                        l0, l1, 0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "getStaticField", "()Ljava/lang/Object;", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(28, l0);
+                mv.visitFieldInsn(GETSTATIC, "test/Utils",
+                        "staticField", "Ljava/lang/Object;");
+                mv.visitInsn(ARETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null,
+                        l0, l1, 0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] utils() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Utils",
+                    null, "java/lang/Object", null);
+
+            cw.visitSource("Utils.java", null);
+
+            {
+                fv = cw.visitField(ACC_PUBLIC + ACC_STATIC, "staticField", "Ljava/lang/Object;", null,
+                        null);
+                fv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(22, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Utils;", null,
+                        l0, l1, 0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "staticMethod", "()Ljava/lang/Object;",
+                        null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(24, l0);
+                mv.visitTypeInsn(NEW, "java/lang/Object");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(ARETURN);
+                mv.visitMaxs(2, 0);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+    }
+
     public static byte[] emptyClass(String name) throws Exception {
 
         ClassWriter cw = new ClassWriter(0);
