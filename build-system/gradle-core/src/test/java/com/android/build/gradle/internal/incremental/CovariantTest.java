@@ -16,8 +16,7 @@
 
 package com.android.build.gradle.internal.incremental;
 
-import static groovy.util.GroovyTestCase.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
