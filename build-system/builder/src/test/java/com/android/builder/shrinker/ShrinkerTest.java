@@ -35,6 +35,7 @@ import com.android.builder.shrinker.TestClasses.MultipleOverridenMethods;
 import com.android.builder.shrinker.TestClasses.SdkTypes;
 import com.android.builder.shrinker.TestClasses.Signatures;
 import com.android.builder.shrinker.TestClasses.SimpleScenario;
+import com.android.builder.shrinker.TestClasses.StaticMembers;
 import com.android.builder.shrinker.TestClasses.SuperCalls;
 import com.android.builder.shrinker.TestClasses.VirtualCalls;
 import com.android.ide.common.internal.WaitableExecutor;
@@ -752,6 +753,34 @@ public class ShrinkerTest {
         assertMembersLeft("Main", "main:()V");
         assertMembersLeft("HasInnerClass$StaticInnerClass", "method:()V", "<init>:()V");
         assertMembersLeft("HasInnerClass");
+    }
+
+    @Test
+    public void staticMethods() throws Exception {
+        // Given:
+        Files.write(StaticMembers.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(StaticMembers.utils(), new File(mTestPackageDir, "Utils.class"));
+
+        // When:
+        run("Main", "callStaticMethod:()Ljava/lang/Object;");
+
+        // Then:
+        assertMembersLeft("Main", "callStaticMethod:()Ljava/lang/Object;");
+        assertMembersLeft("Utils", "staticMethod:()Ljava/lang/Object;");
+    }
+
+    @Test
+    public void staticFields_uninitialized() throws Exception {
+        // Given:
+        Files.write(StaticMembers.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(StaticMembers.utils(), new File(mTestPackageDir, "Utils.class"));
+
+        // When:
+        run("Main", "getStaticField:()Ljava/lang/Object;");
+
+        // Then:
+        assertMembersLeft("Main", "getStaticField:()Ljava/lang/Object;");
+        assertMembersLeft("Utils", "staticField:Ljava/lang/Object;");
     }
 
     private void assertClassSkipped(String className) {
