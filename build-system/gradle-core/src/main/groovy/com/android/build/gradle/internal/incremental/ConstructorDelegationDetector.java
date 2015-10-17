@@ -37,11 +37,6 @@ import java.util.List;
 /**
  * Utilities to detect and manipulate constructor methods.
  *
- * When instrumenting a constructor the original "super" or "this" call, cannot be
- * removed or manipulated in anyway. The same goes for the this object before the super
- * call: It cannot be send to any other method as the verifier sees it as
- * UNINITIALIZED_THIS and won't allow bytecode that "escapes it"
- *
  * A constructor of a non static inner class usually has the form:
  *
  * ALOAD_0              // push this to the stack
@@ -52,8 +47,6 @@ import java.util.List;
  * ...                  // for all the new calls here.
  * INVOKESPECIAL <init> // super() or this() call
  * ...                  // the "body" of the constructor goes here.
- *
- * When instrumenting with incremental support we only allow "swapping" the "body".
  *
  * This class has the utilities to detect which instruction is the right INVOKESPECIAL call before
  * the "body".
@@ -124,11 +117,11 @@ public class ConstructorDelegationDetector {
      * it creates the two parts:
      * <code>
      *   Object[] init$args(Object[] locals, int x) {
-     *     Object[] ret = new Object[2];
-     *     ret[0] = (x = 1)
-     *     ret[1] = expr2() ? 3 : 7;
+     *     Object[] args = new Object[2];
+     *     args[0] = (x = 1)
+     *     args[1] = expr2() ? 3 : 7;
      *     locals[0] = x;
-     *     return ret;
+     *     return new Object[] {"myclass.<init>(I;I;)V", args};
      *   }
      *
      *   void init$body(int x) {
@@ -241,22 +234,35 @@ public class ConstructorDelegationDetector {
             mv.arrayStore(Type.getType(Object.class));
             stack += type.getSize();
         }
-        // Create the return array with the values to send to the delegated constructor
+        // Create the args array with the values to send to the delegated constructor
         Type[] returnTypes = Type.getArgumentTypes(delegation.desc);
         mv.push(returnTypes.length);
         mv.newArray(Type.getType(Object.class));
-        int ret = mv.newLocal(Type.getType("[Ljava/lang/Object;"));
-        mv.storeLocal(ret);
+        int args = mv.newLocal(Type.getType("[Ljava/lang/Object;"));
+        mv.storeLocal(args);
         for (int i = returnTypes.length - 1; i >= 0; i--) {
             Type type = returnTypes[i];
-            mv.loadLocal(ret);
+            mv.loadLocal(args);
             mv.swap(type, Type.getType(Object.class));
             mv.push(i);
             mv.swap(type, Type.INT_TYPE);
             mv.box(type);
             mv.arrayStore(Type.getType(Object.class));
         }
-        mv.loadLocal(ret);
+
+        // Create a two element array. First element is the qualified name of the constructor to
+        // be called. The second is the arguments array that will be passed to the dispatching
+        // constructor.
+        mv.visitInsn(Opcodes.ICONST_2);
+        mv.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
+        mv.dup();
+        mv.dup();
+        mv.visitInsn(Opcodes.ICONST_0);
+        mv.visitLdcInsn(delegation.owner + "." + delegation.desc); // Name of the constructor to be called.
+        mv.visitInsn(Opcodes.AASTORE);
+        mv.visitInsn(Opcodes.ICONST_1);
+        mv.loadLocal(args);
+        mv.visitInsn(Opcodes.AASTORE);
         mv.returnValue();
 
         newDesc = method.desc.replace("(", "(L" + owner + ";");

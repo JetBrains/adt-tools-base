@@ -44,11 +44,49 @@ public class Constructors {
         }
     }
 
+    abstract static class AbstractBase {
+        private final String baseFinal;
+
+        public AbstractBase(double a, String b, int c) {
+            baseFinal = "abstract_base:" + a + b + c;
+        }
+
+        protected AbstractBase() {
+            baseFinal = "abstract base:";
+        }
+
+        public String getBaseFinal() {
+            return baseFinal;
+        }
+    }
+
+    public static class SubOfAbstract extends AbstractBase {
+        private final String subFinal;
+
+        public String value;
+
+        public SubOfAbstract(int a, int b, int c, int d) {
+            super();
+            subFinal = ":sub_abstract";
+            value = "SubOfAbstract(int, int, int, int)";
+        }
+
+        public String getSubFinal() {
+            return subFinal;
+        }
+    }
+
     public static class Sub extends Base {
 
         private final String subFinal;
 
         public String value;
+
+        public Sub(int a, int b, int c, int d) {
+            super();
+            subFinal = ":sub";
+            value = "Sub(int, int, int, int)";
+        }
 
         public Sub(double a, String b, int c) {
             super(a, callMeBefore(b), c);
