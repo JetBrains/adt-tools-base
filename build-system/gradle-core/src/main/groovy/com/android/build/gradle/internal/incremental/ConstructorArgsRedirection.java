@@ -47,15 +47,18 @@ import java.util.List;
  *       Object[] locals = new Object[2];
  *       locals[0] = locals; // So the unboxed receiver can update this array
  *       locals[1] = x;
- *       Object[] args = change.access$dispatch("init$args", locals);
+ *       Object[] result = change.access$dispatch("init$args", locals);
+ *       String constructorName = (String) result[0];
+ *       Object[] constructorArguments = (Object[]) result[1];
  *       x = locals[1];
  *       a = args[0];
  *       b = args[1];
+ *       this(constructorName, constructorArguments, null);
  *     } else {
  *       a = x = 1;
  *       b = expr2() ? 3 : 7;
+ *       super(a, b);
  *     }
- *     super(a, b);
  *     if (change != null) {
  *       Object[] locals = new Object[2];
  *       locals[0] = this;
@@ -72,6 +75,9 @@ import java.util.List;
 public class ConstructorArgsRedirection extends Redirection {
 
     @NonNull
+    private final String thisClassName;
+
+    @NonNull
     private final Type[] types;
 
     @NonNull
@@ -79,13 +85,20 @@ public class ConstructorArgsRedirection extends Redirection {
 
     private int locals;
 
+    // The signature of the dynamically dispatching 'this' constructor. The final parameters is
+    // to disambiguate from other constructors that might preexist on the class.
+    static final String DISPATCHING_THIS_SIGNATURE =
+            "(Ljava/lang/String;[Ljava/lang/Object;L" + IncrementalVisitor.INSTANT_RELOAD_EXCEPTION + ";)V";
+
     /**
+     * @param thisClassName name of the class that this constructor is in.
      * @param name the name to redirect to.
      * @param end the label where the redirection should end (before the super()/this() call).
      * @param types the types of the arguments on the super()/this() call.
      */
-    ConstructorArgsRedirection(String name, @NonNull Label end, @NonNull Type[] types) {
+    ConstructorArgsRedirection(String thisClassName, String name, @NonNull Label end, @NonNull Type[] types) {
         super(name);
+        this.thisClassName = thisClassName;
         this.types = types;
         this.end = end;
 
@@ -119,9 +132,30 @@ public class ConstructorArgsRedirection extends Redirection {
 
     @Override
     protected void restore(GeneratorAdapter mv, List<Type> args) {
-        // Once the redirection is complete, the values for the local variables was updated
-        // in the "locals" array. These values are moved back to the actual local variables
-        // to continue the execution of the constructor.
+        // At this point, init$args has been called and the result Object is on the stack.
+        // The value of that Object is Object[] with exactly two elements. The first element
+        // is the signature of the super or this constructor. The second element is an Object[]
+        // that contains the parameters to that constructor.
+
+        // Create a new local 'ret' that holds the result of init$args call.
+        mv.visitTypeInsn(Opcodes.CHECKCAST, "[Ljava/lang/Object;");
+        int ret = mv.newLocal(Type.getType("[Ljava/lang/Object;"));
+        mv.storeLocal(ret);
+
+        // Element 0 is a string containing the qualified name of the constructor that was called.
+        // It may be a constructor in this class or in super class.
+        mv.loadLocal(ret);
+        mv.visitInsn(Opcodes.ICONST_0);
+        mv.visitInsn(Opcodes.AALOAD);
+        mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/String");
+
+        // Element 1 is an Object array with parameters to pass to the dynamic dispatch constructor.
+        mv.loadLocal(ret);
+        mv.visitInsn(Opcodes.ICONST_1);
+        mv.visitInsn(Opcodes.AALOAD);
+        mv.visitTypeInsn(Opcodes.CHECKCAST, "[Ljava/lang/Object;");
+
+        // Reinstate local values
         mv.loadLocal(locals);
         int stackIndex = 0;
         for (int arrayIndex = 0; arrayIndex < args.size(); arrayIndex++) {
@@ -138,27 +172,19 @@ public class ConstructorArgsRedirection extends Redirection {
                 mv.unbox(arg);
                 // restore the argument
                 mv.visitVarInsn(arg.getOpcode(Opcodes.ISTORE), stackIndex);
-            }
+          }
             // stack index must progress according to the parameter type we just processed.
             stackIndex += arg.getSize();
         }
         // pops the array
         mv.pop();
 
-        // The redirected function returns an array with the arguments that need to be send
-        // to the delegated constructor. So, we push them to the stack.
-        mv.checkCast(Type.getType("[Ljava/lang/Object;"));
-        // Store the stack array
-        mv.storeLocal(locals);
-        // Restore the stack
-        for (int i = 0; i < types.length; i++) {
-            Type ret = types[i];
-            mv.loadLocal(locals);
-            mv.push(i);
-            mv.arrayLoad(Type.getType(Object.class));
-            // Unbox the value from the array and leave it in the stack.
-            mv.unbox(ret);
-        }
+        // Push a null for the marker parameter.
+        mv.visitInsn(Opcodes.ACONST_NULL);
+
+        // Invoke the constructor
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, thisClassName, "<init>", DISPATCHING_THIS_SIGNATURE, false);
+
         mv.goTo(end);
     }
 }

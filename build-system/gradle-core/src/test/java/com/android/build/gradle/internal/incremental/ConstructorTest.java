@@ -77,6 +77,38 @@ public class ConstructorTest {
     }
 
     @Test
+    public void updateConstructorSuperCall() throws Exception {
+        harness.reset();
+        Constructors.Sub sub = new Constructors.Sub(10, 20, 30, 40);
+        assertEquals("base:", sub.getBaseFinal());
+        assertEquals(":sub", sub.getSubFinal());
+        assertEquals("Sub(int, int, int, int)", sub.value);
+
+        harness.reset();
+        harness.applyPatch("changeBaseClass");
+        sub = new Constructors.Sub(10, 20, 30, 40);
+        assertEquals("3.020343:patched_base", sub.getBaseFinal());
+        assertEquals(":patched_sub", sub.getSubFinal());
+        assertEquals("patched_Sub(int, int, int, int)3", sub.value);
+    }
+
+    @Test
+    public void updateConstructorSuperCallInAbstractBase() throws Exception {
+        harness.reset();
+        Constructors.SubOfAbstract sub = new Constructors.SubOfAbstract(10, 20, 30, 40);
+        assertEquals("abstract base:", sub.getBaseFinal());
+        assertEquals(":sub_abstract", sub.getSubFinal());
+        assertEquals("SubOfAbstract(int, int, int, int)", sub.value);
+
+        harness.reset();
+        harness.applyPatch("changeBaseClass");
+        sub = new Constructors.SubOfAbstract(10, 20, 30, 40);
+        assertEquals("patched_abstract_base:30.0203070", sub.getBaseFinal());
+        assertEquals(":patched_sub_abstract", sub.getSubFinal());
+        assertEquals("patched_SubOfAbstract(int, int, int, int)", sub.value);
+    }
+
+    @Test
     public void testExceptionsInConstructor()
             throws ClassNotFoundException, NoSuchFieldException, InstantiationException,
             IllegalAccessException {

@@ -312,10 +312,11 @@ public class IncrementalVisitor extends ClassVisitor {
                 inputFile.getAbsolutePath().length() - (classNode.name.length() + ".class".length())));
         List<ClassNode> parentNodes = new ArrayList<ClassNode>();
         String currentParentName = classNode.superName;
-        while (!currentParentName.equals(Type.getType(Object.class).getInternalName())) {
+
+        while (currentParentName != null) {
             File parentFile = new File(binaryFolder, currentParentName + ".class");
-            System.out.println("parsing " + parentFile);
             if (parentFile.exists()) {
+                System.out.println("parsing " + parentFile);
                 InputStream parentFileClassReader = new BufferedInputStream(new FileInputStream(parentFile));
                 ClassReader parentClassReader = new ClassReader(parentFileClassReader);
                 ClassNode parentNode = new ClassNode();
@@ -323,7 +324,21 @@ public class IncrementalVisitor extends ClassVisitor {
                 parentNodes.add(parentNode);
                 currentParentName = parentNode.superName;
             } else {
-                return parentNodes;
+                // May need method information from outside of the current project. Thread local class reader
+                // should be the one
+                try {
+                    ClassReader parentClassReader = new ClassReader(
+                            Thread.currentThread().getContextClassLoader().getResourceAsStream(
+                                    currentParentName + ".class"));
+                    ClassNode parentNode = new ClassNode();
+                    parentClassReader.accept(parentNode, ClassReader.EXPAND_FRAMES);
+                    parentNodes.add(parentNode);
+                    currentParentName = parentNode.superName;
+                } catch (IOException e) {
+                    // Could not locate parent class. This is as far as we can go locating parents.
+                    System.out.printf("IncrementalVisitor parseParents could not locate class %s.\n", currentParentName);
+                    currentParentName = null;
+                }
             }
         }
         return parentNodes;
