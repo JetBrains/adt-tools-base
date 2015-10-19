@@ -208,7 +208,11 @@ public class InstantRunVerifier {
                 new AnnotationNodeComparator()) != Diff.NONE) {
             return IncompatibleChange.METHOD_ANNOTATION_CHANGE;
         }
-        return null;
+
+        // if the method content has changed, better not used any of our black listed APIs.
+        return METHOD_COMPARATOR.areEqual(methodNode, updatedMethod)
+                ? null
+                : InstantRunMethodVerifier.verifyMethod(updatedMethod);
     }
 
     @Nullable
