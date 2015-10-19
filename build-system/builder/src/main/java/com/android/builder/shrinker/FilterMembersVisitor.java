@@ -21,7 +21,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -37,7 +36,7 @@ public class FilterMembersVisitor extends ClassVisitor {
     private final Set<String> mMembers;
     private final Predicate<String> mKeepInterface;
 
-    public FilterMembersVisitor(Set<String> members, Predicate<String> keepInterface, ClassWriter cv) {
+    public FilterMembersVisitor(Set<String> members, Predicate<String> keepInterface, ClassVisitor cv) {
         super(Opcodes.ASM5, cv);
         mMembers = members;
         mKeepInterface = keepInterface;

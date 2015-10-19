@@ -40,7 +40,7 @@ class TestKeepRules implements KeepRules {
 
         if (graph.getClassName(klass).endsWith(mClassName)) {
             for (T method : graph.getMethods(klass)) {
-                String name = graph.getMethodName(method);
+                String name = graph.getMethodNameAndDesc(method);
                 for (String methodName : mMethodNames) {
                     if (name.equals(methodName)) {
                         symbols.put(method, DependencyType.REQUIRED);

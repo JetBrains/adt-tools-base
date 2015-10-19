@@ -27,16 +27,19 @@ import com.android.annotations.NonNull;
 import com.android.build.transform.api.ScopedContent;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutput;
+import com.android.builder.shrinker.TestClasses.AbstractClasses;
 import com.android.builder.shrinker.TestClasses.Annotations;
 import com.android.builder.shrinker.TestClasses.Fields;
 import com.android.builder.shrinker.TestClasses.InnerClasses;
+import com.android.builder.shrinker.TestClasses.Reflection;
 import com.android.builder.shrinker.TestClasses.Interfaces;
-import com.android.builder.shrinker.TestClasses.MultipleOverridenMethods;
+import com.android.builder.shrinker.TestClasses.MultipleOverriddenMethods;
 import com.android.builder.shrinker.TestClasses.SdkTypes;
 import com.android.builder.shrinker.TestClasses.Signatures;
 import com.android.builder.shrinker.TestClasses.SimpleScenario;
 import com.android.builder.shrinker.TestClasses.StaticMembers;
 import com.android.builder.shrinker.TestClasses.SuperCalls;
+import com.android.builder.shrinker.TestClasses.TryCatch;
 import com.android.builder.shrinker.TestClasses.VirtualCalls;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.utils.FileUtils;
@@ -244,27 +247,30 @@ public class ShrinkerTest {
     public void interfaces_sdkInterface_classUsed_abstractType() throws Exception {
         // Given:
         Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(Interfaces.myCallable(), new File(mTestPackageDir, "MyCallable.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
         Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:
         run(
                 "Main",
-                "buildMyCallable:()Ltest/MyCallable;",
-                "callCallable:(Ljava/util/concurrent/Callable;)V");
+                "buildMyCharSequence:()Ltest/MyCharSequence;",
+                "callCharSequence:(Ljava/lang/CharSequence;)V");
 
         // Then:
         assertMembersLeft(
                 "Main",
-                "buildMyCallable:()Ltest/MyCallable;",
-                "callCallable:(Ljava/util/concurrent/Callable;)V");
+                "buildMyCharSequence:()Ltest/MyCharSequence;",
+                "callCharSequence:(Ljava/lang/CharSequence;)V");
         assertMembersLeft(
-                "MyCallable",
-                // This bridge method is called from Main and it just delegates to the specialized
-                // version (below).
-                "call:()Ljava/lang/Object;",
-                "call:()Ljava/lang/String;",
+                "MyCharSequence",
+                "subSequence:(II)Ljava/lang/CharSequence;",
+                "charAt:(I)C",
+                "length:()I",
                 "<init>:()V");
         assertClassSkipped("MyInterface");
         assertClassSkipped("MyImpl");
@@ -274,50 +280,94 @@ public class ShrinkerTest {
     public void interfaces_sdkInterface_classUsed_concreteType() throws Exception {
         // Given:
         Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(Interfaces.myCallable(), new File(mTestPackageDir, "MyCallable.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
         Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:
         run(
                 "Main",
-                "buildMyCallable:()Ltest/MyCallable;",
-                "callMyCallable:(Ltest/MyCallable;)V");
+                "buildMyCharSequence:()Ltest/MyCharSequence;",
+                "callMyCharSequence:(Ltest/MyCharSequence;)V");
 
         // Then:
         assertMembersLeft(
                 "Main",
-                "buildMyCallable:()Ltest/MyCallable;",
-                "callMyCallable:(Ltest/MyCallable;)V");
+                "buildMyCharSequence:()Ltest/MyCharSequence;",
+                "callMyCharSequence:(Ltest/MyCharSequence;)V");
         assertMembersLeft(
-                "MyCallable",
-                // This bridge method is not called anywhere, but it's part of the interface
-                // contract, so it has to stay here.
-                "call:()Ljava/lang/Object;",
-                "call:()Ljava/lang/String;",
+                "MyCharSequence",
+                "subSequence:(II)Ljava/lang/CharSequence;",
+                "charAt:(I)C",
+                "length:()I",
                 "<init>:()V");
         assertClassSkipped("MyInterface");
         assertClassSkipped("MyImpl");
     }
 
     @Test
-    public void interfaces_sdkInterface_classNotUsed() throws Exception {
+    public void interfaces_implementationFromSuperclass() throws Exception {
         // Given:
         Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(Interfaces.myCallable(), new File(mTestPackageDir, "MyCallable.class"));
         Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:
         run(
                 "Main",
-                "callCallable:(Ljava/util/concurrent/Callable;)V");
+                "useImplementationFromSuperclass:(Ltest/ImplementationFromSuperclass;)V",
+                "useMyInterface:(Ltest/MyInterface;)V");
 
         // Then:
         assertMembersLeft(
                 "Main",
-                "callCallable:(Ljava/util/concurrent/Callable;)V");
-        assertClassSkipped("MyCallable");
+                "useImplementationFromSuperclass:(Ltest/ImplementationFromSuperclass;)V",
+                "useMyInterface:(Ltest/MyInterface;)V");
+        assertMembersLeft("ImplementationFromSuperclass");
+        assertMembersLeft(
+                "MyInterface",
+                "doSomething:(Ljava/lang/Object;)V");
+        assertClassSkipped("MyImpl");
+        assertClassSkipped("MyCharSequence");
+
+        // This is the tricky part: this method should be kept, because a subclass is using it to
+        // implement an interface.
+        assertMembersLeft(
+                "DoesSomething",
+                "doSomething:(Ljava/lang/Object;)V");
+    }
+
+    @Test
+    public void interfaces_sdkInterface_classNotUsed() throws Exception {
+        // Given:
+        Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
+        Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
+
+        // When:
+        run(
+                "Main",
+                "callCharSequence:(Ljava/lang/CharSequence;)V");
+
+        // Then:
+        assertMembersLeft(
+                "Main",
+                "callCharSequence:(Ljava/lang/CharSequence;)V");
+        assertClassSkipped("MyCharSequence");
         assertClassSkipped("MyInterface");
         assertClassSkipped("MyImpl");
     }
@@ -326,9 +376,13 @@ public class ShrinkerTest {
     public void interfaces_appInterface_abstractType() throws Exception {
         // Given:
         Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(Interfaces.myCallable(), new File(mTestPackageDir, "MyCallable.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
         Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:
         run(
@@ -347,19 +401,21 @@ public class ShrinkerTest {
         assertMembersLeft(
                 "MyImpl",
                 "<init>:()V",
-                // Bridge method calls the specialized one.
-                "doSomething:(Ljava/lang/Object;)V",
-                "doSomething:(Ljava/lang/String;)V");
-        assertClassSkipped("MyCallable");
+                "doSomething:(Ljava/lang/Object;)V");
+        assertClassSkipped("MyCharSequence");
     }
 
     @Test
     public void interfaces_appInterface_concreteType() throws Exception {
         // Given:
         Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(Interfaces.myCallable(), new File(mTestPackageDir, "MyCallable.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
         Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:
         run("Main", "useMyImpl_interfaceMethod:(Ltest/MyImpl;)V");
@@ -368,21 +424,22 @@ public class ShrinkerTest {
         assertMembersLeft(
                 "Main",
                 "useMyImpl_interfaceMethod:(Ltest/MyImpl;)V");
-        assertMembersLeft(
-                "MyInterface");
-        assertMembersLeft(
-                "MyImpl",
-                "doSomething:(Ljava/lang/String;)V");
-        assertClassSkipped("MyCallable");
+        assertClassSkipped("MyInterface");
+        assertMembersLeft("MyImpl", "doSomething:(Ljava/lang/Object;)V");
+        assertClassSkipped("MyCharSequence");
     }
 
     @Test
     public void interfaces_appInterface_interfaceNotUsed() throws Exception {
         // Given:
         Files.write(Interfaces.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(Interfaces.myCallable(), new File(mTestPackageDir, "MyCallable.class"));
+        Files.write(Interfaces.myCharSequence(), new File(mTestPackageDir, "MyCharSequence.class"));
         Files.write(Interfaces.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
         Files.write(Interfaces.myImpl(), new File(mTestPackageDir, "MyImpl.class"));
+        Files.write(Interfaces.doesSomething(), new File(mTestPackageDir, "DoesSomething.class"));
+        Files.write(
+                Interfaces.implementationFromSuperclass(),
+                new File(mTestPackageDir, "ImplementationFromSuperclass.class"));
 
         // When:
         run("Main", "useMyImpl_otherMethod:(Ltest/MyImpl;)V");
@@ -391,12 +448,11 @@ public class ShrinkerTest {
         assertMembersLeft(
                 "Main",
                 "useMyImpl_otherMethod:(Ltest/MyImpl;)V");
-        assertMembersLeft(
-                "MyInterface");
+        assertClassSkipped("MyInterface");
         assertMembersLeft(
                 "MyImpl",
                 "someOtherMethod:()V");
-        assertClassSkipped("MyCallable");
+        assertClassSkipped("MyCharSequence");
     }
 
     @Test
@@ -457,10 +513,10 @@ public class ShrinkerTest {
     @Test
     public void overrides_methodNotUsed() throws Exception {
         // Given:
-        Files.write(MultipleOverridenMethods.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(MultipleOverridenMethods.interfaceOne(), new File(mTestPackageDir, "InterfaceOne.class"));
-        Files.write(MultipleOverridenMethods.interfaceTwo(), new File(mTestPackageDir, "InterfaceTwo.class"));
-        Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
+        Files.write(MultipleOverriddenMethods.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(MultipleOverriddenMethods.interfaceOne(), new File(mTestPackageDir, "InterfaceOne.class"));
+        Files.write(MultipleOverriddenMethods.interfaceTwo(), new File(mTestPackageDir, "InterfaceTwo.class"));
+        Files.write(MultipleOverriddenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
         run("Main", "buildImplementation:()V");
@@ -477,10 +533,10 @@ public class ShrinkerTest {
     @Test
     public void overrides_classNotUsed() throws Exception {
         // Given:
-        Files.write(MultipleOverridenMethods.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(MultipleOverridenMethods.interfaceOne(), new File(mTestPackageDir, "InterfaceOne.class"));
-        Files.write(MultipleOverridenMethods.interfaceTwo(), new File(mTestPackageDir, "InterfaceTwo.class"));
-        Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
+        Files.write(MultipleOverriddenMethods.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(MultipleOverriddenMethods.interfaceOne(), new File(mTestPackageDir, "InterfaceOne.class"));
+        Files.write(MultipleOverriddenMethods.interfaceTwo(), new File(mTestPackageDir, "InterfaceTwo.class"));
+        Files.write(MultipleOverriddenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
         run(
@@ -499,12 +555,12 @@ public class ShrinkerTest {
     }
 
     @Test
-    public void overrides_oneInterfaceUsed_classUsed() throws Exception {
+    public void overrides_interfaceOneUsed_classUsed() throws Exception {
         // Given:
-        Files.write(MultipleOverridenMethods.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(MultipleOverridenMethods.interfaceOne(), new File(mTestPackageDir, "InterfaceOne.class"));
-        Files.write(MultipleOverridenMethods.interfaceTwo(), new File(mTestPackageDir, "InterfaceTwo.class"));
-        Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
+        Files.write(MultipleOverriddenMethods.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(MultipleOverriddenMethods.interfaceOne(), new File(mTestPackageDir, "InterfaceOne.class"));
+        Files.write(MultipleOverriddenMethods.interfaceTwo(), new File(mTestPackageDir, "InterfaceTwo.class"));
+        Files.write(MultipleOverriddenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
         run(
@@ -523,12 +579,36 @@ public class ShrinkerTest {
     }
 
     @Test
+    public void overrides_interfaceTwoUsed_classUsed() throws Exception {
+        // Given:
+        Files.write(MultipleOverriddenMethods.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(MultipleOverriddenMethods.interfaceOne(), new File(mTestPackageDir, "InterfaceOne.class"));
+        Files.write(MultipleOverriddenMethods.interfaceTwo(), new File(mTestPackageDir, "InterfaceTwo.class"));
+        Files.write(MultipleOverriddenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
+
+        // When:
+        run(
+                "Main",
+                "useInterfaceTwo:(Ltest/InterfaceTwo;)V",
+                "buildImplementation:()V");
+
+        // Then:
+        assertMembersLeft(
+                "Main",
+                "useInterfaceTwo:(Ltest/InterfaceTwo;)V",
+                "buildImplementation:()V");
+        assertMembersLeft("InterfaceTwo", "m:()V");
+        assertClassSkipped("InterfaceOne");
+        assertMembersLeft("Implementation", "<init>:()V", "m:()V");
+    }
+
+    @Test
     public void overrides_twoInterfacesUsed_classUsed() throws Exception {
         // Given:
-        Files.write(MultipleOverridenMethods.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(MultipleOverridenMethods.interfaceOne(), new File(mTestPackageDir, "InterfaceOne.class"));
-        Files.write(MultipleOverridenMethods.interfaceTwo(), new File(mTestPackageDir, "InterfaceTwo.class"));
-        Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
+        Files.write(MultipleOverriddenMethods.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(MultipleOverriddenMethods.interfaceOne(), new File(mTestPackageDir, "InterfaceOne.class"));
+        Files.write(MultipleOverriddenMethods.interfaceTwo(), new File(mTestPackageDir, "InterfaceTwo.class"));
+        Files.write(MultipleOverriddenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
         run(
@@ -551,10 +631,10 @@ public class ShrinkerTest {
     @Test
     public void overrides_noInterfacesUsed_classUsed() throws Exception {
         // Given:
-        Files.write(MultipleOverridenMethods.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(MultipleOverridenMethods.interfaceOne(), new File(mTestPackageDir, "InterfaceOne.class"));
-        Files.write(MultipleOverridenMethods.interfaceTwo(), new File(mTestPackageDir, "InterfaceTwo.class"));
-        Files.write(MultipleOverridenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
+        Files.write(MultipleOverriddenMethods.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(MultipleOverriddenMethods.interfaceOne(), new File(mTestPackageDir, "InterfaceOne.class"));
+        Files.write(MultipleOverriddenMethods.interfaceTwo(), new File(mTestPackageDir, "InterfaceTwo.class"));
+        Files.write(MultipleOverriddenMethods.implementation(), new File(mTestPackageDir, "Implementation.class"));
 
         // When:
         run(
@@ -781,6 +861,76 @@ public class ShrinkerTest {
         // Then:
         assertMembersLeft("Main", "getStaticField:()Ljava/lang/Object;");
         assertMembersLeft("Utils", "staticField:Ljava/lang/Object;");
+    }
+
+    @Test
+    public void reflection_instanceOf() throws Exception {
+        // Given:
+        Files.write(Reflection.main_instanceOf(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.emptyClass("Foo"), new File(mTestPackageDir, "Foo.class"));
+
+        // When:
+        run("Main", "main:(Ljava/lang/Object;)Z");
+
+        // Then:
+        assertMembersLeft("Main", "main:(Ljava/lang/Object;)Z");
+        assertMembersLeft("Foo");
+    }
+
+    @Test
+    public void reflection_classLiteral() throws Exception {
+        // Given:
+        Files.write(Reflection.main_classLiteral(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.emptyClass("Foo"), new File(mTestPackageDir, "Foo.class"));
+
+        // When:
+        run("Main", "main:()Ljava/lang/Object;");
+
+        // Then:
+        assertMembersLeft("Main", "main:()Ljava/lang/Object;");
+        assertMembersLeft("Foo");
+    }
+
+    @Test
+    public void testTryCatch() throws Exception {
+        // Given:
+        Files.write(TryCatch.main(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TryCatch.customException(), new File(mTestPackageDir, "CustomException.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Then:
+        assertMembersLeft("Main", "main:()V", "helper:()V");
+        assertMembersLeft("CustomException");
+    }
+
+    @Test
+    public void testTryFinally() throws Exception {
+        // Given:
+        Files.write(TryCatch.main_tryFinally(), new File(mTestPackageDir, "Main.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Then:
+        assertMembersLeft("Main", "main:()V", "helper:()V");
+    }
+
+    @Test
+    public void abstractClasses_callToInterfaceMethodInAbstractClass() throws Exception {
+        // Given:
+        Files.write(AbstractClasses.myInterface(), new File(mTestPackageDir, "MyInterface.class"));
+        Files.write(AbstractClasses.abstractImpl(), new File(mTestPackageDir, "AbstractImpl.class"));
+        Files.write(AbstractClasses.realImpl(), new File(mTestPackageDir, "RealImpl.class"));
+
+        // When:
+        run("RealImpl", "main:()V");
+
+        // Then:
+        assertMembersLeft("MyInterface", "m:()V");
+        assertMembersLeft("RealImpl", "main:()V", "m:()V");
+        assertMembersLeft("AbstractImpl", "helper:()V");
     }
 
     private void assertClassSkipped(String className) {

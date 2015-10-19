@@ -47,8 +47,10 @@ public class TypeHierarchyTraverser<T> extends TreeTraverser<T> {
 
             return result;
         } catch (ClassLookupException e) {
-            // TODO: Proper logging.
-            System.out.println("Invalid class reference: " + e.getClassName());
+            if (!e.getClassName().startsWith("sun/misc/Unsafe")) {
+                // TODO: Proper logging.
+                System.out.println("Invalid class reference: " + e.getClassName());
+            }
             // TODO: Is this correct?
             return Collections.emptyList();
         }
