@@ -40,7 +40,7 @@ class SvgTree {
 
     public float w;
     public float h;
-    public float[] matrix;
+    public AffineTransform mRootTransform = new AffineTransform();
     public float[] viewBox;
     public float mScaleFactor = 1;
 
@@ -75,18 +75,15 @@ class SvgTree {
     }
 
     public void normalize() {
-        if (matrix != null) {
-            transform(matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5]);
-        }
+        // mRootTransform is always setup, now just need to apply the viewbox info into.
+        mRootTransform.preConcatenate(new AffineTransform(1, 0, 0, 1, -viewBox[0], -viewBox[1]));
+        transform(mRootTransform);
 
-        if (viewBox != null && (viewBox[0] != 0 || viewBox[1] != 0)) {
-            transform(1, 0, 0, 1, -viewBox[0], -viewBox[1]);
-        }
-        logger.log(Level.FINE, "matrix=" + Arrays.toString(matrix));
+        logger.log(Level.FINE, "matrix=" + mRootTransform);
     }
 
-    private void transform(float a, float b, float c, float d, float e, float f) {
-        mRoot.transformIfNeeded(a, b, c, d, e, f);
+    private void transform(AffineTransform rootTransform) {
+        mRoot.transformIfNeeded(rootTransform);
     }
 
     public void dump(SvgGroupNode root) {

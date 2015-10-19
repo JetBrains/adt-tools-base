@@ -190,7 +190,7 @@ abstract class SvgNode {
     /**
      * Transform the current Node with the transformation matrix.
      */
-    public abstract void transformIfNeeded(float a, float b, float c, float d, float e, float f);
+    public abstract void transformIfNeeded(AffineTransform finalTransform);
 
     protected void fillPresentationAttributes(String name, String value, Logger logger) {
         logger.log(Level.FINE, ">>>> PROP " + name + " = " + value);
