@@ -38,8 +38,8 @@ import java.util.logging.Logger;
 class SvgTree {
     private static Logger logger = Logger.getLogger(SvgTree.class.getSimpleName());
 
-    public float w;
-    public float h;
+    public float w = -1;
+    public float h = -1;
     public AffineTransform mRootTransform = new AffineTransform();
     public float[] viewBox;
     public float mScaleFactor = 1;
