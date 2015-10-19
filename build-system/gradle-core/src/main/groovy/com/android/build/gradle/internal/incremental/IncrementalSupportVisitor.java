@@ -498,7 +498,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         //noinspection unchecked
         for (MethodNode method : (List<MethodNode>) classNode.methods) {
             if (canBeInstantRunEnabled(method.access)
-                    && !methods.containsKey(method.name + method.desc)) {
+                    && !methods.containsKey(method.name + method.desc) &&
+                    (method.access & Opcodes.ACC_STATIC) == 0) {
                 methods.put(method.name + method.desc, method);
             }
         }
