@@ -690,12 +690,15 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         }
 
         @Override
-        public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
-            // Even if we call the first argument of the static redirection "this", JDI has a specific API
-            // to retrieve "thisObject" from the current stack frame, which totally ignores and bypasses this
-            // variable declaration. Therefore, we rename it.
+        public void visitLocalVariable(String name, String desc, String signature, Label start,
+                Label end, int index) {
+            // Even if we call the first argument of the static redirection "this", JDI has a
+            // specific API to retrieve "thisObject" from the current stack frame, which totally
+            // ignores and bypasses this variable declaration. We will not show the renamed
+            // variable to the user and will redirect in Studio to be the real this object.
+            // We use a name unlikely to be used, but different than "this".
             if ("this".equals(name)) {
-                name = "this_";
+                name = "$this";
             }
             super.visitLocalVariable(name, desc, signature, start, end, index);
         }
