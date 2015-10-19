@@ -266,7 +266,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
      */
     private void createAccessSuper() {
         int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_VARARGS;
-        Method m = new Method("access$super", "(L" + visitedClassName + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;");
+        Method m = new Method("access$super", "(L" + visitedClassName
+                + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;");
         MethodVisitor visitor = super.visitMethod(access,
                 m.getName(),
                 m.getDescriptor(),
@@ -278,9 +279,15 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         // implementation.
         // This will work fine as long as we don't support adding methods to a class.
         Map<String, MethodNode> uniqueMethods = new HashMap<String, MethodNode>();
-        addAllNewMethods(uniqueMethods, classNode);
-        for (ClassNode parentNode : parentNodes) {
-            addAllNewMethods(uniqueMethods, parentNode);
+        if (parentNodes.isEmpty()) {
+            // if we cannot determine the parents for this class, let's blindly add all the
+            // method of the current class as a gateway to a possible parent version.
+            addAllNewMethods(uniqueMethods, classNode);
+        } else {
+            // otherwise, use the parent list.
+            for (ClassNode parentNode : parentNodes) {
+                addAllNewMethods(uniqueMethods, parentNode);
+            }
         }
         for (MethodNode methodNode : uniqueMethods.values()) {
             if (methodNode.name.equals(AsmUtils.CONSTRUCTOR) || methodNode.name.equals("<clinit>")) {
