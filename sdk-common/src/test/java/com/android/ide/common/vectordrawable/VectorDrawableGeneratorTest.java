@@ -219,6 +219,15 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         checkSvgConversion("test_lineto_moveto_viewbox3");
     }
 
+    // It seems like different implementations has different results on this svg.
+    public void testSvgLineToMoveToViewbox4() throws Exception {
+        checkSvgConversion("test_lineto_moveto_viewbox4");
+    }
+
+    public void testSvgLineToMoveToViewbox5() throws Exception {
+        checkSvgConversion("test_lineto_moveto_viewbox5");
+    }
+
     public void testSvgColorFormats() throws Exception {
         checkSvgConversion("test_color_formats");
     }
