@@ -25,6 +25,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.awt.geom.AffineTransform;
 import java.io.*;
 import java.util.HashSet;
 import java.util.logging.Level;
@@ -99,7 +100,7 @@ public class Svg2Vector {
         // Gradient elements
         "linearGradient", "radialGradient", "stop",
         // Graphics elements
-        "ellipse", "text", "use",
+        "ellipse", "text",
         // Light source elements
         "feDistantLight", "fePointLight", "feSpotLight",
         // Structural elements
@@ -136,21 +137,7 @@ public class Svg2Vector {
             return svgTree;
         }
 
-        // Parse transformation information.
-        // TODO: Properly handle transformation in the group level. In the "use" case, we treat
-        // it as global for now.
-        NodeList nUseTags;
-        svgTree.matrix = new float[6];
-        svgTree.matrix[0] = 1;
-        svgTree.matrix[3] = 1;
-
-        nUseTags = doc.getElementsByTagName("use");
-        for (int temp = 0; temp < nUseTags.getLength(); temp++) {
-            Node nNode = nUseTags.item(temp);
-            if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-                parseTransformation(svgTree, nNode);
-            }
-        }
+        // TODO: Properly handle "use" tag
 
         SvgGroupNode root = new SvgGroupNode(svgTree, rootNode, "root");
         svgTree.setRoot(root);
@@ -204,31 +191,6 @@ public class Svg2Vector {
             }
         }
 
-    }
-
-    private static void parseTransformation(SvgTree avg, Node nNode) {
-        NamedNodeMap a = nNode.getAttributes();
-        int len = a.getLength();
-
-        for (int i = 0; i < len; i++) {
-            Node n = a.item(i);
-            String name = n.getNodeName();
-            String value = n.getNodeValue();
-            if (SVG_TRANSFORM.equals(name)) {
-                if (value.startsWith("matrix(")) {
-                    value = value.substring("matrix(".length(), value.length() - 1);
-                    String[] sp = value.split(" ");
-                    for (int j = 0; j < sp.length; j++) {
-                        avg.matrix[j] = Float.parseFloat(sp[j]);
-                    }
-                }
-            } else if (name.equals("y")) {
-                Float.parseFloat(value);
-            } else if (name.equals("x")) {
-                Float.parseFloat(value);
-            }
-
-        }
     }
 
     private static void parseDimension(SvgTree avg, Node nNode) {
