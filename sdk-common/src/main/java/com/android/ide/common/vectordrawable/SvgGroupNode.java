@@ -63,9 +63,9 @@ class SvgGroupNode extends SvgNode {
     }
 
     @Override
-    public void transformIfNeeded(float a, float b, float c, float d, float e, float f) {
+    public void transformIfNeeded(AffineTransform rootTransform) {
         for (SvgNode p : mChildren) {
-            p.transformIfNeeded(a, b, c, d, e, f);
+            p.transformIfNeeded(rootTransform);
         }
     }
 

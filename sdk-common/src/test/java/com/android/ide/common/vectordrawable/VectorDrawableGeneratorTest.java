@@ -215,6 +215,10 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         checkSvgConversion("test_lineto_moveto_viewbox2");
     }
 
+    public void testSvgLineToMoveToViewbox3() throws Exception {
+        checkSvgConversion("test_lineto_moveto_viewbox3");
+    }
+
     public void testSvgColorFormats() throws Exception {
         checkSvgConversion("test_color_formats");
     }
@@ -249,6 +253,10 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
 
     public void testSvgTransformBigArcComplex() throws Exception {
         checkSvgConversion("test_transform_big_arc_complex");
+    }
+
+    public void testSvgTransformBigArcComplexViewbox() throws Exception {
+        checkSvgConversion("test_transform_big_arc_complex_viewbox");
     }
 
     public void testSvgTransformBigArcScale() throws Exception {

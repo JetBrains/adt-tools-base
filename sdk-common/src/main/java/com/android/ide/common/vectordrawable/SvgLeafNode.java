@@ -128,14 +128,14 @@ class SvgLeafNode extends SvgNode {
     }
 
     @Override
-    public void transformIfNeeded(float a, float b, float c, float d, float e, float f) {
+    public void transformIfNeeded(AffineTransform rootTransform) {
         if ((mPathData == null)) {
             // Nothing to draw and transform, early return.
             return;
         }
         // TODO: We need to just apply the transformation to group.
         VdPath.Node[] n = PathParser.parsePath(mPathData);
-        AffineTransform finalTransform = new AffineTransform(a, b, c, d, e, f);
+        AffineTransform finalTransform = new AffineTransform(rootTransform);
         finalTransform.concatenate(mStackedTransform);
         if (!finalTransform.isIdentity()) {
             VdPath.Node.transform(finalTransform, n);
