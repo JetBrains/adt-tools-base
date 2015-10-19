@@ -179,11 +179,11 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                     visitedClassName, method);
 
             MethodVisitor original = super.visitMethod(access, constructor.args.name, constructor.args.desc, constructor.args.signature, exceptions);
-            ISVisitor mv = new ISVisitor(Opcodes.ASM5, original, access, constructor.args.name, constructor.args.desc, isStatic);
+            ISVisitor mv = new ISVisitor(original, access, constructor.args.name, constructor.args.desc, isStatic, true /* isConstructor */);
             constructor.args.accept(mv);
 
             original = super.visitMethod(access, constructor.body.name, constructor.body.desc, constructor.body.signature, exceptions);
-            mv = new ISVisitor(Opcodes.ASM5, original, access, constructor.body.name, newDesc, isStatic);
+            mv = new ISVisitor(original, access, constructor.body.name, newDesc, isStatic, true /* isConstructor */);
             constructor.body.accept(mv);
 
             // Remember our created methods so we can generated the access$dispatch for them.
@@ -193,23 +193,34 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         } else {
             String newName = isStatic ? computeOverrideMethodName(name, desc) : name;
             MethodVisitor original = super.visitMethod(access, newName, newDesc, signature, exceptions);
-            return new ISVisitor(Opcodes.ASM5, original, access, newName, newDesc, isStatic);
+            return new ISVisitor(original, access, newName, newDesc, isStatic, false /* isConstructor */);
         }
     }
 
     public class ISVisitor extends GeneratorAdapter {
 
         private final boolean isStatic;
+        private final boolean isConstructor;
 
+        /**
+         * Instrument a method.
+         * @param mv the parent method visitor.
+         * @param access the method access flags.
+         * @param name method name.
+         * @param desc method signature.
+         * @param isStatic true if the instrumented method was originally a static method.
+         * @param isConstructor true if  the instrumented code was originally a constructor body.
+         */
         public ISVisitor(
-                int api,
                 MethodVisitor mv,
                 int access,
                 String name,
                 String desc,
-                boolean isStatic) {
-            super(api, mv, access, name, desc);
+                boolean isStatic,
+                boolean isConstructor) {
+            super(Opcodes.ASM5, mv, access, name, desc);
             this.isStatic = isStatic;
+            this.isConstructor = isConstructor;
         }
 
         @Override
@@ -295,9 +306,19 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         private boolean visitFieldAccess(
                 int opcode, String owner, String name, String desc, AccessRight accessRight) {
 
-            // we should make this more efficient, have a per field access type method
-            // for getting and setting field values.
-            if (accessRight != AccessRight.PUBLIC) {
+            // if the accessed field is anything but public, we must go through reflection.
+            boolean useReflection = accessRight != AccessRight.PUBLIC;
+
+            // if the accessed field is accessed from within a constructor, it might be a public
+            // final field that cannot be set by anything but the original constructor unless
+            // we use reflection.
+            if (!useReflection) {
+                useReflection = isConstructor && (owner.equals(visitedClassName));
+            }
+
+            if (useReflection) {
+                // we should make this more efficient, have a per field access type method
+                // for getting and setting field values.
                 switch (opcode) {
                     case Opcodes.GETFIELD:
                         if (DEBUG) {
