@@ -402,14 +402,15 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
      * <p/>
      * Pseudo code for this trampoline:
      * <code>
-     *   ClassName(String name, Object[] args, Marker unused) {
+     *   ClassName(Object[] args, Marker unused) {
+     *      String name = (String) args[0];
      *      if (name.equals(
      *          "java/lang/ClassName.(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;")) {
-     *        this((String)arg[0], arg[1]);
+     *        this((String)arg[1], arg[2]);
      *        return
      *      }
      *      if (name.equals("SuperClassName.(Ljava/lang/String;I)V")) {
-     *        super((String)arg[0], (int)arg[1]);
+     *        super((String)arg[1], (int)arg[2]);
      *        return;
      *      }
      *      ...
@@ -440,6 +441,14 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         mv.visitCode();
 
+        // Get and store the constructor canonical name.
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
+        mv.push(0);
+        mv.visitInsn(Opcodes.AALOAD);
+        mv.unbox(Type.getType("Ljava/lang/String;"));
+        int constructorCanonicalName = mv.newLocal(Type.getType("Ljava/lang/String;"));
+        mv.storeLocal(constructorCanonicalName);
+
         mv.visitVarInsn(Opcodes.ALOAD, 0);
 
         for (String canonicalName : uniqueMethods.keySet()) {
@@ -450,8 +459,9 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 continue;
             }
 
-            mv.visitVarInsn(Opcodes.ALOAD, 1);
-            mv.visitLdcInsn(canonicalName);
+            mv.loadLocal(constructorCanonicalName);
+            mv.push(canonicalName);
+
             mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals",
                     "(Ljava/lang/Object;)Z", false);
             Label l0 = new Label();
@@ -462,8 +472,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             Type[] args = Type.getArgumentTypes(methodNode.desc);
             int argc = 0;
             for (Type t : args) {
-                mv.visitVarInsn(Opcodes.ALOAD, 2);
-                mv.push(argc);
+                mv.visitVarInsn(Opcodes.ALOAD, 1);
+                mv.push(argc + 1);
                 mv.visitInsn(Opcodes.AALOAD);
                 mv.unbox(t);
                 argc++;
@@ -484,7 +494,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         mv.push("Constructor not found ");
         mv.invokeVirtual(Type.getType(StringBuilder.class),
                 Method.getMethod("StringBuilder append (String)"));
-        mv.visitVarInsn(Opcodes.ALOAD, 1);
+        mv.loadLocal(constructorCanonicalName);
         mv.invokeVirtual(Type.getType(StringBuilder.class),
                 Method.getMethod("StringBuilder append (String)"));
         mv.push(" in " + visitedClassName + " or super class implementation");
