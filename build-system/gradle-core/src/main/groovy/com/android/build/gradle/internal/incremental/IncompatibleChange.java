@@ -42,5 +42,8 @@ public enum IncompatibleChange {
     FIELD_ADDED,
     FIELD_REMOVED,
     // change of field type or kind (static | instance)
-    FIELD_TYPE_CHANGE
+    FIELD_TYPE_CHANGE,
+
+    // reflection use
+    REFLECTION_USED
 }

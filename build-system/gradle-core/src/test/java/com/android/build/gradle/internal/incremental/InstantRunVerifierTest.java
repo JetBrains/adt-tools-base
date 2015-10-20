@@ -36,6 +36,7 @@ import com.verifier.tests.ChangedClassInitializer2;
 import com.verifier.tests.ChangedClassInitializer3;
 import com.verifier.tests.MethodAddedClass;
 import com.verifier.tests.MethodCollisionClass;
+import com.verifier.tests.NewInstanceReflectionUser;
 import com.verifier.tests.RemoveClassAnnotation;
 import com.verifier.tests.RemoveInterfaceImplementation;
 import com.verifier.tests.RemoveMethodAnnotation;
@@ -211,5 +212,13 @@ public class InstantRunVerifierTest {
         assertNull(harness.verify(ChangeStaticFieldVisibility.class, null));
         assertEquals(IncompatibleChange.FIELD_TYPE_CHANGE,
                 harness.verify(ChangeStaticFieldVisibility.class, "verifier"));
+    }
+
+    @Test
+    public void testClassNewInstanceReflectionUser() throws IOException {
+        // not changing a method implementation that uses reflection should be ok.
+        assertNull(harness.verify(NewInstanceReflectionUser.class, null));
+        assertEquals(IncompatibleChange.REFLECTION_USED,
+                harness.verify(NewInstanceReflectionUser.class, "verifier"));
     }
 }
