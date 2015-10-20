@@ -30,23 +30,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.JTabbedPane;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -396,14 +386,28 @@ public class AnimatedComponentVisualTests extends JDialog {
         }
     }
 
+    private enum YAxisMode {
+        NEGATIVE("Show negative streams"),
+        MIRRORED("Show mirrored streams"),
+        NEITHER("Neither");
+
+        public final String value;
+
+        YAxisMode(String value) {
+            this.value = value;
+        }
+    }
+
     private JPanel getTimelineExample() {
-        final TimelineData data = new TimelineData(2, 2000);
+        final int streams = 4;
+        // There are two mirrored streams but only show them if the option is enabled.
+        final int mirroredStreams = 2;
+        final TimelineData data = new TimelineData(streams, 2000);
         final EventData events = new EventData();
-        final int streams = 2;
         final AtomicInteger variance = new AtomicInteger(10);
         final AtomicInteger delay = new AtomicInteger(100);
         final AtomicInteger type = new AtomicInteger(0);
-        final AtomicBoolean alwaysShowPositive = new AtomicBoolean(true);
+        final AtomicReference<YAxisMode> yAxisMode = new AtomicReference<YAxisMode>(YAxisMode.NEITHER);
         new Thread() {
             @Override
             public void run() {
@@ -412,19 +416,19 @@ public class AnimatedComponentVisualTests extends JDialog {
                     float[] values = new float[streams];
                     while (true) {
                         int v = variance.get();
-                        for (int i = 0; i < streams; i++) {
+                        int nonZeroLength = yAxisMode.get() == YAxisMode.MIRRORED ? streams : streams - mirroredStreams;
+                        for (int i = 0; i < nonZeroLength; i++) {
                             float delta = (float) Math.random() * variance.get() - v * 0.5f;
                             values[i] = delta + values[i];
                         }
-                        synchronized (data) {
-                            boolean forcePositive = alwaysShowPositive.get();
-                            float[] valuesCopy = Arrays.copyOf(values, streams);
-                            if (forcePositive) {
-                                for (int i = 0; i < valuesCopy.length; i++) {
-                                    valuesCopy[i] = Math.abs(valuesCopy[i]);
-                                }
+                        float[] valuesCopy = new float[streams];
+                        System.arraycopy(values, 0, valuesCopy, 0, nonZeroLength);
+                        if (yAxisMode.get() != YAxisMode.NEGATIVE) {
+                            for (int i = 0; i < nonZeroLength; i++) {
+                                valuesCopy[i] = Math.abs(valuesCopy[i]);
                             }
-
+                        }
+                        synchronized (data) {
                             data.add(System.currentTimeMillis(), type.get() + (v == 0 ? 1 : 0), valuesCopy);
                         }
                         Thread.sleep(delay.get());
@@ -437,6 +441,8 @@ public class AnimatedComponentVisualTests extends JDialog {
                 10.0f);
         timeline.configureStream(0, "Data 0", new Color(0x78abd9));
         timeline.configureStream(1, "Data 1", new Color(0xbaccdc));
+        timeline.configureStream(2, "Mirrored Data 2", new Color(0xff8000), true);
+        timeline.configureStream(3, "Mirrored Data 3", new Color(0xffcc99), true);
 
         timeline.configureUnits("@");
         timeline.configureEvent(1, 0, UIManager.getIcon("Tree.leafIcon"),
@@ -492,13 +498,26 @@ public class AnimatedComponentVisualTests extends JDialog {
                 timeline.setStackStreams(e.getStateChange() == ItemEvent.SELECTED);
             }
         }, true));
-        controls.add(createCheckbox("Show only positive values", new ItemListener() {
+
+        controls.add(new Box.Filler(new Dimension(0, 20), new Dimension(0, 20), new Dimension(0, 20)));
+        final ButtonGroup group = new ButtonGroup();
+        ActionListener listener = new ActionListener() {
             @Override
-            public void itemStateChanged(ItemEvent itemEvent) {
-                boolean showPositive = itemEvent.getStateChange() == ItemEvent.SELECTED;
-                alwaysShowPositive.set(showPositive);
+            public void actionPerformed(ActionEvent actionEvent) {
+                yAxisMode.set(YAxisMode.valueOf(actionEvent.getActionCommand()));
             }
-        }, alwaysShowPositive.get()));
+        };
+        for (YAxisMode mode : YAxisMode.values()) {
+            JRadioButton radioButton = new JRadioButton(mode.value);
+            radioButton.setActionCommand(mode.name());
+            group.add(radioButton);
+            radioButton.addActionListener(listener);
+            controls.add(radioButton);
+
+            if (mode == yAxisMode.get()) {
+                radioButton.setSelected(true);
+            }
+        }
 
         controls.add(new Box.Filler(new Dimension(0, 0), new Dimension(300, Integer.MAX_VALUE), new Dimension(300, Integer.MAX_VALUE)));
         panel.add(timeline, BorderLayout.CENTER);
