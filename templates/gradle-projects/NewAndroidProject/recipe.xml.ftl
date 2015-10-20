@@ -14,7 +14,7 @@
     <instantiate from="root/gradle.properties.ftl"
                    to="${escapeXmlAttribute(topOut)}/gradle.properties" />
 
-    <copy from="${templateRoot}/gradle/wrapper"
+    <copy from="../../gradle/wrapper"
         to="${escapeXmlAttribute(topOut)}/" />
 
 <#if sdkDir??>
