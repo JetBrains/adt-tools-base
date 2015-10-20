@@ -135,8 +135,13 @@ public class InstantRunTransform extends Transform implements ForkTransform {
         // classloader could also be store in the VariantScope for potential reuse if some
         // other transform need to load project's classes.
         URLClassLoader urlClassLoader = new URLClassLoader(
-                referencedInputUrls.toArray(new URL[referencedInputUrls.size()]),
-                getClass().getClassLoader());
+                referencedInputUrls.toArray(new URL[referencedInputUrls.size()]), null) {
+            @Override
+            public URL getResource(String name) {
+                // Never delegate to bootstrap classes.
+                return findResource(name);
+            }
+        };
 
         ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
         try {
