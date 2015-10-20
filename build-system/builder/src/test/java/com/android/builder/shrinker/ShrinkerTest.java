@@ -16,7 +16,7 @@
 
 package com.android.builder.shrinker;
 
-import static org.junit.Assert.assertEquals;
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -31,9 +31,9 @@ import com.android.builder.shrinker.TestClasses.AbstractClasses;
 import com.android.builder.shrinker.TestClasses.Annotations;
 import com.android.builder.shrinker.TestClasses.Fields;
 import com.android.builder.shrinker.TestClasses.InnerClasses;
-import com.android.builder.shrinker.TestClasses.Reflection;
 import com.android.builder.shrinker.TestClasses.Interfaces;
 import com.android.builder.shrinker.TestClasses.MultipleOverriddenMethods;
+import com.android.builder.shrinker.TestClasses.Reflection;
 import com.android.builder.shrinker.TestClasses.SdkTypes;
 import com.android.builder.shrinker.TestClasses.Signatures;
 import com.android.builder.shrinker.TestClasses.SimpleScenario;
@@ -946,9 +946,9 @@ public class ShrinkerTest {
                 String.format("Class %s does not exist in output.", className),
                 outFile.exists());
 
-        assertEquals(
-                "Methods in class " + className + " not correct.",
-                Sets.newHashSet(members), getMembers(outFile));
+        assertThat(getMembers(outFile))
+                .named("Members in class " + className)
+                .containsExactly(members);
     }
 
     @NonNull
