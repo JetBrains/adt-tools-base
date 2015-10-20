@@ -170,6 +170,10 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         checkSvgConversion("ic_shapes");
     }
 
+    public void testSvgEllipse() throws Exception {
+        checkSvgConversionDebug("test_ellipse");
+    }
+
     public void testSvgTempHigh() throws Exception {
         checkSvgConversion("ic_temp_high");
     }
