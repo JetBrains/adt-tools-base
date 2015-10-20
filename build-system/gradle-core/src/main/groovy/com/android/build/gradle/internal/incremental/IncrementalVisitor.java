@@ -243,7 +243,7 @@ public class IncrementalVisitor extends ClassVisitor {
      * @param access the method access flags
      * @return true if the method should be InstantRun enabled, false otherwise.
      */
-    protected static boolean canBeInstantRunEnabled(int access) {
+    protected static boolean  isAccessCompatibleWithInstantRun(int access) {
         return ((access & Opcodes.ACC_ABSTRACT) == 0) && ((access & Opcodes.ACC_BRIDGE) == 0);
     }
 

@@ -162,7 +162,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
 
-        if (instantRunDisabled || !canBeInstantRunEnabled(access)) {
+        if (instantRunDisabled || !isAccessCompatibleWithInstantRun(access)) {
             // Nothing to generate.
             return null;
         }
@@ -189,10 +189,10 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         // Do not carry on any access flags from the original method. For example synchronized
         // on the original method would translate into a static synchronized method here.
         access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
+        MethodNode method = getMethodByNameInClass(name, desc, classNode);
         if (name.equals("<init>")) {
-            MethodNode method = getMethodByNameInClass(name, desc, classNode);
-            ConstructorDelegationDetector.Constructor constructor = ConstructorDelegationDetector.deconstruct(
-                    visitedClassName, method);
+            ConstructorDelegationDetector.Constructor constructor =
+                    ConstructorDelegationDetector.deconstruct(visitedClassName, method);
 
             MethodVisitor original = super.visitMethod(access, constructor.args.name, constructor.args.desc, constructor.args.signature, exceptions);
             ISVisitor mv = new ISVisitor(original, access, constructor.args.name, constructor.args.desc, isStatic, true /* isConstructor */);
@@ -922,7 +922,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             if (methodNode.name.equals("<clinit>") || methodNode.name.equals("<init>")) {
                 continue;
             }
-            if (!canBeInstantRunEnabled(methodNode.access)) {
+            if (!isAccessCompatibleWithInstantRun(methodNode.access)) {
                 continue;
             }
             String name = methodNode.name;

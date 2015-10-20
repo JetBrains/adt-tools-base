@@ -42,16 +42,21 @@ public class ReflectiveUserTest {
         assertWithMessage("base: ReflectiveUser.reflectiveUser()")
                 .that(reflectiveUser.amIWhoIThinkIam()).isTrue();
 
-        assertWithMessage("base: ReflectiveUser.useJniOnPrivate")
-                .that(reflectiveUser.useJniOnPublic()).isTrue();
+        assertWithMessage("base: ReflectiveUser.useReflectionOnPublicMethod")
+                .that(reflectiveUser.useReflectionOnPublicMethod()).isEqualTo("desserts");
+
+        assertWithMessage("base: ReflectiveUser.noReflectionUse")
+                .that(reflectiveUser.noReflectionUse()).isEqualTo("desserts");
 
         harness.applyPatch("changeSubClass");
 
-        assertWithMessage("changeSubClass: ReflectiveUSer.reflectiveUser()")
-                .that(reflectiveUser.amIWhoIThinkIam()).isEqualTo(true);
+        // unchanged as the use of reflection is banned.
+        assertWithMessage("changeSubClass: ReflectiveUser.useReflectionOnPublicMethod")
+                .that(reflectiveUser.useReflectionOnPublicMethod()).isEqualTo("desserts");
 
-        assertWithMessage("changeSubClass: ReflectiveUser.useJniOnPrivate")
-                .that(reflectiveUser.useJniOnPublic()).isTrue();
+        assertWithMessage("changeSubClass: ReflectiveUser.noReflectionUse")
+                .that(reflectiveUser.noReflectionUse()).isEqualTo("stressed");
+
     }
 
 }

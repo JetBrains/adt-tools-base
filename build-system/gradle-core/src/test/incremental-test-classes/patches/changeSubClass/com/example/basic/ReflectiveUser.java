@@ -28,13 +28,18 @@ public class ReflectiveUser {
         return getClass().equals(ReflectiveUser.class);
     }
 
-    public boolean useJniOnPublic()
+    // this should never be invoked as the use of reflection is blacklisted.
+    public String useReflectionOnPublicMethod()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method hiddenGem = getClass().getDeclaredMethod("hiddenGem", String.class);
-        return "dessertsstressed".equals(hiddenGem.invoke(this, "desserts"));
+        return (String) hiddenGem.invoke(this, "desserts");
     }
 
     public String hiddenGem(String param) {
-        return param + new StringBuilder(param).reverse().toString();
+        return new StringBuilder(param).reverse().toString();
+    }
+
+    public String noReflectionUse() {
+        return hiddenGem("desserts");
     }
 }

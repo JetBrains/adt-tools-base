@@ -40,23 +40,23 @@ public class InstantRunMethodVerifier {
     @Nullable
     public static IncompatibleChange verifyMethod(MethodNode method) {
 
-        VerifierMethodVisitor mv = new VerifierMethodVisitor(Opcodes.ASM5);
+        VerifierMethodVisitor mv = new VerifierMethodVisitor(method);
         method.accept(mv);
         return mv.incompatibleChange.orNull();
     }
-
 
     /**
      * {@link MethodVisitor} implementation that checks methods invocation from this method against
      * a list of blacklisted methods that is not compatible with the current InstantRun class
      * reloading capability.
      */
-    private static class VerifierMethodVisitor extends MethodVisitor {
+    public static class VerifierMethodVisitor extends MethodNode {
 
         Optional<IncompatibleChange> incompatibleChange = Optional.absent();
 
-        public VerifierMethodVisitor(int api) {
-            super(api);
+        public VerifierMethodVisitor(MethodNode method) {
+            super(Opcodes.ASM5, method.access, method.name, method.desc, method.signature,
+                    (String[]) method.exceptions.toArray(new String[method.exceptions.size()]));
         }
 
         @Override

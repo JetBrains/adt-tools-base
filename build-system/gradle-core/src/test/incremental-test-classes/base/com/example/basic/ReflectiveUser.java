@@ -21,7 +21,6 @@ import java.lang.reflect.Method;
 
 /**
  * reflective API user class.
- * TODO: support calling non public method on itself.
  */
 public class ReflectiveUser {
 
@@ -29,13 +28,17 @@ public class ReflectiveUser {
         return getClass().equals(ReflectiveUser.class);
     }
 
-    public boolean useJniOnPublic()
+    public String useReflectionOnPublicMethod()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method hiddenGem = getClass().getDeclaredMethod("hiddenGem", String.class);
-        return "desserts".equals(hiddenGem.invoke(this, "stressed"));
+        return (String) hiddenGem.invoke(this, "stressed");
     }
 
     public String hiddenGem(String param) {
         return new StringBuilder(param).reverse().toString();
+    }
+
+    public String noReflectionUse() {
+        return hiddenGem("stressed");
     }
 }

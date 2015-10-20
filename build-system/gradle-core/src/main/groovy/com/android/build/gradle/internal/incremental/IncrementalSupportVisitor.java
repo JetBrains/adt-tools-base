@@ -54,7 +54,7 @@ import java.util.Map;
  */
 public class IncrementalSupportVisitor extends IncrementalVisitor {
 
-    private boolean disableRedirection = false;
+    private boolean disableRedirectionForClass = false;
 
     private static final class VisitorBuilder implements IncrementalVisitor.VisitorBuilder {
 
@@ -127,7 +127,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
         if (desc.equals(DISABLE_ANNOTATION_TYPE.getDescriptor())) {
-            disableRedirection = true;
+            disableRedirectionForClass = true;
         }
         return super.visitAnnotation(desc, visible);
     }
@@ -142,15 +142,16 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             String[] exceptions) {
 
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
-        if (disableRedirection || !canBeInstantRunEnabled(access) || name.equals("<clinit>")) {
+        MethodNode method = getMethodByNameInClass(name, desc, classNode);
+        if (disableRedirectionForClass || !isAccessCompatibleWithInstantRun(access)
+                || name.equals(AsmUtils.CLASS_INITIALIZER)) {
             return defaultVisitor;
         } else {
-            ISMethodVisitor mv = new ISMethodVisitor(Opcodes.ASM5, defaultVisitor, access, name, desc);
+            ISMethodVisitor mv = new ISMethodVisitor(defaultVisitor, access, name, desc);
             if (name.equals(AsmUtils.CONSTRUCTOR)) {
-                MethodNode method = getMethodByNameInClass(name, desc, classNode);
 
-                ConstructorDelegationDetector.Constructor constructor = ConstructorDelegationDetector.deconstruct(
-                        visitedClassName, method);
+                ConstructorDelegationDetector.Constructor constructor =
+                        ConstructorDelegationDetector.deconstruct(visitedClassName, method);
                 Label start = new Label();
                 Label after = new Label();
                 method.instructions.insert(constructor.loadThis, new LabelNode(start));
@@ -164,14 +165,52 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                             after,
                             Type.getArgumentTypes(constructor.delegation.desc)));
 
-                mv.addRedirection(after, new MethodRedirection(constructor.body.name + "." + constructor.body.desc, Type.getReturnType(desc)));
+                mv.addRedirection(after, new MethodRedirection(constructor.body.name + "."
+                        + constructor.body.desc, Type.getReturnType(desc)));
                 method.accept(mv);
                 return null;
             } else {
-                mv.addRedirection(mv.getStartLabel(), new MethodRedirection(name + "." + desc, Type.getReturnType(desc)));
-                return mv;
+                mv.addRedirection(mv.getStartLabel(), new MethodRedirection(name + "."
+                        + desc, Type.getReturnType(desc)));
+                visit(method, mv, defaultVisitor);
+                return null;
             }
         }
+    }
+
+    /**
+     * Creates a recording {@link MethodNode} that will record all the events passed to it and
+     * delegates to {@link InstantRunMethodVerifier.VerifierMethodVisitor} to check for any use
+     * of a blacklisted API.
+     *
+     * If the method is using a blacklisted API, the default visitor will be invoked to replay
+     * all the recorded method events, otherwise, the instrumentation visitor will be invoked
+     *
+     * This will in effect prevent or allow a method to be hot swap able.
+     *
+     * @param method the method to check for any blacklisted API use.
+     * @param instrumentationVisitor the instrumentation visitor which will add redirection, etc.
+     * @param defaultVisitor the default visitor that basically copies the method unchanged.
+     */
+    public void visit(final MethodNode method,
+            final MethodVisitor instrumentationVisitor,
+            final MethodVisitor defaultVisitor) {
+
+        MethodNode methodNode = new InstantRunMethodVerifier.VerifierMethodVisitor(method) {
+            @Override
+            public void visitEnd()
+            {
+                if (incompatibleChange.isPresent()) {
+                    System.out.println("in " + classNode.name + ", method " + method.name + " "
+                            + method.desc + " is disabled " + incompatibleChange);
+                    accept(defaultVisitor);
+                } else {
+                    accept(instrumentationVisitor);
+                }
+                super.visitEnd();
+            }
+        };
+        method.accept(methodNode);
     }
 
     private class ISMethodVisitor extends GeneratorAdapter {
@@ -182,8 +221,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         private final Map<Label, Redirection> redirections;
         private final Label start;
 
-        public ISMethodVisitor(int api, MethodVisitor mv, int access,  String name, String desc) {
-            super(api, mv, access, name, desc);
+        public ISMethodVisitor(MethodVisitor mv, int access,  String name, String desc) {
+            super(Opcodes.ASM5, mv, access, name, desc);
             this.change = -1;
             this.redirections = new HashMap<Label, Redirection>();
             this.args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(desc)));
@@ -532,7 +571,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     private static void addAllNewMethods(Map<String, MethodNode> methods, ClassNode classNode) {
         //noinspection unchecked
         for (MethodNode method : (List<MethodNode>) classNode.methods) {
-            if (canBeInstantRunEnabled(method.access)
+            if (isAccessCompatibleWithInstantRun(method.access)
                     && !methods.containsKey(method.name + method.desc) &&
                     (method.access & Opcodes.ACC_STATIC) == 0 &&
                     (method.access & Opcodes.ACC_PRIVATE) == 0) {
@@ -553,7 +592,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 continue;
             }
 
-            if (!canBeInstantRunEnabled(method.access)) {
+            if (!isAccessCompatibleWithInstantRun(method.access)) {
                 continue;
             }
             String key = classNode.name + "." + method.desc;
