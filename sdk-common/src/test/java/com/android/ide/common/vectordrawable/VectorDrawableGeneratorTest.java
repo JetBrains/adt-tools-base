@@ -125,6 +125,9 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         checkVectorConversion(fileName, FileType.SVG, true, null);
     }
 
+    public void testSvgArcto1() throws Exception {
+        checkSvgConversion("test_arcto_1");
+    }
     //////////////////////////////////////////////////////////
     // Tests starts here:
     public void testSvgControlPoints01() throws Exception {
@@ -462,5 +465,9 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
 
     public void testXmlStroke3() throws Exception {
         checkXmlConversion("test_xml_stroke_3");
+    }
+
+    public void testXmlArcto1() throws Exception {
+        checkXmlConversion("test_xml_arcto_1");
     }
 }
