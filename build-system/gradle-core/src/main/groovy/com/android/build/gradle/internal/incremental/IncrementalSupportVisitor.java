@@ -534,7 +534,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         for (MethodNode method : (List<MethodNode>) classNode.methods) {
             if (canBeInstantRunEnabled(method.access)
                     && !methods.containsKey(method.name + method.desc) &&
-                    (method.access & Opcodes.ACC_STATIC) == 0) {
+                    (method.access & Opcodes.ACC_STATIC) == 0 &&
+                    (method.access & Opcodes.ACC_PRIVATE) == 0) {
                 methods.put(method.name + method.desc, method);
             }
         }
