@@ -34,6 +34,7 @@ public class InstantUnitTest {
     @Test
     @Category(DeviceTests.class)
     public void runTestsOnDevice() {
+        sProject.execute("clean");
         sProject.executeConnectedCheck();
     }
 }
