@@ -10,7 +10,7 @@
     <dependency mavenUrl="com.android.support:support-v4:${buildApi}.+" />
 </#if>
 
-    <execute file="../common/recipe_manifest.xml.ftl" />
+    <#include "../common/recipe_manifest.xml.ftl" />
 
     <merge from="root/res/values/strings.xml.ftl"
              to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
@@ -18,8 +18,8 @@
              to="${escapeXmlAttribute(resOut)}/values/dimens.xml" />
 
 <#if hasAppBar>
-    <execute file="../common/recipe_no_actionbar.xml.ftl" />
-    <execute file="../common/recipe_simple_menu.xml.ftl" />
+    <#include "../common/recipe_no_actionbar.xml.ftl" />
+    <#include "../common/recipe_simple_menu.xml.ftl" />
     <instantiate from="root/res/layout/app_bar.xml.ftl"
                  to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
     <instantiate from="root/res/layout/simple.xml.ftl"

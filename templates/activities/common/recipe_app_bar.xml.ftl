@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<recipe>
+<recipe folder="root://activities/common">
 
 <#if !(hasDependency('com.android.support:appcompat-v7'))>
     <dependency mavenUrl="com.android.support:appcompat-v7:${buildApi}.+"/>
@@ -15,5 +14,5 @@
     <merge from="root/res/values/app_bar_dimens.xml"
              to="${escapeXmlAttribute(resOut)}/values/dimens.xml" />
 
-    <execute file="recipe_no_actionbar.xml.ftl" />
+    <#include "recipe_no_actionbar.xml.ftl" />
 </recipe>

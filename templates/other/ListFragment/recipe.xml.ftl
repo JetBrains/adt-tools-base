@@ -13,7 +13,7 @@
     <instantiate from="root/src/app_package/RecyclerViewAdapter.java.ftl"
                  to="${escapeXmlAttribute(srcOut)}/${adapterClassName}.java" />
 
-    <execute file="../../activities/common/recipe_dummy_content.xml.ftl" />
+    <#include "../../activities/common/recipe_dummy_content.xml.ftl" />
 
     <open file="${escapeXmlAttribute(srcOut)}/${className}.java" />
 

@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<recipe>
+<recipe folder="root://activities/common">
     <instantiate from="root/res/menu/simple_menu.xml.ftl"
                  to="${escapeXmlAttribute(resOut)}/menu/${menuName}.xml" />
 
