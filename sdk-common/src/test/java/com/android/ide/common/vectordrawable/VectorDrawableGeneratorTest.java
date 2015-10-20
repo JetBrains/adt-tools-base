@@ -466,8 +466,4 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
     public void testXmlStroke3() throws Exception {
         checkXmlConversion("test_xml_stroke_3");
     }
-
-    public void testXmlArcto1() throws Exception {
-        checkXmlConversion("test_xml_arcto_1");
-    }
 }
