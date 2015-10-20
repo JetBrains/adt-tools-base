@@ -405,6 +405,8 @@ public class Svg2Vector {
             float y = 0;
             float width = Float.NaN;
             float height = Float.NaN;
+            float rx = 0;
+            float ry = 0;
 
             NamedNodeMap a = currentGroupNode.getAttributes();
             int len = a.getLength();
@@ -426,6 +428,10 @@ public class Svg2Vector {
                     x = Float.parseFloat(value);
                 } else if (name.equals("y")) {
                     y = Float.parseFloat(value);
+                } else if (name.equals("rx")) {
+                    rx = Float.parseFloat(value);
+                } else if (name.equals("ry")) {
+                    ry = Float.parseFloat(value);
                 } else if (name.equals("width")) {
                     width = Float.parseFloat(value);
                 } else if (name.equals("height")) {
@@ -433,18 +439,41 @@ public class Svg2Vector {
                 } else if (name.equals("style")) {
 
                 }
-
             }
 
             if (!pureTransparent && avg != null && !Float.isNaN(x) && !Float.isNaN(y)
                     && !Float.isNaN(width)
                     && !Float.isNaN(height)) {
-                // "M x, y h width v height h -width z"
                 PathBuilder builder = new PathBuilder();
-                builder.absoluteMoveTo(x, y);
-                builder.relativeHorizontalTo(width);
-                builder.relativeVerticalTo(height);
-                builder.relativeHorizontalTo(-width);
+                if (rx <= 0 && ry <= 0) {
+                    // "M x, y h width v height h -width z"
+                    builder.absoluteMoveTo(x, y);
+                    builder.relativeHorizontalTo(width);
+                    builder.relativeVerticalTo(height);
+                    builder.relativeHorizontalTo(-width);
+                } else {
+                    // Refer to http://www.w3.org/TR/SVG/shapes.html#RectElement
+                    assert rx > 0 || ry > 0;
+                    if (ry == 0) {
+                        ry = rx;
+                    } else if (rx == 0) {
+                        rx = ry;
+                    }
+                    if (rx > width / 2) rx = width / 2;
+                    if (ry > height / 2) ry = height / 2;
+
+                    builder.absoluteMoveTo(x + rx, y);
+                    builder.absoluteLineTo(x + width - rx, y);
+                    builder.absoluteArcTo(rx, ry, false, false, true, x + width, y + ry);
+                    builder.absoluteLineTo(x + width, y + height - ry);
+
+                    builder.absoluteArcTo(rx, ry, false, false, true, x + width - rx, y + height);
+                    builder.absoluteLineTo(x + rx,  y + height);
+
+                    builder.absoluteArcTo(rx, ry, false, false, true, x, y + height - ry);
+                    builder.absoluteLineTo(x,  y + ry);
+                    builder.absoluteArcTo(rx, ry, false, false, true, x + rx, y);
+                }
                 builder.relativeClose();
                 child.setPathData(builder.toString());
             }

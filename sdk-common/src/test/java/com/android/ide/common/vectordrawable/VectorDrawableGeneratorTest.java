@@ -287,6 +287,10 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         checkSvgConversion("test_transform_rect_matrix");
     }
 
+    public void testSvgTransformRoundRectMatrix() throws Exception {
+        checkSvgConversion("test_transform_round_rect_matrix");
+    }
+
     public void testSvgTransformRectRotate() throws Exception {
         checkSvgConversion("test_transform_rect_rotate");
     }
