@@ -34,9 +34,13 @@ import com.verifier.tests.ChangeSuperClass;
 import com.verifier.tests.ChangedClassInitializer1;
 import com.verifier.tests.ChangedClassInitializer2;
 import com.verifier.tests.ChangedClassInitializer3;
+import com.verifier.tests.DisabledClassChanging;
+import com.verifier.tests.DisabledClassNotChanging;
+import com.verifier.tests.DisabledMethodChanging;
 import com.verifier.tests.MethodAddedClass;
 import com.verifier.tests.MethodCollisionClass;
 import com.verifier.tests.NewInstanceReflectionUser;
+import com.verifier.tests.ReflectiveUserNotChanging;
 import com.verifier.tests.RemoveClassAnnotation;
 import com.verifier.tests.RemoveInterfaceImplementation;
 import com.verifier.tests.RemoveMethodAnnotation;
@@ -220,5 +224,38 @@ public class InstantRunVerifierTest {
         assertNull(harness.verify(NewInstanceReflectionUser.class, null));
         assertEquals(IncompatibleChange.REFLECTION_USED,
                 harness.verify(NewInstanceReflectionUser.class, "verifier"));
+    }
+
+    @Test
+    public void testReflectiveUserNotChanging() throws IOException {
+        // not changing a method implementation that uses reflection should be ok.
+        assertNull(harness.verify(ReflectiveUserNotChanging.class, null));
+        // changing other methods should be fine.
+        assertNull(harness.verify(ReflectiveUserNotChanging.class, "verifier"));
+    }
+
+    @Test
+    public void testDisabledClassNotChanging() throws IOException {
+        // even though nothing changed, the verifier will flag it as a new version is available.
+        assertEquals(IncompatibleChange.INSTANT_RUN_DISABLED,
+                harness.verify(DisabledClassNotChanging.class, null));
+    }
+
+    @Test
+    public void testDisabledClassChanging() throws IOException {
+        // not changing a method implementation from a disabled class should be ok.
+        //assertNull(harness.verify(DisabledClassChanging.class, null));
+        // changing a method implementation from a disabled class should be flagged.
+        assertEquals(IncompatibleChange.INSTANT_RUN_DISABLED,
+                harness.verify(DisabledClassChanging.class, "verifier"));
+    }
+
+    @Test
+    public void testDisabledMethodChanging() throws IOException {
+        // not changing a method implementation from a disabled class should be ok.
+        assertNull(harness.verify(DisabledMethodChanging.class, null));
+        // changing a method implementation from a disabled class should be flagged.
+        assertEquals(IncompatibleChange.INSTANT_RUN_DISABLED,
+                harness.verify(DisabledMethodChanging.class, "verifier"));
     }
 }

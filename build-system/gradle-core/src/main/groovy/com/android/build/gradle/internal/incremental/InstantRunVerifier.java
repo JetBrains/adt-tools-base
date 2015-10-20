@@ -36,8 +36,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
+
+import bsh.org.objectweb.asm.Type;
 
 /**
  * Instant Run Verifier responsible for checking that a class change (between two developers
@@ -99,12 +102,24 @@ public class InstantRunVerifier {
             return IncompatibleChange.IMPLEMENTED_INTERFACES_CHANGE;
         }
 
-        // ASM API here and below.
-        //noinspection unchecked
-        if (diffList(originalClass.visibleAnnotations,
-                updatedClass.visibleAnnotations,
+        if (diffList(originalClass.visibleAnnotations, updatedClass.visibleAnnotations,
                 ANNOTATION_COMPARATOR) != Diff.NONE) {
             return IncompatibleChange.CLASS_ANNOTATION_CHANGE;
+        }
+
+        // check if the class is InstantRunDisabled.
+        List<AnnotationNode> invisibleAnnotations = originalClass.invisibleAnnotations;
+        if (invisibleAnnotations!=null) {
+            for (AnnotationNode annotationNode : invisibleAnnotations) {
+
+                if (annotationNode.desc.equals(
+                        IncrementalVisitor.DISABLE_ANNOTATION_TYPE.getDescriptor())) {
+                    // potentially, we could try to see if anything has really changed between
+                    // the two classes but the fact that we got an updated class means so far that
+                    // we have a new version and should restart.
+                    return IncompatibleChange.INSTANT_RUN_DISABLED;
+                }
+            }
         }
 
         IncompatibleChange fieldChange = verifyFields(originalClass, updatedClass);
@@ -120,7 +135,9 @@ public class InstantRunVerifier {
             @NonNull ClassNode originalClass,
             @NonNull ClassNode updatedClass) {
 
-        Diff diff = diffList(originalClass.fields, updatedClass.fields, new Comparator<FieldNode>() {
+        //noinspection unchecked
+        Diff diff = diffList(originalClass.fields, updatedClass.fields, new Comparator<FieldNode>()
+        {
 
             @Override
             public boolean areEqual(@Nullable FieldNode first, @Nullable FieldNode second) {
@@ -197,22 +214,45 @@ public class InstantRunVerifier {
                 : IncompatibleChange.STATIC_INITIALIZER_CHANGE;
     }
 
+    @SuppressWarnings("unchecked") // ASM API
     @Nullable
     private static IncompatibleChange verifyMethod(
             MethodNode methodNode,
             MethodNode updatedMethod) {
 
-        //noinspection unchecked
-        if (diffList(methodNode.visibleAnnotations,
-                updatedMethod.visibleAnnotations,
+        // check for annotations changes
+        if (diffList(methodNode.visibleAnnotations, updatedMethod.visibleAnnotations,
                 new AnnotationNodeComparator()) != Diff.NONE) {
             return IncompatibleChange.METHOD_ANNOTATION_CHANGE;
         }
 
-        // if the method content has changed, better not used any of our black listed APIs.
-        return METHOD_COMPARATOR.areEqual(methodNode, updatedMethod)
-                ? null
-                : InstantRunMethodVerifier.verifyMethod(updatedMethod);
+        // the method exist in both classes, check if the original method was disabled for
+        // instantRun or contained calls to blacklisted APIs. If either of these conditions
+        // is true, and the method implementation has changed, a restart is needed.
+        boolean disabledMethod = false;
+        List<AnnotationNode> invisibleAnnotations = methodNode.invisibleAnnotations;
+        if (invisibleAnnotations != null) {
+            for (AnnotationNode originalMethodAnnotation : invisibleAnnotations) {
+                if (originalMethodAnnotation.desc.equals(
+                        IncrementalVisitor.DISABLE_ANNOTATION_TYPE.getDescriptor())) {
+                    disabledMethod = true;
+                }
+            }
+        }
+
+        boolean usingBlackListedAPIs = InstantRunMethodVerifier.verifyMethod(updatedMethod) != null;
+
+        // either disabled or using blacklisted APIs, let it through only if the method
+        // implementation is unchanged.
+        if ((disabledMethod || usingBlackListedAPIs) &&
+                !METHOD_COMPARATOR.areEqual(methodNode, updatedMethod)) {
+
+            return disabledMethod
+                    ? IncompatibleChange.INSTANT_RUN_DISABLED
+                    : IncompatibleChange.REFLECTION_USED;
+
+        }
+        return null;
     }
 
     @Nullable
