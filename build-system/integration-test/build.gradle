@@ -124,6 +124,7 @@ test.dependsOn ':publishLocal'
 connectedIntegrationTest.dependsOn ':publishLocal',
         ':base:gradle-core:instrumentIncrementalTestPatches',
         ':base:gradle-core:instrumentIncrementalTestBaseClasses'
+        ':base:fdr:jar'
 performanceTest.dependsOn ':publishLocal'
 
 jacocoTestReport {
