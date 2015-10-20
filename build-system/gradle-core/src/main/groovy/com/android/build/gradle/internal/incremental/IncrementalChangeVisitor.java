@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
-import com.android.tools.ir.api.DisableInstantRun;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
@@ -142,7 +141,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
     @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        if (Type.getDescriptor(DisableInstantRun.class).equals(desc)) {
+        if (DISABLE_ANNOTATION_TYPE.getDescriptor().equals(desc)) {
             instantRunDisabled = true;
         }
         return super.visitAnnotation(desc, visible);

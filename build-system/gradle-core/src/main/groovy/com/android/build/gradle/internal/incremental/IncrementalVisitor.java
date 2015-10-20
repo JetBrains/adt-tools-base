@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.ir.api.DisableInstantRun;
 import com.android.utils.FileUtils;
 import com.google.common.io.Files;
 
@@ -65,6 +64,8 @@ public class IncrementalVisitor extends ClassVisitor {
     protected static final Type INSTANT_RELOAD_EXCEPTION =
             Type.getType(PACKAGE + "/InstantReloadException");
     protected static final Type RUNTIME_TYPE = Type.getType("L" + PACKAGE + "/AndroidInstantRuntime;");
+    protected static final Type DISABLE_ANNOTATION_TYPE =
+            Type.getType("Lcom/android/tools/ir/api/DisableInstantRun;");
 
     protected static final boolean TRACING_ENABLED = Boolean.getBoolean("FDR_TRACING");
 
@@ -412,7 +413,7 @@ public class IncrementalVisitor extends ClassVisitor {
                 return false;
             }
             for (AnnotationNode annotation : annotations) {
-                if (annotation.desc.equals(Type.getDescriptor(DisableInstantRun.class))) {
+                if (annotation.desc.equals(DISABLE_ANNOTATION_TYPE.getDescriptor())) {
                     return true;
                 }
             }
