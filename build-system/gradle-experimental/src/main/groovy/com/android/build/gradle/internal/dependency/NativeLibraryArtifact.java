@@ -21,11 +21,11 @@ import com.android.build.gradle.internal.NativeDependencyLinkage;
 
 import org.gradle.api.Named;
 import org.gradle.model.Managed;
-import org.gradle.model.ModelSet;
 import org.gradle.model.Unmanaged;
 
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Container for all native library artifacts.
@@ -46,7 +46,7 @@ public interface NativeLibraryArtifact extends Named {
     /**
      * Folders container the public headers for the libraries.
      */
-    List<File> getExportedHeaderFolders();
+    Set<File> getExportedHeaderDirectories();
 
     /**
      * Build type of the artifact.
@@ -80,8 +80,6 @@ public interface NativeLibraryArtifact extends Named {
     @Nullable
     NativeDependencyLinkage getLinkage();
     void setLinkage(NativeDependencyLinkage linkage);
-
-    ModelSet<NativeLibraryArtifact> getDependencies();
 
     @Unmanaged
     Object getBuiltBy();
