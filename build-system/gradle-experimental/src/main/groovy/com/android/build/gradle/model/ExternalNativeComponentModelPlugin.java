@@ -19,20 +19,25 @@ package com.android.build.gradle.model;
 import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFIG;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.gson.FileGsonTypeAdaptor;
+import com.android.build.gradle.internal.gson.NativeBuildConfigValue;
 import com.android.build.gradle.managed.NativeBuildConfig;
 import com.android.build.gradle.managed.NativeLibrary;
-import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.tasks.Exec;
+import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.plugins.ComponentModelBasePlugin;
+import org.gradle.model.Finalize;
 import org.gradle.model.Model;
 import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
-import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.platform.base.BinaryTasks;
@@ -44,6 +49,8 @@ import org.gradle.platform.base.ComponentTypeBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
 import javax.inject.Inject;
 
@@ -76,8 +83,6 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
     }
 
     public static class Rules extends RuleSource {
-        //TODO: Add capability to read JSON data file.
-
         @ComponentType
         public static void defineComponentType(
                 ComponentTypeBuilder<ExternalNativeComponentSpec> builder) {
@@ -91,6 +96,32 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
 
         @Model(EXTERNAL_BUILD_CONFIG)
         public static void createNativeBuildModel(NativeBuildConfig config) {
+        }
+
+        /**
+         * Parses the JSON file to populate the NativeBuildConfig.
+         * Overwrites all existing values in the config.
+         *
+         * TODO: NativeBuildConfig should not be set if JSON is used.  Verify this and throws an
+         * error if any field is set.
+         */
+        @Finalize
+        public static void readJson(
+                NativeBuildConfig config,
+                ServiceRegistry registry) throws IOException {
+            File configFile = config.getConfigFile();
+            if (configFile == null) {
+                return;
+            }
+
+            FileResolver fileResolver = registry.get(FileResolver.class);
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(File.class, new FileGsonTypeAdaptor(fileResolver))
+                    .create();
+
+            NativeBuildConfigValue jsonConfig =
+                    gson.fromJson(new FileReader(configFile), NativeBuildConfigValue.class);
+            jsonConfig.copyTo(config);
         }
 
         @Mutate

@@ -29,10 +29,19 @@ import java.util.concurrent.Callable;
 @Managed
 public interface NativeSourceFolder {
 
+    /**
+     * The source folder.
+     */
     File getSrc();
     void setSrc(File src);
 
+    /**
+     * List of compiler flags for all C files.
+     */
     List<String> getCFlags();
 
+    /**
+     * List of compiler flags for all C++ files.
+     */
     List<String> getCppFlags();
 }

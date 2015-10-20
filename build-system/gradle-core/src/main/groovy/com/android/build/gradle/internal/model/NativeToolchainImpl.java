@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.NativeToolchain;
 
 import java.io.File;
@@ -29,15 +30,15 @@ public class NativeToolchainImpl implements NativeToolchain, Serializable {
 
     @NonNull
     String name;
-
-    @NonNull
+    @Nullable
     File cCompilerExecutable;
-
-    @NonNull
+    @Nullable
     File cppCompilerExecutable;
 
-    public NativeToolchainImpl(@NonNull String name, @NonNull File cCompilerExecutable,
-            @NonNull File cppCompilerExecutable) {
+    public NativeToolchainImpl(
+            @NonNull String name,
+            @Nullable File cCompilerExecutable,
+            @Nullable File cppCompilerExecutable) {
         this.name = name;
         this.cCompilerExecutable = cCompilerExecutable;
         this.cppCompilerExecutable = cppCompilerExecutable;
@@ -49,13 +50,13 @@ public class NativeToolchainImpl implements NativeToolchain, Serializable {
         return name;
     }
 
-    @NonNull
+    @Nullable
     @Override
     public File getCCompilerExecutable() {
         return cCompilerExecutable;
     }
 
-    @NonNull
+    @Nullable
     @Override
     public File getCppCompilerExecutable() {
         return cppCompilerExecutable;
