@@ -233,4 +233,14 @@ public class ConstructorTest {
         Constructors.Sub sub = new Constructors.Sub("sub", true);
         assertEquals("10.0sub20:patched_base", sub.getBaseFinal());
     }
+
+    @Test
+    public void patchPublicConstructorWhichCallsAPrivateConstructor() throws Exception {
+        harness.reset();
+        Constructors.PrivateConstructor p = new Constructors.PrivateConstructor();
+        assertEquals("Public constructor calls private constructor.", "Base", p.getString());
+        harness.applyPatch("changeBaseClass");
+        p = new Constructors.PrivateConstructor();
+        assertEquals("Public constructor calls private constructor.", "Patched", p.getString());
+    }
 }

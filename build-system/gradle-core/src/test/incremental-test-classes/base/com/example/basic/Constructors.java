@@ -16,8 +16,6 @@
 
 package com.example.basic;
 
-import org.omg.SendingContext.RunTime;
-
 import java.util.List;
 
 public class Constructors {
@@ -204,6 +202,23 @@ public class Constructors {
         public DupInvokeSpecialSub() {
             super(new DupInvokeSpecialBase(null));
             value = "original";
+        }
+    }
+
+    public static class PrivateConstructor {
+
+        private String mString;
+
+        private PrivateConstructor(String string) {
+            mString = string;
+        }
+
+        public PrivateConstructor() {
+            this("Base");
+        }
+
+        public String getString() {
+            return mString;
         }
     }
 }
