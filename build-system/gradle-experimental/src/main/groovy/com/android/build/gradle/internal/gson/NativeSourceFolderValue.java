@@ -14,38 +14,37 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.managed;
+package com.android.build.gradle.internal.gson;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.managed.NativeSourceFolder;
 
-import org.gradle.api.Named;
-import org.gradle.model.Managed;
+import org.gradle.model.Unmanaged;
 
 import java.io.File;
+import java.util.List;
 
 /**
- * A @Managed interface for {@link com.android.builder.model.NativeToolchain}.
+ * Value type for {@link NativeSourceFolder} to be used with Gson.
  */
-@Managed
-public interface NativeToolchain extends com.android.builder.model.NativeToolchain, Named {
-    /**
-     * Returns the full path of the C compiler.
-     *
-     * @return the C compiler path.
-     */
-    @Override
+public class NativeSourceFolderValue {
     @Nullable
-    File getCCompilerExecutable();
-    void setCCompilerExecutable(@Nullable File exe);
+    File src;
+    @Nullable
+    List<String> cFlags;
+    @Nullable
+    List<String> cppFlags;
 
-    /**
-     * Returns the full path of the C++ compiler.
-     *
-     * @return the C++ compiler path.
-     */
-    @Override
-    @Nullable
-    File getCppCompilerExecutable();
-    void setCppCompilerExecutable(@Nullable File exe);
+    void copyTo(@NonNull NativeSourceFolder folder) {
+        folder.setSrc(src);
+        if (cFlags != null) {
+            folder.getCFlags().clear();
+            folder.getCFlags().addAll(cFlags);
+        }
+        if (cppFlags != null) {
+            folder.getCppFlags().clear();
+            folder.getCppFlags().addAll(cppFlags);
+        }
+    }
 }
