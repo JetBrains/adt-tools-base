@@ -236,7 +236,7 @@ public class ConstructorDelegationDetector {
         }
         // Create the args array with the values to send to the delegated constructor
         Type[] returnTypes = Type.getArgumentTypes(delegation.desc);
-        mv.push(returnTypes.length);
+        mv.push(returnTypes.length + 1); // The extra element if for the qualified name of the constuctor.
         mv.newArray(Type.getType(Object.class));
         int args = mv.newLocal(Type.getType("[Ljava/lang/Object;"));
         mv.storeLocal(args);
@@ -244,25 +244,19 @@ public class ConstructorDelegationDetector {
             Type type = returnTypes[i];
             mv.loadLocal(args);
             mv.swap(type, Type.getType(Object.class));
-            mv.push(i);
+            mv.push(i + 1);
             mv.swap(type, Type.INT_TYPE);
             mv.box(type);
             mv.arrayStore(Type.getType(Object.class));
         }
 
-        // Create a two element array. First element is the qualified name of the constructor to
-        // be called. The second is the arguments array that will be passed to the dispatching
-        // constructor.
-        mv.visitInsn(Opcodes.ICONST_2);
-        mv.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
-        mv.dup();
-        mv.dup();
-        mv.visitInsn(Opcodes.ICONST_0);
-        mv.visitLdcInsn(delegation.owner + "." + delegation.desc); // Name of the constructor to be called.
-        mv.visitInsn(Opcodes.AASTORE);
-        mv.visitInsn(Opcodes.ICONST_1);
+        // Store the qualified name of the constructor in the first element of the array.
         mv.loadLocal(args);
-        mv.visitInsn(Opcodes.AASTORE);
+        mv.push(0);
+        mv.push(delegation.owner + "." + delegation.desc); // Name of the constructor to be called.
+        mv.arrayStore(Type.getType(Object.class));
+
+        mv.loadLocal(args);
         mv.returnValue();
 
         newDesc = method.desc.replace("(", "(L" + owner + ";");

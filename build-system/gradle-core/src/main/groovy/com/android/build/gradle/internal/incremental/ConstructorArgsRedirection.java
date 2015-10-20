@@ -47,13 +47,9 @@ import java.util.List;
  *       Object[] locals = new Object[2];
  *       locals[0] = locals; // So the unboxed receiver can update this array
  *       locals[1] = x;
- *       Object[] result = change.access$dispatch("init$args", locals);
- *       String constructorName = (String) result[0];
- *       Object[] constructorArguments = (Object[]) result[1];
+ *       Object[] constructorArguments = change.access$dispatch("init$args", locals);
  *       x = locals[1];
- *       a = args[0];
- *       b = args[1];
- *       this(constructorName, constructorArguments, null);
+ *       this(constructorArguments, null);
  *     } else {
  *       a = x = 1;
  *       b = expr2() ? 3 : 7;
@@ -88,7 +84,7 @@ public class ConstructorArgsRedirection extends Redirection {
     // The signature of the dynamically dispatching 'this' constructor. The final parameters is
     // to disambiguate from other constructors that might preexist on the class.
     static final String DISPATCHING_THIS_SIGNATURE =
-            "(Ljava/lang/String;[Ljava/lang/Object;L" + IncrementalVisitor.INSTANT_RELOAD_EXCEPTION + ";)V";
+            "([Ljava/lang/Object;L" + IncrementalVisitor.INSTANT_RELOAD_EXCEPTION + ";)V";
 
     /**
      * @param thisClassName name of the class that this constructor is in.
@@ -133,27 +129,14 @@ public class ConstructorArgsRedirection extends Redirection {
     @Override
     protected void restore(GeneratorAdapter mv, List<Type> args) {
         // At this point, init$args has been called and the result Object is on the stack.
-        // The value of that Object is Object[] with exactly two elements. The first element
-        // is the signature of the super or this constructor. The second element is an Object[]
-        // that contains the parameters to that constructor.
+        // The value of that Object is Object[] with exactly n + 1 elements.
+        // The first element is a string with the qualified name of the constructor to call.
+        // The remaining elements are the constructtor arguments.
 
-        // Create a new local 'ret' that holds the result of init$args call.
+        // Create a new local that holds the result of init$args call.
         mv.visitTypeInsn(Opcodes.CHECKCAST, "[Ljava/lang/Object;");
-        int ret = mv.newLocal(Type.getType("[Ljava/lang/Object;"));
-        mv.storeLocal(ret);
-
-        // Element 0 is a string containing the qualified name of the constructor that was called.
-        // It may be a constructor in this class or in super class.
-        mv.loadLocal(ret);
-        mv.visitInsn(Opcodes.ICONST_0);
-        mv.visitInsn(Opcodes.AALOAD);
-        mv.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/String");
-
-        // Element 1 is an Object array with parameters to pass to the dynamic dispatch constructor.
-        mv.loadLocal(ret);
-        mv.visitInsn(Opcodes.ICONST_1);
-        mv.visitInsn(Opcodes.AALOAD);
-        mv.visitTypeInsn(Opcodes.CHECKCAST, "[Ljava/lang/Object;");
+        int constructorArgs = mv.newLocal(Type.getType("[Ljava/lang/Object;"));
+        mv.storeLocal(constructorArgs);
 
         // Reinstate local values
         mv.loadLocal(locals);
@@ -180,6 +163,7 @@ public class ConstructorArgsRedirection extends Redirection {
         mv.pop();
 
         // Push a null for the marker parameter.
+        mv.loadLocal(constructorArgs);
         mv.visitInsn(Opcodes.ACONST_NULL);
 
         // Invoke the constructor
