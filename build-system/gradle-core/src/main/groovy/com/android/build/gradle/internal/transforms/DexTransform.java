@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import static com.android.utils.FileUtils.emptyFolder;
 import static com.android.utils.FileUtils.mkdirs;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -317,6 +318,10 @@ public class DexTransform extends Transform implements CombinedTransform {
 
                 // where we write the pre-dex depends on whether we do the merge after.
                 File perStreamDexFolder = needMerge ? intermediateFolder : outFolder;
+
+                if (!isIncremental) {
+                    emptyFolder(perStreamDexFolder);
+                }
 
                 WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
                 ProcessOutputHandler outputHandler = new LoggedProcessOutputHandler(logger);
