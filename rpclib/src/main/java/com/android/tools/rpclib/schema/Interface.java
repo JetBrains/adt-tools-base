@@ -24,15 +24,14 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 public final class Interface extends Type {
-
-    String mName;
+    public final String name;
 
     public Interface(String name) {
-        mName = name;
+        this.name = name;
     }
 
     public Interface(@NotNull Decoder d) throws IOException {
-        mName = d.nonCompactString();
+        this.name = d.nonCompactString();
     }
 
     @Override
@@ -49,12 +48,12 @@ public final class Interface extends Type {
     @Override
     public void encode(@NotNull Encoder e) throws IOException {
         TypeTag.interfaceTag().encode(e);
-        e.nonCompactString(mName);
+        e.nonCompactString(name);
     }
 
     @Override
     void name(StringBuilder out) {
-        out.append(mName);
+        out.append(name);
     }
 
     @Override
