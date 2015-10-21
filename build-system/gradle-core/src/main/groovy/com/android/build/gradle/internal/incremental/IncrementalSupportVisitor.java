@@ -256,6 +256,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         public void visitCode() {
             if (!disableRedirection) {
                 super.visitLabel(start);
+                // A special line number to mark this area of code.
+                super.visitLineNumber(0, start);
                 change = newLocal(CHANGE_TYPE);
                 visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
                         getRuntimeTypeName(CHANGE_TYPE));
