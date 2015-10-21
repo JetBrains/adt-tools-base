@@ -31,7 +31,7 @@ import java.util.List;
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
-    static final int INITIAL_CAPACITY = 249;
+    static final int INITIAL_CAPACITY = 251;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -58,6 +58,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(AppIndexingApiDetector.ISSUE_APP_INDEXING_API);
         issues.add(AppIndexingApiDetector.ISSUE_DEEP_LINK_ERROR);
         issues.add(AppIndexingApiDetector.ISSUE_APP_INDEXING);
+        issues.add(AppLinksAutoVerifyDetector.ISSUE_ERROR);
+        issues.add(AppLinksAutoVerifyDetector.ISSUE_WARNING);
         issues.add(ArraySizeDetector.INCONSISTENT);
         issues.add(AssertDetector.ISSUE);
         issues.add(ButtonDetector.BACK_BUTTON);
