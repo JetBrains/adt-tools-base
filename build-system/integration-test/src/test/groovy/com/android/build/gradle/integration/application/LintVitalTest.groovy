@@ -31,7 +31,7 @@ import static org.junit.Assert.fail
  */
 class LintVitalTest {
 
-    public static final AndroidTestApp helloWorldApp = new HelloWorldApp()
+    public static final AndroidTestApp helloWorldApp = HelloWorldApp.noBuildFile()
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()

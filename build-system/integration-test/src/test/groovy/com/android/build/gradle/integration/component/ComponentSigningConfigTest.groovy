@@ -36,7 +36,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 class ComponentSigningConfigTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+            .fromTestApp(HelloWorldApp.noBuildFile())
             .forExperimentalPlugin(true)
             .create();
 

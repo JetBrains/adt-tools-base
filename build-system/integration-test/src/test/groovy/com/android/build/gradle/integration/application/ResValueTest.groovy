@@ -46,7 +46,7 @@ import static org.junit.Assert.assertNotNull
 class ResValueTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+            .fromTestApp(HelloWorldApp.noBuildFile())
             .create()
 
     private static AndroidProject model

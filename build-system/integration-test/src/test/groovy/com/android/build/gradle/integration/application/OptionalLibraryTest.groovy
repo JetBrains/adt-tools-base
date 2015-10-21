@@ -36,7 +36,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 class OptionalLibraryTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+            .fromTestApp(HelloWorldApp.noBuildFile())
             .create()
 
     @After

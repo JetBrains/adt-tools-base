@@ -59,7 +59,7 @@ class BuildToolsTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+            .fromTestApp(HelloWorldApp.noBuildFile())
             .captureStdOut(true)
             .create()
 

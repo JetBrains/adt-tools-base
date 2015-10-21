@@ -31,7 +31,7 @@ import static com.android.build.gradle.integration.common.utils.FileHelper.searc
 class ApplicationIdTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+            .fromTestApp(HelloWorldApp.noBuildFile())
             .create();
 
     @Before

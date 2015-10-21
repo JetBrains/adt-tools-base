@@ -50,7 +50,7 @@ include ':app2'
 """
         // app1 module
         File app1 = new File(rootFile, "app1")
-        new HelloWorldApp().write(app1, null)
+        HelloWorldApp.noBuildFile().write(app1, null)
         new File(app1, "build.gradle") << """
 apply plugin: 'com.android.application'
 
@@ -74,7 +74,7 @@ artifacts {
 """
         // app2 module
         File app2 = new File(rootFile, "app2")
-        new HelloWorldApp().write(app2, null)
+        HelloWorldApp.noBuildFile().write(app2, null)
         app2BuildFile = new File(app2, "build.gradle")
     }
 

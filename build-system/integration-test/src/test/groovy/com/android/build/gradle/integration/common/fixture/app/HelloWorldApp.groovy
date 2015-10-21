@@ -17,6 +17,7 @@
 
 
 package com.android.build.gradle.integration.common.fixture.app
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
 /**
  * Simple test application that prints "hello world!".
  */
@@ -120,7 +121,32 @@ public class HelloWorldTest extends ActivityInstrumentationTestCase2<HelloWorld>
 }
 """);
 
-    public HelloWorldApp() {
+    private HelloWorldApp() {
         addFiles(javaSource, resValuesSource, resLayoutSource, manifest, androidTestSource);
+    }
+
+    private HelloWorldApp(String plugin) {
+        this();
+
+        TestSourceFile buildFile = new TestSourceFile("", "build.gradle",
+            """
+            apply plugin: '$plugin'
+
+            android {
+                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                buildToolsVersion '$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION'
+            }
+
+            """);
+
+        addFile(buildFile)
+    }
+
+    public static HelloWorldApp noBuildFile() {
+        return new HelloWorldApp()
+    }
+
+    public static HelloWorldApp forPlugin(String plugin) {
+        return new HelloWorldApp(plugin)
     }
 }
