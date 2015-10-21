@@ -58,10 +58,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
     private static final class VisitorBuilder implements IncrementalVisitor.VisitorBuilder {
 
-        private final boolean mProcessParents;
-
-        private VisitorBuilder(boolean processParents) {
-            mProcessParents = processParents;
+        private VisitorBuilder() {
         }
 
         @NonNull
@@ -71,11 +68,6 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 @NonNull List<ClassNode> parentNodes,
                 @NonNull ClassVisitor classVisitor) {
             return new IncrementalSupportVisitor(classNode, parentNodes, classVisitor);
-        }
-
-        @Override
-        public boolean processParents() {
-            return mProcessParents;
         }
 
         @Override
@@ -92,10 +84,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     }
 
     public static final IncrementalVisitor.VisitorBuilder VISITOR_BUILDER =
-            new VisitorBuilder(false /*processParents*/);
-
-    private static final IncrementalVisitor.VisitorBuilder VISITOR_BUILDER_PROCESS_PARENTS =
-            new VisitorBuilder(true /*processParents*/);
+            new VisitorBuilder();
 
     public IncrementalSupportVisitor(
             @NonNull ClassNode classNode,
@@ -613,6 +602,6 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
      * @throws IOException if some files cannot be read or written.
      */
     public static void main(String[] args) throws IOException {
-        IncrementalVisitor.main(args, VISITOR_BUILDER_PROCESS_PARENTS);
+        IncrementalVisitor.main(args, VISITOR_BUILDER);
     }
 }

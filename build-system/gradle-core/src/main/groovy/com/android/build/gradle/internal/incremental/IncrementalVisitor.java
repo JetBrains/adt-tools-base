@@ -196,8 +196,6 @@ public class IncrementalVisitor extends ClassVisitor {
         IncrementalVisitor build(@NonNull ClassNode classNode,
                 @NonNull List<ClassNode> parentNodes, @NonNull ClassVisitor classVisitor);
 
-        boolean processParents();
-
         @NonNull
         String getMangledRelativeClassFilePath(@NonNull String originalClassFilePath);
 
@@ -327,12 +325,7 @@ public class IncrementalVisitor extends ClassVisitor {
             }
         }
 
-        List<ClassNode> parentsNodes;
-        if (visitorBuilder.processParents()) {
-            parentsNodes = parseParents(inputFile, classNode);
-        } else {
-            parentsNodes = Collections.emptyList();
-        }
+        List<ClassNode> parentsNodes = parseParents(inputFile, classNode);
         outputFile = new File(outputDirectory, visitorBuilder.getMangledRelativeClassFilePath(path));
         Files.createParentDirs(outputFile);
         IncrementalVisitor visitor = visitorBuilder.build(classNode, parentsNodes, classWriter);
