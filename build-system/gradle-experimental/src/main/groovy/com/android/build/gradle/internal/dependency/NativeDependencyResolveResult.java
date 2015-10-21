@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal;
+package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.core.Abi;
-import com.android.build.gradle.model.AndroidBinary;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-
-import org.gradle.model.ModelMap;
-import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * Result of resolving dependencies for a native project.
@@ -39,14 +31,14 @@ import java.util.Map;
 public class NativeDependencyResolveResult {
 
     @NonNull
-    private Collection<NativeLibraryBinarySpec> nativeBinaries = Lists.newArrayList();
+    private Collection<NativeLibraryArtifact> nativeArtifacts = Lists.newArrayList();
 
     @NonNull
     private ListMultimap<Abi, File> libraryFiles = ArrayListMultimap.create();
 
     @NonNull
-    public Collection<NativeLibraryBinarySpec> getNativeBinaries() {
-        return nativeBinaries;
+    public Collection<NativeLibraryArtifact> getNativeArtifacts() {
+        return nativeArtifacts;
     }
 
     @NonNull

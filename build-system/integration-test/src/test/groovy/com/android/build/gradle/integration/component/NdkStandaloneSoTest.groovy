@@ -152,11 +152,11 @@ model {
     void "check app contains compiled .so"() {
         project.execute("clean", ":app:assembleRelease");
 
-        GradleTestProject lib = project.getSubproject("lib1")
-        assertThat(lib.file("build/intermediates/binaries/debug/lib/x86/libhello-jni.so")).exists();
+        GradleTestProject lib1 = project.getSubproject("lib1")
+        assertThat(lib1.file("build/intermediates/binaries/debug/obj/x86/libhello-jni.so")).exists();
 
         // Check that release lib is not compiled.
-        assertThat(lib.file("build/intermediates/binaries/release/lib/x86/libhello-jni.so")).doesNotExist();
+        assertThat(lib1.file("build/intermediates/binaries/release/obj/x86/libhello-jni.so")).doesNotExist();
 
         File apk = project.getSubproject("app").getApk("release", "unsigned")
         assertThatZip(apk).contains("lib/x86/libhello-jni.so");

@@ -17,6 +17,10 @@
 package com.android.build.gradle.internal;
 
 import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
+import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.model.AndroidBinary;
 import com.android.build.gradle.model.DefaultAndroidBinary;
 import com.android.build.gradle.model.JniLibsSourceSet;
@@ -32,8 +36,6 @@ import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.internal.SourceTransformTaskConfig;
 import org.gradle.language.base.internal.registry.LanguageTransform;
-import org.gradle.nativeplatform.NativeBinarySpec;
-import org.gradle.nativeplatform.internal.NativeBinarySpecInternal;
 import org.gradle.platform.base.BinarySpec;
 
 import java.io.File;
@@ -118,23 +120,23 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
                                     binaryBuildType,
                                     binaryProductFlavor,
                                     null,
-                                    "shared")).resolve();
+                                    NativeDependencyLinkage.SHARED)).resolve();
             Copy copyTask = (Copy) task;
-            for (NativeBinarySpec nativeBinary: dependencies.getNativeBinaries()) {
+            for (NativeLibraryArtifact artifacts: dependencies.getNativeArtifacts()) {
                 // TODO: Handle transitive dependencies.
-                final String abi = nativeBinary.getTargetPlatform().getName();
+                final String abi = artifacts.getAbi();
                 if (binary.getMergedNdkConfig().getAbiFilters().contains(abi)) {
-                    copyTask.dependsOn(
-                            nativeBinary.getBuildTask().getProject().getPath() + ":" +
-                                    NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
+                    copyTask.dependsOn(artifacts.getBuiltBy());
 
-                    copyTask.from(
-                            ((NativeBinarySpecInternal) nativeBinary).getPrimaryOutput()
-                                    .getParentFile(), new Closure<Void>(this, this) {
-                                public void doCall(CopySpec copySpec) {
-                                    copySpec.into(abi);
-                                }
-                            });
+                    for (File output : artifacts.getLibraries()) {
+                        copyTask.from(
+                                output,
+                                new Closure<Void>(this, this) {
+                                    public void doCall(CopySpec copySpec) {
+                                        copySpec.into(abi);
+                                    }
+                                });
+                    }
                 }
             }
             for (final Map.Entry<Abi, File> entry : dependencies.getLibraryFiles().entries()) {

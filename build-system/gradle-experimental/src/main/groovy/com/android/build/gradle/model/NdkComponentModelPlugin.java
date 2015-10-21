@@ -17,11 +17,15 @@
 package com.android.build.gradle.model;
 
 import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
+import static com.android.build.gradle.model.ModelConstants.ARTIFACTS;
 
 import com.android.build.gradle.internal.LanguageRegistryUtils;
+import com.android.build.gradle.internal.NativeDependencyLinkage;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.dependency.ArtifactContainer;
+import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.NdkAbiOptions;
@@ -33,6 +37,7 @@ import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantConfiguration;
+import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
@@ -67,6 +72,8 @@ import org.gradle.nativeplatform.FlavorContainer;
 import org.gradle.nativeplatform.NativeBinarySpec;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.nativeplatform.NativeLibrarySpec;
+import org.gradle.nativeplatform.SharedLibraryBinarySpec;
+import org.gradle.nativeplatform.StaticLibraryBinarySpec;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
 import org.gradle.platform.base.BinaryContainer;
 import org.gradle.platform.base.ComponentSpecContainer;
@@ -371,6 +378,43 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                     }
                 }
             });
+        }
+
+        @Model(ARTIFACTS)
+        public static void createNativeLibraryArtifacts(
+                ArtifactContainer artifactContainer,
+                ModelMap<DefaultAndroidBinary> binaries,
+                final ModelMap<Task> tasks) {
+            for(final DefaultAndroidBinary binary : binaries.values()) {
+                for (final NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
+                    final NativeDependencyLinkage linkage = nativeBinary instanceof SharedLibraryBinarySpec
+                            ? NativeDependencyLinkage.SHARED
+                            : NativeDependencyLinkage.STATIC;
+                    String name = Joiner.on('-').join(
+                            binary.getName(),
+                            nativeBinary.getTargetPlatform().getName(),
+                            linkage);
+                    artifactContainer.getNativeArtifacts().create(name,
+                            new Action<NativeLibraryArtifact>() {
+                                @Override
+                                public void execute(NativeLibraryArtifact artifacts) {
+                                    File output  = nativeBinary instanceof SharedLibraryBinarySpec
+                                            ? ((SharedLibraryBinarySpec) nativeBinary).getSharedLibraryFile()
+                                            : ((StaticLibraryBinarySpec) nativeBinary).getStaticLibraryFile();
+
+                                    artifacts.getLibraries().add(output);
+                                    artifacts.setBuildType(binary.getBuildType().getName());
+                                    for (ProductFlavor flavor : binary.getProductFlavors()) {
+                                        artifacts.getProductFlavors().add(flavor.getName());
+                                    }
+                                    artifacts.setVariantName(binary.getName());
+                                    artifacts.setAbi(nativeBinary.getTargetPlatform().getName());
+                                    artifacts.setLinkage(linkage);
+                                    artifacts.setBuiltBy(nativeBinary);
+                                }
+                            });
+                }
+            }
         }
 
         /**
