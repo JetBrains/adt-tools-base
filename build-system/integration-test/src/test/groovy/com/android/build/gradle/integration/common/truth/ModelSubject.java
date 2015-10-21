@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.integration.common.truth;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-
 import com.android.annotations.NonNull;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
@@ -68,12 +66,12 @@ public class ModelSubject extends Subject<ModelSubject, AndroidProject> {
     public SyncIssue hasSingleIssue(int severity, int type) {
         Collection<SyncIssue> subject = getSubject().getSyncIssues();
 
-        assertThat(subject).hasSize(1);
+        check().that(subject).hasSize(1);
 
         SyncIssue issue = subject.iterator().next();
-        assertThat(issue).isNotNull();
-        assertThat(issue).hasSeverity(severity);
-        assertThat(issue).hasType(type);
+        check().that(issue).isNotNull();
+        check().that(issue).hasSeverity(severity);
+        check().that(issue).hasType(type);
 
         return issue;
     }
@@ -91,13 +89,13 @@ public class ModelSubject extends Subject<ModelSubject, AndroidProject> {
     public SyncIssue hasSingleIssue(int severity, int type, String data) {
         Collection<SyncIssue> subject = getSubject().getSyncIssues();
 
-        assertThat(subject).hasSize(1);
+        check().that(subject).hasSize(1);
 
         SyncIssue issue = subject.iterator().next();
-        assertThat(issue).isNotNull();
-        assertThat(issue).hasSeverity(severity);
-        assertThat(issue).hasType(type);
-        assertThat(issue).hasData(data);
+        check().that(issue).isNotNull();
+        check().that(issue).hasSeverity(severity);
+        check().that(issue).hasType(type);
+        check().that(issue).hasData(data);
 
         return issue;
     }
@@ -114,14 +112,14 @@ public class ModelSubject extends Subject<ModelSubject, AndroidProject> {
     public void hasSingleIssue(int severity, int type, String data, String message) {
         Collection<SyncIssue> subject = getSubject().getSyncIssues();
 
-        assertThat(subject).hasSize(1);
+        check().that(subject).hasSize(1);
 
         SyncIssue issue = subject.iterator().next();
-        assertThat(issue).isNotNull();
-        assertThat(issue).hasSeverity(severity);
-        assertThat(issue).hasType(type);
-        assertThat(issue).hasData(data);
-        assertThat(issue).hasMessage(message);
+        check().that(issue).isNotNull();
+        check().that(issue).hasSeverity(severity);
+        check().that(issue).hasType(type);
+        check().that(issue).hasData(data);
+        check().that(issue).hasMessage(message);
     }
 
     /**
@@ -174,5 +172,10 @@ public class ModelSubject extends Subject<ModelSubject, AndroidProject> {
                 severity, type, data);
         // won't reach
         return null;
+    }
+
+    @Override
+    public CustomTestVerb check() {
+        return new CustomTestVerb(failureStrategy);
     }
 }
