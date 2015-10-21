@@ -458,9 +458,9 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         // This will work fine as long as we don't support adding constructors to classes.
         Map<String, MethodNode> uniqueMethods = new HashMap<String, MethodNode>();
 
-        addAllNewConstructors(uniqueMethods, classNode);
+        addAllNewConstructors(uniqueMethods, classNode, true /*keepPrivateConstructors*/);
         for (ClassNode parentNode : parentNodes) {
-            addAllNewConstructors(uniqueMethods, parentNode);
+            addAllNewConstructors(uniqueMethods, parentNode, false /*keepPrivateConstructors*/);
         }
 
         int access = Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
@@ -575,8 +575,10 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
      * Add all constructors from the passed ClassNode's methods. {@see ClassNode#methods}
      * @param methods the constructors already encountered in the ClassNode hierarchy
      * @param classNode the class to save all new methods from.
+     * @param keepPrivateConstructors whether to keep the private constructors.
      */
-    private static void addAllNewConstructors(Map<String, MethodNode> methods, ClassNode classNode) {
+    private static void addAllNewConstructors(Map<String, MethodNode> methods, ClassNode classNode,
+            boolean keepPrivateConstructors) {
         //noinspection unchecked
         for (MethodNode method : (List<MethodNode>) classNode.methods) {
             if (!method.name.equals(AsmUtils.CONSTRUCTOR)) {
@@ -586,6 +588,11 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             if (!isAccessCompatibleWithInstantRun(method.access)) {
                 continue;
             }
+
+            if (!keepPrivateConstructors && (method.access & Opcodes.ACC_PRIVATE) != 0) {
+                continue;
+            }
+
             String key = classNode.name + "." + method.desc;
             if (methods.containsKey(key)) {
                 continue;

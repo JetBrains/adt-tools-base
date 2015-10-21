@@ -205,4 +205,22 @@ public class Constructors {
             value = "patched";
         }
     }
+
+    public static class PrivateConstructor {
+
+        private String mString;
+
+        private PrivateConstructor(String string) {
+            mString = string;
+        }
+
+        public PrivateConstructor() {
+            // Call to private constructor via dispatching this
+            this("Patched");
+        }
+
+        public String getString() {
+            return mString;
+        }
+    }
 }
