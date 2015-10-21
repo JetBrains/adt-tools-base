@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.integration.common.truth;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-
 import com.android.annotations.NonNull;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.truth.FailureStrategy;
