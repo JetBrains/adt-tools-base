@@ -36,7 +36,7 @@ class LocalJarInAarInModelTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+            .fromTestApp(HelloWorldApp.noBuildFile())
             .create()
 
     @Before

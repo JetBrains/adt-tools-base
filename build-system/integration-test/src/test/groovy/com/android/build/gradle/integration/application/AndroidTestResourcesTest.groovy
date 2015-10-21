@@ -39,7 +39,7 @@ import static org.junit.Assert.assertTrue
  */
 @CompileStatic
 class AndroidTestResourcesTest {
-    private static AndroidTestApp testApp = new HelloWorldApp()
+    private static AndroidTestApp testApp = HelloWorldApp.noBuildFile()
     static {
 
         testApp.addFile(new TestSourceFile(

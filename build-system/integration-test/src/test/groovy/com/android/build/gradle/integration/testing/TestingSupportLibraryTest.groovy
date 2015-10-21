@@ -35,7 +35,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 @CompileStatic
 class TestingSupportLibraryTest {
 
-    public static final AndroidTestApp helloWorldApp = new HelloWorldApp();
+    public static final AndroidTestApp helloWorldApp = HelloWorldApp.noBuildFile();
     static {
         /* Junit 4 now maps tests annotated with @Ignore and tests that throw
            AssumptionFailureExceptions as skipped. */

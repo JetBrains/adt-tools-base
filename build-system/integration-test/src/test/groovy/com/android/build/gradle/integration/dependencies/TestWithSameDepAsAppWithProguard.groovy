@@ -30,7 +30,7 @@ import org.junit.Test
 @CompileStatic
 class TestWithSameDepAsAppWithProguard {
 
-    private static AndroidTestApp testApp = new HelloWorldApp()
+    private static AndroidTestApp testApp = HelloWorldApp.noBuildFile()
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()

@@ -27,7 +27,7 @@ class DensitySplitWithPublishNonDefaultTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+            .fromTestApp(HelloWorldApp.noBuildFile())
             .create()
 
     @Before

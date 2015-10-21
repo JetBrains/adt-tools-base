@@ -33,22 +33,11 @@ class AaptOptionsTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+            .fromTestApp(HelloWorldApp.forPlugin('com.android.application'))
             .create()
 
     @Before
     public void setUp() {
-
-        project.getBuildFile() << """
-apply plugin: 'com.android.application'
-
-android {
-    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-
-}
-"""
-
         createFile(project.file("src/main/res/raw/ignored"), "ignored")
         createFile(project.file("src/main/res/raw/kept"), "kept")
     }

@@ -87,16 +87,23 @@ public abstract class AbstractAndroidTestApp implements AndroidTestApp {
     @Override
     public void write(@NonNull File projectDir, @Nullable String buildScriptContent)
             throws IOException {
-        // Create build.gradle.
-        if (buildScriptContent != null) {
-            Files.write(
-                    buildScriptContent,
-                    new File(projectDir, "build.gradle"),
-                    Charset.defaultCharset());
-        }
-
         for (TestSourceFile srcFile : getAllSourceFiles()) {
             srcFile.writeToDir(projectDir);
+        }
+
+        // Create build.gradle.
+        if (buildScriptContent != null) {
+            File buildFile = new File(projectDir, "build.gradle");
+            String oldContent = buildFile.isFile()
+                    ? Files.toString(buildFile, Charset.defaultCharset())
+                    : "";
+
+            Files.write(
+                    buildScriptContent
+                            + "\n\n"
+                            + oldContent,
+                    buildFile,
+                    Charset.defaultCharset());
         }
     }
 
