@@ -132,7 +132,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
         MethodNode method = getMethodByNameInClass(name, desc, classNode);
-        if (disableRedirectionForClass || !isAccessCompatibleWithInstantRun(access)
+        boolean hasIncompatibleChange = InstantRunMethodVerifier.verifyMethod(method) != null;
+        if (hasIncompatibleChange || disableRedirectionForClass || !isAccessCompatibleWithInstantRun(access)
                 || name.equals(AsmUtils.CLASS_INITIALIZER)) {
             return defaultVisitor;
         } else {
@@ -141,65 +142,30 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
                 ConstructorDelegationDetector.Constructor constructor =
                         ConstructorDelegationDetector.deconstruct(visitedClassName, method);
-                Label start = new Label();
-                Label after = new Label();
-                method.instructions.insert(constructor.loadThis, new LabelNode(start));
-                method.instructions.insert(constructor.delegation, new LabelNode(after));
+                LabelNode start = new LabelNode();
+                LabelNode after = new LabelNode();
+                method.instructions.insert(constructor.loadThis, start);
+                method.instructions.insert(constructor.delegation, after);
 
                 mv.addRedirection(
-                        start,
                         new ConstructorArgsRedirection(
+                            start,
                             visitedClassName,
                             constructor.args.name + "." + constructor.args.desc,
                             after,
                             Type.getArgumentTypes(constructor.delegation.desc)));
 
-                mv.addRedirection(after, new MethodRedirection(constructor.body.name + "."
+                mv.addRedirection(new MethodRedirection(after, constructor.body.name + "."
                         + constructor.body.desc, Type.getReturnType(desc)));
-                method.accept(mv);
-                return null;
             } else {
-                mv.addRedirection(mv.getStartLabel(), new MethodRedirection(name + "."
-                        + desc, Type.getReturnType(desc)));
-                visit(method, mv, defaultVisitor);
-                return null;
+                mv.addRedirection(new MethodRedirection(
+                        new LabelNode(mv.getStartLabel()),
+                        name + "." + desc,
+                        Type.getReturnType(desc)));
             }
+            method.accept(mv);
+            return null;
         }
-    }
-
-    /**
-     * Creates a recording {@link MethodNode} that will record all the events passed to it and
-     * delegates to {@link InstantRunMethodVerifier.VerifierMethodVisitor} to check for any use
-     * of a blacklisted API.
-     *
-     * If the method is using a blacklisted API, the default visitor will be invoked to replay
-     * all the recorded method events, otherwise, the instrumentation visitor will be invoked
-     *
-     * This will in effect prevent or allow a method to be hot swap able.
-     *
-     * @param method the method to check for any blacklisted API use.
-     * @param instrumentationVisitor the instrumentation visitor which will add redirection, etc.
-     * @param defaultVisitor the default visitor that basically copies the method unchanged.
-     */
-    public void visit(final MethodNode method,
-            final MethodVisitor instrumentationVisitor,
-            final MethodVisitor defaultVisitor) {
-
-        MethodNode methodNode = new InstantRunMethodVerifier.VerifierMethodVisitor(method) {
-            @Override
-            public void visitEnd()
-            {
-                if (incompatibleChange.isPresent()) {
-                    System.out.println("in " + classNode.name + ", method " + method.name + " "
-                            + method.desc + " is disabled " + incompatibleChange);
-                    accept(defaultVisitor);
-                } else {
-                    accept(instrumentationVisitor);
-                }
-                super.visitEnd();
-            }
-        };
-        method.accept(methodNode);
     }
 
     private class ISMethodVisitor extends GeneratorAdapter {
@@ -207,13 +173,15 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         private boolean disableRedirection = false;
         private int change;
         private final List<Type> args;
-        private final Map<Label, Redirection> redirections;
+        private final List<Redirection> redirections;
+        private final Map<Label, Redirection> resolvedRedirections;
         private final Label start;
 
         public ISMethodVisitor(MethodVisitor mv, int access,  String name, String desc) {
             super(Opcodes.ASM5, mv, access, name, desc);
             this.change = -1;
-            this.redirections = new HashMap<Label, Redirection>();
+            this.redirections = new ArrayList<Redirection>();
+            this.resolvedRedirections = new HashMap<Label, Redirection>();
             this.args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(desc)));
             this.start = new Label();
             boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
@@ -244,6 +212,12 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         @Override
         public void visitCode() {
             if (!disableRedirection) {
+                // Labels cannot be used directly as they are volatile between different visits,
+                // so we must use LabelNode and resolve before visiting for better performance.
+                for (Redirection redirection : redirections) {
+                    resolvedRedirections.put(redirection.getPosition().getLabel(), redirection);
+                }
+
                 super.visitLabel(start);
                 // A special line number to mark this area of code.
                 super.visitLineNumber(0, start);
@@ -265,14 +239,14 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         private void redirectAt(Label label) {
             if (disableRedirection) return;
-            Redirection redirection = redirections.get(label);
+            Redirection redirection = resolvedRedirections.get(label);
             if (redirection != null) {
                 redirection.redirect(this, change, args);
             }
         }
 
-        public void addRedirection(@NonNull Label at, @NonNull Redirection redirection) {
-            redirections.put(at, redirection);
+        public void addRedirection(@NonNull Redirection redirection) {
+            redirections.add(redirection);
         }
 
 

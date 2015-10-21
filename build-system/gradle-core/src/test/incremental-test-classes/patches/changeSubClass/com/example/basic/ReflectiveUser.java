@@ -24,6 +24,17 @@ import java.lang.reflect.Method;
  */
 public class ReflectiveUser {
 
+    public String value;
+
+    public ReflectiveUser() {
+    }
+
+    public ReflectiveUser(String useReflection)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method hiddenGem = getClass().getDeclaredMethod("hiddenGem", String.class);
+        value = (String) hiddenGem.invoke(this, "desserts");
+    }
+
     public boolean amIWhoIThinkIam() {
         return getClass().equals(ReflectiveUser.class);
     }

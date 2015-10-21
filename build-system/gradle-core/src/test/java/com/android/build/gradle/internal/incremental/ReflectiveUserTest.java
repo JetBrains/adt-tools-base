@@ -24,9 +24,6 @@ import com.example.basic.ReflectiveUser;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-/**
- * Created by jedo on 9/15/15.
- */
 public class ReflectiveUserTest {
 
     @ClassRule
@@ -48,6 +45,10 @@ public class ReflectiveUserTest {
         assertWithMessage("base: ReflectiveUser.noReflectionUse")
                 .that(reflectiveUser.noReflectionUse()).isEqualTo("desserts");
 
+        ReflectiveUser reflectionInConstructor = new ReflectiveUser("unused");
+        assertWithMessage("base: ReflectiveUser.reflectionInConstructor")
+                .that(reflectionInConstructor.value).isEqualTo("desserts");
+
         harness.applyPatch("changeSubClass");
 
         // unchanged as the use of reflection is banned.
@@ -57,6 +58,10 @@ public class ReflectiveUserTest {
         assertWithMessage("changeSubClass: ReflectiveUser.noReflectionUse")
                 .that(reflectiveUser.noReflectionUse()).isEqualTo("stressed");
 
+        // unchanged as the use of reflection is banned.
+        reflectionInConstructor = new ReflectiveUser("unused");
+        assertWithMessage("base: ReflectiveUser.reflectionInConstructor")
+                .that(reflectionInConstructor.value).isEqualTo("desserts");
     }
 
 }
