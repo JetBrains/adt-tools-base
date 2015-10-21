@@ -17,7 +17,7 @@
         <dependency mavenUrl="com.android.support:design:${buildApi}.+"/>
     </#if>
 
-    <execute file="../common/recipe_manifest.xml.ftl" />
+    <#include "../common/recipe_manifest.xml.ftl" />
 
     <instantiate from="root/res/menu/main.xml.ftl"
             to="${escapeXmlAttribute(resOut)}/menu/${menuName}.xml" />
@@ -31,7 +31,7 @@
              to="${escapeXmlAttribute(resOut)}/values-w820dp/dimens.xml" />
 
     <#if hasAppBar>
-        <execute file="../common/recipe_no_actionbar.xml.ftl" />
+        <#include "../common/recipe_no_actionbar.xml.ftl" />
     </#if>
 
     <!-- Decide what kind of layout(s) to add -->

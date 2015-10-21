@@ -2,7 +2,7 @@
 <recipe>
     <dependency mavenUrl="com.android.support:support-v4:${buildApi}.+" />
 
-    <execute file="../common/recipe_manifest.xml.ftl" />
+    <#include "../common/recipe_manifest.xml.ftl" />
 
     <copy from="root/res/xml/pref_data_sync.xml"
             to="${escapeXmlAttribute(resOut)}/xml/pref_data_sync.xml" />

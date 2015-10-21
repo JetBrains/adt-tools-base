@@ -19,7 +19,7 @@
     <merge from="root/res/values/dimens.xml.ftl"
              to="${escapeXmlAttribute(resOut)}/values/dimens.xml" />
     <#if hasAppBar>
-      <execute file="../common/recipe_no_actionbar.xml.ftl" />
+      <#include "../common/recipe_no_actionbar.xml.ftl" />
     </#if>
 
     <instantiate from="root/res/layout/activity_item_detail.xml.ftl"
@@ -48,7 +48,7 @@
                    to="${escapeXmlAttribute(srcOut)}/${DetailName}Fragment.java" />
     <instantiate from="root/src/app_package/ContentListActivity.java.ftl"
                    to="${escapeXmlAttribute(srcOut)}/${CollectionName}Activity.java" />
-    <execute file="../common/recipe_dummy_content.xml.ftl" />
+    <#include "../common/recipe_dummy_content.xml.ftl" />
 
     <open file="${escapeXmlAttribute(srcOut)}/${DetailName}Fragment.java" />
     <open file="${escapeXmlAttribute(resOut)}/layout/fragment_${detail_name}.xml" />
