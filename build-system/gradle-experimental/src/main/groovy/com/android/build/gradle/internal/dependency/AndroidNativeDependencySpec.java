@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal;
+package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.NativeDependencyLinkage;
 
 import org.gradle.api.InvalidUserDataException;
-import org.gradle.platform.base.DependencySpecBuilder;
 
 import java.io.File;
+import java.util.Locale;
 
 /**
  * Specification for native dependencies.
@@ -52,7 +53,7 @@ public class AndroidNativeDependencySpec {
     @Nullable
     private final String abi;
     @Nullable
-    private final String linkage;
+    private final NativeDependencyLinkage linkage;
 
     public AndroidNativeDependencySpec(
             @Nullable String projectPath,
@@ -60,7 +61,7 @@ public class AndroidNativeDependencySpec {
             @Nullable String buildType,
             @Nullable String productFlavor,
             @Nullable String abi,
-            @Nullable String linkage) {
+            @Nullable NativeDependencyLinkage linkage) {
         this.projectPath = projectPath;
         this.libraryPath = libraryPath;
         this.buildType = buildType;
@@ -95,7 +96,7 @@ public class AndroidNativeDependencySpec {
     }
 
     @Nullable
-    public String getLinkage() {
+    public NativeDependencyLinkage getLinkage() {
         return linkage;
     }
 
@@ -128,7 +129,7 @@ public class AndroidNativeDependencySpec {
         @Nullable
         private String abi;
         @Nullable
-        String linkage;
+        NativeDependencyLinkage linkage;
 
         public Builder project(String value) {
             projectPath = value;
@@ -156,6 +157,11 @@ public class AndroidNativeDependencySpec {
         }
 
         public Builder linkage(String value) {
+            linkage = NativeDependencyLinkage.valueOf(value.toUpperCase(Locale.US));
+            return this;
+        }
+
+        public Builder linkage(NativeDependencyLinkage value) {
             linkage = value;
             return this;
         }

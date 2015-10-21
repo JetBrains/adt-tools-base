@@ -16,13 +16,18 @@
 
 package com.android.build.gradle.model;
 
+import static com.android.build.gradle.model.ModelConstants.ARTIFACTS;
 import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFIG;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.NativeDependencyLinkage;
+import com.android.build.gradle.internal.dependency.ArtifactContainer;
+import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.gson.FileGsonTypeAdaptor;
 import com.android.build.gradle.internal.gson.NativeBuildConfigValue;
 import com.android.build.gradle.managed.NativeBuildConfig;
 import com.android.build.gradle.managed.NativeLibrary;
+import com.android.utils.StringHelper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -141,7 +146,7 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                 final ModelMap<ExternalNativeBinarySpec> binaries,
                 final ExternalNativeComponentSpec component) {
             for(final NativeLibrary lib : component.getConfig().getLibraries()) {
-                binaries.create(component.getName(), new Action<ExternalNativeBinarySpec>() {
+                binaries.create(lib.getName(), new Action<ExternalNativeBinarySpec>() {
                     @Override
                     public void execute(ExternalNativeBinarySpec binary) {
                         binary.setConfig(lib);
@@ -152,13 +157,40 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
 
         @BinaryTasks
         public static void createTasks(ModelMap<Task> tasks, final ExternalNativeBinarySpec binary) {
-            tasks.create("execute", Exec.class, new Action<Exec>() {
-                @Override
-                public void execute(Exec exec) {
-                    exec.executable(binary.getConfig().getExecutable());
-                    exec.args(binary.getConfig().getArgs());
-                }
-            });
+            tasks.create(
+                    "create" + StringHelper.capitalize(binary.getName()),
+                    Exec.class,
+                    new Action<Exec>() {
+                        @Override
+                        public void execute(Exec exec) {
+                            exec.executable(binary.getConfig().getExecutable());
+                            exec.args(binary.getConfig().getArgs());
+                        }
+                    });
+        }
+
+        @Model(ARTIFACTS)
+        public static void createNativeLibraryArtifacts(
+                ArtifactContainer artifactContainer,
+                final NativeBuildConfig config,
+                final ModelMap<Task> tasks) {
+            for(final NativeLibrary lib : config.getLibraries()) {
+                artifactContainer.getNativeArtifacts().create(lib.getName(),
+                        new Action<NativeLibraryArtifact>() {
+                            @Override
+                            public void execute(NativeLibraryArtifact artifacts) {
+                                artifacts.getLibraries().add(lib.getOutput());
+                                artifacts.setAbi(lib.getAbi());
+                                artifacts.setVariantName(lib.getName());
+                                artifacts.setLinkage(lib.getOutput().getName().endsWith(".so")
+                                        ? NativeDependencyLinkage.SHARED
+                                        : NativeDependencyLinkage.STATIC);
+                                artifacts.setBuiltBy(
+                                        tasks.get(
+                                                "create" + StringHelper.capitalize(lib.getName())));
+                            }
+                        });
+            }
         }
     }
 }

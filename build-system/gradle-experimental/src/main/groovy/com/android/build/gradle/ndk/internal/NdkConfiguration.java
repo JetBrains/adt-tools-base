@@ -20,9 +20,11 @@ import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCCompile
 import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCppCompiler;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.NativeDependencyResolver;
-import com.android.build.gradle.internal.AndroidNativeDependencySpec;
-import com.android.build.gradle.internal.NativeDependencyResolveResult;
+import com.android.build.gradle.internal.NativeDependencyLinkage;
+import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
+import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.managed.NdkConfig;
@@ -49,7 +51,6 @@ import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.nativeplatform.NativeLibrarySpec;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 import org.gradle.nativeplatform.StaticLibraryBinarySpec;
-import org.gradle.nativeplatform.internal.NativeBinarySpecInternal;
 import org.gradle.platform.base.BinarySpec;
 import org.gradle.platform.base.binary.BaseBinarySpec;
 
@@ -230,20 +231,23 @@ public class NdkConfiguration {
                                 binary.getBuildType().getName(),
                                 binary.getFlavor().getName(),
                                 binary.getTargetPlatform().getName(),
-                                "static")).resolve();
-        for (final NativeLibraryBinarySpec nativeBinary: dependencies.getNativeBinaries()) {
+                                NativeDependencyLinkage.STATIC)).resolve();
+        for (final NativeLibraryArtifact artifacts: dependencies.getNativeArtifacts()) {
             // TODO: Handle transitive dependencies.
-            final String abi = nativeBinary.getTargetPlatform().getName();
+            final String abi = artifacts.getAbi();
             if (binary.getTargetPlatform().getName().equals(abi)) {
                 binary.getTasks().all(
                         new Action<Task>() {
                             @Override
                             public void execute(Task task) {
-                                task.dependsOn(nativeBinary);
+                                task.dependsOn(artifacts.getBuiltBy());
                             }
                         });
-                binary.getLinker().args(
-                        ((NativeBinarySpecInternal) nativeBinary).getPrimaryOutput().getPath());
+                for(File lib : artifacts.getLibraries()) {
+                    if (lib.getName().endsWith(".so") || lib.getName().endsWith(".a")) {
+                        binary.getLinker().args(lib.getPath());
+                    }
+                }
                 // TODO: Add dependency exported headers as include path.
             }
         }

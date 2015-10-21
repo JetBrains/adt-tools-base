@@ -25,6 +25,8 @@ public class ModelConstants {
 
     public static final String ANDROID_CONFIG_ADAPTOR = "androidConfigAdaptor";
 
+    public static final String ARTIFACTS = "artifacts";
+
     public static final String BINARIES = "binaries";
 
     public static final String COMPONENTS = "components";
