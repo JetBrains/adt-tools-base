@@ -58,11 +58,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             return new IncrementalChangeVisitor(classNode, parentNodes, classVisitor);
         }
 
-        @Override
-        public boolean processParents() {
-            return true;
-        }
-
         @NonNull
         @Override
         public String getMangledRelativeClassFilePath(@NonNull String path) {
