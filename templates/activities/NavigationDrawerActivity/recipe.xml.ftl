@@ -5,7 +5,7 @@
         <dependency mavenUrl="com.android.support:support-v4:${buildApi}.+"/>
     </#if>
 
-    <execute file="../common/recipe_manifest.xml.ftl" />
+    <#include "../common/recipe_manifest.xml.ftl" />
 
     <merge from="root/${resIn}/values/strings.xml.ftl"
              to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
@@ -35,12 +35,12 @@
         <dependency mavenUrl="com.android.support:appcompat-v7:${buildApi}.+"/>
     </#if>
 
-    <execute file="../common/recipe_simple.xml.ftl" />
+    <#include "../common/recipe_simple.xml.ftl" />
 
     <#if hasAppBar>
-        <execute file="../common/recipe_app_bar.xml.ftl" />
+        <#include "../common/recipe_app_bar.xml.ftl" />
     <#else>
-        <execute file="../common/recipe_no_actionbar.xml.ftl" />
+        <#include "../common/recipe_no_actionbar.xml.ftl" />
     </#if>
 
     <instantiate from="root/res-buildApi22/menu/drawer.xml.ftl"
