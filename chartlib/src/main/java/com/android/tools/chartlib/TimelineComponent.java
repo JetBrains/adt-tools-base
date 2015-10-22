@@ -31,7 +31,9 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.Icon;
@@ -216,7 +218,7 @@ public final class TimelineComponent extends AnimatedComponent
      * The reference values for which guiding horizontal lines are drawn. The colored lines provide guidance like the stream values
      * should be at most a reference value, or at least a reference value.
      */
-    private Map<Float, Color> mReferences = new HashMap<Float, Color>();
+    private List<Reference> mReferences = new ArrayList<Reference>();
 
     /**
      * Creates a timeline component that renders the given timeline data. It will animate the
@@ -313,8 +315,8 @@ public final class TimelineComponent extends AnimatedComponent
         drawLabels(g2d);
         drawTimeMarkers(g2d);
         drawMarkers(g2d);
-        drawGuides(g2d);
         drawReferenceLines(g2d);
+        drawGuides(g2d);
 
         mFirstFrame = false;
     }
@@ -611,18 +613,17 @@ public final class TimelineComponent extends AnimatedComponent
     }
 
     private void drawReferenceLines(Graphics2D g2d) {
-        for(Map.Entry<Float, Color> entry : mReferences.entrySet()) {
-            float reference = entry.getKey();
-            if (reference <= mCurrentMax && reference >= mCurrentMin) {
-                g2d.setColor(entry.getValue());
-                int y = (int)valueToY(reference);
-                g2d.drawLine(LEFT_MARGIN + 1, y, mRight - 1, y);
+        for (Reference reference : mReferences) {
+            if (reference.value <= mCurrentMax && reference.value >= mCurrentMin) {
+                g2d.setColor(reference.color);
+                int y = (int)valueToY(reference.value);
+                g2d.drawLine(LEFT_MARGIN, y, mRight, y);
             }
         }
     }
 
     public void addReference(float reference, @NonNull Color color) {
-        mReferences.put(reference, color);
+        mReferences.add(new Reference(reference, color));
     }
 
     private void drawGuides(Graphics2D g2d) {
@@ -728,6 +729,19 @@ public final class TimelineComponent extends AnimatedComponent
         NONE,
         SOLID,
         DASHED
+    }
+
+    private static class Reference {
+
+        public final float value;
+
+        @NonNull
+        public final Color color;
+
+        private Reference(float value, @NonNull Color color) {
+            this.value = value;
+            this.color = color;
+        }
     }
 
     private static class EventInfo {
