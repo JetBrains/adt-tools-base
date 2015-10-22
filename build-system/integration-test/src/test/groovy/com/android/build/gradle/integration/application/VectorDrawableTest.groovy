@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.utils.FileUtils
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
@@ -117,15 +116,29 @@ class VectorDrawableTest {
     @Test
     public void "incremental build: add xml"() throws Exception {
         project.execute("assembleDebug")
+        File apk = project.getApk("debug")
+
+        // Sanity check:
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/heart_copy.png")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart_copy.png")
+
+        File intermediatesXml =
+                project.file("build/intermediates/res/merged/debug/drawable-anydpi-v21/heart.xml")
+        File intermediatesHdpiPng =
+                project.file("build/intermediates/res/merged/debug/drawable-hdpi-v4/heart.png")
+        long xmlTimestamp = intermediatesXml.lastModified()
+        long pngTimestamp = intermediatesHdpiPng.lastModified()
 
         File heartXml = new File(project.testDir, "src/main/res/drawable/heart.xml")
         File heartXmlCopy = new File(project.testDir, "src/main/res/drawable/heart_copy.xml")
         Files.copy(heartXml, heartXmlCopy)
 
         project.execute("assembleDebug")
-        checkIncrementalBuild()
+        assertThat(intermediatesXml).wasModifiedAt(xmlTimestamp)
+        assertThat(intermediatesHdpiPng).wasModifiedAt(pngTimestamp)
 
-        File apk = project.getApk("debug")
+        assertThatApk(apk).containsResource("drawable-anydpi-v21/heart.xml")
+        assertThatApk(apk).containsResource("drawable-hdpi-v4/heart.png")
         assertThatApk(apk).containsResource("drawable-anydpi-v21/heart_copy.xml")
         assertThatApk(apk).containsResource("drawable-hdpi-v4/heart_copy.png")
         assertThatApk(apk).containsResource("drawable-xhdpi-v4/heart_copy.png")
@@ -138,12 +151,13 @@ class VectorDrawableTest {
     @Test
     public void "incremental build: delete xml"() throws Exception {
         project.execute("assembleDebug")
+        File intermediatesIconPng =
+                project.file("build/intermediates/res/merged/debug/drawable/icon.png")
+        long timestamp = intermediatesIconPng.lastModified()
 
-        File heartXml = new File(project.testDir, "src/main/res/drawable/heart.xml")
-        heartXml.delete()
+        FileUtils.delete(new File(project.testDir, "src/main/res/drawable/heart.xml"))
 
         project.execute("assembleDebug")
-        checkIncrementalBuild()
 
         File apk = project.getApk("debug")
         assertThatApk(apk).containsResource("drawable/icon.png")
@@ -153,11 +167,17 @@ class VectorDrawableTest {
         assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart.png")
         assertThatApk(apk).doesNotContainResource("drawable-xhdpi/heart.png")
         assertThatApk(apk).doesNotContainResource("drawable/heart.xml")
+
+        assertThat(intermediatesIconPng).wasModifiedAt(timestamp)
     }
 
     @Test
     public void "incremental build: delete png"() throws Exception {
         project.execute("assembleDebug")
+        File intermediatesXml =
+                project.file("build/intermediates/res/merged/debug/drawable-anydpi-v21/heart.xml")
+        long xmlTimestamp = intermediatesXml.lastModified()
+
 
         File generatedPng = new File(
                 project.testDir,
@@ -174,19 +194,23 @@ class VectorDrawableTest {
                 .that(FileUtils.sha1(pngToUse))
                 .isEqualTo(FileUtils.sha1(originalPng))
 
-        originalPng.delete()
+        FileUtils.delete(originalPng)
 
         project.execute("assembleDebug")
-        checkIncrementalBuild()
 
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
                 .isEqualTo(FileUtils.sha1(generatedPng))
+
+        assertThat(intermediatesXml).wasModifiedAt(xmlTimestamp)
     }
 
     @Test
     public void "incremental build: add png"() throws Exception {
         project.execute("assembleDebug")
+        File intermediatesXml =
+                project.file("build/intermediates/res/merged/debug/drawable-anydpi-v21/heart.xml")
+        long xmlTimestamp = intermediatesXml.lastModified()
 
         File generatedPng = new File(
                 project.testDir,
@@ -206,7 +230,6 @@ class VectorDrawableTest {
         Files.copy(hdpiPng, xhdpiPng)
 
         project.execute("assembleDebug")
-        checkIncrementalBuild()
 
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
@@ -215,11 +238,16 @@ class VectorDrawableTest {
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
                 .isEqualTo(FileUtils.sha1(xhdpiPng))
+
+        assertThat(intermediatesXml).wasModifiedAt(xmlTimestamp)
     }
 
     @Test
     public void "incremental build: modify xml"() throws Exception {
         project.execute("assembleDebug")
+        File intermediatesIconPng =
+                project.file("build/intermediates/res/merged/debug/drawable/icon.png")
+        long timestamp = intermediatesIconPng.lastModified()
 
         File heartPngToUse = new File(
                 project.testDir,
@@ -238,18 +266,22 @@ class VectorDrawableTest {
         Files.write(content.replace("ff0000", "0000ff"), heartXml, UTF_8)
 
         project.execute("assembleDebug")
-        checkIncrementalBuild()
 
         assertThat(iconPngToUse.lastModified()).isEqualTo(iconPngModified)
         assertThat(heartPngToUse.lastModified()).isNotEqualTo(heartPngModified)
         assertWithMessage("XML file change not reflected in PNG.")
                 .that(FileUtils.sha1(heartPngToUse))
                 .isNotEqualTo(oldHashCode)
+
+        assertThat(intermediatesIconPng).wasModifiedAt(timestamp)
     }
 
     @Test
     public void "incremental build: replace vector drawable with bitmap alias"() throws Exception {
         project.execute("assembleDebug")
+        File intermediatesIconPng =
+                project.file("build/intermediates/res/merged/debug/drawable/icon.png")
+        long timestamp = intermediatesIconPng.lastModified()
 
         File heartXml = new File(project.testDir, "src/main/res/drawable/heart.xml")
         Files.write(
@@ -259,7 +291,6 @@ class VectorDrawableTest {
                 UTF_8)
 
         project.execute("assembleDebug")
-        checkIncrementalBuild()
 
         File apk = project.getApk("debug")
         assertThatApk(apk).containsResource("drawable/heart.xml")
@@ -276,6 +307,8 @@ class VectorDrawableTest {
 
         // They won't be equal, because of the source marker added in the XML.
         assertThat(Files.toString(heartXmlToUse, UTF_8)).contains(Files.toString(heartXml, UTF_8))
+
+        assertThat(intermediatesIconPng).wasModifiedAt(timestamp)
     }
 
     @Test
@@ -291,6 +324,9 @@ class VectorDrawableTest {
                 UTF_8)
 
         project.execute("clean", "assembleDebug")
+        File intermediatesIconPng =
+                project.file("build/intermediates/res/merged/debug/drawable/icon.png")
+        long timestamp = intermediatesIconPng.lastModified()
 
         File apk = project.getApk("debug")
         assertThatApk(apk).containsResource("drawable/heart.xml")
@@ -310,7 +346,6 @@ class VectorDrawableTest {
 
         Files.write(vectorDrawable, heartXml, UTF_8)
         project.execute("assembleDebug")
-        checkIncrementalBuild()
 
         assertThatApk(apk).containsResource("drawable-anydpi-v21/heart.xml")
         assertThatApk(apk).containsResource("drawable-hdpi-v4/heart.png")
@@ -318,6 +353,8 @@ class VectorDrawableTest {
         assertThatApk(apk).doesNotContainResource("drawable-v21/heart.xml")
         assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v21/heart.xml")
         assertThatApk(apk).doesNotContainResource("drawable/heart.xml")
+
+        assertThat(intermediatesIconPng).wasModifiedAt(timestamp)
     }
 
     @Test
@@ -360,12 +397,4 @@ class VectorDrawableTest {
         assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart.png")
     }
 
-    private void checkIncrementalBuild() {
-        File marker = FileUtils.join(
-                project.testDir,
-                "build", "intermediates", "incremental", "mergeDebugResources",
-                IncrementalTask.MARKER_NAME)
-
-        assertThat(marker).exists()
-    }
 }
