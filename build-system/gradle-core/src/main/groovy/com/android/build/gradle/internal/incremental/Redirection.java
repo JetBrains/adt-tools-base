@@ -23,6 +23,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
+import org.objectweb.asm.tree.LabelNode;
 
 import java.util.List;
 
@@ -36,8 +37,16 @@ public abstract class Redirection {
     @NonNull
     private final String name;
 
-    Redirection(@NonNull String name) {
+    /**
+     * The position where this redirection should happen.
+     */
+    @NonNull
+    private final LabelNode label;
+
+
+    Redirection(@NonNull LabelNode label, @NonNull String name) {
         this.name = name;
+        this.label = label;
     }
 
     /**
@@ -115,5 +124,9 @@ public abstract class Redirection {
      */
     protected void redirectLocal(GeneratorAdapter mv, int local, Type arg) {
         mv.visitVarInsn(arg.getOpcode(Opcodes.ILOAD), local);
+    }
+
+    public LabelNode getPosition() {
+        return label;
     }
 }

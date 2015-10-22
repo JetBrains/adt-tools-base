@@ -18,10 +18,10 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 
-import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.tree.LabelNode;
 
 import java.util.List;
 
@@ -77,7 +77,7 @@ public class ConstructorArgsRedirection extends Redirection {
     private final Type[] types;
 
     @NonNull
-    private final Label end;
+    private final LabelNode end;
 
     private int locals;
 
@@ -92,8 +92,8 @@ public class ConstructorArgsRedirection extends Redirection {
      * @param end the label where the redirection should end (before the super()/this() call).
      * @param types the types of the arguments on the super()/this() call.
      */
-    ConstructorArgsRedirection(String thisClassName, String name, @NonNull Label end, @NonNull Type[] types) {
-        super(name);
+    ConstructorArgsRedirection(LabelNode label, String thisClassName, String name, @NonNull LabelNode end, @NonNull Type[] types) {
+        super(label, name);
         this.thisClassName = thisClassName;
         this.types = types;
         this.end = end;
@@ -169,6 +169,6 @@ public class ConstructorArgsRedirection extends Redirection {
         // Invoke the constructor
         mv.visitMethodInsn(Opcodes.INVOKESPECIAL, thisClassName, "<init>", DISPATCHING_THIS_SIGNATURE, false);
 
-        mv.goTo(end);
+        mv.goTo(end.getLabel());
     }
 }

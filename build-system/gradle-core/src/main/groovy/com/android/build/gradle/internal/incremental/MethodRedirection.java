@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.incremental;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.tree.LabelNode;
 
 import java.util.List;
 
@@ -25,8 +26,8 @@ public class MethodRedirection extends Redirection {
 
     public final Type type;
 
-    MethodRedirection(String name, Type type) {
-        super(name);
+    MethodRedirection(LabelNode label, String name, Type type) {
+        super(label, name);
         this.type = type;
     }
 
