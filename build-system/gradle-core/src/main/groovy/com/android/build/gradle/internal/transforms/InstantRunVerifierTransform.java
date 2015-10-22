@@ -36,6 +36,7 @@ import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -112,6 +113,8 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
 
         if (!isIncremental && outputDir.exists()) {
             FileUtils.emptyFolder(outputDir);
+        } else {
+            FileUtils.mkdirs(outputDir);
         }
 
         Optional<VerificationResult> verificationResult = Optional.absent();
@@ -196,14 +199,10 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
             @NonNull File newFile) throws IOException {
 
         File lastIterationFile = getLastIterationFile(inputDir, newFile);
-        if (!lastIterationFile.exists()) {
-            return pastResults;
-        }
-        // if we never failed a verification so far, run the verifier on the new file.
-        if (!pastResults.isPresent()) {
+        if (lastIterationFile.exists() && !pastResults.isPresent()) {
             IncompatibleChange changes = runVerifier(lastIterationFile, newFile);
             LOGGER.verbose(
-                "%1$s : verifier result : %2$s", newFile.getName(), changes);
+                    "%1$s : verifier result : %2$s", newFile.getName(), changes);
             if (changes != null) {
                 pastResults = Optional.of(new VerificationResult(changes));
             }
@@ -263,6 +262,12 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
     @Override
     public ScopedContent.Format getOutputFormat() {
         return ScopedContent.Format.SINGLE_FOLDER;
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getSecondaryFolderOutputs() {
+        return ImmutableList.of(outputDir);
     }
 
     @Override
