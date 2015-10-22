@@ -1437,7 +1437,7 @@ public final class SdkConstants {
 
     public static final String GRADLE_PLUGIN_NAME = "com.android.tools.build:gradle:";
     public static final String GRADLE_MINIMUM_VERSION = "2.2.1";
-    public static final String GRADLE_LATEST_VERSION = "2.4";
+    public static final String GRADLE_LATEST_VERSION = "2.8";
     public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "1.0.0";
     public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "1.3.0";
     public static final String GRADLE_PLUGIN_LATEST_VERSION = GRADLE_PLUGIN_RECOMMENDED_VERSION;
