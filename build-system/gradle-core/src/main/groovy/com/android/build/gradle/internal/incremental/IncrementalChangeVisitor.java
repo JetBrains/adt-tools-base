@@ -76,7 +76,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
     private static final boolean DEBUG = false;
     private static final String OVERRIDE_SUFFIX = "$override";
 
-    private static final String METHOD_MANGLE_PREFIX = "$";
+    private static final String METHOD_MANGLE_PREFIX = "static$";
 
     private MachineState state = MachineState.NORMAL;
     private boolean instantRunDisabled = false;
