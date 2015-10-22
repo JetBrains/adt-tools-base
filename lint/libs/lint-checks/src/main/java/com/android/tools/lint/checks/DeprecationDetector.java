@@ -21,7 +21,6 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_AUTO_TEXT;
 import static com.android.SdkConstants.ATTR_CAPITALIZE;
 import static com.android.SdkConstants.ATTR_EDITABLE;
-import static com.android.SdkConstants.ATTR_ENABLED;
 import static com.android.SdkConstants.ATTR_INPUT_METHOD;
 import static com.android.SdkConstants.ATTR_NUMERIC;
 import static com.android.SdkConstants.ATTR_PASSWORD;
@@ -47,7 +46,6 @@ import org.w3c.dom.Element;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Check which looks for usage of deprecated tags, attributes, etc.
@@ -100,15 +98,7 @@ public class DeprecationDetector extends LayoutDetector {
                 ATTR_INPUT_METHOD,
                 ATTR_AUTO_TEXT,
                 ATTR_CAPITALIZE,
-
-                // This flag is still used a lot and is still properly handled by TextView
-                // so in the interest of not being too noisy and make people ignore all the
-                // output, keep quiet about this one -for now-.
-                //ATTR_SINGLE_LINE,
-
-                // This attribute is marked deprecated in android.R.attr but apparently
-                // using the suggested replacement of state_enabled doesn't work, see issue 27613
-                //ATTR_ENABLED,
+                ATTR_SINGLE_LINE,
 
                 ATTR_NUMERIC,
                 ATTR_PHONE_NUMBER,
@@ -160,8 +150,6 @@ public class DeprecationDetector extends LayoutDetector {
                     fix = "Use `inputType` instead";
                 }
             }
-        } else if (name.equals(ATTR_ENABLED)) {
-            fix = "Use `state_enabled` instead";
         } else if (name.equals(ATTR_SINGLE_LINE)) {
             fix = "Use `maxLines=\"1\"` instead";
         } else {
