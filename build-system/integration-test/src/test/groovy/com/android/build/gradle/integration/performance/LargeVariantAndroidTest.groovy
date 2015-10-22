@@ -31,7 +31,7 @@ import static com.android.build.gradle.integration.common.fixture.GradleTestProj
 class LargeVariantAndroidTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+            .fromTestApp(HelloWorldApp.noBuildFile())
             .useExperimentalGradleVersion(true)
             .create()
 

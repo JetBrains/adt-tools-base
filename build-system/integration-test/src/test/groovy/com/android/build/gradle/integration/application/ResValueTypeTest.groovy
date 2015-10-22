@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue
  */
 @CompileStatic
 class ResValueTypeTest {
-    static AndroidTestApp app = new HelloWorldApp()
+    static AndroidTestApp app = HelloWorldApp.noBuildFile()
     static {
         app.removeFile(app.getFile("HelloWorldTest.java"))
         app.addFile(new TestSourceFile("src/androidTest/java/com/example/helloworld", "ResValueTest.java",

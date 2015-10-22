@@ -34,7 +34,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  */
 @Category(SmokeTests.class)
 class UnitTestingComponentTest {
-    static AndroidTestApp app = new HelloWorldApp();
+    static AndroidTestApp app = HelloWorldApp.noBuildFile();
     static {
         app.addFile(new TestSourceFile("src/test/java/com/android/tests", "UnitTest.java", """
 package com.android.tests;

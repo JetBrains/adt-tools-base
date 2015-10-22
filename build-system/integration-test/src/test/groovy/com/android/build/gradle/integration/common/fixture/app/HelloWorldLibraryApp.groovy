@@ -26,7 +26,7 @@ import com.android.build.gradle.integration.common.fixture.TestProject
  */
 class HelloWorldLibraryApp extends MultiModuleTestProject implements TestProject {
     public HelloWorldLibraryApp() {
-        super(":app" : new EmptyAndroidTestApp(), ":lib" : new HelloWorldApp());
+        super(":app" : new EmptyAndroidTestApp(), ":lib" : HelloWorldApp.noBuildFile());
 
         AndroidTestApp app = (AndroidTestApp) getSubproject(":app");
 

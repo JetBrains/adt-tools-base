@@ -30,7 +30,7 @@ import org.junit.Test
 @CompileStatic
 class InvalidResourceDirectoryTest {
 
-    public static AndroidTestApp app = new HelloWorldApp()
+    public static AndroidTestApp app = HelloWorldApp.noBuildFile()
 
     static {
         app.addFile(new TestSourceFile(INVALID_LAYOUT_FOLDER, "main.xml",
