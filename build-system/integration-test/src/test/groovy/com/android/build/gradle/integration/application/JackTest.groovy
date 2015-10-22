@@ -33,7 +33,7 @@ import org.junit.experimental.categories.Category
 class JackTest {
     private final static List<String> JACK_OPTIONS = ImmutableList.of(
             "-PCUSTOM_JACK=1",
-            "-PCUSTOM_BUILDTOOLS=21.1.0")
+            "-PCUSTOM_BUILDTOOLS=" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION)
 
     @ClassRule
     static public GradleTestProject basic = GradleTestProject.builder()

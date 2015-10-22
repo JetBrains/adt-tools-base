@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.test;
+package com.android.build.gradle.integration.test
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
-
-import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import java.io.File;
-
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
  * Test separate test module that tests an application with some complicated dependencies :
  *  - the app imports a library importing a jar file itself.
@@ -43,7 +38,7 @@ public class SeparateTestWithoutMinificationWithDependenciesTest {
         apply plugin: 'com.android.test'
 
         android {
-            compileSdkVersion 19
+            compileSdkVersion rootProject.latestCompileSdk
             buildToolsVersion = rootProject.buildToolsVersion
 
             targetProjectPath ':app'

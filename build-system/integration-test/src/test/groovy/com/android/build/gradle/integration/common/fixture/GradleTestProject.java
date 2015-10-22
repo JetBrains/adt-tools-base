@@ -95,6 +95,13 @@ public class GradleTestProject implements TestRule {
 
     public static final int DEFAULT_COMPILE_SDK_VERSION = 23;
     public static final int LATEST_NDK_VERSION = 21;
+
+    /**
+     * Last SDK that contained java 6 bytecode in the platform jar. Since we run integration tests
+     * on Java 6, this is needed to cover unit testing support.
+     */
+    public static final int LAST_JAVA6_SDK_VERSION = 19;
+
     public static final String DEFAULT_BUILD_TOOL_VERSION;
     public static final String REMOTE_TEST_PROVIDER = System.getenv().get("REMOTE_TEST_PROVIDER");
 

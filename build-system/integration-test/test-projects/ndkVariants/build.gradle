@@ -7,7 +7,7 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion = 19
+        compileSdkVersion = rootProject.latestCompileSdk
         buildToolsVersion = rootProject.buildToolsVersion
     }
 
