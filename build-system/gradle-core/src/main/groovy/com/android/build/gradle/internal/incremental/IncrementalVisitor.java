@@ -19,6 +19,9 @@ package com.android.build.gradle.internal.incremental;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.FileUtils;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import org.objectweb.asm.ClassReader;
@@ -38,6 +41,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -207,15 +212,40 @@ public class IncrementalVisitor extends ClassVisitor {
             @NonNull String[] args,
             @NonNull VisitorBuilder visitorBuilder) throws IOException {
 
-        if (args.length != 2) {
-            throw new IllegalArgumentException("Needs to be given an input and output directory");
+        if (args.length != 3) {
+            throw new IllegalArgumentException("Needs to be given an input and output directory "
+                    + "and a classpath");
         }
 
         File srcLocation = new File(args[0]);
         File baseInstrumentedCompileOutputFolder = new File(args[1]);
         FileUtils.emptyFolder(baseInstrumentedCompileOutputFolder);
-        instrumentClasses(srcLocation,
-                baseInstrumentedCompileOutputFolder, visitorBuilder);
+
+        Iterable<String> classPathStrings = Splitter.on(File.pathSeparatorChar).split(args[2]);
+        List<URL> classPath = Lists.newArrayList();
+        for (String classPathString : classPathStrings) {
+            classPath.add(new File(classPathString).toURI().toURL());
+        }
+        classPath.add(srcLocation.toURI().toURL());
+        URL[] classPathArray = Iterables.toArray(classPath, URL.class);
+
+        ClassLoader classesToInstrumentLoader = new URLClassLoader(classPathArray, null) {
+            @Override
+            public URL getResource(String name) {
+                // Never delegate to bootstrap classes.
+                return findResource(name);
+            }
+        };
+
+        ClassLoader originalThreadContextClassLoader = Thread.currentThread()
+                .getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(classesToInstrumentLoader);
+            instrumentClasses(srcLocation,
+                    baseInstrumentedCompileOutputFolder, visitorBuilder);
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalThreadContextClassLoader);
+        }
     }
 
     private static void instrumentClasses(

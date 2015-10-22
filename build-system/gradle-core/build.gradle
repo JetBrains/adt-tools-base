@@ -124,13 +124,15 @@ Task compileIncrementalTestBaseClasses = tasks.create(
 
 compileTestJava.dependsOn compileIncrementalTestBaseClasses
 
+String androidJar = System.env.ANDROID_HOME + '/platforms/android-15/android.jar'
+
 Task instrumentIncrementalTestBaseClasses = tasks.create(
         name: "instrumentIncrementalTestBaseClasses",
         type: org.gradle.api.tasks.JavaExec) {
     main = 'com.android.build.gradle.internal.incremental.IncrementalSupportVisitor'
 //    jvmArgs = [ '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005']
     classpath = sourceSets.main.runtimeClasspath + sourceSets.test.compileClasspath
-    args baseClasses, baseInstrumentedClasses
+    args baseClasses, baseInstrumentedClasses, androidJar
 }
 
 // Compile other changesets. They have the default changset on their classpath.
@@ -161,7 +163,8 @@ for (File f: new File(project.projectDir, "src/test/incremental-test-classes/pat
         main = 'com.android.build.gradle.internal.incremental.IncrementalChangeVisitor'
 //        jvmArgs = [ '-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005']
         classpath = sourceSets.main.runtimeClasspath + sourceSets.test.compileClasspath
-        args incrementalPatchClassFileDir, new File(instrumentedIncrementalTestOutDir, f.getName())
+        args incrementalPatchClassFileDir, new File(instrumentedIncrementalTestOutDir, f.getName()),
+                androidJar + File.pathSeparator + baseClasses
     }
 
     instrumentPatch.dependsOn(compilePatch)
