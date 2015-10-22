@@ -21,6 +21,9 @@ package com.android.build.gradle.internal.incremental;
  */
 public enum IncompatibleChange {
 
+    // InstantRun disabled on element like a method, class or package.
+    INSTANT_RUN_DISABLED,
+
     // changes in the hierarchy
     PARENT_CLASS_CHANGED,
     IMPLEMENTED_INTERFACES_CHANGE,
