@@ -13,8 +13,6 @@ task extractGradleLibs(type: Copy) {
     into gradleLib.parentFile.parentFile
 }
 
-compileJava.dependsOn extractGradleLibs
-
 task setupGradleInIde {
     dependsOn extractGradleLibs
 }
