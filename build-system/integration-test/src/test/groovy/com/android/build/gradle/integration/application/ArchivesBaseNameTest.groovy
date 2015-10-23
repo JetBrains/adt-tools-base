@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.builder.model.AndroidProject
 import groovy.transform.CompileStatic
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -30,33 +30,55 @@ import static com.android.build.gradle.integration.common.utils.FileHelper.searc
  */
 @CompileStatic
 class ArchivesBaseNameTest {
-    private static final String OLD_NAME = "random_apk_name"
+    private static final String OLD_NAME = "random_name"
     private static final String NEW_NAME = "changed_name"
-
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
-            .fromTestProject("basic")
+            .fromTestApp(new HelloWorldApp())
             .create()
 
-    @Before
-    void setUp() {
-        project.getBuildFile() << """
-android {
-    archivesBaseName = '$OLD_NAME'
-}
-"""
+    @Test
+    void "app module"() {
+        project.buildFile << """
+                apply plugin: 'com.android.application'
+
+                android {
+                    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                }
+                """
+
+        doTest("apk")
     }
 
     @Test
-    void "check model failed to load"() {
-        checkApkName(OLD_NAME)
+    void "lib module"() {
+        project.buildFile << """
+                apply plugin: 'com.android.library'
 
-        searchAndReplace(project.buildFile, OLD_NAME, NEW_NAME)
-        checkApkName(NEW_NAME)
+                android {
+                    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                }
+                """
+
+        doTest("aar")
     }
 
-    private void checkApkName(String apkName) {
+    private void doTest(String extension) {
+        checkApkName('project', extension)
+
+        project.buildFile << """
+            archivesBaseName = '$OLD_NAME'
+        """
+        checkApkName(OLD_NAME, extension)
+
+        searchAndReplace(project.buildFile, OLD_NAME, NEW_NAME)
+        checkApkName(NEW_NAME, extension)
+    }
+
+    private void checkApkName(String name, String extension) {
         AndroidProject model = project.executeAndReturnModel("assembleDebug")
         File outputFile = model.getVariants().find { it.name == "debug" }
                 .getMainArtifact()
@@ -65,7 +87,7 @@ android {
                 .getOutputFile()
 
 
-        assertThat(outputFile.getName()).startsWith(apkName)
+        assertThat(outputFile.getName()).isEqualTo("$name-debug.$extension".toString())
         assertThat(outputFile).isFile()
     }
 }
