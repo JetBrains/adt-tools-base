@@ -255,17 +255,30 @@ public class Shrinker<T> {
     }
 
     private void handleOverrides(Set<T> virtualMethods) {
-        // TODO: Handle Object class specially.
-        //final T javaLangObject = mGraph.getClassReference("java/lang/Object");
         for (final T method : virtualMethods) {
             mExecutor.execute(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
+                    String methodNameAndDesc = mGraph.getMethodNameAndDesc(method);
+                    if (isJavaLangObjectMethod(methodNameAndDesc)) {
+                        // If we override an SDK method, it just has to be there at runtime
+                        // (if the class itself is kept).
+                        mGraph.addDependency(
+                                mGraph.getClassForMember(method),
+                                method,
+                                DependencyType.REQUIRED);
+                        return null;
+                    }
+
                     FluentIterable<T> superTypes =
                             new TypeHierarchyTraverser<T>(mGraph).preOrderTraversal(
                                     mGraph.getClassForMember(method));
 
                     for (T klass : superTypes) {
+                        if (mGraph.getClassName(klass).equals("java/lang/Object")) {
+                            continue;
+                        }
+
                         T superMethod = mGraph.findMatchingMethod(klass, method);
                         if (superMethod != null && !superMethod.equals(method)) {
                             if (mGraph.isLibraryMember(superMethod)) {
@@ -275,6 +288,7 @@ public class Shrinker<T> {
                                         mGraph.getClassForMember(method),
                                         method,
                                         DependencyType.REQUIRED);
+                                return null;
                             } else {
                                 // If we override a program method, there's a chance this method is
                                 // never called and we will get rid of it. Set up the dependencies
@@ -295,6 +309,13 @@ public class Shrinker<T> {
             });
         }
     }
+
+    private static boolean isJavaLangObjectMethod(String nameAndDesc) {
+        return nameAndDesc.equals("hashCode:()I")
+                || (nameAndDesc.equals("equals:(Ljava/lang/Object;)Z")
+                || (nameAndDesc.equals("toString:()Ljava/lang/String;")));
+    }
+
 
     private void handleMultipleInheritance(Set<T> multipleInheritance) {
         for (final T klass : multipleInheritance) {

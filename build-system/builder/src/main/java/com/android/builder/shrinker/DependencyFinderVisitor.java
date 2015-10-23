@@ -278,7 +278,15 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             // This can be the case when calling "clone" on arrays, which is done in Enum classes.
             // Just ignore it, we know arrays not declared in the program, so there's no point in
             // creating the dependency.
-            if (Type.getType(owner).getSort() != Type.ARRAY) {
+            Type type = Type.getType(owner);
+            if (type.getSort() != Type.ARRAY
+                    // TODO: Add a flag to disable these checks?
+                    && !owner.startsWith("java/")
+                    && !owner.startsWith("android/os/")
+                    && !owner.startsWith("android/view/")
+                    && !owner.startsWith("android/content/")
+                    && !owner.startsWith("android/graphics/")
+                    && !owner.startsWith("android/widget/")) {
                 handleDependency(mMethod, mGraph.getClassReference(owner), DependencyType.REQUIRED);
 
                 T target = mGraph.getMemberReference(owner, name, desc);
