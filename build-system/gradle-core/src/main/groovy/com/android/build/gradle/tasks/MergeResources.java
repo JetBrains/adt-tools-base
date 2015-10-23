@@ -28,7 +28,11 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.png.QueuedCruncher;
 import com.android.builder.png.VectorDrawableRenderer;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.ide.common.process.BaseProcessOutputHandler;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessOutput;
+import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.res2.FileValidity;
 import com.android.ide.common.res2.GeneratedResourceSet;
@@ -40,6 +44,7 @@ import com.android.ide.common.res2.ResourceSet;
 import com.android.resources.Density;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
+import com.android.utils.ILogger;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
@@ -52,12 +57,15 @@ import org.gradle.api.tasks.ParallelizableTask;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 @ParallelizableTask
 public class MergeResources extends IncrementalTask {
@@ -121,7 +129,13 @@ public class MergeResources extends IncrementalTask {
             }
             getLogger().info("New PNG cruncher will be enabled with build tools 22 and above.");
         }
-        return getBuilder().getAaptCruncher(new LoggedProcessOutputHandler(getBuilder().getLogger()));
+
+        final FilterProcessOutputHandler handler = new FilterProcessOutputHandler(
+                new LoggedProcessOutputHandler(getBuilder().getLogger()), getBuilder().getLogger());
+        handler.addFilter(Pattern.compile(".*libpng warning: iCCP: "
+                + "Not recognizing known sRGB profile that has been edited.*"));
+
+        return getBuilder().getAaptCruncher(handler);
     }
 
     @Override
@@ -459,6 +473,68 @@ public class MergeResources extends IncrementalTask {
             variantData.mergeResourcesTask = mergeResourcesTask;
         }
     }
+
+    /**
+     * Process output handler that will delegate output to another handler but allows filtering
+     * of stderr lines writing them to a logger as warning.
+     */
+    private static class FilterProcessOutputHandler extends BaseProcessOutputHandler {
+        @NonNull private ProcessOutputHandler mDelegate;
+        @NonNull private List<Pattern> mFilters;
+        @NonNull private ILogger mLogger;
+
+        /**
+         * Creates a new output handler that wraps the provided delegate.
+         * @param delegate the delegate that is being wrapped
+         */
+        FilterProcessOutputHandler(@NonNull ProcessOutputHandler delegate,
+                @NonNull ILogger logger) {
+            mDelegate = delegate;
+            mFilters = Lists.newArrayList();
+            mLogger = logger;
+        }
+
+
+        /**
+         * Adds a new filter pattern.
+         */
+        void addFilter(@NonNull Pattern p) {
+            mFilters.add(p);
+        }
+
+        @Override
+        public void handleOutput(@NonNull ProcessOutput processOutput)
+                throws ProcessException {
+            BaseProcessOutput output = (BaseProcessOutput) processOutput;
+
+            ProcessOutput delOutput = mDelegate.createOutput();
+
+            try {
+                // stdout goes unmodified.
+                delOutput.getStandardOutput().write(output.getStandardOutput().toByteArray());
+
+                String[] lines = output.getErrorOutputAsString().split(
+                        System.getProperty("line.separator"));
+                Writer errWriter = new OutputStreamWriter(delOutput.getErrorOutput());
+                boolean hasPrev = false;
+                for (String l : lines) {
+                    for (Pattern p : mFilters) {
+                        if (p.matcher(l).matches()) {
+                            mLogger.info(l);
+                        } else {
+                            if (hasPrev) {
+                                errWriter.write(System.getProperty("line.separator"));
+                            }
+
+                            errWriter.write(l);
+                            hasPrev = true;
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                throw new ProcessException(e);
+            }
+        }
+    };
+
 }
-
-
