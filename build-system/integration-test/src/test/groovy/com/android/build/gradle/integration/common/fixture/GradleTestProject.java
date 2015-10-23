@@ -445,18 +445,29 @@ public class GradleTestProject implements TestRule {
     }
 
     @Override
-    public Statement apply(final Statement base, Description description) {
-        // on windows, move the temporary copy as close to root to avoid running into path too
+    public Statement apply(final Statement base, final Description description) {
+        return new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                createTestDirectory(description.getTestClass(), description.getMethodName());
+                base.evaluate();
+            }
+        };
+    }
+
+    public void createTestDirectory(Class<?> testClass, String methodName)
+            throws IOException, StreamException {
+        // On windows, move the temporary copy as close to root to avoid running into path too
         // long exceptions.
         testDir = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS
-            ? new File(new File(new File(System.getProperty("user.home")), "android-tests"),
-                description.getTestClass().getSimpleName())
-            : new File(outDir, description.getTestClass().getSimpleName());
+                ? new File(new File(new File(System.getProperty("user.home")), "android-tests"),
+                testClass.getSimpleName())
+                : new File(outDir, testClass.getSimpleName());
 
         // Create separate directory based on test method name if @Rule is used.
         // getMethodName() is null if this rule is used as a @ClassRule.
-        if (description.getMethodName() != null) {
-            String dirName = description.getMethodName();
+        if (methodName != null) {
+            String dirName = methodName;
             dirName = dirName.replaceAll("[^a-zA-Z0-9_]", "_");
             testDir = new File(testDir, dirName);
         }
@@ -465,47 +476,41 @@ public class GradleTestProject implements TestRule {
         buildFile = new File(testDir, "build.gradle");
         sourceDir = new File(testDir, "src");
 
-        return new Statement() {
-            @Override
-            public void evaluate() throws Throwable {
-                if (testDir.exists()) {
-                    deleteRecursive(testDir);
-                }
-                assertTrue(testDir.mkdirs());
-                assertTrue(sourceDir.mkdirs());
+        if (testDir.exists()) {
+            deleteRecursive(testDir);
+        }
+        assertTrue(testDir.mkdirs());
+        assertTrue(sourceDir.mkdirs());
 
-                Files.copy(
-                        new File(Builder.TEST_PROJECT_DIR, COMMON_HEADER),
-                        new File(testDir.getParent(), COMMON_HEADER));
-                Files.copy(
-                        new File(Builder.TEST_PROJECT_DIR, COMMON_LOCAL_REPO),
-                        new File(testDir.getParent(), COMMON_LOCAL_REPO));
-                Files.copy(
-                        new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT),
-                        new File(testDir.getParent(), COMMON_BUILD_SCRIPT));
-                Files.copy(
-                        new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT_EXP),
-                        new File(testDir.getParent(), COMMON_BUILD_SCRIPT_EXP));
-                Files.copy(
-                        new File(Builder.TEST_PROJECT_DIR, COMMON_GRADLE_PLUGIN_VERSION),
-                        new File(testDir.getParent(), COMMON_GRADLE_PLUGIN_VERSION));
+        Files.copy(
+                new File(Builder.TEST_PROJECT_DIR, COMMON_HEADER),
+                new File(testDir.getParent(), COMMON_HEADER));
+        Files.copy(
+                new File(Builder.TEST_PROJECT_DIR, COMMON_LOCAL_REPO),
+                new File(testDir.getParent(), COMMON_LOCAL_REPO));
+        Files.copy(
+                new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT),
+                new File(testDir.getParent(), COMMON_BUILD_SCRIPT));
+        Files.copy(
+                new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT_EXP),
+                new File(testDir.getParent(), COMMON_BUILD_SCRIPT_EXP));
+        Files.copy(
+                new File(Builder.TEST_PROJECT_DIR, COMMON_GRADLE_PLUGIN_VERSION),
+                new File(testDir.getParent(), COMMON_GRADLE_PLUGIN_VERSION));
 
-                if (testProject != null) {
-                    testProject.write(
-                            testDir,
-                            testProject.containsFullBuildScript() ? "" :getGradleBuildscript());
-                } else {
-                    Files.write(
-                            getGradleBuildscript(),
-                            buildFile,
-                            Charsets.UTF_8);
-                }
+        if (testProject != null) {
+            testProject.write(
+                    testDir,
+                    testProject.containsFullBuildScript() ? "" :getGradleBuildscript());
+        } else {
+            Files.write(
+                    getGradleBuildscript(),
+                    buildFile,
+                    Charsets.UTF_8);
+        }
 
-                createLocalProp(testDir, sdkDir, ndkDir);
-                createGradleProp();
-                base.evaluate();
-            }
-        };
+        createLocalProp(testDir, sdkDir, ndkDir);
+        createGradleProp();
     }
 
     /**
