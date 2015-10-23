@@ -14,26 +14,18 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.incremental
+package com.android.build.gradle.integration.packaging
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.Variant
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
 import org.junit.After
-import org.junit.AfterClass
 import org.junit.Before
-import org.junit.BeforeClass
-import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.BenchmarkMode.BUILD_INC_JAVA
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import static org.junit.Assert.assertEquals
+
 /**
  * test for incremental code change.
  *
