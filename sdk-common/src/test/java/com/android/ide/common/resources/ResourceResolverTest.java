@@ -9,6 +9,7 @@ import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.Density;
 import com.android.resources.ResourceType;
 import com.google.common.collect.Lists;
+
 import junit.framework.TestCase;
 
 import java.io.IOException;
@@ -505,6 +506,24 @@ public class ResourceResolverTest extends TestCase {
                 + "    </style>\n"
                 + "    <style name=\"Theme.DeviceDefault\" parent=\"Theme.Holo\"/>\n"
                 + "</resources>\n",
+
+                "values/styles.xml", ""
+                + "<resources>\n"
+                + "    <style name=\"Widget.Button.Small\">\n"
+                + "         <item name=\"android:textColor\">#000000</item>\n"
+                + "    </style>\n"
+                + "    <style name=\"Widget.Holo.Button.Small\">\n"
+                + "         <item name=\"android:textColor\">#ffffff</item>\n"
+                + "    </style>\n"
+                + "    <style name=\"Widget.DeviceDefault.Button.Small\" parent=\"Widget.Holo.Button.Small\" />\n"
+                + "    <style name=\"ButtonBar\">\n"
+                + "         <item name=\"android:textColor\">#000000</item>\n"
+                + "    </style>\n"
+                + "    <style name=\"Holo.ButtonBar\">\n"
+                + "         <item name=\"android:textColor\">#ffffff</item>\n"
+                + "    </style>\n"
+                + "    <style name=\"DeviceDefault.ButtonBar\" parent=\"Holo.ButtonBar\" />\n"
+                + "</resources>\n",
         });
 
         TestResourceRepository projectRepository = TestResourceRepository.create(false,
@@ -532,7 +551,7 @@ public class ResourceResolverTest extends TestCase {
         assertNotNull(textColor);
         assertEquals("#00ff00", textColor.getValue());
 
-        lightResolver.setDeviceDefaults("Theme.Light", null);
+        lightResolver.setDeviceDefaults(ResourceResolver.LEGACY_THEME);
         textColor = lightResolver.findItemInTheme("textColor", true);
         assertNotNull(textColor);
         assertEquals("#ff0000", textColor.getValue());
@@ -544,10 +563,30 @@ public class ResourceResolverTest extends TestCase {
         assertNotNull(textColor);
         assertEquals("#0000ff", textColor.getValue());
 
-        darkResolver.setDeviceDefaults("Theme.Light", "Theme");
+        darkResolver.setDeviceDefaults(ResourceResolver.LEGACY_THEME);
         textColor = darkResolver.findItemInTheme("textColor", true);
         assertNotNull(textColor);
         assertEquals("#000000", textColor.getValue());
+
+        // Check styles are correctly patched. We could use either resolver for that
+        textColor = darkResolver
+                .findItemInStyle(lightResolver.getStyle("Widget.DeviceDefault.Button.Small", true),
+                        "textColor", true);
+        assertEquals("#000000", textColor.getValue());
+        textColor = darkResolver
+                .findItemInStyle(lightResolver.getStyle("DeviceDefault.ButtonBar", true),
+                        "textColor", true);
+        assertEquals("#000000", textColor.getValue());
+
+        darkResolver.setDeviceDefaults("Holo");
+        textColor = darkResolver
+                .findItemInStyle(lightResolver.getStyle("Widget.DeviceDefault.Button.Small", true),
+                        "textColor", true);
+        assertEquals("#ffffff", textColor.getValue());
+        textColor = darkResolver
+                .findItemInStyle(lightResolver.getStyle("DeviceDefault.ButtonBar", true),
+                        "textColor", true);
+        assertEquals("#ffffff", textColor.getValue());
     }
 
     public void testCycle() throws Exception {
