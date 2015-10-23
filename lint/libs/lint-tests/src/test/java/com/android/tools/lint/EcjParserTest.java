@@ -23,6 +23,8 @@ import static com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedVariable;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.checks.AbstractCheckTest;
@@ -911,6 +913,36 @@ public class EcjParserTest extends AbstractCheckTest {
                 return classPath;
             }
         };
+    }
+
+    public void testEnsureUnique() {
+        ResolvedAnnotation foo1 = createTestAnnotation("foo");
+        ResolvedAnnotation foo2 = createTestAnnotation("foo");
+        ResolvedAnnotation foo3 = createTestAnnotation("foo");
+        ResolvedAnnotation bar1 = createTestAnnotation("bar");
+        ResolvedAnnotation bar2 = createTestAnnotation("bar");
+
+        assertEquals("[]",
+                EcjParser.ensureUnique(Lists.<ResolvedAnnotation>newArrayList()).toString());
+        assertEquals("[foo, bar]",
+                EcjParser.ensureUnique(Lists.newArrayList(foo1, foo2, foo3, bar1)).toString());
+        assertEquals("[foo]",
+                EcjParser.ensureUnique(Lists.newArrayList(foo1, foo2)).toString());
+        assertEquals("[foo]",
+                EcjParser.ensureUnique(Lists.newArrayList(foo1, foo2, foo3)).toString());
+        assertEquals("[foo, bar]",
+                EcjParser.ensureUnique(Lists.newArrayList(foo1, foo2, foo3, bar1)).toString());
+        assertEquals("[bar, foo]",
+                EcjParser.ensureUnique(Lists.newArrayList(bar1, foo2, foo3)).toString());
+        assertEquals("[bar, foo]",
+                EcjParser.ensureUnique(Lists.newArrayList(bar1, bar2, foo2, foo3)).toString());
+    }
+
+    private ResolvedAnnotation createTestAnnotation(String name) {
+        ResolvedAnnotation annotation = mock(ResolvedAnnotation.class);
+        when(annotation.getName()).thenReturn(name);
+        when(annotation.toString()).thenReturn(name);
+        return annotation;
     }
 
     public static class AstPrettyPrinter implements SourceFormatter {
