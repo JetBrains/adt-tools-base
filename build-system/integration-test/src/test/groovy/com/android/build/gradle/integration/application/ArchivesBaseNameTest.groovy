@@ -21,6 +21,8 @@ import com.android.builder.model.AndroidProject
 import groovy.transform.CompileStatic
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.utils.FileHelper.searchAndReplace
@@ -29,44 +31,34 @@ import static com.android.build.gradle.integration.common.utils.FileHelper.searc
  * names
  */
 @CompileStatic
+@RunWith(Parameterized)
 class ArchivesBaseNameTest {
     private static final String OLD_NAME = "random_name"
     private static final String NEW_NAME = "changed_name"
 
+     @Parameterized.Parameters(name = "{0}")
+     public static Iterable<Object[]> data() {
+         return [
+                 ["com.android.application", "apk"].toArray(),
+                 ["com.android.library", "aar"].toArray(),
+         ]
+     }
+
     @Rule
-    public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+    public GradleTestProject project
+
+    private String extension
+
+    public ArchivesBaseNameTest(String plugin, String extension) {
+        project = GradleTestProject.builder()
+            .fromTestApp(HelloWorldApp.forPlugin(plugin))
             .create()
 
-    @Test
-    void "app module"() {
-        project.buildFile << """
-                apply plugin: 'com.android.application'
-
-                android {
-                    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-                }
-                """
-
-        doTest("apk")
+        this.extension = extension
     }
 
     @Test
-    void "lib module"() {
-        project.buildFile << """
-                apply plugin: 'com.android.library'
-
-                android {
-                    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-                }
-                """
-
-        doTest("aar")
-    }
-
-    private void doTest(String extension) {
+    void testArtifactName() {
         checkApkName('project', extension)
 
         project.buildFile << """
