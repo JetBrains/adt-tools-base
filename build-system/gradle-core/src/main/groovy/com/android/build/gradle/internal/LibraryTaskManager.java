@@ -37,10 +37,10 @@ import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.FilteredJarCopyTask;
 import com.android.build.gradle.internal.tasks.MergeFileTask;
-import com.android.build.gradle.internal.tasks.SingleFileCopyTask;
 import com.android.build.gradle.internal.transforms.MultiStreamJarTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -120,8 +120,9 @@ public class LibraryTaskManager extends TaskManager {
         final CoreBuildType buildType = variantConfig.getBuildType();
 
         final VariantScope variantScope = variantData.getScope();
+        GlobalScope globalScope = variantScope.getGlobalScope();
 
-        final File intermediatesDir = variantScope.getGlobalScope().getIntermediatesDir();
+        final File intermediatesDir = globalScope.getIntermediatesDir();
         final Collection<String> variantDirectorySegments = variantConfig.getDirectorySegments();
         final File variantBundleDir = FileUtils.join(
                 intermediatesDir,
@@ -335,12 +336,11 @@ public class LibraryTaskManager extends TaskManager {
                 variantScope.getTaskName("copy", "Lint"), Copy.class);
         lintCopy.dependsOn(LINT_COMPILE);
         lintCopy.from(new File(
-                variantScope.getGlobalScope().getIntermediatesDir(),
+                globalScope.getIntermediatesDir(),
                 "lint/lint.jar"));
         lintCopy.into(variantBundleDir);
 
         final Zip bundle = project.getTasks().create(variantScope.getTaskName("bundle"), Zip.class);
-
         if (variantData.getVariantDependency().isAnnotationsPresent()) {
             libVariantData.generateAnnotationsTask =
                     createExtractAnnotations(project, variantData);
@@ -543,9 +543,11 @@ public class LibraryTaskManager extends TaskManager {
 
         bundle.setDescription("Assembles a bundle containing the library in " +
                 variantConfig.getFullName() + ".");
-        bundle.setDestinationDir(new File(variantScope.getGlobalScope().getOutputsDir(), "aar"));
-        bundle.setArchiveName(project.getName() + "-" + variantConfig.getBaseName() + "."
-                + BuilderConstants.EXT_LIB_ARCHIVE);
+        bundle.setDestinationDir(
+                new File(globalScope.getOutputsDir(), BuilderConstants.EXT_LIB_ARCHIVE));
+        bundle.setArchiveName(globalScope.getProjectBaseName()
+                + "-" + variantConfig.getBaseName()
+                + "." + BuilderConstants.EXT_LIB_ARCHIVE);
         bundle.setExtension(BuilderConstants.EXT_LIB_ARCHIVE);
         bundle.from(variantBundleDir);
         bundle.from(FileUtils.join(intermediatesDir,

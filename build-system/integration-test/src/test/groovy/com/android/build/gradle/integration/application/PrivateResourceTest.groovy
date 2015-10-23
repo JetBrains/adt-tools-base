@@ -46,7 +46,7 @@ class PrivateResourceTest {
     }
 
     @Test
-    void "check private resources resources"() {
+    void "check private resources"() {
         String expected = """\
 string mylib_app_name
 string mylib_public_string
