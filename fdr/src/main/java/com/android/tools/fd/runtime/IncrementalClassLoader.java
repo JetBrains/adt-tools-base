@@ -38,6 +38,9 @@ import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
  * <p>Used to implement incremental deployment to Android phones.
  */
 public class IncrementalClassLoader extends ClassLoader {
+    /** When false, compiled out of runtime library */
+    public static final boolean DEBUG_CLASS_LOADING = false;
+
     private final DelegateClassLoader delegateClassLoader;
 
     public IncrementalClassLoader(
@@ -55,13 +58,15 @@ public class IncrementalClassLoader extends ClassLoader {
     public Class<?> findClass(String className) throws ClassNotFoundException {
         try {
             Class<?> aClass = delegateClassLoader.findClass(className);
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+            //noinspection PointlessBooleanExpression,ConstantConditions
+            if (DEBUG_CLASS_LOADING && Log.isLoggable(LOG_TAG, Log.INFO)) {
                 Log.i(LOG_TAG, "Incremental class loader: findClass(" + className + ") = " + aClass);
             }
 
             return aClass;
         } catch (ClassNotFoundException e) {
-            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+            //noinspection PointlessBooleanExpression,ConstantConditions
+            if (DEBUG_CLASS_LOADING && Log.isLoggable(LOG_TAG, Log.INFO)) {
                 Log.i(LOG_TAG, "Incremental class loader: findClass(" + className + ") : not found");
             }
             throw e;
@@ -81,13 +86,15 @@ public class IncrementalClassLoader extends ClassLoader {
         public Class<?> findClass(String name) throws ClassNotFoundException {
             try {
                 Class<?> aClass = super.findClass(name);
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                //noinspection PointlessBooleanExpression,ConstantConditions
+                if (DEBUG_CLASS_LOADING && Log.isLoggable(LOG_TAG, Log.INFO)) {
                     Log.i(LOG_TAG, "Delegate class loader: findClass(" + name + ") = " + aClass);
                 }
 
                 return aClass;
             } catch (ClassNotFoundException e) {
-                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                //noinspection PointlessBooleanExpression,ConstantConditions
+                if (DEBUG_CLASS_LOADING && Log.isLoggable(LOG_TAG, Log.INFO)) {
                     Log.i(LOG_TAG, "Delegate class loader: findClass(" + name + ") : not found");
                 }
                 throw e;
