@@ -93,11 +93,6 @@ public final class TimelineComponent extends AnimatedComponent
     private boolean mStackStreams = true;
 
     /**
-     * The boolean value whether to display negative values, by default it is false.
-     */
-    private boolean mSupportNegativeValues = false;
-
-    /**
      * The current maximum range in y-axis units.
      */
     private float mCurrentMax;
@@ -266,10 +261,6 @@ public final class TimelineComponent extends AnimatedComponent
         mStackStreams = stackStreams;
     }
 
-    public void setSupportNegativeValues(boolean supportNegativeValues) {
-        mSupportNegativeValues = supportNegativeValues;
-    }
-
     public void configureStream(int stream, String name, Color color) {
         mStreamNames[stream] = name;
         mStreamColors[stream] = color;
@@ -290,7 +281,7 @@ public final class TimelineComponent extends AnimatedComponent
 
     public void reset() {
         mCurrentMax = mInitialMax;
-        mCurrentMin = mSupportNegativeValues ? -mInitialMax : 0.0f;
+        mCurrentMin = 0.0f;
         mMarkerSeparation = mInitialMarkerSeparation;
         mEvenMarkersAlpha = 1.0f;
         mFirstFrame = true;
@@ -674,7 +665,7 @@ public final class TimelineComponent extends AnimatedComponent
                 mCurrentMax = lerp(mCurrentMax, cappedMax, mFirstFrame ? 1.f : .95f);
             }
             float cappedMin = mStackStreams ? mData.getMinTotal() : mData.getStreamMin();
-            cappedMin = mSupportNegativeValues ? Math.max(cappedMin, - mAbsoluteMax) : 0.0f;
+            cappedMin = Math.max(cappedMin, -mAbsoluteMax);
             if (cappedMin == 0.0f || cappedMin < mCurrentMin) {
                 mCurrentMin = lerp(mCurrentMin, cappedMin, mFirstFrame ? 1.f : .95f);
             }
