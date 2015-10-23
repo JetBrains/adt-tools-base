@@ -1281,8 +1281,9 @@ public class EcjParser extends JavaParser {
      * return all these "duplicates" when you ask for the annotation on a given element.
      * This method filters out duplicates.
      */
+    @VisibleForTesting
     @NonNull
-    private static List<ResolvedAnnotation> ensureUnique(@NonNull List<ResolvedAnnotation> list) {
+    static List<ResolvedAnnotation> ensureUnique(@NonNull List<ResolvedAnnotation> list) {
         if (list.size() < 2) {
             return list;
         }
@@ -1295,14 +1296,15 @@ public class EcjParser extends JavaParser {
         // Instead we'll just do an O(n^2) iteration comparing each subsequent element with each
         // previous element and removing if matches, which is fine for these tiny lists.
         int n = list.size();
-        for (int i = 1; i < n; i++) {
+        for (int i = 0; i < n - 1; i++) {
             ResolvedAnnotation current = list.get(i);
             String currentName = current.getName();
-            for (int j = 0; j < i; j++) {
-                ResolvedAnnotation earlier = list.get(j);
-                String earlierName = earlier.getName();
-                if (currentName.equals(earlierName)) {
-                    list.remove(i);
+            // Deleting duplicates at end reduces number of elements that have to be shifted
+            for (int j = n - 1; j > i; j--) {
+                ResolvedAnnotation later = list.get(j);
+                String laterName = later.getName();
+                if (currentName.equals(laterName)) {
+                    list.remove(j);
                     n--;
                 }
             }
