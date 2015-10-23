@@ -46,6 +46,8 @@ import java.io.IOException;
  * deployment.
  */
 public class InjectBootstrapApplicationTask extends BaseTask {
+    private static final String BOOTSTRAP_APPLICATION = "com.android.tools.fd.runtime.BootstrapApplication";
+
     private File manifestFile;
 
     /**
@@ -115,6 +117,10 @@ public class InjectBootstrapApplicationTask extends BaseTask {
                             String applicationClass = null;
                             if (application.hasAttributeNS(ANDROID_URI, ATTR_NAME)) {
                                 String name = application.getAttributeNS(ANDROID_URI, ATTR_NAME);
+                                // Task run twice on the same manifest?
+                                if (BOOTSTRAP_APPLICATION.equals(name)) {
+                                    return;
+                                }
                                 assert !name.startsWith(".") : name;
                                 if (!name.isEmpty()) {
                                     applicationClass = name;
@@ -123,7 +129,7 @@ public class InjectBootstrapApplicationTask extends BaseTask {
                                 }
                             }
                             application.setAttributeNS(ANDROID_URI, ATTR_NAME,
-                                    "com.android.tools.fd.runtime.BootstrapApplication");
+                                    BOOTSTRAP_APPLICATION);
 
                             if (applicationClass != null) {
                                 System.out.println("Instrumented " + applicationClass + " with fast deploy");
