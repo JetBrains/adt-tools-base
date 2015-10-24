@@ -22,21 +22,26 @@ import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.IncompatibleChange;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier;
+import com.android.build.gradle.internal.incremental.InstantRunVerifier.ClassBytesJarEntryProvider;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.Context;
-import com.android.build.transform.api.NoOpTransform;
-import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.DirectoryInput;
+import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.QualifiedContent;
+import com.android.build.transform.api.Status;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -45,8 +50,13 @@ import org.gradle.api.logging.Logging;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * No-op transform that verifies that changes between 2 versions of the same class are supported
@@ -60,7 +70,7 @@ import java.util.Set;
  * verification process will be encapsulated in an instance of {@link VerificationResult} and stored
  * in the VariantScope.
  */
-public class InstantRunVerifierTransform extends Transform implements NoOpTransform {
+public class InstantRunVerifierTransform extends Transform {
 
     protected static final ILogger LOGGER =
             new LoggerWrapper(Logging.getLogger(InstantRunVerifierTransform.class));
@@ -98,17 +108,17 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
 
     @Override
     public void transform(@NonNull Context context, @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
+            @NonNull Collection<TransformInput> referencedInputs,
+            @Nullable TransformOutputProvider outputProvider, boolean isIncremental)
             throws IOException, TransformException, InterruptedException {
 
         long startTime = System.currentTimeMillis();
-        doTransform(context, inputs, referencedInputs, isIncremental);
+        doTransform(inputs, isIncremental);
         LOGGER.info(String.format("Wall time for verifier : %1$d ms",
                 System.currentTimeMillis() - startTime));
     }
 
-    public void doTransform(@NonNull Context context, @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
+    public void doTransform(@NonNull Collection<TransformInput> inputs, boolean isIncremental)
             throws IOException, TransformException, InterruptedException {
 
         if (!isIncremental && outputDir.exists()) {
@@ -117,57 +127,34 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
             FileUtils.mkdirs(outputDir);
         }
 
-        Optional<VerificationResult> verificationResult = Optional.absent();
+        // Gather a full list of all inputs.
+        List<JarInput> jarInputs = Lists.newArrayList();
+        List<DirectoryInput> folderInputs = Lists.newArrayList();
+        for (TransformInput input : inputs) {
+            jarInputs.addAll(input.getJarInputs());
+            folderInputs.addAll(input.getDirectoryInputs());
+        }
+        IncompatibleChange verificationResult = null;
+
         for (TransformInput transformInput : inputs) {
-            if (transformInput.getFormat() != ScopedContent.Format.SINGLE_FOLDER) {
-                throw new RuntimeException("Unexpected stream input format : "
-                        + transformInput.getFormat());
+            verificationResult = processFolderInputs(isIncremental, transformInput);
+            if (verificationResult == null) {
+                verificationResult = processJarInputs(transformInput);
             }
-            if (transformInput.getFiles().size() != 1) {
-                throw new RuntimeException("Unexpected stream input size : "
-                        + transformInput.getFiles().size());
-            }
-            final File inputDir = transformInput.getFiles().iterator().next();
-            if (inputDir.isFile()) {
-                throw new RuntimeException(
-                        "Expected a directory in non incremental, got a file " +
-                                inputDir.getAbsolutePath());
-            }
+        }
+        // So far, a null changes means success.
+        variantScope.setVerificationResult(new VerificationResult(verificationResult));
+    }
 
-            if (isIncremental) {
+    @Nullable
+    private IncompatibleChange processFolderInputs(
+            boolean isIncremental, TransformInput transformInput) throws IOException {
+        for (DirectoryInput DirectoryInput : transformInput.getDirectoryInputs()) {
 
-                for (Map.Entry<File, TransformInput.FileStatus> changedEntry :
-                        transformInput.getChangedFiles().entrySet()) {
+            File inputDir = DirectoryInput.getFile();
 
-                    File inputFile = changedEntry.getKey();
-                    switch(changedEntry.getValue()) {
-                        case REMOVED:
-                            // remove the classes.2 and classes.3 files.
-                            File classes_backup = getOutputFile(inputDir, inputFile, outputDir);
-                            if (classes_backup.exists() && !classes_backup.delete()) {
-                                // it's not a big deal if the file cannot be deleted, hopefully
-                                // no code is still referencing it, yet we should notify.
-                                LOGGER.warning("Cannot delete %1$s file", classes_backup);
-                            }
-                            break;
-                        case ADDED:
-                            // new file, no verification necessary, but save it for next iteration.
-                            copyFile(inputFile, getOutputFile(inputDir, inputFile, outputDir));
-                            break;
-                        case CHANGED:
-                            // a new version of the class has been compiled, we should compare
-                            // it with the one saved during the last iteration on the file.
-                            verificationResult = verifyAndSaveFile(verificationResult, inputDir, inputFile);
-                            break;
-
-                        default:
-                            throw new RuntimeException("Unhandled FileStatus : "
-                                    + changedEntry.getValue());
-                    }
-                }
-
-            } else {
-                // non incremental mode, we need to traverse the TransformInput#getFiles() folder}
+            if (!isIncremental) {
+                // non incremental mode, we need to traverse the folder}
                 for (File file : Files.fileTreeTraverser().breadthFirstTraversal(inputDir)) {
 
                     if (file.isDirectory()) {
@@ -180,10 +167,122 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
                                 + file.getAbsolutePath());
                     }
                 }
+                continue;
+            }
+            for (Map.Entry<File, Status> changedFile :
+                    DirectoryInput.getChangedFiles().entrySet()) {
+
+                File inputFile = changedFile.getKey();
+                switch(changedFile.getValue()) {
+                    case REMOVED:
+                        // remove the backup file.
+                        File classes_backup = getOutputFile(inputDir, inputFile, outputDir);
+                        if (classes_backup.exists() && !classes_backup.delete()) {
+                            // it's not a big deal if the file cannot be deleted, hopefully
+                            // no code is still referencing it, yet we should notify.
+                            LOGGER.warning("Cannot delete %1$s file", classes_backup);
+                        }
+                        break;
+                    case ADDED:
+                        // new file, no verification necessary, but save it for next iteration.
+                        copyFile(inputFile, getOutputFile(inputDir, inputFile, outputDir));
+                        break;
+                    case CHANGED:
+                        // a new version of the class has been compiled, we should compare
+                        // it with the one saved during the last iteration on the file.
+                        IncompatibleChange verificationResult =
+                                verifyAndSaveFile(inputDir, inputFile);
+                        if (verificationResult != null) {
+                            return verificationResult;
+                        }
+                        break;
+                    case NOTCHANGED:
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unhandled DirectoryInput status "
+                                + changedFile.getValue());
+                }
+
             }
         }
-        // So far, a null changes means success.
-        variantScope.setVerificationResult(verificationResult.or(new VerificationResult(null)));
+        // all changes are compatible.
+        return null;
+    }
+
+    @Nullable
+    private IncompatibleChange processJarInputs(TransformInput transformInput) throws IOException {
+        // can jarInput have colliding names ?
+        for (JarInput jarInput : transformInput.getJarInputs()) {
+            File backupJar = new File(outputDir, jarInput.getName());
+            switch(jarInput.getStatus()) {
+                case REMOVED:
+                    if (backupJar.exists() && !backupJar.delete()) {
+                        // it's not a big deal if the file cannot be deleted, hopefully
+                        // no code is still referencing it, yet we should notify
+                        LOGGER.warning("Cannot delete %1$s file", backupJar);
+                    }
+                    break;
+                case ADDED:
+                    copyFile(jarInput.getFile(), backupJar);
+                    break;
+                case CHANGED:
+                    // get a Map of the back up jar entries indexed by name.
+                    JarFile backupJarFile = new JarFile(backupJar);
+                    try {
+                        JarFile jarFile = new JarFile(jarInput.getFile());
+                        try {
+                            IncompatibleChange verificationResult =
+                                    processChangedJar(backupJarFile, jarFile);
+                            if (verificationResult != null) {
+                                return verificationResult;
+                            }
+                        } finally {
+                            jarFile.close();
+                        }
+                    } finally {
+                        backupJarFile.close();
+                    }
+                    break;
+                case NOTCHANGED:
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unhandled JarInput status "
+                            + jarInput.getStatus());
+            }
+        }
+        // all changes are compatible.
+        return null;
+    }
+
+    private IncompatibleChange processChangedJar(JarFile backupJar, JarFile newJar)
+            throws IOException {
+
+        Map<String, JarEntry> backupEntries = new HashMap<String, JarEntry>();
+        Enumeration<JarEntry> backupJarEntries = backupJar.entries();
+        while (backupJarEntries.hasMoreElements()) {
+            JarEntry jarEntry = backupJarEntries.nextElement();
+            backupEntries.put(jarEntry.getName(), jarEntry);
+        }
+        // go through the jar file, entry by entry.
+        Enumeration<JarEntry> jarEntries = newJar.entries();
+        while (jarEntries.hasMoreElements()) {
+            JarEntry jarEntry = jarEntries.nextElement();
+            if (jarEntry.getName().endsWith(".class")) {
+                JarEntry backupEntry = backupEntries.get(jarEntry.getName());
+                if (backupEntry != null) {
+                    IncompatibleChange verificationResult =
+                            runVerifier(
+                                    newJar.getName() + ":" + jarEntry.getName(),
+                                    new ClassBytesJarEntryProvider(backupJar, backupEntry),
+                                    new ClassBytesJarEntryProvider(newJar, jarEntry));
+                    if (verificationResult != null) {
+                        return verificationResult;
+                    }
+                }
+
+            }
+        }
+        return null;
     }
 
     @NonNull
@@ -192,30 +291,31 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
         return new File(outputDir, relativePath);
     }
 
-    @NonNull
-    private Optional<VerificationResult> verifyAndSaveFile(
-            @NonNull Optional<VerificationResult> pastResults,
+    @Nullable
+    private IncompatibleChange verifyAndSaveFile(
             @NonNull File inputDir,
             @NonNull File newFile) throws IOException {
 
         File lastIterationFile = getLastIterationFile(inputDir, newFile);
-        if (lastIterationFile.exists() && !pastResults.isPresent()) {
-            IncompatibleChange changes = runVerifier(lastIterationFile, newFile);
+        IncompatibleChange verificationResult = null;
+        if (lastIterationFile.exists()) {
+            verificationResult = runVerifier(newFile.getName(),
+                    new InstantRunVerifier.ClassBytesFileProvider(lastIterationFile),
+                    new InstantRunVerifier.ClassBytesFileProvider(newFile));
             LOGGER.verbose(
-                    "%1$s : verifier result : %2$s", newFile.getName(), changes);
-            if (changes != null) {
-                pastResults = Optional.of(new VerificationResult(changes));
-            }
+                    "%1$s : verifier result : %2$s", newFile.getName(), verificationResult);
         }
         // always copy the new file over to our private backup directory for the next iteration
         // verification.
         copyFile(newFile, lastIterationFile);
-        return pastResults;
+        return verificationResult;
     }
 
     @VisibleForTesting
-    protected IncompatibleChange runVerifier(final File originalClass, final File updatedClass)
-            throws IOException {
+    @Nullable
+    protected IncompatibleChange runVerifier(String name,
+            final InstantRunVerifier.ClassBytesProvider originalClass ,
+            final InstantRunVerifier.ClassBytesProvider updatedClass) throws IOException {
 
         return ThreadRecorder.get().record(ExecutionType.TASK_FILE_VERIFICATION,
                 new Recorder.Block<IncompatibleChange>() {
@@ -223,7 +323,7 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
                     public IncompatibleChange call() throws Exception {
                         return InstantRunVerifier.run(originalClass, updatedClass);
                     }
-                }, new Recorder.Property("file", originalClass.getName())
+                }, new Recorder.Property("target", name)
         );
     }
 
@@ -241,32 +341,31 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
 
     @NonNull
     @Override
-    public Set<ScopedContent.ContentType> getInputTypes() {
+    public Set<QualifiedContent.ContentType> getInputTypes() {
         return TransformManager.CONTENT_CLASS;
     }
 
     @NonNull
     @Override
-    public Set<ScopedContent.ContentType> getOutputTypes() {
-        return TransformManager.CONTENT_CLASS;
+    public Set<QualifiedContent.ContentType> getOutputTypes() {
+        return TransformManager.CONTENT_CLASS;    }
+
+    @NonNull
+    @Override
+    public Set<QualifiedContent.Scope> getScopes() {
+        return ImmutableSet.of();
     }
 
     @NonNull
     @Override
-    public Set<ScopedContent.Scope> getScopes() {
-        return Sets.immutableEnumSet(ScopedContent.Scope.PROJECT);
+    public Set<QualifiedContent.Scope> getReferencedScopes() {
+        return Sets.immutableEnumSet(QualifiedContent.Scope.PROJECT);
 
-    }
-
-    @Nullable
-    @Override
-    public ScopedContent.Format getOutputFormat() {
-        return ScopedContent.Format.SINGLE_FOLDER;
     }
 
     @NonNull
     @Override
-    public Collection<File> getSecondaryFolderOutputs() {
+    public Collection<File> getSecondaryDirectoryOutputs() {
         return ImmutableList.of(outputDir);
     }
 
@@ -274,7 +373,6 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
     public boolean isIncremental() {
         return true;
     }
-
 
     /**
      * Return the expected output {@link File} for an input file located in the transform input
@@ -287,7 +385,8 @@ public class InstantRunVerifierTransform extends Transform implements NoOpTransf
      * @return the output file within the output directory with the right relative path.
      * @throws IOException
      */
-    protected File getOutputFile(File inputDir, File inputFile, File outputDir) throws IOException {
+    protected static File getOutputFile(File inputDir, File inputFile, File outputDir)
+            throws IOException {
         String relativePath = inputFile.getAbsolutePath().substring(
                 inputDir.getAbsolutePath().length());
 

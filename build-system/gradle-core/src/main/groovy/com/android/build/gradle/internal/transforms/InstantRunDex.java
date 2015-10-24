@@ -17,14 +17,16 @@
 package com.android.build.gradle.internal.transforms;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.Context;
-import com.android.build.transform.api.NoOpTransform;
-import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.DirectoryInput;
+import com.android.build.transform.api.QualifiedContent;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
@@ -34,6 +36,7 @@ import com.android.utils.ILogger;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -53,7 +56,7 @@ import java.util.jar.JarOutputStream;
  * and will use the file's content to get a list of .class files to dex in order to produce an
  * incremental dex file that can contains the delta changes from the last invocation.
  */
-public class InstantRunDex extends Transform implements NoOpTransform {
+public class InstantRunDex extends Transform {
 
     /**
      * Expected dex file use.
@@ -82,7 +85,7 @@ public class InstantRunDex extends Transform implements NoOpTransform {
     private final ILogger logger;
 
     @NonNull
-    private final Set<ScopedContent.ContentType> inputTypes;
+    private final Set<QualifiedContent.ContentType> inputTypes;
 
     @NonNull
     private final BuildType buildType;
@@ -97,7 +100,7 @@ public class InstantRunDex extends Transform implements NoOpTransform {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull DexOptions dexOptions,
             @NonNull Logger logger,
-            @NonNull Set<ScopedContent.ContentType> inputTypes) {
+            @NonNull Set<QualifiedContent.ContentType> inputTypes) {
         this.variantScope = variantScope;
         this.buildType = buildType;
         this.outputFolder = outputFolder;
@@ -109,8 +112,10 @@ public class InstantRunDex extends Transform implements NoOpTransform {
 
     @Override
     public void transform(@NonNull Context context, @NonNull Collection<TransformInput> inputs,
-            @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
-            throws IOException, TransformException, InterruptedException {
+            @NonNull Collection<TransformInput> referencedInputs,
+            @Nullable TransformOutputProvider output,
+            boolean isIncremental) throws IOException, TransformException, InterruptedException {
+
 
         if (buildType == BuildType.RELOAD) {
             // if we are in reload mode, we should check the result of the verifier.
@@ -134,11 +139,9 @@ public class InstantRunDex extends Transform implements NoOpTransform {
 
         try {
             for (TransformInput input : inputs) {
-                for (File inputFolder : input.getFiles()) {
-                    if (inputFolder.isDirectory()) {
-
-                    }
-                    File incremental = new File(inputFolder, "incrementalChanges.txt");
+                for (DirectoryInput DirectoryInput : input.getDirectoryInputs()) {
+                    File folder = DirectoryInput.getFile();
+                    File incremental = new File(folder, "incrementalChanges.txt");
                     if (!incremental.exists()) {
                         // done
                         continue;
@@ -153,7 +156,7 @@ public class InstantRunDex extends Transform implements NoOpTransform {
                     }
 
                     for (String fileToProcess : filesToProcess) {
-                        copyFileInJar(inputFolder, new File(fileToProcess), jarOutputStream);
+                        copyFileInJar(folder, new File(fileToProcess), jarOutputStream);
                     }
                 }
 
@@ -200,20 +203,20 @@ public class InstantRunDex extends Transform implements NoOpTransform {
 
     @NonNull
     @Override
-    public Set<ScopedContent.ContentType> getInputTypes() {
+    public Set<QualifiedContent.ContentType> getInputTypes() {
         return inputTypes;
     }
 
     @NonNull
     @Override
-    public Set<ScopedContent.Scope> getScopes() {
-        return Sets.immutableEnumSet(ScopedContent.Scope.PROJECT);
+    public Set<QualifiedContent.Scope> getScopes() {
+        return ImmutableSet.of();
     }
 
     @NonNull
     @Override
-    public ScopedContent.Format getOutputFormat() {
-        return ScopedContent.Format.JAR;
+    public Set<QualifiedContent.Scope> getReferencedScopes() {
+        return Sets.immutableEnumSet(QualifiedContent.Scope.PROJECT);
     }
 
     @Override

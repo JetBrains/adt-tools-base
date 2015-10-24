@@ -44,7 +44,9 @@ public interface QualifiedContent {
         /**
          * The content if standard Java resources.
          */
-        RESOURCES(0x04);
+        RESOURCES(0x04),
+
+        CLASSES_ENHANCED(0x08);
 
         private final int value;
 

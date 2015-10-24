@@ -18,8 +18,11 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.utils.AsmUtils;
 import com.google.common.base.Objects;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
 import org.objectweb.asm.ClassReader;
@@ -34,13 +37,13 @@ import org.objectweb.asm.util.TraceMethodVisitor;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
-
-import bsh.org.objectweb.asm.Type;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Instant Run Verifier responsible for checking that a class change (between two developers
@@ -59,6 +62,51 @@ public class InstantRunVerifier {
             return Objects.equal(first, second);
         }
     };
+
+    public interface ClassBytesProvider {
+        byte[] load() throws IOException;
+    }
+
+    public static class ClassBytesFileProvider implements ClassBytesProvider {
+
+        private final File file;
+        public ClassBytesFileProvider(File file) {
+            this.file = file;
+        }
+
+        @Override
+        public byte[] load() throws IOException {
+            return Files.toByteArray(file);
+        }
+
+        @VisibleForTesting
+        public File getFile() {
+            return file;
+        }
+    }
+
+    public static class ClassBytesJarEntryProvider implements ClassBytesProvider {
+
+        private final JarFile jarFile;
+        private final JarEntry jarEntry;
+
+        public ClassBytesJarEntryProvider(JarFile jarFile, JarEntry jarEntry) {
+            this.jarFile = jarFile;
+            this.jarEntry = jarEntry;
+        }
+
+        @Override
+        public byte[] load() throws IOException {
+            InputStream is = jarFile.getInputStream(jarEntry);
+            try {
+                ByteStreams.toByteArray(is);
+            } finally {
+                Closeables.close(is, false /* swallowIOException */);
+            }
+
+            return new byte[0];
+        }
+    }
 
     /**
      * describe the difference between two collections of the same elements.
@@ -85,10 +133,16 @@ public class InstantRunVerifier {
     private InstantRunVerifier() {
     }
 
+
+    public static IncompatibleChange run(File original, File updated) throws IOException {
+        return run(new ClassBytesFileProvider(original), new ClassBytesFileProvider(updated));
+    }
+
     // ASM API not generified.
     @SuppressWarnings("unchecked")
     @Nullable
-    public static IncompatibleChange run(File original, File updated) throws IOException {
+    public static IncompatibleChange run(ClassBytesProvider original, ClassBytesProvider updated)
+            throws IOException {
 
         ClassNode originalClass = loadClass(original);
         ClassNode updatedClass = loadClass(updated);
@@ -378,9 +432,8 @@ public class InstantRunVerifier {
         return null;
     }
 
-    static ClassNode loadClass(File classFile) throws IOException {
-        byte[] classBytes;
-        classBytes = Files.toByteArray(classFile);
+    static ClassNode loadClass(ClassBytesProvider classFile) throws IOException {
+        byte[] classBytes = classFile.load();
         ClassReader classReader = new ClassReader(classBytes);
 
         org.objectweb.asm.tree.ClassNode classNode = new org.objectweb.asm.tree.ClassNode();

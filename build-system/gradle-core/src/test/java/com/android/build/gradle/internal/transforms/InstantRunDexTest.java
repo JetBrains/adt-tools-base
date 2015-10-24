@@ -25,20 +25,19 @@ import com.android.build.gradle.internal.incremental.IncompatibleChange;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform.VerificationResult;
 import com.android.build.transform.api.Context;
-import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.QualifiedContent;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.builder.core.AndroidBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logger;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.File;
@@ -55,6 +54,9 @@ public class InstantRunDexTest {
 
     @Mock
     AndroidBuilder androidBuilder;
+
+    @Mock
+    TransformOutputProvider TransformOutputProvider;
 
     @Mock
     DexOptions dexOptions;
@@ -83,11 +85,12 @@ public class InstantRunDexTest {
                 androidBuilder,
                 dexOptions,
                 logger,
-                ImmutableSet.<ScopedContent.ContentType>of());
+                ImmutableSet.<QualifiedContent.ContentType>of());
 
         instantRunDex.transform(context,
                 ImmutableList.<TransformInput>of() /* inputs */,
                 ImmutableList.<TransformInput>of() /* referencedInputs */,
+                TransformOutputProvider,
                 false /* isIncremental */);
 
         assertThat(outputFolder.listFiles()).isEmpty();

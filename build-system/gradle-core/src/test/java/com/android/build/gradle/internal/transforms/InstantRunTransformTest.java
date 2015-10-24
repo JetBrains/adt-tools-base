@@ -24,16 +24,22 @@ import static org.mockito.Mockito.when;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.transform.api.Context;
+import com.android.build.transform.api.DirectoryInput;
+import com.android.build.transform.api.Format;
+import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.Scope;
+import com.android.build.transform.api.Status;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.builder.core.AndroidBuilder;
 import com.android.utils.FileUtils;
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
+import com.google.common.truth.Truth;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -87,57 +93,64 @@ public class InstantRunTransformTest {
             }
 
             @Override
-            protected void wrapUpOutputs(TransformOutput classes2Output,
-                    TransformOutput classes3Output) throws IOException {
+            protected void wrapUpOutputs(File classes2Output, File classes3Output)
+                    throws IOException {
+
             }
         };
 
-        ImmutableMap.Builder<TransformInput, Collection<TransformOutput>> input =
-                ImmutableMap.builder();
+        ImmutableList.Builder<TransformInput> input = ImmutableList.builder();
 
-        input.put(new TransformInputForTests() {
+        input.add(new TransformInput() {
+
             @NonNull
             @Override
-            public Collection<File> getFiles() {
-                return ImmutableList.of(new File("/tmp"));
+            public Collection<DirectoryInput> getDirectoryInputs() {
+                return ImmutableList.<DirectoryInput>of(new DirectoryInputForTests() {
+                    @NonNull
+                    @Override
+                    public Map<File, Status> getChangedFiles() {
+                        return ImmutableMap.<File, Status>builder()
+                                .put(new File("/tmp/foo/bar/Changed.class"), Status.CHANGED)
+                                .put(new File("/tmp/foo/bar/Added.class"), Status.ADDED)
+                                .build();
+                    }
+
+                    @NonNull
+                    @Override
+                    public File getFile() {
+                        return new File("/tmp");
+                    }
+                });
             }
 
             @NonNull
             @Override
-            public Map<File, FileStatus> getChangedFiles() {
-                return ImmutableMap.<File, FileStatus>builder()
-                        .put(new File("/tmp/foo/bar/Changed.class"), FileStatus.CHANGED)
-                        .put(new File("/tmp/foo/bar/Added.class"), FileStatus.ADDED)
-                        .build();
+            public Collection<JarInput> getJarInputs() {
+                return ImmutableList.of();
             }
+        });
 
-        }, ImmutableList.<TransformOutput>of(new TransformOutputForTests() {
-            @NonNull
+        TransformOutputProvider tranformOutput = new TransformOutputProvider() {
             @Override
-            public Set<ContentType> getContentTypes() {
-                return ImmutableSet.of(ContentType.CLASSES);
+            public void deleteAll() throws IOException {
+
             }
 
             @NonNull
             @Override
-            public File getOutFile() {
-                return new File("out");
+            public File getContentLocation(@NonNull String name,
+                    @NonNull Set<ContentType> types,
+                    @NonNull Set<Scope> scopes, @NonNull Format format) {
+                Truth.assertThat(types).hasSize(1);
+                if (types.iterator().next().equals(ContentType.CLASSES)) {
+                    return new File("out");
+                } else {
+                    return new File("out.3");
+                }
             }
-        }, new TransformOutputForTests() {
-
-            @NonNull
-            @Override
-            public Set<ContentType> getContentTypes() {
-                return ImmutableSet.of(ContentType.CLASSES_ENHANCED);
-            }
-
-            @NonNull
-            @Override
-            public File getOutFile() {
-                return new File("out.3");
-            }
-        }));
-        transform.transform(context, input.build(), ImmutableList.<TransformInput>of(), true);
+        };
+        transform.transform(context, input.build(), ImmutableList.<TransformInput>of(), tranformOutput, true);
 
         ImmutableList<File> processedFiles = filesElectedForClasses2Transformation.build();
         assertEquals("Wrong number of files elected for classes 2 processing", 2, processedFiles.size());
@@ -186,57 +199,65 @@ public class InstantRunTransformTest {
             }
 
             @Override
-            protected void wrapUpOutputs(TransformOutput classes2Output,
-                    TransformOutput classes3Output)
+            protected void wrapUpOutputs(File classes2Output, File classes3Output)
                     throws IOException {
+
             }
         };
 
-        ImmutableMap.Builder<TransformInput, Collection<TransformOutput>> input =
-                ImmutableMap.builder();
+        ImmutableList.Builder<TransformInput> input = ImmutableList.builder();
 
-        input.put(new TransformInputForTests() {
+        input.add(new TransformInput() {
+
             @NonNull
             @Override
-            public Collection<File> getFiles() {
-                return ImmutableList.of(inputFolder);
+            public Collection<DirectoryInput> getDirectoryInputs() {
+                return ImmutableList.<DirectoryInput>of(new DirectoryInputForTests() {
+                    @NonNull
+                    @Override
+                    public Map<File, Status> getChangedFiles() {
+                        return ImmutableMap.<File, Status>builder()
+                                .put(originalFile, Status.REMOVED)
+                                .build();
+                    }
+
+                    @NonNull
+                    @Override
+                    public File getFile() {
+                        return inputFolder;
+                    }
+                });
             }
 
             @NonNull
             @Override
-            public Map<File, FileStatus> getChangedFiles() {
-                return ImmutableMap.<File, FileStatus>builder()
-                        .put(originalFile, FileStatus.REMOVED)
-                        .build();
+            public Collection<JarInput> getJarInputs() {
+                return ImmutableList.of();
             }
+        });
 
-        }, ImmutableList.<TransformOutput>of(new TransformOutputForTests() {
-            @NonNull
+        TransformOutputProvider TransformOutputProvider = new TransformOutputProvider() {
             @Override
-            public Set<ContentType> getContentTypes() {
-                return ImmutableSet.of(ContentType.CLASSES);
+            public void deleteAll() throws IOException {
+
             }
 
             @NonNull
             @Override
-            public File getOutFile() {
-                return outputFolder;
+            public File getContentLocation(@NonNull String name,
+                    @NonNull Set<ContentType> types,
+                    @NonNull Set<Scope> scopes, @NonNull Format format) {
+                Truth.assertThat(types).hasSize(1);
+                if (types.iterator().next().equals(ContentType.CLASSES)) {
+                    return outputFolder;
+                } else {
+                    return outputEnhancedFolder;
+                }
             }
-        }, new TransformOutputForTests() {
+        };
 
-            @NonNull
-            @Override
-            public Set<ContentType> getContentTypes() {
-                return ImmutableSet.of(ContentType.CLASSES_ENHANCED);
-            }
-
-            @NonNull
-            @Override
-            public File getOutFile() {
-                return outputEnhancedFolder;
-            }
-        }));
-        transform.transform(context, input.build(), ImmutableList.<TransformInput>of(), true);
+        transform.transform(context, input.build(),
+                ImmutableList.<TransformInput>of(), TransformOutputProvider, true);
 
         ImmutableList<File> processedFiles = filesElectedForClasses2Transformation.build();
         assertEquals("Wrong number of files elected for processing", 0, processedFiles.size());
@@ -255,7 +276,13 @@ public class InstantRunTransformTest {
         return file;
     }
 
-    private abstract static class TransformInputForTests implements TransformInput {
+    private abstract static class DirectoryInputForTests implements DirectoryInput {
+
+        @NonNull
+        @Override
+        public String getName() {
+            return "test";
+        }
 
         @NonNull
         @Override
@@ -269,25 +296,5 @@ public class InstantRunTransformTest {
             return ImmutableSet.of(Scope.PROJECT);
         }
 
-        @NonNull
-        @Override
-        public Format getFormat() {
-            return Format.SINGLE_FOLDER;
-        }
-    }
-
-    private abstract static class TransformOutputForTests implements TransformOutput {
-
-        @NonNull
-        @Override
-        public Set<Scope> getScopes() {
-            return ImmutableSet.of(Scope.PROJECT);
-        }
-
-        @NonNull
-        @Override
-        public Format getFormat() {
-            return Format.SINGLE_FOLDER;
-        }
     }
 }

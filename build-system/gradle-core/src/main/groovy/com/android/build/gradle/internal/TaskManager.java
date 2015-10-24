@@ -1302,12 +1302,11 @@ public abstract class TaskManager {
                     tasks, new FastDeployRuntimeExtractorTask.ConfigAction(variantScope));
 
             // also add a new stream for the extractor task output.
-            variantScope.getTransformManager().addStream(TransformStream.builder()
+            variantScope.getTransformManager().addStream(OriginalStream.builder()
                     .addContentTypes(TransformManager.CONTENT_CLASS)
                     .addScope(Scope.EXTERNAL_LIBRARIES)
-                    .setFiles(variantScope.getIncrementalRuntimeSupportJar())
+                    .setJar(variantScope.getIncrementalRuntimeSupportJar())
                     .setDependency(extractorTask.get(tasks))
-                    .setFormat(Format.JAR)
                     .build());
 
             // create the AppInfo.class for this variant.
@@ -1316,12 +1315,11 @@ public abstract class TaskManager {
                             variantScope)).get(tasks);
 
             // also add a new stream for the injector task output.
-            variantScope.getTransformManager().addStream(TransformStream.builder()
+            variantScope.getTransformManager().addStream(OriginalStream.builder()
                     .addContentTypes(TransformManager.CONTENT_CLASS)
                     .addScope(Scope.EXTERNAL_LIBRARIES)
-                    .setFiles(generateInstantRunAppInfoTask.getOutputFile())
+                    .setJar(generateInstantRunAppInfoTask.getOutputFile())
                     .setDependency(generateInstantRunAppInfoTask)
-                    .setFormat(Format.JAR)
                     .build());
 
         }
