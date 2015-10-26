@@ -19,6 +19,8 @@ package com.android.build.gradle.model;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
+import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.model.NativeLibraryFactory;
 import com.android.build.gradle.internal.model.NativeLibraryImpl;
@@ -33,6 +35,8 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
@@ -41,7 +45,7 @@ import org.gradle.platform.base.BinaryContainer;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * Implementation of NativeLibraryFactory from in the component model plugin.
@@ -55,14 +59,18 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
     NdkHandler ndkHandler;
     @NonNull
     ModelMap<NdkAbiOptions> abiOptions;
+    @NonNull
+    Multimap<String, NativeDependencyResolveResult> nativeDependencies;
 
     public ComponentNativeLibraryFactory(
             @NonNull BinaryContainer binaries,
             @NonNull NdkHandler ndkHandler,
-            @NonNull ModelMap<NdkAbiOptions> abiOptions) {
+            @NonNull ModelMap<NdkAbiOptions> abiOptions,
+            @NonNull Multimap<String, NativeDependencyResolveResult> nativeDependencies) {
         this.binaries = binaries;
         this.ndkHandler = ndkHandler;
         this.abiOptions = abiOptions;
+        this.nativeDependencies = nativeDependencies;
     }
 
     @NonNull
@@ -92,8 +100,21 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
                         });
 
         if (!nativeBinary.isPresent()) {
-            // We don't have native binaries.
-            return Optional.absent();
+            // We don't have native binaries, but the project may be dependent on other native
+            // projects.  Create a NativeLibrary to supply the debuggable library directories.
+            return Optional.<NativeLibrary>of(new NativeLibraryImpl(
+                    abi.getName(),
+                    toolchainName,
+                    abi.getName(),
+                    Collections.<File>emptyList(),  /*cIncludeDirs*/
+                    Collections.<File>emptyList(),  /*cppIncludeDirs*/
+                    Collections.<File>emptyList(),  /*cSystemIncludeDirs*/
+                    Collections.<File>emptyList(),  /*cppSystemIncludeDirs*/
+                    Collections.<String>emptyList(),  /*cDefines*/
+                    Collections.<String>emptyList(),  /*cppDefines*/
+                    Collections.<String>emptyList(),  /*cFlags*/
+                    Collections.<String>emptyList(),  /*cppFlags*/
+                    findDebuggableLibraryDirectories(variantData, androidBinary, abi)));
         }
 
         NdkOptions targetOptions = abiOptions.get(abi.getName());
@@ -109,6 +130,7 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
             }
         }
 
+        List<File> debuggableLibDir = findDebuggableLibraryDirectories(variantData, androidBinary, abi);
 
         CoreNdkOptions ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
         // The DSL currently do not support all options available in the model such as the
@@ -125,6 +147,32 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
                 Collections.<String>emptyList(),  /*cppDefines*/
                 cFlags,
                 cppFlags,
-                ImmutableList.of(variantData.getScope().getNdkDebuggableLibraryFolders(abi))));
+                debuggableLibDir));
+    }
+
+    /**
+     * Find all directories containing library with debug symbol.
+     * Include libraries from dependencies.
+     */
+    private List<File> findDebuggableLibraryDirectories(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull AndroidBinary binary,
+            @NonNull Abi abi) {
+        // Create LinkedHashSet to remove duplicated while maintaining order.
+        Set<File> debuggableLibDir = Sets.newLinkedHashSet();
+
+        debuggableLibDir.add(variantData.getScope().getNdkDebuggableLibraryFolders(abi));
+
+        for (NativeDependencyResolveResult dependency : nativeDependencies.get(binary.getName())) {
+            for (NativeLibraryArtifact artifact : dependency.getNativeArtifacts()) {
+                for (File lib : artifact.getLibraries()) {
+                    debuggableLibDir.add(lib.getParentFile());
+                }
+            }
+            for (File lib : dependency.getLibraryFiles().get(abi)) {
+                debuggableLibDir.add(lib.getParentFile());
+            }
+        }
+        return ImmutableList.copyOf(debuggableLibDir);
     }
 }
