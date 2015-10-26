@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.builder.model.AndroidProject
 import groovy.transform.CompileStatic
 import org.junit.Rule
@@ -31,7 +32,7 @@ import static com.android.build.gradle.integration.common.utils.FileHelper.searc
  * names
  */
 @CompileStatic
-@RunWith(Parameterized)
+@RunWith(FilterableParameterized)
 class ArchivesBaseNameTest {
     private static final String OLD_NAME = "random_name"
     private static final String NEW_NAME = "changed_name"
