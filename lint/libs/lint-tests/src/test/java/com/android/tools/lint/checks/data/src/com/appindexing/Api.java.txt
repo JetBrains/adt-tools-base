@@ -1,0 +1,8 @@
+package com.google.android.gms.common.api;
+
+public final class Api<O extends Api.ApiOptions> {
+    public interface ApiOptions {
+        public interface NotRequiredOptions extends Api.ApiOptions {}
+        public static final class NoOptions implements Api.ApiOptions.NotRequiredOptions {}
+    }
+}
