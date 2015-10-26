@@ -76,61 +76,6 @@ class VdPath extends VdElement{
         }
     }
 
-    private static class Svd2x2Solver {
-        private final static double EPSILON = 1e-7;
-        private double mScaleX;
-        private double mScaleY;
-        private double mDeltaDegree; // in degrees
-
-        public double getScaleX() {
-            return mScaleX;
-        }
-
-        public double getScaleY() {
-            return mScaleY;
-        }
-
-        public double getDelta() {
-            return mDeltaDegree;
-        }
-
-        public void applyTransform(AffineTransform transform) {
-            double[] matrix = new double[4];
-            transform.getMatrix(matrix);
-
-            double m00 = matrix[0];
-            double m10 = matrix[1];
-            double m01 = matrix[2];
-            double m11 = matrix[3];
-
-            if (Math.abs(m10) < EPSILON && Math.abs(m01) < EPSILON ) {
-                // Only scaling, no rotation.
-                mScaleX = m00;
-                mScaleY = m11;
-                mDeltaDegree = 0;
-            } else {
-                // Refer to the formula in
-                // http://scicomp.stackexchange.com/questions/8899/robust-algorithm-for-2x2-svd
-                double E = (m00 + m11) / 2;
-                double F = (m00 - m11) / 2;
-                double G = (m10 + m01) / 2;
-                double H = (m10 - m01) / 2;
-
-                double Q = Math.hypot(E, H);
-                double R = Math.hypot(F, G);
-
-                mScaleX = Q + R;
-                mScaleY = Q - R;
-
-                double alpha1 = Math.toDegrees(Math.atan2(G, F));
-                double alpha2 = Math.toDegrees(Math.atan2(H, E));
-
-                mDeltaDegree = (alpha1 + alpha2) / 2;
-            }
-        }
-    }
-
-    private static Svd2x2Solver mSvdSolver = new Svd2x2Solver();
     /**
      * Represent one segment of the path data. Like "l 0,0 1,1"
      */
@@ -351,33 +296,55 @@ class VdPath extends VdElement{
                     }
                     break;
                 case 'A':
-                    mSvdSolver.applyTransform(totalTransform);
                     for (int i = 0; i < paramsLen / step; i ++) {
                         // (0:rx 1:ry 2:x-axis-rotation 3:large-arc-flag 4:sweep-flag 5:x 6:y)
+                        // [0, 1, 2]
+                        if (!isTranslationOnly(totalTransform)) {
+                            EllipseSolver ellipseSolver = new EllipseSolver(totalTransform,
+                                    currentX, currentY,
+                                    mParams[i * step + 0], mParams[i * step + 1], mParams[i * step + 2],
+                                    mParams[i * step + 3], mParams[i * step + 4],
+                                    mParams[i * step + 5], mParams[i * step + 6]);
+                            mParams[i * step + 0] = ellipseSolver.getMajorAxis();
+                            mParams[i * step + 1] = ellipseSolver.getMinorAxis();
+                            mParams[i * step + 2] = ellipseSolver.getRotationDegree();
+                            if (ellipseSolver.getDirectionChanged()) {
+                                mParams[i * step + 4] = 1 - mParams[i * step + 4];
+                            }
+                        } else {
+                            // No need to change the value of rx , ry, rotation, and flags.
+                        }
                         // [5, 6]
                         currentX = mParams[i * step + 5];
                         currentY = mParams[i * step + 6];
 
                         totalTransform.transform(mParams, i * step + 5, mParams, i * step + 5, 1 /*1 point only*/);
-                        // [0, 1, 2]
-                        mParams[i * step + 0] *= mSvdSolver.getScaleX();
-                        mParams[i * step + 1] *= mSvdSolver.getScaleY();
-                        mParams[i * step + 2] += mSvdSolver.getDelta();
                     }
                     break;
                 case 'a':
-                    mSvdSolver.applyTransform(totalTransform);
                     for (int i = 0; i < paramsLen / step; i ++) {
+                        float oldCurrentX = currentX;
+                        float oldCurrentY = currentY;
+
                         currentX += mParams[i * step + 5];
                         currentY += mParams[i * step + 6];
                         if (!isTranslationOnly(totalTransform)) {
+                            EllipseSolver ellipseSolver = new EllipseSolver(totalTransform,
+                                    oldCurrentX, oldCurrentY,
+                                    mParams[i * step + 0], mParams[i * step + 1], mParams[i * step + 2],
+                                    mParams[i * step + 3], mParams[i * step + 4],
+                                    oldCurrentX + mParams[i * step + 5],
+                                    oldCurrentY + mParams[i * step + 6]);
                             // (0:rx 1:ry 2:x-axis-rotation 3:large-arc-flag 4:sweep-flag 5:x 6:y)
                             // [5, 6]
                             deltaTransform(totalTransform, mParams, i * step + 5, 2);
                             // [0, 1, 2]
-                            mParams[i * step + 0] *= mSvdSolver.getScaleX();
-                            mParams[i * step + 1] *= mSvdSolver.getScaleY();
-                            mParams[i * step + 2] += mSvdSolver.getDelta();
+                            mParams[i * step + 0] = ellipseSolver.getMajorAxis();
+                            mParams[i * step + 1] = ellipseSolver.getMinorAxis();
+                            mParams[i * step + 2] = ellipseSolver.getRotationDegree();
+                            if (ellipseSolver.getDirectionChanged()) {
+                                mParams[i * step + 4] = 1 - mParams[i * step + 4];
+                            }
                         }
 
                     }
@@ -577,4 +544,5 @@ class VdPath extends VdElement{
         return pathInfo.toString();
 
     }
+
 };

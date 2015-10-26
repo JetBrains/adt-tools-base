@@ -125,11 +125,12 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         checkVectorConversion(fileName, FileType.SVG, true, null);
     }
 
+    //////////////////////////////////////////////////////////
+    // Tests starts here:
     public void testSvgArcto1() throws Exception {
         checkSvgConversion("test_arcto_1");
     }
-    //////////////////////////////////////////////////////////
-    // Tests starts here:
+
     public void testSvgControlPoints01() throws Exception {
         checkSvgConversion("test_control_points_01");
     }
@@ -392,6 +393,14 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
 
     public void testSvgTransformGroup4() throws Exception {
         checkSvgConversion("test_transform_group_4");
+    }
+
+    public void testSvgTransformEllipseRotateScaleTranslate() throws Exception {
+        checkSvgConversion("test_transform_ellipse_rotate_scale_translate");
+    }
+
+    public void testSvgTransformEllipseComplex() throws Exception {
+        checkSvgConversion("test_transform_ellipse_complex");
     }
 
     // XML files start here.
