@@ -22,9 +22,12 @@ import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestA
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import com.android.build.gradle.integration.common.utils.ModelHelper
+import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.NativeLibrary
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
-import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 
@@ -180,10 +183,34 @@ model {
 
     @Test
     void "check app contains compiled .so"() {
-        project.execute("clean", ":app:assembleDebug");
+        Map<String, AndroidProject> models =
+                project.executeAndReturnMultiModel("clean", ":app:assembleDebug");
+        GradleTestProject app = project.getSubproject("app");
+        GradleTestProject lib1 = project.getSubproject("lib1");
+        GradleTestProject lib2 = project.getSubproject("lib2");
+
+        assertThat(models).containsKey(":app")
+
+        AndroidProject model = models.get(":app")
 
         File apk = project.getSubproject("app").getApk("debug")
         assertThatZip(apk).contains("lib/x86/libhello-jni.so");
         assertThatZip(apk).contains("lib/x86/libstlport_shared.so");
+
+        NativeLibrary libModel = findNativeLibraryByAbi(model, "debug", "x86");
+        assertThat(libModel.getDebuggableLibraryFolders()).containsAllOf(
+                app.file("build/intermediates/binaries/debug/obj/x86"),
+                lib1.file("build/intermediates/binaries/debug/obj/x86"),
+                lib2.file("build/intermediates/binaries/debug/obj/x86"),
+        )
+    }
+
+    private static NativeLibrary findNativeLibraryByAbi(
+            AndroidProject model,
+            String variantName,
+            String abi) {
+        AndroidArtifact artifact =
+                ModelHelper.getVariant(model.getVariants(), variantName).getMainArtifact()
+        return artifact.getNativeLibraries().find { it.abi == abi }
     }
 }

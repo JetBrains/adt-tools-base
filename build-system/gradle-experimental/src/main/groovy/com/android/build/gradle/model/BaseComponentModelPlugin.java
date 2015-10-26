@@ -20,6 +20,7 @@ import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONE
 import static com.android.build.gradle.model.ModelConstants.ANDROID_BUILDER;
 import static com.android.build.gradle.model.ModelConstants.ANDROID_CONFIG_ADAPTOR;
 import static com.android.build.gradle.model.ModelConstants.EXTRA_MODEL_INFO;
+import static com.android.build.gradle.model.ModelConstants.JNILIBS_DEPENDENCIES;
 import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
@@ -32,11 +33,17 @@ import com.android.build.gradle.internal.JniLibsLanguageTransform;
 import com.android.build.gradle.internal.LanguageRegistryUtils;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.NativeDependencyLinkage;
+import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.NdkOptionsHelper;
+import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
+import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
@@ -71,8 +78,10 @@ import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.android.resources.Density;
 import com.android.utils.ILogger;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
@@ -93,7 +102,6 @@ import org.gradle.language.base.internal.registry.LanguageRegistration;
 import org.gradle.language.base.internal.registry.LanguageRegistry;
 import org.gradle.language.base.internal.registry.LanguageTransformContainer;
 import org.gradle.model.Defaults;
-import org.gradle.model.Finalize;
 import org.gradle.model.Model;
 import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
@@ -111,6 +119,7 @@ import android.databinding.tool.DataBindingBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -277,8 +286,9 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public static void registerLanguageTransform(
                 LanguageTransformContainer languages,
-                ServiceRegistry serviceRegistry) {
-            languages.add(new JniLibsLanguageTransform());
+                ServiceRegistry serviceRegistry,
+                NdkHandler ndkHandler) {
+            languages.add(new JniLibsLanguageTransform(ndkHandler));
         }
 
         @Defaults
@@ -448,6 +458,36 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
             return new AndroidConfigAdaptor(androidExtension, AndroidConfigHelper
                     .createSourceSetsContainer(project, instantiator, !isApplication));
+        }
+
+        @Model(JNILIBS_DEPENDENCIES)
+        public static Multimap<String, NativeDependencyResolveResult> resolveJniLibsDependencies(
+                ModelMap<AndroidBinary> androidBinary,
+                @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
+                final ServiceRegistry serviceRegistry) {
+            Multimap<String, NativeDependencyResolveResult> dependencies =
+                    ArrayListMultimap.create();
+            for (AndroidBinary binary : androidBinary.values()) {
+                Collection<JniLibsSourceSet> jniSources = binary.getInputs().withType(
+                        JniLibsSourceSet.class);
+
+                for (JniLibsSourceSet sourceSet : jniSources) {
+                    dependencies.put(
+                            binary.getName(),
+                            new NativeDependencyResolver(
+                                    serviceRegistry,
+                                    sourceSet.getDependencies(),
+                                    new AndroidNativeDependencySpec(
+                                            null,
+                                            null,
+                                            binary.getBuildType().getName(),
+                                            ProductFlavorCombo.getFlavorComboName(
+                                                    binary.getProductFlavors()),
+                                            null,
+                                            NativeDependencyLinkage.SHARED)).resolve());
+                }
+            }
+            return dependencies;
         }
 
         @Mutate

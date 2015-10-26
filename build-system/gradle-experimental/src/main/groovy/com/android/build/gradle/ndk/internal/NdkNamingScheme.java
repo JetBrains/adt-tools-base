@@ -132,24 +132,6 @@ public class NdkNamingScheme {
     }
 
     /**
-     * Return the name of the directory that will contain the native library from dependent
-     * libraries.
-     */
-    @NonNull
-    public static String getDependencyLibraryDirectoryName(
-            @NonNull String buildType,
-            @NonNull String productFlavor,
-            @NonNull String abi) {
-        return FileUtils.join(
-                FD_INTERMEDIATES,
-                "binaries",
-                buildType,
-                productFlavor,
-                "dependency",
-                abi);
-    }
-
-    /**
      * Return the name of the output shared library.
      */
     @NonNull
