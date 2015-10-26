@@ -429,11 +429,8 @@ public class MergeResources extends IncrementalTask {
             mergeResourcesTask.setVariantName(scope.getVariantConfiguration().getFullName());
             mergeResourcesTask.setIncrementalFolder(scope.getIncrementalDir(getName()));
 
-            // Libraries use this task twice, once for compilation (with dependencies),
-            // where blame is useful, and once for packaging where it is not.
-            if (includeDependencies) {
-                mergeResourcesTask.setBlameLogFolder(scope.getResourceBlameLogDir());
-            }
+            mergeResourcesTask.setBlameLogFolder(scope.getResourceBlameLogDir());
+
             mergeResourcesTask.setProcess9Patch(process9Patch);
             mergeResourcesTask.setCrunchPng(extension.getAaptOptions().getCruncherEnabled());
 
