@@ -56,11 +56,6 @@ class  TictactoeTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     public void testModel() throws Exception {
         AndroidProject libModel = models.get(":lib")
         assertNotNull("lib module model null-check", libModel)

@@ -64,11 +64,6 @@ class FlavorsTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     void "check flavors show up in model"() throws Exception {
         File projectDir = project.getTestDir()
 

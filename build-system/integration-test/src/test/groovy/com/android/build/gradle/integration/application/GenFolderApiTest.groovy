@@ -54,11 +54,6 @@ class GenFolderApiTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     void "check the custom java generation task ran"() throws Exception {
         assertThatApk(project.getApk("debug")).containsClass("Lcom/custom/Foo;")
     }

@@ -48,11 +48,6 @@ class RenderscriptNdkTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     void "check packaged .so files"() {
         assertThatZip(project.getApk("debug")).contains("lib/armeabi-v7a/librs.mono.so")
         assertThatZip(project.getApk("debug")).contains("lib/armeabi-v7a/librenderscript.so")

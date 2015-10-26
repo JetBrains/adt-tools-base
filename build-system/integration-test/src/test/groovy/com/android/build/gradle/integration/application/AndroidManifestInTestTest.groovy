@@ -47,11 +47,6 @@ class AndroidManifestInTestTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     public void testUserProvidedTestAndroidManifest() throws Exception {
         File testApk = project.getApk("debug", "androidTest", "unaligned")
 
