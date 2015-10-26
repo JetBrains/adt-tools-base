@@ -1470,12 +1470,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             }
         }
 
-        for (JarDependency jar : mLocalJars) {
-            File jarFile = jar.getJarFile();
-            if (jar.isPackaged() && jarFile.exists()) {
-                jars.add(jarFile);
-            }
-        }
+        jars.addAll(getLocalPackagedJars());
 
         for (LibraryDependency libraryDependency : mFlatLibraries) {
             if (!libraryDependency.isOptional()) {
@@ -1540,10 +1535,20 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     public ImmutableSet<File> getLocalPackagedJars() {
         ImmutableSet.Builder<File> jars = ImmutableSet.builder();
 
+        // For tests of library projects, the local jars are showing both in
+        // the tested library bundle and in the test variant. This removes
+        // them from the test variant where they don't belong anyway.
+        Set<File> testedlocalJars = null;
+        if (mTestedConfig != null && mTestedConfig.getType() == VariantType.LIBRARY) {
+            testedlocalJars = mTestedConfig.getLocalPackagedJars();
+        }
+
         for (JarDependency jar : mLocalJars) {
             File jarFile = jar.getJarFile();
-            if (jar.isPackaged() && jarFile.exists()) {
-                jars.add(jarFile);
+            if (testedlocalJars == null || !testedlocalJars.contains(jarFile)) {
+                if (jar.isPackaged() && jarFile.exists()) {
+                    jars.add(jarFile);
+                }
             }
         }
 
@@ -1891,8 +1896,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @return a non null list of proguard files.
      */
     @NonNull
-    public List<File> getProguardFiles(boolean includeLibraries, List<File> defaultProguardConfig) {
-        List<File> fullList = Lists.newArrayList();
+    public Set<File> getProguardFiles(boolean includeLibraries, List<File> defaultProguardConfig) {
+        Set<File> fullList = Sets.newHashSet();
 
         // add the config files from the build type, main config and flavors
         fullList.addAll(mDefaultConfig.getProguardFiles());
@@ -1923,8 +1928,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * Returns the proguard config files to be used for the test APK.
      */
     @NonNull
-    public List<File> getTestProguardFiles() {
-        List<File> fullList = Lists.newArrayList();
+    public Set<File> getTestProguardFiles() {
+        Set<File> fullList = Sets.newHashSet();
 
         // add the config files from the build type, main config and flavors
         fullList.addAll(mDefaultConfig.getTestProguardFiles());

@@ -22,22 +22,19 @@ import com.google.common.annotations.Beta;
 import java.util.Collection;
 
 /**
- * The input to a Transform.
- * <p/>
- * It is mostly composed of a list of {@link JarInput} and a list of {@link DirectoryInput}.
+ * A {@link QualifiedContent} of type jar.
+ * </p>
+ * This means the {@link #getFile()} is the jar file containing the content.
+ * </p>
+ * This also contain incremental state if the transform is in incremental mode (both
+ * {@link Transform#isIncremental()} must return true, and
+ * {@link Transform#transform(Context, Collection, Collection, TransformOutputProvider, boolean)} must
+ * have its last parameter set to true). If the transform is not in incremental mode,
+ * {@link #getStatus()} always returns {@link Status#NOTCHANGED}.
  */
 @Beta
-public interface TransformInput {
+public interface JarInput extends QualifiedContent {
 
-    /**
-     * Returns a collection of {@link JarInput}.
-     */
     @NonNull
-    Collection<JarInput> getJarInputs();
-
-    /**
-     * Returns a collection of {@link DirectoryInput}.
-     */
-    @NonNull
-    Collection<DirectoryInput> getDirectoryInputs();
+    Status getStatus();
 }

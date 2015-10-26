@@ -112,7 +112,7 @@ dependencies {
     }
 
     @Test
-    void "check exclude"() {
+    void "check exclude on jars"() {
         project.getBuildFile() << """
 android {
     packagingOptions {
@@ -134,15 +134,12 @@ dependencies {
         project.getBuildFile() << """
 android {
     packagingOptions {
-        exclude 'lib/x86/libconflict.so'
         exclude 'conflict.txt'
     }
 }
 """
-        createFile('src/main/jniLibs/x86/libconflict.so')
         createFile('src/main/resources/conflict.txt')
         project.execute("clean", "assembleDebug")
-        assertThatZip(project.getApk("debug")).doesNotContain('lib/x86/libconflict.so')
         assertThatZip(project.getApk("debug")).doesNotContain('conflict.txt')
     }
 
@@ -166,37 +163,32 @@ dependencies {
     }
 
     @Test
-    void "check merge on direct files"() {
+    void "check merge on local res file"() {
         project.getBuildFile() << """
 android {
     packagingOptions {
-        // Doesn't make sense to merge native library, but it should work.
-        merge 'lib/x86/libconflict.so'
+        // this will not be used since debug will override the main one.
+        merge 'file.txt'
     }
 }
 """
-        createFile('src/main/jniLibs/x86/libconflict.so') << "foo"
-        createFile('src/debug/jniLibs/x86/libconflict.so') << "foo"
+        createFile('src/main/resources/file.txt') << "main"
+        createFile('src/debug/resources/file.txt') << "debug"
         project.execute("clean", "assembleDebug")
-        assertThatZip(project.getApk("debug")).containsFileWithContent("lib/x86/libconflict.so", "foofoo")
+        assertThatZip(project.getApk("debug")).containsFileWithContent("file.txt", "debug")
     }
 
     @Test
     void "check merge on a direct file and a jar entry"() {
         project.getBuildFile() << """
-android {
-    packagingOptions {
-        merge 'conflict.txt'
-    }
-}
-
 dependencies {
     compile files('jar1.jar')
 }
 """
-        createFile('src/main/resources/conflict.txt') << "foo"
+        createFile('src/main/resources/conflict.txt') << "project-foo"
         project.execute("clean", "assembleDebug")
-        assertThatZip(project.getApk("debug")).containsFileWithContent("conflict.txt", "foofoo")
+        // we expect to only see the one in src/main because it overrides the dependency one.
+        assertThatZip(project.getApk("debug")).containsFileWithContent("conflict.txt", "project-foo")
     }
 
     /**

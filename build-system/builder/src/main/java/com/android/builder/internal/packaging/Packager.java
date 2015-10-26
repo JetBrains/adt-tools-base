@@ -22,7 +22,6 @@ import static com.android.SdkConstants.FN_APK_CLASSES_N_DEX;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.transform.api.ScopedContent.Format;
 import com.android.builder.internal.packaging.JavaResourceProcessor.IArchiveBuilder;
 import com.android.builder.model.PackagingOptions;
 import com.android.builder.packaging.DuplicateFileException;
@@ -201,13 +200,13 @@ public final class Packager implements IArchiveBuilder {
         }
     }
 
-    public void addDexFiles(@NonNull Map<File, Format> dexFolders)
+    public void addDexFiles(@NonNull Set<File> dexFolders)
             throws DuplicateFileException, SealedPackageException, PackagerException {
         // If there is a single folder that's either no multi-dex or pre-21 multidex (where
         // dx has merged them all into 2+ dex files).
         // IF there are 2+ folders then we are directly adding the pre-dexing output.
-        if (dexFolders.size() == 1 && Iterables.getOnlyElement(dexFolders.values()) != Format.MULTI_FOLDER) {
-            File[] dexFiles = Iterables.getOnlyElement(dexFolders.keySet()).listFiles(
+        if (dexFolders.size() == 1 ) {
+            File[] dexFiles = Iterables.getOnlyElement(dexFolders).listFiles(
                     new FilenameFilter() {
                         @Override
                         public boolean accept(File file, String name) {
@@ -222,21 +221,10 @@ public final class Packager implements IArchiveBuilder {
             }
         } else {
             // in 21+ mode we can simply include all the dex files, and rename them as we
-            // go so that their index is contiguous.
+            // go so that their indices are contiguous.
             int dexIndex = 1;
-            for (Map.Entry<File, Format> folderEntry : dexFolders.entrySet()) {
-                if (folderEntry.getValue() == Format.MULTI_FOLDER) {
-                    File[] children = folderEntry.getKey().listFiles();
-                    if (children != null) {
-                        for (File childFolder : children) {
-                            if (childFolder.isDirectory()) {
-                                dexIndex = addContentOfDexFolder(childFolder, dexIndex);
-                            }
-                        }
-                    }
-                } else {
-                    dexIndex = addContentOfDexFolder(folderEntry.getKey(), dexIndex);
-                }
+            for (File folderEntry : dexFolders) {
+                dexIndex = addContentOfDexFolder(folderEntry, dexIndex);
             }
         }
     }

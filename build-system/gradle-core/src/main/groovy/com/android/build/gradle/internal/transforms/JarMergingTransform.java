@@ -16,44 +16,37 @@
 
 package com.android.build.gradle.internal.transforms;
 
-import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.utils.FileUtils.deleteIfExists;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.transform.api.CombinedTransform;
+import com.android.annotations.Nullable;
 import com.android.build.transform.api.Context;
-import com.android.build.transform.api.ScopedContent;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.DirectoryInput;
+import com.android.build.transform.api.Format;
+import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutput;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.android.build.transform.api.TransformOutputProvider;
+import com.android.builder.signing.SignedJarBuilder;
+import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.Closer;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 /**
  * A transform that merges all the incoming streams into a single jar in a single combined
  * stream.
  */
-public class JarMergingTransform extends Transform implements CombinedTransform {
+public class JarMergingTransform extends Transform {
 
     @NonNull
     private final ImmutableSet<Scope> scopes;
@@ -84,12 +77,6 @@ public class JarMergingTransform extends Transform implements CombinedTransform 
         return scopes;
     }
 
-    @NonNull
-    @Override
-    public ScopedContent.Format getOutputFormat() {
-        return ScopedContent.Format.JAR;
-    }
-
     @Override
     public boolean isIncremental() {
         return false;
@@ -100,136 +87,43 @@ public class JarMergingTransform extends Transform implements CombinedTransform 
             @NonNull Context context,
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedStreams,
-            @NonNull TransformOutput combinedOutput,
+            @Nullable TransformOutputProvider outputProvider,
             boolean isIncremental) throws TransformException, IOException {
-        Closer closer = Closer.create();
+        checkNotNull(outputProvider, "Missing output object for transform " + getName());
+
+        // all the output will be the same since the transform type is COMBINED.
+        // and format is SINGLE_JAR so output is a jar
+        File jarFile = outputProvider.getContentLocation("combined", getOutputTypes(), getScopes(),
+                Format.JAR);
+        FileUtils.mkdirs(jarFile.getParentFile());
+        deleteIfExists(jarFile);
+
+        JarMerger jarMerger = new JarMerger(jarFile);
+
         try {
-            // all the output will be the same since the transform type is COMBINED.
-            // and format is SINGLE_JAR so output is a jar
-            checkNotNull(combinedOutput, "Found no output in transform with Type=COMBINED");
-            File jarFile = combinedOutput.getOutFile();
-            deleteIfExists(jarFile);
-
-            FileOutputStream fos = closer.register(new FileOutputStream(jarFile));
-            JarOutputStream jos = closer.register(new JarOutputStream(fos));
-
-            final byte[] buffer = new byte[8192];
+            jarMerger.setFilter(new SignedJarBuilder.IZipEntryFilter() {
+                @Override
+                public boolean checkEntry(String archivePath)
+                        throws ZipAbortException {
+                    return archivePath.endsWith(SdkConstants.DOT_CLASS);
+                }
+            });
 
             for (TransformInput input : inputs) {
-                switch (input.getFormat()) {
-                    case SINGLE_FOLDER:
-                        for (File inputFile : input.getFiles()) {
-                            if (inputFile.isFile()) {
-                                processJarFile(jos, inputFile, buffer);
-                            } else if (inputFile.isDirectory()) {
-                                processFolder(jos, "", inputFile, buffer);
-                            }
+                for (JarInput jarInput : input.getJarInputs()) {
+                    jarMerger.addJar(jarInput.getFile());
+                }
 
-                        }
-                        break;
-                    case JAR:
-                        for (File f : input.getFiles()) {
-                            processJarFile(jos, f, buffer);
-                        }
-                        break;
-                    case MULTI_FOLDER:
-                        throw new RuntimeException("MULTI_FOLDER format received in Transform method");
-                    default:
-                        throw new RuntimeException("Unsupported ScopedContent.Format value: " + input.getFormat().name());
+                for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
+                    jarMerger.addFolder(directoryInput.getFile());
                 }
             }
-
         } catch (FileNotFoundException e) {
             throw new TransformException(e);
         } catch (IOException e) {
             throw new TransformException(e);
         } finally {
-            closer.close();
-        }
-    }
-
-    private static void processFolder(
-            @NonNull JarOutputStream jos,
-            @NonNull String path,
-            @NonNull File folder,
-            @NonNull byte[] buffer)
-            throws IOException {
-        File[] files = folder.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isFile()) {
-                    if (file.getName().endsWith(DOT_CLASS)) {
-                        // new entry
-                        jos.putNextEntry(new JarEntry(path + file.getName()));
-
-                        // put the file content
-                        Closer closer = Closer.create();
-                        try {
-                            FileInputStream fis = closer.register(new FileInputStream(file));
-                            int count;
-                            while ((count = fis.read(buffer)) != -1) {
-                                jos.write(buffer, 0, count);
-                            }
-                        } finally {
-                            closer.close();
-                        }
-
-                        // close the entry
-                        jos.closeEntry();
-                    }
-                } else if (file.isDirectory()) {
-                    processFolder(jos, path + file.getName() + "/", file, buffer);
-                }
-            }
-        }
-    }
-
-    private static void processJarFile(JarOutputStream jos, File file, byte[] buffer)
-            throws IOException {
-
-        Closer closer = Closer.create();
-        try {
-            FileInputStream fis = closer.register(new FileInputStream(file));
-            ZipInputStream zis = closer.register(new ZipInputStream(fis));
-
-            // loop on the entries of the jar file package and put them in the final jar
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
-                // do not take directories or anything inside a potential META-INF folder.
-                if (entry.isDirectory()) {
-                    continue;
-                }
-
-                String name = entry.getName();
-                if (!name.endsWith(DOT_CLASS)) {
-                    continue;
-                }
-
-                JarEntry newEntry;
-
-                // Preserve the STORED method of the input entry.
-                if (entry.getMethod() == JarEntry.STORED) {
-                    newEntry = new JarEntry(entry);
-                } else {
-                    // Create a new entry so that the compressed len is recomputed.
-                    newEntry = new JarEntry(name);
-                }
-
-                // add the entry to the jar archive
-                jos.putNextEntry(newEntry);
-
-                // read the content of the entry from the input stream, and write it into the archive.
-                int count;
-                while ((count = zis.read(buffer)) != -1) {
-                    jos.write(buffer, 0, count);
-                }
-
-                // close the entries for this file
-                jos.closeEntry();
-                zis.closeEntry();
-            }
-        } finally {
-            closer.close();
+            jarMerger.close();
         }
     }
 }

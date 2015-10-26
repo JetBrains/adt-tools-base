@@ -16,20 +16,28 @@
 
 package com.android.build.transform.api;
 
-import com.android.annotations.NonNull;
 import com.google.common.annotations.Beta;
 
-import java.io.File;
-
 /**
- * The output of a transform, as used during the actual Transform.
+ * The format in which a content is stored.
  */
 @Beta
-public interface TransformOutput extends ScopedContent {
+public enum Format {
 
     /**
-     * The file or folder to write the output to. There is only a single possible output file.
+     * The content is jar(s).
+     *
+     * <p/>
+     * As Input, there can be one or more jar files.
+     * As output, a transform can only write a single jar files.
      */
-    @NonNull
-    File getOutFile();
+    JAR,
+    /**
+     * The content is directly under the root direcory.
+     *
+     * <p/>
+     * This means that in the case of java class files, the files should be in directories
+     * matching their package names, directly under the root directory.
+     */
+    DIRECTORY
 }

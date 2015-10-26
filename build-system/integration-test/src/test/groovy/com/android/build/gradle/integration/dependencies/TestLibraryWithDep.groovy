@@ -24,9 +24,6 @@ import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 
-/**
- * Created by jedo on 1/16/15.
- */
 @CompileStatic
 class TestLibraryWithDep {
 

@@ -6,6 +6,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.pipeline.FilterableStreamCollection;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
@@ -16,19 +17,18 @@ import com.android.build.gradle.internal.tasks.ValidateSigningTask;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Format;
-import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.StringHelper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import org.gradle.api.Task;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Nested;
@@ -41,14 +41,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class PackageApplication extends IncrementalTask implements FileSupplier {
 
-    public static final TransformManager.StreamFilter sDexFilter =
+    public static final FilterableStreamCollection.StreamFilter sDexFilter =
             new TransformManager.StreamFilter() {
                 @Override
                 public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
@@ -56,7 +55,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 }
             };
 
-    public static final TransformManager.StreamFilter sResFilter =
+    public static final FilterableStreamCollection.StreamFilter sResFilter =
             new TransformManager.StreamFilter() {
                 @Override
                 public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
@@ -75,11 +74,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     public void setResourceFile(File resourceFile) {
         this.resourceFile = resourceFile;
-    }
-
-    @InputFiles
-    public Collection<File> getDexFolderList() {
-        return getDexFolders().keySet();
     }
 
     public Set<File> getJniFolders() {
@@ -119,29 +113,22 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     // ----- PRIVATE TASK API -----
 
-    @InputDirectory
+    @InputFiles
     @Optional
-    public File getJavaResourceDir() {
-        return javaResourceDir;
-    }
-
-    @InputFile
-    @Optional
-    public File getJavaResourceJar() {
-        return javaResourceJar;
+    public Collection<File> getJavaResourceFiles() {
+        return javaResourceFiles;
     }
 
     private File resourceFile;
 
-    private Map<File, Format> dexFolders;
-    public Map<File, Format> getDexFolders() {
+    private Set<File> dexFolders;
+    @InputFiles
+    public Set<File> getDexFolders() {
         return dexFolders;
     }
 
-    /** directory for the merged java resources. only valid if the jar below is null  */
-    private File javaResourceDir;
-    /** jar for the merged java resources. only valid if the folder above is null  */
-    private File javaResourceJar;
+    /** list of folders and/or jars that contain the merged java resources. */
+    private Set<File> javaResourceFiles;
 
     private Set<File> jniFolders;
 
@@ -214,14 +201,11 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
     @Override
     protected void doFullTaskAction() {
         try {
-            File resourceLocation = getJavaResourceDir();
-            if (resourceLocation == null) {
-                resourceLocation = getJavaResourceJar();
-            }
+            Collection<File> javaResourceFiles = getJavaResourceFiles();
             getBuilder().packageApk(
                     getResourceFile().getAbsolutePath(),
                     getDexFolders(),
-                    resourceLocation,
+                    javaResourceFiles == null ? ImmutableList.<File>of() : javaResourceFiles,
                     getJniFolders(),
                     getMergingFolder(),
                     getAbiFilters(),
@@ -235,8 +219,10 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             logger.error("Error: duplicate files during packaging of APK " + getOutputFile()
                     .getAbsolutePath());
             logger.error("\tPath in archive: " + e.getArchivePath());
-            logger.error("\tOrigin 1: " + e.getFile1());
-            logger.error("\tOrigin 2: " + e.getFile2());
+            int index = 1;
+            for (File file : e.getSourceFiles()) {
+                logger.error("\tOrigin " + (index++) + ": " + file);
+            }
             logger.error("You can ignore those files in your build.gradle:");
             logger.error("\tandroid {");
             logger.error("\t  packagingOptions {");
@@ -312,27 +298,19 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 });
             }
 
-            ConventionMappingHelper.map(packageApp, "dexFolders", new Callable< Map<File, Format>>() {
+            ConventionMappingHelper.map(packageApp, "dexFolders", new Callable<Set<File>>() {
                 @Override
-                public  Map<File, Format> call() {
+                public  Set<File> call() {
+                    return scope.getVariantScope().getTransformManager()
+                            .getPipelineOutput(sDexFilter).keySet();
+                }
+            });
+
+            ConventionMappingHelper.map(packageApp, "javaResourceFiles", new Callable<Set<File>>() {
+                @Override
+                public Set<File> call() throws Exception {
                     return scope.getVariantScope().getTransformManager().getPipelineOutput(
-                            sDexFilter, null);
-                }
-            });
-
-            ConventionMappingHelper.map(packageApp, "javaResourceDir", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return scope.getVariantScope().getTransformManager().getSinglePipelineOutput(
-                            sResFilter, Format.SINGLE_FOLDER);
-                }
-            });
-
-            ConventionMappingHelper.map(packageApp, "javaResourceJar", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return scope.getVariantScope().getTransformManager().getSinglePipelineOutput(
-                            sResFilter, Format.JAR);
+                            sResFilter).keySet();
                 }
             });
 
@@ -343,7 +321,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             ConventionMappingHelper.map(packageApp, "jniFolders", new Callable<Set<File>>() {
                 @Override
                 public Set<File> call() {
-
                     if (variantData.getSplitHandlingPolicy() ==
                             BaseVariantData.SplitHandlingPolicy.PRE_21_POLICY) {
                         return scope.getVariantScope().getJniFolders();

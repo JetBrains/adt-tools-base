@@ -17,12 +17,13 @@
 package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.tasks.InputFiles;
-import org.gradle.api.tasks.OutputDirectories;
-import org.gradle.api.tasks.OutputFiles;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputDirectory;
 
 import java.io.File;
 import java.util.Collection;
@@ -36,62 +37,31 @@ public class StreamBasedTask extends BaseTask {
 
     protected Collection<TransformStream> consumedInputStreams;
     protected Collection<TransformStream> referencedInputStreams;
-    protected Collection<TransformStream> outputStreams;
+    protected IntermediateStream outputStream;
 
     @NonNull
     @InputFiles
     public List<File> getStreamInputs() {
         List<File> inputs = Lists.newArrayList();
         for (TransformStream s : consumedInputStreams) {
-            inputs.addAll(s.getFiles().get());
+            inputs.addAll(s.getInputFiles());
         }
 
         for (TransformStream s : referencedInputStreams) {
-            inputs.addAll(s.getFiles().get());
+            inputs.addAll(s.getInputFiles());
         }
 
         return inputs;
     }
 
-    @NonNull
-    @OutputDirectories
-    public List<File> getStreamOutputFolders() {
-        List<File> outputs = Lists.newArrayList();
-        for (TransformStream s : outputStreams) {
-            switch (s.getFormat()) {
-                case SINGLE_FOLDER:
-                case MULTI_FOLDER:
-                    outputs.addAll(s.getFiles().get());
-                    break;
-                case JAR:
-                    // do nothing
-                    break;
-                default:
-                    throw new RuntimeException("Unsupported ScopedContent.Format value: " + s.getFormat().name());
-            }
+    @Nullable
+    @Optional
+    @OutputDirectory
+    public File getStreamOutputFolder() {
+        if (outputStream != null) {
+            return outputStream.getRootLocation().get();
         }
 
-        return outputs;
-    }
-
-    @NonNull
-    @OutputFiles
-    public List<File> getStreamOutputFiles() {
-        List<File> outputs = Lists.newArrayList();
-        for (TransformStream s : outputStreams) {
-            switch (s.getFormat()) {
-                case SINGLE_FOLDER:
-                case MULTI_FOLDER:
-                    // do nothing
-                    break;
-                case JAR:
-                    outputs.addAll(s.getFiles().get());
-                    break;
-                default:
-                    throw new RuntimeException("Unsupported ScopedContent.Format value: " + s.getFormat().name());
-            }
-        }
-
-        return outputs;
+        return null;
     }
 }

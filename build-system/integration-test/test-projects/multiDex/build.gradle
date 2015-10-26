@@ -40,5 +40,6 @@ android {
 }
 
 dependencies {
+    compile 'com.android.support:support-v4:20.0.0'
     androidTestCompile 'junit:junit:4.12'
 }

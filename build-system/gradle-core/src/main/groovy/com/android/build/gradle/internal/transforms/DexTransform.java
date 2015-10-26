@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.transforms;
 
-import static com.android.utils.FileUtils.emptyFolder;
 import static com.android.utils.FileUtils.mkdirs;
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -25,16 +24,17 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.transform.api.CombinedTransform;
 import com.android.build.transform.api.Context;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Format;
-import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.DirectoryInput;
+import com.android.build.transform.api.Format;
+import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.QualifiedContent;
+import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformInput.FileStatus;
-import com.android.build.transform.api.TransformOutput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.builder.sdk.TargetInfo;
@@ -68,7 +68,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -80,10 +79,9 @@ import java.util.concurrent.Callable;
  *
  * This handles pre-dexing as well. If there are more than one stream, then only streams with
  * changed files will be re-dexed before a single merge phase is done at the end.
- * If there is a single stream (when there's a {@link CombinedTransform} upstream),
- * then there's only a single dx phase.
+ * If there is a single input, then there's only a single dx phase.
  */
-public class DexTransform extends Transform implements CombinedTransform {
+public class DexTransform extends Transform {
 
     @NonNull
     private final DexOptions dexOptions;
@@ -144,16 +142,6 @@ public class DexTransform extends Transform implements CombinedTransform {
 
     @NonNull
     @Override
-    public Format getOutputFormat() {
-        if (multiDex && mainDexListFile == null) {
-            return Format.MULTI_FOLDER;
-        }
-
-        return Format.SINGLE_FOLDER;
-    }
-
-    @NonNull
-    @Override
     public Collection<File> getSecondaryFileInputs() {
         if (mainDexListFile != null) {
             return ImmutableList.of(mainDexListFile);
@@ -164,7 +152,7 @@ public class DexTransform extends Transform implements CombinedTransform {
 
     @NonNull
     @Override
-    public Collection<File> getSecondaryFolderOutputs() {
+    public Collection<File> getSecondaryDirectoryOutputs() {
         // we use the intermediate folder only if
         // - there's per-scope dexing
         // - there's no native multi-dex
@@ -211,37 +199,44 @@ public class DexTransform extends Transform implements CombinedTransform {
             @NonNull Context context,
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
-            @NonNull TransformOutput combinedOutput,
+            @Nullable TransformOutputProvider outputProvider,
             boolean isIncremental) throws TransformException, IOException, InterruptedException {
-        checkNotNull(combinedOutput, "Found no output in transform with Type=COMBINED");
-        File outFolder = combinedOutput.getOutFile();
+        checkNotNull(outputProvider, "Missing output object for transform " + getName());
+
+        // Gather a full list of all inputs.
+        List<JarInput> jarInputs = Lists.newArrayList();
+        List<DirectoryInput> directoryInputs = Lists.newArrayList();
+        for (TransformInput input : inputs) {
+            jarInputs.addAll(input.getJarInputs());
+            directoryInputs.addAll(input.getDirectoryInputs());
+        }
 
         try {
             // if only one scope or no per-scope dexing, just do a single pass that
             // runs dx on everything.
-            if (inputs.size() == 1 || !dexOptions.getPreDexLibraries()) {
+            if ((jarInputs.size() + directoryInputs.size()) == 1 || !dexOptions.getPreDexLibraries()) {
+                File outputDir = outputProvider.getContentLocation("main",
+                        getOutputTypes(), getScopes(),
+                        Format.DIRECTORY);
+                FileUtils.mkdirs(outputDir);
+
                 // first delete the output folder where the final dex file(s) will be.
-                FileUtils.emptyFolder(outFolder);
+                FileUtils.emptyFolder(outputDir);
 
                 // gather the inputs. This mode is always non incremental, so just
                 // gather the top level folders/jars
                 final List<File> inputFiles = Lists.newArrayList();
-                for (TransformInput input : inputs) {
-                    switch (input.getFormat()) {
-                        case JAR:
-                        case SINGLE_FOLDER:
-                            inputFiles.addAll(input.getFiles());
-                            break;
-                        case MULTI_FOLDER:
-                            throw new RuntimeException("MULTI_FOLDER format received in Transform method");
-                        default:
-                            throw new RuntimeException("Unexpected format: " + input.getFormat());
-                    }
+                for (JarInput jarInput : jarInputs) {
+                    inputFiles.add(jarInput.getFile());
+                }
+
+                for (DirectoryInput directoryInput : directoryInputs) {
+                    inputFiles.add(directoryInput.getFile());
                 }
 
                 androidBuilder.convertByteCode(
                         inputFiles,
-                        outFolder,
+                        outputDir,
                         multiDex,
                         mainDexListFile,
                         dexOptions,
@@ -250,66 +245,6 @@ public class DexTransform extends Transform implements CombinedTransform {
                         true,
                         new LoggedProcessOutputHandler(logger));
             } else {
-                // dex all the different streams separately, then merge later (maybe)
-                final Set<String> hashs = Sets.newHashSet();
-                final List<File> inputFiles = Lists.newArrayList();
-                final List<File> deletedFiles = Lists.newArrayList();
-
-                // first gather the different inputs to be dexed separately.
-                for (TransformInput input : inputs) {
-                    switch (input.getFormat()) {
-                        case SINGLE_FOLDER:
-                            if (input.getFiles().size() != 1) {
-                                throw new RuntimeException(
-                                        "SINGLE_FOLDER format with wrong input files size: " + input);
-                            }
-                            final File rootFolder = input.getFiles().iterator().next();
-                            // The incremental mode only detect file level changes.
-                            // It does not handle removed root folders. However the transform
-                            // task will add the TransformInput right after it's removed so that it
-                            // can be detected by the transform.
-                            if (!rootFolder.exists()) {
-                                // if the root folder is gone we need to remove the previous
-                                // output
-                                File preDexedFile = getDexFileName(intermediateFolder, rootFolder);
-                                if (preDexedFile.exists()) {
-                                    deletedFiles.add(preDexedFile);
-                                }
-                            } else if (!isIncremental || !input.getChangedFiles().isEmpty()) {
-                                // add the folder for re-dexing only if we're not in incremental
-                                // mode or if it contains changed files.
-                                inputFiles.add(rootFolder);
-                            }
-                            break;
-                        case MULTI_FOLDER:
-                            throw new RuntimeException(
-                                    "MULTI_FOLDER format received in Transform method" + input);
-                        case JAR:
-                            if (isIncremental) {
-                                for (Entry<File, FileStatus> entry : input.getChangedFiles()
-                                        .entrySet()) {
-                                    File file = entry.getKey();
-                                    switch (entry.getValue()) {
-                                        case ADDED:
-                                        case CHANGED:
-                                            inputFiles.add(file);
-                                            break;
-                                        case REMOVED:
-                                            File preDexedFile = getDexFileName(intermediateFolder,
-                                                    file);
-                                            deletedFiles.add(preDexedFile);
-                                            break;
-                                    }
-                                }
-                            } else {
-                                inputFiles.addAll(input.getFiles());
-                            }
-                            break;
-                        default:
-                            throw new RuntimeException("Unexpected format: " + input.getFormat());
-                    }
-                }
-
                 // Figure out if we need to do a dx merge.
                 // The ony case we don't need it is in native multi-dex mode when doing debug
                 // builds. This saves build time at the expense of too many dex files which is fine.
@@ -317,21 +252,85 @@ public class DexTransform extends Transform implements CombinedTransform {
                 boolean needMerge = !multiDex || mainDexListFile != null;// || !debugMode;
 
                 // where we write the pre-dex depends on whether we do the merge after.
-                File perStreamDexFolder = needMerge ? intermediateFolder : outFolder;
+                // If needMerge changed from one build to another, we'll be in non incremental
+                // mode, so we don't have to deal with changing folder in incremental mode.
+                File perStreamDexFolder = null;
+                if (needMerge) {
+                    perStreamDexFolder = intermediateFolder;
 
-                if (!isIncremental) {
-                    emptyFolder(perStreamDexFolder);
+                    if (!isIncremental) {
+                        FileUtils.deleteFolder(perStreamDexFolder);
+                    }
+                } else if (!isIncremental) {
+                    // in this mode there's no merge and we dex it all separately into different
+                    // output location so we have to delete everything.
+                    outputProvider.deleteAll();
+                }
+
+                // dex all the different streams separately, then merge later (maybe)
+                // hash to detect duplicate jars (due to isse with library and tests)
+                final Set<String> hashs = Sets.newHashSet();
+                // input files to output file map
+                final Map<File, File> inputFiles = Maps.newHashMap();
+                // stuff to delete. Might be folders.
+                final List<File> deletedFiles = Lists.newArrayList();
+
+                // first gather the different inputs to be dexed separately.
+                for (DirectoryInput directoryInput : directoryInputs) {
+                    File rootFolder = directoryInput.getFile();
+                    // The incremental mode only detect file level changes.
+                    // It does not handle removed root folders. However the transform
+                    // task will add the TransformInput right after it's removed so that it
+                    // can be detected by the transform.
+                    if (!rootFolder.exists()) {
+                        // if the root folder is gone we need to remove the previous
+                        // output
+                        File preDexedFile = getPreDexFile(outputProvider, needMerge, perStreamDexFolder,
+                                directoryInput);
+                        if (preDexedFile.exists()) {
+                            deletedFiles.add(preDexedFile);
+                        }
+                    } else if (!isIncremental || !directoryInput.getChangedFiles().isEmpty()) {
+                        // add the folder for re-dexing only if we're not in incremental
+                        // mode or if it contains changed files.
+                        File preDexFile = getPreDexFile(outputProvider, needMerge, perStreamDexFolder,
+                                directoryInput);
+                        inputFiles.put(rootFolder, preDexFile);
+                    }
+                }
+
+                for (JarInput jarInput : jarInputs) {
+                    switch (jarInput.getStatus()) {
+                        case NOTCHANGED:
+                            if (isIncremental) {
+                                break;
+                            }
+                            // intended fall-through
+                        case CHANGED:
+                        case ADDED: {
+                            File preDexFile = getPreDexFile(outputProvider, needMerge, perStreamDexFolder,
+                                    jarInput);
+                            inputFiles.put(jarInput.getFile(), preDexFile);
+                            break;
+                        }
+                        case REMOVED: {
+                            File preDexedFile = getPreDexFile(outputProvider, needMerge, perStreamDexFolder,
+                                    jarInput);
+                            if (preDexedFile.exists()) {
+                                deletedFiles.add(preDexedFile);
+                            }
+                            break;
+                        }
+                    }
                 }
 
                 WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
                 ProcessOutputHandler outputHandler = new LoggedProcessOutputHandler(logger);
 
-                mkdirs(perStreamDexFolder);
-
-                for (File file : inputFiles) {
+                for (Map.Entry<File, File> entry : inputFiles.entrySet()) {
                     Callable<Void> action = new PreDexTask(
-                            perStreamDexFolder,
-                            file,
+                            entry.getKey(),
+                            entry.getValue(),
                             hashs,
                             outputHandler);
                     executor.execute(action);
@@ -350,9 +349,14 @@ public class DexTransform extends Transform implements CombinedTransform {
                 executor.waitForTasksWithQuickFail(false);
 
                 if (needMerge) {
+                    File outputDir = outputProvider.getContentLocation("main",
+                            TransformManager.CONTENT_DEX, getScopes(),
+                            Format.DIRECTORY);
+                    FileUtils.mkdirs(outputDir);
+
                     // first delete the output folder where the final dex file(s) will be.
-                    FileUtils.emptyFolder(outFolder);
-                    mkdirs(outFolder);
+                    FileUtils.emptyFolder(outputDir);
+                    mkdirs(outputDir);
 
                     // find the inputs of the dex merge.
                     // they are the content of the intermediate folder.
@@ -386,7 +390,7 @@ public class DexTransform extends Transform implements CombinedTransform {
 
                     androidBuilder.convertByteCode(
                             outputs,
-                            outFolder,
+                            outputDir,
                             multiDex,
                             mainDexListFile,
                             dexOptions,
@@ -405,21 +409,21 @@ public class DexTransform extends Transform implements CombinedTransform {
 
     private final class PreDexTask implements Callable<Void> {
         @NonNull
-        private final File outFolder;
+        private final File from;
         @NonNull
-        private final File fileToProcess;
+        private final File to;
         @NonNull
         private final Set<String> hashs;
         @NonNull
         private final ProcessOutputHandler mOutputHandler;
 
         private PreDexTask(
-                @NonNull File outFolder,
-                @NonNull File file,
+                @NonNull File from,
+                @NonNull File to,
                 @NonNull Set<String> hashs,
                 @NonNull ProcessOutputHandler outputHandler) {
-            this.outFolder = outFolder;
-            this.fileToProcess = file;
+            this.from = from;
+            this.to = to;
             this.hashs = hashs;
             this.mOutputHandler = outputHandler;
         }
@@ -427,7 +431,7 @@ public class DexTransform extends Transform implements CombinedTransform {
         @Override
         public Void call() throws Exception {
             // TODO remove once we can properly add a library as a dependency of its test.
-            String hash = getFileHash(fileToProcess);
+            String hash = getFileHash(from);
 
             synchronized (hashs) {
                 if (hashs.contains(hash)) {
@@ -437,22 +441,20 @@ public class DexTransform extends Transform implements CombinedTransform {
                 hashs.add(hash);
             }
 
-            File preDexedFile = getDexFileName(outFolder, fileToProcess);
-
-            if (preDexedFile.isDirectory()) {
-                FileUtils.emptyFolder(preDexedFile);
-            } else if (preDexedFile.isFile()) {
-                FileUtils.delete(preDexedFile);
+            if (to.isDirectory()) {
+                FileUtils.emptyFolder(to);
+            } else if (to.isFile()) {
+                FileUtils.delete(to);
             }
 
             if (multiDex) {
-                mkdirs(preDexedFile);
+                mkdirs(to);
             } else {
-                mkdirs(preDexedFile.getParentFile());
+                mkdirs(to.getParentFile());
             }
 
             androidBuilder.preDexLibrary(
-                    fileToProcess, preDexedFile, multiDex, dexOptions, mOutputHandler);
+                    from, to, multiDex, dexOptions, mOutputHandler);
 
             return null;
         }
@@ -479,18 +481,39 @@ public class DexTransform extends Transform implements CombinedTransform {
         return hashCode.toString();
     }
 
-    /**
-     * Returns a unique File for the pre-dexed library, even
-     * if there are 2 libraries with the same file names (but different
-     * paths)
-     *
-     * If multidex is enabled the return File is actually a folder.
-     *
-     * @param outFolder the output folder.
-     * @param inputFile the library.
-     */
+
     @NonNull
-    private File getDexFileName(@NonNull File outFolder, @NonNull File inputFile) {
+    private File getPreDexFile(
+            @NonNull TransformOutputProvider output,
+            boolean needMerge,
+            @Nullable File outFolder,
+            @NonNull QualifiedContent qualifiedContent) {
+        if (needMerge) {
+            checkNotNull(outFolder);
+            return new File(outFolder, getFilename(qualifiedContent.getFile()));
+        } else {
+            return getOutputLocation(output, qualifiedContent, qualifiedContent.getFile());
+        }
+    }
+
+    @NonNull
+    private File getOutputLocation(
+            @NonNull TransformOutputProvider output,
+            @NonNull QualifiedContent qualifiedContent,
+            @NonNull File file) {
+        File contentLocation = output.getContentLocation(getFilename(file),
+                TransformManager.CONTENT_DEX, qualifiedContent.getScopes(),
+                multiDex ? Format.DIRECTORY : Format.JAR);
+        if (multiDex) {
+            FileUtils.mkdirs(contentLocation);
+        } else {
+            FileUtils.mkdirs(contentLocation.getParentFile());
+        }
+        return contentLocation;
+    }
+
+    @NonNull
+    private String getFilename(@NonNull File inputFile) {
         String name = Files.getNameWithoutExtension(inputFile.getName());
 
         // add a hash of the original file path.
@@ -512,6 +535,6 @@ public class DexTransform extends Transform implements CombinedTransform {
                     groupDir.getName(), artifactDir.getName(), versionDir.getName());
         }
 
-        return new File(outFolder, name + "_" + hashCode.toString() + suffix);
+        return name + "_" + hashCode.toString() + suffix;
     }
 }

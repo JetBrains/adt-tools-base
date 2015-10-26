@@ -24,9 +24,10 @@ import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.DirectoryInput;
+import com.android.build.transform.api.Format;
 import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.builder.shrinker.TestClasses.AbstractClasses;
 import com.android.builder.shrinker.TestClasses.Annotations;
 import com.android.builder.shrinker.TestClasses.Fields;
@@ -53,6 +54,7 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.Mockito;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
@@ -61,9 +63,9 @@ import org.objectweb.asm.tree.MethodNode;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -77,7 +79,8 @@ public class ShrinkerTest {
 
     private File mOutDir;
 
-    private Map<TransformInput, TransformOutput> mInputOutputs;
+    private Collection<TransformInput> mInputs;
+    private TransformOutputProvider mOutput;
 
     private Shrinker<String> mShrinker;
 
@@ -88,13 +91,18 @@ public class ShrinkerTest {
         mOutDir = tmpDir.newFolder("out");
         File incrementalDir = tmpDir.newFolder("incremental");
 
+        DirectoryInput directoryInput = mock(DirectoryInput.class);
+        when(directoryInput.getFile()).thenReturn(classDir);
         TransformInput transformInput = mock(TransformInput.class);
-        when(transformInput.getFiles()).thenReturn(ImmutableList.of(classDir));
-        when(transformInput.getFormat()).thenReturn(ScopedContent.Format.SINGLE_FOLDER);
-        TransformOutput transformOutput = mock(TransformOutput.class);
-        when(transformOutput.getOutFile()).thenReturn(mOutDir);
+        when(transformInput.getDirectoryInputs()).thenReturn(ImmutableList.of(directoryInput));
+        mOutput = mock(TransformOutputProvider.class);
+        // we probably want a better mock that than so that we can return different dir depending
+        // on inputs.
+        when(mOutput.getContentLocation(
+                Mockito.anyString(), Mockito.anySet(), Mockito.anySet(), Mockito.any(Format.class)))
+                .thenReturn(mOutDir);
 
-        mInputOutputs = ImmutableMap.of(transformInput, transformOutput);
+        mInputs = ImmutableList.of(transformInput);
 
         mShrinker = new Shrinker<String>(
                 new WaitableExecutor<Void>(),
@@ -145,7 +153,8 @@ public class ShrinkerTest {
 
         // When:
         mShrinker.handleFileChanges(
-                mInputOutputs,
+                mInputs,
+                mOutput,
                 ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
                         Shrinker.ShrinkType.SHRINK, new TestKeepRules("Bbb", "bbb")));
 
@@ -971,8 +980,9 @@ public class ShrinkerTest {
 
     private void run(String className, String... methods) throws IOException {
         mShrinker.run(
-                mInputOutputs,
+                mInputs,
                 Collections.<TransformInput>emptyList(),
+                mOutput,
                 ImmutableMap.<Shrinker.ShrinkType, KeepRules>of(
                         Shrinker.ShrinkType.SHRINK, new TestKeepRules(className, methods)),
                 false);

@@ -16,6 +16,8 @@
 
 package com.android.build.transform.api;
 
+import com.google.common.annotations.Beta;
+
 import org.gradle.api.logging.LoggingManager;
 
 import java.io.File;
@@ -25,6 +27,7 @@ import java.io.File;
  *
  * This gives access to a limited amount of context when the transform is run.
  */
+@Beta
 public interface Context {
 
     /**

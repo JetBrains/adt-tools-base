@@ -17,29 +17,30 @@
 package com.android.build.gradle.internal.transforms;
 
 import static com.android.utils.FileUtils.delete;
-import static com.android.utils.FileUtils.deleteFolder;
 import static com.android.utils.FileUtils.emptyFolder;
 import static com.android.utils.FileUtils.mkdirs;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.transform.api.AsInputTransform;
+import com.android.annotations.Nullable;
 import com.android.build.transform.api.Context;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Format;
-import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.transform.api.DirectoryInput;
+import com.android.build.transform.api.Format;
+import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformInput.FileStatus;
-import com.android.build.transform.api.TransformOutput;
+import com.android.build.transform.api.TransformOutputProvider;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.ide.common.packaging.PackagingUtils;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
+import com.android.utils.FileUtils;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closer;
+
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -47,8 +48,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.jar.JarFile;
@@ -58,13 +57,8 @@ import java.util.zip.ZipInputStream;
 /**
  * Transform to extract jars.
  *
- * This only supports {@link Format#JAR} and is a {@link AsInputTransform} so that each input
- * stream has a matching output stream.
- *
- * The output format is {@link Format#MULTI_FOLDER} because each input jar has its own sub-folder
- * in the output stream root folder.
  */
-public class ExtractJarsTransform extends Transform implements AsInputTransform {
+public class ExtractJarsTransform extends Transform {
 
     @NonNull
     private final Set<ContentType> contentTypes;
@@ -96,12 +90,6 @@ public class ExtractJarsTransform extends Transform implements AsInputTransform 
         return scopes;
     }
 
-    @NonNull
-    @Override
-    public Format getOutputFormat() {
-        return Format.MULTI_FOLDER;
-    }
-
     @Override
     public boolean isIncremental() {
         return true;
@@ -110,41 +98,59 @@ public class ExtractJarsTransform extends Transform implements AsInputTransform 
     @Override
     public void transform(
             @NonNull Context context,
-            @NonNull Map<TransformInput, TransformOutput> inputOutputs,
+            @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
-            boolean isIncremental) throws IOException, InterruptedException, TransformException {
+            @Nullable TransformOutputProvider outputProvider,
+            boolean isIncremental) throws IOException, TransformException, InterruptedException {
+        checkNotNull(outputProvider, "Missing output object for transform " + getName());
 
         // as_input transform and no referenced scopes, all the inputs will in InputOutputStreams.
         final boolean extractCode = contentTypes.contains(ContentType.CLASSES);
 
+        Logger logger = Logging.getLogger(ExtractJarsTransform.class);
+
+        if (!isIncremental) {
+            outputProvider.deleteAll();
+        }
+
         try {
             WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
 
-            for (Entry<TransformInput, TransformOutput> entry : inputOutputs.entrySet()) {
-                TransformInput input = entry.getKey();
-
-                Format format = input.getFormat();
-                if (format != Format.JAR) {
-                    throw new RuntimeException(
-                            String.format(
-                                    "%s only supports JAR streams. Current stream format: %s:\n\t%s",
-                                    getName(),
-                                    format.name(),
-                                    Iterables.getFirst(input.getFiles(), null)));
+            for (TransformInput input : inputs) {
+                if (!input.getDirectoryInputs().isEmpty()) {
+                    for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
+                        logger.warn("Extract Jars input contains folder. Ignoring: " +
+                                directoryInput.getFile());
+                    }
                 }
 
-                final File outFolder = entry.getValue().getOutFile();
+                for (JarInput jarInput : input.getJarInputs()) {
+                    final File jarFile = jarInput.getFile();
 
-                if (isIncremental) {
-                    for (final Entry<File, FileStatus> fileEntry : input.getChangedFiles().entrySet()) {
-                        final File outJarFolder = getFolder(outFolder, fileEntry.getKey());
-                        switch (fileEntry.getValue()) {
+                    // create an output folder for this jar, keeping its type and scopes.
+                    final File outJarFolder = outputProvider.getContentLocation(
+                            jarFile.getName() + "-" + jarFile.getPath().hashCode(),
+                            jarInput.getContentTypes(),
+                            jarInput.getScopes(),
+                            Format.DIRECTORY);
+                    FileUtils.mkdirs(outJarFolder);
+
+                    if (!isIncremental) {
+                        executor.execute(new Callable<Void>() {
+                            @Override
+                            public Void call() throws Exception {
+                                extractJar(outJarFolder, jarFile, extractCode);
+                                return null;
+                            }
+                        });
+                    } else {
+                        switch (jarInput.getStatus()) {
                             case CHANGED:
                                 executor.execute(new Callable<Void>() {
                                     @Override
                                     public Void call() throws Exception {
                                         emptyFolder(outJarFolder);
-                                        extractJar(outJarFolder, fileEntry.getKey(), extractCode);
+                                        extractJar(outJarFolder, jarFile, extractCode);
                                         return null;
                                     }
                                 });
@@ -153,7 +159,7 @@ public class ExtractJarsTransform extends Transform implements AsInputTransform 
                                 executor.execute(new Callable<Void>() {
                                     @Override
                                     public Void call() throws Exception {
-                                        extractJar(outJarFolder, fileEntry.getKey(), extractCode);
+                                        extractJar(outJarFolder, jarFile, extractCode);
                                         return null;
                                     }
                                 });
@@ -166,29 +172,8 @@ public class ExtractJarsTransform extends Transform implements AsInputTransform 
                                         return null;
                                     }
                                 });
+                                break;
                         }
-                    }
-
-                } else {
-                    // empty the parent folder.
-                    File[] childrenFolders = outFolder.listFiles();
-                    if (childrenFolders!=null) {
-                        for (File childFolder : childrenFolders) {
-                            if (childFolder.isDirectory()) {
-                                deleteFolder(childFolder);
-                            }
-                        }
-                    }
-                    for (final File jarFile : entry.getKey().getFiles()) {
-                        executor.execute(new Callable<Void>() {
-                            @Override
-                            public Void call() throws Exception {
-                                File outJarFolder = getFolder(outFolder, jarFile);
-                                emptyFolder(outJarFolder);
-                                extractJar(outJarFolder, jarFile, extractCode);
-                                return null;
-                            }
-                        });
                     }
                 }
             }

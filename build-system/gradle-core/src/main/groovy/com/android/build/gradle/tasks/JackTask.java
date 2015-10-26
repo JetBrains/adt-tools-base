@@ -58,6 +58,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 /**
@@ -436,9 +437,9 @@ public class JackTask extends AbstractAndroidCompile
             jackTask.setJavaResourcesFolder(scope.getJavaResourcesDestinationDir());
 
             if (config.isMinifyEnabled()) {
-                ConventionMappingHelper.map(jackTask, "proguardFiles", new Callable<List<File>>() {
+                ConventionMappingHelper.map(jackTask, "proguardFiles", new Callable<Collection<File>>() {
                     @Override
-                    public List<File> call() throws Exception {
+                    public Collection<File> call() throws Exception {
                         // since all the output use the same resources, we can use the first output
                         // to query for a proguard file.
                         File sdkDir = scope.getGlobalScope().getSdkHandler().getAndCheckSdkFolder();
@@ -447,7 +448,7 @@ public class JackTask extends AbstractAndroidCompile
                                         + SdkConstants.FD_PROGUARD + File.separatorChar
                                         + TaskManager.DEFAULT_PROGUARD_CONFIG_FILE);
 
-                        List<File> proguardFiles = config.getProguardFiles(true /*includeLibs*/,
+                        Set<File> proguardFiles = config.getProguardFiles(true /*includeLibs*/,
                                 ImmutableList.of(defaultProguardFile));
                         File proguardResFile = scope.getProcessAndroidResourcesProguardOutputFile();
                         proguardFiles.add(proguardResFile);

@@ -18,31 +18,56 @@ package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
-import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.QualifiedContent;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableSet;
 
+import java.io.File;
 import java.util.Set;
 
 /**
- * Basic implementation of {@link ScopedContent}.
+ * Basic implementation of {@link QualifiedContent}.
  */
 @Immutable
-class ScopedContentImpl implements ScopedContent {
+class QualifiedContentImpl implements QualifiedContent {
 
+    @NonNull
+    private final String name;
+    @NonNull
+    private final File file;
     @NonNull
     private final Set<ContentType> contentTypes;
     @NonNull
     private final Set<Scope> scopes;
-    @NonNull
-    private final Format format;
 
-    protected ScopedContentImpl(
+    protected QualifiedContentImpl(
+            @NonNull String name,
+            @NonNull File file,
             @NonNull Set<ContentType> contentTypes,
-            @NonNull Set<Scope> scopes,
-            @NonNull Format format) {
-        this.contentTypes = contentTypes;
-        this.scopes = scopes;
-        this.format = format;
+            @NonNull Set<Scope> scopes) {
+        this.name = name;
+        this.file = file;
+        this.contentTypes = ImmutableSet.copyOf(contentTypes);
+        this.scopes = ImmutableSet.copyOf(scopes);
+    }
+
+    protected QualifiedContentImpl(@NonNull QualifiedContent qualifiedContent) {
+        this.name = qualifiedContent.getName();
+        this.file = qualifiedContent.getFile();
+        this.contentTypes = qualifiedContent.getContentTypes();
+        this.scopes = qualifiedContent.getScopes();
+    }
+
+    @Override
+    @NonNull
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    @NonNull
+    public File getFile() {
+        return file;
     }
 
     @NonNull
@@ -57,18 +82,13 @@ class ScopedContentImpl implements ScopedContent {
         return scopes;
     }
 
-    @NonNull
-    @Override
-    public Format getFormat() {
-        return format;
-    }
-
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
+                .add("name", name)
+                .add("file", file)
                 .add("contentTypes", contentTypes)
                 .add("scopes", scopes)
-                .add("format", format)
                 .toString();
     }
 }

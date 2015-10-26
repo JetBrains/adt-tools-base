@@ -19,25 +19,27 @@ package com.android.build.transform.api;
 import com.android.annotations.NonNull;
 import com.google.common.annotations.Beta;
 
+import java.io.File;
 import java.util.Collection;
+import java.util.Map;
 
 /**
- * The input to a Transform.
- * <p/>
- * It is mostly composed of a list of {@link JarInput} and a list of {@link DirectoryInput}.
+ * A {@link QualifiedContent} of type directory.
+ * </p>
+ * This means the {@link #getFile()} is the root directory containing the content.
+ * </p>
+ * This also contain incremental data if the transform is in incremental mode (both
+ * {@link Transform#isIncremental()} must return true, and
+ * {@link Transform#transform(Context, Collection, Collection, TransformOutputProvider, boolean)} must
+ * have its last parameter set to true). If the transform is not in incremental mode, the
+ * list is empty.
  */
 @Beta
-public interface TransformInput {
+public interface DirectoryInput extends QualifiedContent {
 
     /**
-     * Returns a collection of {@link JarInput}.
+     * Returns the changed files. This is only valid if the transform is in incremental mode.
      */
     @NonNull
-    Collection<JarInput> getJarInputs();
-
-    /**
-     * Returns a collection of {@link DirectoryInput}.
-     */
-    @NonNull
-    Collection<DirectoryInput> getDirectoryInputs();
+    Map<File, Status> getChangedFiles();
 }

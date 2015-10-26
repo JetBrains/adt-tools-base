@@ -30,7 +30,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.BaseScope;
 import com.android.build.gradle.internal.scope.GlobalScope;
-import com.android.build.transform.api.ScopedContent;
+import com.android.build.transform.api.QualifiedContent;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -77,7 +77,17 @@ public class TaskTestUtils {
     }
 
     protected StreamTester streamTester() {
-        return new StreamTester();
+        return new StreamTester(null);
+    }
+
+    protected StreamTester streamTester(@NonNull final Collection<TransformStream> streams) {
+        return new StreamTester(new FilterableStreamCollection() {
+            @NonNull
+            @Override
+            Collection<TransformStream> getStreams() {
+                return streams;
+            }
+        });
     }
 
     /**
@@ -91,42 +101,59 @@ public class TaskTestUtils {
      */
     protected class StreamTester {
         @NonNull
-        private final Set<ScopedContent.ContentType> contentTypes = Sets.newHashSet();
-        private final Set<ScopedContent.Scope> scopes = Sets.newHashSet();
+        private final FilterableStreamCollection streamCollection;
+        @NonNull
+        private final Set<QualifiedContent.ContentType> contentTypes = Sets.newHashSet();
+        private final Set<QualifiedContent.Scope> scopes = Sets.newHashSet();
         private List<Object> dependencies = Lists.newArrayList();
-        private List<File> files = Lists.newArrayList();
-        private TransformStream parentStream;
 
-        // Differentiate between lack of test and testing for a null value.
-        private ScopedContent.Format format;
+        private List<File> jars = Lists.newArrayList();
+        private List<File> folders = Lists.newArrayList();
+        private File rootLocation = null;
 
-        private StreamTester() {
+        private StreamTester(@Nullable FilterableStreamCollection streamCollection) {
+            if (streamCollection != null) {
+                this.streamCollection = streamCollection;
+            } else {
+                this.streamCollection = transformManager;
+            }
         }
 
-        StreamTester withContentTypes(@NonNull ScopedContent.ContentType... contentTypes) {
+        StreamTester withContentTypes(@NonNull QualifiedContent.ContentType... contentTypes) {
             this.contentTypes.addAll(Arrays.asList(contentTypes));
             return this;
         }
 
-        StreamTester withScopes(@NonNull ScopedContent.Scope... scopes) {
+        StreamTester withScopes(@NonNull QualifiedContent.Scope... scopes) {
             this.scopes.addAll(Arrays.asList(scopes));
             return this;
         }
 
-        StreamTester withFormat(@Nullable ScopedContent.Format format) {
-            this.format = format;
+        StreamTester withJar(@NonNull File file) {
+            jars.add(file);
             return this;
         }
 
-        StreamTester withFile(@NonNull File file) {
-            files.add(file);
+        StreamTester withJars(@NonNull Collection<File> files) {
+            jars.addAll(files);
             return this;
         }
 
-        StreamTester withFiles(@NonNull Collection<File> files) {
-            this.files.addAll(files);
+        StreamTester withFolder(@NonNull File file) {
+            folders.add(file);
             return this;
         }
+
+        StreamTester withFolders(@NonNull Collection<File> files) {
+            folders.addAll(files);
+            return this;
+        }
+
+        StreamTester withRootLocation(@NonNull File file) {
+            rootLocation = file;
+            return this;
+        }
+
 
         StreamTester withDependency(@NonNull Object dependency) {
             this.dependencies.add(dependency);
@@ -138,28 +165,25 @@ public class TaskTestUtils {
             return this;
         }
 
-        StreamTester withParentStream(@NonNull TransformStream parentStream) {
-            this.parentStream = parentStream;
-            return this;
-        }
-
         TransformStream test() {
             if (contentTypes.isEmpty() && scopes.isEmpty()) {
                 fail("content-type and scopes empty in StreamTester");
             }
 
-            ImmutableList<TransformStream> streams = transformManager
+            ImmutableList<TransformStream> streams = streamCollection
                     .getStreams(new TransformManager.StreamFilter() {
                         @Override
-                        public boolean accept(@NonNull Set<ScopedContent.ContentType> types,
-                                @NonNull Set<ScopedContent.Scope> scopes) {
+                        public boolean accept(@NonNull Set<QualifiedContent.ContentType> types,
+                                @NonNull Set<QualifiedContent.Scope> scopes) {
                             return (StreamTester.this.contentTypes.isEmpty() ||
                                     types.equals(contentTypes)) &&
                                     (StreamTester.this.scopes.isEmpty() ||
                                             StreamTester.this.scopes.equals(scopes));
                         }
                     });
-            assertThat(streams).hasSize(1);
+            assertThat(streams)
+                    .named(String.format("Streams matching requested %s/%s", scopes, contentTypes))
+                            .hasSize(1);
             TransformStream stream = Iterables.getOnlyElement(streams);
 
             assertThat(stream.getContentTypes()).containsExactlyElementsIn(contentTypes);
@@ -168,21 +192,32 @@ public class TaskTestUtils {
                 assertThat(stream.getDependencies()).containsExactlyElementsIn(dependencies);
             }
 
-            // if a list of files is provided then check this, otherwise just check the
-            // size which must be one for all post-transform streams.
-            if (!files.isEmpty()) {
-                assertThat(stream.getFiles().get()).containsExactlyElementsIn(files);
-            } else {
-                assertThat(stream.getFiles().get()).hasSize(1);
+            if (!jars.isEmpty()) {
+                if (!(stream instanceof OriginalStream)) {
+                    throw new RuntimeException("StreamTest.withJar(s) used on Stream that is not an OriginalStream");
+                }
+
+                OriginalStream originalStream = (OriginalStream) stream;
+                assertThat(originalStream.getJarFiles().get()).containsExactlyElementsIn(jars);
             }
 
-            if (format != null) {
-                assertThat(stream.getFormat()).isEqualTo(format);
+            if (!folders.isEmpty()) {
+                if (!(stream instanceof OriginalStream)) {
+                    throw new RuntimeException("StreamTest.withFolder(s) used on Stream that is not an OriginalStream");
+                }
+
+                OriginalStream originalStream = (OriginalStream) stream;
+                assertThat(originalStream.getFolders().get()).containsExactlyElementsIn(folders);
             }
 
-            // always check for parentStream, since we cannot make the distinction between
-            // no value set and no parent.
-            assertThat(stream.getParentStream()).isSameAs(parentStream);
+            if (rootLocation != null) {
+                if (!(stream instanceof IntermediateStream)) {
+                    throw new RuntimeException("StreamTest.withRootLocation used on Stream that is not an IntermediateStream");
+                }
+
+                IntermediateStream originalStream = (IntermediateStream) stream;
+                assertThat(originalStream.getRootLocation().get()).isEqualTo(rootLocation);
+            }
 
             return stream;
         }

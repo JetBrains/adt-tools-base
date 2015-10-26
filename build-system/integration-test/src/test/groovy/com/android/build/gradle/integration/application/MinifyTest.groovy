@@ -74,10 +74,9 @@ class MinifyTest {
                 "build/" +
                         "$AndroidProject.FD_INTERMEDIATES/" +
                         "transforms/" +
-                        "CLASSES_and_RESOURCES/" +
-                        "FULL_PROJECT/" +
                         "proguard/" +
-                        "minified"))
+                        "minified/" +
+                        "folders/5/1f/main"))
 
         // Ignore JaCoCo stuff.
         minifiedList.removeAll { it =~ /org.jacoco/ }
@@ -97,17 +96,15 @@ class MinifyTest {
                 "build/" +
                         "$AndroidProject.FD_INTERMEDIATES/" +
                         "transforms/" +
-                        "CLASSES_and_RESOURCES/" +
-                        "FULL_PROJECT/" +
                         "proguard/" +
                         "androidTest/" +
-                        "minified")
+                        "minified/" +
+                        "folders/5/1f/main")
         Set<String> minifiedList = gatherContentAsRelativePath(rootFolder)
 
         def testClassFiles = minifiedList.findAll { !it.startsWith("org/hamcrest") }
 
         assertThat(testClassFiles).containsExactly(
-                "LICENSE.txt",
                 "com/android/tests/basic/MainTest.class",
                 "com/android/tests/basic/UnusedTestClass.class",
                 "com/android/tests/basic/UsedTestClass.class",
