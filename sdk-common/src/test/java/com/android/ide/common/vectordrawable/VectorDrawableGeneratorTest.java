@@ -403,6 +403,14 @@ public class VectorDrawableGeneratorTest extends GeneratorTest {
         checkSvgConversion("test_transform_ellipse_complex");
     }
 
+    public void testSvgMoveAfterCloseTransform() throws Exception {
+        checkSvgConversion("test_move_after_close");
+    }
+
+    public void testSvgMoveAfterClose() throws Exception {
+        checkSvgConversion("test_move_after_close_transform");
+    }
+
     // XML files start here.
     public void testXmlIconSizeOpacity() throws Exception {
         checkXmlConversion("ic_size_opacity");
