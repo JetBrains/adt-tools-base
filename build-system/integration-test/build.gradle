@@ -71,7 +71,20 @@ configure([test, testPrebuilts]) {
         excludeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
     }
     exclude "com/android/build/gradle/integration/performance/**"
+    exclude "com/android/build/gradle/integration/automatic/**"
 }
+
+task automaticTest(type: Test) {
+    include "com/android/build/gradle/integration/automatic/**"
+
+    systemProperties['junit.parallel.threads'] = Runtime.runtime.availableProcessors() / 2
+
+    // Always run the task, when requested.
+    outputs.upToDateWhen { false }
+    environment = testEnvironment
+}
+
+test.dependsOn automaticTest
 
 task connectedIntegrationTest(type: Test)
 

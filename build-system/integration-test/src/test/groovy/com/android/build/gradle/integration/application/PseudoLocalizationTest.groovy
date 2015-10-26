@@ -45,11 +45,6 @@ class PseudoLocalizationTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     public void testPseudolocalization() throws Exception {
         assertThatApk(project.getApk("debug")).locales().containsAllOf("en-XA", "ar-XB")
     }

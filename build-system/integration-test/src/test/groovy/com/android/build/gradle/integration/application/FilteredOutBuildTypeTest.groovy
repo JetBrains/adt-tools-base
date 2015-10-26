@@ -56,9 +56,4 @@ class FilteredOutBuildTypeTest {
         Variant variant = model.getVariants().iterator().next()
         assertEquals("Variant name", "release", variant.getBuildType())
     }
-
-    @Test
-    void lint() {
-        project.execute("lint")
-    }
 }

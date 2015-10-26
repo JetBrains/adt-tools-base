@@ -62,11 +62,6 @@ class DensitySplitTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     void testPackaging() {
         for (Variant variant : model.getVariants()) {
             AndroidArtifact mainArtifact = variant.getMainArtifact()
