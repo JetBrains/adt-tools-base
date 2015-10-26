@@ -53,9 +53,6 @@ public class Svg2Vector {
     public static final String SVG_ELLIPSE = "ellipse";
     public static final String SVG_GROUP = "g";
     public static final String SVG_TRANSFORM = "transform";
-    public static final String SVG_WIDTH = "width";
-    public static final String SVG_HEIGHT = "height";
-    public static final String SVG_VIEW_BOX = "viewBox";
     public static final String SVG_STYLE = "style";
     public static final String SVG_DISPLAY = "display";
 
@@ -114,11 +111,6 @@ public class Svg2Vector {
         // Uncategorized elements
         "clipPath", "color-profile", "cursor", "filter", "foreignObject", "script", "view");
 
-    private enum SizeType {
-        PIXEL,
-        PERCENTAGE;
-    }
-
     @NonNull
     private static SvgTree parse(File f) throws Exception {
         SvgTree svgTree = new SvgTree();
@@ -134,11 +126,11 @@ public class Svg2Vector {
         for (int i = 0; i < nSvgNode.getLength(); i++) {
             Node nNode = nSvgNode.item(i);
             if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-                parseDimension(svgTree, nNode);
+                svgTree.parseDimension(nNode);
             }
         }
 
-        if (svgTree.viewBox == null) {
+        if (svgTree.getViewBox() == null) {
             svgTree.logErrorLine("Missing \"viewBox\" in <svg> element", rootNode, SvgTree.SvgLogLevel.ERROR);
             return svgTree;
         }
@@ -198,58 +190,6 @@ public class Svg2Vector {
             }
         }
 
-    }
-
-    private static void parseDimension(SvgTree avg, Node nNode) {
-        NamedNodeMap a = nNode.getAttributes();
-        int len = a.getLength();
-        SizeType widthType = SizeType.PIXEL;
-        SizeType heightType = SizeType.PIXEL;
-        for (int i = 0; i < len; i++) {
-            Node n = a.item(i);
-            String name = n.getNodeName().trim();
-            String value = n.getNodeValue().trim();
-            int subStringSize = value.length();
-            SizeType currentType = SizeType.PIXEL;
-            if (value.endsWith("px")) {
-                subStringSize = subStringSize - 2;
-            } else if (value.endsWith("%")) {
-                subStringSize = subStringSize - 1;
-                currentType = SizeType.PERCENTAGE;
-            }
-
-            if (SVG_WIDTH.equals(name)) {
-                avg.w = Float.parseFloat(value.substring(0, subStringSize));
-                widthType = currentType;
-            } else if (SVG_HEIGHT.equals(name)) {
-                avg.h = Float.parseFloat(value.substring(0, subStringSize));
-                heightType = currentType;
-            } else if (SVG_VIEW_BOX.equals(name)) {
-                avg.viewBox = new float[4];
-                String[] strbox = value.split(" ");
-                for (int j = 0; j < avg.viewBox.length; j++) {
-                    avg.viewBox[j] = Float.parseFloat(strbox[j]);
-                }
-            }
-        }
-        // If there is no viewbox, then set it up according to w, h.
-        // From now on, viewport should be read from viewBox, and size should be from w and h.
-        // w and h can be set to percentage too, in this case, set it to the viewbox size.
-        if (avg.viewBox == null && avg.w > 0 && avg.h > 0) {
-            avg.viewBox = new float[4];
-            avg.viewBox[2] = avg.w;
-            avg.viewBox[3] = avg.h;
-        } else if ((avg.w < 0 || avg.h < 0) && avg.viewBox != null) {
-            avg.w = avg.viewBox[2];
-            avg.h = avg.viewBox[3];
-        }
-
-        if (widthType == SizeType.PERCENTAGE && avg.w > 0) {
-            avg.w = avg.viewBox[2] * avg.w / 100;
-        }
-        if (heightType == SizeType.PERCENTAGE && avg.h > 0) {
-            avg.h = avg.viewBox[3] * avg.h / 100;
-        }
     }
 
     // Read the content from currentItem, and fill into "child"
@@ -698,10 +638,10 @@ public class Svg2Vector {
 
         OutputStreamWriter fw = new OutputStreamWriter(outStream);
         fw.write(head);
-        float viewportWidth = svgTree.viewBox[2];
-        float viewportHeight = svgTree.viewBox[3];
+        float viewportWidth = svgTree.getViewportWidth();
+        float viewportHeight = svgTree.getViewportHeight();
 
-        fw.write(getSizeString(svgTree.w, svgTree.h, svgTree.mScaleFactor));
+        fw.write(getSizeString(svgTree.getWidth(), svgTree.getHeight(), svgTree.getScaleFactor()));
 
         fw.write("        android:viewportWidth=\"" + viewportWidth + "\"\n");
         fw.write("        android:viewportHeight=\"" + viewportHeight + "\">\n");

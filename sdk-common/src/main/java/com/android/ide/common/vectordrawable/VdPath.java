@@ -23,6 +23,8 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -101,7 +103,7 @@ class VdPath extends VdElement{
             this.mParams = Arrays.copyOf(n.mParams, n.mParams.length);
         }
 
-        public static String NodeListToString(Node[] nodes) {
+        public static String NodeListToString(Node[] nodes, String decimalPlaceString) {
             String s = "";
             for (int i = 0; i < nodes.length; i++) {
                 Node n = nodes[i];
@@ -125,7 +127,9 @@ class VdPath extends VdElement{
                     if (value == (long) value) {
                         s += String.valueOf((long) value);
                     } else {
-                        s += String.valueOf(value);
+                        DecimalFormat df = new DecimalFormat(decimalPlaceString);
+                        df.setRoundingMode(RoundingMode.CEILING);
+                        s += df.format(value);
                     }
 
                 }
