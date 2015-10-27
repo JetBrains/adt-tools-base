@@ -1,0 +1,15 @@
+package com.google.android.gms.common.api;
+
+import com.google.android.gms.common.api.Api;
+import com.google.android.gms.common.api.Api.ApiOptions.NotRequiredOptions;
+
+public abstract class GoogleApiClient {
+    public abstract void connect() {}
+    public abstract void disconnect() {}
+
+    public static final class Builder {
+        public Builder(Context c);
+        public GoogleApiClient.Builder addApi(Api<? extends NotRequiredOptions> api);
+        public GoogleApiClient build();
+    }
+}
