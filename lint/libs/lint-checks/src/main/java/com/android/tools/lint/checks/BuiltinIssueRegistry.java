@@ -31,7 +31,7 @@ import java.util.List;
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
-    static final int INITIAL_CAPACITY = 242;
+    static final int INITIAL_CAPACITY = 244;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -221,6 +221,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(SharedPrefsDetector.ISSUE);
         issues.add(SignatureOrSystemDetector.ISSUE);
         issues.add(SQLiteDetector.ISSUE);
+        issues.add(SslCertificateSocketFactoryDetector.CREATE_SOCKET);
+        issues.add(SslCertificateSocketFactoryDetector.GET_INSECURE);
         issues.add(StateListDetector.ISSUE);
         issues.add(StringFormatDetector.ARG_COUNT);
         issues.add(StringFormatDetector.ARG_TYPES);
