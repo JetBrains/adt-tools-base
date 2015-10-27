@@ -103,6 +103,17 @@ class VdPath extends VdElement{
             this.mParams = Arrays.copyOf(n.mParams, n.mParams.length);
         }
 
+        public static boolean hasRelMoveAfterClose(Node[] nodes) {
+            char preType = ' ';
+            for (Node n : nodes) {
+                if ((preType == 'z' || preType == 'Z') && n.mType == 'm') {
+                    return true;
+                }
+                preType = n.mType;
+            }
+            return false;
+        }
+
         public static String NodeListToString(Node[] nodes, String decimalPlaceString) {
             String s = "";
             for (int i = 0; i < nodes.length; i++) {
@@ -137,13 +148,15 @@ class VdPath extends VdElement{
             return s;
         }
 
-        // Only thing used is the viewBox translation.
+        private static final char INIT_TYPE = ' ';
         public static void transform(AffineTransform totalTransform,
                                      Node[] nodes) {
             Point2D.Float currentPoint = new Point2D.Float();
             Point2D.Float currentSegmentStartPoint = new Point2D.Float();
+            char previousType = INIT_TYPE;
             for (int i = 0; i < nodes.length; i++) {
-                nodes[i].transform(totalTransform, currentPoint, currentSegmentStartPoint, i == 0);
+                nodes[i].transform(totalTransform, currentPoint, currentSegmentStartPoint, previousType);
+                previousType= nodes[i].mType;
             }
         }
 
@@ -172,7 +185,7 @@ class VdPath extends VdElement{
             .build();
 
         private void transform(AffineTransform totalTransform, Point2D.Float currentPoint,
-                               Point2D.Float currentSegmentStartPoint, boolean firstNode) {
+                               Point2D.Float currentSegmentStartPoint, char previousType) {
             // For Horizontal / Vertical lines, we have to convert to LineTo with 2 parameters
             // And for arcTo, we also need to isolate the parameters for transformation.
             // Therefore a looping will be necessary for such commands.
@@ -211,29 +224,48 @@ class VdPath extends VdElement{
                     totalTransform.transform(mParams, 0, mParams, 0, paramsLen / 2);
                     break;
                 case 'm':
-                    // We need to handle the initial 'm' similar to 'M' for first pair.
-                    // Then all the following numbers are handled as 'l'
-                    int startIndex = 0;
-                    if (firstNode) {
-                        int paramsLenInitialM = 2;
-                        currentX = mParams[paramsLenInitialM - 2];
-                        currentY = mParams[paramsLenInitialM - 1];
-                        currentSegmentStartX = currentX;
-                        currentSegmentStartY = currentY;
+                    // We also need to workaround a bug in API 21 that 'm' after 'z'
+                    // is not picking up the relative value correctly.
+                    if (previousType == 'z' || previousType == 'Z') {
+                        mType = 'M';
+                        mParams[0] += currentSegmentStartX;
+                        mParams[1] += currentSegmentStartY;
+                        currentSegmentStartX = mParams[0];
+                        currentSegmentStartY = mParams[1];
+                        for (int i = 1; i < paramsLen / step; i++) {
+                            mParams[i * step + 0] += mParams[(i - 1) * step + 0];
+                            mParams[i * step + 1] += mParams[(i - 1) * step + 1];
+                        }
+                        currentX = mParams[paramsLen - 2];
+                        currentY = mParams[paramsLen - 1];
 
-                        totalTransform.transform(mParams, 0, mParams, 0, paramsLenInitialM / 2);
-                        startIndex = 1;
-                    }
-                    for (int i = startIndex; i < paramsLen / step; i++) {
-                        int indexX = i * step + (step - 2);
-                        int indexY = i * step + (step - 1);
-                        currentX += mParams[indexX];
-                        currentY += mParams[indexY];
-                    }
+                        totalTransform.transform(mParams, 0, mParams, 0, paramsLen / 2);
+                    } else {
 
-                    if (!isTranslationOnly(totalTransform)) {
-                        deltaTransform(totalTransform, mParams, 2 * startIndex,
-                                paramsLen - 2 * startIndex);
+                        // We need to handle the initial 'm' similar to 'M' for first pair.
+                        // Then all the following numbers are handled as 'l'
+                        int startIndex = 0;
+                        if (previousType == INIT_TYPE) {
+                            int paramsLenInitialM = 2;
+                            currentX = mParams[paramsLenInitialM - 2];
+                            currentY = mParams[paramsLenInitialM - 1];
+                            currentSegmentStartX = currentX;
+                            currentSegmentStartY = currentY;
+
+                            totalTransform.transform(mParams, 0, mParams, 0, paramsLenInitialM / 2);
+                            startIndex = 1;
+                        }
+                        for (int i = startIndex; i < paramsLen / step; i++) {
+                            int indexX = i * step + (step - 2);
+                            int indexY = i * step + (step - 1);
+                            currentX += mParams[indexX];
+                            currentY += mParams[indexY];
+                        }
+
+                        if (!isTranslationOnly(totalTransform)) {
+                            deltaTransform(totalTransform, mParams, 2 * startIndex,
+                                    paramsLen - 2 * startIndex);
+                        }
                     }
 
                     break;

@@ -23,7 +23,6 @@ import org.w3c.dom.Node;
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -136,7 +135,8 @@ class SvgLeafNode extends SvgNode {
         VdPath.Node[] n = PathParser.parsePath(mPathData);
         AffineTransform finalTransform = new AffineTransform(rootTransform);
         finalTransform.concatenate(mStackedTransform);
-        if (!finalTransform.isIdentity()) {
+        boolean needsConvertRelativeMoveAfterClose = VdPath.Node.hasRelMoveAfterClose(n);
+        if (!finalTransform.isIdentity() || needsConvertRelativeMoveAfterClose) {
             VdPath.Node.transform(finalTransform, n);
         }
         String decimalFormatString = getDecimalFormatString();
