@@ -130,6 +130,12 @@ public class SecurityDetectorTest extends AbstractCheckTest {
 
     public void testWorldWriteable() throws Exception {
         assertEquals(
+            "src/test/pkg/WorldWriteableFile.java:41: Warning: Setting file permissions to world-readable can be risky, review carefully [SetWorldReadable]\n" +
+            "            mFile.setReadable(true, false);\n" +
+            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "src/test/pkg/WorldWriteableFile.java:48: Warning: Setting file permissions to world-writable can be risky, review carefully [SetWorldWritable]\n" +
+            "            mFile.setWritable(true, false);\n" +
+            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "src/test/pkg/WorldWriteableFile.java:27: Warning: Using MODE_WORLD_READABLE when creating files can be risky, review carefully [WorldReadableFiles]\n" +
             "            out = openFileOutput(mFile.getName(), MODE_WORLD_READABLE);\n" +
             "                                                  ~~~~~~~~~~~~~~~~~~~\n" +
@@ -148,7 +154,7 @@ public class SecurityDetectorTest extends AbstractCheckTest {
             "src/test/pkg/WorldWriteableFile.java:35: Warning: Using MODE_WORLD_WRITEABLE when creating files can be risky, review carefully [WorldWriteableFiles]\n" +
             "            dir = getDir(mFile.getName(), MODE_WORLD_WRITEABLE);\n" +
             "                                          ~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 6 warnings\n" +
+            "0 errors, 8 warnings\n" +
             "",
 
             lintProject(

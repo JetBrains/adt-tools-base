@@ -38,7 +38,11 @@ import static com.android.xml.AndroidManifest.NODE_ACTION;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
@@ -134,6 +138,32 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
             Severity.WARNING,
             IMPLEMENTATION_MANIFEST);
 
+    /** Using java.io.File.setReadable(true, false) to set file world-readable */
+    public static final Issue SET_READABLE = Issue.create(
+            "SetWorldReadable",
+            "`File.setReadable()` used to make file world-readable",
+            "Setting files world-readable is very dangerous, and likely to cause security " +
+            "holes in applications. It is strongly discouraged; instead, applications should " +
+            "use more formal mechanisms for interactions such as `ContentProvider`, " +
+            "`BroadcastReceiver`, and `Service`.",
+            Category.SECURITY,
+            6,
+            Severity.WARNING,
+            IMPLEMENTATION_JAVA);
+
+    /** Using java.io.File.setWritable(true, false) to set file world-writable */
+    public static final Issue SET_WRITABLE = Issue.create(
+            "SetWorldWritable",
+            "`File.setWritable()` used to make file world-writable",
+            "Setting files world-writable is very dangerous, and likely to cause security " +
+            "holes in applications. It is strongly discouraged; instead, applications should " +
+            "use more formal mechanisms for interactions such as `ContentProvider`, " +
+            "`BroadcastReceiver`, and `Service`.",
+            Category.SECURITY,
+            6,
+            Severity.WARNING,
+            IMPLEMENTATION_JAVA);
+
     /** Using the world-writable flag */
     public static final Issue WORLD_WRITEABLE = Issue.create(
             "WorldWriteableFiles", //$NON-NLS-1$
@@ -161,6 +191,8 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
             4,
             Severity.WARNING,
             IMPLEMENTATION_JAVA);
+
+    private static final String FILE_CLASS = "java.io.File"; //$NON-NLS-1$
 
     /** Constructs a new {@link SecurityDetector} check */
     public SecurityDetector() {
@@ -367,12 +399,47 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
         values.add("openFileOutput"); //$NON-NLS-1$
         values.add("getSharedPreferences"); //$NON-NLS-1$
         values.add("getDir"); //$NON-NLS-1$
+        // These API calls can be used to set files world-readable or world-writable
+        values.add("setReadable"); //$NON-NLS-1$
+        values.add("setWritable"); //$NON-NLS-1$
         return values;
     }
 
     @Override
     public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
             @NonNull MethodInvocation node) {
+        ResolvedNode resolved = context.resolve(node);
+        if (resolved instanceof ResolvedMethod) {
+            ResolvedClass resolvedClass = ((ResolvedMethod) resolved).getContainingClass();
+            String methodName = node.astName().astValue();
+            if (resolvedClass.isSubclassOf(FILE_CLASS, false)) {
+                // Report calls to java.io.File.setReadable(true, false) or
+                // java.io.File.setWritable(true, false)
+                if ("setReadable".equals(methodName)) {
+                    if (node.astArguments().size() == 2 &&
+                            Boolean.TRUE.equals(ConstantEvaluator.evaluate(context,
+                                    node.astArguments().first())) &&
+                            Boolean.FALSE.equals(ConstantEvaluator.evaluate(context,
+                                    node.astArguments().last()))) {
+                        context.report(SET_READABLE, node, context.getLocation(node),
+                                "Setting file permissions to world-readable can be " +
+                                        "risky, review carefully");
+                    }
+                    return;
+                } else if ("setWritable".equals(methodName)) {
+                    if (node.astArguments().size() == 2 &&
+                            Boolean.TRUE.equals(ConstantEvaluator.evaluate(context,
+                                    node.astArguments().first())) &&
+                            Boolean.FALSE.equals(ConstantEvaluator.evaluate(context,
+                                    node.astArguments().last()))) {
+                        context.report(SET_WRITABLE, node, context.getLocation(node),
+                                "Setting file permissions to world-writable can be " +
+                                        "risky, review carefully");
+                    }
+                    return;
+                }
+            }
+        }
         StrictListAccessor<Expression,MethodInvocation> args = node.astArguments();
         for (Expression arg : args) {
             arg.accept(visitor);

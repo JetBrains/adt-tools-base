@@ -35,6 +35,20 @@ public class WorldWriteableFile {
             dir = getDir(mFile.getName(), MODE_WORLD_WRITEABLE);
             dir = getDir(mFile.getName(), MODE_WORLD_READABLE);
 
+            mFile.setReadable(true, true); // ok
+            mFile.setReadable(false, true); // ok
+            mFile.setReadable(false, false); // ok
+            mFile.setReadable(true, false);
+            mFile.setReadable(true); // ok
+            mFile.setReadable(false); // ok
+
+            mFile.setWritable(true, true); // ok
+            mFile.setWritable(false, true); // ok
+            mFile.setWritable(false, false); // ok
+            mFile.setWritable(true, false);
+            mFile.setWritable(true); // ok
+            mFile.setWritable(false); // ok
+
             // Flickr.get().downloadPhoto(params[0], Flickr.PhotoSize.LARGE,
             // out);
             success = true;
