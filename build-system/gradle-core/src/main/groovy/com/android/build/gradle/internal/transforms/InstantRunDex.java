@@ -138,9 +138,12 @@ public class InstantRunDex extends Transform {
         JarOutputStream jarOutputStream = null;
 
         try {
-            for (TransformInput input : inputs) {
-                for (DirectoryInput DirectoryInput : input.getDirectoryInputs()) {
-                    File folder = DirectoryInput.getFile();
+            for (TransformInput input : referencedInputs) {
+                for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
+                    if (!directoryInput.getContentTypes().containsAll(inputTypes)) {
+                        continue;
+                    }
+                    File folder = directoryInput.getFile();
                     File incremental = new File(folder, "incrementalChanges.txt");
                     if (!incremental.exists()) {
                         // done
