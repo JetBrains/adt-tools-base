@@ -145,4 +145,11 @@ public class FileHelper {
         Files.createParentDirs(file);
         Files.write(content, file, Charset.defaultCharset());
     }
+
+    public static void addMethod(
+            @NonNull File javaFile,
+            @NonNull String methodCode) throws IOException {
+        // Put the method code before the last closing brace.
+        searchAndReplace(javaFile, "\n}\\s+$", methodCode + "\n\n}");
+    }
 }
