@@ -133,14 +133,34 @@ class SvgLeafNode extends SvgNode {
             // Nothing to draw and transform, early return.
             return;
         }
-        // TODO: We need to just apply the transformation to group.
         VdPath.Node[] n = PathParser.parsePath(mPathData);
         AffineTransform finalTransform = new AffineTransform(rootTransform);
         finalTransform.concatenate(mStackedTransform);
         if (!finalTransform.isIdentity()) {
             VdPath.Node.transform(finalTransform, n);
         }
-        mPathData = VdPath.Node.NodeListToString(n);
+        String decimalFormatString = getDecimalFormatString();
+        mPathData = VdPath.Node.NodeListToString(n, decimalFormatString);
+    }
+
+    private String getDecimalFormatString() {
+        float viewportWidth = getTree().getViewportWidth();
+        float viewportHeight = getTree().getViewportHeight();
+        float minSize = Math.min(viewportHeight, viewportWidth);
+        float exponent = Math.round(Math.log10(minSize));
+        int decimalPlace = (int) Math.floor(exponent - 4);
+        String decimalFormatString = "#";
+        if (decimalPlace < 0) {
+            // Build a string with decimal places for "#.##...", and cap on 6 digits.
+            if (decimalPlace < -6) {
+                decimalPlace = -6;
+            }
+            decimalFormatString += ".";
+            for (int i = 0 ; i < -decimalPlace; i++) {
+                decimalFormatString += "#";
+            }
+        }
+        return decimalFormatString;
     }
 
     @Override
