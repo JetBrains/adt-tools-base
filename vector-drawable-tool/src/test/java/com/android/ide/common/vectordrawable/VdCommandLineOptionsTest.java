@@ -80,6 +80,24 @@ public class VdCommandLineOptionsTest extends TestCase {
         TestCase.assertTrue(options.getInputFiles() != null);
     }
 
+    public void testCommandlineOptionsExtras() {
+        // Use a known directory for testing purpose.
+        String testFolderPath = getTestFolderPath();
+
+        VdCommandLineOptions options = new VdCommandLineOptions();
+        String[] args = {"-c", "-in", testFolderPath, "-widthdp", "23", "-heightdp", "10", "-addHeader"};
+        String error = options.parse(args);
+
+        TestCase.assertTrue(error == null);
+        TestCase.assertFalse(options.getDisplayXml());
+        TestCase.assertTrue(options.getConvertSvg());
+        TestCase.assertTrue(options.getOutputDir() != null);
+        TestCase.assertTrue(options.getInputFiles() != null);
+        TestCase.assertTrue(options.getForceWidth() == 23);
+        TestCase.assertTrue(options.getForceHeight() == 10);
+        TestCase.assertTrue(options.isAddHeader());
+    }
+
     // Below are the negative test cases.
     public void testCommandlineOptionsInvalidOption() {
         VdCommandLineOptions options = new VdCommandLineOptions();
