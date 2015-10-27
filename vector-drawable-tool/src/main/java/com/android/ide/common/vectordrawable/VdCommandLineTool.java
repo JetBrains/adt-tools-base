@@ -43,6 +43,8 @@ public class VdCommandLineTool {
 
     public static final String BROKEN_FILE_EXTENSION = ".broken";
 
+    private static final boolean DBG_COPY_BROKEN_SVG = false;
+
     private static void exitWithErrorMessage(String message) {
         System.err.println(message);
         System.exit(-1);;
@@ -194,11 +196,12 @@ public class VdCommandLineTool {
                 if (error != null && !error.isEmpty()) {
                     errorSvgFileCounter++;
                     System.err.println("error is " + error);
-
-                    // Copy the broken svg file in the same directory but with a new extension.
-                    String brokenFileName = svgFilename + BROKEN_FILE_EXTENSION;
-                    File brokenSvgFile = new File(outputDir, brokenFileName);
-                    Files.copy(inputSVGFiles[i], brokenSvgFile);
+                    if (DBG_COPY_BROKEN_SVG) {
+                        // Copy the broken svg file in the same directory but with a new extension.
+                        String brokenFileName = svgFilename + BROKEN_FILE_EXTENSION;
+                        File brokenSvgFile = new File(outputDir, brokenFileName);
+                        Files.copy(inputSVGFiles[i], brokenSvgFile);
+                    }
                 }
             } catch (Exception e) {
                 System.err.println("exception" + e.getMessage());
