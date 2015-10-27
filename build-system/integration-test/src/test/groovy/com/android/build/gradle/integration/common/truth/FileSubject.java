@@ -24,6 +24,7 @@ import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
+import com.google.common.truth.TestVerb;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +36,10 @@ import java.io.IOException;
 public class FileSubject extends Subject<FileSubject, File> {
     public FileSubject(FailureStrategy failureStrategy, File subject) {
         super(failureStrategy, subject);
+    }
+
+    public void hasName(String name) {
+        check().that(getSubject().getName()).named(getDisplaySubject()).isEqualTo(name);
     }
 
     public void exists() {
