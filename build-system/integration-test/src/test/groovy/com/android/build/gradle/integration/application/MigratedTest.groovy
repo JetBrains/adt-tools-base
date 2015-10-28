@@ -59,11 +59,6 @@ class MigratedTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     void "check model reflect migrated source providers"() throws Exception {
         File projectDir = project.getTestDir()
 
