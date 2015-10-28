@@ -69,6 +69,9 @@ public class LibraryJarTransform extends Transform {
     private final String packagePath;
     private final boolean packageBuildConfig;
 
+    @Nullable
+    private List<ExcludeListProvider> excludeListProviders;
+
     public LibraryJarTransform(
             @NonNull File mainClassLocation,
             @NonNull File localJarsLocation,
@@ -78,6 +81,13 @@ public class LibraryJarTransform extends Transform {
         this.localJarsLocation = localJarsLocation;
         this.packagePath = packageName.replace(".", "/");
         this.packageBuildConfig = packageBuildConfig;
+    }
+
+    public void addExcludeListProvider(ExcludeListProvider provider) {
+        if (excludeListProviders == null) {
+            excludeListProviders = Lists.newArrayList();
+        }
+        excludeListProviders.add(provider);
     }
 
     @NonNull
@@ -138,6 +148,14 @@ public class LibraryJarTransform extends Transform {
         excludes.add(packagePath + "/Manifest\\$(.*).class");
         if (!packageBuildConfig) {
             excludes.add(packagePath + "/BuildConfig.class");
+        }
+        if (excludeListProviders != null) {
+            for (ExcludeListProvider provider : excludeListProviders) {
+                List<String> list = provider.getExcludeList();
+                if (list != null) {
+                    excludes.addAll(list);
+                }
+            }
         }
 
         // create Pattern Objects.
@@ -342,5 +360,13 @@ public class LibraryJarTransform extends Transform {
             }
         }
         return true;
+    }
+
+    /**
+     * Convenient way to attach exclude list providers that can provide their list at the end of
+     * the build.
+     */
+    public interface ExcludeListProvider {
+        @Nullable List<String> getExcludeList();
     }
 }
