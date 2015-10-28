@@ -699,7 +699,9 @@ public class VariantManager implements VariantModel {
 
         // create the internal storage for this variant.
         TestVariantData testVariantData = new TestVariantData(
-                extension, taskManager, testVariantConfig, (TestedVariantData) testedVariantData);
+                extension, taskManager,
+                testVariantConfig, (TestedVariantData) testedVariantData,
+                androidBuilder.getErrorReporter());
         // link the testVariant to the tested variant in the other direction
         ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData, type);
 

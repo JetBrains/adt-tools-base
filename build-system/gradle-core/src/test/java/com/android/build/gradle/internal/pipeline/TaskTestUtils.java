@@ -27,10 +27,14 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.TaskContainerAdaptor;
 import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.model.SyncIssueImpl;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.BaseScope;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.transform.api.QualifiedContent;
+import com.android.builder.core.ErrorReporter;
+import com.android.builder.model.SyncIssue;
+import com.android.ide.common.blame.Message;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -65,6 +69,34 @@ public class TaskTestUtils {
     protected TaskFactory taskFactory;
     protected BaseScope scope;
     protected TransformManager transformManager;
+    protected FakeErrorReporter errorReporter;
+
+    static class FakeErrorReporter extends ErrorReporter {
+
+        private SyncIssue syncIssue = null;
+
+        protected FakeErrorReporter(@NonNull EvaluationMode mode) {
+            super(mode);
+        }
+
+        public SyncIssue getSyncIssue() {
+            return syncIssue;
+        }
+
+        @NonNull
+        @Override
+        public SyncIssue handleSyncError(@NonNull String data, int type, @NonNull String msg) {
+            // always create a sync issue, no matter what the mode is. This can be used to validate
+            // what error is thrown anyway.
+            syncIssue = new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
+            return syncIssue;
+        }
+
+        @Override
+        public void receiveMessage(@NonNull Message message) {
+            // do nothing
+        }
+    }
 
     @Before
     public void setUp() {
@@ -72,7 +104,8 @@ public class TaskTestUtils {
                 new File(getRootDir(), FOLDER_TEST_PROJECTS + "/basic")).build();
 
         scope = getScope();
-        transformManager = new TransformManager(new AndroidTaskRegistry());
+        errorReporter = new FakeErrorReporter(ErrorReporter.EvaluationMode.IDE);
+        transformManager = new TransformManager(new AndroidTaskRegistry(), errorReporter);
         taskFactory = new TaskContainerAdaptor(project.getTasks());
     }
 

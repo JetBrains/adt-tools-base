@@ -20,6 +20,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.builder.core.ErrorReporter;
 import com.android.builder.core.VariantType;
 import com.google.common.collect.Maps;
 
@@ -37,8 +38,9 @@ public class ApplicationVariantData extends ApkVariantData implements TestedVari
     public ApplicationVariantData(
             @NonNull AndroidConfig androidConfig,
             @NonNull GradleVariantConfiguration config,
-            @NonNull TaskManager taskManager) {
-        super(androidConfig, taskManager, config);
+            @NonNull TaskManager taskManager,
+            @NonNull ErrorReporter errorReporter) {
+        super(androidConfig, taskManager, config, errorReporter);
         testVariants = Maps.newEnumMap(VariantType.class);
     }
 

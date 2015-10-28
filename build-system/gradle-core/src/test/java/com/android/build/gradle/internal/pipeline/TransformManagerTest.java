@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.transform.api.QualifiedContent.ContentType;
 import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
+import com.android.builder.model.SyncIssue;
 import com.google.common.collect.Iterables;
 
 import org.junit.Rule;
@@ -97,11 +98,13 @@ public class TransformManagerTest extends TaskTestUtils {
                 .build();
 
         // add the transform
-        exception.expect(RuntimeException.class);
-        exception.expectMessage(
+        transformManager.addTransform(taskFactory, scope, t);
+
+        SyncIssue syncIssue = errorReporter.getSyncIssue();
+        assertThat(syncIssue).isNotNull();
+        assertThat(syncIssue.getMessage()).isEqualTo(
                 "Unable to add Transform 'transform name' on variant 'null': requested streams not available: [PROJECT]+[] / [RESOURCES]");
-        AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, scope, t);
+        assertThat(syncIssue.getType()).isEqualTo(SyncIssue.TYPE_TRANSFORM_WITH_NO_STREAMS);
     }
 
     @Test
