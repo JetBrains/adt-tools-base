@@ -445,12 +445,12 @@ public class DexTransform extends Transform {
                 FileUtils.emptyFolder(to);
             } else if (to.isFile()) {
                 FileUtils.delete(to);
-            }
-
-            if (multiDex) {
-                mkdirs(to);
             } else {
-                mkdirs(to.getParentFile());
+                if (multiDex) {
+                    mkdirs(to);
+                } else {
+                    mkdirs(to.getParentFile());
+                }
             }
 
             androidBuilder.preDexLibrary(
