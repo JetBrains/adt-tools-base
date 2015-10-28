@@ -23,6 +23,7 @@ import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.tasks.ExtractAnnotations;
+import com.android.builder.core.ErrorReporter;
 import com.android.builder.core.VariantType;
 import com.google.common.collect.Maps;
 
@@ -46,8 +47,9 @@ public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> im
     public LibraryVariantData(
             @NonNull AndroidConfig androidConfig,
             @NonNull TaskManager taskManager,
-            @NonNull GradleVariantConfiguration config) {
-        super(androidConfig, taskManager, config);
+            @NonNull GradleVariantConfiguration config,
+            @NonNull ErrorReporter errorReporter) {
+        super(androidConfig, taskManager, config, errorReporter);
         testVariants = Maps.newEnumMap(VariantType.class);
 
         // create default output

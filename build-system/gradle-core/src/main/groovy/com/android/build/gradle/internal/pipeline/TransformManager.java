@@ -31,7 +31,9 @@ import com.android.build.gradle.internal.scope.BaseScope;
 import com.android.build.transform.api.QualifiedContent.ContentType;
 import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
+import com.android.builder.core.ErrorReporter;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.SyncIssue;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableList;
@@ -80,6 +82,8 @@ public class TransformManager extends FilterableStreamCollection {
 
     @NonNull
     private final AndroidTaskRegistry taskRegistry;
+    @NonNull
+    private final ErrorReporter errorReporter;
 
     /**
      * These are the streams that are available for new Transforms to consume.
@@ -97,8 +101,11 @@ public class TransformManager extends FilterableStreamCollection {
 
     private final List<Transform> transforms = Lists.newArrayList();
 
-    public TransformManager(@NonNull AndroidTaskRegistry taskRegistry) {
+    public TransformManager(
+            @NonNull AndroidTaskRegistry taskRegistry,
+            @NonNull ErrorReporter errorReporter) {
         this.taskRegistry = taskRegistry;
+        this.errorReporter = errorReporter;
     }
 
     @NonNull
@@ -155,10 +162,13 @@ public class TransformManager extends FilterableStreamCollection {
 
         if (inputStreams.isEmpty() && referencedStreams.isEmpty()) {
             // didn't find any match. Means there is a broken order somewhere in the streams.
-            throw new RuntimeException(String.format(
-                    "Unable to add Transform '%s' on variant '%s': requested streams not available: %s+%s / %s",
-                    transform.getName(), scope.getVariantConfiguration().getFullName(),
-                    transform.getScopes(), transform.getReferencedScopes(), transform.getInputTypes()));
+            errorReporter.handleSyncError("", SyncIssue.TYPE_TRANSFORM_WITH_NO_STREAMS,
+                    String.format(
+                            "Unable to add Transform '%s' on variant '%s': requested streams not available: %s+%s / %s",
+                            transform.getName(), scope.getVariantConfiguration().getFullName(),
+                            transform.getScopes(), transform.getReferencedScopes(),
+                            transform.getInputTypes()));
+            return null;
         }
 
         if (DEBUG) {

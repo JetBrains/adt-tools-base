@@ -16,6 +16,9 @@
 
 package com.android.build.gradle.internal.variant;
 
+import static com.android.builder.core.BuilderConstants.DEBUG;
+import static com.android.builder.core.BuilderConstants.RELEASE;
+
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.api.BaseVariantOutput;
@@ -34,13 +37,11 @@ import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.google.common.collect.Lists;
+
 import org.gradle.api.GradleException;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.internal.reflect.Instantiator;
-
-import static com.android.builder.core.BuilderConstants.DEBUG;
-import static com.android.builder.core.BuilderConstants.RELEASE;
 
 import java.util.List;
 
@@ -67,7 +68,8 @@ public class LibraryVariantFactory implements VariantFactory {
     public BaseVariantData createVariantData(
             @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull TaskManager taskManager) {
-        return new LibraryVariantData(extension, taskManager, variantConfiguration);
+        return new LibraryVariantData(extension, taskManager, variantConfiguration,
+                androidBuilder.getErrorReporter());
     }
 
     @Override
