@@ -95,68 +95,19 @@ public class CheckAll {
 
     // TODO: Investigate and clear these lists.
     private static final ImmutableSet<String> BROKEN_ASSEMBLE = ImmutableSet.of(
-            "3rdPartyTests",
-            "abiPureSplits",
-            "androidTestLibDep",
-            "combinedAbiDensityPureSplits",
-            "componentModel",
-            "customSigning",
-            "dependencyCheckerComGoogleAndroidJar",
-            "duplicateNameImport",
-            "embedded",
-            "extractAnnotations",
-            "filteredOutVariants",
-            "flavorlibWithFailedTests",
-            "genFolderApi2",
-            "invalidDependencyOnAppProject",
-            "jarjarIntegration",
-            "jarjarIntegrationLib",
-            "localAarTest",
-            "ndkJniLib",
-            "ndkJniPureSplitLib",
-            "ndkPrebuilts",
-            "ndkRsHelloCompute",
-            "ndkSanAngeles",
-            "ndkSanAngeles2",
-            "ndkVariants",
-            "noPreDex",
-            "packagingOptions",
-            "privateResources",
-            "projectWithLocalDeps",
-            "renderscriptNdk",
-            "rsSupportMode",
-            "simpleManifestMergingTask", // Not an Android project.
-            "simpleMicroApp",
-            "testWithDep",
-            "unitTestingFlavors");
+            "componentModel", // ???
+            "duplicateNameImport", // Fails on purpose.
+            "invalidDependencyOnAppProject", // Fails on purpose.
+            "ndkRsHelloCompute", // ???
+            "ndkSanAngeles2", // ???
+            "ndkVariants", // ???
+            "packagingOptions", // so libraries?
+            "projectWithLocalDeps", // TODO: move to HelloWorldApp
+            "simpleManifestMergingTask" // Not an Android project.
+    );
 
-    private static final ImmutableSet<String> BROKEN_LINT = ImmutableSet.of(
-            "3rdPartyTests",
-            "abiPureSplits",
-            "androidTestLibDep",
-            "combinedAbiDensityPureSplits",
-            "componentModel",
-            "customSigning",
-            "dependencyCheckerComGoogleAndroidJar",
-            "duplicateNameImport",
-            "flavorlibWithFailedTests",
-            "genFolderApi2",
-            "invalidDependencyOnAppProject",
-            "jarjarIntegration",
-            "jarjarIntegrationLib",
-            "ndkJniLib",
-            "ndkJniPureSplitLib",
-            "ndkPrebuilts",
-            "ndkRsHelloCompute",
-            "ndkSanAngeles",
-            "ndkSanAngeles2",
-            "ndkVariants",
-            "privateResources",
-            "projectWithLocalDeps",
-            "projectWithModules",
-            "renderscriptNdk",
-            "rsSupportMode",
-            "simpleManifestMergingTask", // Not an Android project.
-            "testWithDep",
-            "unitTestingFlavors");
+    private static final ImmutableSet<String> BROKEN_LINT = ImmutableSet.<String>builder()
+            .addAll(BROKEN_ASSEMBLE)
+            .add("privateResources")// Fails on purpose.
+            .build();
 }

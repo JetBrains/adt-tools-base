@@ -17,5 +17,4 @@
 package com.android.tests;
 
 public class Broken {
-    this is broken
 }

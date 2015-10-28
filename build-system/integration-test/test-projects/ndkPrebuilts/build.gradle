@@ -1,8 +1,9 @@
 apply from: "../commonHeader.gradle"
 buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 
-
 apply plugin: 'com.android.application'
+
+project.ext['android.useDeprecatedNdk'] = true
 
 android {
     compileSdkVersion rootProject.latestCompileSdk
