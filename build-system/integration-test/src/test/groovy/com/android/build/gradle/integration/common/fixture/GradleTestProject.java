@@ -92,6 +92,7 @@ import java.util.concurrent.TimeUnit;
 public class GradleTestProject implements TestRule {
 
     public static final File TEST_RES_DIR = new File("src/test/resources");
+    public static final File TEST_PROJECT_DIR = new File("test-projects");
 
     public static final int DEFAULT_COMPILE_SDK_VERSION = 23;
     public static final int LATEST_NDK_VERSION = 21;
@@ -115,6 +116,7 @@ public class GradleTestProject implements TestRule {
 
     public static final String CUSTOM_JACK;
     public static final boolean USE_JACK;
+
 
     private static final String RECORD_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String RECORD_BENCHMARK_MODE = "com.android.benchmark.mode";
@@ -143,8 +145,6 @@ public class GradleTestProject implements TestRule {
     private static final String DEFAULT_TEST_PROJECT_NAME = "project";
 
     public static class Builder {
-        private static final File SAMPLE_PROJECT_DIR = new File("samples");
-        private static final File TEST_PROJECT_DIR = new File("test-projects");
 
         @Nullable
         private String name;
@@ -490,19 +490,19 @@ public class GradleTestProject implements TestRule {
         assertTrue(sourceDir.mkdirs());
 
         Files.copy(
-                new File(Builder.TEST_PROJECT_DIR, COMMON_HEADER),
+                new File(TEST_PROJECT_DIR, COMMON_HEADER),
                 new File(testDir.getParent(), COMMON_HEADER));
         Files.copy(
-                new File(Builder.TEST_PROJECT_DIR, COMMON_LOCAL_REPO),
+                new File(TEST_PROJECT_DIR, COMMON_LOCAL_REPO),
                 new File(testDir.getParent(), COMMON_LOCAL_REPO));
         Files.copy(
-                new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT),
+                new File(TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT),
                 new File(testDir.getParent(), COMMON_BUILD_SCRIPT));
         Files.copy(
-                new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT_EXP),
+                new File(TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT_EXP),
                 new File(testDir.getParent(), COMMON_BUILD_SCRIPT_EXP));
         Files.copy(
-                new File(Builder.TEST_PROJECT_DIR, COMMON_GRADLE_PLUGIN_VERSION),
+                new File(TEST_PROJECT_DIR, COMMON_GRADLE_PLUGIN_VERSION),
                 new File(testDir.getParent(), COMMON_GRADLE_PLUGIN_VERSION));
 
         if (testProject != null) {

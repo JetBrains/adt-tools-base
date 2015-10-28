@@ -47,11 +47,6 @@ class NdkJniPureSplitLibTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     void "check version code"() {
         GradleTestProject app = project.getSubproject("app")
         assertThatApk(app.getApk("free", "debug_armeabi-v7a")).hasVersionCode(123)

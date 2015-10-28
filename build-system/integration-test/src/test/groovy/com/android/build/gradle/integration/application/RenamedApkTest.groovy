@@ -54,11 +54,6 @@ class RenamedApkTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     void "check model reflects renamed apk"() throws Exception {
         File projectDir = project.getTestDir()
 
