@@ -22,6 +22,7 @@ import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.InstantRun;
 import com.android.builder.model.NativeLibrary;
 import com.android.builder.model.SourceProvider;
 import com.google.common.collect.Sets;
@@ -60,7 +61,7 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     @NonNull
     private final Map<String, ClassField> resValues;
     @NonNull
-    private final String incrementalAssembleTaskName;
+    private final InstantRun instantRun;
 
     AndroidArtifactImpl(
             @NonNull String name,
@@ -71,7 +72,6 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
             @NonNull String applicationId,
             @NonNull String sourceGenTaskName,
             @NonNull String compileTaskName,
-            @NonNull String incrementalAssembleTaskName,
             @NonNull List<File> generatedSourceFolders,
             @NonNull List<File> generatedResourceFolders,
             @NonNull File classesFolder,
@@ -82,7 +82,8 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
             @Nullable Set<String> abiFilters,
             @NonNull Collection<NativeLibrary> nativeLibraries,
             @NonNull Map<String,ClassField> buildConfigFields,
-            @NonNull Map<String,ClassField> resValues) {
+            @NonNull Map<String,ClassField> resValues,
+            @NonNull InstantRun instantRun) {
         super(name, assembleTaskName, compileTaskName,
                 classesFolder, javaResourcesFolder,
                 dependencies, variantSourceProvider, multiFlavorSourceProviders,
@@ -98,7 +99,7 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
         this.nativeLibraries = nativeLibraries;
         this.buildConfigFields = buildConfigFields;
         this.resValues = resValues;
-        this.incrementalAssembleTaskName = incrementalAssembleTaskName;
+        this.instantRun = instantRun;
     }
 
     @NonNull
@@ -168,7 +169,7 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
 
     @NonNull
     @Override
-    public String getIncrementalAsssembleTaskName() {
-        return incrementalAssembleTaskName;
+    public InstantRun getInstantRun() {
+        return instantRun;
     }
 }

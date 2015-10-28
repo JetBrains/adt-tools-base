@@ -123,11 +123,10 @@ public interface AndroidArtifact extends BaseArtifact {
     @NonNull
     Map<String, ClassField> getResValues();
 
-
     /**
-     * Returns the name of the task used to generate the incremental .dex files from the last
-     * build.
+     * Returns the InstantRun feature related model.
+     * @return the model for all InstantRun related information.
      */
     @NonNull
-    String getIncrementalAsssembleTaskName();
+    InstantRun getInstantRun();
 }

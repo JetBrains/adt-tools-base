@@ -33,6 +33,7 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.build.gradle.internal.incremental.InstantRunAnchorTaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -417,6 +418,11 @@ public class ModelBuilder implements ToolingModelBuilder {
                     intVersionCode));
         }
 
+        InstantRunImpl instantRun = new InstantRunImpl(
+                InstantRunAnchorTaskConfigAction.getName(scope),
+                scope.getRestartDexOutputFolder(),
+                scope.getReloadDexOutputFolder());
+
         return new AndroidArtifactImpl(
                 name,
                 outputs,
@@ -428,7 +434,6 @@ public class ModelBuilder implements ToolingModelBuilder {
                 // in component plugin.
                 scope.getSourceGenTask() == null ? scope.getTaskName("generate", "Sources") : scope.getSourceGenTask().getName(),
                 scope.getCompileTask() == null ? scope.getTaskName("compile", "Sources") : scope.getCompileTask().getName(),
-                scope.getTaskName("incremental", "SupportDex"),
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
                 (variantData.javacTask != null) ?
@@ -441,7 +446,8 @@ public class ModelBuilder implements ToolingModelBuilder {
                 variantConfiguration.getSupportedAbis(),
                 nativeLibraries,
                 variantConfiguration.getMergedBuildConfigFields(),
-                variantConfiguration.getMergedResValues());
+                variantConfiguration.getMergedResValues(),
+                instantRun);
     }
 
     private static Collection<Abi> createAbiList(Collection<String> abiNames) {

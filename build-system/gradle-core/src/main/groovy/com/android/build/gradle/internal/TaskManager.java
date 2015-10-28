@@ -45,6 +45,7 @@ import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.incremental.InstantRunAnchorTaskConfigAction;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -123,7 +124,6 @@ import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
 import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
 import com.android.build.gradle.tasks.fd.InjectBootstrapApplicationTask;
 import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
-import com.android.build.transform.api.QualifiedContent;
 import com.android.build.transform.api.QualifiedContent.ContentType;
 import com.android.build.transform.api.QualifiedContent.DefaultContentType;
 import com.android.build.transform.api.QualifiedContent.Scope;
@@ -146,7 +146,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
@@ -2075,23 +2074,7 @@ public abstract class TaskManager {
             // create the anchor task, no other tasks depend on this, it must be invoked by
             // the user directly.
             AndroidTask<Task> instantRunAnchor = androidTasks.create(tasks,
-                    new TaskConfigAction<Task>() {
-                        @NonNull
-                        @Override
-                        public String getName() {
-                            return scope.getTaskName("incremental", "SupportDex");
-                        }
-
-                        @NonNull
-                        @Override
-                        public Class<Task> getType() {
-                            return Task.class;
-                        }
-
-                        @Override
-                        public void execute(@NonNull Task task) {
-                        }
-                    });
+                    new InstantRunAnchorTaskConfigAction(scope));
 
             instantRunAnchor.dependsOn(tasks, transformTwoTask, transformThreeTask);
         }
