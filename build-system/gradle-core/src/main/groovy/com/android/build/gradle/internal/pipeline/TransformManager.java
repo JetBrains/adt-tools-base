@@ -39,6 +39,9 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
+
 import java.io.File;
 import java.util.Iterator;
 import java.util.List;
@@ -54,7 +57,7 @@ import java.util.Set;
  */
 public class TransformManager extends FilterableStreamCollection {
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     private static final String FD_TRANSFORMS = "transforms";
 
@@ -159,19 +162,20 @@ public class TransformManager extends FilterableStreamCollection {
         }
 
         if (DEBUG) {
-            System.out.println(
+            Logger logger = Logging.getLogger(TransformManager.class);
+            logger.debug(
                     "ADDED TRANSFORM(" + scope.getVariantConfiguration().getFullName()
                             + "):");
-            System.out.println("\tName: " + transform.getName());
-            System.out.println("\tTask: " + taskName);
+            logger.debug("\tName: " + transform.getName());
+            logger.debug("\tTask: " + taskName);
             for (TransformStream sd : inputStreams) {
-                System.out.println("\tInputStream: " + sd);
+                logger.debug("\tInputStream: " + sd);
             }
             for (TransformStream sd : referencedStreams) {
-                System.out.println("\tRef'edStream: " + sd);
+                logger.debug("\tRef'edStream: " + sd);
             }
             if (outputStream != null) {
-                System.out.println("\tOutputStream: " + outputStream);
+                logger.debug("\tOutputStream: " + outputStream);
             }
         }
 
@@ -204,8 +208,6 @@ public class TransformManager extends FilterableStreamCollection {
     public List<TransformStream> getStreams() {
         return streams;
     }
-
-
 
     @NonNull
     private static String getTaskNamePrefix(@NonNull Transform transform) {
