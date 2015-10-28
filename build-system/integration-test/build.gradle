@@ -84,7 +84,7 @@ task automaticTest(type: Test) {
     environment = testEnvironment
 }
 
-test.dependsOn automaticTest
+check.dependsOn automaticTest
 
 task connectedIntegrationTest(type: Test)
 
