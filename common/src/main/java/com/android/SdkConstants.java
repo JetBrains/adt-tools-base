@@ -972,6 +972,14 @@ public final class SdkConstants {
     public static final String ATTR_LIST_PREFERRED_ITEM_PADDING_END =
             "listPreferredItemPaddingEnd";                             //$NON-NLS-1$
     public static final String ATTR_INDEX = "index";                   //$NON-NLS-1$
+    public static final String ATTR_ACTION_BAR_NAV_MODE = "actionBarNavMode"; //$NON-NLS-1$
+    public static final String ATTR_MENU = "menu";                     //$NON-NLS-1$
+    public static final String ATTR_SHOW_IN = "showIn";                //$NON-NLS-1$
+
+    // Tools attributes for AdapterView inheritors
+    public static final String ATTR_LISTFOOTER = "listfooter";         //$NON-NLS-1$
+    public static final String ATTR_LISTHEADER = "listheader";         //$NON-NLS-1$
+    public static final String ATTR_LISTITEM = "listitem";             //$NON-NLS-1$
 
     // AbsoluteLayout layout params
     public static final String ATTR_LAYOUT_Y = "layout_y";             //$NON-NLS-1$
