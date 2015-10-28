@@ -63,6 +63,8 @@ public interface SyncIssue {
     int TYPE_OPTIONAL_LIB_NOT_FOUND   = 10;
 
     int TYPE_WRONG_TRANSFORM_SCOPE_ON_LIB = 11;
+    int TYPE_TRANSFORM_WITH_NO_STREAMS = 12;
+    int TYPE_WRONG_CONTENT_TYPE_IMPL = 13;
 
     int TYPE_MAX                      = 12; // increment when adding new types.
 

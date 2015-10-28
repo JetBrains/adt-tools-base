@@ -80,7 +80,8 @@ public class ApplicationVariantFactory implements VariantFactory {
             @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull TaskManager taskManager) {
         ApplicationVariantData variant =
-                new ApplicationVariantData(extension, variantConfiguration, taskManager);
+                new ApplicationVariantData(extension, variantConfiguration, taskManager,
+                        androidBuilder.getErrorReporter());
 
         variant.calculateFilters(extension.getSplits());
 
