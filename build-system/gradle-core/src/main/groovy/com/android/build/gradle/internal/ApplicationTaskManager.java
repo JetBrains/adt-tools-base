@@ -191,6 +191,16 @@ public class ApplicationTaskManager extends TaskManager {
         }
         variantScope.setNdkBuildable(getNdkBuildable(variantData));
 
+        // Add a task to merge the jni libs folders
+        ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_JNILIBS_FOLDERS_TASK,
+                new Recorder.Block<Void>() {
+                    @Override
+                    public Void call() {
+                        createMergeJniLibFoldersTasks(tasks, variantScope);
+                        return null;
+                    }
+                });
+
         if (variantData.getSplitHandlingPolicy().equals(
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY)) {
             if (getExtension().getBuildToolsRevision().getMajor() < 21) {

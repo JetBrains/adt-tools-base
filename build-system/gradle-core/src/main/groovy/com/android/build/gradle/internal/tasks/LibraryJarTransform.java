@@ -53,8 +53,8 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 /**
- * A Transforms that takes the project/project local streams and processes and combines them, and
- * put them in the bundle folder.
+ * A Transforms that takes the project/project local streams for CLASSES and RESOURCES,
+ * and processes and combines them, and put them in the bundle folder.
  *
  * Regarding Streams, this is a no-op transform as it does not write any output to any stream. It
  * uses secondary outputs to write directly into the bundle folder.

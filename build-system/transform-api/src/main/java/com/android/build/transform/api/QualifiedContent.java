@@ -45,8 +45,8 @@ public interface QualifiedContent {
          * The content if standard Java resources.
          */
         RESOURCES(0x04),
-
-        CLASSES_ENHANCED(0x08);
+        NATIVE_LIBS(0x08),
+        CLASSES_ENHANCED(0x10);
 
         private final int value;
 

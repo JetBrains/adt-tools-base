@@ -30,7 +30,7 @@ import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
-import com.android.build.gradle.tasks.MergeAssets;
+import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
@@ -79,9 +79,6 @@ public interface VariantScope extends BaseScope {
 
     @NonNull
     File getDexOutputFolder();
-
-    @NonNull
-    Set<File> getJniFolders();
 
     @Nullable
     BaseVariantData getTestedVariantData();
@@ -160,6 +157,9 @@ public interface VariantScope extends BaseScope {
     File getMergeAssetsOutputDir();
 
     @NonNull
+    File getMergeNativeLibsOutputDir();
+
+    @NonNull
     File getBuildConfigSourceOutputDir();
 
     @NonNull
@@ -224,78 +224,66 @@ public interface VariantScope extends BaseScope {
 
     AndroidTask<Task> getPreBuildTask();
 
-    void setPreBuildTask(
-            AndroidTask<Task> preBuildTask);
+    void setPreBuildTask(AndroidTask<Task> preBuildTask);
 
     AndroidTask<PrepareDependenciesTask> getPrepareDependenciesTask();
 
-    void setPrepareDependenciesTask(
-            AndroidTask<PrepareDependenciesTask> prepareDependenciesTask);
+    void setPrepareDependenciesTask(AndroidTask<PrepareDependenciesTask> prepareDependenciesTask);
 
     AndroidTask<ProcessAndroidResources> getGenerateRClassTask();
 
-    void setGenerateRClassTask(
-            AndroidTask<ProcessAndroidResources> generateRClassTask);
+    void setGenerateRClassTask(AndroidTask<ProcessAndroidResources> generateRClassTask);
 
     AndroidTask<Task> getSourceGenTask();
 
-    void setSourceGenTask(
-            AndroidTask<Task> sourceGenTask);
+    void setSourceGenTask(AndroidTask<Task> sourceGenTask);
 
     AndroidTask<Task> getResourceGenTask();
 
-    void setResourceGenTask(
-            AndroidTask<Task> resourceGenTask);
+    void setResourceGenTask(AndroidTask<Task> resourceGenTask);
 
     AndroidTask<Task> getAssetGenTask();
 
-    void setAssetGenTask(
-            AndroidTask<Task> assetGenTask);
+    void setAssetGenTask(AndroidTask<Task> assetGenTask);
 
     AndroidTask<CheckManifest> getCheckManifestTask();
 
-    void setCheckManifestTask(
-            AndroidTask<CheckManifest> checkManifestTask);
+    void setCheckManifestTask(AndroidTask<CheckManifest> checkManifestTask);
 
     AndroidTask<RenderscriptCompile> getRenderscriptCompileTask();
 
-    void setRenderscriptCompileTask(
-            AndroidTask<RenderscriptCompile> renderscriptCompileTask);
+    void setRenderscriptCompileTask(AndroidTask<RenderscriptCompile> renderscriptCompileTask);
 
     AndroidTask<AidlCompile> getAidlCompileTask();
 
-    void setAidlCompileTask(
-            AndroidTask<AidlCompile> aidlCompileTask);
+    void setAidlCompileTask(AndroidTask<AidlCompile> aidlCompileTask);
 
     @Nullable
     AndroidTask<MergeResources> getMergeResourcesTask();
 
-    void setMergeResourcesTask(
-            @Nullable AndroidTask<MergeResources> mergeResourcesTask);
+    void setMergeResourcesTask(@Nullable AndroidTask<MergeResources> mergeResourcesTask);
 
     @Nullable
-    AndroidTask<MergeAssets> getMergeAssetsTask();
+    AndroidTask<MergeSourceSetFolders> getMergeAssetsTask();
 
-    void setMergeAssetsTask(
-            @Nullable AndroidTask<MergeAssets> mergeAssetsTask);
+    void setMergeAssetsTask(@Nullable AndroidTask<MergeSourceSetFolders> mergeAssetsTask);
+
+    @Nullable
+    AndroidTask<MergeSourceSetFolders> getMergeJniLibFoldersTask();
+
+    void setMergeJniLibFoldersTask(@Nullable AndroidTask<MergeSourceSetFolders> mergeJniLibsTask);
 
     AndroidTask<GenerateBuildConfig> getGenerateBuildConfigTask();
 
-    void setGenerateBuildConfigTask(
-            AndroidTask<GenerateBuildConfig> generateBuildConfigTask);
+    void setGenerateBuildConfigTask(AndroidTask<GenerateBuildConfig> generateBuildConfigTask);
 
     AndroidTask<GenerateResValues> getGenerateResValuesTask();
 
-    void setGenerateResValuesTask(
-            AndroidTask<GenerateResValues> generateResValuesTask);
+    void setGenerateResValuesTask(AndroidTask<GenerateResValues> generateResValuesTask);
 
     AndroidTask<Sync> getProcessJavaResourcesTask();
 
     void setProcessJavaResourcesTask(AndroidTask<Sync> processJavaResourcesTask);
-
-    void setPackagingOptionsFilter(SignedJarBuilder.IZipEntryFilter filter);
-
-    SignedJarBuilder.IZipEntryFilter getPackagingOptionsFilter();
 
     void setMergeJavaResourcesTask(AndroidTask<TransformTask> mergeJavaResourcesTask);
 

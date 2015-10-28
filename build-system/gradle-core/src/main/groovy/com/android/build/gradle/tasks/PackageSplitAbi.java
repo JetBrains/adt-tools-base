@@ -71,13 +71,7 @@ public class PackageSplitAbi extends SplitRelatedTask {
 
     private SigningConfig signingConfig;
 
-    private PackagingOptions packagingOptions;
-
     private Collection<File> jniFolders;
-
-    private File mergingFolder;
-
-    private SignedJarBuilder.IZipEntryFilter packagingOptionsFilter;
 
     @OutputFiles
     public List<File> getOutputFiles() {
@@ -141,12 +135,9 @@ public class PackageSplitAbi extends SplitRelatedTask {
                         ImmutableSet.<File>of(), /* dexFolders */
                         ImmutableList.<File>of(), /* getJavaResourceDir */
                         getJniFolders(),
-                        getMergingFolder(),
                         ImmutableSet.of(matcher.group(1)),
                         isJniDebuggable(),
                         getSigningConfig(),
-                        getPackagingOptions(),
-                        getPackagingOptionsFilter(),
                         outFile.getAbsolutePath());
                 unprocessedSplits.remove(matcher.group(1));
             }
@@ -230,15 +221,6 @@ public class PackageSplitAbi extends SplitRelatedTask {
         this.signingConfig = signingConfig;
     }
 
-    @Nested
-    public PackagingOptions getPackagingOptions() {
-        return packagingOptions;
-    }
-
-    public void setPackagingOptions(PackagingOptions packagingOptions) {
-        this.packagingOptions = packagingOptions;
-    }
-
     @Input
     public Collection<File> getJniFolders() {
         return jniFolders;
@@ -247,21 +229,4 @@ public class PackageSplitAbi extends SplitRelatedTask {
     public void setJniFolders(Collection<File> jniFolders) {
         this.jniFolders = jniFolders;
     }
-
-    public File getMergingFolder() {
-        return mergingFolder;
-    }
-
-    public void setMergingFolder(File mergingFolder) {
-        this.mergingFolder = mergingFolder;
-    }
-
-    public SignedJarBuilder.IZipEntryFilter getPackagingOptionsFilter() {
-        return packagingOptionsFilter;
-    }
-
-    public void setPackagingOptionsFilter(SignedJarBuilder.IZipEntryFilter packagingOptionsFilter) {
-        this.packagingOptionsFilter = packagingOptionsFilter;
-    }
-
 }

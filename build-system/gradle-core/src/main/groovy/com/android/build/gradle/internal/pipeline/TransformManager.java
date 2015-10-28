@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.pipeline;
 
 import static com.android.build.transform.api.QualifiedContent.ContentType.CLASSES;
 import static com.android.build.transform.api.QualifiedContent.ContentType.DEX;
+import static com.android.build.transform.api.QualifiedContent.ContentType.NATIVE_LIBS;
 import static com.android.build.transform.api.QualifiedContent.ContentType.RESOURCES;
 import static com.android.utils.StringHelper.capitalize;
 
@@ -62,6 +63,7 @@ public class TransformManager extends FilterableStreamCollection {
     public static final Set<ContentType> CONTENT_CLASS = Sets.immutableEnumSet(CLASSES);
     public static final Set<ContentType> CONTENT_JARS = Sets.immutableEnumSet(CLASSES, RESOURCES);
     public static final Set<ContentType> CONTENT_RESOURCES = Sets.immutableEnumSet(RESOURCES);
+    public static final Set<ContentType> CONTENT_NATIVE_LIBS = Sets.immutableEnumSet(NATIVE_LIBS);
     public static final Set<ContentType> CONTENT_DEX = Sets.immutableEnumSet(DEX);
     public static final Set<Scope> SCOPE_FULL_PROJECT = Sets.immutableEnumSet(
             Scope.PROJECT,

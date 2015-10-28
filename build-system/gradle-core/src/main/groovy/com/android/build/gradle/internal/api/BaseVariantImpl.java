@@ -23,7 +23,7 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
-import com.android.build.gradle.tasks.MergeAssets;
+import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.RenderscriptCompile;
@@ -171,7 +171,7 @@ abstract class BaseVariantImpl implements BaseVariant {
     }
 
     @Override
-    public MergeAssets getMergeAssets() {
+    public MergeSourceSetFolders getMergeAssets() {
         return getVariantData().mergeAssetsTask;
     }
 
