@@ -26,5 +26,13 @@ public enum OptionalCompilationStep {
     /**
      * presence will turn on the InstantDev (name still tbd) feature.
      */
-    INSTANT_DEV
+    INSTANT_DEV,
+    /**
+     * presence will disable all tasks before javac.
+     */
+    LOCAL_JAVA_ONLY,
+    /**
+     * presence will disable all tasks before resource merger.
+     */
+    LOCAL_RES_ONLY
 }

@@ -417,9 +417,14 @@ public abstract class TaskManager {
                 })
                 .build());
 
-        ImmutableList<Object> dependencies = ImmutableList.of(variantData.prepareDependenciesTask,
-                variantData.getVariantDependency().getPackageConfiguration()
-                        .getBuildDependencies());
+        IncrementalMode incrementalMode = getIncrementalMode(config);
+        boolean skipDependency = incrementalMode == IncrementalMode.LOCAL_JAVA_ONLY ||
+                incrementalMode == IncrementalMode.LOCAL_RES_ONLY;
+        ImmutableList<Object> dependencies = skipDependency ?
+                ImmutableList.of() :
+                ImmutableList.of(variantData.prepareDependenciesTask,
+                        variantData.getVariantDependency().getPackageConfiguration()
+                                .getBuildDependencies());
 
         transformManager.addStream(OriginalStream.builder()
                 .addContentTypes(fullJar)
@@ -638,9 +643,12 @@ public abstract class TaskManager {
                         outputLocation,
                         includeDependencies,
                         process9Patch));
-        mergeResourcesTask.dependsOn(tasks,
-                scope.getVariantData().prepareDependenciesTask,
-                scope.getResourceGenTask());
+
+        if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.LOCAL_RES_ONLY) {
+            mergeResourcesTask.dependsOn(tasks,
+                    scope.getVariantData().prepareDependenciesTask,
+                    scope.getResourceGenTask());
+        }
         scope.setMergeResourcesTask(mergeResourcesTask);
         scope.setResourceOutputDir(
                 Objects.firstNonNull(outputLocation, scope.getDefaultMergeResourcesOutputDir()));
@@ -778,10 +786,16 @@ public abstract class TaskManager {
             variantOutputScope.setProcessResourcesTask(androidTasks.create(tasks,
                     new ProcessAndroidResources.ConfigAction(variantOutputScope, symbolLocation,
                             generateResourcePackage)));
+
+            // always depend on merge res,
             variantOutputScope.getProcessResourcesTask().dependsOn(tasks,
-                    variantOutputScope.getManifestProcessorTask(),
-                    scope.getMergeResourcesTask(),
-                    scope.getMergeAssetsTask());
+                    scope.getMergeResourcesTask());
+
+            if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.LOCAL_RES_ONLY) {
+                variantOutputScope.getProcessResourcesTask().dependsOn(tasks,
+                        variantOutputScope.getManifestProcessorTask(),
+                        scope.getMergeAssetsTask());
+            }
 
             if (vod.getMainOutputFile().getFilter(DENSITY) == null) {
                 scope.setGenerateRClassTask(variantOutputScope.getProcessResourcesTask());
@@ -790,7 +804,6 @@ public abstract class TaskManager {
             }
 
         }
-
     }
 
     /**
@@ -1049,14 +1062,22 @@ public abstract class TaskManager {
                 new JavaCompileConfigAction(scope));
         scope.setJavacTask(javacTask);
 
-        javacTask.optionalDependsOn(tasks, scope.getSourceGenTask());
-        javacTask.dependsOn(tasks, scope.getVariantData().prepareDependenciesTask);
+        IncrementalMode incrementalMode = getIncrementalMode(scope.getVariantConfiguration());
 
-        // TODO - dependency information for the compile classpath is being lost.
-        // Add a temporary approximation
-        javacTask.dependsOn(tasks,
-                scope.getVariantData().getVariantDependency().getCompileConfiguration()
-                        .getBuildDependencies());
+        if (incrementalMode == IncrementalMode.LOCAL_RES_ONLY) {
+            // in this case only depend on the R class. We want to ignore the other
+            // source generating classes like RS, aidl, etc...
+            javacTask.optionalDependsOn(tasks, scope.getGenerateRClassTask());
+        } else if (incrementalMode != IncrementalMode.LOCAL_JAVA_ONLY) {
+            javacTask.optionalDependsOn(tasks, scope.getSourceGenTask());
+            javacTask.dependsOn(tasks, scope.getVariantData().prepareDependenciesTask);
+
+            // TODO - dependency information for the compile classpath is being lost.
+            // Add a temporary approximation
+            javacTask.dependsOn(tasks,
+                    scope.getVariantData().getVariantDependency().getCompileConfiguration()
+                            .getBuildDependencies());
+        }
 
         // create the output stream from this task
         scope.getTransformManager().addStream(OriginalStream.builder()
@@ -1319,7 +1340,7 @@ public abstract class TaskManager {
     @Nullable
     protected void createIncrementalSupportTasks(TaskFactory tasks, VariantScope variantScope) {
 
-        if (isIncrementalSupportActive(variantScope.getVariantConfiguration())) {
+        if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
 
             TransformManager transformManager = variantScope.getTransformManager();
 
@@ -1362,16 +1383,34 @@ public abstract class TaskManager {
         }
     }
 
+    private enum IncrementalMode {
+        NONE, FULL, LOCAL_JAVA_ONLY, LOCAL_RES_ONLY;
+    }
+
     /**
-     * Returns true if the incremental support is active for this variant.
+     * Returns the incremental mode for this variant.
      * @param config the variant's configuration
-     * @return true if incremental support is active, false otherwise.
+     * @return the {@link IncrementalMode} for this variant.
      */
-    private boolean isIncrementalSupportActive(VariantConfiguration config) {
-        return config.getBuildType().isDebuggable()
+    private IncrementalMode getIncrementalMode(@NonNull GradleVariantConfiguration config) {
+        if (config.getBuildType().isDebuggable()
                 && !config.getBuildType().isMinifyEnabled()
                 && !config.getType().isForTesting()
-                && globalScope.isActive(OptionalCompilationStep.INSTANT_DEV);
+                && !config.getUseJack()
+                && globalScope.isActive(OptionalCompilationStep.INSTANT_DEV)) {
+            // while both LOCAL_RES and LOCAL_JAVA could be active, LOCAL_RES is higher priority.
+            if (globalScope.isActive(OptionalCompilationStep.LOCAL_RES_ONLY)) {
+                return IncrementalMode.LOCAL_RES_ONLY;
+            }
+
+            if (globalScope.isActive(OptionalCompilationStep.LOCAL_JAVA_ONLY)) {
+                return IncrementalMode.LOCAL_JAVA_ONLY;
+            }
+
+            return IncrementalMode.FULL;
+        }
+
+        return IncrementalMode.NONE;
     }
 
     // TODO - should compile src/lint/java from src/lint/java and jar it into build/lint/lint.jar
@@ -1866,7 +1905,6 @@ public abstract class TaskManager {
     public void createJarTasks(@NonNull TaskFactory tasks, @NonNull final VariantScope scope) {
         final BaseVariantData variantData = scope.getVariantData();
 
-        final boolean isIncremental = isIncrementalSupportActive(scope.getVariantConfiguration());
         final GradleVariantConfiguration config = variantData.getVariantConfiguration();
         tasks.create(
                 scope.getTaskName("jar", "Classes"),
@@ -2003,7 +2041,7 @@ public abstract class TaskManager {
     public void createIncrementalPostCompilationTasks(
             TaskFactory tasks, @NonNull final VariantScope scope) {
 
-        if (isIncrementalSupportActive(scope.getVariantConfiguration())) {
+        if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.NONE) {
 
             InstantRunDex classesTwoTransform = new InstantRunDex(
                     scope,
@@ -2308,7 +2346,7 @@ public abstract class TaskManager {
             }
 
             // modify the manifest file and generate the new AppInfo.
-            if (isIncrementalSupportActive(config)) {
+            if (getIncrementalMode(config) != IncrementalMode.NONE) {
                 AndroidTask<InjectBootstrapApplicationTask> rewriteTask = androidTasks.create(
                         tasks, new InjectBootstrapApplicationTask.ConfigAction(variantOutputScope));
                 rewriteTask.dependsOn(tasks, variantOutputScope.getManifestProcessorTask());
@@ -2327,7 +2365,7 @@ public abstract class TaskManager {
         }
 
         if (getExtension().getLintOptions().isCheckReleaseBuilds()
-                && !isIncrementalSupportActive(variantScope.getVariantConfiguration())) {
+                && getIncrementalMode(variantScope.getVariantConfiguration()) == IncrementalMode.NONE) {
             createLintVitalTask(variantData);
         }
 
