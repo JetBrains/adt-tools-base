@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.IncrementalChangeVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalSupportVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalVisitor;
+import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.transform.api.Context;
@@ -29,6 +30,7 @@ import com.android.build.transform.api.DirectoryInput;
 import com.android.build.transform.api.Format;
 import com.android.build.transform.api.JarInput;
 import com.android.build.transform.api.QualifiedContent;
+import com.android.build.transform.api.QualifiedContent.ContentType;
 import com.android.build.transform.api.Status;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
@@ -38,6 +40,7 @@ import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -86,15 +89,16 @@ public class InstantRunTransform extends Transform {
 
     @NonNull
     @Override
-    public Set<QualifiedContent.ContentType> getInputTypes() {
+    public Set<ContentType> getInputTypes() {
         return TransformManager.CONTENT_CLASS;
     }
 
     @NonNull
     @Override
-    public Set<QualifiedContent.ContentType> getOutputTypes() {
-        return Sets.immutableEnumSet(QualifiedContent.ContentType.CLASSES,
-                QualifiedContent.ContentType.CLASSES_ENHANCED);
+    public Set<ContentType> getOutputTypes() {
+        return ImmutableSet.<ContentType>of(
+                QualifiedContent.DefaultContentType.CLASSES,
+                ExtendedContentType.CLASSES_ENHANCED);
     }
 
     @NonNull
@@ -151,7 +155,7 @@ public class InstantRunTransform extends Transform {
                     TransformManager.CONTENT_CLASS, getScopes(), Format.DIRECTORY);
 
             File classesThreeOutput = outputProvider.getContentLocation("enhanced",
-                    Sets.immutableEnumSet(QualifiedContent.ContentType.CLASSES_ENHANCED),
+                    ImmutableSet.<ContentType>of(ExtendedContentType.CLASSES_ENHANCED),
                     getScopes(), Format.DIRECTORY);
 
             for (TransformInput input : inputs) {
@@ -329,7 +333,7 @@ public class InstantRunTransform extends Transform {
     }
 
     /**
-     * Transform a single file into a {@link QualifiedContent.ContentType#CLASSES_ENHANCED} format
+     * Transform a single file into a {@link ContentType#CLASSES_ENHANCED} format
      *
      * @param inputDir the input directory containing the input file.
      * @param inputFile the input file within the input directory to transform.

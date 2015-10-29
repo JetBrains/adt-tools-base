@@ -2054,7 +2054,8 @@ public abstract class TaskManager {
                     scope.getRestartDexOutputFolder(),
                     androidBuilder,
                     scope.getGlobalScope().getExtension().getDexOptions(), getLogger(),
-                    Sets.immutableEnumSet(ContentType.CLASSES));
+                    ImmutableSet.<ContentType>of(
+                            DefaultContentType.CLASSES));
 
             AndroidTask<TransformTask> transformTwoTask = scope.getTransformManager()
                     .addTransform(tasks, scope, classesTwoTransform);
@@ -2065,7 +2066,8 @@ public abstract class TaskManager {
                     scope.getReloadDexOutputFolder(),
                     androidBuilder,
                     scope.getGlobalScope().getExtension().getDexOptions(), getLogger(),
-                    Sets.immutableEnumSet(ContentType.CLASSES_ENHANCED));
+                    ImmutableSet.<ContentType>of(
+                            ExtendedContentType.CLASSES_ENHANCED));
 
             AndroidTask<TransformTask> transformThreeTask = scope.getTransformManager()
                     .addTransform(tasks, scope, classesThreeTransform);
