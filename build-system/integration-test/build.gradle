@@ -139,6 +139,7 @@ task performanceTest(type: Test) {
     }
 }
 
+automaticTest.dependsOn ':publishLocal'
 test.dependsOn ':publishLocal'
 connectedIntegrationTest.dependsOn ':publishLocal'
 performanceTest.dependsOn ':publishLocal'
