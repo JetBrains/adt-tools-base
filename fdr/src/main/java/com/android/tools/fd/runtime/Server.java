@@ -243,8 +243,7 @@ public class Server {
                             Log.i(LOG_TAG, "Received Ping message from the IDE; " +
                                     "returned active = " + active);
                         }
-                        // NOTE: Ping has defined semantics of ending the conversation
-                        return;
+                        continue;
                     }
 
                     case MESSAGE_PATH_EXISTS: {
