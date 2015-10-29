@@ -71,6 +71,8 @@ public class ValueXmlHelperTest extends TestCase {
         assertEquals("te\\st", unescapeResourceString("\n\t  te\\\\st \t\n ", false, true));
         assertEquals("te\\st", unescapeResourceString("  te\\\\st  ", false, true));
         assertEquals("test", unescapeResourceString("\"\"\"test\"\"  ", false, true));
+        assertEquals("t t", unescapeResourceString("  \"\"t   t\"  ", false, true));
+        assertEquals("t   t", unescapeResourceString("  \"\"\"t   t\"  ", false, true));
         assertEquals("\"test\"", unescapeResourceString("\"\"\\\"test\\\"\"  ", false, true));
         assertEquals("test ", unescapeResourceString("test\\  ", false, true));
         assertEquals("\\\\\\", unescapeResourceString("\\\\\\\\\\\\ ", false, true));
