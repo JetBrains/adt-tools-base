@@ -43,6 +43,7 @@ import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
+import com.android.builder.core.ErrorReporter;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.SourceProvider;
 import com.android.ide.common.blame.MergingLog;
@@ -168,7 +169,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public BaseVariantData(
             @NonNull AndroidConfig androidConfig,
             @NonNull TaskManager taskManager,
-            @NonNull GradleVariantConfiguration variantConfiguration) {
+            @NonNull GradleVariantConfiguration variantConfiguration,
+            @NonNull ErrorReporter errorReporter) {
         this.androidConfig = androidConfig;
         this.variantConfiguration = variantConfiguration;
         this.taskManager = taskManager;
@@ -191,7 +193,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         }
         scope = new VariantScopeImpl(
                 taskManager.getGlobalScope(),
-                new TransformManager(taskManager.getAndroidTasks()),
+                new TransformManager(taskManager.getAndroidTasks(), errorReporter),
                 this);
         taskManager.configureScopeForNdk(scope);
     }
