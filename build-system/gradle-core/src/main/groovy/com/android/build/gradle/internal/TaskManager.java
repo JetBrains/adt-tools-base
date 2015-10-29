@@ -1976,6 +1976,10 @@ public abstract class TaskManager {
             createMinifyTransform(tasks, variantScope, outputToJarFile);
         }
 
+        // ----- 10x support
+
+        createIncrementalPostCompilationTasks(tasks, variantScope);
+
         // ----- Multi-Dex support
 
         AndroidTask<TransformTask> multiDexClassListTask = null;
@@ -2014,8 +2018,6 @@ public abstract class TaskManager {
                     tasks, variantScope, multiDexTransform);
             multiDexClassListTask.dependsOn(tasks, manifestKeepListTask);
         }
-
-        createIncrementalPostCompilationTasks(tasks, variantScope);
 
         // create dex transform
         DexTransform dexTransform = new DexTransform(
