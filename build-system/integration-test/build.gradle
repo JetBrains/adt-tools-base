@@ -137,6 +137,7 @@ task performanceTest(type: Test) {
     }
 }
 
+automaticTest.dependsOn ':publishLocal'
 test.dependsOn ':publishLocal'
 connectedIntegrationTest.dependsOn ':publishLocal',
         ':base:gradle-core:instrumentIncrementalTestPatches',
