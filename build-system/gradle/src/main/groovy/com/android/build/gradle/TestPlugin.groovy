@@ -16,7 +16,6 @@
 
 package com.android.build.gradle
 
-import android.databinding.tool.DataBindingBuilder
 import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
@@ -49,7 +48,6 @@ class TestPlugin extends BasePlugin implements Plugin<Project> {
     protected TaskManager createTaskManager(
             Project project,
             AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
             AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
@@ -57,7 +55,6 @@ class TestPlugin extends BasePlugin implements Plugin<Project> {
         return new TestApplicationTaskManager (
                 project,
                 androidBuilder,
-                dataBindingBuilder,
                 extension,
                 sdkHandler,
                 dependencyManager,

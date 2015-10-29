@@ -37,7 +37,7 @@ import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
-import android.databinding.tool.DataBindingBuilder;
+
 /**
  * TaskManager for standalone test application that lives in a separate module from the tested
  * application.
@@ -47,13 +47,11 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
 
     public TestApplicationTaskManager(Project project,
             AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
             AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
-        super(project, androidBuilder, dataBindingBuilder, extension, sdkHandler, dependencyManager,
-                toolingRegistry);
+        super(project, androidBuilder, extension, sdkHandler, dependencyManager, toolingRegistry);
     }
 
     @Override

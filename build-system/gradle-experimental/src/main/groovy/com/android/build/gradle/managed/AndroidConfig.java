@@ -161,5 +161,4 @@ public interface AndroidConfig {
 
     Set<String> getAidlPackageWhitelist();
 
-    DataBindingOptions getDataBinding();
 }

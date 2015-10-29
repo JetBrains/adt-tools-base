@@ -77,8 +77,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * JUnit4 test rule for integration test.
@@ -261,18 +259,10 @@ public class GradleTestProject implements TestRule {
          * Create GradleTestProject from an existing test project.
          */
         public Builder fromTestProject(@NonNull String project) {
-            return fromTestProject(project, null);
-        }
-
-        /**
-         * Create GradleTestProject from an existing test project.
-         * @param buildFileSuffix if non-null, imports files named build.suffix.gradle.
-         */
-        public Builder fromTestProject(@NonNull String project, @Nullable String buildFileSuffix) {
             AndroidTestApp app = new EmptyTestApp();
             name = project;
             File projectDir = new File(TEST_PROJECT_DIR, project);
-            addAllFiles(app, projectDir, buildFileSuffix);
+            addAllFiles(app, projectDir);
             return fromTestApp(app);
         }
 
@@ -287,7 +277,7 @@ public class GradleTestProject implements TestRule {
                     .getParentFile().getParentFile().getParentFile();
             parentDir = new File(parentDir, "external");
             File projectDir = new File(parentDir, project);
-            addAllFiles(app, projectDir, null /*buildFileSuffix*/);
+            addAllFiles(app, projectDir);
             return fromTestApp(app);
         }
 
@@ -443,28 +433,17 @@ public class GradleTestProject implements TestRule {
         }
     }
 
-    private static final Pattern BUILD_FILE_PATTERN = Pattern.compile("build\\.(.+\\.)?gradle");
-
     /**
      * Add all files in a directory to an AndroidTestApp.
      */
-    private static void addAllFiles(AndroidTestApp app, File projectDir, String buildFileSuffix) {
-        String buildFileNameToKeep = (buildFileSuffix != null) ?
-                "build." + buildFileSuffix + ".gradle" : "build.gradle";
+    private static void addAllFiles(AndroidTestApp app, File projectDir) {
         for (String filePath : FileHelper.listFiles(projectDir)) {
             File file = new File(filePath);
             try {
-                String fileName = file.getName();
-                if (BUILD_FILE_PATTERN.matcher(fileName).matches()) {
-                    if (!fileName.equals(buildFileNameToKeep)) {
-                        continue;
-                    }
-                    fileName = "build.gradle";
-                }
                 app.addFile(
                         new TestSourceFile(
                                 file.getParent(),
-                                fileName,
+                                file.getName(),
                                 Files.toByteArray(new File(projectDir, filePath))));
             } catch (IOException e) {
                 fail(e.toString());
