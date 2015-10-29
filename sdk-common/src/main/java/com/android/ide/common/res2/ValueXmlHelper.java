@@ -52,7 +52,6 @@ public class ValueXmlHelper {
         // Trim space surrounding optional quotes
         int i = 0;
         int n = s.length();
-        boolean quoted = false;
         if (trim) {
             while (i < n) {
                 char c = s.charAt(i);
@@ -72,108 +71,64 @@ public class ValueXmlHelper {
                 }
                 n--;
             }
-
-            // Trim surrounding quotes. Note that there can be *any* number of these, and
-            // the left side and right side do not have to match; e.g. you can have
-            //    """"f"" => f
-            int quoteEnd = n;
-            while (i < n) {
-                char c = s.charAt(i);
-                if (c != '"') {
-                    break;
-                }
-                quoted = true;
-                i++;
-            }
-            // Searching backwards is slightly more complicated; make sure we don't trim
-            // quotes that have been escaped.
-            if (quoted) {
-                while (n > i) {
-                    char c = s.charAt(n - 1);
-                    if (c != '"') {
-                        if (n < s.length() && isEscaped(s, n)) {
-                            n++;
-                        }
-                        break;
-                    }
-                    n--;
-                }
-            }
-            if (n == i) {
-                return ""; //$NON-NLS-1$
-            }
-
-            // Only trim leading spaces if we didn't already process a leading quote:
-            if (!quoted) {
-                while (i < n) {
-                    char c = s.charAt(i);
-                    if (!Character.isWhitespace(c)) {
-                        break;
-                    }
-                    i++;
-                }
-
-                // Only trim trailing spaces if we didn't already process a trailing quote:
-                if (n == quoteEnd) {
-                    while (n > i) {
-                        char c = s.charAt(n - 1);
-                        if (!Character.isWhitespace(c)) {
-                            //See if this was a \, and if so, see whether it was escaped
-                            if (n < s.length() && isEscaped(s, n)) {
-                                n++;
-                            }
-                            break;
-                        }
-                        n--;
-                    }
-                }
-                if (n == i) {
-                    return ""; //$NON-NLS-1$
-                }
-            }
         }
 
         // Perform a single pass over the string and see if it contains
         // (1) spaces that should be converted (e.g. repeated spaces or a newline which
         // should be converted to a space)
         // (2) escape characters (\ and &) which will require expansions
+        // (3) quotes that need to be removed
         // If we find neither of these, we can simply return the string
         boolean rewriteWhitespace = false;
-        if (!quoted) {
-            // See if we need to fold adjacent spaces
-            boolean prevSpace = false;
-            boolean hasEscape = false;
-            for (int curr = i; curr < n; curr++) {
-                char c = s.charAt(curr);
-                if (c == '\\' || c == '&') {
-                    hasEscape = true;
-                }
-                boolean isSpace = Character.isWhitespace(c);
-                if (isSpace && prevSpace) {
-                    // fold adjacent spaces
-                    rewriteWhitespace = true;
-                } else if (c == '\n') {
-                    // rewrite newlines as spaces
-                    rewriteWhitespace = true;
-                }
-                prevSpace = isSpace;
+        // See if we need to fold adjacent spaces
+        boolean prevSpace = false;
+        boolean hasEscape = false;
+        boolean hasQuotes = false;
+        for (int curr = i; curr < n; curr++) {
+            char c = s.charAt(curr);
+            if (c == '\\' || c == '&') {
+                hasEscape = true;
             }
-
-            if (!trim) {
-                rewriteWhitespace = false;
+            if (c == '"') {
+                hasQuotes = true;
             }
-
-            // If no surrounding whitespace and no escape characters, no need to do any
-            // more work
-            if (!rewriteWhitespace && !hasEscape && i == 0 && n == s.length()) {
-                return s;
+            boolean isSpace = Character.isWhitespace(c);
+            if (c == '\n' || (isSpace && prevSpace)) {
+                // rewrite newlines as spaces
+                // fold adjacent spaces
+                rewriteWhitespace = true;
             }
+            prevSpace = isSpace;
         }
 
+        if (!trim) {
+            rewriteWhitespace = false;
+            hasQuotes = false;
+        }
+
+        // If no surrounding whitespace and no escape characters, no need to do any
+        // more work
+        if (!rewriteWhitespace && !hasEscape && !hasQuotes && i == 0 && n == s.length()) {
+            return s;
+        }
+
+        boolean quoted = false;
         StringBuilder sb = new StringBuilder(n - i);
-        boolean prevSpace = false;
+        prevSpace = false;
         for (; i < n; i++) {
             char c = s.charAt(i);
+            while (c == '"' && trim) {
+                quoted = !quoted;
+                i++;
+                if (i == n) {
+                    break;
+                }
+                c = s.charAt(i);
+            }
+            if (i == n) {
+                break;
+            }
+
             if (c == '\\' && i < n - 1) {
                 prevSpace = false;
                 char next = s.charAt(i + 1);
@@ -247,7 +202,7 @@ public class ValueXmlHelper {
                     }
                 }
 
-                if (rewriteWhitespace) {
+                if (trim && !quoted) {
                     boolean isSpace = Character.isWhitespace(c);
                     if (isSpace) {
                         if (!prevSpace) {
