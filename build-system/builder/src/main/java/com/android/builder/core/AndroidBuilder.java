@@ -40,6 +40,7 @@ import com.android.builder.internal.SymbolLoader;
 import com.android.builder.internal.SymbolWriter;
 import com.android.builder.internal.TestManifestGenerator;
 import com.android.builder.internal.compiler.AidlProcessor;
+import com.android.builder.internal.compiler.DexWrapper;
 import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.LeafFolderGatherer;
 import com.android.builder.internal.compiler.PreDexCache;
@@ -1351,6 +1352,38 @@ public class AndroidBuilder {
 
         ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
         result.rethrowFailure().assertNormalExitValue();
+    }
+
+    /**
+     * Converts the bytecode to Dalvik format
+     * @param inputs the input files
+     * @param outDexFolder the location of the output folder
+     *
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws ProcessException
+     */
+    public void convertByteCodeWithDexWrapper(
+            @NonNull Collection<File> inputs,
+            @NonNull File outDexFolder)
+            throws IOException, InterruptedException, ProcessException {
+        checkNotNull(inputs, "inputs cannot be null.");
+        checkNotNull(outDexFolder, "outDexFolder cannot be null.");
+        checkArgument(outDexFolder.isDirectory(), "outDexFolder must be a folder");
+        checkState(mTargetInfo != null,
+                "Cannot call convertByteCode() before setTargetInfo() is called.");
+
+        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+        File dxJar = new File(buildToolInfo.getPath(BuildToolInfo.PathId.DX_JAR));
+
+        DexWrapper wrapper = DexWrapper.getWrapper(dxJar);
+
+        wrapper.run(
+                outDexFolder,
+                inputs,
+                false,
+                System.out,
+                System.err);
     }
 
     public Set<String> createMainDexList(
