@@ -66,7 +66,10 @@ public interface SyncIssue {
     int TYPE_TRANSFORM_WITH_NO_STREAMS = 12;
     int TYPE_WRONG_CONTENT_TYPE_IMPL = 13;
 
-    int TYPE_MAX                      = 12; // increment when adding new types.
+    // data is the component that does not support Jack
+    int TYPE_JACK_IS_NOT_SUPPORTED = 12;
+
+    int TYPE_MAX                      = 13; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.

@@ -1458,6 +1458,11 @@ public final class SdkConstants {
 
     // Data Binding MISC
     public static final String DATA_BINDING_LIB_ARTIFACT = "com.android.databinding:library";
+    public static final String DATA_BINDING_BASELIB_ARTIFACT = "com.android.databinding:baseLibrary";
+    public static final String DATA_BINDING_ANNOTATION_PROCESSOR_ARTIFACT =
+            "com.android.databinding:compiler";
+    public static final String DATA_BINDING_ADAPTER_LIB_ARTIFACT =
+            "com.android.databinding:adapters";
     public static final String[] TAGS_DATA_BINDING = new String[]{TAG_VARIABLE,
         TAG_IMPORT, TAG_LAYOUT, TAG_DATA};
     public static final String[] ATTRS_DATA_BINDING = new String[]{ATTR_NAME,
