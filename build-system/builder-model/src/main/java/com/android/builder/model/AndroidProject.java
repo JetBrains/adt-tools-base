@@ -44,7 +44,7 @@ public interface AndroidProject {
     String PROPERTY_SIGNING_KEY_PASSWORD = "android.injected.signing.key.password";
     String PROPERTY_SIGNING_STORE_TYPE = "android.injected.signing.store.type";
 
-    // InstantDev related properties, must be ';' separated list of OptionalCompilationStep values.
+    // InstantDev related properties, must be ',' separated list of OptionalCompilationStep values.
     String OPTIONAL_COMPILATION_STEPS = "android.optional.compilation";
 
     String PROPERTY_APK_LOCATION = "android.injected.apk.location";
