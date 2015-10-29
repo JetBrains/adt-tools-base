@@ -46,7 +46,6 @@ import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.transform.api.Transform;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.LibraryRequest;
-import com.android.builder.model.DataBindingOptions;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.sdklib.repository.FullRevision;
@@ -257,11 +256,6 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
     @Override
     public Splits getSplits() {
         return model.getSplits();
-    }
-
-    @Override
-    public DataBindingOptions getDataBinding() {
-        return new DataBindingOptionsAdapter(model.getDataBinding());
     }
 
     @Override

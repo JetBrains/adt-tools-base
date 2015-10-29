@@ -74,27 +74,10 @@ public class ApkHelper {
             @NonNull ProcessInfo processInfo,
             @NonNull ProcessExecutor processExecutor)
             throws ProcessException {
-        return Splitter.on(System.getProperty("line.separator")).splitToList(
-                runAndGetRawOutput(processInfo, processExecutor));
-    }
-
-    /**
-     * Runs a process, and returns the output.
-     *
-     * @param processInfo the process info to run
-     * @param processExecutor the process executor
-     *
-     * @return the output as a String
-     * @throws ProcessException
-     */
-    @NonNull
-    public static String runAndGetRawOutput(
-            @NonNull ProcessInfo processInfo,
-            @NonNull ProcessExecutor processExecutor)
-            throws ProcessException {
         CachedProcessOutputHandler handler = new CachedProcessOutputHandler();
         processExecutor.execute(processInfo, handler).rethrowFailure().assertNormalExitValue();
-        return handler.getProcessOutput().getStandardOutputAsString();
+        return Splitter.on(System.getProperty("line.separator")).splitToList(
+                handler.getProcessOutput().getStandardOutputAsString());
     }
 
     @NonNull

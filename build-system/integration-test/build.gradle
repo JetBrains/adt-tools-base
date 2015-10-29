@@ -39,8 +39,6 @@ def testEnvironment = [
     DEBUG_INNER_TEST: System.env.DEBUG_INNER_TEST,
     RECORD_SPANS: System.env.RECORD_SPANS,
     INTEGRATION_TEST: "true",
-    DATA_BINDING_INTERNAL_REPO : rootProject.file("../tools/data-binding/internal-prebuilts"),
-    DATA_BINDING_REPO : rootProject.file("../tools/data-binding/maven-repo"),
 ].findAll { it.value != null }
 
 // These tasks will not depend on publishLocal, so they will run integration

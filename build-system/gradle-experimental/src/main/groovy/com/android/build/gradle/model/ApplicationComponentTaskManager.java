@@ -29,8 +29,6 @@ import com.google.common.collect.ImmutableList;
 import org.gradle.api.Project;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
-import android.databinding.tool.DataBindingBuilder;
-
 import java.util.Collection;
 
 /**
@@ -41,13 +39,11 @@ public class ApplicationComponentTaskManager extends ApplicationTaskManager {
     public ApplicationComponentTaskManager (
             Project project,
             AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
             AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
-        super(project, androidBuilder, dataBindingBuilder, extension, sdkHandler, dependencyManager,
-                toolingRegistry);
+        super(project, androidBuilder, extension, sdkHandler, dependencyManager, toolingRegistry);
         isNdkTaskNeeded = false;
     }
 

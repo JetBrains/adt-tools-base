@@ -72,8 +72,6 @@ import com.android.build.gradle.internal.tasks.SigningReportTask;
 import com.android.build.gradle.internal.tasks.SourceSetsTask;
 import com.android.build.gradle.internal.tasks.TestServerTask;
 import com.android.build.gradle.internal.tasks.UninstallTask;
-import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
-import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
 import com.android.build.gradle.internal.tasks.multidex.CreateManifestKeepList;
 import com.android.build.gradle.internal.test.TestDataImpl;
 import com.android.build.gradle.internal.test.report.ReportType;
@@ -132,8 +130,6 @@ import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.internal.testing.SimpleTestCallable;
-import com.android.builder.model.DataBindingOptions;
-import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
@@ -151,7 +147,6 @@ import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
-import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
@@ -171,8 +166,6 @@ import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
-
-import android.databinding.tool.DataBindingBuilder;
 
 import java.io.File;
 import java.io.IOException;
@@ -205,8 +198,6 @@ public abstract class TaskManager {
     protected Project project;
 
     protected AndroidBuilder androidBuilder;
-
-    protected DataBindingBuilder dataBindingBuilder;
 
     private DependencyManager dependencyManager;
 
@@ -250,14 +241,12 @@ public abstract class TaskManager {
     public TaskManager(
             Project project,
             AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
             AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
         this.project = project;
         this.androidBuilder = androidBuilder;
-        this.dataBindingBuilder = dataBindingBuilder;
         this.sdkHandler = sdkHandler;
         this.extension = extension;
         this.toolingRegistry = toolingRegistry;
@@ -278,10 +267,6 @@ public abstract class TaskManager {
 
     private boolean isDebugLog() {
         return project.getLogger().isEnabled(LogLevel.DEBUG);
-    }
-
-    public DataBindingBuilder getDataBindingBuilder() {
-        return dataBindingBuilder;
     }
 
     /**
@@ -1316,11 +1301,6 @@ public abstract class TaskManager {
             createPostCompilationTasks(tasks, variantScope);
         }
 
-        // Add data binding tasks if enabled
-        if (extension.getDataBinding().isEnabled()) {
-            createDataBindingTasks(tasks, variantScope);
-        }
-
         createPackagingTask(tasks, variantScope, false /*publishApk*/);
 
         tasks.named(ASSEMBLE_ANDROID_TEST, new Action<Task>() {
@@ -2140,27 +2120,6 @@ public abstract class TaskManager {
 
     }
 
-    protected void createDataBindingTasks(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
-        dataBindingBuilder.setDebugLogEnabled(getLogger().isDebugEnabled());
-        AndroidTask<DataBindingProcessLayoutsTask> processLayoutsTask = androidTasks
-                .create(tasks, new DataBindingProcessLayoutsTask.ConfigAction(scope));
-        scope.getGenerateRClassTask().dependsOn(tasks, processLayoutsTask);
-        processLayoutsTask.dependsOn(tasks, scope.getMergeResourcesTask());
-
-        AndroidTask<DataBindingExportBuildInfoTask> exportBuildInfo = androidTasks
-                .create(tasks, new DataBindingExportBuildInfoTask.ConfigAction(scope,
-                        dataBindingBuilder.getPrintMachineReadableOutput()));
-        exportBuildInfo.dependsOn(tasks, processLayoutsTask);
-        scope.getSourceGenTask().dependsOn(tasks, exportBuildInfo);
-
-        if (scope.getVariantConfiguration().getUseJack()) {
-            androidBuilder.getErrorReporter().handleSyncError(
-                    "Data Binding", SyncIssue.TYPE_JACK_IS_NOT_SUPPORTED,
-                    "Data Binding does not support Jack builds yet"
-            );
-        }
-    }
-
     /**
      * Creates the final packaging task, and optionally the zipalign task (if the variant is signed)
      *
@@ -2809,23 +2768,4 @@ public abstract class TaskManager {
                         + File.separatorChar + name);
     }
 
-    public void addDataBindingDependenciesIfNecessary(DataBindingOptions options) {
-        if (!options.isEnabled()) {
-            return;
-        }
-        String version = Objects.firstNonNull(options.getVersion(),
-                dataBindingBuilder.getCompilerVersion());
-        project.getDependencies().add("compile", SdkConstants.DATA_BINDING_LIB_ARTIFACT + ":"
-                + dataBindingBuilder.getLibraryVersion(version));
-        project.getDependencies().add("compile", SdkConstants.DATA_BINDING_BASELIB_ARTIFACT + ":"
-                + dataBindingBuilder.getBaseLibraryVersion(version));
-        project.getDependencies().add("provided",
-                SdkConstants.DATA_BINDING_ANNOTATION_PROCESSOR_ARTIFACT + ":" +
-                version);
-        if (options.getAddDefaultAdapters()) {
-            project.getDependencies()
-                    .add("compile", SdkConstants.DATA_BINDING_ADAPTER_LIB_ARTIFACT + ":" +
-                    dataBindingBuilder.getBaseAdaptersVersion(version));
-        }
-    }
 }

@@ -25,10 +25,4 @@ repositories {
     if (System.env.ADDITIONAL_TEST_CUSTOM_REPO != null) {
         maven { url System.env.ADDITIONAL_TEST_CUSTOM_REPO }
     }
-    if (System.env.DATA_BINDING_REPO != null) {
-        maven { url System.env.DATA_BINDING_REPO}
-    }
-    if (System.env.DATA_BINDING_INTERNAL_REPO != null) {
-        maven { url System.env.DATA_BINDING_INTERNAL_REPO}
-    }
 }
