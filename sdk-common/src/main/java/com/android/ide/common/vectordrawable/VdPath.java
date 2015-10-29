@@ -139,7 +139,7 @@ class VdPath extends VdElement{
                         s += String.valueOf((long) value);
                     } else {
                         DecimalFormat df = new DecimalFormat(decimalPlaceString);
-                        df.setRoundingMode(RoundingMode.CEILING);
+                        df.setRoundingMode(RoundingMode.HALF_UP);
                         s += df.format(value);
                     }
 
