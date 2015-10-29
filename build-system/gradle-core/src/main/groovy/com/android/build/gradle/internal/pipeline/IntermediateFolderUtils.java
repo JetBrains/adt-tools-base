@@ -31,6 +31,7 @@ import com.android.build.transform.api.Status;
 import com.android.build.transform.api.TransformInput;
 import com.android.utils.FileUtils;
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -457,19 +458,20 @@ public class IntermediateFolderUtils {
             return null;
         }
 
-        Set<ContentType> types = Sets.newHashSet();
+        ImmutableSet.Builder<ContentType> typesBuilder = ImmutableSet.builder();
 
-        for (ContentType type : ContentType.values()) {
+        for (ContentType type : ExtendedContentType.getAllContentTypes()) {
             if ((type.getValue() & value) != 0) {
-                types.add(type);
+                typesBuilder.add(type);
             }
         }
 
+        Set<ContentType> types = typesBuilder.build();
         if (types.isEmpty()) {
             return null;
         }
 
-        return Sets.immutableEnumSet(types);
+        return types;
     }
 
     private static String typesToString(@NonNull Set<ContentType> types) {

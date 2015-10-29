@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.transform.api.Context;
 import com.android.build.transform.api.DirectoryInput;
 import com.android.build.transform.api.Format;
@@ -101,10 +102,10 @@ public class MergeJavaResourcesTransform extends Transform {
         this.packagingOptions = packagingOptions;
         this.name = name;
         this.mergeScopes = Sets.immutableEnumSet(mergeScopes);
-        this.mergedType = Sets.immutableEnumSet(mergedType);
+        this.mergedType = ImmutableSet.of(mergedType);
 
 
-        if (mergedType == ContentType.RESOURCES) {
+        if (mergedType == QualifiedContent.DefaultContentType.RESOURCES) {
             validator = new FileValidator() {
                 @Override
                 public boolean validateJarPath(@NonNull String path) {
@@ -132,7 +133,7 @@ public class MergeJavaResourcesTransform extends Transform {
                 }
             };
 
-        } else if (mergedType == ContentType.NATIVE_LIBS) {
+        } else if (mergedType == ExtendedContentType.NATIVE_LIBS) {
             validator = new NativeLibValidator();
 
         } else {
