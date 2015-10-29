@@ -33,7 +33,6 @@ dependencies {
     compile project(':base:builder')
     compile project(':base:lint')
     compile project(':base:transform-api')
-
     compile 'org.ow2.asm:asm:5.0.3'
     compile 'org.ow2.asm:asm-commons:5.0.3'
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
