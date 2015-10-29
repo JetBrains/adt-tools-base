@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.transform.api.Context;
 import com.android.build.transform.api.DirectoryInput;
 import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.QualifiedContent;
 import com.android.build.transform.api.QualifiedContent.ContentType;
 import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.TransformException;
@@ -38,7 +39,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -91,7 +91,7 @@ public class MultiDexTransform extends BaseProguardAction {
     @NonNull
     @Override
     public Set<ContentType> getInputTypes() {
-        return Sets.immutableEnumSet(ContentType.CLASSES);
+        return ImmutableSet.<ContentType>of(QualifiedContent.DefaultContentType.CLASSES);
     }
 
     @NonNull

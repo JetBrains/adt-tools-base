@@ -6,6 +6,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.FilterableStreamCollection;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -17,6 +18,7 @@ import com.android.build.gradle.internal.tasks.ValidateSigningTask;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.transform.api.QualifiedContent;
 import com.android.build.transform.api.QualifiedContent.ContentType;
 import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.builder.packaging.DuplicateFileException;
@@ -51,7 +53,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             new TransformManager.StreamFilter() {
                 @Override
                 public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
-                    return types.contains(ContentType.DEX);
+                    return types.contains(ExtendedContentType.DEX);
                 }
             };
 
@@ -59,7 +61,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             new TransformManager.StreamFilter() {
                 @Override
                 public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
-                    return types.contains(ContentType.RESOURCES) &&
+                    return types.contains(QualifiedContent.DefaultContentType.RESOURCES) &&
                             !scopes.contains(Scope.PROVIDED_ONLY) &&
                             !scopes.contains(Scope.TESTED_CODE);
                 }
@@ -69,7 +71,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             new TransformManager.StreamFilter() {
                 @Override
                 public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
-                    return types.contains(ContentType.NATIVE_LIBS) &&
+                    return types.contains(ExtendedContentType.NATIVE_LIBS) &&
                             !scopes.contains(Scope.PROVIDED_ONLY) &&
                             !scopes.contains(Scope.TESTED_CODE);
                 }

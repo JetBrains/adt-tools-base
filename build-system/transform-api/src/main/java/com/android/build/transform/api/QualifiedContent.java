@@ -29,31 +29,45 @@ import java.util.Set;
 public interface QualifiedContent {
 
     /**
+     * Defines a content type that is handled through the Pipeline. Some transforms might request
+     * some input for a particular ContentType or might output a specific ContentType.
+     */
+    interface ContentType {
+
+        /**
+         * Content type name, readable by humans.
+         * @return the string content type name
+         */
+        String name();
+
+        /**
+         * A unique value for a content type.
+         */
+        int getValue();
+    }
+
+    /**
      * The type of of the content.
      */
-    enum ContentType {
+    enum DefaultContentType implements ContentType {
         /**
          * The content is compiled Java code. This can be in a Jar file or in a folder. If
          * in a folder, it is expected to in sub-folders matching package names.
          */
         CLASSES(0x01),
-        /**
-         * The content is dex files.
-         */
-        DEX(0x02),
+
         /**
          * The content if standard Java resources.
          */
-        RESOURCES(0x04),
-        NATIVE_LIBS(0x08),
-        CLASSES_ENHANCED(0x10);
+        RESOURCES(0x02);
 
         private final int value;
 
-        ContentType(int value) {
+        DefaultContentType(int value) {
             this.value = value;
         }
 
+        @Override
         public int getValue() {
             return value;
         }

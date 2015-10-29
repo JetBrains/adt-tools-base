@@ -28,6 +28,7 @@ import com.android.build.transform.api.DirectoryInput;
 import com.android.build.transform.api.Format;
 import com.android.build.transform.api.JarInput;
 import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.DefaultContentType;
 import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
 import com.android.build.transform.api.TransformException;
@@ -105,7 +106,7 @@ public class ExtractJarsTransform extends Transform {
         checkNotNull(outputProvider, "Missing output object for transform " + getName());
 
         // as_input transform and no referenced scopes, all the inputs will in InputOutputStreams.
-        final boolean extractCode = contentTypes.contains(ContentType.CLASSES);
+        final boolean extractCode = contentTypes.contains(DefaultContentType.CLASSES);
 
         Logger logger = Logging.getLogger(ExtractJarsTransform.class);
 
