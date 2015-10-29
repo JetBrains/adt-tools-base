@@ -13,6 +13,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.List;
 
 import dalvik.system.DexClassLoader;
@@ -39,7 +40,7 @@ public class Server {
     /**
      * Version of the protocol
      */
-    public static final int PROTOCOL_VERSION = 2;
+    public static final int PROTOCOL_VERSION = 3;
 
     /**
      * Message: sending patches
@@ -50,6 +51,32 @@ public class Server {
      * Message: ping, send ack back
      */
     public static final int MESSAGE_PING = 2;
+
+    /**
+     * Message: look up a very quick checksum of the given path; this
+     * may not pick up on edits in the middle of the file but should be a
+     * quick way to determine if a path exists and some basic information
+     * about it.
+     */
+    public static final int MESSAGE_PATH_EXISTS = 3;
+
+    /**
+     * Message: query whether the app has a given file and if so return
+     * its checksum. (This is used to determine whether the app can receive
+     * a small delta on top of a (typically resource ) file instead of resending the whole
+     * file over again.)
+     */
+    public static final int MESSAGE_PATH_CHECKSUM = 4;
+
+    /**
+     * Message: restart activities
+     */
+    public static final int MESSAGE_RESTART_ACTIVITY = 5;
+
+    /**
+     * Done transmitting
+     */
+    public static final int MESSAGE_EOF = 6;
 
     /**
      * No updates
@@ -73,6 +100,7 @@ public class Server {
 
     private LocalServerSocket mServerSocket;
     private final Application mApplication;
+    private static int mWrongTokenCount;
 
     public static void create(@NonNull String packageName, @NonNull Application application) {
         new Server(packageName, application);
@@ -128,6 +156,14 @@ public class Server {
                     SocketServerReplyThread socketServerReplyThread = new SocketServerReplyThread(
                             socket);
                     socketServerReplyThread.run();
+
+                    if (mWrongTokenCount > 50) {
+                        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                            Log.i(LOG_TAG, "Stopping server: too many wrong token connections");
+                        }
+                        mServerSocket.close();
+                        break;
+                    }
                 }
             } catch (IOException e) {
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
@@ -150,49 +186,7 @@ public class Server {
                 DataInputStream input = new DataInputStream(mSocket.getInputStream());
                 DataOutputStream output = new DataOutputStream(mSocket.getOutputStream());
                 try {
-                    long magic = input.readLong();
-                    if (magic != PROTOCOL_IDENTIFIER) {
-                        Log.w(LOG_TAG, "Unrecognized header format "
-                                + Long.toHexString(magic));
-                        return;
-                    }
-                    int version = input.readInt();
-                    if (version != PROTOCOL_VERSION) {
-                        Log.w(LOG_TAG, "Mismatched protocol versions; app is "
-                                + "using version " + PROTOCOL_VERSION + " and tool is using version "
-                                + version);
-                        return;
-                    }
-
-                    int message = input.readInt();
-                    if (message == MESSAGE_PING) {
-                        // Send an "ack" back to the IDE.
-                        // The value of the boolean is true only when the app is in the
-                        // foreground.
-                        boolean active = Restarter.getForegroundActivity() != null;
-                        output.writeBoolean(active);
-                        return;
-                    }
-                    if (message != MESSAGE_PATCHES) {
-                        if (Log.isLoggable(LOG_TAG, Log.ERROR)) {
-                            Log.e(LOG_TAG, "Unexpected message type: " + message);
-                        }
-                        return;
-                    }
-
-                    List<ApplicationPatch> changes = ApplicationPatch.read(input);
-                    if (changes == null) {
-                        return;
-                    }
-
-                    boolean hasResources = hasResources(changes);
-                    @UpdateMode int updateMode = input.readInt();
-                    updateMode = handlePatches(changes, hasResources, updateMode);
-
-                    // Send an "ack" back to the IDE; this is used for timing purposes only
-                    output.writeBoolean(true);
-
-                    restart(updateMode, hasResources);
+                    handle(input, output);
                 } finally {
                     try {
                         input.close();
@@ -208,6 +202,143 @@ public class Server {
                     Log.i(LOG_TAG, "Fatal error receiving messages", e);
                 }
             }
+        }
+
+        private void handle(DataInputStream input, DataOutputStream output) throws IOException {
+            long magic = input.readLong();
+            if (magic != PROTOCOL_IDENTIFIER) {
+                Log.w(LOG_TAG, "Unrecognized header format "
+                        + Long.toHexString(magic));
+                return;
+            }
+            int version = input.readInt();
+
+            // Send current protocol version to the IDE so it can decide what to do
+            output.writeInt(PROTOCOL_VERSION);
+
+            if (version != PROTOCOL_VERSION) {
+                Log.w(LOG_TAG, "Mismatched protocol versions; app is "
+                        + "using version " + PROTOCOL_VERSION + " and tool is using version "
+                        + version);
+                return;
+            }
+
+            while (true) {
+                int message = input.readInt();
+                switch (message) {
+                    case MESSAGE_EOF: {
+                        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                            Log.i(LOG_TAG, "Received EOF from the IDE");
+                        }
+                        return;
+                    }
+
+                    case MESSAGE_PING: {
+                        // Send an "ack" back to the IDE.
+                        // The value of the boolean is true only when the app is in the
+                        // foreground.
+                        boolean active = Restarter.getForegroundActivity() != null;
+                        output.writeBoolean(active);
+                        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                            Log.i(LOG_TAG, "Received Ping message from the IDE; " +
+                                    "returned active = " + active);
+                        }
+                        // NOTE: Ping has defined semantics of ending the conversation
+                        return;
+                    }
+
+                    case MESSAGE_PATH_EXISTS: {
+                        String path = input.readUTF();
+                        long size = FileManager.getFileSize(path);
+                        output.writeLong(size);
+                        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                            Log.i(LOG_TAG, "Received path-exists(" + path + ") from the " +
+                                    "IDE; returned size=" + size);
+                        }
+                        continue;
+                    }
+
+                    case MESSAGE_PATH_CHECKSUM: {
+                        long begin = System.currentTimeMillis();
+                        String path = input.readUTF();
+                        byte[] checksum = FileManager.getCheckSum(path);
+                        if (checksum != null) {
+                            output.writeInt(checksum.length);
+                            output.write(checksum);
+                            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                                long end = System.currentTimeMillis();
+                                String hash = new BigInteger(1, checksum).toString(16);
+                                Log.i(LOG_TAG, "Received checksum(" + path + ") from the " +
+                                        "IDE: took " + (end - begin) + "ms to compute " + hash);
+                            }
+                        } else {
+                            output.writeInt(0);
+                            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                                Log.i(LOG_TAG, "Received checksum(" + path + ") from the " +
+                                        "IDE: returning <null>");
+                            }
+                        }
+                        continue;
+                    }
+
+                    case MESSAGE_RESTART_ACTIVITY: {
+                        if (!authenticate(input)) {
+                            return;
+                        }
+
+                        Activity activity = Restarter.getForegroundActivity();
+                        if (activity != null) {
+                            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                                Log.i(LOG_TAG, "Restarting activity per user request");
+                            }
+                            Restarter.restartActivityOnUiThread(activity);
+                        }
+                        continue;
+                    }
+
+                    case MESSAGE_PATCHES: {
+                        if (!authenticate(input)) {
+                            return;
+                        }
+
+                        List<ApplicationPatch> changes = ApplicationPatch.read(input);
+                        if (changes == null) {
+                            continue;
+                        }
+
+                        boolean hasResources = hasResources(changes);
+                        @UpdateMode int updateMode = input.readInt();
+                        updateMode = handlePatches(changes, hasResources, updateMode);
+
+                        // Send an "ack" back to the IDE; this is used for timing purposes only
+                        output.writeBoolean(true);
+
+                        restart(updateMode, hasResources);
+                        return;
+                    }
+
+                    default: {
+                        if (Log.isLoggable(LOG_TAG, Log.ERROR)) {
+                            Log.e(LOG_TAG, "Unexpected message type: " + message);
+                        }
+                        // If we hit unexpected message types we can't really continue
+                        // the conversation: we can misinterpret data for the unexpected
+                        // command as separate messages with different meanings than intended
+                        return;
+                    }
+                }
+            }
+        }
+
+        private boolean authenticate(@NonNull DataInputStream input) throws IOException {
+            long token = input.readLong();
+            if (token != AppInfo.token) {
+                Log.w(LOG_TAG, "Mismatched identity token from client; received " + token
+                        + " and expected " + AppInfo.token);
+                mWrongTokenCount++;
+                return false;
+            }
+            return true;
         }
     }
 

@@ -1,6 +1,9 @@
 package com.android.tools.fd.runtime;
 
 public class AppInfo {
+    // Keep the structure of this class in sync with
+    // GenerateInstantRunAppInfoTask#writeAppInfoClass
+
     private AppInfo() {
     }
     /**
@@ -24,4 +27,11 @@ public class AppInfo {
      */
     @SuppressWarnings("CanBeFinal")
     public static String applicationClass = null;
+
+    /**
+     * A token assigned to this app at build time. This is used such that the running
+     * app socket server can be reasonably sure that it's responding to requests from
+     * the IDE.
+     */
+    public static long token = 0L;
 }
