@@ -365,7 +365,7 @@ public class InstantRunVerifierTransformTest {
         @NonNull
         @Override
         public Set<ContentType> getContentTypes() {
-            return ImmutableSet.of(ContentType.CLASSES);
+            return ImmutableSet.<ContentType>of(DefaultContentType.CLASSES);
         }
 
         @NonNull

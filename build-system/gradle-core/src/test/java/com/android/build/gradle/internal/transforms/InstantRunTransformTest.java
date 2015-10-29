@@ -27,6 +27,7 @@ import com.android.build.transform.api.Context;
 import com.android.build.transform.api.DirectoryInput;
 import com.android.build.transform.api.Format;
 import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.QualifiedContent;
 import com.android.build.transform.api.QualifiedContent.ContentType;
 import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Status;
@@ -143,7 +144,7 @@ public class InstantRunTransformTest {
                     @NonNull Set<ContentType> types,
                     @NonNull Set<Scope> scopes, @NonNull Format format) {
                 Truth.assertThat(types).hasSize(1);
-                if (types.iterator().next().equals(ContentType.CLASSES)) {
+                if (types.iterator().next().equals(QualifiedContent.DefaultContentType.CLASSES)) {
                     return new File("out");
                 } else {
                     return new File("out.3");
@@ -248,7 +249,7 @@ public class InstantRunTransformTest {
                     @NonNull Set<ContentType> types,
                     @NonNull Set<Scope> scopes, @NonNull Format format) {
                 Truth.assertThat(types).hasSize(1);
-                if (types.iterator().next().equals(ContentType.CLASSES)) {
+                if (types.iterator().next().equals(QualifiedContent.DefaultContentType.CLASSES)) {
                     return outputFolder;
                 } else {
                     return outputEnhancedFolder;
@@ -287,7 +288,7 @@ public class InstantRunTransformTest {
         @NonNull
         @Override
         public Set<ContentType> getContentTypes() {
-            return ImmutableSet.of(ContentType.CLASSES);
+            return ImmutableSet.<ContentType>of(DefaultContentType.CLASSES);
         }
 
         @NonNull
