@@ -192,7 +192,7 @@ public class InstantRunVerifierTransformTest {
         // changed class should have been verified
         assertThat(recordedVerification).hasSize(1);
         assertThat(recordedVerification).containsEntry(
-                lastIterationChangedFile, changedFile);
+                changedFile, lastIterationChangedFile);
 
         // new classes should have been copied, and changed ones updated.
         assertThat(recordedCopies).hasSize(2);
@@ -324,7 +324,7 @@ public class InstantRunVerifierTransformTest {
         // input class should have been verified.
         assertThat(recordedVerification).hasSize(5);
         for (int i=0; i<5; i++) {
-            assertThat(recordedVerification).containsEntry(lastIterationFiles[i], files[i]);
+            assertThat(recordedVerification).containsEntry(files[i], lastIterationFiles[i]);
         }
         // and updated...
         assertThat(recordedCopies).hasSize(5);

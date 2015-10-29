@@ -39,6 +39,7 @@ import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -127,41 +128,34 @@ public class InstantRunVerifierTransform extends Transform {
             FileUtils.mkdirs(outputDir);
         }
 
-        // Gather a full list of all inputs.
-        List<JarInput> jarInputs = Lists.newArrayList();
-        List<DirectoryInput> folderInputs = Lists.newArrayList();
-        for (TransformInput input : inputs) {
-            jarInputs.addAll(input.getJarInputs());
-            folderInputs.addAll(input.getDirectoryInputs());
-        }
-        IncompatibleChange verificationResult = null;
-
+        Optional<IncompatibleChange> resultSoFar = Optional.absent();
         for (TransformInput transformInput : inputs) {
-            verificationResult = processFolderInputs(isIncremental, transformInput);
-            if (verificationResult == null) {
-                verificationResult = processJarInputs(transformInput);
-            }
+            resultSoFar = processFolderInputs(isIncremental, transformInput);
+            resultSoFar = processJarInputs(resultSoFar, transformInput);
         }
         // So far, a null changes means success.
-        variantScope.setVerificationResult(new VerificationResult(verificationResult));
+        variantScope.setVerificationResult(new VerificationResult(resultSoFar.orNull()));
     }
 
-    @Nullable
-    private IncompatibleChange processFolderInputs(
-            boolean isIncremental, TransformInput transformInput) throws IOException {
+    @NonNull
+    private Optional<IncompatibleChange> processFolderInputs(
+            boolean isIncremental,
+            @NonNull TransformInput transformInput) throws IOException {
+
+        Optional<IncompatibleChange> verificationResult = Optional.absent();
         for (DirectoryInput DirectoryInput : transformInput.getDirectoryInputs()) {
 
             File inputDir = DirectoryInput.getFile();
 
             if (!isIncremental) {
-                // non incremental mode, we need to traverse the folder}
+                // non incremental mode, we need to traverse the folder
                 for (File file : Files.fileTreeTraverser().breadthFirstTraversal(inputDir)) {
 
                     if (file.isDirectory()) {
                         continue;
                     }
                     try {
-                        copyFile(file, getLastIterationFile(inputDir, file));
+                        copyFile(file, getOutputFile(inputDir, file, outputDir));
                     } catch (IOException e) {
                         throw new RuntimeException("Exception while copying "
                                 + file.getAbsolutePath());
@@ -173,28 +167,32 @@ public class InstantRunVerifierTransform extends Transform {
                     DirectoryInput.getChangedFiles().entrySet()) {
 
                 File inputFile = changedFile.getKey();
+                File lastIterationFile = getOutputFile(inputDir, inputFile, outputDir);
                 switch(changedFile.getValue()) {
                     case REMOVED:
                         // remove the backup file.
-                        File classes_backup = getOutputFile(inputDir, inputFile, outputDir);
-                        if (classes_backup.exists() && !classes_backup.delete()) {
+                        if (lastIterationFile.exists() && !lastIterationFile.delete()) {
                             // it's not a big deal if the file cannot be deleted, hopefully
                             // no code is still referencing it, yet we should notify.
-                            LOGGER.warning("Cannot delete %1$s file", classes_backup);
+                            LOGGER.warning("Cannot delete %1$s file", lastIterationFile);
                         }
                         break;
                     case ADDED:
                         // new file, no verification necessary, but save it for next iteration.
-                        copyFile(inputFile, getOutputFile(inputDir, inputFile, outputDir));
+                        copyFile(inputFile, lastIterationFile);
                         break;
                     case CHANGED:
                         // a new version of the class has been compiled, we should compare
-                        // it with the one saved during the last iteration on the file.
-                        IncompatibleChange verificationResult =
-                                verifyAndSaveFile(inputDir, inputFile);
-                        if (verificationResult != null) {
-                            return verificationResult;
+                        // it with the one saved during the last iteration on the file, but only
+                        // if we have not failed any verification so far.
+                        if (!verificationResult.isPresent()) {
+                            verificationResult = Optional.fromNullable(
+                                    verifyAndSaveFile(inputFile, lastIterationFile));
                         }
+
+                        // always copy the new file over to our private backup directory for the
+                        // next iteration verification.
+                        copyFile(inputFile, lastIterationFile);
                         break;
                     case NOTCHANGED:
                         break;
@@ -206,11 +204,14 @@ public class InstantRunVerifierTransform extends Transform {
             }
         }
         // all changes are compatible.
-        return null;
+        return verificationResult;
     }
 
-    @Nullable
-    private IncompatibleChange processJarInputs(TransformInput transformInput) throws IOException {
+    @NonNull
+    private Optional<IncompatibleChange> processJarInputs(
+            @NonNull Optional<IncompatibleChange> resultSoFar,
+            @NonNull TransformInput transformInput) throws IOException {
+
         // can jarInput have colliding names ?
         for (JarInput jarInput : transformInput.getJarInputs()) {
             File backupJar = new File(outputDir, jarInput.getName());
@@ -227,21 +228,21 @@ public class InstantRunVerifierTransform extends Transform {
                     break;
                 case CHANGED:
                     // get a Map of the back up jar entries indexed by name.
-                    JarFile backupJarFile = new JarFile(backupJar);
-                    try {
-                        JarFile jarFile = new JarFile(jarInput.getFile());
+                    if (!resultSoFar.isPresent()) {
+                        JarFile backupJarFile = new JarFile(backupJar);
                         try {
-                            IncompatibleChange verificationResult =
-                                    processChangedJar(backupJarFile, jarFile);
-                            if (verificationResult != null) {
-                                return verificationResult;
+                            JarFile jarFile = new JarFile(jarInput.getFile());
+                            try {
+                                resultSoFar = Optional.fromNullable(
+                                        processChangedJar(backupJarFile, jarFile));
+                            } finally {
+                                jarFile.close();
                             }
                         } finally {
-                            jarFile.close();
+                            backupJarFile.close();
                         }
-                    } finally {
-                        backupJarFile.close();
                     }
+                    copyFile(jarInput.getFile(), backupJar);
                     break;
                 case NOTCHANGED:
                     break;
@@ -251,7 +252,7 @@ public class InstantRunVerifierTransform extends Transform {
             }
         }
         // all changes are compatible.
-        return null;
+        return resultSoFar;
     }
 
     private IncompatibleChange processChangedJar(JarFile backupJar, JarFile newJar)
@@ -285,18 +286,11 @@ public class InstantRunVerifierTransform extends Transform {
         return null;
     }
 
-    @NonNull
-    private File getLastIterationFile(File inputDir, File inputFile) {
-        String relativePath = FileUtils.relativePath(inputFile, inputDir);
-        return new File(outputDir, relativePath);
-    }
-
     @Nullable
     private IncompatibleChange verifyAndSaveFile(
-            @NonNull File inputDir,
+            @NonNull File lastIterationFile,
             @NonNull File newFile) throws IOException {
 
-        File lastIterationFile = getLastIterationFile(inputDir, newFile);
         IncompatibleChange verificationResult = null;
         if (lastIterationFile.exists()) {
             verificationResult = runVerifier(newFile.getName(),
@@ -305,17 +299,14 @@ public class InstantRunVerifierTransform extends Transform {
             LOGGER.verbose(
                     "%1$s : verifier result : %2$s", newFile.getName(), verificationResult);
         }
-        // always copy the new file over to our private backup directory for the next iteration
-        // verification.
-        copyFile(newFile, lastIterationFile);
         return verificationResult;
     }
 
     @VisibleForTesting
     @Nullable
     protected IncompatibleChange runVerifier(String name,
-            final InstantRunVerifier.ClassBytesProvider originalClass ,
-            final InstantRunVerifier.ClassBytesProvider updatedClass) throws IOException {
+            @NonNull final InstantRunVerifier.ClassBytesProvider originalClass ,
+            @NonNull final InstantRunVerifier.ClassBytesProvider updatedClass) throws IOException {
 
         return ThreadRecorder.get().record(ExecutionType.TASK_FILE_VERIFICATION,
                 new Recorder.Block<IncompatibleChange>() {
@@ -387,9 +378,7 @@ public class InstantRunVerifierTransform extends Transform {
      */
     protected static File getOutputFile(File inputDir, File inputFile, File outputDir)
             throws IOException {
-        String relativePath = inputFile.getAbsolutePath().substring(
-                inputDir.getAbsolutePath().length());
-
+        String relativePath = FileUtils.relativePossiblyNonExistingPath(inputFile, inputDir);
         return new File(outputDir, relativePath);
     }
 }
