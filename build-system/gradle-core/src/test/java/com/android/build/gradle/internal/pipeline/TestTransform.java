@@ -25,6 +25,7 @@ import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutputProvider;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -162,7 +164,7 @@ public class TestTransform extends Transform {
     static final class Builder {
 
         private String name;
-        private final Set<ContentType> inputTypes = EnumSet.noneOf(ContentType.class);
+        private final Set<ContentType> inputTypes = new HashSet<ContentType>();
         private Set<ContentType> outputTypes;
         private final Set<Scope> scopes = EnumSet.noneOf(Scope.class);
         private final Set<Scope> referencedScopes = EnumSet.noneOf(Scope.class);
@@ -181,14 +183,14 @@ public class TestTransform extends Transform {
 
         Builder setOutputTypes(@NonNull ContentType... types) {
             if (outputTypes == null) {
-                outputTypes = EnumSet.noneOf(ContentType.class);
+                outputTypes = new HashSet<ContentType>();
             }
             outputTypes.addAll(Arrays.asList(types));
             return this;
         }
 
         Builder setOutputTypes(@NonNull Set<ContentType> types) {
-            outputTypes = EnumSet.copyOf(types);
+            outputTypes = ImmutableSet.copyOf(types);
             return this;
         }
 
@@ -216,9 +218,9 @@ public class TestTransform extends Transform {
         TestTransform build() {
             String name = this.name != null ? this.name : "transform name";
             Assert.assertFalse(this.inputTypes.isEmpty());
-            Set<ContentType> inputTypes = Sets.immutableEnumSet(this.inputTypes);
+            Set<ContentType> inputTypes = ImmutableSet.copyOf(this.inputTypes);
             Set<ContentType> outputTypes = this.outputTypes != null ?
-                    Sets.immutableEnumSet(this.outputTypes) : inputTypes;
+                    ImmutableSet.copyOf(this.outputTypes) : inputTypes;
             Set<Scope> scopes = Sets.immutableEnumSet(this.scopes);
             Set<Scope> refedScopes = Sets.immutableEnumSet(this.referencedScopes);
 

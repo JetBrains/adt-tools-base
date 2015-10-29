@@ -44,6 +44,7 @@ import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformStream;
@@ -115,7 +116,9 @@ import com.android.build.gradle.tasks.ZipAlign;
 import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
 import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
 import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
+import com.android.build.transform.api.QualifiedContent;
 import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.DefaultContentType;
 import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
 import com.android.builder.core.AndroidBuilder;
@@ -395,8 +398,8 @@ public abstract class TaskManager {
         TransformManager transformManager = variantScope.getTransformManager();
 
         // content that can be found in a jar:
-        Set<ContentType> fullJar = Sets.immutableEnumSet(
-                ContentType.CLASSES, ContentType.RESOURCES, ContentType.NATIVE_LIBS);
+        Set<ContentType> fullJar = ImmutableSet.<ContentType>of(
+                DefaultContentType.CLASSES, DefaultContentType.RESOURCES, ExtendedContentType.NATIVE_LIBS);
 
         transformManager.addStream(OriginalStream.builder()
                 .addContentTypes(fullJar)
@@ -497,7 +500,7 @@ public abstract class TaskManager {
 
             // create two streams of different types.
             transformManager.addStream(OriginalStream.builder()
-                    .addContentTypes(ContentType.CLASSES)
+                    .addContentTypes(DefaultContentType.CLASSES)
                     .addScope(Scope.TESTED_CODE)
                     .setFolders(
                             Suppliers.ofInstance(
@@ -507,7 +510,7 @@ public abstract class TaskManager {
                     .build());
 
             transformManager.addStream(OriginalStream.builder()
-                    .addContentTypes(ContentType.CLASSES)
+                    .addContentTypes(DefaultContentType.CLASSES)
                     .addScope(Scope.TESTED_CODE)
                     .setJars(Suppliers.ofInstance(
                             (Collection<File>) variantScope.getGlobalScope().getAndroidBuilder()
@@ -663,7 +666,7 @@ public abstract class TaskManager {
 
         // create the stream generated from this task
         variantScope.getTransformManager().addStream(OriginalStream.builder()
-                .addContentType(ContentType.NATIVE_LIBS)
+                .addContentType(ExtendedContentType.NATIVE_LIBS)
                 .addScope(Scope.PROJECT)
                 .setFolder(variantScope.getMergeNativeLibsOutputDir())
                 .setDependency(mergeJniLibFoldersTask.getName())
@@ -672,7 +675,7 @@ public abstract class TaskManager {
 
         // create a stream that contains the content of the local NDK build
         variantScope.getTransformManager().addStream(OriginalStream.builder()
-                .addContentType(ContentType.NATIVE_LIBS)
+                .addContentType(ExtendedContentType.NATIVE_LIBS)
                 .addScope(Scope.PROJECT)
                 .setFolders(Suppliers.ofInstance(variantScope.getNdkSoFolder()))
                 .setDependency(getNdkBuildable(variantScope.getVariantData()))
@@ -682,7 +685,7 @@ public abstract class TaskManager {
         // if support mode is enabled.
         if (variantScope.getVariantConfiguration().getRenderscriptSupportModeEnabled()) {
             variantScope.getTransformManager().addStream(OriginalStream.builder()
-                    .addContentType(ContentType.NATIVE_LIBS)
+                    .addContentType(ExtendedContentType.NATIVE_LIBS)
                     .addScope(Scope.PROJECT)
                     .setFolders(new Supplier<Collection<File>>() {
                         @Override
@@ -711,7 +714,7 @@ public abstract class TaskManager {
         // Create the merge transform
         MergeJavaResourcesTransform mergeTransform = new MergeJavaResourcesTransform(
                 variantScope.getGlobalScope().getExtension().getPackagingOptions(),
-                mergeScopes, ContentType.NATIVE_LIBS, "mergeJniLibs");
+                mergeScopes, ExtendedContentType.NATIVE_LIBS, "mergeJniLibs");
         variantScope.getTransformManager().addTransform(tasks, variantScope, mergeTransform);
     }
 
@@ -1005,7 +1008,7 @@ public abstract class TaskManager {
 
         // create the stream generated from this task
         variantScope.getTransformManager().addStream(OriginalStream.builder()
-                .addContentType(ContentType.RESOURCES)
+                .addContentType(DefaultContentType.RESOURCES)
                 .addScope(Scope.PROJECT)
                 .setFolder(variantScope.getSourceFoldersJavaResDestinationDir())
                 .setDependency(processJavaResourcesTask.getName())
@@ -1017,7 +1020,7 @@ public abstract class TaskManager {
         // Create the merge transform
         MergeJavaResourcesTransform mergeTransform = new MergeJavaResourcesTransform(
                 variantScope.getGlobalScope().getExtension().getPackagingOptions(),
-                mergeScopes, ContentType.RESOURCES, "mergeJavaRes");
+                mergeScopes, DefaultContentType.RESOURCES, "mergeJavaRes");
 
         variantScope.setMergeJavaResourcesTask(
                 transformManager.addTransform(tasks, variantScope, mergeTransform));
@@ -1053,7 +1056,7 @@ public abstract class TaskManager {
 
         // create the output stream from this task
         scope.getTransformManager().addStream(OriginalStream.builder()
-                .addContentType(ContentType.CLASSES)
+                .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
                 .setFolder(scope.getJavaOutputDir())
                 .setDependency(javacTask.getName()).build());

@@ -16,10 +16,8 @@
 
 package com.android.build.gradle.internal.pipeline;
 
-import static com.android.build.transform.api.QualifiedContent.ContentType.CLASSES;
-import static com.android.build.transform.api.QualifiedContent.ContentType.DEX;
-import static com.android.build.transform.api.QualifiedContent.ContentType.NATIVE_LIBS;
-import static com.android.build.transform.api.QualifiedContent.ContentType.RESOURCES;
+import static com.android.build.transform.api.QualifiedContent.DefaultContentType.CLASSES;
+import static com.android.build.transform.api.QualifiedContent.DefaultContentType.RESOURCES;
 import static com.android.utils.StringHelper.capitalize;
 
 import com.android.annotations.NonNull;
@@ -28,6 +26,7 @@ import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.BaseScope;
+import com.android.build.transform.api.QualifiedContent;
 import com.android.build.transform.api.QualifiedContent.ContentType;
 import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
@@ -65,11 +64,13 @@ public class TransformManager extends FilterableStreamCollection {
 
     public static final Set<Scope> EMPTY_SCOPES = ImmutableSet.of();
 
-    public static final Set<ContentType> CONTENT_CLASS = Sets.immutableEnumSet(CLASSES);
-    public static final Set<ContentType> CONTENT_JARS = Sets.immutableEnumSet(CLASSES, RESOURCES);
-    public static final Set<ContentType> CONTENT_RESOURCES = Sets.immutableEnumSet(RESOURCES);
-    public static final Set<ContentType> CONTENT_NATIVE_LIBS = Sets.immutableEnumSet(NATIVE_LIBS);
-    public static final Set<ContentType> CONTENT_DEX = Sets.immutableEnumSet(DEX);
+    public static final Set<ContentType> CONTENT_CLASS = ImmutableSet.<ContentType>of(CLASSES);
+    public static final Set<ContentType> CONTENT_JARS = ImmutableSet.<ContentType>of(CLASSES, RESOURCES);
+    public static final Set<ContentType> CONTENT_RESOURCES = ImmutableSet.<ContentType>of(RESOURCES);
+    public static final Set<ContentType> CONTENT_NATIVE_LIBS = ImmutableSet.<ContentType>of(
+            ExtendedContentType.NATIVE_LIBS);
+    public static final Set<ContentType> CONTENT_DEX = ImmutableSet.<ContentType>of(
+            ExtendedContentType.DEX);
     public static final Set<Scope> SCOPE_FULL_PROJECT = Sets.immutableEnumSet(
             Scope.PROJECT,
             Scope.PROJECT_LOCAL_DEPS,
@@ -138,14 +139,20 @@ public class TransformManager extends FilterableStreamCollection {
      * @param transform the transform to add
      * @param callback a callback that is run when the task is actually configured
      * @param <T> the type of the transform
-     * @return the AndroidTask for the given transform task.
+     * @return the AndroidTask for the given transform task or null if it cannot be created.
      */
+    @Nullable
     public <T extends Transform> AndroidTask<TransformTask> addTransform(
             @NonNull TaskFactory taskFactory,
             @NonNull BaseScope scope,
             @NonNull T transform,
             @Nullable TransformTask.ConfigActionCallback<T> callback) {
 
+
+        if (!checkContentTypes(transform.getInputTypes())
+                || !checkContentTypes(transform.getOutputTypes())) {
+            return null;
+        }
         List<TransformStream> inputStreams = Lists.newArrayList();
         String taskName = scope.getTaskName(getTaskNamePrefix(transform));
 
@@ -365,5 +372,18 @@ public class TransformManager extends FilterableStreamCollection {
         }
 
         return streamMatches;
+    }
+
+    private boolean checkContentTypes(Set<ContentType> contentTypes) {
+        for (ContentType contentType : contentTypes) {
+            if (!(contentType instanceof QualifiedContent.DefaultContentType
+                    || contentType instanceof ExtendedContentType)) {
+                errorReporter.handleSyncError("", SyncIssue.TYPE_WRONG_CONTENT_TYPE_IMPL,
+                        String.format("Custom content type not supported : %1$s",
+                                contentType.name()));
+                return false;
+            }
+        }
+        return true;
     }
 }

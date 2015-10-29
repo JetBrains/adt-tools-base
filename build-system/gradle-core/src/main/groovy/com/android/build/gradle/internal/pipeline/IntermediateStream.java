@@ -27,6 +27,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import java.io.File;
@@ -57,7 +58,7 @@ class IntermediateStream extends TransformStream {
             Preconditions.checkState(!contentTypes.isEmpty());
             Preconditions.checkState(!scopes.isEmpty());
             return new IntermediateStream(
-                    Sets.immutableEnumSet(contentTypes),
+                    ImmutableSet.copyOf(contentTypes),
                     Sets.immutableEnumSet(scopes),
                     rootLocation,
                     dependencies != null ? dependencies : ImmutableList.of());

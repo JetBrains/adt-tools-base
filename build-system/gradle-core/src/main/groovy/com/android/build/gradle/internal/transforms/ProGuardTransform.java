@@ -35,6 +35,7 @@ import com.android.build.transform.api.Format;
 import com.android.build.transform.api.JarInput;
 import com.android.build.transform.api.QualifiedContent;
 import com.android.build.transform.api.QualifiedContent.ContentType;
+import com.android.build.transform.api.QualifiedContent.DefaultContentType;
 import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.TransformException;
 import com.android.build.transform.api.TransformInput;
@@ -325,7 +326,7 @@ public class ProGuardTransform extends BaseProguardAction {
             @Nullable List<String> baseFilter) {
         List<String> filter = baseFilter;
 
-        if (!content.getContentTypes().contains(ContentType.CLASSES)) {
+        if (!content.getContentTypes().contains(DefaultContentType.CLASSES)) {
             // if the content is not meant to contain classes, we ignore them
             // in case they are present.
             ImmutableList.Builder<String> builder = ImmutableList.builder();
@@ -334,7 +335,7 @@ public class ProGuardTransform extends BaseProguardAction {
             }
             builder.add("!**/*.class");
             filter = builder.build();
-        } else if (!content.getContentTypes().contains(ContentType.RESOURCES)) {
+        } else if (!content.getContentTypes().contains(DefaultContentType.RESOURCES)) {
             // if the content is not meant to contain resources, we ignore them
             // in case they are present (by accepting only classes.)
             filter = ImmutableList.of("**/*.class");

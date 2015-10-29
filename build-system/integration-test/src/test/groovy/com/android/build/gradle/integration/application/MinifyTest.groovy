@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.truth.ZipFileSubject
+import com.android.build.transform.api.QualifiedContent
 import com.android.builder.model.AndroidProject
 import com.google.common.collect.Sets
 import groovy.transform.CompileDynamic
@@ -71,7 +72,7 @@ class MinifyTest {
                         "transforms/" +
                         "proguard/" +
                         "minified/" +
-                        "folders/5/1f/main"))
+                        "folders/3/1f/main"))
 
         // Ignore JaCoCo stuff.
         minifiedList.removeAll { it =~ /org.jacoco/ }
@@ -94,7 +95,7 @@ class MinifyTest {
                         "proguard/" +
                         "androidTest/" +
                         "minified/" +
-                        "folders/5/1f/main")
+                        "folders/3/1f/main")
         Set<String> minifiedList = gatherContentAsRelativePath(rootFolder)
 
         def testClassFiles = minifiedList.findAll { !it.startsWith("org/hamcrest") }

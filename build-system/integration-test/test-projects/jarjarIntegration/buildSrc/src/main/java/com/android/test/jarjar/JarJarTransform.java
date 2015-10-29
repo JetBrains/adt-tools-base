@@ -6,6 +6,7 @@ import com.android.build.transform.api.Context;
 import com.android.build.transform.api.DirectoryInput;
 import com.android.build.transform.api.Format;
 import com.android.build.transform.api.JarInput;
+import com.android.build.transform.api.QualifiedContent.DefaultContentType;
 import com.android.build.transform.api.QualifiedContent.ContentType;
 import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
@@ -14,6 +15,7 @@ import com.android.build.transform.api.TransformInput;
 import com.android.build.transform.api.TransformOutputProvider;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Closer;
 import com.google.common.io.Files;
 
@@ -39,7 +41,7 @@ public class JarJarTransform extends Transform {
 
     @Override
     public Set<ContentType> getInputTypes() {
-        return EnumSet.of(ContentType.CLASSES);
+        return ImmutableSet.<ContentType>of(DefaultContentType.CLASSES);
     }
 
     @Override
