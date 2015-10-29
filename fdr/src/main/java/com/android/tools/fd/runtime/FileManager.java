@@ -4,6 +4,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -20,6 +21,8 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -466,7 +469,11 @@ public class FileManager {
 
     public static void writeAaptResources(@NonNull String relativePath, @NonNull byte[] bytes) {
         // TODO: Take relativePath into account for the actual destination file
-        File file = getResourceFile(getWriteFolder(false));
+        File resourceFile = getResourceFile(getWriteFolder(false));
+        File file = resourceFile;
+        if (USE_EXTRACTED_RESOURCES) {
+            file = new File(file, relativePath);
+        }
         File folder = file.getParentFile();
         if (!folder.isDirectory()) {
             boolean created = folder.mkdirs();
@@ -481,7 +488,7 @@ public class FileManager {
         if (relativePath.equals(RESOURCE_FILE_NAME)) {
             //noinspection ConstantConditions
             if (USE_EXTRACTED_RESOURCES) {
-                extractZip(file, bytes);
+                extractZip(resourceFile, bytes);
             } else {
                 writeRawBytes(file, bytes);
             }
@@ -621,5 +628,115 @@ public class FileManager {
             utf8 = Charset.forName("UTF-8");
         }
         return utf8;
+    }
+
+    public static long getFileSize(@NonNull String path) {
+        // Currently only handle this for resource files
+        if (path.equals(RESOURCE_FILE_NAME)) {
+            File file = getExternalResourceFile();
+            if (file != null) {
+                return file.length();
+            }
+        }
+
+        return -1;
+    }
+
+    @Nullable
+    public static byte[] getCheckSum(@NonNull String path) {
+        // Currently only handle this for resource files
+        if (path.equals(RESOURCE_FILE_NAME)) {
+            File file = getExternalResourceFile();
+            if (file != null) {
+                return getCheckSum(file);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Computes a checksum of a file.
+     *
+     * @param file the file to compute the fingerprint for
+     * @return a fingerprint
+     */
+    @Nullable
+    public static byte[] getCheckSum(@NonNull File file) {
+        try {
+            // Create MD5 Hash
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+            byte[] buffer = new byte[4096];
+            BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
+            try {
+                while (true) {
+                    int read = input.read(buffer);
+                    if (read == -1) {
+                        break;
+                    }
+                    digest.update(buffer, 0, read);
+                }
+                return digest.digest();
+            } finally {
+                input.close();
+            }
+        } catch (NoSuchAlgorithmException e) {
+            if (Log.isLoggable(LOG_TAG, Log.ERROR)) {
+                Log.e(LOG_TAG, "Couldn't look up message digest", e);
+            }
+        } catch (IOException ioe) {
+            if (Log.isLoggable(LOG_TAG, Log.ERROR)) {
+                Log.e(LOG_TAG, "Failed to read file " + file, ioe);
+            }
+        } catch (Throwable t) {
+            if (Log.isLoggable(LOG_TAG, Log.ERROR)) {
+                Log.e(LOG_TAG, "Unexpected checksum exception", t);
+            }
+        }
+        return null;
+    }
+
+    public static byte[] readRawBytes(@NonNull File source) {
+        try {
+            if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                Log.i(LOG_TAG, "Reading the bytes for file " + source);
+            }
+            long length = source.length();
+            if (length > Integer.MAX_VALUE) {
+                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                    Log.i(LOG_TAG, "File too large (" + length + ")");
+                }
+                return null;
+            }
+            byte[] result = new byte[(int)length];
+
+            BufferedInputStream input = new BufferedInputStream(new FileInputStream(source));
+            try {
+                int index = 0;
+                int remaining = result.length - index;
+                while (remaining > 0) {
+                    int numRead = input.read(result, index, remaining);
+                    if (numRead == -1) {
+                        break;
+                    }
+                    index += numRead;
+                    remaining -= numRead;
+                }
+                if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                    Log.i(LOG_TAG, "Returning length " + result.length + " for file " + source);
+                }
+                return result;
+            } finally {
+                input.close();
+            }
+        } catch (IOException ioe) {
+            if (Log.isLoggable(LOG_TAG, Log.ERROR)) {
+                Log.e(LOG_TAG, "Failed to read file " + source, ioe);
+            }
+        }
+        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+            Log.i(LOG_TAG, "I/O error, no bytes returned for " + source);
+        }
+        return null;
     }
 }

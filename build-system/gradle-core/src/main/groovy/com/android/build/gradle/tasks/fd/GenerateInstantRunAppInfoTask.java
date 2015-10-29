@@ -25,6 +25,7 @@ import static org.objectweb.asm.Opcodes.ACC_SUPER;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.LCONST_0;
 import static org.objectweb.asm.Opcodes.PUTSTATIC;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_6;
@@ -123,7 +124,7 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
 
                     if (!applicationId.isEmpty()) {
                         // Must be *after* extractLibrary() to replace dummy version
-                        writeAppInfoClass(applicationId, applicationClass    );
+                        writeAppInfoClass(applicationId, applicationClass, 0L);
                     }
                 }
             } catch (ParserConfigurationException e) {
@@ -138,7 +139,8 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
 
     void writeAppInfoClass(
             @NonNull String applicationId,
-            @Nullable String applicationClass)
+            @Nullable String applicationClass,
+            long token)
             throws IOException {
         ClassWriter cw = new ClassWriter(0);
         FieldVisitor fv;
@@ -150,6 +152,8 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
         fv = cw.visitField(ACC_PUBLIC + ACC_STATIC, "applicationId", "Ljava/lang/String;", null, null);
         fv.visitEnd();
         fv = cw.visitField(ACC_PUBLIC + ACC_STATIC, "applicationClass", "Ljava/lang/String;", null, null);
+        fv.visitEnd();
+        fv = cw.visitField(ACC_PUBLIC + ACC_STATIC, "token", "J", null, null);
         fv.visitEnd();
         mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
@@ -173,8 +177,14 @@ public class GenerateInstantRunAppInfoTask extends BaseTask {
             mv.visitInsn(ACONST_NULL);
         }
         mv.visitFieldInsn(PUTSTATIC, appInfoOwner, "applicationClass", "Ljava/lang/String;");
+        if (token != 0L) {
+            mv.visitLdcInsn(token);
+        } else {
+            mv.visitInsn(LCONST_0);
+        }
+        mv.visitFieldInsn(PUTSTATIC, appInfoOwner, "token", "J");
         mv.visitInsn(RETURN);
-        mv.visitMaxs(1, 0);
+        mv.visitMaxs(2, 0);
         mv.visitEnd();
         cw.visitEnd();
 
