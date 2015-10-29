@@ -312,13 +312,13 @@ public class MonkeyPatcher {
                 }
             }
 
-            // Iterate over all known Resources objects
-            Field fMActiveResources = clazz.getDeclaredField("mActiveResources");
-            fMActiveResources.setAccessible(true);
-            @SuppressWarnings("unchecked")
-            ArrayMap<?, WeakReference<Resources>> arrayMap =
-                    (ArrayMap<?, WeakReference<Resources>>) fMActiveResources.get(resourcesManager);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                // Iterate over all known Resources objects
+                Field fMActiveResources = clazz.getDeclaredField("mActiveResources");
+                fMActiveResources.setAccessible(true);
+                @SuppressWarnings("unchecked")
+                ArrayMap<?, WeakReference<Resources>> arrayMap =
+                        (ArrayMap<?, WeakReference<Resources>>) fMActiveResources.get(resourcesManager);
                 for (WeakReference<Resources> wr : arrayMap.values()) {
                     Resources resources = wr.get();
                     if (resources != null) {
