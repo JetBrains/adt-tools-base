@@ -61,7 +61,7 @@ class MultiDexTest {
                 "build/" + FD_INTERMEDIATES +
                 "/transforms/dex/" +
                 "ics/debug/" +
-                "folders/2/1f/main/" +
+                "folders/1000/1f/main/" +
                 "classes.dex")
         File apk = project.getApk("ics", "debug")
 
