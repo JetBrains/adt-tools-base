@@ -352,7 +352,7 @@ public class InstantRunTransform extends Transform {
                 inputFile.getAbsolutePath().substring(
                     inputDir.getAbsolutePath().length() + 1,
                     inputFile.getAbsolutePath().length() - ".class".length())
-                        .replace('/', '.'));
+                        .replace(File.separatorChar, '.'));
         generatedClasses3Files.add(outputFile.getAbsolutePath());
     }
 
