@@ -24,8 +24,6 @@ import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
-import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
-import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.AidlCompile;
@@ -211,18 +209,6 @@ public interface VariantScope extends BaseScope {
     File getJackClassesZip();
 
     @NonNull
-    File getClassOutputForDataBinding();
-
-    @NonNull
-    File getLayoutInfoOutputForDataBinding();
-
-    @NonNull
-    File getLayoutFolderOutputForDataBinding();
-
-    @NonNull
-    File getGeneratedClassListOutputFileForDataBinding();
-
-    @NonNull
     File getProguardOutputFolder();
 
     @NonNull
@@ -294,18 +280,6 @@ public interface VariantScope extends BaseScope {
     AndroidTask<GenerateResValues> getGenerateResValuesTask();
 
     void setGenerateResValuesTask(AndroidTask<GenerateResValues> generateResValuesTask);
-
-    @Nullable
-    AndroidTask<DataBindingExportBuildInfoTask> getDataBindingExportInfoTask();
-
-    void setDataBindingExportInfoTask(
-            @Nullable AndroidTask<DataBindingExportBuildInfoTask> dataBindingExportInfoTask);
-
-    @Nullable
-    AndroidTask<DataBindingProcessLayoutsTask> getDataBindingProcessLayoutsTask();
-
-    void setDataBindingProcessLayoutsTask(
-            @Nullable AndroidTask<DataBindingProcessLayoutsTask> dataBindingProcessLayoutsTask);
 
     AndroidTask<Sync> getProcessJavaResourcesTask();
 

@@ -247,8 +247,6 @@ public class VariantManager implements VariantModel {
 
     /**
      * Variant/Task creation entry point.
-     *
-     * Not used by gradle-experimental.
      */
     public void createAndroidTasks() {
         variantFactory.validateModel(this);

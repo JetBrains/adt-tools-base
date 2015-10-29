@@ -41,7 +41,6 @@
             <tr><td>adbOptions</td></tr>
             <tr><td>buildTypes</td></tr>
             <tr><td>compileOptions</td></tr>
-            <tr><td>dataBinding</td></tr>
             <tr><td>dexOptions</td></tr>
             <tr><td>jacoco</td></tr>
             <tr><td>lintOptions</td></tr>

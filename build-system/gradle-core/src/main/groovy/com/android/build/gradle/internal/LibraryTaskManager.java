@@ -76,8 +76,6 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.tooling.BuildException;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
-import android.databinding.tool.DataBindingBuilder;
-
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
@@ -96,12 +94,11 @@ public class LibraryTaskManager extends TaskManager {
     public LibraryTaskManager (
             Project project,
             AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
             AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
-        super(project, androidBuilder, dataBindingBuilder, extension, sdkHandler,dependencyManager, toolingRegistry);
+        super(project, androidBuilder, extension, sdkHandler, dependencyManager, toolingRegistry);
     }
 
     @Override
@@ -252,11 +249,6 @@ public class LibraryTaskManager extends TaskManager {
                     }
                 });
 
-        // Add data binding tasks if enabled
-        if (extension.getDataBinding().isEnabled()) {
-            createDataBindingTasks(tasks, variantScope);
-        }
-
         // Add dependencies on NDK tasks if NDK plugin is applied.
         if (isNdkTaskNeeded) {
             // Add NDK tasks
@@ -393,7 +385,6 @@ public class LibraryTaskManager extends TaskManager {
                                 new File(variantBundleDir, LIBS_FOLDER),
                                 packageName,
                                 getExtension().getPackageBuildConfig());
-                        excludeDataBindingClassesIfNecessary(variantScope, transform);
 
                         AndroidTask<TransformTask> jarPackagingTask = transformManager
                                 .addTransform(tasks, variantScope, transform);
@@ -530,26 +521,6 @@ public class LibraryTaskManager extends TaskManager {
                     public Void call() throws Exception {
                         createLintTasks(tasks, variantScope);
                         return null;
-                    }
-                });
-    }
-
-    private void excludeDataBindingClassesIfNecessary(final VariantScope variantScope,
-            LibraryJarTransform transform) {
-        if (!extension.getDataBinding().isEnabled()) {
-            return;
-        }
-        transform.addExcludeListProvider(
-                new LibraryJarTransform.ExcludeListProvider() {
-                    @Nullable
-                    @Override
-                    public List<String> getExcludeList() {
-                        final File excludeFile = variantScope.getVariantData().getType()
-                                .isExportDataBindingClassList() ? variantScope
-                                .getGeneratedClassListOutputFileForDataBinding() : null;
-                        return dataBindingBuilder.getJarExcludeList(
-                                variantScope.getVariantData().getLayoutXmlProcessor(), excludeFile
-                        );
                     }
                 });
     }
