@@ -25,8 +25,8 @@ import com.google.common.collect.ImmutableList;
  * Type of a variant.
  */
 public enum VariantType {
-    DEFAULT(false),
-    LIBRARY(true),
+    DEFAULT,
+    LIBRARY,
     ANDROID_TEST(
             "androidTest",
             "AndroidTest",
@@ -57,17 +57,15 @@ public enum VariantType {
     private final boolean isSingleBuildType;
     private final String mArtifactName;
     private final int mArtifactType;
-    private final boolean exportsDataBindingClassList;
 
     /** App or library variant. */
-    VariantType(boolean exportsDataBindingClassList) {
+    VariantType() {
         this.mIsForTesting = false;
         this.mPrefix = "";
         this.mSuffix = "";
         this.mArtifactName = AndroidProject.ARTIFACT_MAIN;
         this.mArtifactType = ArtifactMetaData.TYPE_ANDROID;
         this.isSingleBuildType = false;
-        this.exportsDataBindingClassList = exportsDataBindingClassList;
     }
 
     /** Testing variant. */
@@ -83,7 +81,6 @@ public enum VariantType {
         this.mPrefix = prefix;
         this.mSuffix = suffix;
         this.isSingleBuildType = isSingleBuildType;
-        this.exportsDataBindingClassList = false;
     }
 
     /**
@@ -133,12 +130,5 @@ public enum VariantType {
      */
     public boolean isSingleBuildType() {
         return isSingleBuildType;
-    }
-
-    /**
-     * Whether the artifact type should export the data binding class list.
-     */
-    public boolean isExportDataBindingClassList() {
-        return exportsDataBindingClassList;
     }
 }

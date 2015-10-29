@@ -61,8 +61,6 @@ import com.google.common.truth.TableSubject;
 import com.google.common.truth.TestVerb;
 import com.google.common.truth.ThrowableSubject;
 
-import org.w3c.dom.Node;
-
 import java.io.File;
 import java.math.BigDecimal;
 import java.util.Map;
@@ -74,11 +72,6 @@ public class TruthHelper {
     @NonNull
     public static FileSubject assertThat(@NonNull File file) {
         return assert_().about(FileSubjectFactory.factory()).that(file);
-    }
-
-    @NonNull
-    public static DexClassSubject assertThatDexClass(@NonNull Node node) {
-        return assert_().about(DexClassSubject.Factory.get()).that(node);
     }
 
     @NonNull

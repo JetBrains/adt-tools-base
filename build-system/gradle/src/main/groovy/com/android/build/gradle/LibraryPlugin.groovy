@@ -15,7 +15,6 @@
  */
 package com.android.build.gradle
 
-import android.databinding.tool.DataBindingBuilder
 import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.LibraryTaskManager
 import com.android.build.gradle.internal.SdkHandler
@@ -69,7 +68,6 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
     protected TaskManager createTaskManager(
             Project project,
             AndroidBuilder androidBuilder,
-            DataBindingBuilder dataBindingBuilder,
             AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
@@ -77,7 +75,6 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
         return new LibraryTaskManager(
                 project,
                 androidBuilder,
-                dataBindingBuilder,
                 extension,
                 sdkHandler,
                 dependencyManager,
