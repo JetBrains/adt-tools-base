@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,19 +25,17 @@ import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 
 /**
- * Tests for standalone NDK plugin and native dependencies.
- *
- * Test project consists of an app project that depends on an NDK project that depends on another
- * NDK project.
+ * Test for dependencies on NDK projects.
  */
 @CompileStatic
-class NdkStandaloneSoTest {
+class NdkDependencyTest {
     static MultiModuleTestProject base = new MultiModuleTestProject(
             app: new HelloWorldJniApp(),
             lib1: new EmptyAndroidTestApp(),
@@ -45,7 +43,21 @@ class NdkStandaloneSoTest {
 
     static {
         AndroidTestApp app = (HelloWorldJniApp) base.getSubproject("app")
+
         app.removeFile(app.getFile("hello-jni.c"))
+        app.addFile(new TestSourceFile("src/main/jni", "hello-jni.cpp",
+                """
+#include <string.h>
+#include <jni.h>
+#include "lib1.h"
+
+jstring
+Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
+{
+    return (*env)->NewStringUTF(env, getLib1String());
+}
+"""));
+
         app.addFile(new TestSourceFile("", "build.gradle", """
 apply plugin: "com.android.model.application"
 
@@ -58,30 +70,31 @@ model {
         main {
             jniLibs {
                 dependencies {
-                    project ":lib1" buildType "debug"
-                    library file("prebuilt.so") abi "x86"
+                    project ":lib1"
                 }
             }
         }
     }
 }
 """))
-        // An empty .so just to check if it can be packaged
-        app.addFile(new TestSourceFile("", "prebuilt.so", ""));
 
         AndroidTestApp lib1 = (AndroidTestApp) base.getSubproject("lib1")
-        lib1.addFile(new TestSourceFile("src/main/jni", "hello-jni.c",
-                """
-#include <string.h>
-#include <jni.h>
+        lib1.addFile(new TestSourceFile("src/main/headers/", "lib1.h", """
+#ifndef INCLUDED_LIB1_H
+#define INCLUDED_LIB1_H
 
-jstring
-Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
-{
-    return (*env)->NewStringUTF(env, getString());
+char* getLib1String();
+
+#endif
+"""))
+        lib1.addFile(new TestSourceFile("src/main/jni/", "lib1.cpp", """
+#include "lib1.h"
+#include "lib2.h"
+
+char* getLib1String() {
+    return getLib2String();
 }
-"""));
-
+"""))
         lib1.addFile(new TestSourceFile("", "build.gradle", """
 apply plugin: "com.android.model.native"
 
@@ -98,24 +111,36 @@ model {
                 dependencies {
                     project ":lib2"
                 }
+                exportedHeaders {
+                    srcDir "src/main/headers"
+                }
             }
         }
     }
 }
-"""));
+"""))
 
         AndroidTestApp lib2 = (AndroidTestApp) base.getSubproject("lib2")
-        lib2.addFile(new TestSourceFile("src/main/headers/", "hello.h", """
-#ifndef HELLO_H
-#define HELLO_H
+        lib2.addFile(new TestSourceFile("src/main/headers/", "lib2.h", """
+#ifndef INCLUDED_LIB2_H
+#define INCLUDED_LIB2_H
 
-char* getString();
+char* getLib2String();
 
 #endif
 """))
-        lib2.addFile(new TestSourceFile("src/main/jni/", "hello.c", """
-char* getString() {
-    return "hello world!";
+        // Add c++ file that uses function from the STL.
+        lib2.addFile(new TestSourceFile("src/main/jni/", "lib2.cpp", """
+#include "lib2.h"
+#include <algorithm>
+#include <cstring>
+#include <cctype>
+
+char* getLib2String() {
+    char* greeting = new char[32];
+    std::strcpy(greeting, "HELLO WORLD!");
+    std::transform(greeting, greeting + strlen(greeting), greeting, std::tolower);
+    return greeting;  // memory leak if greeting is not deallocated, but doesn't matter.
 }
 """))
         lib2.addFile(new TestSourceFile("", "build.gradle", """
@@ -127,6 +152,7 @@ model {
     }
     android.ndk {
         moduleName = "hello-jni"
+        stl = "stlport_shared"
     }
     android.sources {
         main {
@@ -141,40 +167,23 @@ model {
 """))
     }
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(base)
             .forExperimentalPlugin(true)
             .create()
 
     @AfterClass
     static void cleanUp() {
-        project = null
         base = null
     }
 
     @Test
-    void "check standalone lib properly creates library"() {
-        project.execute("clean", ":lib1:assembleDebug");
-
-        GradleTestProject lib = project.getSubproject("lib1")
-        assertThat(lib.file("build/outputs/native/debug/lib/x86/libhello-jni.so")).exists();
-        assertThat(lib.file("build/outputs/native/debug/lib/x86/gdbserver")).exists();
-        assertThat(lib.file("build/outputs/native/debug/lib/x86/gdb.setup")).exists();
-    }
-
-    @Test
     void "check app contains compiled .so"() {
-        project.execute("clean", ":app:assembleRelease");
+        project.execute("clean", ":app:assembleDebug");
 
-        GradleTestProject lib1 = project.getSubproject("lib1")
-        assertThat(lib1.file("build/intermediates/binaries/debug/obj/x86/libhello-jni.so")).exists();
-
-        // Check that release lib is not compiled.
-        assertThat(lib1.file("build/intermediates/binaries/release/obj/x86/libhello-jni.so")).doesNotExist();
-
-        File apk = project.getSubproject("app").getApk("release", "unsigned")
+        File apk = project.getSubproject("app").getApk("debug")
         assertThatZip(apk).contains("lib/x86/libhello-jni.so");
-        assertThatZip(apk).contains("lib/x86/prebuilt.so");
+        assertThatZip(apk).contains("lib/x86/libstlport_shared.so");
     }
 }
