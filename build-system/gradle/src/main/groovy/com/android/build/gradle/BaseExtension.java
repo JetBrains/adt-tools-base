@@ -32,6 +32,7 @@ import com.android.build.gradle.internal.dsl.AdbOptions;
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.DexOptions;
+import com.android.build.gradle.internal.dsl.DataBindingOptions;
 import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
@@ -158,6 +159,9 @@ public abstract class BaseExtension implements AndroidConfig {
 
     private boolean isWritable = true;
 
+    /** Data Binding options */
+    final DataBindingOptions dataBinding;
+
     /**
      * The source sets container.
      */
@@ -196,6 +200,7 @@ public abstract class BaseExtension implements AndroidConfig {
         jacoco = instantiator.newInstance(JacocoOptions.class);
         adbOptions = instantiator.newInstance(AdbOptions.class);
         splits = instantiator.newInstance(Splits.class, instantiator);
+        dataBinding = instantiator.newInstance(DataBindingOptions.class);
 
         sourceSetsContainer = project.container(AndroidSourceSet.class,
                 new AndroidSourceSetFactory(instantiator, project, isLibrary));
@@ -475,6 +480,20 @@ public abstract class BaseExtension implements AndroidConfig {
     public void splits(Action<Splits> action) {
         checkWritability();
         action.execute(splits);
+    }
+
+    /**
+     * Configures data binding options
+     */
+    public void dataBinding(Action<DataBindingOptions> action) {
+        checkWritability();
+        action.execute(dataBinding);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public DataBindingOptions getDataBinding() {
+        return dataBinding;
     }
 
     public void deviceProvider(DeviceProvider deviceProvider) {
