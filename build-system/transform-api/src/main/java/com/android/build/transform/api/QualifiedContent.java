@@ -24,13 +24,15 @@ import java.util.Set;
 
 /**
  * Represent content qualified with one or more {@link ContentType} and one or more {@link Scope}.
+ * <p/>
+ * <strong>This API is non final and is subject to change. We are looking for feedback, and will
+ * attempt to stabilize it in the 1.6 time frame.</strong>
  */
 @Beta
 public interface QualifiedContent {
 
     /**
-     * Defines a content type that is handled through the Pipeline. Some transforms might request
-     * some input for a particular ContentType or might output a specific ContentType.
+     * A content type that is requested through the transform API.
      */
     interface ContentType {
 
@@ -57,7 +59,7 @@ public interface QualifiedContent {
         CLASSES(0x01),
 
         /**
-         * The content if standard Java resources.
+         * The content is standard Java resources.
          */
         RESOURCES(0x02);
 
@@ -108,10 +110,11 @@ public interface QualifiedContent {
     }
 
     /**
-     * The name of the content. Can be used to differentiate different content using the same scope.
+     * Returns the name of the content. Can be used to differentiate different content using
+     * the same scope.
      *
-     * This is not reliably usable at every stage of the pipeline, but can be used for logging for
-     * instance.
+     * This is not reliably usable at every stage of the transformations, but can be used for
+     * logging for instance.
      *
      * @return the name
      */
@@ -119,7 +122,7 @@ public interface QualifiedContent {
     String getName();
 
     /**
-     * The location of the content.
+     * Returns he location of the content.
      *
      * @return the content location.
      */
@@ -129,13 +132,13 @@ public interface QualifiedContent {
     /**
      * Returns the type of content that the stream represents.
      * <p/>
-     * Even though this may return only {@link ContentType#RESOURCES} or
-     * {@link ContentType#CLASSES}, the actual content (the folder or the jar) may contain files
-     * representing other content types. This is because the transform mechanism avoids duplicating
-     * files around to remove unwanted types for performance.
+     * Even though this may return only {@link DefaultContentType#RESOURCES} or
+     * {@link DefaultContentType#CLASSES}, the actual content (the folder or the jar) may
+     * contain files representing other content types. This is because the transform mechanism
+     * avoids duplicating files around to remove unwanted types for performance.
      * <p/>
-     * For each input, transforms should always take care to read only the files associated
-     * with the types returned by this method.
+     * For each input, transforms should always take care to read and process only the files
+     * associated with the types returned by this method.
      *
      * @return a set of one or more types, never null nor empty.
      */
@@ -143,7 +146,7 @@ public interface QualifiedContent {
     Set<ContentType> getContentTypes();
 
     /**
-     * Returns the scope of the stream.
+     * Returns the scope of the content.
      *
      * @return a set of one or more scopes, never null nor empty.
      */
