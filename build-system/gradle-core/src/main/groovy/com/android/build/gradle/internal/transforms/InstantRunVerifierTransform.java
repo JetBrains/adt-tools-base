@@ -114,7 +114,10 @@ public class InstantRunVerifierTransform extends Transform {
             throws IOException, TransformException, InterruptedException {
 
         long startTime = System.currentTimeMillis();
-        doTransform(inputs, isIncremental);
+        if (referencedInputs.isEmpty()) {
+            throw new RuntimeException("Empty list of referenced inputs");
+        }
+        doTransform(referencedInputs, isIncremental);
         LOGGER.info(String.format("Wall time for verifier : %1$d ms",
                 System.currentTimeMillis() - startTime));
     }
