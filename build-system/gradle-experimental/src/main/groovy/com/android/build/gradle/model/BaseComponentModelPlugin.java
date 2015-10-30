@@ -476,14 +476,13 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                             binary.getName(),
                             new NativeDependencyResolver(
                                     serviceRegistry,
-                                    sourceSet.getDependencies(),
+                                    sourceSet.getDependencyContainer(),
                                     new AndroidNativeDependencySpec(
                                             null,
                                             null,
                                             binary.getBuildType().getName(),
                                             ProductFlavorCombo.getFlavorComboName(
                                                     binary.getProductFlavors()),
-                                            null,
                                             NativeDependencyLinkage.SHARED)).resolve());
                 }
             }

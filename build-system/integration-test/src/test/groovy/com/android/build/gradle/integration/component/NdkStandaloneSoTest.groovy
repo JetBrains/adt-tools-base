@@ -50,6 +50,15 @@ class NdkStandaloneSoTest {
 apply plugin: "com.android.model.application"
 
 model {
+    repositories {
+        libs(PrebuiltLibraries) {
+            prebuilt {
+                binaries.withType(SharedLibraryBinary) {
+                    sharedLibraryFile = file("prebuilt.so")
+                }
+            }
+        }
+    }
     android {
         compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
@@ -59,7 +68,7 @@ model {
             jniLibs {
                 dependencies {
                     project ":lib1" buildType "debug"
-                    library file("prebuilt.so") abi "x86"
+                    library "prebuilt"
                 }
             }
         }
