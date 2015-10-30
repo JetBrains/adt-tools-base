@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal;
 
+import static com.android.build.gradle.internal.TaskManager.getIncrementalMode;
 import static com.android.builder.core.BuilderConstants.LINT;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.builder.core.VariantType.LIBRARY;
@@ -28,6 +29,7 @@ import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.TestAndroidConfig;
 import com.android.build.gradle.TestedAndroidConfig;
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.android.build.gradle.internal.TaskManager.IncrementalMode;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.api.VariantFilter;
@@ -45,6 +47,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
+import com.android.builder.model.SyncIssue;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
@@ -58,7 +61,6 @@ import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.internal.reflect.Instantiator;
 
 import java.io.File;
 import java.util.Collections;
@@ -88,8 +90,6 @@ public class VariantManager implements VariantModel {
     @NonNull
     private final TaskManager taskManager;
     @NonNull
-    private final Instantiator instantiator;
-    @NonNull
     private ProductFlavorData<CoreProductFlavor> defaultConfigData;
     @NonNull
     private final Map<String, BuildTypeData> buildTypes = Maps.newHashMap();
@@ -113,14 +113,12 @@ public class VariantManager implements VariantModel {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull AndroidConfig extension,
             @NonNull VariantFactory variantFactory,
-            @NonNull TaskManager taskManager,
-            @NonNull Instantiator instantiator) {
+            @NonNull TaskManager taskManager) {
         this.extension = extension;
         this.androidBuilder = androidBuilder;
         this.project = project;
         this.variantFactory = variantFactory;
         this.taskManager = taskManager;
-        this.instantiator = instantiator;
 
         DefaultAndroidSourceSet mainSourceSet =
                 (DefaultAndroidSourceSet) extension.getSourceSets().getByName(extension.getDefaultConfig().getName());
@@ -776,7 +774,9 @@ public class VariantManager implements VariantModel {
                                 Boolean.toString(variantConfig.isLegacyMultiDexMode())));
 
 
-                if (variantFactory.hasTestScope()) {
+                // Disable test variants in InstantRun mode.
+                if (variantFactory.hasTestScope() &&
+                        getIncrementalMode(variantData.getScope()) == IncrementalMode.NONE) {
                     TestVariantData unitTestVariantData = createTestVariantData(
                             variantData,
                             UNIT_TEST);
@@ -784,20 +784,24 @@ public class VariantManager implements VariantModel {
 
                     if (buildTypeData == testBuildTypeData) {
                         if (variantConfig.isMinifyEnabled() && variantConfig.getUseJack()) {
-                            throw new RuntimeException(
-                                    "Cannot test obfuscated variants when compiling with jack.");
+                            taskManager.getDependencyManager().getExtraModelInfo().handleSyncError(
+                                    "",
+                                    SyncIssue.TYPE_BROKEN_VARIANT_CONFIG,
+                                    "Cannot test obfuscated variants when compiling with jack."
+                            );
+                        } else {
+                            variantForAndroidTest = variantData;
                         }
-                        variantForAndroidTest = variantData;
                     }
                 }
             }
         }
 
         if (variantForAndroidTest != null) {
-            TestVariantData androidTestVariantData = createTestVariantData(
-                    variantForAndroidTest,
-                    ANDROID_TEST);
-            variantDataList.add(androidTestVariantData);
+           TestVariantData androidTestVariantData = createTestVariantData(
+                   variantForAndroidTest,
+                   ANDROID_TEST);
+           variantDataList.add(androidTestVariantData);
         }
     }
 

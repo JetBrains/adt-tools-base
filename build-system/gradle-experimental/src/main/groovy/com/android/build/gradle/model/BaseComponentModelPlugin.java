@@ -505,7 +505,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 SdkHandler sdkHandler,
                 ExtraModelInfo extraModelInfo,
                 @Path("isApplication") Boolean isApplication) {
-            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
 
             // check if the target has been set.
             TargetInfo targetInfo = androidBuilder.getTargetInfo();
@@ -516,7 +515,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             }
 
             VariantManager variantManager = new VariantManager(project, androidBuilder,
-                    adaptedModel, variantFactory, taskManager, instantiator);
+                    adaptedModel, variantFactory, taskManager);
 
             variantFactory.validateModel(variantManager);
 
