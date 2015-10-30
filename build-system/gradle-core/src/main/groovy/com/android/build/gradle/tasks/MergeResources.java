@@ -151,7 +151,7 @@ public class MergeResources extends IncrementalTask {
         List<ResourceSet> resourceSets = getConfiguredResourceSets(preprocessor);
 
         // create a new merger and populate it with the sets.
-        ResourceMerger merger = new ResourceMerger();
+        ResourceMerger merger = new ResourceMerger(minSdk);
 
         try {
             for (ResourceSet resourceSet : resourceSets) {
@@ -185,7 +185,7 @@ public class MergeResources extends IncrementalTask {
         ResourcePreprocessor preprocessor = getPreprocessor();
 
         // create a merger and load the known state.
-        ResourceMerger merger = new ResourceMerger();
+        ResourceMerger merger = new ResourceMerger(minSdk);
         try {
             if (!merger.loadFromBlob(getIncrementalFolder(), true /*incrementalState*/)) {
                 doFullTaskAction();
