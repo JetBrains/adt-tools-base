@@ -256,6 +256,8 @@ public class InstantRunTransformTest {
                 }
             }
         };
+        // delete the "deleted" file.
+        originalFile.delete();
 
         transform.transform(context, input.build(),
                 ImmutableList.<TransformInput>of(), TransformOutputProvider, true);
