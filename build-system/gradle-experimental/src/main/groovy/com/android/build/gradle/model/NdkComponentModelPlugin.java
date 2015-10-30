@@ -19,6 +19,7 @@ package com.android.build.gradle.model;
 import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
 import static com.android.build.gradle.model.ModelConstants.ARTIFACTS;
 import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFIG;
+import static com.android.build.gradle.model.ModelConstants.NATIVE_DEPENDENCIES;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.LanguageRegistryUtils;
@@ -323,7 +324,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
          * We need to predict the NativeBinarySpec that will be produce instead of creating this map
          * after the binaries are created.
          */
-        @Model
+        @Model(NATIVE_DEPENDENCIES)
         public static Multimap<String, NativeDependencyResolveResult> resolveNativeDependencies(
                 ModelMap<NativeLibraryBinarySpec> nativeBinaries,
                 @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
@@ -351,7 +352,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 final ModelMap<Task> tasks,
                 ModelMap<AndroidComponentSpec> specs,
                 @Path("android.ndk") final NdkConfig ndkConfig,
-                final Multimap<String, NativeDependencyResolveResult> dependencies,
+                @Path(NATIVE_DEPENDENCIES) final Multimap<String, NativeDependencyResolveResult> dependencies,
                 final NdkHandler ndkHandler,
                 BinaryContainer binaries,
                 @Path("buildDir") final File buildDir) {
@@ -512,7 +513,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 ModelMap<DefaultAndroidBinary> binaries,
                 @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 final ModelMap<Task> tasks,
-                final Multimap<String, NativeDependencyResolveResult> dependencies,
+                @Path(NATIVE_DEPENDENCIES) final Multimap<String, NativeDependencyResolveResult> dependencies,
                 NdkHandler ndkHandler) {
             for(final DefaultAndroidBinary binary : binaries.values()) {
                 for (final NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
@@ -590,6 +591,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 // Include transitive dependencies.
                 // Dynamic objects from dependencies needs to be added to the library list.
                 Abi abi = Abi.getByName(nativeBinary.getTargetPlatform().getName());
+                assert abi != null;
                 for (NativeDependencyResolveResult dependency : dependencies) {
                     Iterables.addAll(
                             artifact.getLibraries(),
@@ -598,9 +600,11 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                     SHARED_OBJECT_FILTER));
                     Collection<NativeLibraryArtifact> artifacts = dependency.getNativeArtifacts();
                     for (NativeLibraryArtifact dep : artifacts) {
-                        Iterables.addAll(
-                            artifact.getLibraries(),
-                            Iterables.filter(dep.getLibraries(), SHARED_OBJECT_FILTER));
+                        if (abi.getName().equals(dep.getAbi())) {
+                            Iterables.addAll(
+                                    artifact.getLibraries(),
+                                    Iterables.filter(dep.getLibraries(), SHARED_OBJECT_FILTER));
+                        }
                     }
                 }
             }
@@ -663,12 +667,6 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             builder.add(new File(
                     scope.getGlobalScope().getBuildDir(),
                     NdkNamingScheme.getOutputDirectoryName(
-                            config.getBuildType().getName(),
-                            config.getFlavorName(),
-                            abi.getName())).getParentFile());
-            builder.add(new File(
-                    scope.getGlobalScope().getBuildDir(),
-                    NdkNamingScheme.getDependencyLibraryDirectoryName(
                             config.getBuildType().getName(),
                             config.getFlavorName(),
                             abi.getName())).getParentFile());

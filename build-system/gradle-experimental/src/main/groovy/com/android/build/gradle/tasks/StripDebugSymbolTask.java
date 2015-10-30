@@ -25,19 +25,22 @@ import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.FileUtils;
+import com.google.common.collect.Lists;
 
 import org.gradle.api.Action;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
+import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 import org.gradle.api.tasks.incremental.InputFileDetails;
-import org.gradle.nativeplatform.SharedLibraryBinarySpec;
+import org.gradle.nativeplatform.NativeBinarySpec;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * Task to remove debug symbols from a native library.
@@ -47,6 +50,8 @@ public class StripDebugSymbolTask extends DefaultTask {
     private File stripCommand;
 
     private File inputFolder;
+
+    private Collection<File> inputFiles = Lists.newArrayList();
 
     private File outputFolder;
 
@@ -75,6 +80,12 @@ public class StripDebugSymbolTask extends DefaultTask {
 
     public void setInputFolder(File inputFolder) {
         this.inputFolder = inputFolder;
+    }
+
+    @SuppressWarnings("unused") // Used by incremental task action.
+    @InputFiles
+    public Collection<File> getInputFiles() {
+        return inputFiles;
     }
 
     @OutputDirectory
@@ -137,25 +148,33 @@ public class StripDebugSymbolTask extends DefaultTask {
 
     public static class ConfigAction implements Action<StripDebugSymbolTask> {
         @NonNull
-        private final SharedLibraryBinarySpec binary;
+        private final NativeBinarySpec binary;
+        @NonNull
+        private final File inputFolder;
+        @NonNull
+        private final Collection<File> inputFiles;
         @NonNull
         private final File buildDir;
         @NonNull
         private final NdkHandler handler;
 
         public ConfigAction(
-                @NonNull SharedLibraryBinarySpec binary,
+                @NonNull NativeBinarySpec binary,
+                @NonNull File inputFolder,
+                @NonNull Collection<File> inputFiles,
                 @NonNull File buildDir,
                 @NonNull NdkHandler handler) {
             this.binary = binary;
+            this.inputFolder = inputFolder;
+            this.inputFiles = inputFiles;
             this.buildDir = buildDir;
             this.handler = handler;
         }
 
         @Override
         public void execute(@NonNull StripDebugSymbolTask task) {
-            task.setInputFolder(
-                    new File(buildDir, NdkNamingScheme.getDebugLibraryDirectoryName(binary)));
+            task.setInputFolder(inputFolder);
+            task.getInputFiles().addAll(inputFiles);
             task.setOutputFolder(new File(
                     buildDir,
                     NdkNamingScheme.getOutputDirectoryName(binary)));

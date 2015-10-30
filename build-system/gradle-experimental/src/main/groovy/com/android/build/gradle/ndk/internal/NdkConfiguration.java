@@ -33,6 +33,7 @@ import com.android.build.gradle.tasks.GdbSetupTask;
 import com.android.build.gradle.tasks.StripDebugSymbolTask;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
@@ -58,6 +59,8 @@ import org.gradle.platform.base.binary.BaseBinarySpec;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -229,7 +232,7 @@ public class NdkConfiguration {
                         binary.getBuildType().getName(),
                         binary.getFlavor().getName(),
                         binary.getTargetPlatform().getName(),
-                        NativeDependencyLinkage.STATIC)).resolve();
+                        NativeDependencyLinkage.SHARED)).resolve();
     }
 
     private static void handleDependencies(
@@ -360,9 +363,6 @@ public class NdkConfiguration {
         tasks.create(compileNdkTaskName);
 
         if (binary instanceof SharedLibraryBinarySpec) {
-            copyDependencyLibraries(tasks, binary, buildDir, dependencyMap, compileNdkTaskName);
-            // TODO: strip dependency libraries.
-
             StlConfiguration.createStlCopyTask(tasks, binary, buildDir, ndkHandler,
                     ndkConfig.getStl(), compileNdkTaskName);
 
@@ -371,59 +371,14 @@ public class NdkConfiguration {
                 setupNdkGdbDebug(tasks, binary, buildDir, ndkConfig, ndkHandler,
                         compileNdkTaskName);
             }
-            createStripDebugTask(tasks, (SharedLibraryBinarySpec) binary, buildDir, ndkHandler,
+            createStripDebugTask(
+                    tasks,
+                    (SharedLibraryBinarySpec) binary,
+                    dependencyMap,
+                    buildDir,
+                    ndkHandler,
                     compileNdkTaskName);
         }
-    }
-
-    /**
-     * Create a task to copy all dynamic libraries to an intermediate folder.
-     */
-    private static void copyDependencyLibraries(
-            @NonNull ModelMap<Task> tasks,
-            @NonNull final NativeBinarySpec binary,
-            @NonNull final File buildDir,
-            @NonNull final Multimap<String, NativeDependencyResolveResult> dependencyMap,
-            @NonNull String buildTaskName) {
-        final Collection<NativeDependencyResolveResult> dependencies =
-                dependencyMap.get(binary.getName());
-
-        final String copyDependenciesTaskName =
-                "copyDependencies" + StringHelper.capitalize(binary.getName());
-        tasks.create(
-                copyDependenciesTaskName,
-                Copy.class,
-                new Action<Copy>() {
-                    @Override
-                    public void execute(Copy copy) {
-                        copy.setDestinationDir(
-                                new File(
-                                        buildDir,
-                                        NdkNamingScheme.getDependencyLibraryDirectoryName(
-                                                binary.getBuildType().getName(),
-                                                binary.getFlavor().getName(),
-                                                binary.getTargetPlatform().getName())));
-
-                        Abi abi = Abi.getByName(binary.getTargetPlatform().getName());
-                        for (NativeDependencyResolveResult dependency : dependencies) {
-                            for (File lib : dependency.getLibraryFiles().get(abi)) {
-                                copy.from(lib);
-                            }
-                            Collection<NativeLibraryArtifact> artifacts =
-                                    dependency.getNativeArtifacts();
-                            for (NativeLibraryArtifact artifact : artifacts) {
-                                copy.from(artifact.getLibraries());
-                            }
-                        }
-                    }
-                });
-        tasks.named(buildTaskName, new Action<Task>() {
-            @Override
-            public void execute(Task task) {
-                task.dependsOn(copyDependenciesTaskName);
-            }
-        });
-
     }
 
     /**
@@ -471,15 +426,36 @@ public class NdkConfiguration {
     private static void createStripDebugTask(
             ModelMap<Task> tasks,
             final SharedLibraryBinarySpec binary,
+            @NonNull final Multimap<String, NativeDependencyResolveResult> dependencyMap,
             final File buildDir,
             final NdkHandler handler,
             String buildTaskName) {
 
         final String taskName = NdkNamingScheme.getTaskName(binary, "stripSymbols");
+        Abi abi = Abi.getByName(binary.getTargetPlatform().getName());
+
+        List<File> libs = Lists.newArrayList();
+        final Collection<NativeDependencyResolveResult> dependencies =
+                dependencyMap.get(binary.getName());
+        for (NativeDependencyResolveResult dependency : dependencies) {
+            for (File lib : dependency.getLibraryFiles().get(abi)) {
+                libs.add(lib);
+            }
+            Collection<NativeLibraryArtifact> artifacts =
+                    dependency.getNativeArtifacts();
+            for (NativeLibraryArtifact artifact : artifacts) {
+                libs.addAll(artifact.getLibraries());
+            }
+        }
         tasks.create(
                 taskName,
                 StripDebugSymbolTask.class,
-                new StripDebugSymbolTask.ConfigAction(binary, buildDir, handler));
+                new StripDebugSymbolTask.ConfigAction(
+                        binary,
+                        new File(buildDir, NdkNamingScheme.getDebugLibraryDirectoryName(binary)),
+                        libs,
+                        buildDir,
+                        handler));
         tasks.named(buildTaskName, new Action<Task>() {
             @Override
             public void execute(Task task) {
