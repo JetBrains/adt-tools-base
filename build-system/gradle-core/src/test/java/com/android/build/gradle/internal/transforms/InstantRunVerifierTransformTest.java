@@ -115,8 +115,8 @@ public class InstantRunVerifierTransformTest {
         });
 
         transform.transform(context,
+                ImmutableList.<TransformInput>of(), /* inputs */
                 transformInputs,
-                ImmutableList.<TransformInput>of() /* referencedInputs */,
                 TransformOutputProvider,
                 false /*isIncremental*/);
 
@@ -181,8 +181,8 @@ public class InstantRunVerifierTransformTest {
                 });
 
         transform.transform(context,
+                ImmutableList.<TransformInput>of(), /* inputs */
                 transformInputs,
-                ImmutableList.<TransformInput>of(), /* referencedInputs */
                 TransformOutputProvider,
                 true /*isIncremental*/);
 
@@ -247,8 +247,8 @@ public class InstantRunVerifierTransformTest {
                 });
 
         transform.transform(context,
+                ImmutableList.<TransformInput>of(), /* inputs */
                 transformInputs,
-                ImmutableList.<TransformInput>of(), /* referencedInputs */
                 TransformOutputProvider,
                 true /*isIncremental*/);
 
@@ -313,8 +313,8 @@ public class InstantRunVerifierTransformTest {
                 });
 
         transform.transform(context,
+                ImmutableList.<TransformInput>of(), /* inputs */
                 transformInputs,
-                ImmutableList.<TransformInput>of(), /* referencedInputs */
                 TransformOutputProvider,
                 true /*isIncremental*/);
 
