@@ -39,12 +39,11 @@ import java.util.Set;
  * processes. The output of the transform becomes consumable by other transforms and these
  * tasks get automatically linked together.
  * <p/>
- * The Transform indicates what it applies to (content, scope) and what it generates (content,
- * format).
+ * The Transform indicates what it applies to (content, scope) and what it generates (content).
  * <p/>
  * A transform receives input as a collection {@link TransformInput}, which is composed of
- * {@link JarInput} and {@link DirectoryInput}.
- * Both provide information about the {@link Scope} and {@link ContentType} associated with their
+ * {@link JarInput}s and {@link DirectoryInput}s.
+ * Both provide information about the {@link Scope}s and {@link ContentType}s associated with their
  * particular content.
  *<p/>
  * The output is handled by {@link TransformOutputProvider} which allows creating new self-contained
@@ -52,21 +51,31 @@ import java.util.Set;
  * The content handled by TransformInput/Output is managed by the transform system, and their
  * location is not configurable.
  * <p/>
- * It is best practice to write into as many outputs as Jar/Folder Inputs received by the
+ * It is best practice to write into as many outputs as Jar/Folder Inputs have been received by the
  * transform. Combining all the inputs into a single output prevents downstream transform from
- * processing limited scopes.<br>
+ * processing limited scopes.
+ * <p/>
  * While it's possible to differentiate different Content Types by file extension, it's not possible
  * to do so for Scopes. Therefore if a transform request a Scope but the only available Output
- * contains more than the requested Scope, the build will fail.
+ * contains more than the requested Scope, the build will fail.<br>
+ * If a transform request a single content type but the only available content includes more than
+ * the requested type, the input file/folder will contain all the files of all the types, but
+ * the transform should only read, process and output the type(s) it requested.
  *
  * <p/>
  * Additionally, a transform can indicate secondary inputs/outputs. These are not handled by
- * previous or later transforms, and are not restricted by type handled by transform. They can
+ * upstream or downstream transforms, and are not restricted by type handled by transform. They can
  * be anything.
  * It's up to each transform to manage where these files are, and to make sure that these files
  * are generated before the transform is called. This is done through additional parameters
  * when register the transform.
+ * <p/>These secondary inputs/outputs allow a transform to read but not process any content. This
+ * can be achieved by having {@link #getScopes()} return an empty list and use
+ * {@link #getReferencedScopes()} to indicate what to read instead.
  *
+ * <p/>
+ * <strong>This API is non final and is subject to change. We are looking for feedback, and will
+ * attempt to stabilize it in the 1.6 time frame.</strong>
  */
 @Beta
 @SuppressWarnings("MethodMayBeStatic")
@@ -85,6 +94,8 @@ public abstract class Transform {
     /**
      * Returns the type(s) of data that is consumed by the Transform. This may be more than
      * one type.
+     *
+     * <strong>This must be of type {@link QualifiedContent.DefaultContentType}</strong>
      */
     @NonNull
     public abstract Set<ContentType> getInputTypes();
@@ -95,6 +106,8 @@ public abstract class Transform {
      *
      * <p/>
      * The default implementation returns {@link #getInputTypes()}.
+     * <p/>
+     * <strong>This must be of type {@link QualifiedContent.DefaultContentType}</strong>
      */
     @NonNull
     public Set<ContentType> getOutputTypes() {
@@ -102,8 +115,7 @@ public abstract class Transform {
     }
 
     /**
-     * Returns the scope(s) of the Transform. This indicates what the transform consumes, not in
-     * term of content types, but in term of which streams it consumes.
+     * Returns the scope(s) of the Transform. This indicates which scopes the transform consumes.
      */
     @NonNull
     public abstract Set<Scope> getScopes();
@@ -126,7 +138,7 @@ public abstract class Transform {
      *
      * <p/>
      * Changes to files returned in this list will trigger a new execution of the Transform
-     * even if the streams haven't been touched.
+     * even if the qualified-content inputs haven't been touched.
      * <p/>
      * Any changes to these files will trigger a non incremental execution.
      *
@@ -147,7 +159,7 @@ public abstract class Transform {
      *
      * <p/>
      * Changes to files returned in this list will trigger a new execution of the Transform
-     * even if the streams haven't been touched.
+     * even if the qualified-content inputs haven't been touched.
      * <p/>
      * Changes to these output files force a non incremental execution.
      *
@@ -168,7 +180,7 @@ public abstract class Transform {
      *
      * <p/>
      * Changes to directories returned in this list will trigger a new execution of the Transform
-     * even if the streams haven't been touched.
+     * even if the qualified-content inputs haven't been touched.
      * <p/>
      * Changes to these output directories force a non incremental execution.
      *
@@ -185,7 +197,7 @@ public abstract class Transform {
      *
      * <p/>
      * Changes to values returned in this map will trigger a new execution of the Transform
-     * even if the streams haven't been touched.
+     * even if the content inputs haven't been touched.
      * <p/>
      * Changes to these values force a non incremental execution.
      *
@@ -201,7 +213,8 @@ public abstract class Transform {
      * Returns whether the Transform can perform incremental work.
      *
      * <p/>
-     * If it does, then the TransformInput will contains a list of changed/removed/added files.
+     * If it does, then the TransformInput may contain a list of changed/removed/added files, unless
+     * something else triggers a non incremental run.
      */
     public abstract boolean isIncremental();
 
@@ -220,9 +233,6 @@ public abstract class Transform {
      *     through {@link #getReferencedScopes()}.</li>
      * </ul>
      *
-     * The inputs are provided as a collection of {@link TransformInput}, which then gives access
-     * to the inputs either as {@link JarInput} or {@link DirectoryInput}.
-     * <p/>
      * A transform that does not want to consume anything but instead just wants to see the content
      * of some inputs should return an empty set in {@link #getScopes()}, and what it wants to
      * see in {@link #getReferencedScopes()}.
@@ -233,9 +243,12 @@ public abstract class Transform {
      * <ul>
      *     <li>a change in secondary files ({@link #getSecondaryFileInputs()},
      *     {@link #getSecondaryFileOutputs()}, {@link #getSecondaryDirectoryOutputs()})</li>
-     *     <li>a change to a non file input ({@link #getParameterInputs()}</li>
-     *     <li>a change to the output files/directories</li>
-     *     <li>a file deletion that the transform mechanism could not match to a previous input.</li>
+     *     <li>a change to a non file input ({@link #getParameterInputs()})</li>
+     *     <li>an unexpected change to the output files/directories. This should not happen unless
+     *     tasks are improperly configured and clobber each other's output.</li>
+     *     <li>a file deletion that the transform mechanism could not match to a previous input.
+     *     This should not happen in most case, except in some cases where dependencies have
+     *     changed.</li>
      * </ul>
      * In such an event, when <var>isIncremental</var> is false, the inputs will not have any
      * incremental change information:

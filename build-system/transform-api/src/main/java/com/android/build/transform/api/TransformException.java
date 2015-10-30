@@ -20,6 +20,9 @@ import com.google.common.annotations.Beta;
 
 /**
  * An exception during the execution of a Transform
+ * <p/>
+ * <strong>This API is non final and is subject to change. We are looking for feedback, and will
+ * attempt to stabilize it in the 1.6 time frame.</strong>
  */
 @Beta
 public class TransformException extends Exception {
