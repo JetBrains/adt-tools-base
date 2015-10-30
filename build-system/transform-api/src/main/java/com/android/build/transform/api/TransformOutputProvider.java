@@ -26,8 +26,11 @@ import java.util.Set;
 /**
  * The output of a transform.
  * <p/>
- * There is no direct access to a location to write. Instead, Transforms can ask to create
- * new content location for given scopes/content-types and a format.
+ * There is no direct access to a location to write. Instead, Transforms can ask to get the
+ * location for given scopes, content-types and a format.
+ * <p/>
+ * <strong>This API is non final and is subject to change. We are looking for feedback, and will
+ * attempt to stabilize it in the 1.6 time frame.</strong>
  */
 @Beta
 public interface TransformOutputProvider {
@@ -39,11 +42,17 @@ public interface TransformOutputProvider {
     void deleteAll() throws IOException;
 
     /**
-     * Returns the location of content for a given set of Scopes, Content Types, and format.
-     *
+     * Returns the location of content for a given set of Scopes, Content Types, and Format.
+     * <p/>
      * If the format is {@link Format#DIRECTORY} then the result is the file location of the
-     * directory.
+     * directory.<br>
      * If the format is {@link Format#JAR} then the result is a file representing the jar to create.
+     * <p/>
+     * Non of the directories or files are created by querying this method, and there is
+     * no checks regarding the existence of content in this location.
+     * <p/>
+     * In case of incremental processing of removed files, it is safe to query the method to get
+     * the location of the files to removed.
      *
      * @param name a unique name for the content. For a given set of scopes/types/format it must
      *             be unique.

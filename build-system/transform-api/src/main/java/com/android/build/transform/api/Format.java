@@ -19,22 +19,20 @@ package com.android.build.transform.api;
 import com.google.common.annotations.Beta;
 
 /**
- * The format in which a content is stored.
+ * The format in which content is stored.
+ * <p/>
+ * <strong>This API is non final and is subject to change. We are looking for feedback, and will
+ * attempt to stabilize it in the 1.6 time frame.</strong>
  */
 @Beta
 public enum Format {
 
     /**
-     * The content is jar(s).
-     *
-     * <p/>
-     * As Input, there can be one or more jar files.
-     * As output, a transform can only write a single jar files.
+     * The content is a jar.
      */
     JAR,
     /**
-     * The content is directly under the root direcory.
-     *
+     * The content is a directory.
      * <p/>
      * This means that in the case of java class files, the files should be in directories
      * matching their package names, directly under the root directory.

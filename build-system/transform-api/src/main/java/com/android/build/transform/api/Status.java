@@ -20,8 +20,26 @@ import com.google.common.annotations.Beta;
 
 /**
  * The file changed status for incremental execution.
+ * <p/>
+ * <strong>This API is non final and is subject to change. We are looking for feedback, and will
+ * attempt to stabilize it in the 1.6 time frame.</strong>
  */
 @Beta
 public enum Status {
-    NOTCHANGED, ADDED, CHANGED, REMOVED
+    /**
+     * The file was not changed since the last build.
+     */
+    NOTCHANGED,
+    /**
+     * The file was added since the last build.
+     */
+    ADDED,
+    /**
+     * The file was modified since the last build.
+     */
+    CHANGED,
+    /**
+     * The file was removed since the last build.
+     */
+    REMOVED
 }
