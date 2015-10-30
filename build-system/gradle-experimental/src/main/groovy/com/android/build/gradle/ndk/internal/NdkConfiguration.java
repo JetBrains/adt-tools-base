@@ -33,10 +33,12 @@ import com.android.build.gradle.tasks.GdbSetupTask;
 import com.android.build.gradle.tasks.StripDebugSymbolTask;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 
 import org.gradle.api.Action;
 import org.gradle.api.Task;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.Copy;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
@@ -55,7 +57,7 @@ import org.gradle.platform.base.BinarySpec;
 import org.gradle.platform.base.binary.BaseBinarySpec;
 
 import java.io.File;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -87,14 +89,11 @@ public class NdkConfiguration {
                 .withType(NativeLibraryBinarySpec.class, new Action<NativeLibraryBinarySpec>() {
                     @Override
                     public void execute(final NativeLibraryBinarySpec binary) {
-                        List<NativeSourceSet> jniSources = Lists.newArrayList();
-                        jniSources.add(sourceIfExist(binary, sources, "main"));
-                        jniSources.add(sourceIfExist(binary, sources, binary.getFlavor().getName()));
-                        jniSources.add(
-                                sourceIfExist(binary, sources, binary.getBuildType().getName()));
-                        jniSources.add(sourceIfExist(binary, sources,
-                                binary.getFlavor().getName()
-                                        + StringHelper.capitalize(binary.getBuildType().getName())));
+                        Map<String, NativeSourceSet> jniSources =
+                                findNativeSourceSets(binary, sources);
+                        for (Map.Entry<String, NativeSourceSet> entry : jniSources.entrySet()) {
+                            addNativeSourceSets(binary, entry.getKey(), entry.getValue());
+                        }
 
                         getCCompiler(binary).define("ANDROID");
                         getCppCompiler(binary).define("ANDROID");
@@ -135,10 +134,10 @@ public class NdkConfiguration {
                         binary.getLinker().args("--sysroot=" + sysroot);
                         binary.getLinker().args("-Wl,--build-id");
 
-                        for (NativeSourceSet jniSource : jniSources) {
-                            if (jniSource != null) {
-                                resolveDependencies(serviceRegistry, binary, jniSource);
-                            }
+                        for (NativeSourceSet jniSource : jniSources.values()) {
+                            handleDependencies(
+                                    binary,
+                                    resolveDependency(serviceRegistry, binary, jniSource));
                         }
                     }
                 });
@@ -216,24 +215,27 @@ public class NdkConfiguration {
         }
     }
 
-    private static void resolveDependencies(
-            ServiceRegistry serviceRegistry,
-            NativeBinarySpec binary,
-            NativeSourceSet sourceSet) {
 
-        NativeDependencyResolveResult dependencies =
-                new NativeDependencyResolver(
-                        serviceRegistry,
-                        sourceSet.getDependencies(),
-                        new AndroidNativeDependencySpec(
-                                null,
-                                null,
-                                binary.getBuildType().getName(),
-                                binary.getFlavor().getName(),
-                                binary.getTargetPlatform().getName(),
-                                NativeDependencyLinkage.STATIC)).resolve();
-        for (final NativeLibraryArtifact artifacts: dependencies.getNativeArtifacts()) {
-            // TODO: Handle transitive dependencies.
+    public static NativeDependencyResolveResult resolveDependency(
+            @NonNull ServiceRegistry serviceRegistry,
+            @NonNull NativeBinarySpec binary,
+            @NonNull NativeSourceSet jniSource) {
+        return new NativeDependencyResolver(
+                serviceRegistry,
+                jniSource.getDependencies(),
+                new AndroidNativeDependencySpec(
+                        null,
+                        null,
+                        binary.getBuildType().getName(),
+                        binary.getFlavor().getName(),
+                        binary.getTargetPlatform().getName(),
+                        NativeDependencyLinkage.STATIC)).resolve();
+    }
+
+    private static void handleDependencies(
+            @NonNull NativeBinarySpec binary,
+            @NonNull NativeDependencyResolveResult dependency) {
+        for (final NativeLibraryArtifact artifacts: dependency.getNativeArtifacts()) {
             final String abi = artifacts.getAbi();
             if (binary.getTargetPlatform().getName().equals(abi)) {
                 binary.getTasks().all(
@@ -243,31 +245,123 @@ public class NdkConfiguration {
                                 task.dependsOn(artifacts.getBuiltBy());
                             }
                         });
+
+                for (File dir : artifacts.getExportedHeaderDirectories()) {
+                    getCCompiler(binary).args("-I" + dir);
+                    getCppCompiler(binary).args("-I" + dir);
+                }
                 for(File lib : artifacts.getLibraries()) {
                     if (lib.getName().endsWith(".so") || lib.getName().endsWith(".a")) {
                         binary.getLinker().args(lib.getPath());
                     }
                 }
-                // TODO: Add dependency exported headers as include path.
             }
         }
-        for (final Map.Entry<Abi, File> entry : dependencies.getLibraryFiles().entries()) {
+        for (final Map.Entry<Abi, File> entry : dependency.getLibraryFiles().entries()) {
             if (entry.getKey().getName().equals(binary.getTargetPlatform().getName())) {
                 binary.getLinker().args(entry.getValue().getPath());
             }
         }
     }
 
+    /**
+     * Find all JNI source sets that should be added the a native binary.
+     *
+     * @return a map from the name of the FunctionalSourceSet containing the JNI source set, to the
+     * JNI source set.
+     */
+    public static Map<String, NativeSourceSet> findNativeSourceSets(
+            NativeBinarySpec binary,
+            ModelMap<FunctionalSourceSet> projectSourceSet) {
+        Map<String, NativeSourceSet> sourceSetMap = Maps.newHashMap();
+        addSourceIfExist(sourceSetMap, projectSourceSet, "main");
+        addSourceIfExist(sourceSetMap, projectSourceSet, binary.getFlavor().getName());
+        addSourceIfExist(sourceSetMap, projectSourceSet, binary.getBuildType().getName());
+        addSourceIfExist(sourceSetMap, projectSourceSet,
+                binary.getFlavor().getName()
+                        + StringHelper.capitalize(binary.getBuildType().getName()));
+        return sourceSetMap;
+    }
+
+    private static void addSourceIfExist(
+            @NonNull Map<String, NativeSourceSet> sourceSetMap,
+            @NonNull ModelMap<FunctionalSourceSet> projectSourceSet,
+            @NonNull String sourceSetName) {
+        FunctionalSourceSet sourceSet = projectSourceSet.get(sourceSetName);
+        if (sourceSet != null) {
+            sourceSetMap.put(sourceSetName, (NativeSourceSet) sourceSet.getByName("jni"));
+        }
+    }
+
+    /**
+     * Add the sourceSet with the specified name to the binary.
+     */
+    private static void addNativeSourceSets(
+            @NonNull BinarySpec binary,
+            @NonNull final String sourceSetName,
+            @NonNull final NativeSourceSet jni) {
+        binary.sources(new Action<ModelMap<LanguageSourceSet>>() {
+            @Override
+            public void execute(ModelMap<LanguageSourceSet> languageSourceSets) {
+                // Hardcode the acceptable extension until we find a suitable DSL for user to
+                // modify.
+                languageSourceSets.create(
+                        sourceSetName + "C",
+                        CSourceSet.class,
+                        new Action<CSourceSet>() {
+                            @Override
+                            public void execute(CSourceSet source) {
+                                source.getSource().setSrcDirs(jni.getSource().getSrcDirs());
+                                source.getSource().include("**/*.c");
+                                source.getSource().exclude(jni.getSource().getExcludes());
+                                source.exportedHeaders(new Action<SourceDirectorySet>() {
+                                    @Override
+                                    public void execute(SourceDirectorySet files) {
+                                        files.source(jni.getExportedHeaders());
+                                    }
+                                });
+                            }
+                        });
+                languageSourceSets.create(
+                        sourceSetName + "Cpp",
+                        CppSourceSet.class,
+                        new Action<CppSourceSet>() {
+                            @Override
+                            public void execute(CppSourceSet source) {
+                                source.getSource().setSrcDirs(jni.getSource().getSrcDirs());
+                                source.getSource().include("**/*.C");
+                                source.getSource().include("**/*.CPP");
+                                source.getSource().include("**/*.c++");
+                                source.getSource().include("**/*.cc");
+                                source.getSource().include("**/*.cp");
+                                source.getSource().include("**/*.cpp");
+                                source.getSource().include("**/*.cxx");
+                                source.getSource().exclude(jni.getSource().getExcludes());
+                                source.exportedHeaders(new Action<SourceDirectorySet>() {
+                                    @Override
+                                    public void execute(SourceDirectorySet files) {
+                                        files.source(jni.getExportedHeaders());
+                                    }
+                                });
+                            }
+                        });
+            }
+        });
+    }
+
     public static void createTasks(
             @NonNull ModelMap<Task> tasks,
-            @NonNull NativeBinarySpec binary,
-            @NonNull File buildDir,
+            @NonNull final NativeBinarySpec binary,
+            @NonNull final File buildDir,
             @NonNull NdkConfig ndkConfig,
-            @NonNull NdkHandler ndkHandler) {
+            @NonNull NdkHandler ndkHandler,
+            @NonNull final Multimap<String, NativeDependencyResolveResult> dependencyMap) {
         String compileNdkTaskName = NdkNamingScheme.getNdkBuildTaskName(binary);
         tasks.create(compileNdkTaskName);
 
         if (binary instanceof SharedLibraryBinarySpec) {
+            copyDependencyLibraries(tasks, binary, buildDir, dependencyMap, compileNdkTaskName);
+            // TODO: strip dependency libraries.
 
             StlConfiguration.createStlCopyTask(tasks, binary, buildDir, ndkHandler,
                     ndkConfig.getStl(), compileNdkTaskName);
@@ -283,54 +377,53 @@ public class NdkConfiguration {
     }
 
     /**
-     * Add the sourceSet with the specified name to the binary if such sourceSet is defined.
-     * Returns the JNI source set found.
+     * Create a task to copy all dynamic libraries to an intermediate folder.
      */
-    private static NativeSourceSet sourceIfExist(
-            BinarySpec binary,
-            ModelMap<FunctionalSourceSet> projectSourceSet,
-            final String sourceSetName) {
-        FunctionalSourceSet sourceSet = projectSourceSet.get(sourceSetName);
-        if (sourceSet != null) {
-            final NativeSourceSet jni = sourceSet.withType(NativeSourceSet.class).getByName("jni");
-            binary.sources(new Action<ModelMap<LanguageSourceSet>>() {
-                @Override
-                public void execute(ModelMap<LanguageSourceSet> languageSourceSets) {
-                    // Hardcode the acceptable extension until we find a suitable DSL for user to
-                    // modify.
-                    languageSourceSets.create(
-                            sourceSetName + "C",
-                            CSourceSet.class,
-                            new Action<LanguageSourceSet>() {
-                                @Override
-                                public void execute(LanguageSourceSet source) {
-                                    source.getSource().setSrcDirs(jni.getSource().getSrcDirs());
-                                    source.getSource().include("**/*.c");
-                                    source.getSource().exclude(jni.getSource().getExcludes());
-                                }
-                            });
-                    languageSourceSets.create(
-                            sourceSetName + "Cpp",
-                            CppSourceSet.class,
-                            new Action<LanguageSourceSet>() {
-                                @Override
-                                public void execute(LanguageSourceSet source) {
-                                    source.getSource().setSrcDirs(jni.getSource().getSrcDirs());
-                                    source.getSource().include("**/*.C");
-                                    source.getSource().include("**/*.CPP");
-                                    source.getSource().include("**/*.c++");
-                                    source.getSource().include("**/*.cc");
-                                    source.getSource().include("**/*.cp");
-                                    source.getSource().include("**/*.cpp");
-                                    source.getSource().include("**/*.cxx");
-                                    source.getSource().exclude(jni.getSource().getExcludes());
-                                }
-                            });
-                }
-            });
-            return jni;
-        }
-        return null;
+    private static void copyDependencyLibraries(
+            @NonNull ModelMap<Task> tasks,
+            @NonNull final NativeBinarySpec binary,
+            @NonNull final File buildDir,
+            @NonNull final Multimap<String, NativeDependencyResolveResult> dependencyMap,
+            @NonNull String buildTaskName) {
+        final Collection<NativeDependencyResolveResult> dependencies =
+                dependencyMap.get(binary.getName());
+
+        final String copyDependenciesTaskName =
+                "copyDependencies" + StringHelper.capitalize(binary.getName());
+        tasks.create(
+                copyDependenciesTaskName,
+                Copy.class,
+                new Action<Copy>() {
+                    @Override
+                    public void execute(Copy copy) {
+                        copy.setDestinationDir(
+                                new File(
+                                        buildDir,
+                                        NdkNamingScheme.getDependencyLibraryDirectoryName(
+                                                binary.getBuildType().getName(),
+                                                binary.getFlavor().getName(),
+                                                binary.getTargetPlatform().getName())));
+
+                        Abi abi = Abi.getByName(binary.getTargetPlatform().getName());
+                        for (NativeDependencyResolveResult dependency : dependencies) {
+                            for (File lib : dependency.getLibraryFiles().get(abi)) {
+                                copy.from(lib);
+                            }
+                            Collection<NativeLibraryArtifact> artifacts =
+                                    dependency.getNativeArtifacts();
+                            for (NativeLibraryArtifact artifact : artifacts) {
+                                copy.from(artifact.getLibraries());
+                            }
+                        }
+                    }
+                });
+        tasks.named(buildTaskName, new Action<Task>() {
+            @Override
+            public void execute(Task task) {
+                task.dependsOn(copyDependenciesTaskName);
+            }
+        });
+
     }
 
     /**
