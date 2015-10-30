@@ -455,14 +455,21 @@ public class Server {
             Log.i(LOG_TAG, "Finished loading changes; update mode =" + updateMode);
         }
 
-        List<Activity> activities = Restarter.getActivities(false);
-
         if (updateMode == UPDATE_MODE_NONE || updateMode == UPDATE_MODE_HOT_SWAP) {
             if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                 Log.i(LOG_TAG, "Applying incremental code without restart");
             }
+
+            Activity foreground = Restarter.getForegroundActivity();
+            if (foreground != null) {
+                Restarter.showToast(foreground, "Applied code changes without activity restart");
+            } else if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                Log.i(LOG_TAG, "Couldn't show toast: no activity found");
+            }
             return;
         }
+
+        List<Activity> activities = Restarter.getActivities(false);
 
         if (incrementalResources && updateMode == UPDATE_MODE_WARM_SWAP) {
             // Try to just replace the resources on the fly!
@@ -489,6 +496,7 @@ public class Server {
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                     Log.i(LOG_TAG, "Restarting activity only!");
                 }
+                Restarter.showToast(activity, "Applied changes, restarted activity");
                 Restarter.restartActivityOnUiThread(activity);
                 return;
             }

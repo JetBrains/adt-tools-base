@@ -105,14 +105,25 @@ public class Restarter {
         // TODO: Toast warning?
     }
 
-    private static void showToast(Activity activity, String text) {
-        try {
-            // Avoid crashing when not available, e.g.
-            //   java.lang.RuntimeException: Can't create handler inside thread that has
-            //        not called Looper.prepare()
-            Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
-        } catch (Throwable ignore) {
+    static void showToast(@NonNull final Activity activity, @NonNull final String text) {
+        if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+            Log.i(LOG_TAG, "About to show toast for activity " + activity + ": " + text);
         }
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // Avoid crashing when not available, e.g.
+                    //   java.lang.RuntimeException: Can't create handler inside thread that has
+                    //        not called Looper.prepare()
+                    Toast.makeText(activity, text, Toast.LENGTH_SHORT).show();
+                } catch (Throwable e) {
+                    if (Log.isLoggable(LOG_TAG, Log.WARN)) {
+                        Log.w(LOG_TAG, "Couldn't show toast", e);
+                    }
+                }
+            }
+        });
     }
 
     @Nullable
