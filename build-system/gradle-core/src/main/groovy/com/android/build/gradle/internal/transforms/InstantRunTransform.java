@@ -318,7 +318,7 @@ public class InstantRunTransform extends Transform {
     private static void deleteOutputFile(
             @NonNull IncrementalVisitor.VisitorBuilder visitorBuilder,
             @NonNull File inputDir, @NonNull File inputFile, @NonNull File outputDir) {
-        String inputPath = FileUtils.relativePath(inputFile, inputDir);
+        String inputPath = FileUtils.relativePossiblyNonExistingPath(inputFile, inputDir);
         String outputPath =
                 visitorBuilder.getMangledRelativeClassFilePath(inputPath);
         File outputFile = new File(outputDir, outputPath);
