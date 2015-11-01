@@ -499,6 +499,41 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "</manifest>\n")));
     }
 
+    public void testNotExported() throws Exception {
+        assertEquals("AndroidManifest.xml:10: Error: Activity supporting ACTION_VIEW is not exported [GoogleAppIndexingDeepLinkError]\n"
+                        + "        <activity android:exported=\"false\"\n"
+                        + "        ^\n"
+                        + "1 errors, 0 warnings\n",
+                lintProject(xml("AndroidManifest.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.helloworld\" >\n"
+                        + "\n"
+                        + "    <application\n"
+                        + "        android:allowBackup=\"true\"\n"
+                        + "        android:icon=\"@mipmap/ic_launcher\"\n"
+                        + "        android:label=\"@string/app_name\"\n"
+                        + "        android:theme=\"@style/AppTheme\" >\n"
+                        + "        <activity android:exported=\"false\"\n"
+                        + "            android:name=\".FullscreenActivity\"\n"
+                        + "            android:configChanges=\"orientation|keyboardHidden|screenSize\"\n"
+                        + "            android:label=\"@string/title_activity_fullscreen\"\n"
+                        + "            android:theme=\"@style/FullscreenTheme\" >\n"
+                        + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
+                        + "                <action android:name=\"android.intent.action.VIEW\" />\n"
+                        + "                <data android:scheme=\"http\"\n"
+                        + "                    android:host=\"example.com\"\n"
+                        + "                    android:pathPrefix=\"/gizmos\" />\n"
+                        + "                <category android:name=\"android.intent.category.DEFAULT\" />\n"
+                        + "                <category android:name=\"android.intent.category.BROWSABLE\" />\n"
+                        + "            </intent-filter>\n"
+                        + "        </activity>\n"
+                        + "        <meta-data android:name=\"com.google.android.gms.version\" android:value=\"@integer/google_play_services_version\" />"
+                        + "    </application>\n"
+                        + "\n"
+                        + "</manifest>\n")));
+    }
+
     public void testOkWithResource() throws Exception {
         assertEquals("No warnings.",
                 lintProjectIncrementally(

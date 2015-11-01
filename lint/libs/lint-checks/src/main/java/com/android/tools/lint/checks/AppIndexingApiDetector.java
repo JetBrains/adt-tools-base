@@ -198,8 +198,9 @@ public class AppIndexingApiDetector extends Detector
                     Attr exported = activity.getAttributeNodeNS(ANDROID_URI, ATTR_EXPORTED);
                     if (!exported.getValue().equals("true")) {
                         // Report error if the activity supporting action view is not exported.
-                        context.report(ISSUE_APP_INDEXING, activity, context.getLocation(activity),
-                                "Activity supporting ACTION_VIEW is not exported");
+                        context.report(ISSUE_DEEP_LINK_ERROR, activity,
+                                       context.getLocation(activity),
+                                       "Activity supporting ACTION_VIEW is not exported");
                     }
                 }
             }
@@ -305,7 +306,11 @@ public class AppIndexingApiDetector extends Detector
             }
             ClassDeclaration node = (ClassDeclaration)root;
             JavaParser.ResolvedNode resolvedNode = mJavaContext.resolve(node);
-            if (resolvedNode == null) {
+            if (resolvedNode == null || !(resolvedNode instanceof JavaParser.ResolvedClass)) {
+                return;
+            }
+
+            if (!((JavaParser.ResolvedClass)resolvedNode).isInheritingFrom(CLASS_ACTIVITY, true)) {
                 return;
             }
 
