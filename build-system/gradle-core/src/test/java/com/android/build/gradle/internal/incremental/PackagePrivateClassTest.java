@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import com.android.build.gradle.internal.incremental.fixture.ClassEnhancement;
@@ -23,7 +24,11 @@ import com.example.basic.PackagePrivateInvoker;
 
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.objectweb.asm.Opcodes;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.logging.Logger;
 
 /**
@@ -34,6 +39,27 @@ public class PackagePrivateClassTest {
     @ClassRule
     public static ClassEnhancement harness = new ClassEnhancement();
 
+
+    @Test
+    public void verifyBaseClassAccesses() throws Exception {
+        Class packagePrivateClass = PackagePrivateInvoker.class.getClassLoader()
+                .loadClass("com.example.basic.PackagePrivateClass");
+        assertThat(packagePrivateClass).isNotNull();
+        assertThat(packagePrivateClass.getModifiers() & Opcodes.ACC_PUBLIC)
+                .isEqualTo(Opcodes.ACC_PUBLIC);
+        for (Method method : packagePrivateClass.getDeclaredMethods()) {
+            assertWithMessage(method.getName() + " is package private")
+                    .that(Modifier.isPublic(method.getModifiers())
+                        || Modifier.isPrivate(method.getModifiers())
+                        || Modifier.isProtected(method.getModifiers())).isTrue();
+        }
+        for (Field field : packagePrivateClass.getDeclaredFields()) {
+            assertWithMessage(field.getName() + " is package private")
+                    .that(Modifier.isPublic(field.getModifiers())
+                            || Modifier.isPrivate(field.getModifiers())
+                            || Modifier.isProtected(field.getModifiers())).isTrue();
+        }
+    }
 
     @Test
     public void changeBaseClassTest() throws Exception {

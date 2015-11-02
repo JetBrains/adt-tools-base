@@ -22,8 +22,10 @@ package com.example.basic;
 class PackagePrivateClass implements Provider<String> {
 
     private final String stringValue;
+    final String packagePrivateValue;
     PackagePrivateClass(String param) {
         this.stringValue = param;
+        packagePrivateValue = new StringBuilder().append(param).reverse().toString();
     }
 
     String getStringValue() {
