@@ -1292,6 +1292,9 @@ final class Device implements IDevice {
     @Override
     public int getDensity() {
         String densityValue = getProperty(IDevice.PROP_DEVICE_DENSITY);
+        if (densityValue == null) {
+            densityValue = getProperty(IDevice.PROP_DEVICE_EMULATOR_DENSITY);
+        }
         if (densityValue != null) {
             try {
                 return Integer.parseInt(densityValue);
