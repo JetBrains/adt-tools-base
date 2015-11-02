@@ -73,7 +73,7 @@ public class ${activityClass} extends ${superClass} implements LoaderCallbacks<C
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
+        setContentView(R.layout.${layoutName});
 <#if parentActivityClass != "">
         setupActionBar();
 </#if>
