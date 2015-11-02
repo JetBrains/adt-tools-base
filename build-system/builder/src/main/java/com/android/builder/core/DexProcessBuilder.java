@@ -26,14 +26,11 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
-import com.google.common.base.Charsets;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -44,9 +41,8 @@ import java.util.Set;
  * A builder to create a dex-specific ProcessInfoBuilder
  */
 public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
-    private static final FullRevision MIN_BUILD_TOOLS_REVISION_FOR_DEX_INPUT_LIST = new FullRevision(21, 0, 0);
-    private static final FullRevision MIN_MULTIDEX_BUILD_TOOLS_REV = new FullRevision(21, 0, 0);
-    private static final FullRevision MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV = new FullRevision(22, 0, 2);
+    public static final FullRevision MIN_MULTIDEX_BUILD_TOOLS_REV = new FullRevision(21, 0, 0);
+    public static final FullRevision MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV = new FullRevision(22, 0, 2);
 
     @NonNull
     private final File mOutputFile;
@@ -54,10 +50,8 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     private boolean mIncremental = false;
     private boolean mNoOptimize = false;
     private boolean mMultiDex = false;
-    private boolean mNoStrict = false;
     private File mMainDexList = null;
     private Set<File> mInputs = Sets.newHashSet();
-    private File mTempInputFolder = null;
     private List<String> mAdditionalParams = null;
 
     public DexProcessBuilder(@NonNull File outputFile) {
@@ -95,12 +89,6 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     }
 
     @NonNull
-    public DexProcessBuilder setNoStrict(boolean noStrict) {
-        mNoStrict = noStrict;
-        return this;
-    }
-
-    @NonNull
     public DexProcessBuilder addInput(File input) {
         mInputs.add(input);
         return this;
@@ -109,12 +97,6 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     @NonNull
     public DexProcessBuilder addInputs(@NonNull Collection<File> inputs) {
         mInputs.addAll(inputs);
-        return this;
-    }
-
-    @NonNull
-    public DexProcessBuilder setTempInputFolder(File tempInputFolder) {
-        mTempInputFolder = tempInputFolder;
         return this;
     }
 
@@ -150,24 +132,12 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
         return mMultiDex;
     }
 
-    public boolean isNoStrict() {
-        return mNoStrict;
-    }
-
     public File getMainDexList() {
         return mMainDexList;
     }
 
     public Set<File> getInputs() {
         return mInputs;
-    }
-
-    public File getTempInputFolder() {
-        return mTempInputFolder;
-    }
-
-    public List<String> getAdditionalParams() {
-        return mAdditionalParams;
     }
 
     @NonNull
@@ -219,10 +189,6 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
             builder.addArgs("--no-optimize");
         }
 
-        if (mNoStrict) {
-            builder.addArgs("--no-strict");
-        }
-
         // only change thread count is build tools is 22.0.2+
         if (buildToolInfo.getRevision().compareTo(MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV) >= 0) {
             Integer threadCount = dexOptions.getThreadCount();
@@ -251,14 +217,13 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
         builder.addArgs("--output", mOutputFile.getAbsolutePath());
 
         // input
-        builder.addArgs(getFilesToAdd(buildToolInfo));
+        builder.addArgs(getFilesToAdd());
 
         return builder.createJavaProcess();
     }
 
     @NonNull
-    private List<String> getFilesToAdd(@NonNull BuildToolInfo buildToolInfo) throws
-            ProcessException {
+    public List<String> getFilesToAdd() throws ProcessException {
         // remove non-existing files.
         Set<File> existingFiles = Sets.filter(mInputs, new Predicate<File>() {
             @Override
@@ -294,18 +259,6 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
             filePathList.add(f.getAbsolutePath());
         }
 
-        if (mTempInputFolder != null && buildToolInfo.getRevision()
-                .compareTo(MIN_BUILD_TOOLS_REVISION_FOR_DEX_INPUT_LIST) >= 0) {
-            File inputListFile = new File(mTempInputFolder, "inputList.txt");
-            // Write each library line by line to file
-            try {
-                Files.asCharSink(inputListFile, Charsets.UTF_8).writeLines(filePathList);
-            } catch (IOException e) {
-                throw new ProcessException(e);
-            }
-            return Collections.singletonList("--input-list=" + inputListFile.getAbsolutePath());
-        } else {
-            return filePathList;
-        }
+        return filePathList;
     }
 }

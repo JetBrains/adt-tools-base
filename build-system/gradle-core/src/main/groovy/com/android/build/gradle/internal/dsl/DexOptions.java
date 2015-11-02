@@ -39,6 +39,7 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     private String javaMaxHeapSize;
 
     public void setIncremental(boolean isIncremental) {
+        // TODO: Print out a warning, that this is ignored.
         isIncrementalFlag = isIncremental;
     }
 

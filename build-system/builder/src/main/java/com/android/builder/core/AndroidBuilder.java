@@ -39,6 +39,7 @@ import com.android.builder.internal.SymbolLoader;
 import com.android.builder.internal.SymbolWriter;
 import com.android.builder.internal.TestManifestGenerator;
 import com.android.builder.internal.compiler.AidlProcessor;
+import com.android.builder.internal.compiler.DexWrapper;
 import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.LeafFolderGatherer;
 import com.android.builder.internal.compiler.PreDexCache;
@@ -98,7 +99,6 @@ import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
-import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -1344,19 +1344,31 @@ public class AndroidBuilder {
     private void runDexer(
             @NonNull DexProcessBuilder builder,
             @NonNull DexOptions dexOptions,
-            @NonNull ProcessOutputHandler processOutputHandler) throws ProcessException {
-        Stopwatch stopwatch = Stopwatch.createStarted();
-
+            @NonNull ProcessOutputHandler processOutputHandler)
+            throws ProcessException, IOException {
         if (dexOptions.getDexInProcess()) {
-            throw new RuntimeException("Dexing in process is not implemented yet.");
+            // Version that supports all flags that we know about, including numThreads.
+            FullRevision minimumBuildTools =
+                    DexProcessBuilder.MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV;
+            FullRevision buildToolsVersion = mTargetInfo.getBuildTools().getRevision();
+            if (buildToolsVersion.compareTo(minimumBuildTools) < 0) {
+                throw new IllegalStateException(
+                        "Running dex in-process requires build tools "
+                                + minimumBuildTools.toShortString());
+            }
+            File dxJar = new File(mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.DX_JAR));
+            DexWrapper dexWrapper = DexWrapper.obtain(dxJar);
+            try {
+                dexWrapper.run(builder, dexOptions, processOutputHandler, mLogger);
+            } finally {
+                dexWrapper.release();
+            }
+
         } else {
             JavaProcessInfo javaProcessInfo = builder.build(mTargetInfo.getBuildTools(), dexOptions);
             ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
             result.rethrowFailure().assertNormalExitValue();
         }
-        stopwatch.stop();
-
-        mLogger.info("Dexing %s: %s", builder.getOutputFile(), stopwatch);
     }
 
     public Set<String> createMainDexList(
@@ -1437,7 +1449,7 @@ public class AndroidBuilder {
             boolean multiDex,
             @NonNull DexOptions dexOptions,
             @NonNull ProcessOutputHandler processOutputHandler)
-            throws ProcessException {
+            throws ProcessException, IOException {
         checkNotNull(inputFile, "inputFile cannot be null.");
         checkNotNull(outFile, "outFile cannot be null.");
         checkNotNull(dexOptions, "dexOptions cannot be null.");
