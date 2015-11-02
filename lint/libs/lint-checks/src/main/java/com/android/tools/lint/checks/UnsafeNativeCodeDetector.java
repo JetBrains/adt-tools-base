@@ -27,22 +27,32 @@ import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.LintUtils;
+import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 
 import lombok.ast.AstVisitor;
 import lombok.ast.MethodInvocation;
 
 public class UnsafeNativeCodeDetector extends Detector
-        implements Detector.JavaScanner {
+        implements Detector.JavaScanner, Detector.OtherFileScanner {
 
     private static final Implementation IMPLEMENTATION_JAVA = new Implementation(
             UnsafeNativeCodeDetector.class,
             Scope.JAVA_FILE_SCOPE);
+
+    private static final Implementation IMPLEMENTATION_OTHER = new Implementation(
+            UnsafeNativeCodeDetector.class,
+            Scope.OTHER_SCOPE);
 
     public static final Issue LOAD = Issue.create(
             "UnsafeDynamicallyLoadedCode",
@@ -60,13 +70,31 @@ public class UnsafeNativeCodeDetector extends Detector
             Severity.WARNING,
             IMPLEMENTATION_JAVA);
 
+    public static final Issue UNSAFE_NATIVE_CODE_LOCATION = Issue.create(
+            "UnsafeNativeCodeLocation", //$NON-NLS-1$
+            "Native code outside library directory",
+            "In general, application native code should only be placed in the application's " +
+            "library directory, not in other locations such as the res or assets directories. " +
+            "Placing the code in the library directory provides increased assurance that the " +
+            "code will not be tampered with after application installation. Application " +
+            "developers should use the features of their development environment to place " +
+            "application native libraries into the lib directory of their compiled " +
+            "APKs. Embedding non-shared library native executables into applications should " +
+            "be avoided when possible.",
+            Category.SECURITY,
+            4,
+            Severity.WARNING,
+            IMPLEMENTATION_OTHER);
+
     private static final String RUNTIME_CLASS = "java.lang.Runtime"; //$NON-NLS-1$
     private static final String SYSTEM_CLASS = "java.lang.System"; //$NON-NLS-1$
+
+    private static final byte[] ELF_MAGIC_VALUE = { (byte) 0x7F, (byte) 0x45, (byte) 0x4C, (byte) 0x46 };
 
     @NonNull
     @Override
     public Speed getSpeed() {
-        return Speed.FAST;
+        return Speed.NORMAL;
     }
 
     // ---- Implements Detector.JavaScanner ----
@@ -96,4 +124,70 @@ public class UnsafeNativeCodeDetector extends Detector
             }
         }
     }
+
+    // ---- Implements Detector.OtherFileScanner ----
+
+    private static boolean isNativeCode(File file) {
+        if (!file.isFile()) {
+            return false;
+        }
+
+        String path = file.getPath().toLowerCase();
+
+        // TODO: Currently this method never gets invoked on
+        // files in the assets directory (at least when testing
+        // with ./gradlew lint). Need to investigate why and
+        // fix.
+        if (!path.contains("res") && !path.contains("assets")) {
+            return false;
+        }
+
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            byte[] bytes = new byte[4];
+            int length = fis.read(bytes);
+            fis.close();
+            if ((length == 4) && (Arrays.equals(ELF_MAGIC_VALUE, bytes))) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (IOException ex) {
+            return false;
+        }
+    }
+
+    @NonNull
+    @Override
+    public EnumSet<Scope> getApplicableFiles() {
+        return Scope.OTHER_SCOPE;
+    }
+
+    @Override
+    public void run(@NonNull Context context) {
+        if (!context.getProject().getReportIssues()) {
+            // If this is a library project not being analyzed, ignore it
+            return;
+        }
+
+        File file = context.file;
+        if (isNativeCode(file)) {
+            if (LintUtils.endsWith(file.getPath(), "so")) {
+                context.report(UNSAFE_NATIVE_CODE_LOCATION, Location.create(file),
+                        "Shared libraries should not be placed in the res or assets " +
+                        "directories. Please use the features of your development " +
+                        "environment to place shared libraries in the lib directory of " +
+                        "the compiled APK.");
+            } else {
+                context.report(UNSAFE_NATIVE_CODE_LOCATION, Location.create(file),
+                        "Embedding non-shared library native executables into applications " +
+                        "should be avoided when possible, as there is an increased risk that " +
+                        "the executables could be tampered with after installation. Instead, " +
+                        "native code should be placed in a shared library, and the features of " +
+                        "the development environment should be used to place the shared library " +
+                        "in the lib directory of the compiled APK.");
+            }
+        }
+    }
+
 }

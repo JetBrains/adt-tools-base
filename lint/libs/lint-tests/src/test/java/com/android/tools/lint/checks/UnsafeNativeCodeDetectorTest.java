@@ -57,4 +57,13 @@ public class UnsafeNativeCodeDetectorTest extends AbstractCheckTest {
                         + "    }\n"
                         + "}\n")));
     }
+
+    public void testNativeCode() throws Exception {
+        assertEquals(
+               "res/raw/hello: Warning: Embedding non-shared library native executables into applications should be avoided when possible, as there is an increased risk that the executables could be tampered with after installation. Instead, native code should be placed in a shared library, and the features of the development environment should be used to place the shared library in the lib directory of the compiled APK. [UnsafeNativeCodeLocation]\n" +
+               "res/raw/libhello-jni.so: Warning: Shared libraries should not be placed in the res or assets directories. Please use the features of your development environment to place shared libraries in the lib directory of the compiled APK. [UnsafeNativeCodeLocation]\n" +
+               "0 errors, 2 warnings\n",
+               lintProject("res/raw/hello", "res/raw/libhello-jni.so",
+                       "lib/armeabi/hello", "lib/armeabi/libhello-jni.so"));
+    }
 }
