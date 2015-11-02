@@ -28,7 +28,7 @@ class GoogleServicesPlugin implements Plugin<Project> {
 
     public final static String MODULE_GROUP = "com.google.android.gms"
     public final static String MODULE_NAME = "play-services-measurement"
-    public final static String MODULE_VERSION = "8.1.0"
+    public final static String MODULE_VERSION = "8.3.0"
 
     @Override
     void apply(Project project) {
