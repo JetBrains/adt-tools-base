@@ -74,8 +74,8 @@ import java.util.concurrent.Callable;
 /**
  * Dexing as a transform.
  *
- * This consumes all the available {@link ContentType#CLASSES} streams and create a dex file
- * (or more in the case of multi-dex)
+ * This consumes all the available classes streams and creates a dex file (or more in the case of
+ * multi-dex)
  *
  * This handles pre-dexing as well. If there are more than one stream, then only streams with
  * changed files will be re-dexed before a single merge phase is done at the end.

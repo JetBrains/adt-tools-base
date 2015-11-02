@@ -130,6 +130,47 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     }
 
     @NonNull
+    public File getOutputFile() {
+        return mOutputFile;
+    }
+
+    public boolean isVerbose() {
+        return mVerbose;
+    }
+
+    public boolean isIncremental() {
+        return mIncremental;
+    }
+
+    public boolean isNoOptimize() {
+        return mNoOptimize;
+    }
+
+    public boolean isMultiDex() {
+        return mMultiDex;
+    }
+
+    public boolean isNoStrict() {
+        return mNoStrict;
+    }
+
+    public File getMainDexList() {
+        return mMainDexList;
+    }
+
+    public Set<File> getInputs() {
+        return mInputs;
+    }
+
+    public File getTempInputFolder() {
+        return mTempInputFolder;
+    }
+
+    public List<String> getAdditionalParams() {
+        return mAdditionalParams;
+    }
+
+    @NonNull
     public JavaProcessInfo build(
             @NonNull BuildToolInfo buildToolInfo,
             @NonNull DexOptions dexOptions) throws ProcessException {
