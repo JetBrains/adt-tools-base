@@ -68,7 +68,7 @@ public class Restarter {
      * (Dianne says to put the app in the background, kill it then restart it; need to
      * figure out how to do this.)
      */
-    public static void restartApp(@NonNull Collection<Activity> knownActivities) {
+    public static void restartApp(@NonNull Collection<Activity> knownActivities, boolean toast) {
         if (!knownActivities.isEmpty()) {
             // Can't live patch resources; instead, try to restart the current activity
             Activity foreground = getForegroundActivity();
@@ -76,7 +76,9 @@ public class Restarter {
             if (foreground != null) {
                 // http://stackoverflow.com/questions/6609414/howto-programatically-restart-android-app
                 //noinspection UnnecessaryLocalVariable
-                showToast(foreground, "Restarting app to show changed resources");
+                if (toast) {
+                    showToast(foreground, "Restarting app to apply incompatible changes");
+                }
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                     Log.i(LOG_TAG, "RESTARTING APP");
                 }
@@ -101,8 +103,6 @@ public class Restarter {
             }
             System.exit(0);
         }
-
-        // TODO: Toast warning?
     }
 
     static void showToast(@NonNull final Activity activity, @NonNull final String text) {

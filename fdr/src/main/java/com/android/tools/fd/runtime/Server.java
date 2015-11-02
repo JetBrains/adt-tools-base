@@ -40,7 +40,7 @@ public class Server {
     /**
      * Version of the protocol
      */
-    public static final int PROTOCOL_VERSION = 3;
+    public static final int PROTOCOL_VERSION = 4;
 
     /**
      * Message: sending patches
@@ -74,9 +74,14 @@ public class Server {
     public static final int MESSAGE_RESTART_ACTIVITY = 5;
 
     /**
+     * Message: show toast
+     */
+    public static final int MESSAGE_SHOW_TOAST = 6;
+
+    /**
      * Done transmitting
      */
-    public static final int MESSAGE_EOF = 6;
+    public static final int MESSAGE_EOF = 7;
 
     /**
      * No updates
@@ -309,11 +314,24 @@ public class Server {
                         @UpdateMode int updateMode = input.readInt();
                         updateMode = handlePatches(changes, hasResources, updateMode);
 
+                        boolean showToast = input.readBoolean();
+
                         // Send an "ack" back to the IDE; this is used for timing purposes only
                         output.writeBoolean(true);
 
-                        restart(updateMode, hasResources);
-                        return;
+                        restart(updateMode, hasResources, showToast);
+                        continue;
+                    }
+
+                    case MESSAGE_SHOW_TOAST: {
+                        String text = input.readUTF();
+                        Activity foreground = Restarter.getForegroundActivity();
+                        if (foreground != null) {
+                            Restarter.showToast(foreground, text);
+                        } else if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                            Log.i(LOG_TAG, "Couldn't show toast (no activity) : " + text);
+                        }
+                        continue;
                     }
 
                     default: {
@@ -450,7 +468,7 @@ public class Server {
         FileManager.writeDexFile(patch.getBytes(), true);
     }
 
-    private void restart(@UpdateMode int updateMode, boolean incrementalResources) {
+    private void restart(@UpdateMode int updateMode, boolean incrementalResources, boolean toast) {
         if (Log.isLoggable(LOG_TAG, Log.INFO)) {
             Log.i(LOG_TAG, "Finished loading changes; update mode =" + updateMode);
         }
@@ -460,11 +478,14 @@ public class Server {
                 Log.i(LOG_TAG, "Applying incremental code without restart");
             }
 
-            Activity foreground = Restarter.getForegroundActivity();
-            if (foreground != null) {
-                Restarter.showToast(foreground, "Applied code changes without activity restart");
-            } else if (Log.isLoggable(LOG_TAG, Log.INFO)) {
-                Log.i(LOG_TAG, "Couldn't show toast: no activity found");
+            if (toast) {
+                Activity foreground = Restarter.getForegroundActivity();
+                if (foreground != null) {
+                    Restarter.showToast(foreground, "Applied code changes without activity " +
+                            "restart");
+                } else if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                    Log.i(LOG_TAG, "Couldn't show toast: no activity found");
+                }
             }
             return;
         }
@@ -496,7 +517,9 @@ public class Server {
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                     Log.i(LOG_TAG, "Restarting activity only!");
                 }
-                Restarter.showToast(activity, "Applied changes, restarted activity");
+                if (toast) {
+                    Restarter.showToast(activity, "Applied changes, restarted activity");
+                }
                 Restarter.restartActivityOnUiThread(activity);
                 return;
             }
@@ -518,6 +541,6 @@ public class Server {
             Log.i(LOG_TAG, "Performing full app restart");
         }
 
-        Restarter.restartApp(activities);
+        Restarter.restartApp(activities, toast);
     }
 }
