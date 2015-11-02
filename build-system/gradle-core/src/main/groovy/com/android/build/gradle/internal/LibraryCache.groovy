@@ -15,11 +15,12 @@
  */
 
 package com.android.build.gradle.internal
-
 import com.android.annotations.NonNull
 import com.android.annotations.concurrency.GuardedBy
 import com.google.common.collect.Maps
+import org.gradle.api.Action
 import org.gradle.api.Project
+import org.gradle.api.file.CopySpec
 import org.gradle.api.file.FileCopyDetails
 import org.gradle.api.file.RelativePath
 
@@ -91,13 +92,34 @@ public class LibraryCache {
         folderOut.deleteDir()
         folderOut.mkdirs()
 
-        project.copy {
-            from project.zipTree(bundle)
-            into folderOut
-            filesMatching('**/*.jar') { FileCopyDetails details ->
-                details.relativePath = new RelativePath(false, FD_JARS).plus(details.relativePath)
+        project.copy(new Action<CopySpec>() {
+            @Override
+            void execute(CopySpec spec) {
+                spec.from(project.zipTree(bundle));
+                spec.into(folderOut);
+                spec.filesMatching("**/*.jar", new Action<FileCopyDetails>() {
+                    @Override
+                    void execute(FileCopyDetails details) {
+                        /*
+                         * For each jar, check where it is. /classes.jar, /lint.jar and jars in
+                         * /libs are moved inside the FD_JARS directory. Jars inside /assets or
+                         * /res/raw are kept where they were. All other jars are ignored and a
+                         * warning is issued.
+                         */
+                        String path = details.getRelativePath().getPathString();
+                        if (path.equals("classes.jar") || path.equals("lint.jar")
+                                || path.startsWith("libs/")) {
+                            details.setRelativePath(new RelativePath(false, FD_JARS).plus(
+                                    details.relativePath));
+                        } else if (!path.startsWith("res/raw/*") && !path.startsWith("assets/*")) {
+                            project.getLogger().warn("Jar found at unexpected path (" + path
+                                    + ") in " + bundle + " and will be ignored. Jars should be "
+                                    + "placed inside 'jars' folder to be merged into dex. Jars "
+                                    + "that are in assets/ or res/raw/ will be copied as-is.");
+                        }
+                    }
+                });
             }
-        }
+        });
     }
-
 }

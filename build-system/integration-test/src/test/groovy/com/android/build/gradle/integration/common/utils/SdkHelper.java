@@ -47,7 +47,10 @@ public class SdkHelper {
             } else {
                 System.out.println("Failed to find SDK in ANDROID_HOME=" + androidHome);
             }
+        } else {
+            System.out.println("ANDROID_HOME not set.");
         }
+
         return null;
     }
 
