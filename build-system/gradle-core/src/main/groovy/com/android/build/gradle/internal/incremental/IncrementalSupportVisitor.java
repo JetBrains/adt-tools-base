@@ -21,6 +21,7 @@ import com.android.utils.AsmUtils;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -108,8 +109,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
             "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
-        AccessRight accessRight = AccessRight.fromNodeAccess(access);
-        access = accessRight == AccessRight.PACKAGE_PRIVATE ? access | Opcodes.ACC_PUBLIC : access;
+        access = transformAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
@@ -121,6 +121,15 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         return super.visitAnnotation(desc, visible);
     }
 
+
+    @Override
+    public FieldVisitor visitField(int access, String name, String desc, String signature,
+            Object value) {
+
+        access = transformAccessForInstantRun(access);
+        return super.visitField(access, name, desc, signature, value);
+    }
+
     /**
      * Insert Constructor specific logic({@link ConstructorArgsRedirection} and
      * {@link ConstructorDelegationDetector}) for constructor redirecting or
@@ -129,6 +138,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
+
+        access = transformAccessForInstantRun(access);
 
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
         MethodNode method = getMethodByNameInClass(name, desc, classNode);
@@ -166,6 +177,23 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             method.accept(mv);
             return null;
         }
+    }
+
+    /**
+     * If a class/method/field is package private, make it public. This is the workaround the fact
+     * <ul>Our restart.dex files are loaded with a different class loader than the main dex file
+     * class loader on restart. so we need methods/fields to be public</ul>
+     * <ul>Our reload.dex are loaded from a different class loader as well but methods/fields
+     * are accessed through reflection, yet you need class visibility.</ul>
+     * @param access the original class/method/field access.
+     * @return the new access or the same one depending on the original access rights.
+     */
+    private static int transformAccessForInstantRun(int access) {
+        // if a method is package private, make it public. This is to workaround the fact
+        // out patch files are loaded in a different class loaders that the original class loader
+        // on restart.
+        AccessRight accessRight = AccessRight.fromNodeAccess(access);
+        return accessRight == AccessRight.PACKAGE_PRIVATE ? access | Opcodes.ACC_PUBLIC : access;
     }
 
     private class ISMethodVisitor extends GeneratorAdapter {
