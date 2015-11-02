@@ -37,6 +37,10 @@ public class ModelConstants {
 
     public static final String IS_APPLICATION = "isApplication";
 
+    public static final String JNILIBS_DEPENDENCIES = "jniLibsDependencies";
+
+    public static final String NATIVE_DEPENDENCIES = "nativeDependencies";
+
     public static final String NDK_HANDLER = "ndkHandler";
 
     public static final String TASK_MANAGER = "taskManager";
