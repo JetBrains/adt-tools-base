@@ -36,6 +36,8 @@ import org.gradle.model.Model;
 import org.gradle.model.RuleSource;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
+import android.databinding.tool.DataBindingBuilder;
+
 /**
  * Gradle component model plugin class for 'application' projects.
  */
@@ -60,6 +62,7 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
                 AndroidConfig androidExtension,
                 Project project,
                 AndroidBuilder androidBuilder,
+                DataBindingBuilder dataBindingBuilder,
                 SdkHandler sdkHandler,
                 ExtraModelInfo extraModelInfo,
                 ToolingModelBuilderRegistry toolingRegistry) {
@@ -68,6 +71,7 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
             return new LibraryComponentTaskManager(
                     project,
                     androidBuilder,
+                    dataBindingBuilder,
                     androidExtension,
                     sdkHandler,
                     dependencyManager,

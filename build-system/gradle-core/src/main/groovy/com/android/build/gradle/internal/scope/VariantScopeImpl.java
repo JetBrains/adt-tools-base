@@ -31,6 +31,8 @@ import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
+import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
+import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
@@ -111,6 +113,11 @@ public class VariantScopeImpl implements VariantScope {
     private AndroidTask<MergeSourceSetFolders> mergeJniLibsFolderTask;
 
     private AndroidTask<NdkCompile> ndkCompileTask;
+
+    @Nullable
+    private AndroidTask<DataBindingExportBuildInfoTask> dataBindingExportInfoTask;
+    @Nullable
+    private AndroidTask<DataBindingProcessLayoutsTask> dataBindingProcessLayoutsTask;
 
     /** @see BaseVariantData#javaCompilerTask */
     @Nullable
@@ -201,6 +208,30 @@ public class VariantScopeImpl implements VariantScope {
     @Override
     public void setNdkBuildable(@NonNull Collection<Object> ndkBuildable) {
         this.ndkBuildable = ndkBuildable;
+    }
+
+    @Nullable
+    @Override
+    public AndroidTask<DataBindingExportBuildInfoTask> getDataBindingExportInfoTask() {
+        return dataBindingExportInfoTask;
+    }
+
+    @Override
+    public void setDataBindingExportInfoTask(
+            @Nullable AndroidTask<DataBindingExportBuildInfoTask> dataBindingExportInfoTask) {
+        this.dataBindingExportInfoTask = dataBindingExportInfoTask;
+    }
+
+    @Nullable
+    @Override
+    public AndroidTask<DataBindingProcessLayoutsTask> getDataBindingProcessLayoutsTask() {
+        return dataBindingProcessLayoutsTask;
+    }
+
+    @Override
+    public void setDataBindingProcessLayoutsTask(
+            @Nullable AndroidTask<DataBindingProcessLayoutsTask> dataBindingProcessLayoutsTask) {
+        this.dataBindingProcessLayoutsTask = dataBindingProcessLayoutsTask;
     }
 
     @Override
@@ -559,6 +590,33 @@ public class VariantScopeImpl implements VariantScope {
     public File getJackClassesZip() {
         return new File(globalScope.getIntermediatesDir(),
                 "packaged/" + getVariantConfiguration().getDirName() + "/classes.zip");
+    }
+
+    @Override
+    @NonNull
+    public File getClassOutputForDataBinding() {
+        return new File(globalScope.getIntermediatesDir(),
+                "dataBindingInfo/" + getVariantConfiguration().getDirName());
+    }
+
+    @Override
+    @NonNull
+    public File getLayoutInfoOutputForDataBinding() {
+        return new File(globalScope.getIntermediatesDir() + "/data-binding-info/" +
+                getVariantConfiguration().getDirName());
+    }
+
+    @Override
+    @NonNull
+    public File getLayoutFolderOutputForDataBinding() {
+        return new File(globalScope.getIntermediatesDir() + "/data-binding-layout-out/" +
+                getVariantConfiguration().getDirName());
+    }
+
+    @Override
+    @NonNull
+    public File getGeneratedClassListOutputFileForDataBinding() {
+        return new File(getLayoutInfoOutputForDataBinding(), "_generated.txt");
     }
 
     @Override
