@@ -12,6 +12,7 @@ import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.tasks.ValidateSigningTask;
@@ -22,13 +23,11 @@ import com.android.build.transform.api.QualifiedContent;
 import com.android.build.transform.api.QualifiedContent.ContentType;
 import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.builder.packaging.DuplicateFileException;
-import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import org.gradle.api.Task;
-import org.gradle.api.file.FileTree;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
@@ -40,7 +39,6 @@ import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.tooling.BuildException;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -242,15 +240,16 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
         @Override
         public void execute(@NonNull PackageApplication packageApp) {
-            final ApkVariantData variantData = (ApkVariantData) scope.getVariantScope().getVariantData();
+            final VariantScope variantScope = scope.getVariantScope();
+            final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
             final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) scope
                     .getVariantOutputData();
-            final GradleVariantConfiguration config = scope.getVariantScope().getVariantConfiguration();
+            final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
 
             variantOutputData.packageApplicationTask = packageApp;
             packageApp.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             packageApp.setVariantName(
-                    scope.getVariantScope().getVariantConfiguration().getFullName());
+                    variantScope.getVariantConfiguration().getFullName());
 
             if (config.isMinifyEnabled() && config.getBuildType().isShrinkResources() && !config
                     .getUseJack()) {
@@ -272,7 +271,11 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             ConventionMappingHelper.map(packageApp, "dexFolders", new Callable<Set<File>>() {
                 @Override
                 public  Set<File> call() {
-                    return scope.getVariantScope().getTransformManager()
+                    if (config.getUseJack()) {
+                        return ImmutableSet.of(variantScope.getJackDestinationDir());
+                    }
+
+                    return variantScope.getTransformManager()
                             .getPipelineOutput(sDexFilter).keySet();
                 }
             });
@@ -280,7 +283,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             ConventionMappingHelper.map(packageApp, "javaResourceFiles", new Callable<Set<File>>() {
                 @Override
                 public Set<File> call() throws Exception {
-                    return scope.getVariantScope().getTransformManager().getPipelineOutput(
+                    return variantScope.getTransformManager().getPipelineOutput(
                             sResFilter).keySet();
                 }
             });
@@ -290,13 +293,13 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 public Set<File> call() {
                     if (variantData.getSplitHandlingPolicy() ==
                             BaseVariantData.SplitHandlingPolicy.PRE_21_POLICY) {
-                        return scope.getVariantScope().getTransformManager().getPipelineOutput(
+                        return variantScope.getTransformManager().getPipelineOutput(
                                 sNativeLibsFilter).keySet();
                     }
 
                     Set<String> filters = AbiSplitOptions.getAbiFilters(
                             scope.getGlobalScope().getExtension().getSplits().getAbiFilters());
-                    return filters.isEmpty() ? scope.getVariantScope().getTransformManager().getPipelineOutput(
+                    return filters.isEmpty() ? variantScope.getTransformManager().getPipelineOutput(
                             sNativeLibsFilter).keySet() : Collections.<File>emptySet();
                 }
             });
@@ -337,7 +340,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                                     ValidateSigningTask.class);
                     validateSigningTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
                     validateSigningTask.setVariantName(
-                            scope.getVariantScope().getVariantConfiguration().getFullName());
+                            variantScope.getVariantConfiguration().getFullName());
                     validateSigningTask.setSigningConfig(sc);
                 }
 
