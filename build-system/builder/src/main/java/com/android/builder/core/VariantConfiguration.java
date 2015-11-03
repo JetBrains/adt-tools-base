@@ -123,7 +123,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      *
      * @see VariantType#isForTesting()
      */
-    private final VariantConfiguration mTestedConfig;
+    private final VariantConfiguration<T, D, F> mTestedConfig;
 
     /**
      * An optional output that is only valid if the type is Type#LIBRARY so that the test
@@ -225,7 +225,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             @NonNull T buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
             @NonNull VariantType type,
-            @Nullable VariantConfiguration testedConfig,
+            @Nullable VariantConfiguration<T, D, F> testedConfig,
             @Nullable SigningConfig signingConfigOverride) {
         checkNotNull(defaultConfig);
         checkNotNull(defaultSourceProvider);

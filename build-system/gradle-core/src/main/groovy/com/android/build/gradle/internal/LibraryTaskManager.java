@@ -49,7 +49,6 @@ import com.android.build.transform.api.QualifiedContent.Scope;
 import com.android.build.transform.api.Transform;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
-import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryBundle;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.dependency.ManifestDependency;
@@ -61,7 +60,6 @@ import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
@@ -503,24 +501,6 @@ public class LibraryTaskManager extends TaskManager {
             @Override
             public boolean isOptional() {
                 return false;
-            }
-
-            @NonNull
-            @Override
-            public List<JarDependency> getLocalDependencies() {
-                // because the test artifact already directly depends on the local jars
-                // we make this fake AndroidLibrary not include them, otherwise
-                // they'll be there twice.
-                return ImmutableList.of();
-            }
-
-            @NonNull
-            @Override
-            public List<File> getLocalJars() {
-                // because the test artifact already directly depends on the local jars
-                // we make this fake AndroidLibrary not include them, otherwise
-                // they'll be there twice.
-                return ImmutableList.of();
             }
         });
 
