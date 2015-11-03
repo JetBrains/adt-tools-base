@@ -64,15 +64,28 @@ public class InstantRunDex extends Transform {
         /**
          * dex file will contain files that can be used to reload classes in a running application.
          */
-        RELOAD,
+        RELOAD {
+            @NonNull
+            @Override
+            File getOutputFolder(VariantScope variantScope) {
+                return variantScope.getReloadDexOutputFolder();
+            }
+        },
         /**
          * dex file will contain the delta files (from the last incremental build) that can be used
          * to restart the application
          */
-        RESTART}
+        RESTART {
+            @NonNull
+            @Override
+            File getOutputFolder(VariantScope variantScope) {
+                return variantScope.getRestartDexOutputFolder();
+            }
+        };
 
-    @NonNull
-    private final File outputFolder;
+        @NonNull
+        abstract File getOutputFolder(VariantScope variantScope);
+    }
 
     @NonNull
     private final AndroidBuilder androidBuilder;
@@ -95,14 +108,12 @@ public class InstantRunDex extends Transform {
     public InstantRunDex(
             @NonNull VariantScope variantScope,
             @NonNull BuildType buildType,
-            @NonNull File outputFolder,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull DexOptions dexOptions,
             @NonNull Logger logger,
             @NonNull Set<QualifiedContent.ContentType> inputTypes) {
         this.variantScope = variantScope;
         this.buildType = buildType;
-        this.outputFolder = outputFolder;
         this.androidBuilder = androidBuilder;
         this.dexOptions = dexOptions;
         this.logger = new LoggerWrapper(logger);
@@ -115,6 +126,7 @@ public class InstantRunDex extends Transform {
             @Nullable TransformOutputProvider output,
             boolean isIncremental) throws IOException, TransformException, InterruptedException {
 
+        File outputFolder = buildType.getOutputFolder(variantScope);
 
         if (buildType == BuildType.RELOAD) {
             // if we are in reload mode, we should check the result of the verifier.

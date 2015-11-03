@@ -44,6 +44,7 @@ import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
+import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTaskConfigAction;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
@@ -2073,12 +2074,13 @@ public abstract class TaskManager {
 
         if (getIncrementalMode(scope) != IncrementalMode.NONE) {
 
+            DexOptions dexOptions = scope.getGlobalScope().getExtension().getDexOptions();
             InstantRunDex classesTwoTransform = new InstantRunDex(
                     scope,
                     InstantRunDex.BuildType.RESTART,
-                    scope.getRestartDexOutputFolder(),
                     androidBuilder,
-                    scope.getGlobalScope().getExtension().getDexOptions(), getLogger(),
+                    dexOptions,
+                    getLogger(),
                     ImmutableSet.<ContentType>of(
                             DefaultContentType.CLASSES));
 
@@ -2088,9 +2090,9 @@ public abstract class TaskManager {
             InstantRunDex classesThreeTransform = new InstantRunDex(
                     scope,
                     InstantRunDex.BuildType.RELOAD,
-                    scope.getReloadDexOutputFolder(),
                     androidBuilder,
-                    scope.getGlobalScope().getExtension().getDexOptions(), getLogger(),
+                    dexOptions,
+                    getLogger(),
                     ImmutableSet.<ContentType>of(
                             ExtendedContentType.CLASSES_ENHANCED));
 

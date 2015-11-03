@@ -420,8 +420,8 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         InstantRunImpl instantRun = new InstantRunImpl(
                 InstantRunAnchorTaskConfigAction.getName(scope),
-                scope.getRestartDexOutputFolder(),
-                scope.getReloadDexOutputFolder(),
+                new File(scope.getRestartDexOutputFolder(), "classes.dex"),
+                new File(scope.getReloadDexOutputFolder(), "classes.dex"),
                 // todo : move this to a shared location.
                 new File(scope.getReloadDexOutputFolder(), "reload.xml"));
 

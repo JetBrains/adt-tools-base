@@ -77,11 +77,11 @@ public class InstantRunDexTest {
 
         when(variantScope.getVerificationResult()).thenReturn(
                 new VerificationResult(IncompatibleChange.FIELD_ADDED));
+        when(variantScope.getReloadDexOutputFolder()).thenReturn(outputFolder);
 
         InstantRunDex instantRunDex = new InstantRunDex(
                 variantScope,
                 InstantRunDex.BuildType.RELOAD,
-                outputFolder,
                 androidBuilder,
                 dexOptions,
                 logger,
