@@ -18,6 +18,7 @@ package com.android.build.gradle.tasks;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -90,6 +91,8 @@ public class MergeResources extends IncrementalTask {
     private boolean crunchPng;
 
     private boolean useNewCruncher;
+
+    private boolean validateEnabled;
 
     private File blameLogFolder;
     // actual inputs
@@ -333,6 +336,17 @@ public class MergeResources extends IncrementalTask {
         this.publicFile = publicFile;
     }
 
+    // Synthetic input: the validation flag is set on the resource sets in ConfigAction.execute.
+    @SuppressWarnings("unused")
+    @Input
+    public boolean isValidateEnabled() {
+        return validateEnabled;
+    }
+
+    public void setValidateEnabled(boolean validateEnabled) {
+        this.validateEnabled = validateEnabled;
+    }
+
     @OutputDirectory
     @Optional
     public File getBlameLogFolder() {
@@ -436,6 +450,11 @@ public class MergeResources extends IncrementalTask {
 
             mergeResourcesTask.setUseNewCruncher(extension.getAaptOptions().getUseNewCruncher());
 
+            final boolean validateEnabled = AndroidGradleOptions.isResourceValidationEnabled(
+                    scope.getGlobalScope().getProject());
+
+            mergeResourcesTask.setValidateEnabled(validateEnabled);
+
             ConventionMappingHelper.map(mergeResourcesTask, "inputResourceSets",
                     new Callable<List<ResourceSet>>() {
                         @Override
@@ -453,8 +472,9 @@ public class MergeResources extends IncrementalTask {
                                 generatedResFolders.add(
                                         variantData.generateApkDataTask.getResOutputDir());
                             }
-                            return variantData.getVariantConfiguration()
-                                    .getResourceSets(generatedResFolders, includeDependencies);
+
+                            return variantData.getVariantConfiguration().getResourceSets(
+                                    generatedResFolders, includeDependencies, validateEnabled);
                         }
                     });
 
@@ -530,6 +550,5 @@ public class MergeResources extends IncrementalTask {
                 throw new ProcessException(e);
             }
         }
-    };
-
+    }
 }

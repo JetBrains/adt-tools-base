@@ -390,7 +390,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public void calculateFilters(Splits splits) {
 
         List<ResourceSet> resourceSets = variantConfiguration
-                .getResourceSets(getGeneratedResFolders(), false);
+                .getResourceSets(getGeneratedResFolders(), false, false /*validate*/);
         densityFilters = getFilters(resourceSets, DiscoverableFilterType.DENSITY, splits);
         languageFilters = getFilters(resourceSets, DiscoverableFilterType.LANGUAGE, splits);
         abiFilters = getFilters(resourceSets, DiscoverableFilterType.ABI, splits);
@@ -442,7 +442,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public List<String> discoverListOfResourceConfigs() {
         List<String> resFoldersOnDisk = new ArrayList<String>();
         List<ResourceSet> resourceSets = variantConfiguration.getResourceSets(
-                getGeneratedResFolders(), false /* no libraries resources */);
+                getGeneratedResFolders(), false /* no libraries resources */, false /*validate*/);
         resFoldersOnDisk.addAll(getAllFilters(
                 resourceSets,
                 DiscoverableFilterType.LANGUAGE.folderPrefix,
@@ -454,7 +454,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public List<String> discoverListOfResourceConfigsNotDensities() {
         List<String> resFoldersOnDisk = new ArrayList<String>();
         List<ResourceSet> resourceSets = variantConfiguration.getResourceSets(
-                getGeneratedResFolders(), false /* no libraries resources */);
+                getGeneratedResFolders(), false /* no libraries resources */, false /*validate*/);
         resFoldersOnDisk.addAll(getAllFilters(
                 resourceSets,
                 DiscoverableFilterType.LANGUAGE.folderPrefix));
