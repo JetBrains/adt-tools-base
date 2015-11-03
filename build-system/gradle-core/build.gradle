@@ -81,5 +81,3 @@ if (project.has("release")) {
     archives javadocJar
   }
 }
-
-tasks.publishLocal.dependsOn(project(":dataBinding").tasks.publishLocal)
