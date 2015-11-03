@@ -88,7 +88,6 @@ class JackTest {
 
     @Test
     void "check classes.dex is packaged"() {
-        basic.execute("clean", "assembleDebug");
         TruthHelper.assertThatApk(basic.getApk("debug")).contains("classes.dex");
     }
 
