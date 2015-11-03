@@ -40,6 +40,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 
@@ -85,6 +86,8 @@ public class TransformManager extends FilterableStreamCollection {
     private final AndroidTaskRegistry taskRegistry;
     @NonNull
     private final ErrorReporter errorReporter;
+    @NonNull
+    private final Logger logger;
 
     /**
      * These are the streams that are available for new Transforms to consume.
@@ -99,7 +102,7 @@ public class TransformManager extends FilterableStreamCollection {
      */
     @NonNull
     private final List<TransformStream> streams = Lists.newArrayList();
-
+    @NonNull
     private final List<Transform> transforms = Lists.newArrayList();
 
     public TransformManager(
@@ -107,6 +110,8 @@ public class TransformManager extends FilterableStreamCollection {
             @NonNull ErrorReporter errorReporter) {
         this.taskRegistry = taskRegistry;
         this.errorReporter = errorReporter;
+        this.logger = Logging.getLogger(TransformManager.class);
+
     }
 
     @NonNull
@@ -178,8 +183,8 @@ public class TransformManager extends FilterableStreamCollection {
             return null;
         }
 
-        if (DEBUG) {
-            Logger logger = Logging.getLogger(TransformManager.class);
+        //noinspection PointlessBooleanExpression
+        if (DEBUG && logger.isEnabled(LogLevel.DEBUG)) {
             logger.debug(
                     "ADDED TRANSFORM(" + scope.getVariantConfiguration().getFullName()
                             + "):");
