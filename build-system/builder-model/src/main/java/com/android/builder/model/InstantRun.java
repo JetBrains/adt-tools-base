@@ -37,4 +37,12 @@ public interface InstantRun {
 
     @NonNull
     File getReloadDexFile();
+
+    /**
+     * Return the last incremental build information, including success or failure, verifier
+     * reason for requesting a restart, etc...
+     * @return a file location, possibly not existing.
+     */
+    @NonNull
+    File getInfoFile();
 }

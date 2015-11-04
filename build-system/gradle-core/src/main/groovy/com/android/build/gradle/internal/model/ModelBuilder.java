@@ -421,7 +421,9 @@ public class ModelBuilder implements ToolingModelBuilder {
         InstantRunImpl instantRun = new InstantRunImpl(
                 InstantRunAnchorTaskConfigAction.getName(scope),
                 scope.getRestartDexOutputFolder(),
-                scope.getReloadDexOutputFolder());
+                scope.getReloadDexOutputFolder(),
+                // todo : move this to a shared location.
+                new File(scope.getReloadDexOutputFolder(), "reload.xml"));
 
         return new AndroidArtifactImpl(
                 name,
