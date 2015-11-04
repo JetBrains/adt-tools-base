@@ -82,6 +82,10 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         return resourceFile;
     }
 
+    public void setResourceFile(File resourceFile) {
+        this.resourceFile = resourceFile;
+    }
+
     @OutputFile
     public File getOutputFile() {
         return outputFile;
