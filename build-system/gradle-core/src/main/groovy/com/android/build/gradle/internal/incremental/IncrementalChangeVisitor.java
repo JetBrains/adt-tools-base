@@ -32,9 +32,8 @@ import org.objectweb.asm.tree.MethodNode;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 /**
  * Visitor for classes that have been changed since the initial push.
  *
@@ -888,7 +887,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      *   }
      * </code>
      */
-    private void addDispatchMethod() {
+    public void addDispatchMethod() {
         int access = Opcodes.ACC_PUBLIC | Opcodes.ACC_VARARGS;
         Method m = new Method("access$dispatch", "(Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;");
         MethodVisitor visitor = super.visitMethod(access,
@@ -896,7 +895,7 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 m.getDescriptor(),
                 null, null);
 
-        final GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
+        GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
 
         if (TRACING_ENABLED) {
             mv.push("Redirecting ");
@@ -904,70 +903,88 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             trace(mv, 2);
         }
 
-        List<MethodNode> allMethods = new ArrayList<MethodNode>();
+        List<MethodNode> methods = new ArrayList<MethodNode>();
 
         // if we are disabled, do not generate any dispatch, the method will throw an exception
         // if invoked which should never happen.
         if (!instantRunDisabled) {
             //noinspection unchecked
-            allMethods.addAll(classNode.methods);
-            allMethods.addAll(addedMethods);
+            methods.addAll(classNode.methods);
+            methods.addAll(addedMethods);
         }
 
-        final Map<String, MethodNode> methods = new HashMap<String, MethodNode>();
-        for (MethodNode methodNode : allMethods) {
+        for (MethodNode methodNode : methods) {
             if (methodNode.name.equals("<clinit>") || methodNode.name.equals("<init>")) {
                 continue;
             }
             if (!isAccessCompatibleWithInstantRun(methodNode.access)) {
                 continue;
             }
-            methods.put(methodNode.name + "." + methodNode.desc, methodNode);
+            String name = methodNode.name;
+            mv.visitVarInsn(Opcodes.ALOAD, 1);
+            mv.visitLdcInsn(name + "." + methodNode.desc);
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals",
+                    "(Ljava/lang/Object;)Z", false);
+            Label l0 = new Label();
+            mv.visitJumpInsn(Opcodes.IFEQ, l0);
+            boolean isStatic = (methodNode.access & Opcodes.ACC_STATIC) != 0;
+            String newDesc =
+                    computeOverrideMethodDesc(methodNode.desc, isStatic);
+
+            if (TRACING_ENABLED) {
+                trace(mv, "M: " + name + " P:" + newDesc);
+            }
+            Type[] args = Type.getArgumentTypes(newDesc);
+            int argc = 0;
+            for (Type t : args) {
+                mv.visitVarInsn(Opcodes.ALOAD, 2);
+                mv.push(argc);
+                mv.visitInsn(Opcodes.AALOAD);
+                mv.unbox(t);
+                argc++;
+            }
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override",
+                    isStatic ? computeOverrideMethodName(name, methodNode.desc) : name,
+                    newDesc, false);
+            Type ret = Type.getReturnType(methodNode.desc);
+            if (ret.getSort() == Type.VOID) {
+                mv.visitInsn(Opcodes.ACONST_NULL);
+            } else {
+                mv.box(ret);
+            }
+            mv.visitInsn(Opcodes.ARETURN);
+            mv.visitLabel(l0);
         }
+        // this is an exception, we cannot find the method to dispatch, the verifier should have
+        // flagged this and refused the hotswaping, generate an exception.
+        // we could not find the method to invoke, prepare an exception to be thrown.
+        mv.newInstance(Type.getType(StringBuilder.class));
+        mv.dup();
+        mv.invokeConstructor(Type.getType(StringBuilder.class), Method.getMethod("void <init>()V"));
 
-        new StringSwitch() {
-            @Override
-            void visitString() {
-                mv.visitVarInsn(Opcodes.ALOAD, 1);
-            }
+        // TODO: have a common exception generation function.
+        // create a meaningful message
+        mv.push("Method not found ");
+        mv.invokeVirtual(Type.getType(StringBuilder.class),
+                Method.getMethod("StringBuilder append (String)"));
+        mv.visitVarInsn(Opcodes.ALOAD, 1);
+        mv.invokeVirtual(Type.getType(StringBuilder.class),
+                Method.getMethod("StringBuilder append (String)"));
+        mv.push(" in " + visitedClassName + "$dispatch implementation, restart the application");
+        mv.invokeVirtual(Type.getType(StringBuilder.class),
+                Method.getMethod("StringBuilder append (String)"));
 
-            @Override
-            void visitCase(String methodName) {
-                MethodNode methodNode = methods.get(methodName);
-                String name = methodNode.name;
-                boolean isStatic = (methodNode.access & Opcodes.ACC_STATIC) != 0;
-                String newDesc =
-                        computeOverrideMethodDesc(methodNode.desc, isStatic);
+        mv.invokeVirtual(Type.getType(StringBuilder.class),
+                Method.getMethod("String toString()"));
 
-                if (TRACING_ENABLED) {
-                    trace(mv, "M: " + name + " P:" + newDesc);
-                }
-                Type[] args = Type.getArgumentTypes(newDesc);
-                int argc = 0;
-                for (Type t : args) {
-                    mv.visitVarInsn(Opcodes.ALOAD, 2);
-                    mv.push(argc);
-                    mv.visitInsn(Opcodes.AALOAD);
-                    mv.unbox(t);
-                    argc++;
-                }
-                mv.visitMethodInsn(Opcodes.INVOKESTATIC, visitedClassName + "$override",
-                        isStatic ? computeOverrideMethodName(name, methodNode.desc) : name,
-                        newDesc, false);
-                Type ret = Type.getReturnType(methodNode.desc);
-                if (ret.getSort() == Type.VOID) {
-                    mv.visitInsn(Opcodes.ACONST_NULL);
-                } else {
-                    mv.box(ret);
-                }
-                mv.visitInsn(Opcodes.ARETURN);
-            }
-
-            @Override
-            void visitDefault() {
-                writeMissingMessageWithHash(mv, visitedClassName);
-            }
-        }.visit(mv, methods.keySet());
+        // create the exception with the message
+        mv.newInstance(INSTANT_RELOAD_EXCEPTION);
+        mv.dupX1();
+        mv.swap();
+        mv.invokeConstructor(INSTANT_RELOAD_EXCEPTION,
+                Method.getMethod("void <init> (String)"));
+        // and throw.
+        mv.throwException();
 
         mv.visitMaxs(0, 0);
         mv.visitEnd();
