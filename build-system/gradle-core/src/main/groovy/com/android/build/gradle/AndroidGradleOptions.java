@@ -89,6 +89,11 @@ public class AndroidGradleOptions {
         return getString(project, AndroidProject.PROPERTY_APK_LOCATION);
     }
 
+    @Nullable
+    public static String getBuildTargetDensity(@NonNull Project project) {
+        return getString(project, AndroidProject.PROPERTY_BUILD_DENSITY);
+    }
+
     public static boolean isIntegrationTest() {
         return Boolean.parseBoolean(System.getenv("INTEGRATION_TEST"));
     }

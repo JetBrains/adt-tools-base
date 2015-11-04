@@ -63,7 +63,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     private static final Pattern PATTERN_MAX_SDK_VERSION = Pattern.compile(
             "^maxSdkVersion\\W*:\\W*'(.+)'$");
 
-    static class Factory extends SubjectFactory<ApkSubject, File> {
+    public static class Factory extends SubjectFactory<ApkSubject, File> {
         @NonNull
         public static Factory get() {
             return new Factory();

@@ -17,6 +17,7 @@ package com.android.build.gradle.tasks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.LoggingUtil;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl;
@@ -310,9 +311,15 @@ public class ProcessAndroidResources extends IncrementalTask {
             ConventionMappingHelper.map(processResources, "preferredDensity",
                     new Callable<String>() {
                         @Override
+                        @Nullable
                         public String call() throws Exception {
-                            return variantOutputData.getMainOutputFile()
+                            String variantFilter = variantOutputData.getMainOutputFile()
                                     .getFilter(com.android.build.OutputFile.DENSITY);
+                            if (variantFilter != null) {
+                                return variantFilter;
+                            }
+                            return AndroidGradleOptions.getBuildTargetDensity(
+                                    scope.getGlobalScope().getProject());
                         }
                     });
 

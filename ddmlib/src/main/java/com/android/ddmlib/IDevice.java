@@ -44,6 +44,7 @@ public interface IDevice extends IShellEnabledDevice {
     String PROP_DEVICE_CPU_ABI2 = "ro.product.cpu.abi2";
     String PROP_BUILD_CHARACTERISTICS = "ro.build.characteristics";
     String PROP_DEVICE_DENSITY = "ro.sf.lcd_density";
+    String PROP_DEVICE_EMULATOR_DENSITY = "qemu.sf.lcd_density";
     String PROP_DEVICE_LANGUAGE = "persist.sys.language";
     String PROP_DEVICE_REGION = "persist.sys.country";
 

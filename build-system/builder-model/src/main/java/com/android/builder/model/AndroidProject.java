@@ -35,6 +35,7 @@ public interface AndroidProject {
     // Sent by Studio 1.5+
     String PROPERTY_BUILD_API = "android.injected.build.api";
     String PROPERTY_BUILD_ARCH = "android.injected.build.arch";
+    String PROPERTY_BUILD_DENSITY = "android.injected.build.density";
 
     String PROPERTY_INVOKED_FROM_IDE = "android.injected.invoked.from.ide";
 
