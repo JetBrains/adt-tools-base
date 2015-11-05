@@ -261,7 +261,7 @@ public class ApplicationTaskManager extends TaskManager {
     @Override
     protected void createIncrementalSupportTasks(TaskFactory tasks, VariantScope variantScope) {
 
-        if (getIncrementalMode(variantScope) != IncrementalMode.NONE) {
+        if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
 
             TransformManager transformManager = variantScope.getTransformManager();
 
