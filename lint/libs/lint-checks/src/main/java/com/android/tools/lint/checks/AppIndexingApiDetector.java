@@ -207,7 +207,11 @@ public class AppIndexingApiDetector extends Detector
         if (!applicationHasActionView) {
             // Report warning if there is no activity that supports action view.
             context.report(ISSUE_APP_INDEXING, application, context.getLocation(application),
-                    "Application should have at least one Activity supporting ACTION_VIEW");
+                           // This error message is more verbose than the other app indexing lint warnings, because it
+                           // shows up on a blank project, and we want to make it obvious by just looking at the error
+                           // message what this is
+                           "App is not indexable by Google Search; consider adding at least one Activity with an ACTION-VIEW " +
+                           "intent-filler. See issue explanation for more details.");
         }
     }
 
