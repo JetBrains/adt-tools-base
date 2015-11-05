@@ -16,6 +16,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="library" exported="" name="proguard-gradle" level="project" />
+    <orderEntry type="module" module-name="compilerCommon-base" exported="" />
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
