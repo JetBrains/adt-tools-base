@@ -385,6 +385,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      * Densities used when generating PNGs from vector drawables at build time. For the PNGs to be
      * generated, minimum SDK has to be below 21.
      *
+     * <p>If set to an empty collection, all special handling of vector drawables will be
+     * disabled.
+     *
      * <p>See <a href="http://developer.android.com/guide/practices/screens_support.html">Supporting Multiple Screens</a>.
      */
     @Nullable
