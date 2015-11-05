@@ -102,4 +102,24 @@ public class ParcelDetectorTest extends AbstractCheckTest {
                                 + "}")
                 ));
     }
+
+    @SuppressWarnings("ClassNameDiffersFromFileName")
+    public void testSpans() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=192841
+        assertEquals("No warnings.",
+
+                lintProject(
+                        java("src/test/pkg/TestSpan.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.text.TextPaint;\n"
+                                + "import android.text.style.URLSpan;\n"
+                                + "\n"
+                                + "public class TestSpan extends URLSpan {\n"
+                                + "    public TestSpan(String url) {\n"
+                                + "        super(url);\n"
+                                + "    }\n"
+                                + "}")
+                ));
+    }
 }
