@@ -17,9 +17,11 @@
 package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.VisibleForTesting;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -74,7 +76,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
 
     // todo : find a better way to specify logging and append to a log file.
     private static final boolean DEBUG = false;
-    private static final String OVERRIDE_SUFFIX = "$override";
+
+    @VisibleForTesting
+    public static final String OVERRIDE_SUFFIX = "$override";
 
     private static final String METHOD_MANGLE_PREFIX = "static$";
 
@@ -206,6 +210,14 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
             MethodVisitor original = super.visitMethod(access, newName, newDesc, signature, exceptions);
             return new ISVisitor(original, access, newName, newDesc, isStatic, false /* isConstructor */);
         }
+    }
+
+    @Override
+    public FieldVisitor visitField(int access, String name, String desc, String signature,
+            Object value) {
+        // do not add any of the original class fields in the $override class, they would never
+        // be used and confuse the debugger.
+        return null;
     }
 
     public class ISVisitor extends GeneratorAdapter {
