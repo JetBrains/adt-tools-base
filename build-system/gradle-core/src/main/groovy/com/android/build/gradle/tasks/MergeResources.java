@@ -37,6 +37,7 @@ import com.android.ide.common.res2.FileValidity;
 import com.android.ide.common.res2.GeneratedResourceSet;
 import com.android.ide.common.res2.MergedResourceWriter;
 import com.android.ide.common.res2.MergingException;
+import com.android.ide.common.res2.NoOpResourcePreprocessor;
 import com.android.ide.common.res2.ResourceMerger;
 import com.android.ide.common.res2.ResourcePreprocessor;
 import com.android.ide.common.res2.ResourceSet;
@@ -247,12 +248,18 @@ public class MergeResources extends IncrementalTask {
         }
     }
 
-    @NonNull
+    @Nullable
     private ResourcePreprocessor getPreprocessor() {
         // Only one pre-processor for now. The code will need slight changes when we add more.
+        Collection<String> generatedDensitiesNames = getGeneratedDensities();
+
+        if (generatedDensitiesNames.isEmpty()) {
+            // If the user doesn't want any PNGs, leave the XML file alone as well.
+            return new NoOpResourcePreprocessor();
+        }
 
         Collection<Density> densities = Lists.newArrayList();
-        for (String density : getGeneratedDensities()) {
+        for (String density : generatedDensitiesNames) {
             densities.add(Density.getEnum(density));
         }
 
@@ -351,6 +358,7 @@ public class MergeResources extends IncrementalTask {
         this.generatedPngsOutputDir = generatedPngsOutputDir;
     }
 
+    @Input
     public Collection<String> getGeneratedDensities() {
         return generatedDensities;
     }
