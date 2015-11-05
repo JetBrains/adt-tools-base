@@ -1363,53 +1363,11 @@ public abstract class TaskManager {
     /**
      * Create InstantRun related tasks that should be ran right after the java compilation task.
      */
-    @Nullable
     protected void createIncrementalSupportTasks(TaskFactory tasks, VariantScope variantScope) {
-
-        if (getIncrementalMode(variantScope) != IncrementalMode.NONE) {
-
-            TransformManager transformManager = variantScope.getTransformManager();
-
-            // always run the verifier first, since if it detects incompatible changes, we
-            // should skip bytecode enhancements of the changed classes.
-            InstantRunVerifierTransform verifierTransform =
-                    new InstantRunVerifierTransform(variantScope);
-            AndroidTask<TransformTask> verifierTask = transformManager
-                    .addTransform(tasks, variantScope, verifierTransform);
-
-            InstantRunTransform instantRunTransform = new InstantRunTransform(globalScope);
-            AndroidTask<TransformTask> instantRunTask = transformManager
-                    .addTransform(tasks, variantScope, instantRunTransform);
-            instantRunTask.dependsOn(tasks, verifierTask);
-
-            AndroidTask<FastDeployRuntimeExtractorTask> extractorTask = androidTasks.create(
-                    tasks, new FastDeployRuntimeExtractorTask.ConfigAction(variantScope));
-
-            // also add a new stream for the extractor task output.
-            variantScope.getTransformManager().addStream(OriginalStream.builder()
-                    .addContentTypes(TransformManager.CONTENT_CLASS)
-                    .addScope(Scope.EXTERNAL_LIBRARIES)
-                    .setJar(variantScope.getIncrementalRuntimeSupportJar())
-                    .setDependency(extractorTask.get(tasks))
-                    .build());
-
-            // create the AppInfo.class for this variant.
-            GenerateInstantRunAppInfoTask generateInstantRunAppInfoTask
-                    = androidTasks.create(tasks, new GenerateInstantRunAppInfoTask.ConfigAction(
-                            variantScope)).get(tasks);
-
-            // also add a new stream for the injector task output.
-            variantScope.getTransformManager().addStream(OriginalStream.builder()
-                    .addContentTypes(TransformManager.CONTENT_CLASS)
-                    .addScope(Scope.EXTERNAL_LIBRARIES)
-                    .setJar(generateInstantRunAppInfoTask.getOutputFile())
-                    .setDependency(generateInstantRunAppInfoTask)
-                    .build());
-
-        }
+        // by default, do not run incremental tasks.
     }
 
-    enum IncrementalMode {
+    protected enum IncrementalMode {
         NONE, FULL, LOCAL_JAVA_ONLY, LOCAL_RES_ONLY;
     }
 
@@ -1997,6 +1955,8 @@ public abstract class TaskManager {
                 task.dependsOn(tasks, deps);
             }
         }
+
+        createIncrementalSupportTasks(tasks, variantScope);
 
         // ----- Minify next -----
 
