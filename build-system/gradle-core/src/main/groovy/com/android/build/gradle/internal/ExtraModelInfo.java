@@ -39,7 +39,10 @@ import com.android.builder.model.SyncIssue;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.MessageJsonSerializer;
 import com.android.ide.common.blame.SourceFilePosition;
+import com.android.utils.SdkUtils;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
@@ -51,6 +54,7 @@ import org.gradle.api.artifacts.Configuration;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -155,9 +159,10 @@ public class ExtraModelInfo extends ErrorReporter {
     public void receiveMessage(@NonNull Message message) {
         StringBuilder errorStringBuilder = new StringBuilder();
         if (errorFormatMode == ErrorFormatMode.HUMAN_READABLE) {
-            for (SourceFilePosition pos : message.getSourceFilePositions()) {
-                errorStringBuilder.append(pos.toString());
-                errorStringBuilder.append(' ');
+            List<SourceFilePosition> positions = message.getSourceFilePositions();
+            if (positions.size() != 1 ||
+                    !SourceFilePosition.UNKNOWN.equals(Iterables.getOnlyElement(positions))) {
+                errorStringBuilder.append(Joiner.on(' ').join(positions));
             }
             if (errorStringBuilder.length() > 0) {
                 errorStringBuilder.append(": ");
@@ -165,7 +170,15 @@ public class ExtraModelInfo extends ErrorReporter {
             if (message.getToolName().isPresent()) {
                 errorStringBuilder.append(message.getToolName().get()).append(": ");
             }
-            errorStringBuilder.append(message.getText()).append("\n");
+            errorStringBuilder.append(message.getText());
+
+            String rawMessage = message.getRawMessage();
+            if (!message.getText().equals(message.getRawMessage())) {
+                String separator = SdkUtils.getLineSeparator();
+                errorStringBuilder.append("\n    ")
+                        .append(rawMessage.replace(separator, separator + "    "));
+            }
+            errorStringBuilder.append("\n");
 
         } else {
             //noinspection ConstantConditions mGson != null when errorFormatMode == MACHINE_PARSABLE
