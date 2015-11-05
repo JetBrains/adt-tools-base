@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.internal.pipeline;
 
-import com.android.build.transform.api.QualifiedContent.ContentType;
-import com.android.build.transform.api.QualifiedContent.DefaultContentType;
+import com.android.build.api.transform.QualifiedContent.ContentType;
+import com.android.build.api.transform.QualifiedContent.DefaultContentType;
 import com.google.common.collect.ImmutableSet;
 
 

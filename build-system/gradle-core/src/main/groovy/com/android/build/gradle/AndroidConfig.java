@@ -30,7 +30,7 @@ import com.android.build.gradle.internal.dsl.LintOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.dsl.TestOptions;
-import com.android.build.transform.api.Transform;
+import com.android.build.api.transform.Transform;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.SigningConfig;

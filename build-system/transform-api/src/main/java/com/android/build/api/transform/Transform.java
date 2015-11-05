@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.build.transform.api;
+package com.android.build.api.transform;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.transform.api.QualifiedContent.ContentType;
-import com.android.build.transform.api.QualifiedContent.Scope;
+import com.android.build.api.transform.QualifiedContent.ContentType;
+import com.android.build.api.transform.QualifiedContent.Scope;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;

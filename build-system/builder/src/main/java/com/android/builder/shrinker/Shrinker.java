@@ -22,12 +22,12 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.transform.api.DirectoryInput;
-import com.android.build.transform.api.Format;
-import com.android.build.transform.api.JarInput;
-import com.android.build.transform.api.Status;
-import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutputProvider;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.Format;
+import com.android.build.api.transform.JarInput;
+import com.android.build.api.transform.Status;
+import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformOutputProvider;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.utils.FileUtils;

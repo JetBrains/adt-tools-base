@@ -14,28 +14,33 @@
  * limitations under the License.
  */
 
-package com.android.build.transform.api;
+package com.android.build.api.transform;
 
+import com.android.annotations.NonNull;
 import com.google.common.annotations.Beta;
 
+import java.util.Collection;
+
 /**
- * The format in which content is stored.
+ * The input to a Transform.
+ * <p/>
+ * It is mostly composed of a list of {@link JarInput} and a list of {@link DirectoryInput}.
  * <p/>
  * <strong>This API is non final and is subject to change. We are looking for feedback, and will
  * attempt to stabilize it in the 1.6 time frame.</strong>
  */
 @Beta
-public enum Format {
+public interface TransformInput {
 
     /**
-     * The content is a jar.
+     * Returns a collection of {@link JarInput}.
      */
-    JAR,
+    @NonNull
+    Collection<JarInput> getJarInputs();
+
     /**
-     * The content is a directory.
-     * <p/>
-     * This means that in the case of java class files, the files should be in directories
-     * matching their package names, directly under the root directory.
+     * Returns a collection of {@link DirectoryInput}.
      */
-    DIRECTORY
+    @NonNull
+    Collection<DirectoryInput> getDirectoryInputs();
 }
