@@ -84,26 +84,16 @@ import java.util.Set;
 public class DependencyManager {
     protected static final boolean DEBUG_DEPENDENCY = false;
 
-    @NonNull
-    private final Project project;
-    @NonNull
-    private final ExtraModelInfo extraModelInfo;
-    @NonNull
-    private final ILogger logger;
+    private Project project;
+    private ExtraModelInfo extraModelInfo;
+    private ILogger logger;
 
     final Map<LibraryDependencyImpl, PrepareLibraryTask> prepareTaskMap = Maps.newHashMap();
 
-    public DependencyManager(
-            @NonNull Project project,
-            @NonNull ExtraModelInfo extraModelInfo) {
+    public DependencyManager(Project project, ExtraModelInfo extraModelInfo) {
         this.project = project;
         this.extraModelInfo = extraModelInfo;
         logger = new LoggerWrapper(Logging.getLogger(DependencyManager.class));
-    }
-
-    @NonNull
-    public ExtraModelInfo getExtraModelInfo() {
-        return extraModelInfo;
     }
 
     /**

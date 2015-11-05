@@ -471,7 +471,8 @@ public abstract class BasePlugin {
                 androidBuilder,
                 extension,
                 variantFactory,
-                taskManager);
+                taskManager,
+                instantiator);
 
         ndkHandler = new NdkHandler(
                 project.getRootDir(),

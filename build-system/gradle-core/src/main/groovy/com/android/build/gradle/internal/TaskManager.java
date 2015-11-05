@@ -297,11 +297,6 @@ public abstract class TaskManager {
         return globalScope;
     }
 
-    @NonNull
-    public DependencyManager getDependencyManager() {
-        return dependencyManager;
-    }
-
     /**
      * Returns a collection of buildables that creates native object.
      *
@@ -438,7 +433,7 @@ public abstract class TaskManager {
                 })
                 .build());
 
-        IncrementalMode incrementalMode = getIncrementalMode(variantScope);
+        IncrementalMode incrementalMode = getIncrementalMode(config);
         boolean skipDependency = incrementalMode == IncrementalMode.LOCAL_JAVA_ONLY ||
                 incrementalMode == IncrementalMode.LOCAL_RES_ONLY;
         ImmutableList<Object> dependencies = skipDependency ?
@@ -665,7 +660,7 @@ public abstract class TaskManager {
                         includeDependencies,
                         process9Patch));
 
-        if (getIncrementalMode(scope) != IncrementalMode.LOCAL_RES_ONLY) {
+        if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.LOCAL_RES_ONLY) {
             mergeResourcesTask.dependsOn(tasks,
                     scope.getVariantData().prepareDependenciesTask,
                     scope.getResourceGenTask());
@@ -812,7 +807,7 @@ public abstract class TaskManager {
             variantOutputScope.getProcessResourcesTask().dependsOn(tasks,
                     scope.getMergeResourcesTask());
 
-            if (getIncrementalMode(scope) != IncrementalMode.LOCAL_RES_ONLY) {
+            if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.LOCAL_RES_ONLY) {
                 variantOutputScope.getProcessResourcesTask().dependsOn(tasks,
                         variantOutputScope.getManifestProcessorTask(),
                         scope.getMergeAssetsTask());
@@ -1083,7 +1078,7 @@ public abstract class TaskManager {
                 new JavaCompileConfigAction(scope));
         scope.setJavacTask(javacTask);
 
-        IncrementalMode incrementalMode = getIncrementalMode(scope);
+        IncrementalMode incrementalMode = getIncrementalMode(scope.getVariantConfiguration());
 
         if (incrementalMode == IncrementalMode.LOCAL_RES_ONLY) {
             // in this case only depend on the R class. We want to ignore the other
@@ -1372,14 +1367,11 @@ public abstract class TaskManager {
     }
 
     /**
-     * Returns the incremental mode for a given variant.
-     * @param variantScope the variant's scope
+     * Returns the incremental mode for this variant.
+     * @param config the variant's configuration
      * @return the {@link IncrementalMode} for this variant.
      */
-    static IncrementalMode getIncrementalMode(
-            @NonNull VariantScope variantScope) {
-        GradleVariantConfiguration config = variantScope.getVariantConfiguration();
-        GlobalScope globalScope = variantScope.getGlobalScope();
+    protected IncrementalMode getIncrementalMode(@NonNull GradleVariantConfiguration config) {
         if (config.getBuildType().isDebuggable()
                 && !config.getBuildType().isMinifyEnabled()
                 && !config.getType().isForTesting()
@@ -1989,7 +1981,7 @@ public abstract class TaskManager {
             }
 
             // ----------
-            // Create a task to collect the list of manifest entry points which arex
+            // Create a task to collect the list of manifest entry points which are
             // needed in the primary dex
             AndroidTask<CreateManifestKeepList> manifestKeepListTask = androidTasks.create(tasks,
                     new CreateManifestKeepList.ConfigAction(variantScope));
@@ -2032,7 +2024,7 @@ public abstract class TaskManager {
     public void createIncrementalPostCompilationTasks(
             TaskFactory tasks, @NonNull final VariantScope scope) {
 
-        if (getIncrementalMode(scope) != IncrementalMode.NONE) {
+        if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.NONE) {
 
             DexOptions dexOptions = scope.getGlobalScope().getExtension().getDexOptions();
             InstantRunDex classesTwoTransform = new InstantRunDex(
@@ -2160,21 +2152,17 @@ public abstract class TaskManager {
     /**
      * Creates the final packaging task, and optionally the zipalign task (if the variant is signed)
      *
-     * @param tasks the task factory
-     * @param variantScope the variant scope for which to create the tasks.
      * @param publishApk if true the generated APK gets published.
      */
-    public void createPackagingTask(
-            @NonNull TaskFactory tasks,
-            @NonNull VariantScope variantScope,
+    public void createPackagingTask(@NonNull TaskFactory tasks, @NonNull VariantScope variantScope,
             boolean publishApk) {
         final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
+        GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
         boolean signedApk = variantData.isSigned();
         File apkLocation = new File(variantScope.getGlobalScope().getApkLocation());
 
         boolean multiOutput = variantData.getOutputs().size() > 1;
-        IncrementalMode incrementalMode = getIncrementalMode(variantScope);
 
         // loop on all outputs. The only difference will be the name of the task, and location
         // of the generated data.
@@ -2349,7 +2337,7 @@ public abstract class TaskManager {
             }
 
             // modify the manifest file and generate the new AppInfo.
-            if (incrementalMode != IncrementalMode.NONE) {
+            if (getIncrementalMode(config) != IncrementalMode.NONE) {
                 AndroidTask<InjectBootstrapApplicationTask> rewriteTask = androidTasks.create(
                         tasks, new InjectBootstrapApplicationTask.ConfigAction(variantOutputScope));
                 rewriteTask.dependsOn(tasks, variantOutputScope.getManifestProcessorTask());
@@ -2368,7 +2356,7 @@ public abstract class TaskManager {
         }
 
         if (getExtension().getLintOptions().isCheckReleaseBuilds()
-                && incrementalMode == IncrementalMode.NONE) {
+                && getIncrementalMode(variantScope.getVariantConfiguration()) == IncrementalMode.NONE) {
             createLintVitalTask(variantData);
         }
 
