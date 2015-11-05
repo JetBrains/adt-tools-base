@@ -111,9 +111,6 @@ if (project.has("release")) {
     }
 }
 
-tasks.publishLocal.dependsOn(project(":dataBinding").tasks.publishLocal)
-
-
 // Incremental update test support
 
 Task compileIncrementalTestBaseClasses = tasks.create(
