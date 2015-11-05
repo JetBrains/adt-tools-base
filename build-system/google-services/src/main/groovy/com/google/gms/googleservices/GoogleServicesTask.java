@@ -73,11 +73,8 @@ public class GoogleServicesTask extends DefaultTask {
     public void action() throws IOException {
         checkVersionConflict();
         if (!quickstartFile.isFile()) {
-            getLogger().warn("File " + quickstartFile.getName() + " is missing from module root folder." +
+            throw new GradleException("File " + quickstartFile.getName() + " is missing from module root folder." +
                     " The Google Services Plugin cannot function without it.");
-
-            // Skip the rest of the actions because it would not make sense if `quickstartFile` is missing.
-            return;
         }
 
         // delete content of outputdir.
@@ -97,7 +94,7 @@ public class GoogleServicesTask extends DefaultTask {
         Map<String, String> resValues = new TreeMap<String, String>();
         Map<String, Map<String, String>> resAttributes = new TreeMap<String, Map<String, String>>();
 
-        handleProjectNumber(rootObject, resValues);
+        handleProjectNumber(rootObject, resValues, resAttributes);
 
         JsonObject clientObject = getClientForPackageName(rootObject);
 
@@ -144,14 +141,17 @@ public class GoogleServicesTask extends DefaultTask {
                 if (dependency.getGroup().equals(moduleGroup)
                         && !dependency.getVersion().equals(moduleVersion)) {
                     hasConflict = true;
-                    project.getLogger().warn("Found " + dependency.getGroup() + ":"
-                            + dependency.getName() + ":" + dependency.getVersion() +
-                            ", but version " + moduleVersion + " is needed");
+                    project.getLogger().warn("Found " + dependency.getGroup() + ":" +
+                        dependency.getName() + ":" + dependency.getVersion() + ", but version " +
+                        moduleVersion + " is needed for the google-services plugin.");
                 }
             }
         }
         if (hasConflict) {
-            throw new GradleException("Please fix the version conflict.");
+            throw new GradleException("Please fix the version conflict either by updating the version " +
+                "of the google-services plugin (information about the latest version is available at " +
+                "https://bintray.com/android/android-tools/com.google.gms.google-services/) or updating " +
+                "the version of " + moduleGroup + " to " + moduleVersion + ".");
         }
     }
 
@@ -160,7 +160,8 @@ public class GoogleServicesTask extends DefaultTask {
      * @param rootObject the root Json object.
      * @throws IOException
      */
-    private void handleProjectNumber(JsonObject rootObject, Map<String, String> resValues)
+    private void handleProjectNumber(JsonObject rootObject, Map<String, String> resValues,
+        Map<String, Map<String, String>> resAttributes)
             throws IOException {
         JsonObject projectInfo = rootObject.getAsJsonObject("project_info");
         if (projectInfo == null) {
@@ -173,6 +174,9 @@ public class GoogleServicesTask extends DefaultTask {
         }
 
         resValues.put("gcm_defaultSenderId", projectNumber.getAsString());
+        Map<String, String> attributes = new TreeMap<String, String>();
+        attributes.put("translatable", "false");
+        resAttributes.put("gcm_defaultSenderId", attributes);
     }
 
     /**
