@@ -13,6 +13,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.util.List;
 
@@ -517,10 +518,33 @@ public class Server {
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                     Log.i(LOG_TAG, "Restarting activity only!");
                 }
-                if (toast) {
-                    Restarter.showToast(activity, "Applied changes, restarted activity");
+
+                boolean handledRestart = false;
+                try {
+                    // Allow methods to handle their own restart by implementing
+                    //     public boolean onHandleCodeChange(long flags) { .... }
+                    // and returning true if the change was handled manually
+                    Method method = activity.getClass().getMethod("onHandleCodeChange", Long.TYPE);
+                    Object result = method.invoke(activity, 0L);
+                    if (Log.isLoggable(LOG_TAG, Log.INFO)) {
+                        Log.i(LOG_TAG, "Activity " + activity
+                                + " provided manual restart method; return " + result);
+                    }
+                    if (Boolean.TRUE.equals(result)) {
+                        handledRestart = true;
+                        if (toast) {
+                            Restarter.showToast(activity, "Applied changes");
+                        }
+                    }
+                } catch (Throwable ignore) {
                 }
-                Restarter.restartActivityOnUiThread(activity);
+
+                if (!handledRestart) {
+                    if (toast) {
+                        Restarter.showToast(activity, "Applied changes, restarted activity");
+                    }
+                    Restarter.restartActivityOnUiThread(activity);
+                }
                 return;
             }
 
