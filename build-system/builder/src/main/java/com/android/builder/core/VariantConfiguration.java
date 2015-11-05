@@ -1163,7 +1163,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     @NonNull
     public List<ResourceSet> getResourceSets(@NonNull List<File> generatedResFolders,
-                                             boolean includeDependencies) {
+                                             boolean includeDependencies,
+                                             boolean validateEnabled) {
         List<ResourceSet> resourceSets = Lists.newArrayList();
 
         // the list of dependency must be reversed to use the right overlay order.
@@ -1173,7 +1174,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
                 if (!dependency.isOptional()) {
                     File resFolder = dependency.getResFolder();
                     if (resFolder.isDirectory()) {
-                        ResourceSet resourceSet = new ResourceSet(dependency.getFolder().getName());
+                        ResourceSet resourceSet =
+                                new ResourceSet(dependency.getFolder().getName(), validateEnabled);
                         resourceSet.addSource(resFolder);
                         resourceSets.add(resourceSet);
                     }
@@ -1184,7 +1186,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         Collection<File> mainResDirs = mDefaultSourceProvider.getResDirectories();
 
         // the main + generated res folders are in the same ResourceSet
-        ResourceSet resourceSet = new ResourceSet(BuilderConstants.MAIN);
+        ResourceSet resourceSet = new ResourceSet(BuilderConstants.MAIN, validateEnabled);
         resourceSet.addSources(mainResDirs);
         if (!generatedResFolders.isEmpty()) {
             for (File generatedResFolder : generatedResFolders) {
@@ -1201,7 +1203,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             Collection<File> flavorResDirs = sourceProvider.getResDirectories();
             // we need the same of the flavor config, but it's in a different list.
             // This is fine as both list are parallel collections with the same number of items.
-            resourceSet = new ResourceSet(sourceProvider.getName());
+            resourceSet = new ResourceSet(sourceProvider.getName(), validateEnabled);
             resourceSet.addSources(flavorResDirs);
             resourceSets.add(resourceSet);
         }
@@ -1209,7 +1211,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         // multiflavor specific overrides flavor
         if (mMultiFlavorSourceProvider != null) {
             Collection<File> variantResDirs = mMultiFlavorSourceProvider.getResDirectories();
-            resourceSet = new ResourceSet(getFlavorName());
+            resourceSet = new ResourceSet(getFlavorName(), validateEnabled);
             resourceSet.addSources(variantResDirs);
             resourceSets.add(resourceSet);
         }
@@ -1217,7 +1219,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         // build type overrides the flavors
         if (mBuildTypeSourceProvider != null) {
             Collection<File> typeResDirs = mBuildTypeSourceProvider.getResDirectories();
-            resourceSet = new ResourceSet(mBuildType.getName());
+            resourceSet = new ResourceSet(mBuildType.getName(), validateEnabled);
             resourceSet.addSources(typeResDirs);
             resourceSets.add(resourceSet);
         }
@@ -1225,7 +1227,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         // variant specific overrides all
         if (mVariantSourceProvider != null) {
             Collection<File> variantResDirs = mVariantSourceProvider.getResDirectories();
-            resourceSet = new ResourceSet(getFullName());
+            resourceSet = new ResourceSet(getFullName(), validateEnabled);
             resourceSet.addSources(variantResDirs);
             resourceSets.add(resourceSet);
         }
