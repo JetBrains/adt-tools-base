@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.truth.ZipFileSubject
-import com.android.build.transform.api.QualifiedContent
 import com.android.builder.model.AndroidProject
 import com.google.common.collect.Sets
 import groovy.transform.CompileDynamic

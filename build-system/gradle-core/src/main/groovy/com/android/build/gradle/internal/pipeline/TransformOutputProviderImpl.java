@@ -17,9 +17,9 @@
 package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
-import com.android.build.transform.api.Format;
-import com.android.build.transform.api.QualifiedContent;
-import com.android.build.transform.api.TransformOutputProvider;
+import com.android.build.api.transform.Format;
+import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.TransformOutputProvider;
 import com.android.utils.FileUtils;
 
 import java.io.File;

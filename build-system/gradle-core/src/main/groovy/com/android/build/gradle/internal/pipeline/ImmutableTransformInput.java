@@ -18,9 +18,9 @@ package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.transform.api.DirectoryInput;
-import com.android.build.transform.api.JarInput;
-import com.android.build.transform.api.TransformInput;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.JarInput;
+import com.android.build.api.transform.TransformInput;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 

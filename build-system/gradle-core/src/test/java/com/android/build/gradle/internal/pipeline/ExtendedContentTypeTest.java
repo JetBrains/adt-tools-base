@@ -18,8 +18,8 @@ package com.android.build.gradle.internal.pipeline;
 
 import static org.junit.Assert.fail;
 
-import com.android.build.transform.api.QualifiedContent.ContentType;
-import com.android.build.transform.api.QualifiedContent.DefaultContentType;
+import com.android.build.api.transform.QualifiedContent.ContentType;
+import com.android.build.api.transform.QualifiedContent.DefaultContentType;
 
 import org.junit.Test;
 

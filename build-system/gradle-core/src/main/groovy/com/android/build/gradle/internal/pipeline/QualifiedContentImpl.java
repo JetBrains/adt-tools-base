@@ -18,7 +18,7 @@ package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
-import com.android.build.transform.api.QualifiedContent;
+import com.android.build.api.transform.QualifiedContent;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 
