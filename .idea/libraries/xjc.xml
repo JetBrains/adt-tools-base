@@ -1,0 +1,32 @@
+<component name="libraryTable">
+  <library name="xjc">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/sun/istack/istack-commons-runtime/2.21/istack-commons-runtime-2.21.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/sun/xml/bind/external/rngom/2.2.11/rngom-2.2.11.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/sun/istack/istack-commons-tools/2.21/istack-commons-tools-2.21.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/sun/xml/dtd-parser/dtd-parser/1.1/dtd-parser-1.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/sun/xsom/xsom/20140925/xsom-20140925.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/javax/xml/bind/jaxb-api/2.2.12-b140109.1041/jaxb-api-2.2.12-b140109.1041.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/glassfish/jaxb/codemodel/2.2.11/codemodel-2.2.11.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/glassfish/jaxb/jaxb-core/2.2.11/jaxb-core-2.2.11.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/glassfish/jaxb/jaxb-xjc/2.2.11/jaxb-xjc-2.2.11.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/glassfish/jaxb/txw2/2.2.11/txw2-2.2.11.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/relaxngDatatype/relaxngDatatype/20020414/relaxngDatatype-20020414.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/sun/istack/istack-commons-tools/2.21/istack-commons-tools-2.21-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/sun/istack/istack-commons-runtime/2.21/istack-commons-runtime-2.21-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/sun/xml/bind/external/rngom/2.2.11/rngom-2.2.11-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/sun/xml/dtd-parser/dtd-parser/1.1/dtd-parser-1.1-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/sun/xsom/xsom/20140925/xsom-20140925-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/javax/xml/bind/jaxb-api/2.2.12-b140109.1041/jaxb-api-2.2.12-b140109.1041-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/glassfish/jaxb/codemodel/2.2.11/codemodel-2.2.11-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/glassfish/jaxb/jaxb-core/2.2.11/jaxb-core-2.2.11-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/glassfish/jaxb/jaxb-xjc/2.2.11/jaxb-xjc-2.2.11-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/glassfish/jaxb/jaxb-xjc/2.2.11/jaxb-xjc-2.2.11.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/glassfish/jaxb/txw2/2.2.11/txw2-2.2.11-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/relaxngDatatype/relaxngDatatype/20020414/relaxngDatatype-20020414-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
