@@ -38,8 +38,6 @@ import java.util.List;
  */
 public class StlConfiguration {
 
-    private static final String DEFAULT_STL = "system";
-
     private static final List<String> VALID_STL = ImmutableList.of(
             "system",
             "stlport_static",
