@@ -88,7 +88,9 @@ public class ScreenSizeQualifier extends EnumBasedResourceQualifier {
     @Override
     public boolean isBetterMatchThan(ResourceQualifier compareTo, ResourceQualifier reference) {
         if (compareTo == null) {
-            return true;
+            // Small is better at matching Small than null (i.e. no qualifier)
+            // However null is better than Small at matching any other screen size
+            return getValue() != ScreenSize.SMALL || ((ScreenSizeQualifier)reference).getValue() == ScreenSize.SMALL;
         }
 
         ScreenSizeQualifier compareQ = (ScreenSizeQualifier) compareTo;
