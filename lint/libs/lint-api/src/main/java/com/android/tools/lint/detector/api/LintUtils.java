@@ -27,6 +27,7 @@ import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_WEBP;
 import static com.android.SdkConstants.DOT_XML;
+import static com.android.SdkConstants.FN_BUILD_GRADLE;
 import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 import static com.android.SdkConstants.TOOLS_URI;
@@ -1225,5 +1226,25 @@ public class LintUtils {
         } else {
             return "en".equals(locale.getLanguage());  //$NON-NLS-1$
         }
+    }
+
+    /**
+     * Create a {@link Location} for an error in the top level build.gradle file.
+     * This is necessary when we're doing an analysis based on the Gradle interpreted model,
+     * not from parsing Gradle files - and the model doesn't provide source positions.
+     * @param project the project containing the gradle file being analyzed
+     * @return location for the top level gradle file if it exists, otherwise fall back to
+     *     the project directory.
+     */
+    public static Location guessGradleLocation(@NonNull Project project) {
+        File dir = project.getDir();
+        Location location;
+        File topLevel = new File(dir, FN_BUILD_GRADLE);
+        if (topLevel.exists()) {
+            location = Location.create(topLevel);
+        } else {
+            location = Location.create(dir);
+        }
+        return location;
     }
 }

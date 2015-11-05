@@ -22,6 +22,7 @@ import static com.android.SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION;
 import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
 import static com.android.tools.lint.checks.ManifestDetector.TARGET_NEWER;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
+import static com.android.tools.lint.detector.api.LintUtils.guessGradleLocation;
 import static com.google.common.base.Charsets.UTF_8;
 
 import com.android.SdkConstants;
@@ -1171,19 +1172,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             if (cookie != null) {
                 report(context, cookie, COMPATIBILITY, message);
             } else {
-                // Associate the error with the top level build.gradle file, if found
-                // (if not, fall back to the project directory). This is necessary because
-                // we're doing this analysis based on the Gradle interpreted model, not from
-                // parsing Gradle files - and the model doesn't provide source positions.
-                File dir = context.getProject().getDir();
-                Location location;
-                File topLevel = new File(dir, FN_BUILD_GRADLE);
-                if (topLevel.exists()) {
-                    location = Location.create(topLevel);
-                } else {
-                    location = Location.create(dir);
-                }
-                context.report(COMPATIBILITY, location, message);
+                context.report(COMPATIBILITY, guessGradleLocation(context.getProject()), message);
             }
         }
     }
