@@ -400,7 +400,9 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     private ResourceFile createResourceFile(@NonNull File file,
             @NonNull FolderData folderData, @NonNull ILogger logger) throws MergingException {
         if (folderData.type != null) {
-            FileResourceNameValidator.validate(file, folderData.type);
+            if (getValidateEnabled()) {
+                FileResourceNameValidator.validate(file, folderData.type);
+            }
             String name = getNameForFile(file);
 
             if (needsPreprocessing(file)) {

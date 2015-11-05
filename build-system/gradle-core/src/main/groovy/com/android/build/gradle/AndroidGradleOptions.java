@@ -37,6 +37,8 @@ public class AndroidGradleOptions {
     private static final String PROPERTY_THREAD_POOL_SIZE_OLD = "com.android.build.threadPoolSize";
 
     private static final String PROPERTY_NEW_SHRINKER = "android.newShrinker";
+    private static final String PROPERTY_DISABLE_RESOURCE_VALIDATION =
+            "android.disableResourceValidation";
 
     // TODO: Drop the "com." prefix, for consistency.
     private static final String PROPERTY_BENCHMARK_NAME = "com.android.benchmark.name";
@@ -131,6 +133,10 @@ public class AndroidGradleOptions {
         return getBoolean(project, PROPERTY_NEW_SHRINKER);
     }
 
+    public static boolean isResourceValidationEnabled(@NonNull Project project) {
+        return !getBoolean(project, PROPERTY_DISABLE_RESOURCE_VALIDATION);
+    }
+
     @Nullable
     private static String getString(@NonNull Project project, String propertyName) {
         return (String) project.getProperties().get(propertyName);
@@ -156,6 +162,8 @@ public class AndroidGradleOptions {
             Object value = project.getProperties().get(propertyName);
             if (value instanceof String) {
                 return Boolean.parseBoolean((String) value);
+            } else if (value instanceof Boolean) {
+                return ((Boolean) value);
             }
         }
 
