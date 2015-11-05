@@ -22,6 +22,7 @@ import com.android.annotations.Nullable;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ScreenOrientation;
+import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterators;
 
@@ -1071,6 +1072,19 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
                     Configurable configurable = matchingConfigurables.get(i);
                     FolderConfiguration configuration = configurable.getConfiguration();
                     ResourceQualifier qualifier = configuration.getQualifier(q);
+
+                    if (q == INDEX_SCREEN_LAYOUT_SIZE) {
+                        // For screen size, the null qualifier matches better than ScreenSize.SMALL
+                        // when matching a screen size normal or bigger.
+                        // Since it works differently than other qualifiers, we treat it separately
+                        if (!Objects.equal(bestMatch, qualifier)) {
+                            matchingConfigurables.remove(configurable);
+                        }
+                        else {
+                            i++;
+                        }
+                        continue;
+                    }
 
                     if (qualifier == null) {
                         // this resources has no qualifier of this type: rejected.
