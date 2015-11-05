@@ -136,7 +136,8 @@ public class JacocoTransform extends Transform {
                 continue;
             }
 
-            File outputFile = new File(outputDir, FileUtils.relativePath(inputFile, inputDir));
+            File outputFile = new File(outputDir,
+                    FileUtils.relativePossiblyNonExistingPath(inputFile, inputDir));
             switch (changedInput.getValue()) {
                 case REMOVED:
                     FileUtils.delete(outputFile);
