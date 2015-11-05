@@ -260,6 +260,16 @@ public class ClassEnhancement implements TestRule {
         }
     }
 
+    public Class loadPatchForClass(String patchName, Class originalClass)
+            throws ClassNotFoundException {
+        ClassLoader classLoader = mEnhancedClassLoaders.get(patchName);
+        if (classLoader != null) {
+            return classLoader.loadClass(originalClass.getName()
+                    + IncrementalChangeVisitor.OVERRIDE_SUFFIX);
+        }
+        throw new IllegalArgumentException("Unknown patch name " + patchName);
+    }
+
     @SuppressWarnings("unused") // Helpful for debugging.
     public static String traceClass(byte[] bytes) {
         ClassReader classReader = new ClassReader(bytes, 0, bytes.length);
