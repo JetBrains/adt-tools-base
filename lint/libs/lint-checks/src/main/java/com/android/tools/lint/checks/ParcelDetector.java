@@ -107,7 +107,9 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
             JavaParser.ResolvedNode resolved = mContext.resolve(node);
             if (resolved instanceof ResolvedClass) {
                 ResolvedClass cls = (ResolvedClass) resolved;
-                if (cls.isImplementing("android.os.Parcelable", false)) {
+                if (cls.isImplementing("android.os.Parcelable", false) &&
+                        // Parceling spans is handled in TextUtils#CHAR_SEQUENCE_CREATOR
+                        !cls.isImplementing("android.text.ParcelableSpan", false)) {
                     ResolvedField field = cls.getField("CREATOR", false);
                     if (field == null) {
                         Location location = mContext.getLocation(node.astName());
