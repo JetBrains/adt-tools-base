@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.integration.common.truth;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.android.annotations.NonNull;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.truth.FailureStrategy;
@@ -80,22 +78,6 @@ public abstract class AbstractAndroidSubject<T extends AbstractZipSubject<T>> ex
         if (!checkForClass(className, scope)) {
             failWithRawMessage("'%s' does not contain '%s'", getDisplaySubject(), className);
         }
-    }
-
-    @Override
-    public void contains(@NonNull String path) throws IOException {
-        checkArgument(
-                !path.startsWith("L") || !path.endsWith(";"),
-                "Use containsClass to check for classes.");
-        super.contains(path);
-    }
-
-    @Override
-    public void doesNotContain(@NonNull String path) throws IOException {
-        checkArgument(
-                !path.startsWith("L") || !path.endsWith(";"),
-                "Use doesNotContainClass to check for classes.");
-        super.doesNotContain(path);
     }
 
     public void doesNotContainClass(@NonNull String className)

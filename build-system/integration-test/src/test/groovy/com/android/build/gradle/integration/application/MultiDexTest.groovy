@@ -73,10 +73,8 @@ class MultiDexTest {
         // both test apk should contain a class from Junit
         assertThatApk(project.getTestApk("ics", "debug")).containsClass("Lorg/junit/Assert;")
         assertThatApk(project.getTestApk("lollipop", "debug")).containsClass("Lorg/junit/Assert;")
-        assertThatApk(project.getApk("ics", "debug")).containsClass("Landroid/support/multidex/MultiDexApplication;")
-        assertThatApk(project.getTestApk("ics", "debug")).doesNotContainClass("Landroid/support/multidex/MultiDexApplication;")
-        assertThatApk(project.getApk("lollipop", "debug")).doesNotContainClass("Landroid/support/multidex/MultiDexApplication;")
-        assertThatApk(project.getTestApk("lollipop", "debug")).doesNotContainClass("Landroid/support/multidex/MultiDexApplication;")
+        assertThatApk(project.getTestApk("ics", "debug")).containsClass("Landroid/support/multidex/MultiDexApplication;")
+        assertThatApk(project.getTestApk("lollipop", "debug")).doesNotContain("Landroid/support/multidex/MultiDexApplication;")
     }
 
     @Test
