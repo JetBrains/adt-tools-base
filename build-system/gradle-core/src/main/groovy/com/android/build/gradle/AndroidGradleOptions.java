@@ -170,6 +170,11 @@ public class AndroidGradleOptions {
         return false;
     }
 
+    public static boolean useDexerPool() {
+        // TODO: Implement.
+        return false;
+    }
+
     public static class SigningOptions {
         @NonNull public final String storeFile;
         @NonNull public final String storePassword;
