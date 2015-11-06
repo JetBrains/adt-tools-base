@@ -443,7 +443,7 @@ public abstract class TaskManager {
                                 .getBuildDependencies());
 
         transformManager.addStream(OriginalStream.builder()
-                .addContentTypes(fullJar)
+                .addContentTypes(TransformManager.CONTENT_JARS)
                 .addScope(Scope.EXTERNAL_LIBRARIES)
                 .setJars(new Supplier<Collection<File>>() {
                     @Override
@@ -458,6 +458,33 @@ public abstract class TaskManager {
                         }
 
                         return files;
+                    }
+                })
+                .setDependencies(dependencies)
+                .build());
+
+        transformManager.addStream(OriginalStream.builder()
+                .addContentTypes(TransformManager.CONTENT_NATIVE_LIBS)
+                .addScope(Scope.EXTERNAL_LIBRARIES)
+                .setJars(new Supplier<Collection<File>>() {
+                    @Override
+                    public Collection<File> get() {
+                        Set<File> files = config.getExternalPackagedJarsWithoutAars();
+                        Set<File> additions = variantScope.getGlobalScope().getAndroidBuilder()
+                                .getAdditionalPackagedJars(config);
+
+                        if (!additions.isEmpty()) {
+                            ImmutableSet.Builder<File> builder = ImmutableSet.builder();
+                            return builder.addAll(files).addAll(additions).build();
+                        }
+
+                        return files;
+                    }
+                })
+                .setFolders(new Supplier<Collection<File>>() {
+                    @Override
+                    public Collection<File> get() {
+                        return config.getExternalAarJniLibraries();
                     }
                 })
                 .setDependencies(dependencies)
