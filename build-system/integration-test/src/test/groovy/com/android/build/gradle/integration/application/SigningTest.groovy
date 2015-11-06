@@ -15,8 +15,11 @@
  */
 
 package com.android.build.gradle.integration.application
+
+import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.utils.FileHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.SigningConfigHelper
 import com.android.builder.model.AndroidArtifact
@@ -29,8 +32,10 @@ import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.experimental.categories.Category
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.core.BuilderConstants.RELEASE
@@ -177,5 +182,35 @@ class SigningTest {
     @Test
     public void 'signingReport task'() throws Exception {
         project.execute("signingReport")
+    }
+
+    @Test
+    public void 'SHA algorithm change'() throws Exception {
+        project.buildFile << "android.defaultConfig.minSdkVersion 15"
+        project.execute("assembleDebug")
+
+        File apk = project.getApk("debug")
+        assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA1-Digest");
+        assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-256-Digest");
+        assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA1-Digest");
+        assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-256-Digest");
+
+        FileHelper.searchAndReplace(project.buildFile, "minSdkVersion 15", "minSdkVersion 18")
+        project.execute("assembleDebug")
+
+        assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA-256-Digest");
+        assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA1-Digest");
+        assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA-256-Digest");
+        assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA1-Digest");
+    }
+
+    @Test
+    @Category(DeviceTests)
+    public void 'SHA algorithm change - on device'() throws Exception {
+        project.buildFile << "android.defaultConfig.minSdkVersion 15"
+        project.executeConnectedCheck()
+
+        FileHelper.searchAndReplace(project.buildFile, "minSdkVersion 15", "minSdkVersion 18")
+        project.executeConnectedCheck()
     }
 }

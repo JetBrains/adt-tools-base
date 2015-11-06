@@ -21,13 +21,12 @@ import com.android.annotations.Nullable;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
-import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.model.FilterDataImpl;
+import com.android.builder.model.ApiVersion;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SigningException;
-import com.android.builder.signing.SignedJarBuilder;
 import com.android.ide.common.signing.KeytoolException;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -72,6 +71,8 @@ public class PackageSplitAbi extends SplitRelatedTask {
     private SigningConfig signingConfig;
 
     private Collection<File> jniFolders;
+
+    private ApiVersion minSdkVersion;
 
     @OutputFiles
     public List<File> getOutputFiles() {
@@ -138,7 +139,8 @@ public class PackageSplitAbi extends SplitRelatedTask {
                         ImmutableSet.of(matcher.group(1)),
                         isJniDebuggable(),
                         getSigningConfig(),
-                        outFile.getAbsolutePath());
+                        outFile.getAbsolutePath(),
+                        getMinSdkVersion());
                 unprocessedSplits.remove(matcher.group(1));
             }
         }
@@ -228,5 +230,14 @@ public class PackageSplitAbi extends SplitRelatedTask {
 
     public void setJniFolders(Collection<File> jniFolders) {
         this.jniFolders = jniFolders;
+    }
+
+    public void setMinSdkVersion(ApiVersion version) {
+        this.minSdkVersion = version;
+    }
+
+    @Input
+    public int getMinSdkVersion() {
+        return minSdkVersion.getApiLevel();
     }
 }

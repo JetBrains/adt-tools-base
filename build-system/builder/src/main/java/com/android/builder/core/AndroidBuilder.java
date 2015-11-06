@@ -89,17 +89,16 @@ import com.android.manifmerger.MergingReport;
 import com.android.manifmerger.PlaceholderEncoder;
 import com.android.manifmerger.PlaceholderHandler;
 import com.android.manifmerger.XmlDocument;
+import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.IAndroidTarget.OptionalLibrary;
-import com.android.repository.Revision;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
-import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -1839,7 +1838,8 @@ public class AndroidBuilder {
             @NonNull Set<String> abiFilters,
             boolean jniDebugBuild,
             @Nullable SigningConfig signingConfig,
-            @NonNull String outApkLocation)
+            @NonNull String outApkLocation,
+            int minSdkVersion)
             throws DuplicateFileException, FileNotFoundException,
             KeytoolException, PackagerException, SigningException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
@@ -1856,7 +1856,8 @@ public class AndroidBuilder {
         try {
             Packager packager = new Packager(
                     outApkLocation, androidResPkgLocation,
-                    certificateInfo, mCreatedBy, mLogger);
+                    certificateInfo, mCreatedBy, mLogger,
+                    minSdkVersion);
 
             // add dex folder to the apk root.
             if (!dexFolders.isEmpty()) {
@@ -1911,7 +1912,7 @@ public class AndroidBuilder {
                 new FileOutputStream(out),
                 certificateInfo != null ? certificateInfo.getKey() : null,
                 certificateInfo != null ? certificateInfo.getCertificate() : null,
-                Packager.getLocalVersion(), mCreatedBy);
+                Packager.getLocalVersion(), mCreatedBy, 1 /* minSdkVersion */);
 
 
         signedJarBuilder.writeZip(new FileInputStream(in));

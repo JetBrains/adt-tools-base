@@ -50,7 +50,6 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.Signature;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -67,9 +66,6 @@ import java.util.zip.ZipInputStream;
  * A Jar file builder with signature support.
  */
 public class SignedJarBuilder {
-    private static final String DIGEST_ALGORITHM = "SHA1";
-    private static final String DIGEST_ATTR = "SHA1-Digest";
-    private static final String DIGEST_MANIFEST_ATTR = "SHA1-Digest-Manifest";
 
     /** Write to another stream and track how many bytes have been
      *  written.
@@ -103,6 +99,9 @@ public class SignedJarBuilder {
     private PrivateKey mKey;
     private X509Certificate mCertificate;
     private Manifest mManifest;
+    private String mDigestAttributeName;
+    private String mDigestManifestAttributeName;
+    private String mMessageDigestAlgorithm;
     private MessageDigest mMessageDigest;
 
     private byte[] mBuffer = new byte[4096];
@@ -168,6 +167,7 @@ public class SignedJarBuilder {
      * @param key the {@link PrivateKey} used to sign the archive, or <code>null</code>.
      * @param certificate the {@link X509Certificate} used to sign the archive, or
      * <code>null</code>.
+     * @param minSdkVersion minSdkVersion of the package contained in this JAR.
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
@@ -175,7 +175,8 @@ public class SignedJarBuilder {
                             @Nullable PrivateKey key,
                             @Nullable X509Certificate certificate,
                             @Nullable String builtBy,
-                            @Nullable String createdBy)
+                            @Nullable String createdBy,
+                            int minSdkVersion)
             throws IOException, NoSuchAlgorithmException {
         mOutputJar = new JarOutputStream(new BufferedOutputStream(out));
         mOutputJar.setLevel(9);
@@ -193,7 +194,22 @@ public class SignedJarBuilder {
                 main.putValue("Created-By", createdBy);
             }
 
-            mMessageDigest = MessageDigest.getInstance(DIGEST_ALGORITHM);
+            String digestAttributeDigestAlgorithm;
+            if (minSdkVersion < 18) {
+                // Android 2.3 (API Level 9) to 4.2 (API Level 17) (inclusive) do not support SHA-2
+                // JAR signatures.
+                mMessageDigestAlgorithm = "SHA-1";
+                // Moreover, platforms prior to API Level 18, without the additional
+                // Digest-Algorithms attribute, only support SHA or SHA1 algorithm names in .SF and
+                // MANIFEST.MF attributes.
+                digestAttributeDigestAlgorithm = "SHA1";
+            } else {
+                mMessageDigestAlgorithm = "SHA-256";
+                digestAttributeDigestAlgorithm = mMessageDigestAlgorithm;
+            }
+            mDigestAttributeName = digestAttributeDigestAlgorithm + "-Digest";
+            mDigestManifestAttributeName = digestAttributeDigestAlgorithm + "-Digest-Manifest";
+            mMessageDigest = MessageDigest.getInstance(mMessageDigestAlgorithm);
         }
     }
 
@@ -322,8 +338,6 @@ public class SignedJarBuilder {
 
             try {
                 // CERT.SF
-                Signature signature = Signature.getInstance("SHA1with" + mKey.getAlgorithm());
-                signature.initSign(mKey);
                 mOutputJar.putNextEntry(new JarEntry("META-INF/CERT.SF"));
 
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -388,7 +402,7 @@ public class SignedJarBuilder {
                 attr = new Attributes();
                 mManifest.getEntries().put(entry.getName(), attr);
             }
-            attr.putValue(DIGEST_ATTR, 
+            attr.putValue(mDigestAttributeName,
                           new String(Base64.encode(mMessageDigest.digest()), "ASCII"));
         }
     }
@@ -401,7 +415,7 @@ public class SignedJarBuilder {
         main.putValue("Signature-Version", "1.0");
         main.putValue("Created-By", "1.0 (Android)");
 
-        MessageDigest md = MessageDigest.getInstance(DIGEST_ALGORITHM);
+        MessageDigest md = MessageDigest.getInstance(mMessageDigestAlgorithm);
         PrintStream print = new PrintStream(
                 new DigestOutputStream(new ByteArrayOutputStream(), md),
                 true, SdkConstants.UTF_8);
@@ -409,7 +423,8 @@ public class SignedJarBuilder {
         // Digest of the entire manifest
         mManifest.write(print);
         print.flush();
-        main.putValue(DIGEST_MANIFEST_ATTR, new String(Base64.encode(md.digest()), "ASCII"));
+        main.putValue(mDigestManifestAttributeName,
+                new String(Base64.encode(md.digest()), "ASCII"));
 
         Map<String, Attributes> entries = mManifest.getEntries();
         for (Map.Entry<String, Attributes> entry : entries.entrySet()) {
@@ -422,7 +437,7 @@ public class SignedJarBuilder {
             print.flush();
 
             Attributes sfAttr = new Attributes();
-            sfAttr.putValue(DIGEST_ATTR, new String(Base64.encode(md.digest()), "ASCII"));
+            sfAttr.putValue(mDigestAttributeName, new String(Base64.encode(md.digest()), "ASCII"));
             sf.getEntries().put(entry.getKey(), sfAttr);
         }
         CountOutputStream cout = new CountOutputStream(out);
@@ -451,8 +466,11 @@ public class SignedJarBuilder {
         JcaCertStore certs = new JcaCertStore(certList);
 
         CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
-        ContentSigner sha1Signer = new JcaContentSignerBuilder(
-                                       "SHA1with" + privateKey.getAlgorithm())
+        // Digest algorithms in JCA Signature algorithms do not use the hyphen.
+        // For example, SHA-256 becomes SHA256withRSA.
+        String signatureAlgorithm =
+                mMessageDigestAlgorithm.replace("-", "") + "with" + privateKey.getAlgorithm();
+        ContentSigner sha1Signer = new JcaContentSignerBuilder(signatureAlgorithm)
                                    .build(privateKey);
         gen.addSignerInfoGenerator(
             new JcaSignerInfoGeneratorBuilder(
