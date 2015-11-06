@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -297,7 +298,9 @@ public class InstantRunVerifierTransform extends Transform {
     protected InstantRunVerifierStatus runVerifier(String name,
             @NonNull final InstantRunVerifier.ClassBytesProvider originalClass ,
             @NonNull final InstantRunVerifier.ClassBytesProvider updatedClass) throws IOException {
-
+        if (!name.endsWith(SdkConstants.DOT_CLASS)) {
+            return null;
+        }
         InstantRunVerifierStatus status = ThreadRecorder.get().record(
                 ExecutionType.TASK_FILE_VERIFICATION,
                 new Recorder.Block<InstantRunVerifierStatus>() {
