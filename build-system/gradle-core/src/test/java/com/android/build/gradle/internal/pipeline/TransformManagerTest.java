@@ -19,9 +19,9 @@ package com.android.build.gradle.internal.pipeline;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.build.gradle.internal.scope.AndroidTask;
-import com.android.build.transform.api.QualifiedContent.DefaultContentType;
-import com.android.build.transform.api.QualifiedContent.Scope;
-import com.android.build.transform.api.Transform;
+import com.android.build.api.transform.QualifiedContent.DefaultContentType;
+import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.Transform;
 import com.android.builder.model.SyncIssue;
 import com.google.common.collect.Iterables;
 

@@ -18,13 +18,13 @@ package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
-import com.android.build.transform.api.DirectoryInput;
-import com.android.build.transform.api.JarInput;
-import com.android.build.transform.api.QualifiedContent;
-import com.android.build.transform.api.QualifiedContent.ContentType;
-import com.android.build.transform.api.QualifiedContent.Scope;
-import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutputProvider;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.JarInput;
+import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.QualifiedContent.ContentType;
+import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformOutputProvider;
 
 import java.io.File;
 import java.util.List;
@@ -35,7 +35,7 @@ import java.util.Set;
  * the different Transforms.
  *
  * Transforms read from and write into TransformStreams, via a custom view of them:
- * {@link com.android.build.transform.api.TransformInput}, and {@link TransformOutputProvider}.
+ * {@link TransformInput}, and {@link TransformOutputProvider}.
  *
  * This contains information about the content via {@link QualifiedContent}, dependencies, and the
  * actual file information.

@@ -16,8 +16,22 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import static com.android.build.api.transform.QualifiedContent.ContentType;
+import static com.android.build.api.transform.QualifiedContent.DefaultContentType;
+import static com.android.build.api.transform.QualifiedContent.Scope;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.Context;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.Format;
+import com.android.build.api.transform.JarInput;
+import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.Status;
+import com.android.build.api.transform.Transform;
+import com.android.build.api.transform.TransformException;
+import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.IncrementalChangeVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalSupportVisitor;
@@ -25,17 +39,6 @@ import com.android.build.gradle.internal.incremental.IncrementalVisitor;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.GlobalScope;
-import com.android.build.transform.api.Context;
-import com.android.build.transform.api.DirectoryInput;
-import com.android.build.transform.api.Format;
-import com.android.build.transform.api.JarInput;
-import com.android.build.transform.api.QualifiedContent;
-import com.android.build.transform.api.QualifiedContent.ContentType;
-import com.android.build.transform.api.Status;
-import com.android.build.transform.api.Transform;
-import com.android.build.transform.api.TransformException;
-import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutputProvider;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Throwables;
@@ -97,22 +100,22 @@ public class InstantRunTransform extends Transform {
     @Override
     public Set<ContentType> getOutputTypes() {
         return ImmutableSet.<ContentType>of(
-                QualifiedContent.DefaultContentType.CLASSES,
+                DefaultContentType.CLASSES,
                 ExtendedContentType.CLASSES_ENHANCED);
     }
 
     @NonNull
     @Override
     public Set<QualifiedContent.Scope> getScopes() {
-        return Sets.immutableEnumSet(QualifiedContent.Scope.PROJECT);
+        return Sets.immutableEnumSet(Scope.PROJECT);
     }
 
     @NonNull
     @Override
-    public Set<QualifiedContent.Scope> getReferencedScopes() {
-        return Sets.immutableEnumSet(QualifiedContent.Scope.EXTERNAL_LIBRARIES,
-                QualifiedContent.Scope.PROJECT_LOCAL_DEPS,
-                QualifiedContent.Scope.SUB_PROJECTS);
+    public Set<Scope> getReferencedScopes() {
+        return Sets.immutableEnumSet(Scope.EXTERNAL_LIBRARIES,
+                Scope.PROJECT_LOCAL_DEPS,
+                Scope.SUB_PROJECTS);
     }
 
     @Override
@@ -333,7 +336,7 @@ public class InstantRunTransform extends Transform {
     }
 
     /**
-     * Transform a single file into a {@link ContentType#CLASSES_ENHANCED} format
+     * Transform a single file into a {@link ExtendedContentType#CLASSES_ENHANCED} format
      *
      * @param inputDir the input directory containing the input file.
      * @param inputFile the input file within the input directory to transform.

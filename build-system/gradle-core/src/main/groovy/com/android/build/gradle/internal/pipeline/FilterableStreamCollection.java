@@ -17,11 +17,11 @@
 package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
-import com.android.build.transform.api.DirectoryInput;
-import com.android.build.transform.api.Format;
-import com.android.build.transform.api.JarInput;
-import com.android.build.transform.api.QualifiedContent;
-import com.android.build.transform.api.TransformInput;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.Format;
+import com.android.build.api.transform.JarInput;
+import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.TransformInput;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 

@@ -14,24 +14,32 @@
  * limitations under the License.
  */
 
-package com.android.build.transform.api;
+package com.android.build.api.transform;
 
 import com.google.common.annotations.Beta;
 
 /**
- * An exception during the execution of a Transform
+ * The file changed status for incremental execution.
  * <p/>
  * <strong>This API is non final and is subject to change. We are looking for feedback, and will
  * attempt to stabilize it in the 1.6 time frame.</strong>
  */
 @Beta
-public class TransformException extends Exception {
-
-    public TransformException(Throwable throwable) {
-        super(throwable);
-    }
-
-    public TransformException(String s) {
-        super(s);
-    }
+public enum Status {
+    /**
+     * The file was not changed since the last build.
+     */
+    NOTCHANGED,
+    /**
+     * The file was added since the last build.
+     */
+    ADDED,
+    /**
+     * The file was modified since the last build.
+     */
+    CHANGED,
+    /**
+     * The file was removed since the last build.
+     */
+    REMOVED
 }
