@@ -1,0 +1,11 @@
+apply plugin: 'java'
+
+group = 'com.android.tools'
+archivesBaseName = 'jaxb-inheritance-plugin'
+version = 1
+
+dependencies {
+    compile project(':base:annotations')
+    compile 'com.google.guava:guava:17.0'
+    compile 'org.glassfish.jaxb:jaxb-xjc:2.2.11'
+}
