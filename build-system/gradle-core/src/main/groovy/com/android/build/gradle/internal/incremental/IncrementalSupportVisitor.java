@@ -144,7 +144,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
         MethodNode method = getMethodByNameInClass(name, desc, classNode);
         boolean hasIncompatibleChange = InstantRunMethodVerifier.verifyMethod(method) != null;
-        if (hasIncompatibleChange || disableRedirectionForClass || !isAccessCompatibleWithInstantRun(access)
+        if (hasIncompatibleChange || disableRedirectionForClass
+                || !isAccessCompatibleWithInstantRun(access)
                 || name.equals(AsmUtils.CLASS_INITIALIZER)) {
             return defaultVisitor;
         } else {
@@ -213,8 +214,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             this.args = new ArrayList<Type>(Arrays.asList(Type.getArgumentTypes(desc)));
             this.start = new Label();
             boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
-            // if this is not a static, we add a fictional first parameter what will contain the "this"
-            // reference which can be loaded with ILOAD_0 bytecode.
+            // if this is not a static, we add a fictional first parameter what will contain the
+            // "this" reference which can be loaded with ILOAD_0 bytecode.
             if (!isStatic) {
                 args.add(0, Type.getType(Object.class));
             }
@@ -304,25 +305,24 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
      * Pseudo code for this trampoline:
      * <code>
      *   Object access$super($classType instance, String name, object[] args) {
-     *      if (name.equals(
-     *          "firstMethod.(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;")) {
-     *        return super~instance.firstMethod((String)arg[0], arg[1]);
+     *      switch(name) {
+     *          case "firstMethod.(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;":
+     *            return super~instance.firstMethod((String)arg[0], arg[1]);
+     *          case "secondMethod.(Ljava/lang/String;I)V":
+     *            return super~instance.firstMethod((String)arg[0], arg[1]);
+     *
+     *          default:
+     *            StringBuilder $local1 = new StringBuilder();
+     *            $local1.append("Method not found ");
+     *            $local1.append(name);
+     *            $local1.append(" in " $classType $super implementation");
+     *            throw new $package/InstantReloadException($local1.toString());
      *      }
-     *      if (name.equals("secondMethod.(Ljava/lang/String;I)V")) {
-     *        super~instance.secondMethod((String)arg[0], (int)arg[1]);
-     *        return;
-     *      }
-     *      ...
-     *      StringBuilder $local1 = new StringBuilder();
-     *      $local1.append("Method not found ");
-     *      $local1.append(name);
-     *      $local1.append(" in " $classType $super implementation");
-     *      throw new $package/InstantReloadException($local1.toString());
-     *   }
      * </code>
      */
     private void createAccessSuper() {
-        int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_VARARGS;
+        int access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC
+                | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_VARARGS;
         Method m = new Method("access$super", "(L" + visitedClassName
                 + ";Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;");
         MethodVisitor visitor = super.visitMethod(access,
@@ -330,12 +330,12 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 m.getDescriptor(),
                 null, null);
 
-        GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
+        final GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
 
         // Gather all methods from itself and its superclasses to generate a giant access$super
         // implementation.
         // This will work fine as long as we don't support adding methods to a class.
-        Map<String, MethodNode> uniqueMethods = new HashMap<String, MethodNode>();
+        final Map<String, MethodNode> uniqueMethods = new HashMap<String, MethodNode>();
         if (parentNodes.isEmpty()) {
             // if we cannot determine the parents for this class, let's blindly add all the
             // method of the current class as a gateway to a possible parent version.
@@ -346,82 +346,51 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 addAllNewMethods(uniqueMethods, parentNode);
             }
         }
-        for (MethodNode methodNode : uniqueMethods.values()) {
-            if (methodNode.name.equals(AsmUtils.CONSTRUCTOR) || methodNode.name.equals("<clinit>")) {
-                continue;
-            }
-            if (TRACING_ENABLED) {
-                trace(mv, "testing super for ", methodNode.name);
-            }
-            mv.visitVarInsn(Opcodes.ALOAD, 1);
-            mv.visitLdcInsn(methodNode.name + "." + methodNode.desc);
-            if (TRACING_ENABLED) {
-                mv.push(methodNode.name + "." + methodNode.desc);
-                mv.push("==");
+
+        new StringSwitch() {
+            @Override
+            void visitString() {
                 mv.visitVarInsn(Opcodes.ALOAD, 1);
-                trace(mv, 3);
-            }
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals",
-                    "(Ljava/lang/Object;)Z", false);
-            Label l0 = new Label();
-            mv.visitJumpInsn(Opcodes.IFEQ, l0);
-            mv.visitVarInsn(Opcodes.ALOAD, 0);
-
-            Type[] args = Type.getArgumentTypes(methodNode.desc);
-            int argc = 0;
-            for (Type t : args) {
-                mv.visitVarInsn(Opcodes.ALOAD, 2);
-                mv.push(argc);
-                mv.visitInsn(Opcodes.AALOAD);
-                mv.unbox(t);
-                argc++;
             }
 
-            if (TRACING_ENABLED) {
-                trace(mv, "super selected ", methodNode.name, methodNode.desc);
+            @Override
+            void visitCase(String methodName) {
+                MethodNode methodNode = uniqueMethods.get(methodName);
+
+                mv.visitVarInsn(Opcodes.ALOAD, 0);
+
+                Type[] args = Type.getArgumentTypes(methodNode.desc);
+                int argc = 0;
+                for (Type t : args) {
+                    mv.visitVarInsn(Opcodes.ALOAD, 2);
+                    mv.push(argc);
+                    mv.visitInsn(Opcodes.AALOAD);
+                    mv.unbox(t);
+                    argc++;
+                }
+
+                if (TRACING_ENABLED) {
+                    trace(mv, "super selected ", methodNode.name, methodNode.desc);
+                }
+                // Call super on the other object, yup this works cos we are on the right place to
+                // call from.
+                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, visitedSuperName, methodNode.name,
+                        methodNode.desc, false);
+
+                Type ret = Type.getReturnType(methodNode.desc);
+                if (ret.getSort() == Type.VOID) {
+                    mv.visitInsn(Opcodes.ACONST_NULL);
+                } else {
+                    mv.box(ret);
+                }
+                mv.visitInsn(Opcodes.ARETURN);
             }
-            // Call super on the other object, yup this works cos we are on the right place to call from.
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, visitedSuperName, methodNode.name,
-                    methodNode.desc, false);
 
-            Type ret = Type.getReturnType(methodNode.desc);
-            if (ret.getSort() == Type.VOID) {
-                mv.visitInsn(Opcodes.ACONST_NULL);
-            } else {
-                mv.box(ret);
+            @Override
+            void visitDefault() {
+                writeMissingMessageWithHash(mv, visitedClassName);
             }
-            mv.visitInsn(Opcodes.ARETURN);
-            mv.visitLabel(l0);
-        }
-
-
-        // we could not find the method to invoke, prepare an exception to be thrown.
-        mv.newInstance(Type.getType(StringBuilder.class));
-        mv.dup();
-        mv.invokeConstructor(Type.getType(StringBuilder.class), Method.getMethod("void <init>()V"));
-
-        // create a meaningful message
-        mv.push("Method not found ");
-        mv.invokeVirtual(Type.getType(StringBuilder.class),
-                Method.getMethod("StringBuilder append (String)"));
-        mv.visitVarInsn(Opcodes.ALOAD, 1);
-        mv.invokeVirtual(Type.getType(StringBuilder.class),
-                Method.getMethod("StringBuilder append (String)"));
-        mv.push(" in " + visitedClassName + "$super implementation");
-        mv.invokeVirtual(Type.getType(StringBuilder.class),
-                Method.getMethod("StringBuilder append (String)"));
-
-        mv.invokeVirtual(Type.getType(StringBuilder.class),
-                Method.getMethod("String toString()"));
-
-        // create the exception with the message
-        mv.newInstance(INSTANT_RELOAD_EXCEPTION);
-        mv.dupX1();
-        mv.swap();
-        mv.invokeConstructor(INSTANT_RELOAD_EXCEPTION,
-                Method.getMethod("void <init> (String)"));
-        // and throw.
-        mv.throwException();
+        }.visit(mv, uniqueMethods.keySet());
 
         mv.visitMaxs(0, 0);
         mv.visitEnd();
@@ -458,7 +427,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         // Gather all methods from itself and its superclasses to generate a giant constructor
         // implementation.
         // This will work fine as long as we don't support adding constructors to classes.
-        Map<String, MethodNode> uniqueMethods = new HashMap<String, MethodNode>();
+        final Map<String, MethodNode> uniqueMethods = new HashMap<String, MethodNode>();
 
         addAllNewConstructors(uniqueMethods, classNode, true /*keepPrivateConstructors*/);
         for (ClassNode parentNode : parentNodes) {
@@ -467,9 +436,10 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         int access = Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC;
 
-        Method m = new Method(AsmUtils.CONSTRUCTOR, ConstructorArgsRedirection.DISPATCHING_THIS_SIGNATURE);
+        Method m = new Method(AsmUtils.CONSTRUCTOR,
+                ConstructorArgsRedirection.DISPATCHING_THIS_SIGNATURE);
         MethodVisitor visitor = super.visitMethod(0, m.getName(), m.getDescriptor(), null, null);
-        GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
+        final GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
 
         mv.visitCode();
 
@@ -478,72 +448,44 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         mv.push(0);
         mv.visitInsn(Opcodes.AALOAD);
         mv.unbox(Type.getType("Ljava/lang/String;"));
-        int constructorCanonicalName = mv.newLocal(Type.getType("Ljava/lang/String;"));
+        final int constructorCanonicalName = mv.newLocal(Type.getType("Ljava/lang/String;"));
         mv.storeLocal(constructorCanonicalName);
 
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        new StringSwitch() {
 
-        for (String canonicalName : uniqueMethods.keySet()) {
-            MethodNode methodNode = uniqueMethods.get(canonicalName);
-            String[] parts = canonicalName.split("\\.");
-            String owner = parts[0];
-            if (!owner.equals(visitedClassName) && !owner.equals(visitedSuperName)) {
-                continue;
+            @Override
+            void visitString() {
+                mv.loadLocal(constructorCanonicalName);
             }
 
-            mv.loadLocal(constructorCanonicalName);
-            mv.push(canonicalName);
+            @Override
+            void visitCase(String canonicalName) {
+                MethodNode methodNode = uniqueMethods.get(canonicalName);
+                String owner = canonicalName.split("\\.")[0];
 
-            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals",
-                    "(Ljava/lang/Object;)Z", false);
-            Label l0 = new Label();
-            mv.visitJumpInsn(Opcodes.IFEQ, l0);
-            mv.visitVarInsn(Opcodes.ALOAD, 0);
+                // Parse method arguments and
+                mv.visitVarInsn(Opcodes.ALOAD, 0);
+                Type[] args = Type.getArgumentTypes(methodNode.desc);
+                int argc = 0;
+                for (Type t : args) {
+                    mv.visitVarInsn(Opcodes.ALOAD, 1);
+                    mv.push(argc + 1);
+                    mv.visitInsn(Opcodes.AALOAD);
+                    mv.unbox(t);
+                    argc++;
+                }
 
-            // Parse method arguments and
-            Type[] args = Type.getArgumentTypes(methodNode.desc);
-            int argc = 0;
-            for (Type t : args) {
-                mv.visitVarInsn(Opcodes.ALOAD, 1);
-                mv.push(argc + 1);
-                mv.visitInsn(Opcodes.AALOAD);
-                mv.unbox(t);
-                argc++;
+                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, owner, AsmUtils.CONSTRUCTOR,
+                        methodNode.desc, false);
+
+                mv.visitInsn(Opcodes.RETURN);
             }
 
-            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, owner, AsmUtils.CONSTRUCTOR,
-                    methodNode.desc, false);
-            mv.visitInsn(Opcodes.RETURN);
-            mv.visitLabel(l0);
-        }
-
-        // we could not find the method to invoke, prepare an exception to be thrown.
-        mv.newInstance(Type.getType(StringBuilder.class));
-        mv.dup();
-        mv.invokeConstructor(Type.getType(StringBuilder.class), Method.getMethod("void <init>()V"));
-
-        // create a meaningful message
-        mv.push("Constructor not found ");
-        mv.invokeVirtual(Type.getType(StringBuilder.class),
-                Method.getMethod("StringBuilder append (String)"));
-        mv.loadLocal(constructorCanonicalName);
-        mv.invokeVirtual(Type.getType(StringBuilder.class),
-                Method.getMethod("StringBuilder append (String)"));
-        mv.push(" in " + visitedClassName + " or super class implementation");
-        mv.invokeVirtual(Type.getType(StringBuilder.class),
-                Method.getMethod("StringBuilder append (String)"));
-
-        mv.invokeVirtual(Type.getType(StringBuilder.class),
-                Method.getMethod("String toString()"));
-
-        // create the exception with the message
-        mv.newInstance(INSTANT_RELOAD_EXCEPTION);
-        mv.dupX1();
-        mv.swap();
-        mv.invokeConstructor(INSTANT_RELOAD_EXCEPTION,
-                Method.getMethod("void <init> (String)"));
-        // and throw.
-        mv.throwException();
+            @Override
+            void visitDefault() {
+                writeMissingMessageWithHash(mv, visitedClassName);
+            }
+        }.visit(mv,uniqueMethods.keySet());
 
         mv.visitMaxs(1, 3);
         mv.visitEnd();
@@ -564,11 +506,15 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     private static void addAllNewMethods(Map<String, MethodNode> methods, ClassNode classNode) {
         //noinspection unchecked
         for (MethodNode method : (List<MethodNode>) classNode.methods) {
+            if (method.name.equals(AsmUtils.CONSTRUCTOR) || method.name.equals("<clinit>")) {
+                continue;
+            }
+            String name = method.name + "." + method.desc;
             if (isAccessCompatibleWithInstantRun(method.access)
-                    && !methods.containsKey(method.name + method.desc) &&
+                    && !methods.containsKey(name) &&
                     (method.access & Opcodes.ACC_STATIC) == 0 &&
                     (method.access & Opcodes.ACC_PRIVATE) == 0) {
-                methods.put(method.name + method.desc, method);
+                methods.put(name, method);
             }
         }
     }
@@ -579,7 +525,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
      * @param classNode the class to save all new methods from.
      * @param keepPrivateConstructors whether to keep the private constructors.
      */
-    private static void addAllNewConstructors(Map<String, MethodNode> methods, ClassNode classNode,
+    private void addAllNewConstructors(Map<String, MethodNode> methods, ClassNode classNode,
             boolean keepPrivateConstructors) {
         //noinspection unchecked
         for (MethodNode method : (List<MethodNode>) classNode.methods) {
@@ -594,7 +540,10 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             if (!keepPrivateConstructors && (method.access & Opcodes.ACC_PRIVATE) != 0) {
                 continue;
             }
-
+            if (!classNode.name.equals(visitedClassName)
+                    && !classNode.name.equals(visitedSuperName)) {
+                continue;
+            }
             String key = classNode.name + "." + method.desc;
             if (methods.containsKey(key)) {
                 continue;
@@ -602,8 +551,6 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             methods.put(key, method);
         }
     }
-
-
 
     /**
      * Command line invocation entry point. Expects 2 parameters, first is the source directory
