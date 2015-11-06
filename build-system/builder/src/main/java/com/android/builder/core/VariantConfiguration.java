@@ -1559,6 +1559,26 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
+     * Returns the list of packaged jars for this config. If the config tests a library, this
+     * will include the jars of the tested config
+     *
+     * @return a non null, but possibly empty list.
+     */
+    @NonNull
+    public ImmutableSet<File> getExternalPackagedJarsWithoutAars() {
+        ImmutableSet.Builder<File> jars = ImmutableSet.builder();
+
+        for (JarDependency jar : mExternalJars) {
+            File jarFile = jar.getJarFile();
+            if (jar.isPackaged() && jarFile.exists()) {
+                jars.add(jarFile);
+            }
+        }
+
+        return jars.build();
+    }
+
+    /**
      * Returns the packaged local Jars
      *
      * @return a non null, but possibly empty immutable set.
@@ -1644,6 +1664,28 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         for (LibraryDependency libraryDependency : mFlatLibraries) {
             // only take the sub-project android libraries.
             if (!libraryDependency.isOptional() && libraryDependency.getProject() != null) {
+                File jniDir = libraryDependency.getJniFolder();
+                if (jniDir.exists()) {
+                    jniDirectories.add(jniDir);
+                }
+            }
+        }
+
+        return jniDirectories.build();
+    }
+
+    /**
+     * Returns the sub-project jni libs
+     *
+     * @return a non null, but possibly empty immutable set.
+     */
+    @NonNull
+    public ImmutableSet<File> getExternalAarJniLibraries() {
+        ImmutableSet.Builder<File> jniDirectories = ImmutableSet.builder();
+
+        for (LibraryDependency libraryDependency : mFlatLibraries) {
+            // only take the external android libraries.
+            if (!libraryDependency.isOptional() && libraryDependency.getProject() == null) {
                 File jniDir = libraryDependency.getJniFolder();
                 if (jniDir.exists()) {
                     jniDirectories.add(jniDir);
