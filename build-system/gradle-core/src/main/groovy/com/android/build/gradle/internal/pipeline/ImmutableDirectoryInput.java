@@ -18,8 +18,8 @@ package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
-import com.android.build.transform.api.DirectoryInput;
-import com.android.build.transform.api.Status;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.Status;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableMap;

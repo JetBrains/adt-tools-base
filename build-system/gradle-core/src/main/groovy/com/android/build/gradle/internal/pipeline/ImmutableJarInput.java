@@ -18,9 +18,9 @@ package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
-import com.android.build.transform.api.JarInput;
-import com.android.build.transform.api.QualifiedContent;
-import com.android.build.transform.api.Status;
+import com.android.build.api.transform.JarInput;
+import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.Status;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 

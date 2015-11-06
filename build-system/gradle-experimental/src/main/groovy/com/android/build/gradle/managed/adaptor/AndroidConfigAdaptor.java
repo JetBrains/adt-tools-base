@@ -16,18 +16,12 @@
 
 package com.android.build.gradle.managed.adaptor;
 
-import static com.android.builder.core.VariantType.ANDROID_TEST;
-
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.build.gradle.api.AndroidSourceDirectorySet;
 import com.android.build.gradle.api.AndroidSourceFile;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.api.VariantFilter;
-import com.android.build.gradle.internal.BuildTypeData;
 import com.android.build.gradle.internal.CompileOptions;
-import com.android.build.gradle.internal.ProductFlavorData;
-import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.coverage.JacocoOptions;
 import com.android.build.gradle.internal.dsl.AaptOptions;
@@ -43,7 +37,7 @@ import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.build.gradle.managed.SigningConfig;
 import com.android.build.gradle.managed.AndroidConfig;
-import com.android.build.transform.api.Transform;
+import com.android.build.api.transform.Transform;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.model.DataBindingOptions;

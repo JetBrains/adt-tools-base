@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.transform.api;
+package com.android.build.api.transform;
 
 import com.google.common.annotations.Beta;
 

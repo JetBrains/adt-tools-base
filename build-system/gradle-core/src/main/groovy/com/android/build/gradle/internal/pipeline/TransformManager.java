@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.internal.pipeline;
 
-import static com.android.build.transform.api.QualifiedContent.DefaultContentType.CLASSES;
-import static com.android.build.transform.api.QualifiedContent.DefaultContentType.RESOURCES;
+import static com.android.build.api.transform.QualifiedContent.DefaultContentType.CLASSES;
+import static com.android.build.api.transform.QualifiedContent.DefaultContentType.RESOURCES;
 import static com.android.utils.StringHelper.capitalize;
 
 import com.android.annotations.NonNull;
@@ -26,10 +26,10 @@ import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.BaseScope;
-import com.android.build.transform.api.QualifiedContent;
-import com.android.build.transform.api.QualifiedContent.ContentType;
-import com.android.build.transform.api.QualifiedContent.Scope;
-import com.android.build.transform.api.Transform;
+import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.QualifiedContent.ContentType;
+import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.Transform;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;

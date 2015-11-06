@@ -31,7 +31,7 @@ import com.android.build.gradle.internal.model.SyncIssueImpl;
 import com.android.build.gradle.internal.scope.AndroidTaskRegistry;
 import com.android.build.gradle.internal.scope.BaseScope;
 import com.android.build.gradle.internal.scope.GlobalScope;
-import com.android.build.transform.api.QualifiedContent;
+import com.android.build.api.transform.QualifiedContent;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.model.SyncIssue;
 import com.android.ide.common.blame.Message;

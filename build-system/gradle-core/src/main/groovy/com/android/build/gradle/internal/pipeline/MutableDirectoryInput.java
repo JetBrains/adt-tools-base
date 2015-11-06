@@ -17,8 +17,8 @@
 package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
-import com.android.build.transform.api.DirectoryInput;
-import com.android.build.transform.api.Status;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.Status;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
