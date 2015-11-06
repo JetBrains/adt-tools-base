@@ -154,7 +154,7 @@
         <xsd:all>
             <!-- The revision, an int > 0, incremented each time a new
                  package is generated. -->
-            <xsd:element name="revision"  type="xsd:positiveInteger" />
+            <xsd:element name="revision"  type="sdk:revisionType" />
 
             <!-- The optional display list item. When missing, it is auto-computed. -->
             <xsd:element name="list-display"   type="xsd:normalizedString" minOccurs="0" />
