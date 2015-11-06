@@ -142,12 +142,12 @@ public class LibraryJarTransform extends Transform {
         List<String> excludes = Lists.newArrayListWithExpectedSize(5);
 
         // these must be regexp to match the zip entries
-        excludes.add(packagePath + "/R.class");
-        excludes.add(packagePath + "/R\\$(.*).class");
-        excludes.add(packagePath + "/Manifest.class");
-        excludes.add(packagePath + "/Manifest\\$(.*).class");
+        excludes.add(".*/R.class$");
+        excludes.add(".*/R\\$(.*).class$");
+        excludes.add(packagePath + "/Manifest.class$");
+        excludes.add(packagePath + "/Manifest\\$(.*).class$");
         if (!packageBuildConfig) {
-            excludes.add(packagePath + "/BuildConfig.class");
+            excludes.add(packagePath + "/BuildConfig.class$");
         }
         if (excludeListProviders != null) {
             for (ExcludeListProvider provider : excludeListProviders) {
