@@ -107,7 +107,7 @@ include \$(BUILD_SHARED_LIBRARY)
 apply plugin: "com.android.model.external"
 
 model {
-    nativeBuild.libraries {
+    nativeBuildConfig.libraries {
         create("foo") {
             executable = "${compiler.getPath()}"
             args.addAll([
@@ -127,7 +127,7 @@ model {
 
         }
     }
-    nativeBuild.toolchains {
+    nativeBuildConfig.toolchains {
         create("gcc") {
             CCompilerExecutable = file("${compiler.getPath()}")
 

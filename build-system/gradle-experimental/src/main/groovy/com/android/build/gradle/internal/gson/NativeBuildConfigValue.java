@@ -36,20 +36,18 @@ public class NativeBuildConfigValue {
     @Nullable
     Collection<File> buildFiles;
     @Nullable
-    Collection<String> generatorCommand;
-    @Nullable
     Map<String, NativeLibraryValue> libraries;
     @Nullable
     Map<String, NativeToolchainValue> toolchains;
 
+    /**
+     * Copies this NativeBuildConfigValue to another.
+     *
+     * If target already contains non-empty lists, values are appended.
+     */
     public void copyTo(@NonNull NativeBuildConfig config) {
         if (buildFiles != null) {
-            config.getBuildFiles().clear();
             config.getBuildFiles().addAll(buildFiles);
-        }
-        if (generatorCommand != null) {
-            config.getGeneratorCommand().clear();
-            config.getGeneratorCommand().addAll(generatorCommand);
         }
         if (libraries != null) {
             for (final Map.Entry<String, NativeLibraryValue> entry : libraries.entrySet()) {

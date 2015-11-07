@@ -31,7 +31,9 @@ public class ModelConstants {
 
     public static final String COMPONENTS = "components";
 
-    public static final String EXTERNAL_BUILD_CONFIG = "nativeBuild";
+    public static final String EXTERNAL_CONFIG_FILES = "nativeBuild";
+
+    public static final String EXTERNAL_BUILD_CONFIG = "nativeBuildConfig";
 
     public static final String EXTRA_MODEL_INFO = "extraModelInfo";
 
