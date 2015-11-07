@@ -270,8 +270,6 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 }
 
                 super.visitLabel(start);
-                // A special line number to mark this area of code.
-                super.visitLineNumber(0, start);
                 change = newLocal(CHANGE_TYPE);
                 visitFieldInsn(Opcodes.GETSTATIC, visitedClassName, "$change",
                         getRuntimeTypeName(CHANGE_TYPE));
@@ -292,6 +290,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
             if (disableRedirection) return;
             Redirection redirection = resolvedRedirections.get(label);
             if (redirection != null) {
+                // A special line number to mark this area of code.
+                super.visitLineNumber(0, label);
                 redirection.redirect(this, change, args);
             }
         }
@@ -464,6 +464,9 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         final GeneratorAdapter mv = new GeneratorAdapter(access, m, visitor);
 
         mv.visitCode();
+        // Mark this code as redirection code
+        Label label = new Label();
+        mv.visitLineNumber(0, label);
 
         // Get and store the constructor canonical name.
         mv.visitVarInsn(Opcodes.ALOAD, 1);
