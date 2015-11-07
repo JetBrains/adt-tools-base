@@ -34,6 +34,7 @@ import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
 import com.android.ide.common.res2.AssetSet;
 import com.android.ide.common.res2.ResourceSet;
+import com.android.sdklib.SdkVersionInfo;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
@@ -1372,6 +1373,20 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
 
         return jniSets;
+    }
+
+    public int getRenderscriptTarget() {
+        ProductFlavor mergedFlavor = getMergedFlavor();
+
+        int targetApi = mergedFlavor.getRenderscriptTargetApi() != null ?
+                mergedFlavor.getRenderscriptTargetApi() : -1;
+        ApiVersion apiVersion = getMinSdkVersion();
+        int minSdk = apiVersion.getApiLevel();
+        if (apiVersion.getCodename() != null) {
+            minSdk = SdkVersionInfo.getApiByBuildCode(apiVersion.getCodename(), true);
+        }
+
+        return targetApi > minSdk ? targetApi : minSdk;
     }
 
     /**
