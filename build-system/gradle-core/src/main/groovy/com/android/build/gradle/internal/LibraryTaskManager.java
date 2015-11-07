@@ -356,8 +356,8 @@ public class LibraryTaskManager extends TaskManager {
                             if (!difference.isEmpty()) {
                                 String scopes = difference.toString();
                                 androidBuilder.getErrorReporter().handleSyncError(
-                                        scopes,
-                                        SyncIssue.TYPE_WRONG_TRANSFORM_SCOPE_ON_LIB,
+                                        "",
+                                        SyncIssue.TYPE_GENERIC,
                                         String.format("Transforms with scopes '%s' cannot be applied to library projects.",
                                                 scopes));
                             }

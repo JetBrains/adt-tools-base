@@ -174,7 +174,7 @@ public class TransformManager extends FilterableStreamCollection {
 
         if (inputStreams.isEmpty() && referencedStreams.isEmpty()) {
             // didn't find any match. Means there is a broken order somewhere in the streams.
-            errorReporter.handleSyncError("", SyncIssue.TYPE_TRANSFORM_WITH_NO_STREAMS,
+            errorReporter.handleSyncError("", SyncIssue.TYPE_GENERIC,
                     String.format(
                             "Unable to add Transform '%s' on variant '%s': requested streams not available: %s+%s / %s",
                             transform.getName(), scope.getVariantConfiguration().getFullName(),
@@ -383,7 +383,7 @@ public class TransformManager extends FilterableStreamCollection {
         for (ContentType contentType : contentTypes) {
             if (!(contentType instanceof QualifiedContent.DefaultContentType
                     || contentType instanceof ExtendedContentType)) {
-                errorReporter.handleSyncError("", SyncIssue.TYPE_WRONG_CONTENT_TYPE_IMPL,
+                errorReporter.handleSyncError("", SyncIssue.TYPE_GENERIC,
                         String.format("Custom content type not supported : %1$s",
                                 contentType.name()));
                 return false;

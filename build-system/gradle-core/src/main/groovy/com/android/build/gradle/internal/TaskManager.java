@@ -2055,7 +2055,8 @@ public abstract class TaskManager {
 
         if (scope.getVariantConfiguration().getUseJack()) {
             androidBuilder.getErrorReporter().handleSyncError(
-                    "Data Binding", SyncIssue.TYPE_JACK_IS_NOT_SUPPORTED,
+                    scope.getVariantConfiguration().getFullName(),
+                    SyncIssue.TYPE_JACK_IS_NOT_SUPPORTED,
                     "Data Binding does not support Jack builds yet"
             );
         }
