@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
+import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
@@ -184,7 +185,15 @@ public class InstantRunDex extends Transform {
         inputFiles.add(classesJar);
 
         try {
-            androidBuilder.convertByteCodeWithDexWrapper(inputFiles.build(), outputFolder);
+            androidBuilder.convertByteCode(inputFiles.build(),
+                    outputFolder,
+                    false /* multiDexEnabled */,
+                    null /*getMainDexListFile */,
+                    dexOptions,
+                    ImmutableList.<String>of() /* getAdditionalParameters */,
+                    false /* incremental */,
+                    true /* optimize */,
+                    new LoggedProcessOutputHandler(logger));
         } catch (ProcessException e) {
             throw new TransformException(e);
         }

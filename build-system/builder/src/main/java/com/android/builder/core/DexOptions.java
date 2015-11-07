@@ -23,6 +23,8 @@ public interface DexOptions {
     boolean getIncremental();
     boolean getPreDexLibraries();
     boolean getJumboMode();
+    boolean getDexInProcess();
+
     @Nullable
     String getJavaMaxHeapSize();
     @Nullable

@@ -32,11 +32,14 @@ public class DexOptions implements com.android.builder.core.DexOptions {
 
     private boolean isJumboModeFlag = false;
 
+    private boolean isDexInProcess = false;
+
     private Integer threadCount = null;
 
     private String javaMaxHeapSize;
 
     public void setIncremental(boolean isIncremental) {
+        // TODO: Print out a warning, that this is ignored.
         isIncrementalFlag = isIncremental;
     }
 
@@ -50,6 +53,10 @@ public class DexOptions implements com.android.builder.core.DexOptions {
         return isIncrementalFlag;
     }
 
+    void setPreDexLibraries(boolean flag) {
+        isPreDexLibrariesFlag = flag;
+    }
+
     /**
      * Whether to pre-dex libraries. This can improve incremental builds, but clean builds may
      * be slower.
@@ -58,10 +65,6 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     @Input
     public boolean getPreDexLibraries() {
         return isPreDexLibrariesFlag;
-    }
-
-    void setPreDexLibraries(boolean flag) {
-        isPreDexLibrariesFlag = flag;
     }
 
     public void setJumboMode(boolean flag) {
@@ -75,6 +78,18 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     @Input
     public boolean getJumboMode() {
         return isJumboModeFlag;
+    }
+
+    public void setDexInProcess(boolean dexInProcess) {
+        isDexInProcess = dexInProcess;
+    }
+
+    /**
+     * Whether to run the dx compiler in the same JVM as Gradle.
+     */
+    @Override
+    public boolean getDexInProcess() {
+        return isDexInProcess;
     }
 
     public void setJavaMaxHeapSize(String theJavaMaxHeapSize) {
