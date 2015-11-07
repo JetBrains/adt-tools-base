@@ -17,21 +17,20 @@
 package com.android.build.gradle.internal.transforms;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.Context;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.JarInput;
+import com.android.build.api.transform.Status;
+import com.android.build.api.transform.TransformException;
+import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.incremental.IncompatibleChange;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.transform.api.Context;
-import com.android.build.transform.api.DirectoryInput;
-import com.android.build.transform.api.JarInput;
-import com.android.build.transform.api.Status;
-import com.android.build.transform.api.TransformException;
-import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutputProvider;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
