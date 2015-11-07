@@ -76,9 +76,9 @@ public class RemoteRepoTest extends TestCase {
         Archive a2 = archiveIter.next();
         Iterator<Archive.PatchType> patchIter = a2.getAllPatches().iterator();
         Archive.PatchType patch = patchIter.next();
-        assertEquals(new Revision(1, 3, 2), patch.getBasedOn().toPreciseRevision());
+        assertEquals(new Revision(1, 3, 2), patch.getBasedOn().toRevision());
         patch = patchIter.next();
-        assertEquals(new Revision(2), patch.getBasedOn().toPreciseRevision());
+        assertEquals(new Revision(2), patch.getBasedOn().toRevision());
     }
 
     private static class FakeRepositorySourceProvider implements RepositorySourceProvider {

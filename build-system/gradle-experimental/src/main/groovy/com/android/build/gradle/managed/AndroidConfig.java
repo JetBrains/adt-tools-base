@@ -29,7 +29,7 @@ import com.android.build.gradle.internal.dsl.TestOptions;
 import com.android.builder.core.LibraryRequest;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 
 import org.gradle.api.Action;
 import org.gradle.language.base.FunctionalSourceSet;
@@ -56,8 +56,8 @@ public interface AndroidConfig {
 
     /** Build tool revisions */
     @Unmanaged
-    FullRevision getBuildToolsRevision();
-    void setBuildToolsRevision(FullRevision fullRevision);
+    Revision getBuildToolsRevision();
+    void setBuildToolsRevision(Revision revision);
 
     /** Default config, shared by all flavors. */
     ProductFlavor getDefaultConfig();

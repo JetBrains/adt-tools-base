@@ -26,9 +26,9 @@ import static org.mockito.Mockito.when;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
+import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.sdklib.repository.FullRevision;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
@@ -1892,7 +1892,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 @NonNull
                 @Override
                 protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
-                    FullRevision revision = new FullRevision(22, 2, 1);
+                    Revision revision = new Revision(22, 2, 1);
                     BuildToolInfo info = new BuildToolInfo(revision, dir);
 
                     Project fromSuper = super.createProject(dir, referenceDir);
@@ -1907,7 +1907,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 @NonNull
                 @Override
                 protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
-                    FullRevision revision = new FullRevision(23, 0, 2);
+                    Revision revision = new Revision(23, 0, 2);
                     BuildToolInfo info = new BuildToolInfo(revision, dir);
 
                     Project fromSuper = super.createProject(dir, referenceDir);

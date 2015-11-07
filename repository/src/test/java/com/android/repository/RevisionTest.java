@@ -22,7 +22,7 @@ import java.util.Arrays;
 
 public class RevisionTest extends TestCase {
 
-    public final void testPreciseRevision() {
+    public final void testRevision() {
 
         assertEquals("5", Revision.parseRevision("5").toString());
         assertEquals("5.0", Revision.parseRevision("5.0").toString());

@@ -16,6 +16,8 @@
 
 package com.android.sdklib.internal.repository.archives;
 
+import com.android.repository.io.FileOp;
+import com.android.repository.io.MockFileOp;
 import com.android.sdklib.internal.repository.DownloadCache;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.MockEmptySdkManager;
@@ -25,10 +27,10 @@ import com.android.sdklib.internal.repository.packages.MockEmptyPackage;
 import com.android.sdklib.internal.repository.packages.MockExtraPackage;
 import com.android.sdklib.internal.repository.sources.SdkRepoSource;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.io.IFileOp;
-import com.android.sdklib.io.MockFileOp;
 import com.android.sdklib.repository.PkgProps;
 import com.android.utils.Pair;
+
+import junit.framework.TestCase;
 
 import java.io.File;
 import java.util.Arrays;
@@ -36,8 +38,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link ArchiveInstaller}.
@@ -54,7 +54,7 @@ public class ArchiveInstallerTest extends TestCase {
 
         private Map<Archive, File> mDownloadMap = new HashMap<Archive, File>();
 
-        public MockArchiveInstaller(IFileOp fileUtils) {
+        public MockArchiveInstaller(FileOp fileUtils) {
             super(fileUtils);
         }
 
@@ -135,7 +135,7 @@ public class ArchiveInstallerTest extends TestCase {
                 Arrays.toString(mFile.getExistingFiles()));
 
         assertEquals(
-                "[/, /sdk, /sdk/mock, /sdk/mock/testPkg]",
+                "[/, /sdk, /sdk/mock, /sdk/mock/testPkg, /sdk/tmp]",
                 Arrays.toString(mFile.getExistingFolders()));
 
         assertEquals(
@@ -169,7 +169,7 @@ public class ArchiveInstallerTest extends TestCase {
 
         // associate the File that will be "downloaded" for this archive
         mArchInst.setDownloadResponse(
-                newPkg.getArchives()[0], createFile("/sdk", "tmp", "download1.zip"));
+                newPkg.getArchives()[0], createFile("/sdk", "temp", "download1.zip"));
 
         assertTrue(mArchInst.install(ar, mSdkRoot, false /*forceHttp*/, mSdkMan,
                 null /*UrlCache*/, mMon));
@@ -197,7 +197,7 @@ public class ArchiveInstallerTest extends TestCase {
                 "Extra.VendorId=vendor1\n" +
                 "Pkg.Desc=desc\n" +
                 "Pkg.DescUrl=url\n" +
-                "Pkg.Revision=2.0.0\n" +
+                "Pkg.Revision=2\n" +
                 "Pkg.SourceUrl=http\\://repo.example.com/url\n" +
                 "'>]"),
                 stripDate(Arrays.toString(mFile.getOutputStreams())));
@@ -255,7 +255,7 @@ public class ArchiveInstallerTest extends TestCase {
         // No sdk/temp dir was created since we didn't have to move the old package dir out
         // of the way.
         assertEquals(
-                "[/, /sdk, /sdk/extras, /sdk/extras/vendor1, /sdk/extras/vendor1/newPath]",
+                "[/, /sdk, /sdk/extras, /sdk/extras/vendor1, /sdk/extras/vendor1/newPath, /sdk/tmp]",
                 Arrays.toString(mFile.getExistingFolders()));
 
         assertEquals(
@@ -270,7 +270,7 @@ public class ArchiveInstallerTest extends TestCase {
                 "Extra.VendorId=vendor1\n" +
                 "Pkg.Desc=desc\n" +
                 "Pkg.DescUrl=url\n" +
-                "Pkg.Revision=2.0.0\n" +
+                "Pkg.Revision=2\n" +
                 "Pkg.SourceUrl=http\\://repo.example.com/url\n" +
                 "'>]"),
                 stripDate(Arrays.toString(mFile.getOutputStreams())));

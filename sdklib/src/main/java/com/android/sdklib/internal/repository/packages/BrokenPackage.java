@@ -22,7 +22,7 @@ import com.android.sdklib.SdkManager;
 import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 
 import java.io.File;
@@ -225,7 +225,7 @@ public class BrokenPackage extends MajorRevisionPackage
     @Override
     protected String comparisonKey() {
         String s = super.comparisonKey();
-        FullRevision rev = getPkgDesc().getFullRevision();
+        Revision rev = getPkgDesc().getRevision();
         if (rev != null) {
             int pos = s.indexOf("|r:");         //$NON-NLS-1$
             assert pos > 0;

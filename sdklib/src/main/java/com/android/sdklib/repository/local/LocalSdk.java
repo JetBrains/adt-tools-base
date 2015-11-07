@@ -22,19 +22,17 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.annotations.concurrency.GuardedBy;
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.*;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
 import com.android.sdklib.internal.androidTarget.MissingTarget;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.io.IFileOp;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
-import com.android.sdklib.repository.NoPreviewRevision;
-import com.android.sdklib.repository.PkgProps;
+import com.android.repository.io.FileOp;
+import com.android.sdklib.repository.*;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDescExtra;
 import com.android.sdklib.repository.descriptors.PkgType;
+import com.android.repository.Revision;
 import com.google.common.collect.*;
 
 import java.io.File;
@@ -77,10 +75,10 @@ import java.util.*;
  *
  * <tr>
  * <td>Build-Tools</td>
- * <td>{@link FullRevision}</td>
+ * <td>{@link Revision}</td>
  * <td>{@code getLatestBuildTool()} => {@link BuildToolInfo}, <br/>
- *     or {@code getBuildTool(FullRevision)} => {@link BuildToolInfo}, <br/>
- *     or {@code getPkgInfo(PkgType.PKG_BUILD_TOOLS, FullRevision)} => {@link LocalPkgInfo}, <br/>
+ *     or {@code getBuildTool(Revision)} => {@link BuildToolInfo}, <br/>
+ *     or {@code getPkgInfo(PkgType.PKG_BUILD_TOOLS, Revision)} => {@link LocalPkgInfo}, <br/>
  *     or {@code getPkgsInfos(PkgType.PKG_BUILD_TOOLS)} => {@link LocalPkgInfo}[]</td>
  * </tr>
  *
@@ -163,7 +161,7 @@ public class LocalSdk {
     /** Location of the SDK. Maybe null. Can be changed. */
     private File mSdkRoot;
     /** File operation object. (Used for overriding in mock testing.) */
-    private final IFileOp mFileOp;
+    private final FileOp mFileOp;
     /** List of package information loaded so far. Lazily populated. */
     @GuardedBy(value="mLocalPackages")
     private final Multimap<PkgType, LocalPkgInfo> mLocalPackages = TreeMultimap.create();
@@ -181,7 +179,7 @@ public class LocalSdk {
      * Creates an initial LocalSdk instance with an unknown location.
      */
     public LocalSdk() {
-        mFileOp = new FileOp();
+        mFileOp = FileOpUtils.create();
     }
 
     /**
@@ -201,15 +199,15 @@ public class LocalSdk {
      * @param fileOp The alternate {@link FileOp} to use for all file-based interactions.
      */
     @VisibleForTesting(visibility=Visibility.PRIVATE)
-    public LocalSdk(@NonNull IFileOp fileOp) {
+    public LocalSdk(@NonNull FileOp fileOp) {
         mFileOp = fileOp;
     }
 
     /*
-     * Returns the current IFileOp being used.
+     * Returns the current FileOp being used.
      */
     @NonNull
-    public IFileOp getFileOp() {
+    public FileOp getFileOp() {
         return mFileOp;
     }
 
@@ -341,24 +339,24 @@ public class LocalSdk {
     }
 
     /**
-     * Retrieves information on a package identified by its {@link FullRevision}.
+     * Retrieves information on a package identified by its {@link Revision}.
      * <p/>
      * Note that {@link PkgType#PKG_TOOLS} and {@link PkgType#PKG_PLATFORM_TOOLS}
      * are unique in a local SDK so you'll want to use {@link #getPkgInfo(PkgType)}
      * to retrieve them instead.
      *
      * @param filter {@link PkgType#PKG_BUILD_TOOLS}.
-     * @param revision The {@link FullRevision} uniquely identifying this package.
+     * @param revision The {@link Revision} uniquely identifying this package.
      * @return An existing package information or null if not found.
      */
     @Nullable
-    public LocalPkgInfo getPkgInfo(@NonNull PkgType filter, @NonNull FullRevision revision) {
+    public LocalPkgInfo getPkgInfo(@NonNull PkgType filter, @NonNull Revision revision) {
 
         assert filter == PkgType.PKG_BUILD_TOOLS;
 
         for (LocalPkgInfo pkg : getPkgsInfos(filter)) {
             IPkgDesc d = pkg.getDesc();
-            if (d.hasFullRevision() && d.getFullRevision().equals(revision)) {
+            if (d.getRevision().equals(revision)) {
                 return pkg;
             }
         }
@@ -622,7 +620,7 @@ public class LocalSdk {
      *  not part of the known set returned by {@code getPkgsInfos(PkgType.PKG_BUILD_TOOLS)}.
      */
     @Nullable
-    public BuildToolInfo getBuildTool(@Nullable FullRevision revision) {
+    public BuildToolInfo getBuildTool(@Nullable Revision revision) {
         LocalPkgInfo pkg = getPkgInfo(PkgType.PKG_BUILD_TOOLS, revision);
         if (pkg instanceof LocalBuildToolPkgInfo) {
             return ((LocalBuildToolPkgInfo) pkg).getBuildToolInfo();
@@ -651,7 +649,7 @@ public class LocalSdk {
         if (pkgs.length == 0) {
             LocalPkgInfo ptPkg = getPkgInfo(PkgType.PKG_PLATFORM_TOOLS);
             if (ptPkg instanceof LocalPlatformToolPkgInfo &&
-                    ptPkg.getDesc().getFullRevision().compareTo(new FullRevision(17)) < 0) {
+                    ptPkg.getDesc().getRevision().compareTo(new Revision(17)) < 0) {
                 // older SDK, create a compatible build-tools
                 mLegacyBuildTools = createLegacyBuildTools((LocalPlatformToolPkgInfo) ptPkg);
                 return mLegacyBuildTools;
@@ -665,7 +663,7 @@ public class LocalSdk {
         // Just in case, sort them again.
         Arrays.sort(pkgs);
 
-        // LocalBuildToolPkgInfo's comparator sorts on its FullRevision so we just
+        // LocalBuildToolPkgInfo's comparator sorts on its Revision so we just
         // need to take the latest element.
 
         LocalBuildToolPkgInfo preview = null;
@@ -693,7 +691,7 @@ public class LocalSdk {
         File platformToolsRs = new File(platformTools, SdkConstants.FN_FRAMEWORK_RENDERSCRIPT);
 
         return new BuildToolInfo(
-                ptInfo.getDesc().getFullRevision(),
+                ptInfo.getDesc().getRevision(),
                 platformTools,
                 new File(platformTools, SdkConstants.FN_AAPT),
                 new File(platformTools, SdkConstants.FN_AIDL),
@@ -813,15 +811,15 @@ public class LocalSdk {
     private LocalToolPkgInfo scanTools(File toolFolder) {
         // Can we find some properties?
         Properties props = parseProperties(new File(toolFolder, SdkConstants.FN_SOURCE_PROP));
-        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+        Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
 
-        FullRevision minPlatToolsRev =
-            PackageParserUtils.getPropertyFull(props, PkgProps.MIN_PLATFORM_TOOLS_REV);
+        Revision minPlatToolsRev =
+            PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_PLATFORM_TOOLS_REV);
         if (minPlatToolsRev == null) {
-            minPlatToolsRev = FullRevision.NOT_SPECIFIED;
+            minPlatToolsRev = Revision.NOT_SPECIFIED;
         }
 
         LocalToolPkgInfo info = new LocalToolPkgInfo(this, toolFolder, props, rev, minPlatToolsRev);
@@ -859,7 +857,7 @@ public class LocalSdk {
     private LocalPlatformToolPkgInfo scanPlatformTools(File ptFolder) {
         // Can we find some properties?
         Properties props = parseProperties(new File(ptFolder, SdkConstants.FN_SOURCE_PROP));
-        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+        Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
@@ -875,7 +873,7 @@ public class LocalSdk {
     private LocalDocPkgInfo scanDoc(File docFolder) {
         // Can we find some properties?
         Properties props = parseProperties(new File(docFolder, SdkConstants.FN_SOURCE_PROP));
-        MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+        Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
@@ -904,7 +902,7 @@ public class LocalSdk {
     private LocalNdkPkgInfo scanNdk(@NonNull File ndkFolder) {
         // Can we find some properties?
         Properties props = parseProperties(new File(ndkFolder, SdkConstants.FN_SOURCE_PROP));
-        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+        Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
@@ -920,7 +918,7 @@ public class LocalSdk {
     private LocalLLDBPkgInfo scanLLDB(@NonNull File lldbFolder) {
         // Can we find some properties?
         Properties props = parseProperties(new File(lldbFolder, SdkConstants.FN_SOURCE_PROP));
-        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+        Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
@@ -960,7 +958,7 @@ public class LocalSdk {
             }
 
             Properties props = parseProperties(new File(buildToolDir, SdkConstants.FN_SOURCE_PROP));
-            FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+            Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
@@ -979,15 +977,15 @@ public class LocalSdk {
             }
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
-            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+            Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
 
-            FullRevision minToolsRev =
-                PackageParserUtils.getPropertyFull(props, PkgProps.MIN_TOOLS_REV);
+            Revision minToolsRev =
+                PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_TOOLS_REV);
             if (minToolsRev == null) {
-                minToolsRev = FullRevision.NOT_SPECIFIED;
+                minToolsRev = Revision.NOT_SPECIFIED;
             }
 
             try {
@@ -1010,7 +1008,7 @@ public class LocalSdk {
             }
 
             Properties props = parseProperties(new File(addonDir, SdkConstants.FN_SOURCE_PROP));
-            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+            Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
@@ -1108,7 +1106,7 @@ public class LocalSdk {
 
         for (File propFile : propFiles) {
             Properties props = parseProperties(propFile);
-            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+            Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
@@ -1148,15 +1146,15 @@ public class LocalSdk {
             }
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
-            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+            Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
 
-            FullRevision minToolsRev =
-                PackageParserUtils.getPropertyFull(props, PkgProps.MIN_TOOLS_REV);
+            Revision minToolsRev =
+                PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_TOOLS_REV);
             if (minToolsRev == null) {
-                minToolsRev = FullRevision.NOT_SPECIFIED;
+                minToolsRev = Revision.NOT_SPECIFIED;
             }
 
             try {
@@ -1179,7 +1177,7 @@ public class LocalSdk {
             }
 
             Properties props = parseProperties(new File(platformDir, SdkConstants.FN_SOURCE_PROP));
-            MajorRevision rev = PackageParserUtils.getPropertyMajor(props, PkgProps.PKG_REVISION);
+            Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
             if (rev == null) {
                 continue; // skip, no revision
             }
@@ -1208,8 +1206,8 @@ public class LocalSdk {
                 }
 
                 Properties props = parseProperties(new File(extraDir, SdkConstants.FN_SOURCE_PROP));
-                NoPreviewRevision rev =
-                    PackageParserUtils.getPropertyNoPreview(props, PkgProps.PKG_REVISION);
+                Revision rev =
+                    PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
                 if (rev == null) {
                     continue; // skip, no revision
                 }

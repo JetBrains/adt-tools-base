@@ -16,7 +16,7 @@
 
 package com.android.sdklib.internal.repository.packages;
 
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
 
@@ -55,7 +55,7 @@ public class MockBrokenPackage extends BrokenPackage {
                 exactApiLevel,
                 "/sdk/broken/package" /*osPath*/,
                 PkgDesc.Builder.newTool(
-                        new FullRevision(1, 2, 3, 4),
-                        FullRevision.NOT_SPECIFIED).create());
+                        new Revision(1, 2, 3, 4),
+                        Revision.NOT_SPECIFIED).create());
     }
 }

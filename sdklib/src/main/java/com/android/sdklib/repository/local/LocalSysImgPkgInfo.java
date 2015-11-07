@@ -22,10 +22,9 @@ import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SystemImage;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.io.IFileOp;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOp;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IdDisplay;
@@ -49,12 +48,12 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
     private final IPkgDesc mDesc;
 
     public LocalSysImgPkgInfo(@NonNull  LocalSdk localSdk,
-      @NonNull  File localDir,
-      @NonNull  Properties sourceProps,
-      @NonNull  AndroidVersion version,
-      @Nullable IdDisplay tag,
-      @NonNull  String abi,
-      @NonNull  MajorRevision revision) {
+                              @NonNull  File localDir,
+                              @NonNull  Properties sourceProps,
+                              @NonNull  AndroidVersion version,
+                              @Nullable IdDisplay tag,
+                              @NonNull  String abi,
+                              @NonNull Revision revision) {
         super(localSdk, localDir, sourceProps);
         String listDisplay = sourceProps.getProperty(PkgProps.PKG_LIST_DISPLAY);
         if (listDisplay == null) {
@@ -126,7 +125,7 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
         return getSystemImage(mDesc, getLocalDir(), getLocalSdk().getFileOp());
     }
 
-    static SystemImage getSystemImage(IPkgDesc desc, File localDir, @NonNull IFileOp fileOp) {
+    static SystemImage getSystemImage(IPkgDesc desc, File localDir, @NonNull FileOp fileOp) {
         final IdDisplay tag = desc.getTag();
         final String abi = desc.getPath();
         List<File> parsedSkins = PackageParserUtils.parseSkinFolder(new File(localDir, SdkConstants.FD_SKINS), fileOp);
@@ -159,7 +158,7 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
             IdDisplay vendor,
             IdDisplay tag,
             AndroidVersion version,
-            FullRevision revision,
+            Revision revision,
             boolean obsolete) {
         if (!listDisplay.isEmpty()) {
             return String.format("%1$s, %2$s API %3$s, revision %4$s%5$s", listDisplay, vendor == null ? "Android" : vendor.getDisplay(),

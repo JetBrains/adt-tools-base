@@ -30,7 +30,7 @@ import com.android.annotations.Nullable;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
@@ -79,7 +79,7 @@ public class DefaultSdkLoader implements SdkLoader {
     @NonNull
     public TargetInfo getTargetInfo(
             @NonNull String targetHash,
-            @NonNull FullRevision buildToolRevision,
+            @NonNull Revision buildToolRevision,
             @NonNull ILogger logger) {
         init(logger);
 
@@ -134,7 +134,7 @@ public class DefaultSdkLoader implements SdkLoader {
     }
 
     @Nullable
-    private FullRevision getPlatformToolsRevision(@NonNull File platformToolsFolder) {
+    private Revision getPlatformToolsRevision(@NonNull File platformToolsFolder) {
         if (!platformToolsFolder.isDirectory()) {
             return null;
         }
@@ -149,7 +149,7 @@ public class DefaultSdkLoader implements SdkLoader {
 
             String value = props.getProperty(PkgProps.PKG_REVISION);
 
-            return FullRevision.parseRevision(value);
+            return Revision.parseRevision(value);
 
         } catch (FileNotFoundException ignore) {
             // return null below.

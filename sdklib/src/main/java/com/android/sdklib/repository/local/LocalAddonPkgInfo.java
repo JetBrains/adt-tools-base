@@ -19,6 +19,8 @@ package com.android.sdklib.repository.local;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.Revision;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
@@ -27,12 +29,11 @@ import com.android.sdklib.SystemImage;
 import com.android.sdklib.internal.androidTarget.AddOnTarget;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.internal.project.ProjectProperties;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.AddonManifestIniProps;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
-import com.android.sdklib.repository.descriptors.*;
+import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.android.sdklib.repository.descriptors.PkgDesc;
+import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.utils.Pair;
 import com.google.common.base.Objects;
 import com.google.common.collect.SetMultimap;
@@ -40,7 +41,16 @@ import com.google.common.collect.TreeMultimap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,21 +62,20 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
     // usb ids are 16-bit hexadecimal values.
     private static final Pattern PATTERN_USB_IDS = Pattern.compile(
-           "^0x[a-f0-9]{4}$", Pattern.CASE_INSENSITIVE);                    //$NON-NLS-1$
+            "^0x[a-f0-9]{4}$", Pattern.CASE_INSENSITIVE);                    //$NON-NLS-1$
 
     @NonNull
-    private final IPkgDescAddon mAddonDesc;
+    private final IPkgDesc mAddonDesc;
 
     public LocalAddonPkgInfo(@NonNull LocalSdk localSdk,
-                             @NonNull File localDir,
-                             @NonNull Properties sourceProps,
-                             @NonNull AndroidVersion version,
-                             @NonNull MajorRevision revision,
-                             @NonNull IdDisplay vendor,
-                             @NonNull IdDisplay name) {
-        super(localSdk, localDir, sourceProps, version, revision, FullRevision.NOT_SPECIFIED);
-        mAddonDesc = (IPkgDescAddon) PkgDesc.Builder.newAddon(version, revision, vendor, name)
-                                                    .create();
+            @NonNull File localDir,
+            @NonNull Properties sourceProps,
+            @NonNull AndroidVersion version,
+            @NonNull Revision revision,
+            @NonNull IdDisplay vendor,
+            @NonNull IdDisplay name) {
+        super(localSdk, localDir, sourceProps, version, revision, Revision.NOT_SPECIFIED);
+        mAddonDesc = PkgDesc.Builder.newAddon(version, revision, vendor, name).create();
     }
 
     @NonNull
@@ -75,7 +84,9 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
         return mAddonDesc;
     }
 
-    /** The "path" of an add-on is its Target Hash. */
+    /**
+     * The "path" of an add-on is its Target Hash.
+     */
     @Override
     @NonNull
     public String getTargetHash() {
@@ -85,8 +96,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
     //-----
 
     /**
-     * Computes a sanitized name-id based on an addon name-display.
-     * This is used to provide compatibility with older add-ons that lacks the new fields.
+     * Computes a sanitized name-id based on an addon name-display. This is used to provide
+     * compatibility with older add-ons that lacks the new fields.
      *
      * @param displayName A name-display field or a old-style name field.
      * @return A non-null sanitized name-id that fits in the {@code [a-zA-Z0-9_-]+} pattern.
@@ -115,7 +126,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
     @Nullable
     protected IAndroidTarget createAndroidTarget() {
         LocalSdk sdk = getLocalSdk();
-        IFileOp fileOp = sdk.getFileOp();
+        FileOp fileOp = sdk.getFileOp();
 
         // Parse the addon properties to ensure we can load it.
         Pair<Map<String, String>, String> infos = parseAddonProperties();
@@ -144,7 +155,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
             // Look for a platform that has a matching api level or codename.
             LocalPkgInfo plat = sdk.getPkgInfo(PkgType.PKG_PLATFORM,
-                                               getDesc().getAndroidVersion());
+                    getDesc().getAndroidVersion());
             if (plat instanceof LocalPlatformPkgInfo) {
                 baseTarget = (PlatformTarget) ((LocalPlatformPkgInfo) plat).getAndroidTarget();
             }
@@ -184,8 +195,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                                 // split the jar file from the description
                                 Matcher m = PATTERN_LIB_DATA.matcher(libData);
                                 if (m.matches()) {
-                                    libMap.put(libName, new String[] {
-                                            m.group(1), m.group(2) });
+                                    libMap.put(libName, new String[]{
+                                            m.group(1), m.group(2)});
                                 } else {
                                     appendLoadError(
                                             "Ignoring library '%1$s', property value has wrong format\n\t%2$s",
@@ -211,10 +222,10 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             File dataFolder = new File(getLocalDir(), SdkConstants.FD_DATA);
             if (fileOp.isDirectory(dataFolder)) {
                 hasRenderingLibrary =
-                    fileOp.isFile(new File(dataFolder, SdkConstants.FN_LAYOUTLIB_JAR));
+                        fileOp.isFile(new File(dataFolder, SdkConstants.FN_LAYOUTLIB_JAR));
                 hasRenderingResources =
-                    fileOp.isDirectory(new File(dataFolder, SdkConstants.FD_RES)) &&
-                    fileOp.isDirectory(new File(dataFolder, SdkConstants.FD_FONTS));
+                        fileOp.isDirectory(new File(dataFolder, SdkConstants.FD_RES)) &&
+                                fileOp.isDirectory(new File(dataFolder, SdkConstants.FD_FONTS));
             }
 
             AddOnTarget target = new AddOnTarget(
@@ -285,15 +296,15 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
      * Parses the add-on properties and decodes any error that occurs when loading an addon.
      *
      * @return A pair with the property map and an error string. Both can be null but not at the
-     *  same time. If a non-null error is present then the property map must be ignored. The error
-     *  should be translatable as it might show up in the SdkManager UI.
+     * same time. If a non-null error is present then the property map must be ignored. The error
+     * should be translatable as it might show up in the SdkManager UI.
      */
     @NonNull
     private Pair<Map<String, String>, String> parseAddonProperties() {
         Map<String, String> propertyMap = null;
         String error = null;
 
-        IFileOp fileOp = getLocalSdk().getFileOp();
+        FileOp fileOp = getLocalSdk().getFileOp();
         File addOnManifest = new File(getLocalDir(), SdkConstants.FN_MANIFEST_INI);
 
         do {
@@ -343,7 +354,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             // Look for a platform that has a matching api level or codename.
             IAndroidTarget baseTarget = null;
             LocalPkgInfo plat = getLocalSdk().getPkgInfo(PkgType.PKG_PLATFORM,
-                                                         getDesc().getAndroidVersion());
+                    getDesc().getAndroidVersion());
             if (plat instanceof LocalPlatformPkgInfo) {
                 baseTarget = ((LocalPlatformPkgInfo) plat).getAndroidTarget();
             }
@@ -369,14 +380,14 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                 }
             }
 
-        } while(false);
+        } while (false);
 
         return Pair.of(propertyMap, error);
     }
 
     /**
-     * Prepares a warning about the addon being ignored due to a missing manifest value.
-     * This string will show up in the SdkManager UI.
+     * Prepares a warning about the addon being ignored due to a missing manifest value. This string
+     * will show up in the SdkManager UI.
      *
      * @param valueName The missing manifest value, for display.
      */
@@ -388,6 +399,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
     /**
      * Converts a string representation of an hexadecimal ID into an int.
+     *
      * @param value the string to convert.
      * @return the int value, or {@link IAndroidTarget#NO_USB_ID} if the conversion failed.
      */
@@ -408,25 +420,22 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
     }
 
     /**
-     * Get all the system images supported by an add-on target.
-     * For an add-on,  we first look in the new sdk/system-images folders then we look
-     * for sub-folders in the addon/images directory.
-     * If none are found but the directory exists and is not empty, assume it's a legacy
-     * arm eabi system image.
-     * If any given API appears twice or more, the first occurrence wins.
+     * Get all the system images supported by an add-on target. For an add-on,  we first look in the
+     * new sdk/system-images folders then we look for sub-folders in the addon/images directory. If
+     * none are found but the directory exists and is not empty, assume it's a legacy arm eabi
+     * system image. If any given API appears twice or more, the first occurrence wins.
      * <p/>
-     * Note that it's OK for an add-on to have no system-images at all, since it can always
-     * rely on the ones from its base platform.
+     * Note that it's OK for an add-on to have no system-images at all, since it can always rely on
+     * the ones from its base platform.
      *
      * @param fileOp File operation wrapper.
-     * @return an array of ISystemImage containing all the system images for the target.
-     *              The list can be empty but not null.
-    */
+     * @return an array of ISystemImage containing all the system images for the target. The list
+     * can be empty but not null.
+     */
     @NonNull
-    private ISystemImage[] getAddonSystemImages(IFileOp fileOp) {
+    private ISystemImage[] getAddonSystemImages(FileOp fileOp) {
         Set<ISystemImage> found = new TreeSet<ISystemImage>();
         SetMultimap<IdDisplay, String> tagToAbiFound = TreeMultimap.create();
-
 
         // Look in the system images folders:
         // - SDK/system-image/platform/addon-id-tag/abi
@@ -443,7 +452,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                     d.hasVendor() &&
                     mAddonDesc.getVendor().equals(d.getVendor()) &&
                     mAddonDesc.getName().equals(d.getTag()) &&
-                    Objects.equal(mAddonDesc.getAndroidVersion(), pkg.getDesc().getAndroidVersion())) {
+                    Objects.equal(mAddonDesc.getAndroidVersion(),
+                            pkg.getDesc().getAndroidVersion())) {
                 final IdDisplay tag = mAddonDesc.getName();
                 final String abi = d.getPath();
                 if (abi != null && !tagToAbiFound.containsEntry(tag, abi)) {

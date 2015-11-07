@@ -22,7 +22,7 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.IDescription;
-import com.android.sdklib.repository.MajorRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
@@ -76,7 +76,7 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
         mVersion = new AndroidVersion(apiLevel, codeName);
 
         mPkgDesc = setDescriptions(
-                PkgDesc.Builder.newDoc(mVersion, (MajorRevision) getRevision()))
+                PkgDesc.Builder.newDoc(mVersion, getRevision()))
                 .create();
     }
 
@@ -118,7 +118,7 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
                 archiveOsPath);
         mVersion = new AndroidVersion(props, apiLevel, codename);
 
-        mPkgDesc = setDescriptions(PkgDesc.Builder.newDoc(mVersion, (MajorRevision) getRevision()))
+        mPkgDesc = setDescriptions(PkgDesc.Builder.newDoc(mVersion, getRevision()))
                 .create();
     }
 

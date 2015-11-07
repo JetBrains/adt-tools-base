@@ -26,8 +26,8 @@ import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.repository.Revision;
+import com.android.repository.Revision.PreviewComparison;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
@@ -50,7 +50,7 @@ import java.util.Properties;
  * com.android.tools.idea.sdk.remote.internal.
  */
 @Deprecated
-public class ToolPackage extends FullRevisionPackage implements IMinPlatformToolsDependency {
+public class ToolPackage extends PreciseRevisionPackage implements IMinPlatformToolsDependency {
 
     /** The value returned by {@link ToolPackage#installId()}. */
     public static final String INSTALL_ID = "tools";                             //$NON-NLS-1$
@@ -61,7 +61,7 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
      * The minimal revision of the platform-tools package required by this package
      * or {@link #MIN_PLATFORM_TOOLS_REV_INVALID} if the value was missing.
      */
-    private final FullRevision mMinPlatformToolsRevision;
+    private final Revision mMinPlatformToolsRevision;
 
     private final IPkgDesc mPkgDesc;
 
@@ -81,7 +81,7 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
             Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
 
-        mMinPlatformToolsRevision = PackageParserUtils.parseFullRevisionElement(
+        mMinPlatformToolsRevision = PackageParserUtils.parseRevisionElement(
                 PackageParserUtils.findChildElement(packageNode,
                                                     SdkRepoConstants.NODE_MIN_PLATFORM_TOOLS_REV));
 
@@ -140,10 +140,10 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
         // Setup min-platform-tool
         String revStr = getProperty(props, PkgProps.MIN_PLATFORM_TOOLS_REV, null);
 
-        FullRevision rev = MIN_PLATFORM_TOOLS_REV_INVALID;
+        Revision rev = MIN_PLATFORM_TOOLS_REV_INVALID;
         if (revStr != null) {
             try {
-                rev = FullRevision.parseRevision(revStr);
+                rev = Revision.parseRevision(revStr);
             } catch (NumberFormatException ignore) {}
         }
 
@@ -161,7 +161,7 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
     }
 
     @Override
-    public FullRevision getMinPlatformToolsRevision() {
+    public Revision getMinPlatformToolsRevision() {
         return mMinPlatformToolsRevision;
     }
 

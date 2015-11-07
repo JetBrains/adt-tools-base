@@ -17,7 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.internal.repository.archives.Archive;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 
 import java.util.Properties;
@@ -49,7 +49,7 @@ public class PlatformToolPackageTest extends TestCase {
         Properties props = PackageTest.createDefaultProps();
 
         props.setProperty(PkgProps.PKG_REVISION,
-                new FullRevision(1, 2, 3, isPreview ? 4 : 0).toShortString());
+                new Revision(1, 2, 3, isPreview ? 4 : 0).toShortString());
         props.setProperty(PkgProps.VERSION_API_LEVEL, "5");
 
         return props;

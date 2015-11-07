@@ -26,8 +26,8 @@ import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.io.IFileOp;
-import com.android.sdklib.repository.MajorRevision;
+import com.android.repository.io.FileOp;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
@@ -98,7 +98,7 @@ public class SamplePackage extends MinToolsPackage
                     MIN_API_LEVEL_NOT_SPECIFIED);
 
         mPkgDesc = setDescriptions(PkgDesc.Builder
-                .newSample(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
+                .newSample(mVersion, getRevision(), getMinToolsRevision()))
                 .create();
     }
 
@@ -135,7 +135,7 @@ public class SamplePackage extends MinToolsPackage
                 MIN_API_LEVEL_NOT_SPECIFIED);
 
         mPkgDesc = setDescriptions(PkgDesc.Builder
-                .newSample(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
+                .newSample(mVersion, getRevision(), getMinToolsRevision()))
                 .create();
     }
 
@@ -172,7 +172,7 @@ public class SamplePackage extends MinToolsPackage
                                              MIN_API_LEVEL_NOT_SPECIFIED);
 
         mPkgDesc = setDescriptions(PkgDesc.Builder
-                .newSample(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
+                .newSample(mVersion, getRevision(), getMinToolsRevision()))
                 .create();
     }
 
@@ -420,7 +420,7 @@ public class SamplePackage extends MinToolsPackage
     public void postUnzipFileHook(
             Archive archive,
             ITaskMonitor monitor,
-            IFileOp fileOp,
+            FileOp fileOp,
             File unzippedFile,
             ZipArchiveEntry zipEntry) {
         super.postUnzipFileHook(archive, monitor, fileOp, unzippedFile, zipEntry);

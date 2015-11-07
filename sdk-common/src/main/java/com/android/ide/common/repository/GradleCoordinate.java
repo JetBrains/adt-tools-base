@@ -467,7 +467,7 @@ public class GradleCoordinate {
 
     @Override
     public String toString() {
-        String s = String.format(Locale.US, "%s:%s:%s", mGroupId, mArtifactId, getFullRevision());
+        String s = String.format(Locale.US, "%s:%s:%s", mGroupId, mArtifactId, getRevision());
         if (mArtifactType != null) {
             s += "@" + mArtifactType.toString();
         }
@@ -507,7 +507,7 @@ public class GradleCoordinate {
         return mRevisions.get(mRevisions.size() - 1) == PLUS_REV;
     }
 
-    public String getFullRevision() {
+    public String getRevision() {
         StringBuilder revision = new StringBuilder();
         for (RevisionComponent component : mRevisions) {
             if (revision.length() > 0) {

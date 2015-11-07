@@ -22,7 +22,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.annotations.concurrency.Immutable;
 import com.android.ide.common.xml.XmlPrettyPrinter;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.android.utils.XmlUtils;
@@ -223,19 +223,19 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         @NonNull
         private final File mSourceFile;
         @NonNull
-        private final FullRevision mBuildToolsRevision;
+        private final Revision mBuildToolsRevision;
 
-        public static Key of(@NonNull File sourceFile, @NonNull FullRevision buildToolsRevision) {
+        public static Key of(@NonNull File sourceFile, @NonNull Revision buildToolsRevision) {
             return new Key(sourceFile, buildToolsRevision);
         }
 
-        protected Key(@NonNull File sourceFile, @NonNull FullRevision buildToolsRevision) {
+        protected Key(@NonNull File sourceFile, @NonNull Revision buildToolsRevision) {
             mSourceFile = sourceFile;
             mBuildToolsRevision = buildToolsRevision;
         }
 
         @NonNull
-        public FullRevision getBuildToolsRevision() {
+        public Revision getBuildToolsRevision() {
             return mBuildToolsRevision;
         }
 
@@ -272,7 +272,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
     }
 
     protected interface KeyFactory<T> {
-        T of(@NonNull File sourceFile, @NonNull FullRevision revision, @NonNull NamedNodeMap attrMap);
+        T of(@NonNull File sourceFile, @NonNull Revision revision, @NonNull NamedNodeMap attrMap);
     }
 
     @GuardedBy("this")
@@ -422,7 +422,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
                 NamedNodeMap attrMap = node.getAttributes();
 
                 File sourceFile = new File(attrMap.getNamedItem(ATTR_JAR).getNodeValue());
-                FullRevision revision = FullRevision.parseRevision(attrMap.getNamedItem(
+                Revision revision = Revision.parseRevision(attrMap.getNamedItem(
                         ATTR_REVISION).getNodeValue());
 
                 List<File> outputFiles = Lists.newArrayList();

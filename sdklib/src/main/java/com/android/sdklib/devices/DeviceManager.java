@@ -21,12 +21,13 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
+import com.android.repository.io.FileOpUtils;
 import com.android.resources.Keyboard;
 import com.android.resources.KeyboardState;
 import com.android.resources.Navigation;
 import com.android.sdklib.internal.avd.AvdManager;
 import com.android.sdklib.internal.avd.HardwareProperties;
-import com.android.sdklib.io.FileOp;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.repository.PkgProps;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
@@ -51,8 +52,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -363,7 +362,7 @@ public class DeviceManager {
             // Load devices from tagged system-images
             // Path pattern is /sdk/system-images/<platform-N>/<tag>/<abi>/devices.xml
 
-            FileOp fop = new FileOp();
+            FileOp fop = FileOpUtils.create();
             File sysImgFolder = new File(mOsSdkPath, SdkConstants.FD_SYSTEM_IMAGES);
 
             for (File platformFolder : fop.listFiles(sysImgFolder)) {

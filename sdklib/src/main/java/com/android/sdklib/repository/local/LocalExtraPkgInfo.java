@@ -18,7 +18,7 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IPkgDescExtra;
 import com.android.sdklib.repository.descriptors.IdDisplay;
@@ -39,7 +39,7 @@ public class LocalExtraPkgInfo extends LocalPkgInfo {
                              @NonNull  String path,
                              @Nullable String displayName,
                              @NonNull  String[] oldPaths,
-                             @NonNull  NoPreviewRevision revision) {
+                             @NonNull  Revision revision) {
         super(localSdk, localDir, sourceProps);
         mDesc = (IPkgDescExtra) PkgDesc.Builder.newExtra(
                 vendor,

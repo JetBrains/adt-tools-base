@@ -48,7 +48,7 @@ import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.resources.Density;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -85,7 +85,7 @@ import java.util.Set;
 public abstract class BaseExtension implements AndroidConfig {
 
     private String target;
-    private FullRevision buildToolsRevision;
+    private Revision buildToolsRevision;
     private List<LibraryRequest> libraryRequests = Lists.newArrayList();
 
     /** Default config, shared by all flavors. */
@@ -332,7 +332,7 @@ public abstract class BaseExtension implements AndroidConfig {
 
     public void buildToolsVersion(String version) {
         checkWritability();
-        buildToolsRevision = FullRevision.parseRevision(version);
+        buildToolsRevision = Revision.parseRevision(version);
     }
 
     /**
@@ -707,7 +707,7 @@ public abstract class BaseExtension implements AndroidConfig {
     }
 
     @Override
-    public FullRevision getBuildToolsRevision() {
+    public Revision getBuildToolsRevision() {
         return buildToolsRevision;
     }
 

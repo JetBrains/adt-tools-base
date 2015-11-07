@@ -44,7 +44,7 @@ public abstract class RepoPackageImpl implements RepoPackage {
     @Override
     @XmlTransient
     public Revision getVersion() {
-        return getRevision().toPreciseRevision();
+        return getRevision().toRevision();
     }
 
     @NonNull

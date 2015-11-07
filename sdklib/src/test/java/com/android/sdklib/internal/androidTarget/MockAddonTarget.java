@@ -19,13 +19,14 @@ package com.android.sdklib.internal.androidTarget;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SystemImage;
-import com.android.sdklib.io.FileOp;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.google.common.collect.ImmutableList;
 
@@ -80,7 +81,7 @@ public class MockAddonTarget implements IAndroidTarget {
     public ISystemImage[] getSystemImages() {
         if (mSystemImages == null) {
             SystemImage si = new SystemImage(
-                    FileOp.append(getLocation(), SdkConstants.OS_IMAGES_FOLDER),
+                    FileOpUtils.append(getLocation(), SdkConstants.OS_IMAGES_FOLDER),
                     LocationType.IN_LEGACY_FOLDER,
                     SystemImage.DEFAULT_TAG,
                     SdkConstants.ABI_ARMEABI,

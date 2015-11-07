@@ -25,7 +25,7 @@ import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.sdklib.internal.androidTarget.AddOnTarget;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repository.local.LocalExtraPkgInfo;
@@ -36,14 +36,11 @@ import com.android.utils.ILogger;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * The SDK manager parses the SDK folder and gives access to the content.
@@ -198,7 +195,7 @@ public class SdkManager {
      *  not part of the known set returned by {@link #getBuildTools()}.
      */
     @Nullable
-    public BuildToolInfo getBuildTool(@Nullable FullRevision revision) {
+    public BuildToolInfo getBuildTool(@Nullable Revision revision) {
         return mLocalSdk.getBuildTool(revision);
     }
 
@@ -338,7 +335,7 @@ public class SdkManager {
                 IPkgDesc d = ei.getDesc();
                 String vendor = d.getVendor().getId();
                 String path   = d.getPath();
-                int majorRev  = d.getFullRevision().getMajor();
+                int majorRev  = d.getRevision().getMajor();
 
                 extraVersions.put(vendor + '/' + path, majorRev);
             }
@@ -352,8 +349,8 @@ public class SdkManager {
     public String getPlatformToolsVersion() {
         LocalPkgInfo info = mLocalSdk.getPkgInfo(PkgType.PKG_PLATFORM_TOOLS);
         IPkgDesc d = info == null ? null : info.getDesc();
-        if (d != null && d.hasFullRevision()) {
-            return d.getFullRevision().toShortString();
+        if (d != null) {
+            return d.getRevision().toShortString();
         }
 
         return null;

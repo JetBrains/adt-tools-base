@@ -25,7 +25,7 @@ import com.android.sdklib.internal.repository.AdbWrapper;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.repository.Revision.PreviewComparison;
 import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
@@ -45,7 +45,7 @@ import java.util.Set;
  * com.android.tools.idea.sdk.remote.internal.
  */
 @Deprecated
-public class PlatformToolPackage extends FullRevisionPackage {
+public class PlatformToolPackage extends PreciseRevisionPackage {
 
     /** The value returned by {@link PlatformToolPackage#installId()}. */
     public static final String INSTALL_ID = "platform-tools";                       //$NON-NLS-1$

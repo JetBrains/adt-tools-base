@@ -26,7 +26,7 @@ import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.internal.repository.archives.ArchFilter;
 import com.android.sdklib.internal.repository.archives.HostOs;
 import com.android.sdklib.internal.repository.packages.Package;
-import com.android.sdklib.io.FileOp;
+import com.android.repository.io.FileOp;
 
 import java.io.File;
 import java.util.Arrays;

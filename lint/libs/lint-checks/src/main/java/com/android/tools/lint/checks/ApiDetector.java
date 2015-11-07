@@ -60,7 +60,7 @@ import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repository.local.LocalPkgInfo;
@@ -345,7 +345,7 @@ public class ApiDetector extends ResourceXmlDetector
                     return;
                 }
                 IPkgDesc desc = pkgInfo.getDesc();
-                FullRevision revision = desc.getFullRevision();
+                Revision revision = desc.getRevision();
                 if (revision == null) {
                     return;
                 }
@@ -440,7 +440,7 @@ public class ApiDetector extends ResourceXmlDetector
                         // the resources differently.
 
                         BuildToolInfo buildToolInfo = context.getProject().getBuildTools();
-                        FullRevision buildTools = buildToolInfo != null
+                        Revision buildTools = buildToolInfo != null
                                 ? buildToolInfo.getRevision() : null;
                         boolean isOldBuildTools = buildTools != null &&
                                 (buildTools.getMajor() < 23 || buildTools.getMajor() == 23
@@ -1448,11 +1448,11 @@ public class ApiDetector extends ResourceXmlDetector
 
         AndroidProject gradleModel = context.getProject().getGradleProjectModel();
         if (gradleModel != null) {
-            FullRevision gradleModelVersion =
-                    FullRevision.parseRevision(gradleModel.getModelVersion());
+            Revision gradleModelVersion =
+                    Revision.parseRevision(gradleModel.getModelVersion());
             if (gradleModelVersion.compareTo(
-                    FullRevision.parseRevision(minGradleVersion),
-                    FullRevision.PreviewComparison.IGNORE) >= 0) {
+                    Revision.parseRevision(minGradleVersion),
+                    Revision.PreviewComparison.IGNORE) >= 0) {
                 return true;
             }
         }

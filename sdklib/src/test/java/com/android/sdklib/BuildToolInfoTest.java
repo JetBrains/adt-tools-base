@@ -17,8 +17,7 @@
 package com.android.sdklib;
 
 import com.android.annotations.Nullable;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.repository.Revision;
 import com.android.utils.ILogger;
 
 import java.util.Properties;
@@ -31,7 +30,7 @@ public class BuildToolInfoTest extends SdkManagerTestCase {
     public static class BuildToolInfoWrapper extends BuildToolInfo {
 
         private final BuildToolInfo mInfo;
-        private NoPreviewRevision mOverrideJvmVersion;
+        private Revision mOverrideJvmVersion;
 
         public BuildToolInfoWrapper(BuildToolInfo info) {
             super(info.getRevision(), info.getLocation());
@@ -62,29 +61,29 @@ public class BuildToolInfoTest extends SdkManagerTestCase {
         }
 
         @Override
-        protected NoPreviewRevision getCurrentJvmVersion() throws NumberFormatException {
+        protected Revision getCurrentJvmVersion() throws NumberFormatException {
             if (mOverrideJvmVersion != null) {
                 return mOverrideJvmVersion;
             }
             return mInfo.getCurrentJvmVersion();
         }
 
-        public void overrideJvmVersion(@Nullable NoPreviewRevision jvmVersion) {
+        public void overrideJvmVersion(@Nullable Revision jvmVersion) {
             mOverrideJvmVersion = jvmVersion;
         }
     }
 
     public void testGetCurrentJvmVersion() {
         SdkManager sdkman = getSdkManager();
-        BuildToolInfo bt = sdkman.getBuildTool(new FullRevision(18, 3, 4, 5));
+        BuildToolInfo bt = sdkman.getBuildTool(new Revision(18, 3, 4, 5));
         assertNotNull(bt);
 
         // Check the actual JVM running this test.
-        NoPreviewRevision curr = bt.getCurrentJvmVersion();
+        Revision curr = bt.getCurrentJvmVersion();
         // We can reasonably expect this to at least run with JVM 1.5 or more
-        assertTrue(curr.compareTo(new FullRevision(1, 5, 0)) > 0);
+        assertTrue(curr.compareTo(new Revision(1, 5, 0)) > 0);
         // and we can reasonably expect to not be running with JVM 42.0.0
-        assertTrue(curr.compareTo(new FullRevision(42, 0, 0)) < 0);
+        assertTrue(curr.compareTo(new Revision(42, 0, 0)) < 0);
     }
 
 }

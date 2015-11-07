@@ -22,17 +22,13 @@ import com.android.sdklib.BuildToolInfoTest.BuildToolInfoWrapper;
 import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SdkManager.LayoutlibVersion;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.repository.io.FileOp;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.IdDisplay;
-import com.google.common.collect.Sets;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 /** Setup will build an SDK Manager local install matching the latest repository-N.xsd. */
@@ -55,7 +51,7 @@ public class SdkManagerTest extends SdkManagerTestCase {
 
     public void testSdkManager_BuildTools_canRunOnJvm() throws IOException {
         SdkManager sdkman = getSdkManager();
-        BuildToolInfo bt = sdkman.getBuildTool(new FullRevision(18, 3, 4, 5));
+        BuildToolInfo bt = sdkman.getBuildTool(new Revision(18, 3, 4, 5));
         assertNotNull(bt);
 
         // By default there is no runtime.properties file and no Runtime.Jvm value.
@@ -77,20 +73,20 @@ public class SdkManagerTest extends SdkManagerTestCase {
         BuildToolInfoWrapper wrap = new BuildToolInfoTest.BuildToolInfoWrapper(bt);
 
         // Let's assume a real JVM 42.0.0 doesn't exist yet
-        wrap.overrideJvmVersion(new NoPreviewRevision(1, 6, 0));
+        wrap.overrideJvmVersion(new Revision(1, 6, 0));
         assertFalse(wrap.canRunOnJvm());
 
         // Let's assume a real JVM 42.0.0 and above exists
-        wrap.overrideJvmVersion(new NoPreviewRevision(42, 0, 0));
+        wrap.overrideJvmVersion(new Revision(42, 0, 0));
         assertTrue(wrap.canRunOnJvm());
 
-        wrap.overrideJvmVersion(new NoPreviewRevision(42, 0, 1));
+        wrap.overrideJvmVersion(new Revision(42, 0, 1));
         assertTrue(wrap.canRunOnJvm());
 
-        wrap.overrideJvmVersion(new NoPreviewRevision(42, 1, 1));
+        wrap.overrideJvmVersion(new Revision(42, 1, 1));
         assertTrue(wrap.canRunOnJvm());
 
-        wrap.overrideJvmVersion(new NoPreviewRevision(43, 1, 1));
+        wrap.overrideJvmVersion(new Revision(43, 1, 1));
         assertTrue(wrap.canRunOnJvm());
 
     }

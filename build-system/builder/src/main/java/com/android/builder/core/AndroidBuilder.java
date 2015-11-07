@@ -92,7 +92,7 @@ import com.android.manifmerger.XmlDocument;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.IAndroidTarget.OptionalLibrary;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
@@ -147,7 +147,7 @@ import java.util.zip.ZipFile;
  */
 public class AndroidBuilder {
 
-    private static final FullRevision MIN_BUILD_TOOLS_REV = new FullRevision(19, 1, 0);
+    private static final Revision MIN_BUILD_TOOLS_REV = new Revision(19, 1, 0);
     private static final DependencyFileProcessor sNoOpDependencyFileProcessor = new DependencyFileProcessor() {
         @Override
         public DependencyData processFile(@NonNull File dependencyFile) {
@@ -1348,9 +1348,9 @@ public class AndroidBuilder {
             throws ProcessException, IOException {
         if (dexOptions.getDexInProcess()) {
             // Version that supports all flags that we know about, including numThreads.
-            FullRevision minimumBuildTools =
+            Revision minimumBuildTools =
                     DexProcessBuilder.MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV;
-            FullRevision buildToolsVersion = mTargetInfo.getBuildTools().getRevision();
+            Revision buildToolsVersion = mTargetInfo.getBuildTools().getRevision();
             if (buildToolsVersion.compareTo(minimumBuildTools) < 0) {
                 throw new IllegalStateException(
                         "Running dex in-process requires build tools "

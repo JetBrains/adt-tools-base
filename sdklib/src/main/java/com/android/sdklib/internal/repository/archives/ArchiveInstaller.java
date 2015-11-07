@@ -20,14 +20,14 @@ import com.android.SdkConstants;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.CanceledByUserException;
 import com.android.sdklib.internal.repository.DownloadCache;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.RepoConstants;
 import com.android.utils.GrabProcessOutput;
 import com.android.utils.GrabProcessOutput.IProcessOutput;
@@ -77,13 +77,13 @@ public class ArchiveInstaller {
     public static final int NUM_MONITOR_INC = 100;
 
     /** The current {@link FileOp} to use. Never null. */
-    private final IFileOp mFileOp;
+    private final FileOp mFileOp;
 
     /**
      * Generates an {@link ArchiveInstaller} that relies on the default {@link FileOp}.
      */
     public ArchiveInstaller() {
-        mFileOp = new FileOp();
+        mFileOp = FileOpUtils.create();
     }
 
     /**
@@ -91,12 +91,12 @@ public class ArchiveInstaller {
      *
      * @param fileUtils An alternate version of {@link FileOp} to use for file operations.
      */
-    protected ArchiveInstaller(IFileOp fileUtils) {
+    protected ArchiveInstaller(FileOp fileUtils) {
         mFileOp = fileUtils;
     }
 
     /** Returns current {@link FileOp} to use. Never null. */
-    protected IFileOp getFileOp() {
+    protected FileOp getFileOp() {
         return mFileOp;
     }
 
@@ -759,7 +759,7 @@ public class ArchiveInstaller {
 
         assert SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS;
 
-        File findLockExe = FileOp.append(
+        File findLockExe = FileOpUtils.append(
                 osSdkRoot, SdkConstants.FD_TOOLS, SdkConstants.FD_LIB, SdkConstants.FN_FIND_LOCK);
 
         if (mFileOp.exists(findLockExe)) {

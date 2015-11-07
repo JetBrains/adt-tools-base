@@ -126,7 +126,7 @@ public abstract class Archive {
                 }
                 sJvmVersion = minJvmVersion;
             }
-            if (getMinJvmVersion().toPreciseRevision().compareTo(sJvmVersion) > 0) {
+            if (getMinJvmVersion().toRevision().compareTo(sJvmVersion) > 0) {
                 return false;
             }
         }

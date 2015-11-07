@@ -26,6 +26,7 @@ import com.android.io.IAbstractFile;
 import com.android.io.StreamException;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkManager;
@@ -36,7 +37,7 @@ import com.android.sdklib.devices.DeviceManager;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus;
 import com.android.sdklib.internal.project.ProjectProperties;
-import com.android.sdklib.io.FileOp;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.local.LocalSdk;
 import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
@@ -909,7 +910,7 @@ public class AvdManager {
                 // if skinFolder is in the sdk, use the relative path
                 if (skinFolder.getPath().startsWith(myLocalSdk.getLocation().getPath())) {
                     try {
-                        skinPath = FileOp.makeRelative(myLocalSdk.getLocation(), skinFolder);
+                        skinPath = FileOpUtils.makeRelative(myLocalSdk.getLocation(), skinFolder);
                     } catch (IOException e) {
                         // In case it fails, just use the absolute path
                         skinPath = skinFolder.getAbsolutePath();

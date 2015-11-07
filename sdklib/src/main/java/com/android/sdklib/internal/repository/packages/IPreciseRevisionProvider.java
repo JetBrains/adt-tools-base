@@ -16,18 +16,17 @@
 
 package com.android.sdklib.internal.repository.packages;
 
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
-import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.repository.Revision;
+import com.android.repository.Revision.PreviewComparison;
 
 
 
 /**
- * Interface for packages that provide a {@link FullRevision},
+ * Interface for packages that provide a {@link Revision},
  * which is a multi-part revision number (major.minor.micro) and an optional preview revision.
  * <p/>
  * This interface is a tag. It indicates that {@link Package#getRevision()} returns a
- * {@link FullRevision} instead of a limited {@link MajorRevision}. <br/>
+ * {@link Revision} instead of a limited {@link Revision}. <br/>
  * The preview version number is available via {@link Package#getRevision()}.
  *
  * @deprecated
@@ -35,7 +34,7 @@ import com.android.sdklib.repository.FullRevision.PreviewComparison;
  * com.android.tools.idea.sdk.remote.internal.
  */
 @Deprecated
-public interface IFullRevisionProvider {
+public interface IPreciseRevisionProvider {
 
     /**
      * Returns whether the given package represents the same item as the current package.

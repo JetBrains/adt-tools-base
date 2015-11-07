@@ -17,9 +17,9 @@
 package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
-import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
+import com.android.repository.Revision;
 
 import java.io.File;
 import java.util.Properties;
@@ -34,7 +34,7 @@ public class LocalLLDBPkgInfo extends LocalPkgInfo {
   protected LocalLLDBPkgInfo(@NonNull LocalSdk localSdk,
                             @NonNull File localDir,
                             @NonNull Properties sourceProps,
-                            @NonNull FullRevision revision) {
+                            @NonNull Revision revision) {
     super(localSdk, localDir, sourceProps);
     mDesc = PkgDesc.Builder.newLLDB(revision).setDescriptionShort("LLDB").setListDisplay("LLDB").create();
   }
