@@ -15,42 +15,34 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.google.common.base.Throwables
 import groovy.transform.CompileStatic
 import org.gradle.tooling.BuildException
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 import static org.junit.Assert.fail
-
 /**
  * Debug builds with a wearApp with applicationId that does not match that of the main application
  * should fail.
  */
 @CompileStatic
 class WearWithCustomApplicationIdTest {
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("embedded")
             .create()
 
-    @BeforeClass
-    static void setUp() {
+    @Before
+    void setUp() {
         def mainAppBuildGradle = project.file("main/build.gradle");
 
         mainAppBuildGradle.text = mainAppBuildGradle.text.replaceFirst(
                 /flavor1 \{/,
                 "flavor1 {\n" +
                         "        applicationId \"com.example.change.application.id.breaks.embed\"")
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
     }
 
     @Test

@@ -24,7 +24,7 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
         // ensure a valid handle to the activity has been returned
         assertNotNull(a);
         // Wrapped in an immutable list from guava, to check the dependency worked.
-        mTextView = ImmutableList.of((TextView) a.findViewById(R.id.text))
+        mTextView = ImmutableList.of((TextView) a.findViewById(R.id.text));
     }
 
     @Override

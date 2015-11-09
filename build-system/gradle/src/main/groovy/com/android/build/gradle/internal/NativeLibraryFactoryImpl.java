@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.model.NativeLibraryFactory;
@@ -24,7 +25,6 @@ import com.android.build.gradle.internal.model.NativeLibraryImpl;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.NdkCompile;
 import com.android.builder.model.NativeLibrary;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -52,7 +52,7 @@ public class NativeLibraryFactoryImpl implements NativeLibraryFactory {
             @NonNull VariantScope scope,
             @NonNull String toolchainName, @NonNull Abi abi) {
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
-        if (!scope.getGlobalScope().getProject().hasProperty(NdkCompile.USE_DEPRECATED_NDK)) {
+        if (!AndroidGradleOptions.useDeprecatedNdk(scope.getGlobalScope().getProject())) {
             return Optional.absent();
         }
 
