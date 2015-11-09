@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.repository;
+package com.android.repository.testframework;
 
 import com.android.repository.api.SettingsController;
 

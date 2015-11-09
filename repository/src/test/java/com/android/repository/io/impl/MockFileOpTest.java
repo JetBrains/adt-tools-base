@@ -16,10 +16,9 @@
 
 package com.android.repository.io.impl;
 
-import com.android.repository.io.MockFileOp;
+import com.android.repository.testframework.MockFileOp;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 

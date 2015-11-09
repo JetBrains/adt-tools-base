@@ -17,7 +17,7 @@
 package com.android.sdklib.internal.repository.archives;
 
 import com.android.repository.io.FileOp;
-import com.android.repository.io.MockFileOp;
+import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.internal.repository.DownloadCache;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.MockEmptySdkManager;

@@ -21,7 +21,7 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.BuildToolInfo.PathId;
 import com.android.sdklib.IAndroidTarget;
-import com.android.repository.io.MockFileOp;
+import com.android.repository.testframework.MockFileOp;
 import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.PkgType;
 
