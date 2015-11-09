@@ -36,7 +36,7 @@ import com.android.sdklib.internal.repository.packages.SamplePackage;
 import com.android.sdklib.internal.repository.packages.SourcePackage;
 import com.android.sdklib.internal.repository.packages.SystemImagePackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
-import com.android.sdklib.io.FileOp;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.utils.ILogger;

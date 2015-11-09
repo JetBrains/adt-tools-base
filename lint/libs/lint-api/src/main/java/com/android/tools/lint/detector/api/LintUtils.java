@@ -52,7 +52,7 @@ import com.android.resources.ResourceType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.utils.PositionXmlParser;
 import com.android.utils.SdkUtils;
@@ -1074,7 +1074,7 @@ public class LintUtils {
         if (project != null) {
             String modelVersion = project.getModelVersion();
             try {
-                FullRevision version = FullRevision.parseRevision(modelVersion);
+                Revision version = Revision.parseRevision(modelVersion);
                 if (version.getMajor() != major) {
                     return version.getMajor() < major;
                 }

@@ -17,8 +17,6 @@
 package com.android.sdklib.repository.descriptors;
 
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
 
 /**
  * {@link IPkgCapabilities} describe which attributes are available for each kind of
@@ -30,18 +28,6 @@ import com.android.sdklib.repository.MajorRevision;
  * @see PkgDesc
  */
 public interface IPkgCapabilities {
-
-    /**
-     * Indicates whether this package type has a {@link FullRevision}.
-     * @return True if this package type has a {@link FullRevision}.
-     */
-    boolean hasFullRevision();
-
-    /**
-     * Indicates whether this package type has a {@link MajorRevision}.
-     * @return True if this package type has a {@link MajorRevision}.
-     */
-    boolean hasMajorRevision();
 
     /**
      * Indicates whether this package type has a {@link AndroidVersion}.
@@ -78,5 +64,11 @@ public interface IPkgCapabilities {
      * @return True if this package type has a {@code min-platform-tools-rev} attribute.
      */
     boolean hasMinPlatformToolsRev();
+
+    /**
+     * Indicates whether this package type has a {@code name} attribute.
+     * @return True if this package type has a {@code name} attribute.
+     */
+    boolean hasName();
 }
 

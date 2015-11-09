@@ -17,7 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 
 /**
  * A mock {@link BuildToolPackage} for testing.
@@ -60,10 +60,10 @@ public class MockBuildToolPackage extends BuildToolPackage {
      * <p/>
      * By design, this creates a package with one and only one archive.
      */
-    public MockBuildToolPackage(SdkSource source, FullRevision revision) {
+    public MockBuildToolPackage(SdkSource source, Revision revision) {
         super(
                 source, // source,
-                FullRevisionPackageTest.createProps(revision), // props,
+                PreciseRevisionPackageTest.createProps(revision), // props,
                 revision.getMajor(),
                 null, // license,
                 "desc", // description,

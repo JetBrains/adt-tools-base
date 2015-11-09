@@ -54,9 +54,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.repository.io.FileOp;
+import com.android.repository.Revision;
+import com.android.repository.io.FileOpUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.Maps;
 
@@ -81,7 +81,7 @@ public class BuildToolInfo {
 
     /**
      * Property in {@link #FN_RUNTIME_PROPS} indicating the desired runtime JVM.
-     * Type: {@link NoPreviewRevision#toShortString()}, e.g. "1.7.0"
+     * Type: {@link Revision#toShortString()}, e.g. "1.7.0"
      */
     private static final String PROP_RUNTIME_JVM = "Runtime.Jvm";
 
@@ -132,7 +132,7 @@ public class BuildToolInfo {
          * min revision this element was introduced.
          * Controls {@link BuildToolInfo#isValid(ILogger)}
          */
-        private final FullRevision mMinRevision;
+        private final Revision mMinRevision;
 
         /**
          * Creates the enum with a min revision in which this
@@ -141,23 +141,23 @@ public class BuildToolInfo {
          * @param minRevision the min revision.
          */
         PathId(@NonNull String minRevision) {
-            mMinRevision = FullRevision.parseRevision(minRevision);
+            mMinRevision = Revision.parseRevision(minRevision);
         }
 
         /**
          * Returns whether the enum of present in a given rev of the build tools.
          *
-         * @param fullRevision the build tools revision.
+         * @param revision the build tools revision.
          * @return true if the tool is present.
          */
-        boolean isPresentIn(@NonNull FullRevision fullRevision) {
-            return fullRevision.compareTo(mMinRevision) >= 0;
+        boolean isPresentIn(@NonNull Revision revision) {
+            return revision.compareTo(mMinRevision) >= 0;
         }
     }
 
     /** The build-tool revision. */
     @NonNull
-    private final FullRevision mRevision;
+    private final Revision mRevision;
 
     /** The path to the build-tool folder specific to this revision. */
     @NonNull
@@ -165,7 +165,7 @@ public class BuildToolInfo {
 
     private final Map<PathId, String> mPaths = Maps.newEnumMap(PathId.class);
 
-    public BuildToolInfo(@NonNull FullRevision revision, @NonNull File path) {
+    public BuildToolInfo(@NonNull Revision revision, @NonNull File path) {
         mRevision = revision;
         mPath = path;
 
@@ -188,7 +188,7 @@ public class BuildToolInfo {
     }
 
     public BuildToolInfo(
-            @NonNull FullRevision revision,
+            @NonNull Revision revision,
             @NonNull File mainPath,
             @NonNull File aapt,
             @NonNull File aidl,
@@ -253,7 +253,7 @@ public class BuildToolInfo {
      * Returns the revision.
      */
     @NonNull
-    public FullRevision getRevision() {
+    public Revision getRevision() {
         return mRevision;
     }
 
@@ -313,7 +313,7 @@ public class BuildToolInfo {
      */
     @NonNull
     public Properties getRuntimeProps() {
-        FileOp fop = new FileOp();
+        FileOp fop = FileOpUtils.create();
         return fop.loadProperties(new File(mPath, FN_RUNTIME_PROPS));
     }
 
@@ -333,8 +333,8 @@ public class BuildToolInfo {
             return true;
         }
         try {
-            NoPreviewRevision requiredVersion = NoPreviewRevision.parseRevision(required);
-            NoPreviewRevision currentVersion = getCurrentJvmVersion();
+            Revision requiredVersion = Revision.parseRevision(required);
+            Revision currentVersion = getCurrentJvmVersion();
             return currentVersion.compareTo(requiredVersion) >= 0;
 
         } catch (NumberFormatException ignore) {
@@ -346,14 +346,14 @@ public class BuildToolInfo {
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
     @Nullable
-    protected NoPreviewRevision getCurrentJvmVersion() throws NumberFormatException {
+    protected Revision getCurrentJvmVersion() throws NumberFormatException {
         String javav = System.getProperty("java.version");              //$NON-NLS-1$
         // java Version is typically in the form "1.2.3_45" and we just need to keep up to "1.2.3"
         // since our revision numbers are in 3-parts form (1.2.3).
         Pattern p = Pattern.compile("((\\d+)(\\.\\d+)?(\\.\\d+)?).*");  //$NON-NLS-1$
         Matcher m = p.matcher(javav);
         if (m.matches()) {
-            return NoPreviewRevision.parseRevision(m.group(1));
+            return Revision.parseRevision(m.group(1));
         }
         return null;
     }

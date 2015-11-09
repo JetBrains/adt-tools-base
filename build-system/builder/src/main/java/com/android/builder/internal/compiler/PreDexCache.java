@@ -24,7 +24,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.utils.FileUtils;
 import com.android.utils.Pair;
 import com.google.common.io.Files;
@@ -73,7 +73,7 @@ public class PreDexCache extends PreProcessCache<DexKey> {
     protected KeyFactory<DexKey> getKeyFactory() {
         return new KeyFactory<DexKey>() {
             @Override
-            public DexKey of(@NonNull File sourceFile, @NonNull FullRevision revision,
+            public DexKey of(@NonNull File sourceFile, @NonNull Revision revision,
                     @NonNull NamedNodeMap attrMap) {
                 return DexKey.of(sourceFile, revision,
                         Boolean.parseBoolean(attrMap.getNamedItem(ATTR_JUMBO_MODE).getNodeValue()));

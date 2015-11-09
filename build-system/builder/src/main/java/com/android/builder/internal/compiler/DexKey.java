@@ -18,7 +18,7 @@ package com.android.builder.internal.compiler;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 
 import java.io.File;
 
@@ -33,12 +33,12 @@ import java.io.File;
 class DexKey extends PreProcessCache.Key {
     private final boolean mJumboMode;
 
-    static DexKey of(@NonNull File sourceFile, @NonNull FullRevision buildToolsRevision,
+    static DexKey of(@NonNull File sourceFile, @NonNull Revision buildToolsRevision,
             boolean jumboMode) {
         return new DexKey(sourceFile, buildToolsRevision, jumboMode);
     }
 
-    private DexKey(@NonNull File sourceFile, @NonNull FullRevision buildToolsRevision,
+    private DexKey(@NonNull File sourceFile, @NonNull Revision buildToolsRevision,
             boolean jumboMode) {
         super(sourceFile, buildToolsRevision);
         mJumboMode = jumboMode;

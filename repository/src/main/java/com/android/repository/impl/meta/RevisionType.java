@@ -85,7 +85,7 @@ public abstract class RevisionType {
      * Convenience method to convert this into a {@link Revision}.
      */
     @NonNull
-    public Revision toPreciseRevision() {
+    public Revision toRevision() {
         return new Revision(getMajor(), getMinor(), getMicro(), getPreview());
     }
 }

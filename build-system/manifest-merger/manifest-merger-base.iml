@@ -12,8 +12,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="library" scope="TEST" name="mockito" level="project" />
-    <orderEntry type="module" module-name="sdk-common-base" />
     <orderEntry type="library" name="gson" level="project" />
-    <orderEntry type="module" module-name="sdklib-base" exported="" />
+    <orderEntry type="module" module-name="sdk-common-base" />
   </component>
 </module>

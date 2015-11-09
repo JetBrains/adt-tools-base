@@ -17,8 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 
@@ -28,7 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Represents a package in an SDK repository that has a {@link MajorRevision},
+ * Represents a package in an SDK repository that has a {@link Revision},
  * which is a single major revision number (not minor, micro or previews).
  *
  * @deprecated
@@ -38,7 +37,7 @@ import java.util.Properties;
 @Deprecated
 public abstract class MajorRevisionPackage extends Package {
 
-    private final MajorRevision mRevision;
+    private final Revision mRevision;
 
     /**
      * Creates a new package from the attributes and elements of the given XML node.
@@ -56,7 +55,7 @@ public abstract class MajorRevisionPackage extends Package {
             Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
 
-        mRevision = new MajorRevision(
+        mRevision = new Revision(
                 PackageParserUtils.getXmlInt(packageNode, SdkRepoConstants.NODE_REVISION, 0));
     }
 
@@ -81,14 +80,14 @@ public abstract class MajorRevisionPackage extends Package {
 
         String revStr = getProperty(props, PkgProps.PKG_REVISION, null);
 
-        MajorRevision rev = null;
+        Revision rev = null;
         if (revStr != null) {
             try {
-                rev = MajorRevision.parseRevision(revStr);
+                rev = Revision.parseRevision(revStr);
             } catch (NumberFormatException ignore) {}
         }
         if (rev == null) {
-            rev = new MajorRevision(revision);
+            rev = new Revision(revision);
         }
 
         mRevision = rev;
@@ -99,7 +98,7 @@ public abstract class MajorRevisionPackage extends Package {
      * Can be 0 if this is a local package of unknown revision.
      */
     @Override
-    public FullRevision getRevision() {
+    public Revision getRevision() {
         return mRevision;
     }
 

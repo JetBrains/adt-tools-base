@@ -24,8 +24,8 @@ import com.android.ide.common.process.JavaProcessInfo;
 import com.android.ide.common.process.ProcessEnvBuilder;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
+import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repository.FullRevision;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -41,8 +41,8 @@ import java.util.Set;
  * A builder to create a dex-specific ProcessInfoBuilder
  */
 public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
-    public static final FullRevision MIN_MULTIDEX_BUILD_TOOLS_REV = new FullRevision(21, 0, 0);
-    public static final FullRevision MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV = new FullRevision(22, 0, 2);
+    public static final Revision MIN_MULTIDEX_BUILD_TOOLS_REV = new Revision(21, 0, 0);
+    public static final Revision MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV = new Revision(22, 0, 2);
 
     @NonNull
     private final File mOutputFile;

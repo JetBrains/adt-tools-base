@@ -17,7 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 
 /**
  * A mock {@link PlatformToolPackage} for testing.
@@ -60,10 +60,10 @@ public class MockPlatformToolPackage extends PlatformToolPackage {
      * <p/>
      * By design, this creates a package with one and only one archive.
      */
-    public MockPlatformToolPackage(SdkSource source, FullRevision revision) {
+    public MockPlatformToolPackage(SdkSource source, Revision revision) {
         super(
                 source, // source,
-                FullRevisionPackageTest.createProps(revision), // props,
+                PreciseRevisionPackageTest.createProps(revision), // props,
                 revision.getMajor(),
                 null, // license,
                 "desc", // description,

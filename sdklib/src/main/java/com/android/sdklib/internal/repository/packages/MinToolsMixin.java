@@ -17,7 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 
@@ -39,7 +39,7 @@ class MinToolsMixin implements IMinToolsDependency {
      * The minimal revision of the tools package required by this extra package, if > 0,
      * or {@link #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
      */
-    private final FullRevision mMinToolsRevision;
+    private final Revision mMinToolsRevision;
 
     /**
      * Creates a new mixin from the attributes and elements of the given XML node.
@@ -49,7 +49,7 @@ class MinToolsMixin implements IMinToolsDependency {
      */
     MinToolsMixin(Node packageNode) {
 
-        mMinToolsRevision = PackageParserUtils.parseFullRevisionElement(
+        mMinToolsRevision = PackageParserUtils.parseRevisionElement(
             PackageParserUtils.findChildElement(packageNode, SdkRepoConstants.NODE_MIN_TOOLS_REV));
     }
 
@@ -73,10 +73,10 @@ class MinToolsMixin implements IMinToolsDependency {
 
         String revStr = Package.getProperty(props, PkgProps.MIN_TOOLS_REV, null);
 
-        FullRevision rev = MIN_TOOLS_REV_NOT_SPECIFIED;
+        Revision rev = MIN_TOOLS_REV_NOT_SPECIFIED;
         if (revStr != null) {
             try {
-                rev = FullRevision.parseRevision(revStr);
+                rev = Revision.parseRevision(revStr);
             } catch (NumberFormatException ignore) {}
         }
 
@@ -88,7 +88,7 @@ class MinToolsMixin implements IMinToolsDependency {
      * or {@link #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
      */
     @Override
-    public FullRevision getMinToolsRevision() {
+    public Revision getMinToolsRevision() {
         return mMinToolsRevision;
     }
 

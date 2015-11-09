@@ -18,7 +18,7 @@ package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
@@ -75,8 +75,8 @@ public class MinToolsPackageTest extends PackageTest {
         @Override
         public IPkgDesc getPkgDesc() {
             return PkgDesc.Builder.newTool(
-                    new FullRevision(1, 2, 3, 4),
-                    FullRevision.NOT_SPECIFIED).create();
+                    new Revision(1, 2, 3, 4),
+                    Revision.NOT_SPECIFIED).create();
         }
     }
 

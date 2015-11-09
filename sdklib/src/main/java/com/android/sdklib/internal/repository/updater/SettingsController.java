@@ -22,8 +22,8 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.io.IFileOp;
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
 import com.android.utils.ILogger;
 
 import java.io.File;
@@ -49,7 +49,7 @@ public class SettingsController {
 
     private static final String SETTINGS_FILENAME = "androidtool.cfg"; //$NON-NLS-1$
 
-    private final IFileOp mFileOp;
+    private final FileOp mFileOp;
     private final ILogger mSdkLog;
     private final Settings mSettings;
 
@@ -69,7 +69,7 @@ public class SettingsController {
      * @param sdkLog A non-null logger to use.
      */
     public SettingsController(@NonNull ILogger sdkLog) {
-        this(new FileOp(), sdkLog);
+        this(FileOpUtils.create(), sdkLog);
     }
 
     /**
@@ -78,7 +78,7 @@ public class SettingsController {
      * @param fileOp A non-null {@link FileOp} to perform file operations (to load/save settings.)
      * @param sdkLog A non-null logger to use.
      */
-    public SettingsController(@NonNull IFileOp fileOp, @NonNull ILogger sdkLog) {
+    public SettingsController(@NonNull FileOp fileOp, @NonNull ILogger sdkLog) {
         this(fileOp, sdkLog, new Settings());
     }
 
@@ -92,7 +92,7 @@ public class SettingsController {
      * @param settings A non-null {@link Settings} to use as-is. It is not duplicated.
      */
     @VisibleForTesting(visibility=Visibility.PRIVATE)
-    protected SettingsController(@NonNull IFileOp fileOp,
+    protected SettingsController(@NonNull FileOp fileOp,
                                  @NonNull ILogger sdkLog,
                                  @NonNull Settings settings) {
         mFileOp = fileOp;

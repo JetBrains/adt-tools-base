@@ -16,12 +16,12 @@
 
 package com.android.sdklib.internal.repository.updater;
 
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.AndroidLocationTestCase;
 import com.android.sdklib.internal.repository.updater.ISettingsPage.SettingsChangedCallback;
 import com.android.sdklib.internal.repository.updater.SettingsController.OnChangedListener;
 import com.android.sdklib.internal.repository.updater.SettingsController.Settings;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.mock.MockLog;
 
 import java.util.Properties;
@@ -30,14 +30,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class SettingsControllerTest extends AndroidLocationTestCase {
 
-    private IFileOp mFileOp;
+    private FileOp mFileOp;
     private MockLog mMockLog;
     private SettingsController m;
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        mFileOp = new FileOp();
+        mFileOp = FileOpUtils.create();
         mMockLog = new MockLog();
         m = new SettingsController(mFileOp, mMockLog);
     }

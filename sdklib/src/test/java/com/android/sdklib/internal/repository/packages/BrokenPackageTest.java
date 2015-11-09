@@ -16,7 +16,7 @@
 
 package com.android.sdklib.internal.repository.packages;
 
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
 import junit.framework.TestCase;
@@ -35,8 +35,8 @@ public class BrokenPackageTest extends TestCase {
                 12, // min api level
                 13, // exact api level
                 "os/path",
-                PkgDesc.Builder.newTool(new FullRevision(1, 2, 3, 4),
-                                        FullRevision.NOT_SPECIFIED).create());
+                PkgDesc.Builder.newTool(new Revision(1, 2, 3, 4),
+                                        Revision.NOT_SPECIFIED).create());
     }
 
     public final void testGetShortDescription() {
@@ -61,8 +61,8 @@ public class BrokenPackageTest extends TestCase {
 
     public final void testGetPkgDesc() {
         assertEquals(
-                PkgDesc.Builder.newTool(new FullRevision(1, 2, 3, 4),
-                                        FullRevision.NOT_SPECIFIED).create(),
+                PkgDesc.Builder.newTool(new Revision(1, 2, 3, 4),
+                                        Revision.NOT_SPECIFIED).create(),
                 m.getPkgDesc());
     }
 }

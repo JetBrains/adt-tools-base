@@ -18,9 +18,10 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.IListDescription;
-import com.android.sdklib.io.FileOp;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 
 import java.io.File;
@@ -233,7 +234,7 @@ public abstract class LocalPkgInfo
      * Deletes the files in the SDK corresponding to this package.
      */
     public void delete() {
-        new FileOp().deleteFileOrFolder(getLocalDir());
+        FileOpUtils.create().deleteFileOrFolder(getLocalDir());
     }
 
 }

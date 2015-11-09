@@ -22,11 +22,10 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.repository.Revision;
+import com.android.repository.Revision.PreviewComparison;
 import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.PkgProps;
-import com.android.sdklib.repository.PreciseRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
@@ -46,7 +45,7 @@ import java.util.Set;
  * com.android.tools.idea.sdk.remote.internal.
  */
 @Deprecated
-public class BuildToolPackage extends FullRevisionPackage {
+public class BuildToolPackage extends PreciseRevisionPackage {
 
     /** The base value returned by {@link BuildToolPackage#installId()}. */
     private static final String INSTALL_ID_BASE = SdkConstants.FD_BUILD_TOOLS + '-';
@@ -103,13 +102,13 @@ public class BuildToolPackage extends FullRevisionPackage {
         }
 
         // Check we can find the revision in the source properties
-        FullRevision rev = null;
+        Revision rev = null;
         if (error == null) {
             String revStr = getProperty(props, PkgProps.PKG_REVISION, null);
 
             if (revStr != null) {
                 try {
-                    rev = FullRevision.parseRevision(revStr);
+                    rev = Revision.parseRevision(revStr);
                 } catch (NumberFormatException ignore) {}
             }
 
@@ -184,7 +183,7 @@ public class BuildToolPackage extends FullRevisionPackage {
         String longDesc = sb.toString();
 
         IPkgDesc desc = PkgDesc.Builder
-                .newBuildTool(rev != null ? rev : new FullRevision(FullRevision.MISSING_MAJOR_REV))
+                .newBuildTool(rev != null ? rev : new Revision(Revision.MISSING_MAJOR_REV))
                 .setDescriptionShort(shortDesc)
                 .create();
 
@@ -300,7 +299,7 @@ public class BuildToolPackage extends FullRevisionPackage {
         File folder = new File(osSdkRoot, SdkConstants.FD_BUILD_TOOLS);
         StringBuilder sb = new StringBuilder();
 
-        PreciseRevision revision = getPkgDesc().getPreciseRevision();
+        Revision revision = getPkgDesc().getRevision();
         int[] version = revision.toIntArray(false);
         for (int i = 0; i < version.length; i++) {
             sb.append(version[i]);
@@ -308,7 +307,7 @@ public class BuildToolPackage extends FullRevisionPackage {
                 sb.append('.');
             }
         }
-        if (getPkgDesc().getPreciseRevision().isPreview()) {
+        if (getPkgDesc().getRevision().isPreview()) {
             sb.append(PkgDesc.PREVIEW_SUFFIX);
         }
 
@@ -354,7 +353,7 @@ public class BuildToolPackage extends FullRevisionPackage {
         int pos = s.indexOf("|r:");         //$NON-NLS-1$
         assert pos > 0;
 
-        FullRevision rev = getRevision();
+        Revision rev = getRevision();
         String reverseSort = String.format("|rr:%1$04d.%2$04d.%3$04d.",         //$NON-NLS-1$
                                             9999 - rev.getMajor(),
                                             9999 - rev.getMinor(),

@@ -19,9 +19,10 @@ package com.android.sdklib;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.devices.Abi;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
-import com.android.sdklib.io.FileOp;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.google.common.base.Objects;
 
@@ -158,7 +159,8 @@ public class SystemImage implements ISystemImage {
             break;
 
         case IN_IMAGES_SUBFOLDER:
-            location = FileOp.append(target.getLocation(), SdkConstants.OS_IMAGES_FOLDER, abiType);
+            location = FileOpUtils
+                    .append(target.getLocation(), SdkConstants.OS_IMAGES_FOLDER, abiType);
             break;
 
         case IN_SYSTEM_IMAGE:
@@ -201,15 +203,15 @@ public class SystemImage implements ISystemImage {
             @Nullable String abiType) {
         File root;
         if (addonVendorId == null) {
-            root = FileOp.append(
+            root = FileOpUtils.append(
                     sdkOsPath,
                     SdkConstants.FD_SYSTEM_IMAGES,
                     AndroidTargetHash.getPlatformHashString(platformVersion));
             if (tagId != null) {
-                root = FileOp.append(root, tagId);
+                root = FileOpUtils.append(root, tagId);
             }
         } else {
-            root = FileOp.append(
+            root = FileOpUtils.append(
                     sdkOsPath,
                     SdkConstants.FD_SYSTEM_IMAGES,
                     AndroidTargetHash.getAddonHashString(addonVendorId, tagId, platformVersion));
@@ -217,7 +219,7 @@ public class SystemImage implements ISystemImage {
         if (abiType == null) {
             return root;
         } else {
-            return FileOp.append(root, abiType);
+            return FileOpUtils.append(root, abiType);
         }
     }
 

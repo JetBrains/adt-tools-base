@@ -24,7 +24,7 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.Toolchain;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.repository.PreciseRevision;
+import com.android.repository.Revision;
 import com.android.utils.FileUtils;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
@@ -60,7 +60,7 @@ public class NdkHandler {
     private final String toolchainVersion;
     private final File ndkDirectory;
 
-    private Map<Pair<Toolchain, Abi>, PreciseRevision> defaultToolchainVersions = Maps.newHashMap();
+    private Map<Pair<Toolchain, Abi>, Revision> defaultToolchainVersions = Maps.newHashMap();
 
 
     public NdkHandler(
@@ -322,8 +322,8 @@ public class NdkHandler {
      * The default version is the highest version found in the NDK for the specified toolchain and
      * ABI.  The result is cached for performance.
      */
-    private PreciseRevision getDefaultToolchainVersion(Toolchain toolchain, final Abi abi) {
-        PreciseRevision defaultVersion = defaultToolchainVersions.get(Pair.of(toolchain, abi));
+    private Revision getDefaultToolchainVersion(Toolchain toolchain, final Abi abi) {
+        Revision defaultVersion = defaultToolchainVersions.get(Pair.of(toolchain, abi));
         if (defaultVersion != null) {
             return defaultVersion;
         }
@@ -343,12 +343,12 @@ public class NdkHandler {
         }
 
         // Once we have a list of toolchains, we look the highest version
-        PreciseRevision bestRevision = null;
+        Revision bestRevision = null;
         for (File toolchainFolder : toolchainsForAbi) {
             String folderName = toolchainFolder.getName();
             String version = folderName.substring(toolchainPrefix.length() + 1);
             try {
-                PreciseRevision revision = PreciseRevision.parseRevision(version);
+                Revision revision = Revision.parseRevision(version);
                 if (bestRevision == null || revision.compareTo(bestRevision) > 0) {
                     bestRevision = revision;
                 }

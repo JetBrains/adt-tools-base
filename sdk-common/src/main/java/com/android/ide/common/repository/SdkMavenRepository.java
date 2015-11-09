@@ -24,8 +24,7 @@ import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
@@ -170,7 +169,7 @@ public enum SdkMavenRepository {
                         groupId + ":" + artifactId + ":" + dir.getName());
 
                 if (gc != null && (allowPreview || !gc.isPreview())) {
-                    if (!allowPreview && "5.2.08".equals(gc.getFullRevision()) &&
+                    if (!allowPreview && "5.2.08".equals(gc.getRevision()) &&
                             "play-services".equals(gc.getArtifactId())) {
                         // This specific version is actually a preview version which should
                         // not be used (https://code.google.com/p/android/issues/detail?id=75292)
@@ -212,6 +211,6 @@ public enum SdkMavenRepository {
      */
     public IPkgDesc getPackageDescription() {
         return PkgDesc.Builder.newExtra(new IdDisplay(mDir, ""), FD_M2_REPOSITORY, myDisplayName,
-                                        null, new NoPreviewRevision(1)).create();
+                                        null, new Revision(1)).create();
     }
 }

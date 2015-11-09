@@ -27,7 +27,7 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.MajorRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
@@ -100,7 +100,7 @@ public class PlatformPackage extends MinToolsPackage
         mLayoutlibVersion = new LayoutlibVersionMixin(packageNode);
 
         mPkgDesc = setDescriptions(PkgDesc.Builder
-                .newPlatform(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
+                .newPlatform(mVersion, getRevision(), getMinToolsRevision()))
                 .create();
     }
 
@@ -140,7 +140,7 @@ public class PlatformPackage extends MinToolsPackage
         mIncludedAbi = props == null ? null : props.getProperty(PkgProps.PLATFORM_INCLUDED_ABI);
 
         mPkgDesc = setDescriptions(PkgDesc.Builder
-                .newPlatform(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
+                .newPlatform(mVersion, getRevision(), getMinToolsRevision()))
                 .create();
     }
 

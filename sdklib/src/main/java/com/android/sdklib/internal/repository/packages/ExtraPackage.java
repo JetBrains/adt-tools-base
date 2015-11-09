@@ -26,7 +26,7 @@ import com.android.sdklib.internal.repository.LocalSdkParser;
 import com.android.sdklib.internal.repository.NullTaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.RepoConstants;
@@ -53,7 +53,7 @@ import java.util.regex.Pattern;
  * com.android.tools.idea.sdk.remote.internal.
  */
 @Deprecated
-public class ExtraPackage extends NoPreviewRevisionPackage
+public class ExtraPackage extends PreciseRevisionPackage
     implements IMinApiLevelDependency, IMinToolsDependency {
 
     /** Mixin handling the min-tools dependency. */
@@ -340,7 +340,7 @@ public class ExtraPackage extends NoPreviewRevisionPackage
      * or {@link #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
      */
     @Override
-    public FullRevision getMinToolsRevision() {
+    public Revision getMinToolsRevision() {
         return mMinToolsMixin.getMinToolsRevision();
     }
 

@@ -40,7 +40,7 @@ import com.android.sdklib.internal.repository.packages.SystemImagePackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.internal.repository.sources.SdkSources;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 
 import java.util.ArrayList;
@@ -192,7 +192,7 @@ public class SdkUpdaterLogic {
         return archives;
     }
 
-    private double getRevisionRank(FullRevision rev) {
+    private double getRevisionRank(Revision rev) {
         int p = rev.isPreview() ? 999 : 999 - rev.getPreview();
         return  rev.getMajor() +
                 rev.getMinor() / 1000.d +
@@ -722,7 +722,7 @@ public class SdkUpdaterLogic {
             SdkSource[] remoteSources,
             ArchiveInfo[] localArchives) {
         // This is the requirement to match.
-        FullRevision rev = pkg.getMinToolsRevision();
+        Revision rev = pkg.getMinToolsRevision();
 
         if (rev.equals(MinToolsPackage.MIN_TOOLS_REV_NOT_SPECIFIED)) {
             // Well actually there's no requirement.
@@ -778,11 +778,11 @@ public class SdkUpdaterLogic {
 
         // Finally nothing matched, so let's look at all available remote packages
         fetchRemotePackages(remotePkgs, remoteSources);
-        FullRevision localRev = rev;
+        Revision localRev = rev;
         Archive localArch = null;
         for (Package p : remotePkgs) {
             if (p instanceof ToolPackage) {
-                FullRevision r = ((ToolPackage) p).getRevision();
+                Revision r = ((ToolPackage) p).getRevision();
                 if (r.compareTo(localRev) >= 0) {
                     // It's not already in the list of things to install, so add the
                     // first compatible archive we can find.
@@ -829,7 +829,7 @@ public class SdkUpdaterLogic {
             SdkSource[] remoteSources,
             ArchiveInfo[] localArchives) {
         // This is the requirement to match.
-        FullRevision rev = pkg.getMinPlatformToolsRevision();
+        Revision rev = pkg.getMinPlatformToolsRevision();
         boolean findMax = false;
         int compareThreshold = 0;
         ArchiveInfo aiMax = null;
@@ -854,7 +854,7 @@ public class SdkUpdaterLogic {
             if (a != null) {
                 Package p = a.getParentPackage();
                 if (p instanceof PlatformToolPackage) {
-                    FullRevision r = ((PlatformToolPackage) p).getRevision();
+                    Revision r = ((PlatformToolPackage) p).getRevision();
                     if (findMax && r.compareTo(rev) > compareThreshold) {
                         rev = r;
                         aiMax = ai;
@@ -867,7 +867,7 @@ public class SdkUpdaterLogic {
         }
 
         // Because of previews, we can have more than 1 choice, so get the local max.
-        FullRevision localRev = rev;
+        Revision localRev = rev;
         ArchiveInfo localAiMax = null;
         // Look in archives already scheduled for install
         for (ArchiveInfo ai : outArchives) {
@@ -875,7 +875,7 @@ public class SdkUpdaterLogic {
             if (a != null) {
                 Package p = a.getParentPackage();
                 if (p instanceof PlatformToolPackage) {
-                    FullRevision r = ((PlatformToolPackage) p).getRevision();
+                    Revision r = ((PlatformToolPackage) p).getRevision();
                     // If computing dependencies for a non-preview package, don't offer preview dependencies
                     if (r.isPreview() && !rev.isPreview()) {
                         continue;
@@ -905,7 +905,7 @@ public class SdkUpdaterLogic {
             for (Archive a : selectedArchives) {
                 Package p = a.getParentPackage();
                 if (p instanceof PlatformToolPackage) {
-                    FullRevision r = ((PlatformToolPackage) p).getRevision();
+                    Revision r = ((PlatformToolPackage) p).getRevision();
                     // If computing dependencies for a non-preview package, don't offer preview dependencies
                     if (r.isPreview() && !rev.isPreview()) {
                         continue;
@@ -942,7 +942,7 @@ public class SdkUpdaterLogic {
         localAMax = null;
         for (Package p : remotePkgs) {
             if (p instanceof PlatformToolPackage) {
-                FullRevision r = ((PlatformToolPackage) p).getRevision();
+                Revision r = ((PlatformToolPackage) p).getRevision();
                 // If computing dependencies for a non-preview package, don't offer preview dependencies
                 if (r.isPreview() && !rev.isPreview()) {
                     continue;
@@ -1527,7 +1527,7 @@ public class SdkUpdaterLogic {
      */
     private static class MissingArchiveInfo extends ArchiveInfo {
 
-        private final FullRevision mRevision;
+        private final Revision mRevision;
         private final String mTitle;
 
         public static final String TITLE_TOOL = "Tools";
@@ -1540,7 +1540,7 @@ public class SdkUpdaterLogic {
          * @param title Typically "Tools" or "Platform-tools".
          * @param revision The required revision.
          */
-        public MissingArchiveInfo(String title, FullRevision revision) {
+        public MissingArchiveInfo(String title, Revision revision) {
             super(null /*newArchive*/, null /*replaced*/, null /*dependsOn*/);
             mTitle = title;
             mRevision = revision;

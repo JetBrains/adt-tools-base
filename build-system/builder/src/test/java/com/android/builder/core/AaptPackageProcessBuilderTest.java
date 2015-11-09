@@ -20,10 +20,10 @@ import com.android.annotations.NonNull;
 import com.android.builder.dependency.SymbolFileProvider;
 import com.android.builder.model.AaptOptions;
 import com.android.ide.common.process.ProcessInfo;
+import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.collect.ImmutableList;
@@ -276,7 +276,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("20"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("20"));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 20");
         }
@@ -324,7 +324,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("21"));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -374,7 +374,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("21"));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -429,7 +429,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("21"));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -485,7 +485,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("20"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("20"));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 20");
         }
@@ -537,7 +537,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("21"));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -591,7 +591,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("21"));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -639,7 +639,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("21"));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }

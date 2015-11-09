@@ -21,7 +21,7 @@ import com.android.sdklib.internal.repository.archives.ArchFilter;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkRepoSource;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
@@ -39,7 +39,7 @@ public class PackageTest extends TestCase {
     protected static final String LOCAL_ARCHIVE_PATH = "/local/archive/path";
 
     /** Local class used to test the abstract Package class */
-    protected static class MockPackage extends MajorRevisionPackage {
+    protected static class MockPackage extends PreciseRevisionPackage {
         public MockPackage(
                 SdkSource source,
                 Properties props,
@@ -85,8 +85,8 @@ public class PackageTest extends TestCase {
         @Override
         public IPkgDesc getPkgDesc() {
             return PkgDesc.Builder.newTool(
-                    new FullRevision(1, 2, 3, 4),
-                    FullRevision.NOT_SPECIFIED).create();
+                    new Revision(1, 2, 3, 4),
+                    Revision.NOT_SPECIFIED).create();
         }
     }
 

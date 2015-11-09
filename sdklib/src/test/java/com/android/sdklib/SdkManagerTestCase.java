@@ -22,6 +22,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
+import com.android.repository.io.FileOpUtils;
 import com.android.resources.Density;
 import com.android.resources.Keyboard;
 import com.android.resources.KeyboardState;
@@ -46,9 +47,9 @@ import com.android.sdklib.devices.State;
 import com.android.sdklib.devices.Storage;
 import com.android.sdklib.devices.Storage.Unit;
 import com.android.sdklib.internal.avd.AvdManager;
-import com.android.sdklib.io.FileOp;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.mock.MockLog;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
@@ -431,7 +432,7 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
      * Utility to make a fake skin for the given target
      */
     protected void makeFakeSkin(File targetDir, String skinName) throws IOException {
-        File skinFolder = FileOp.append(targetDir, "skins", skinName);
+        File skinFolder = FileOpUtils.append(targetDir, "skins", skinName);
         skinFolder.mkdirs();
 
         // To be detected properly, the skin folder should have a "layout" file.
@@ -445,18 +446,18 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
      * Utility to create a fake source with a few files in the given sdk folder.
      */
     private void makeFakeSourceInternal(File sdkDir) throws IOException {
-        File sourcesDir = FileOp.append(sdkDir, SdkConstants.FD_PKG_SOURCES, "android-0");
+        File sourcesDir = FileOpUtils.append(sdkDir, SdkConstants.FD_PKG_SOURCES, "android-0");
         sourcesDir.mkdirs();
 
         createSourceProps(sourcesDir, PkgProps.VERSION_API_LEVEL, "0");
 
-        File dir1 = FileOp.append(sourcesDir, "src", "com", "android");
+        File dir1 = FileOpUtils.append(sourcesDir, "src", "com", "android");
         dir1.mkdirs();
-        FileOp.append(dir1, "File1.java").createNewFile();
-        FileOp.append(dir1, "File2.java").createNewFile();
+        FileOpUtils.append(dir1, "File1.java").createNewFile();
+        FileOpUtils.append(dir1, "File2.java").createNewFile();
 
-        FileOp.append(sourcesDir, "res", "values").mkdirs();
-        FileOp.append(sourcesDir, "res", "values", "styles.xml").createNewFile();
+        FileOpUtils.append(sourcesDir, "res", "values").mkdirs();
+        FileOpUtils.append(sourcesDir, "res", "values", "styles.xml").createNewFile();
     }
 
     private void makePlatformTools(File platformToolsDir) throws IOException {
@@ -478,60 +479,60 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
      *
      * @param sdkDir   The SDK top folder. Must already exist.
      * @param os       The OS. One of HostOs#toString() or "ANY".
-     * @param revision The "x.y.z rc r" revision number from {@link FullRevision#toShortString()}.
+     * @param revisionStr The "x.y.z rc r" revisionStr number from {@link Revision#toShortString()}.
      */
-    protected void createFakeBuildTools(File sdkDir, String os, String revision)
+    protected void createFakeBuildTools(File sdkDir, String os, String revisionStr)
             throws IOException {
         File buildToolsTopDir = new File(sdkDir, SdkConstants.FD_BUILD_TOOLS);
         buildToolsTopDir.mkdir();
-        File buildToolsDir = new File(buildToolsTopDir, revision);
+        File buildToolsDir = new File(buildToolsTopDir, revisionStr);
         createSourceProps(buildToolsDir,
-                PkgProps.PKG_REVISION, revision,
+                PkgProps.PKG_REVISION, revisionStr,
                 "Archive.Os", os);
 
-        FullRevision fullRevision = FullRevision.parseRevision(revision);
+        Revision revision = Revision.parseRevision(revisionStr);
 
         createFakeBuildToolsFile(
-                buildToolsDir, fullRevision,
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.AAPT, SdkConstants.FN_AAPT);
         createFakeBuildToolsFile(
-                buildToolsDir, fullRevision,
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.AIDL, SdkConstants.FN_AIDL);
         createFakeBuildToolsFile(
-                buildToolsDir, fullRevision,
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.DX, SdkConstants.FN_DX);
         createFakeBuildToolsFile(
-                buildToolsDir, fullRevision,
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.DX_JAR, SdkConstants.FD_LIB + File.separator +
                         SdkConstants.FN_DX_JAR);
         createFakeBuildToolsFile(
-                buildToolsDir, fullRevision,
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.LLVM_RS_CC, SdkConstants.FN_RENDERSCRIPT);
         createFakeBuildToolsFile(
-                buildToolsDir, fullRevision,
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.ANDROID_RS, SdkConstants.OS_FRAMEWORK_RS + File.separator +
                         "placeholder.txt");
         createFakeBuildToolsFile(
-                buildToolsDir, fullRevision,
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.ANDROID_RS_CLANG,
                 SdkConstants.OS_FRAMEWORK_RS_CLANG + File.separator +
                         "placeholder.txt");
         createFakeBuildToolsFile(
-                buildToolsDir, fullRevision,
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.BCC_COMPAT, SdkConstants.FN_BCC_COMPAT);
         createFakeBuildToolsFile(
-                buildToolsDir, fullRevision,
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.LD_ARM, SdkConstants.FN_LD_ARM);
         createFakeBuildToolsFile(
-                buildToolsDir, fullRevision,
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.LD_MIPS, SdkConstants.FN_LD_MIPS);
         createFakeBuildToolsFile(
-                buildToolsDir, fullRevision,
+                buildToolsDir, revision,
                 BuildToolInfo.PathId.LD_X86, SdkConstants.FN_LD_X86);
     }
 
     private void createFakeBuildToolsFile(@NonNull File dir,
-            @NonNull FullRevision buildToolsRevision,
+            @NonNull Revision buildToolsRevision,
             @NonNull BuildToolInfo.PathId pathId,
             @NonNull String filepath)
             throws IOException {

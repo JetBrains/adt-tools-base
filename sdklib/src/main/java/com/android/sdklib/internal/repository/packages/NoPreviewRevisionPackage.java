@@ -17,7 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 
@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Represents a package in an SDK repository that has a {@link NoPreviewRevision},
+ * Represents a package in an SDK repository that has a {@link Revision},
  * which is a single major.minor.micro revision number and no preview.
  *
  * @deprecated
@@ -37,7 +37,7 @@ import java.util.Properties;
 @Deprecated
 public abstract class NoPreviewRevisionPackage extends Package {
 
-    private final NoPreviewRevision mRevision;
+    private final Revision mRevision;
 
     /**
      * Creates a new package from the attributes and elements of the given XML node.
@@ -55,7 +55,7 @@ public abstract class NoPreviewRevisionPackage extends Package {
             Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
 
-        mRevision = PackageParserUtils.parseNoPreviewRevisionElement(
+        mRevision = PackageParserUtils.parseRevisionElement(
                 PackageParserUtils.findChildElement(packageNode, SdkRepoConstants.NODE_REVISION));
     }
 
@@ -80,14 +80,14 @@ public abstract class NoPreviewRevisionPackage extends Package {
 
         String revStr = getProperty(props, PkgProps.PKG_REVISION, null);
 
-        NoPreviewRevision rev = null;
+        Revision rev = null;
         if (revStr != null) {
             try {
-                rev = NoPreviewRevision.parseRevision(revStr);
+                rev = Revision.parseRevision(revStr);
             } catch (NumberFormatException ignore) {}
         }
         if (rev == null) {
-            rev = new NoPreviewRevision(revision);
+            rev = new Revision(revision);
         }
 
         mRevision = rev;
@@ -98,7 +98,7 @@ public abstract class NoPreviewRevisionPackage extends Package {
      * Can be 0 if this is a local package of unknown revision.
      */
     @Override
-    public NoPreviewRevision getRevision() {
+    public Revision getRevision() {
         return mRevision;
     }
 

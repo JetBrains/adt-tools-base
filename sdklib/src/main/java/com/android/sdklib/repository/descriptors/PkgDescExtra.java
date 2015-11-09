@@ -18,10 +18,9 @@ package com.android.sdklib.repository.descriptors;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.Revision;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.repository.License;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
 
 /**
  * Implementation detail of {@link IPkgDescExtra} for extra packages.
@@ -29,7 +28,6 @@ import com.android.sdklib.repository.MajorRevision;
 public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
 
     private final String[] mOldPaths;
-    private final String mNameDisplay;
 
     PkgDescExtra(@NonNull PkgType type,
                  @Nullable License license,
@@ -37,14 +35,13 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
                  @Nullable String descriptionShort,
                  @Nullable String descriptionUrl,
                  boolean isObsolete,
-                 @Nullable FullRevision fullRevision,
-                 @Nullable MajorRevision majorRevision,
+                 @Nullable Revision revision,
                  @Nullable AndroidVersion androidVersion,
                  @Nullable String path,
                  @Nullable IdDisplay tag,
                  @Nullable IdDisplay vendor,
-                 @Nullable FullRevision minToolsRev,
-                 @Nullable FullRevision minPlatformToolsRev,
+                 @Nullable Revision minToolsRev,
+                 @Nullable Revision minPlatformToolsRev,
                  @Nullable  String nameDisplay,
                  @Nullable final String[] oldPaths) {
         super(type,
@@ -53,8 +50,7 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
               descriptionShort,
               descriptionUrl,
               isObsolete,
-              fullRevision,
-              majorRevision,
+              revision,
               androidVersion,
               path,
               tag,
@@ -62,8 +58,8 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
               minToolsRev,
               minPlatformToolsRev,
               null,     //customIsUpdateFor
-              null);    //customPath
-        mNameDisplay = nameDisplay;
+              null,
+              new IdDisplay(nameDisplay, nameDisplay));
         mOldPaths = oldPaths != null ? oldPaths : new String[0];
     }
 
@@ -76,7 +72,8 @@ public final class PkgDescExtra extends PkgDesc implements IPkgDescExtra {
     @NonNull
     @Override
     public String getNameDisplay() {
-        return mNameDisplay == null ? String.format("Unknown (%s)", getInstallId()) : mNameDisplay;
+        return getName() == null || getName().getDisplay() == null ? String
+                .format("Unknown (%s)", getInstallId()) : getName().getDisplay();
     }
 
     // ---- Helpers ----

@@ -17,7 +17,7 @@
 package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
@@ -32,7 +32,7 @@ public class LocalPlatformToolPkgInfo extends LocalPkgInfo {
     public LocalPlatformToolPkgInfo(@NonNull LocalSdk localSdk,
                                     @NonNull File localDir,
                                     @NonNull Properties sourceProps,
-                                    @NonNull FullRevision revision) {
+                                    @NonNull Revision revision) {
         super(localSdk, localDir, sourceProps);
         mDesc = PkgDesc.Builder.newPlatformTool(revision).create();
     }
