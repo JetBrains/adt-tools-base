@@ -24,6 +24,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.SyncIssue
 import com.android.builder.model.Variant
 import com.google.common.collect.Iterators
+import groovy.transform.CompileStatic
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertNotNull
 /**
  * Test for the jarjar integration.
  */
+@CompileStatic
 public class JarJarLibTest {
 
     @Rule
