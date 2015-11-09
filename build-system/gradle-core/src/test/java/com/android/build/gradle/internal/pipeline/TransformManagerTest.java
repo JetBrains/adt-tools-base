@@ -104,7 +104,7 @@ public class TransformManagerTest extends TaskTestUtils {
         assertThat(syncIssue).isNotNull();
         assertThat(syncIssue.getMessage()).isEqualTo(
                 "Unable to add Transform 'transform name' on variant 'null': requested streams not available: [PROJECT]+[] / [RESOURCES]");
-        assertThat(syncIssue.getType()).isEqualTo(SyncIssue.TYPE_TRANSFORM_WITH_NO_STREAMS);
+        assertThat(syncIssue.getType()).isEqualTo(SyncIssue.TYPE_GENERIC);
     }
 
     @Test
