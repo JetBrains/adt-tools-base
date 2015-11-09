@@ -365,6 +365,7 @@ public class MergeResources extends IncrementalTask {
         this.generatedPngsOutputDir = generatedPngsOutputDir;
     }
 
+    @Input
     public Collection<String> getGeneratedDensities() {
         return generatedDensities;
     }
