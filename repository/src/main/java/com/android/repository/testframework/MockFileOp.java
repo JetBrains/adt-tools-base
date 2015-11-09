@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.repository.io;
+package com.android.repository.testframework;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.io.FileOp;
+import com.android.repository.io.FileOpUtils;
 import com.android.repository.io.impl.FileOpImpl;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;

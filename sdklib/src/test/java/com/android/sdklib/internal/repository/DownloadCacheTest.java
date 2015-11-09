@@ -20,7 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
-import com.android.repository.io.MockFileOp;
+import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.AndroidLocationTestCase;
 import com.android.sdklib.internal.repository.DownloadCache.Strategy;
 import com.android.utils.Pair;

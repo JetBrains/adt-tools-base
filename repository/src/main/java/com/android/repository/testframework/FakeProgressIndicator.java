@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package com.android.repository;
+package com.android.repository.testframework;
 
 import com.android.annotations.NonNull;
 import com.android.repository.api.ProgressIndicator;
 import com.google.common.collect.Lists;
-
-import junit.framework.Assert;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -145,12 +143,12 @@ public class FakeProgressIndicator implements ProgressIndicator {
     /**
      * {@code assert} that no errors or warnings have been logged.
      */
-    public void assertNoErrorsOrWarnings() {
+    public void assertNoErrorsOrWarnings(){
         if (!getErrors().isEmpty()) {
-            Assert.assertTrue(getErrors().toString(), false);
+            throw new Error(getErrors().toString());
         }
         if (!getWarnings().isEmpty()) {
-            Assert.assertTrue(getWarnings().toString(), false);
+            throw new Error(getWarnings().toString());
         }
 
     }
