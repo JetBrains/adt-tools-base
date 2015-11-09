@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="ga_trackingId">UA-123456789</string>
+    <string name="ga_trackingId" translatable="false">UA-123456789</string>
     <string name="gcm_defaultSenderId" translatable="false">1234567890</string>
-    <string name="google_app_id">mobilesdk-app-id-free</string>
+    <string name="google_app_id" translatable="false">mobilesdk-app-id-free</string>
     <string name="google_maps_key" translatable="false">android-api-key-free</string>
-    <string name="test_banner_ad_unit_id">ca-app-pub-3940256099942544/1033173712</string>
-    <string name="test_interstitial_ad_unit_id">ca-app-pub-3940256099942544/6300978111</string>
+    <string name="test_banner_ad_unit_id" translatable="false">ca-app-pub-3940256099942544/1033173712</string>
+    <string name="test_interstitial_ad_unit_id" translatable="false">ca-app-pub-3940256099942544/6300978111</string>
 </resources>
