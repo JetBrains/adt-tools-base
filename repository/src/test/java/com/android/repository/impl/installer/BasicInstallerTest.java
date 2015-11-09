@@ -16,10 +16,10 @@
 
 package com.android.repository.impl.installer;
 
-import com.android.repository.FakeDownloader;
-import com.android.repository.FakeProgressIndicator;
-import com.android.repository.FakeProgressRunner;
-import com.android.repository.FakeSettingsController;
+import com.android.repository.testframework.FakeDownloader;
+import com.android.repository.testframework.FakeProgressIndicator;
+import com.android.repository.testframework.FakeProgressRunner;
+import com.android.repository.testframework.FakeSettingsController;
 import com.android.repository.Revision;
 import com.android.repository.api.ConstantSourceProvider;
 import com.android.repository.api.LocalPackage;
@@ -27,7 +27,7 @@ import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
-import com.android.repository.io.MockFileOp;
+import com.android.repository.testframework.MockFileOp;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 

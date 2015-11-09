@@ -16,7 +16,7 @@
 
 package com.android.repository.impl.local;
 
-import com.android.repository.FakeProgressIndicator;
+import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.Revision;
 import com.android.repository.api.Dependency;
 import com.android.repository.api.License;
@@ -29,7 +29,7 @@ import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
 import com.android.repository.impl.meta.RevisionType;
 import com.android.repository.impl.meta.SchemaModuleUtil;
-import com.android.repository.io.MockFileOp;
+import com.android.repository.testframework.MockFileOp;
 import com.google.common.collect.ImmutableSet;
 
 import junit.framework.TestCase;

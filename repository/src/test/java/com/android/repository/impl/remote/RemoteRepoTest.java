@@ -17,9 +17,9 @@
 package com.android.repository.impl.remote;
 
 import com.android.annotations.NonNull;
-import com.android.repository.FakeDownloader;
-import com.android.repository.FakeProgressIndicator;
-import com.android.repository.FakeSettingsController;
+import com.android.repository.testframework.FakeDownloader;
+import com.android.repository.testframework.FakeProgressIndicator;
+import com.android.repository.testframework.FakeSettingsController;
 import com.android.repository.Revision;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.ProgressIndicator;
