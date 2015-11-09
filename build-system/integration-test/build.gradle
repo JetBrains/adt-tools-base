@@ -119,6 +119,7 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
         includeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
     }
     exclude "com/android/build/gradle/integration/performance/**"
+    exclude "com/android/build/gradle/integration/automatic/**"
 }
 
 task performanceTest(type: Test) {
