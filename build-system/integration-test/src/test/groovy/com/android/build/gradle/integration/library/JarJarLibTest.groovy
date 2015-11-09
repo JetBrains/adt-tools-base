@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.library
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
@@ -26,19 +25,14 @@ import com.android.builder.model.SyncIssue
 import com.android.builder.model.Variant
 import com.google.common.collect.Iterators
 import org.junit.After
-import org.junit.AfterClass
 import org.junit.Before
-import org.junit.BeforeClass
-import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.builder.core.BuilderConstants.DEBUG
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
-
 /**
  * Test for the jarjar integration.
  */
@@ -104,6 +98,6 @@ android {
 
         TruthHelper.assertThat(model).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
-                SyncIssue.TYPE_WRONG_TRANSFORM_SCOPE_ON_LIB)
+                SyncIssue.TYPE_GENERIC)
     }
 }
