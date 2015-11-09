@@ -92,6 +92,8 @@ public class MergeResources extends IncrementalTask {
 
     private boolean useNewCruncher;
 
+    private boolean validateEnabled;
+
     private File blameLogFolder;
     // actual inputs
     private List<ResourceSet> inputResourceSets;
@@ -342,6 +344,17 @@ public class MergeResources extends IncrementalTask {
         this.publicFile = publicFile;
     }
 
+    // Synthetic input: the validation flag is set on the resource sets in ConfigAction.execute.
+    @SuppressWarnings("unused")
+    @Input
+    public boolean isValidateEnabled() {
+        return validateEnabled;
+    }
+
+    public void setValidateEnabled(boolean validateEnabled) {
+        this.validateEnabled = validateEnabled;
+    }
+
     @OutputDirectory
     @Optional
     public File getBlameLogFolder() {
@@ -446,6 +459,11 @@ public class MergeResources extends IncrementalTask {
 
             mergeResourcesTask.setUseNewCruncher(extension.getAaptOptions().getUseNewCruncher());
 
+            final boolean validateEnabled = AndroidGradleOptions.isResourceValidationEnabled(
+                    scope.getGlobalScope().getProject());
+
+            mergeResourcesTask.setValidateEnabled(validateEnabled);
+
             ConventionMappingHelper.map(mergeResourcesTask, "inputResourceSets",
                     new Callable<List<ResourceSet>>() {
                         @Override
@@ -463,8 +481,9 @@ public class MergeResources extends IncrementalTask {
                                 generatedResFolders.add(
                                         variantData.generateApkDataTask.getResOutputDir());
                             }
-                            return variantData.getVariantConfiguration()
-                                    .getResourceSets(generatedResFolders, includeDependencies);
+
+                            return variantData.getVariantConfiguration().getResourceSets(
+                                    generatedResFolders, includeDependencies, validateEnabled);
                         }
                     });
 
@@ -540,6 +559,5 @@ public class MergeResources extends IncrementalTask {
                 throw new ProcessException(e);
             }
         }
-    };
-
+    }
 }
