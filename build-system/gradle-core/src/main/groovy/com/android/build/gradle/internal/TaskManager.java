@@ -783,16 +783,15 @@ public abstract class TaskManager {
         scope.getResourceGenTask().dependsOn(tasks, generateResValuesTask);
     }
 
-    public void createProcessResTask(
+    public void createApkProcessResTask(
             @NonNull TaskFactory tasks,
-            @NonNull VariantScope scope,
-            boolean generateResourcePackage) {
+            @NonNull VariantScope scope) {
         createProcessResTask(
                 tasks,
                 scope,
                 new File(globalScope.getIntermediatesDir(),
                         "symbols/" + scope.getVariantData().getVariantConfiguration().getDirName()),
-                generateResourcePackage);
+                true);
     }
 
     public void createProcessResTask(
@@ -809,17 +808,24 @@ public abstract class TaskManager {
         for (BaseVariantOutputData vod : variantData.getOutputs()) {
             final VariantOutputScope variantOutputScope = vod.getScope();
 
-            variantOutputScope.setProcessResourcesTask(androidTasks.create(tasks,
-                    new ProcessAndroidResources.ConfigAction(variantOutputScope, symbolLocation,
-                            generateResourcePackage)));
-            variantOutputScope.getProcessResourcesTask().dependsOn(tasks,
+            variantOutputScope.setProcessResourcesTask(
+                    androidTasks.create(
+                            tasks,
+                            new ProcessAndroidResources.ConfigAction(
+                                    variantOutputScope,
+                                    symbolLocation,
+                                    generateResourcePackage)));
+
+            variantOutputScope.getProcessResourcesTask().dependsOn(
+                    tasks,
                     variantOutputScope.getManifestProcessorTask(),
                     scope.getMergeResourcesTask(),
                     scope.getMergeAssetsTask());
 
             if (vod.getMainOutputFile().getFilter(DENSITY) == null) {
                 scope.setGenerateRClassTask(variantOutputScope.getProcessResourcesTask());
-                scope.getSourceGenTask().optionalDependsOn(tasks,
+                scope.getSourceGenTask().optionalDependsOn(
+                        tasks,
                         variantOutputScope.getProcessResourcesTask());
             }
 
@@ -1309,7 +1315,7 @@ public abstract class TaskManager {
         createBuildConfigTask(tasks, variantScope);
 
         // Add a task to generate resource source files
-        createProcessResTask(tasks, variantScope, true /*generateResourcePackage*/);
+        createApkProcessResTask(tasks, variantScope);
 
         // process java resources
         createProcessJavaResTasks(tasks, variantScope);
