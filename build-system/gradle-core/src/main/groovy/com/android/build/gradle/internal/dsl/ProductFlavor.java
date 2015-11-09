@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.dsl;
 
-import static com.android.build.gradle.tasks.NdkCompile.USE_DEPRECATED_NDK;
+import static com.android.build.gradle.AndroidGradleOptions.USE_DEPRECATED_NDK;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
