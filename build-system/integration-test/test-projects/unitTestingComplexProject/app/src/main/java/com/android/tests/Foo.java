@@ -20,7 +20,12 @@ import com.android.tests.lib.LibFoo;
 
 public class Foo {
   public String foo() {
+    useRClass();
     return "production code";
+  }
+
+  public int useRClass() {
+    return R.string.app_name;
   }
 
   public String callLibFoo() {
