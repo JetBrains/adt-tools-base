@@ -800,16 +800,15 @@ public abstract class TaskManager {
         scope.getResourceGenTask().dependsOn(tasks, generateResValuesTask);
     }
 
-    public void createProcessResTask(
+    public void createApkProcessResTask(
             @NonNull TaskFactory tasks,
-            @NonNull VariantScope scope,
-            boolean generateResourcePackage) {
+            @NonNull VariantScope scope) {
         createProcessResTask(
                 tasks,
                 scope,
                 new File(globalScope.getIntermediatesDir(),
                         "symbols/" + scope.getVariantData().getVariantConfiguration().getDirName()),
-                generateResourcePackage);
+                true);
     }
 
     public void createProcessResTask(
@@ -842,7 +841,8 @@ public abstract class TaskManager {
 
             if (vod.getMainOutputFile().getFilter(DENSITY) == null) {
                 scope.setGenerateRClassTask(variantOutputScope.getProcessResourcesTask());
-                scope.getSourceGenTask().optionalDependsOn(tasks,
+                scope.getSourceGenTask().optionalDependsOn(
+                        tasks,
                         variantOutputScope.getProcessResourcesTask());
             }
 
@@ -1339,7 +1339,7 @@ public abstract class TaskManager {
         createBuildConfigTask(tasks, variantScope);
 
         // Add a task to generate resource source files
-        createProcessResTask(tasks, variantScope, true /*generateResourcePackage*/);
+        createApkProcessResTask(tasks, variantScope);
 
         // process java resources
         createProcessJavaResTasks(tasks, variantScope);

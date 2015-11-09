@@ -100,6 +100,7 @@ import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
+import com.google.common.base.Stopwatch;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
@@ -924,10 +925,8 @@ public class AndroidBuilder {
         ProcessResult result = mProcessExecutor.execute(processInfo, processOutputHandler);
         result.rethrowFailure().assertNormalExitValue();
 
-        // now if the project has libraries, R needs to be created for each libraries,
-        // but only if the current project is not a library.
+        // If the project has libraries, R needs to be created for each library.
         if (aaptCommand.getSourceOutputDir() != null
-                && aaptCommand.getType() != VariantType.LIBRARY
                 && !aaptCommand.getLibraries().isEmpty()) {
             SymbolLoader fullSymbolValues = null;
 

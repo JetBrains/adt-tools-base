@@ -148,7 +148,7 @@ public class ApplicationTaskManager extends TaskManager {
                     @Override
                     public Void call() {
                         // Add a task to process the Android Resources and generate source files
-                        createProcessResTask(tasks, variantScope, true /*generateResourcePackage*/);
+                        createApkProcessResTask(tasks, variantScope);
 
                         // Add a task to process the java resources
                         createProcessJavaResTasks(tasks, variantScope);
