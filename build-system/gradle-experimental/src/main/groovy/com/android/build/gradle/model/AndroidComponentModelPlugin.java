@@ -24,7 +24,7 @@ import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.builder.core.BuilderConstants;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.utils.StringHelper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -136,7 +136,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             if (androidModel.getBuildToolsRevision() == null
                     && androidModel.getBuildToolsVersion() != null) {
                 androidModel.setBuildToolsRevision(
-                        FullRevision.parseRevision(androidModel.getBuildToolsVersion()));
+                        Revision.parseRevision(androidModel.getBuildToolsVersion()));
             }
 
             if (androidModel.getCompileSdkVersion() != null

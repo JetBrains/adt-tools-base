@@ -23,7 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
@@ -57,32 +57,32 @@ public class SdkHelper {
     @NonNull
     public static File getAapt() {
         return getBuildTool(
-                FullRevision.parseRevision(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION),
+                Revision.parseRevision(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION),
                 BuildToolInfo.PathId.AAPT);
     }
 
     @NonNull
-    public static File getAapt(@NonNull FullRevision fullRevision) {
-        return getBuildTool(fullRevision, BuildToolInfo.PathId.AAPT);
+    public static File getAapt(@NonNull Revision revision) {
+        return getBuildTool(revision, BuildToolInfo.PathId.AAPT);
     }
 
     @NonNull
     public static File getDexDump() {
         return getBuildTool(
-                FullRevision.parseRevision(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION),
+                Revision.parseRevision(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION),
                 BuildToolInfo.PathId.DEXDUMP);
     }
 
     @NonNull
     public static File getBuildTool(
-            @NonNull FullRevision fullRevision,
+            @NonNull Revision revision,
             @NonNull BuildToolInfo.PathId pathId) {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
         SdkManager sdkManager = SdkManager.createManager(findSdkDir().getAbsolutePath(), logger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(fullRevision);
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(revision);
         if (buildToolInfo == null) {
-            throw new RuntimeException("Test requires build-tools " + fullRevision.toString());
+            throw new RuntimeException("Test requires build-tools " + revision.toString());
         }
         return new File(buildToolInfo.getPath(pathId));
     }

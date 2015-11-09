@@ -17,7 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 
 import org.w3c.dom.Node;
 
@@ -86,7 +86,7 @@ public abstract class MinToolsPackage extends MajorRevisionPackage implements IM
      * or {@link #MIN_TOOLS_REV_NOT_SPECIFIED} if there is no such requirement.
      */
     @Override
-    public FullRevision getMinToolsRevision() {
+    public Revision getMinToolsRevision() {
         return mMinToolsMixin.getMinToolsRevision();
     }
 

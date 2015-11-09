@@ -32,7 +32,6 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.builder.core.ErrorReporter;
 import com.android.builder.core.LibraryRequest;
-import com.android.builder.internal.FakeAndroidTarget;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.TargetInfo;
@@ -45,8 +44,8 @@ import com.android.ide.common.process.ProcessInfo;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.process.ProcessResult;
+import com.android.repository.Revision;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repository.FullRevision;
 import com.android.utils.FileUtils;
 import com.android.utils.NullLogger;
 import com.google.common.base.Charsets;
@@ -54,8 +53,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
 import junit.framework.TestCase;
-
-import org.mockito.Mockito;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -511,7 +508,7 @@ public class PreDexCacheTest extends TestCase {
         Files.write("dx!", dx, Charsets.UTF_8);
 
         return new BuildToolInfo(
-                new FullRevision(21, 0, 1),
+                new Revision(21, 0, 1),
                 toolDir,
                 new File(toolDir, FN_AAPT),
                 new File(toolDir, FN_AIDL),

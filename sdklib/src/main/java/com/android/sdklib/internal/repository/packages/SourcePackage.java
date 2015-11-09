@@ -27,8 +27,8 @@ import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.io.IFileOp;
-import com.android.sdklib.repository.MajorRevision;
+import com.android.repository.io.FileOp;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
@@ -85,7 +85,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
         }
         mVersion = new AndroidVersion(apiLevel, codeName);
 
-        mPkgDesc = setDescriptions(PkgDesc.Builder.newSource(mVersion, (MajorRevision)getRevision())).create();
+        mPkgDesc = setDescriptions(PkgDesc.Builder.newSource(mVersion, getRevision())).create();
     }
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
@@ -114,7 +114,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
                 );
         mVersion = platformVersion;
 
-        mPkgDesc = setDescriptions(PkgDesc.Builder.newSource(mVersion, (MajorRevision) getRevision())).create();
+        mPkgDesc = setDescriptions(PkgDesc.Builder.newSource(mVersion, getRevision())).create();
     }
 
     /**
@@ -180,7 +180,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
 
         IPkgDesc desc = PkgDesc.Builder
                 .newSource(version != null ? version : new AndroidVersion(0, null),
-                           new MajorRevision(MajorRevision.MISSING_MAJOR_REV))
+                           new Revision(Revision.MISSING_MAJOR_REV))
                 .setDescriptionShort(shortDesc)
                 .create();
 
@@ -322,7 +322,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
     public void postUnzipFileHook(
             Archive archive,
             ITaskMonitor monitor,
-            IFileOp fileOp,
+            FileOp fileOp,
             File unzippedFile,
             ZipArchiveEntry zipEntry) {
         super.postUnzipFileHook(archive, monitor, fileOp, unzippedFile, zipEntry);

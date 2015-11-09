@@ -22,7 +22,7 @@ import com.android.ide.common.process.ProcessEnvBuilder;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.google.common.collect.Lists;
 
 import java.io.File;
@@ -34,7 +34,7 @@ import java.util.List;
  */
 public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
 
-    static final FullRevision JACK_MIN_REV = new FullRevision(21, 1, 0);
+    static final Revision JACK_MIN_REV = new Revision(21, 1, 0);
 
     private boolean mDebugLog = false;
     private boolean mVerbose = false;
@@ -143,7 +143,7 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
     @NonNull
     public JavaProcessInfo build(@NonNull BuildToolInfo buildToolInfo) throws ProcessException {
 
-        FullRevision revision = buildToolInfo.getRevision();
+        Revision revision = buildToolInfo.getRevision();
         if (revision.compareTo(JACK_MIN_REV) < 0) {
             throw new ProcessException(
                     "Jack requires Build Tools " + JACK_MIN_REV.toString() +

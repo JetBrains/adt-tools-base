@@ -19,7 +19,7 @@ package com.android.sdklib.internal.repository.archives;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.repository.Revision;
 
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -55,7 +55,7 @@ public class ArchFilter {
     private final HostOs mHostOs;
     private final BitSize mHostBits;
     private final BitSize mJvmBits;
-    private final NoPreviewRevision mMinJvmVersion;
+    private final Revision mMinJvmVersion;
 
     /**
      * Creates a new {@link ArchFilter} with the specified filter attributes.
@@ -74,7 +74,7 @@ public class ArchFilter {
     public ArchFilter(@Nullable HostOs  hostOs,
                       @Nullable BitSize hostBits,
                       @Nullable BitSize jvmBits,
-                      @Nullable NoPreviewRevision minJvmVersion) {
+                      @Nullable Revision minJvmVersion) {
         mHostOs = hostOs;
         mHostBits = hostBits;
         mJvmBits = jvmBits;
@@ -94,7 +94,7 @@ public class ArchFilter {
         HostOs  hostOs   = null;
         BitSize hostBits = null;
         BitSize jvmBits  = null;
-        NoPreviewRevision minJvmVers = null;
+        Revision minJvmVers = null;
 
         if (props != null) {
             hostOs   = HostOs .fromXmlName(props.getProperty(PROP_HOST_OS));
@@ -102,7 +102,7 @@ public class ArchFilter {
             jvmBits  = BitSize.fromXmlName(props.getProperty(PROP_JVM_BITS));
 
             try {
-                minJvmVers = NoPreviewRevision.parseRevision(props.getProperty(PROP_MIN_JVM_VERSION));
+                minJvmVers = Revision.parseRevision(props.getProperty(PROP_MIN_JVM_VERSION));
             } catch (NumberFormatException ignore) {}
 
             // Backward compatibility with older PROP_OS and PROP_ARCH values
@@ -155,7 +155,7 @@ public class ArchFilter {
     /** @return the minimal JVM version required by this package
      *          or null if there's no limitation for this package. */
     @Nullable
-    public NoPreviewRevision getMinJvmVersion() {
+    public Revision getMinJvmVersion() {
         return mMinJvmVersion;
     }
 
@@ -234,14 +234,14 @@ public class ArchFilter {
         // but that's not necessarily obvious when jvmBits is 32.
         BitSize hostBits = jvmBits;
 
-        NoPreviewRevision minJvmVersion = null;
+        Revision minJvmVersion = null;
         String javav = System.getProperty("java.version");              //$NON-NLS-1$
         // java Version is typically in the form "1.2.3_45" and we just need to keep up to "1.2.3"
         // since our revision numbers are in 3-parts form (1.2.3).
         Pattern p = Pattern.compile("((\\d+)(\\.\\d+)?(\\.\\d+)?).*");  //$NON-NLS-1$
         Matcher m = p.matcher(javav);
         if (m.matches()) {
-            minJvmVersion = NoPreviewRevision.parseRevision(m.group(1));
+            minJvmVersion = Revision.parseRevision(m.group(1));
         }
 
         return new ArchFilter(hostOS, hostBits, jvmBits, minJvmVersion);

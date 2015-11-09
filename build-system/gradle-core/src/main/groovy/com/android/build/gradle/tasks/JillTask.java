@@ -28,7 +28,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
@@ -67,7 +67,7 @@ public class JillTask extends BaseTask {
     @TaskAction
     public void taskAction(IncrementalTaskInputs taskInputs)
             throws LoggedErrorException, InterruptedException, IOException {
-        FullRevision revision = getBuilder().getTargetInfo().getBuildTools().getRevision();
+        Revision revision = getBuilder().getTargetInfo().getBuildTools().getRevision();
         if (revision.compareTo(JackTask.JACK_MIN_REV) < 0) {
             throw new RuntimeException(
                     "Jack requires Build Tools " + JackTask.JACK_MIN_REV.toString()

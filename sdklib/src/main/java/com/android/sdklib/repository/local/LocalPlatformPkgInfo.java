@@ -20,6 +20,8 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.repository.Revision;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.IAndroidTarget.OptionalLibrary;
@@ -30,10 +32,6 @@ import com.android.sdklib.SystemImage;
 import com.android.sdklib.internal.androidTarget.OptionalLibraryImpl;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.internal.project.ProjectProperties;
-import com.android.sdklib.io.FileOp;
-import com.android.sdklib.io.IFileOp;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IdDisplay;
@@ -64,23 +62,28 @@ import java.util.TreeSet;
 @SuppressWarnings("ConstantConditions")
 public class LocalPlatformPkgInfo extends LocalPkgInfo {
 
-    public static final String PROP_VERSION_SDK      = "ro.build.version.sdk";      //$NON-NLS-1$
+    public static final String PROP_VERSION_SDK = "ro.build.version.sdk";      //$NON-NLS-1$
+
     public static final String PROP_VERSION_CODENAME = "ro.build.version.codename"; //$NON-NLS-1$
-    public static final String PROP_VERSION_RELEASE  = "ro.build.version.release";  //$NON-NLS-1$
+
+    public static final String PROP_VERSION_RELEASE = "ro.build.version.release";  //$NON-NLS-1$
 
     @NonNull
     private final IPkgDesc mDesc;
 
-    /** Android target, lazyly loaded from #getAndroidTarget */
+    /**
+     * Android target, lazyly loaded from #getAndroidTarget
+     */
     private IAndroidTarget mTarget;
+
     private boolean mLoaded;
 
     public LocalPlatformPkgInfo(@NonNull LocalSdk localSdk,
-                                @NonNull File localDir,
-                                @NonNull Properties sourceProps,
-                                @NonNull AndroidVersion version,
-                                @NonNull MajorRevision revision,
-                                @NonNull FullRevision minToolsRev) {
+            @NonNull File localDir,
+            @NonNull Properties sourceProps,
+            @NonNull AndroidVersion version,
+            @NonNull Revision revision,
+            @NonNull Revision minToolsRev) {
         super(localSdk, localDir, sourceProps);
         mDesc = PkgDesc.Builder.newPlatform(version, revision, minToolsRev).create();
     }
@@ -91,7 +94,9 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         return mDesc;
     }
 
-    /** The "path" of a Platform is its Target Hash. */
+    /**
+     * The "path" of a Platform is its Target Hash.
+     */
     @NonNull
     public String getTargetHash() {
         return getDesc().getPath();
@@ -119,7 +124,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
     @Nullable
     protected IAndroidTarget createAndroidTarget() {
         LocalSdk sdk = getLocalSdk();
-        IFileOp fileOp = sdk.getFileOp();
+        FileOp fileOp = sdk.getFileOp();
         File platformFolder = getLocalDir();
         File buildProp = new File(platformFolder, SdkConstants.FN_BUILD_PROP);
         File sourcePropFile = new File(platformFolder, SdkConstants.FN_SOURCE_PROP);
@@ -144,7 +149,8 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
             if (map != null) {
                 platformProp.putAll(map);
             }
-        } catch (FileNotFoundException ignore) {}
+        } catch (FileNotFoundException ignore) {
+        }
 
         try {
             map = ProjectProperties.parsePropertyStream(
@@ -154,7 +160,8 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
             if (map != null) {
                 platformProp.putAll(map);
             }
-        } catch (FileNotFoundException ignore) {}
+        } catch (FileNotFoundException ignore) {
+        }
 
         File sdkPropFile = new File(platformFolder, SdkConstants.FN_SDK_PROP);
         if (fileOp.isFile(sdkPropFile)) { // obsolete platforms don't have this.
@@ -166,7 +173,8 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 if (map != null) {
                     platformProp.putAll(map);
                 }
-            } catch (FileNotFoundException ignore) {}
+            } catch (FileNotFoundException ignore) {
+            }
         }
 
         // look for some specific values in the map.
@@ -181,7 +189,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
             return null;
         } else {
             try {
-                 apiNumber = Integer.parseInt(stringValue);
+                apiNumber = Integer.parseInt(stringValue);
             } catch (NumberFormatException e) {
                 // looks like apiNumber does not parse to a number.
                 // Ignore this platform.
@@ -196,7 +204,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         // Codename must be either null or a platform codename.
         // REL means it's a release version and therefore the codename should be null.
         AndroidVersion apiVersion =
-            new AndroidVersion(apiNumber, platformProp.get(PROP_VERSION_CODENAME));
+                new AndroidVersion(apiNumber, platformProp.get(PROP_VERSION_CODENAME));
 
         // version string
         String apiName = platformProp.get(PkgProps.PLATFORM_VERSION);
@@ -226,9 +234,9 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
             String propApi = platformProp.get(PkgProps.LAYOUTLIB_API);
             String propRev = platformProp.get(PkgProps.LAYOUTLIB_REV);
             int llApi = propApi == null ? LayoutlibVersion.NOT_SPECIFIED :
-                                          Integer.parseInt(propApi);
+                    Integer.parseInt(propApi);
             int llRev = propRev == null ? LayoutlibVersion.NOT_SPECIFIED :
-                                          Integer.parseInt(propRev);
+                    Integer.parseInt(propRev);
             if (llApi > LayoutlibVersion.NOT_SPECIFIED &&
                     llRev >= LayoutlibVersion.NOT_SPECIFIED) {
                 layoutlibVersion = new LayoutlibVersion(llApi, llRev);
@@ -260,7 +268,8 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 sdk.getLatestBuildTool());
 
         // add the skins from the platform. Make a copy to not modify the original collection.
-        List<File> skins = new ArrayList<File>(PackageParserUtils.parseSkinFolder(pt.getFile(IAndroidTarget.SKINS), fileOp));
+        List<File> skins = new ArrayList<File>(
+                PackageParserUtils.parseSkinFolder(pt.getFile(IAndroidTarget.SKINS), fileOp));
 
         // add the system-image specific skins, if any.
         for (ISystemImage systemImage : systemImages) {
@@ -285,25 +294,23 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
     }
 
     /**
-     * Get all the system images supported by a platform target.
-     * For a platform, we first look in the new sdk/system-images folders then we
-     * look for sub-folders in the platform/images directory and/or the one legacy
-     * folder.
-     * If any given API appears twice or more, the first occurrence wins.
+     * Get all the system images supported by a platform target. For a platform, we first look in
+     * the new sdk/system-images folders then we look for sub-folders in the platform/images
+     * directory and/or the one legacy folder. If any given API appears twice or more, the first
+     * occurrence wins.
      *
-     * @param fileOp File operation wrapper.
+     * @param fileOp      File operation wrapper.
      * @param platformDir Root of the platform target being loaded.
-     * @param apiVersion API level + codename of platform being loaded.
-     * @return an array of ISystemImage containing all the system images for the target.
-     *              The list can be empty but not null.
+     * @param apiVersion  API level + codename of platform being loaded.
+     * @return an array of ISystemImage containing all the system images for the target. The list
+     * can be empty but not null.
      */
     @NonNull
-    private ISystemImage[] getPlatformSystemImages(IFileOp fileOp,
-                                                   File platformDir,
-                                                   AndroidVersion apiVersion) {
+    private ISystemImage[] getPlatformSystemImages(FileOp fileOp,
+            File platformDir,
+            AndroidVersion apiVersion) {
         Set<ISystemImage> found = new TreeSet<ISystemImage>();
         SetMultimap<IdDisplay, String> tagToAbiFound = TreeMultimap.create();
-
 
         // Look in the SDK/system-image/platform-n/tag/abi folders.
         // Look in the SDK/system-image/platform-n/abi folders.
@@ -318,7 +325,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 IdDisplay tag = d.getTag();
                 String abi = d.getPath();
                 if (tag != null && abi != null && !tagToAbiFound.containsEntry(tag, abi)) {
-                    found.add(((LocalSysImgPkgInfo)pkg).getSystemImage());
+                    found.add(((LocalSysImgPkgInfo) pkg).getSystemImage());
                     tagToAbiFound.put(tag, abi);
                 }
             }
@@ -326,7 +333,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
 
         // Look in either the platform/images/abi or the legacy folder
         File imgDir = new File(platformDir, SdkConstants.OS_IMAGES_FOLDER);
-        File[] files =  fileOp.listFiles(imgDir);
+        File[] files = fileOp.listFiles(imgDir);
         boolean useLegacy = true;
         boolean hasImgFiles = false;
         final IdDisplay defaultTag = SystemImage.DEFAULT_TAG;
@@ -384,8 +391,11 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
     }
 
     public static class Library {
+
         String name;
+
         String jar;
+
         boolean manifest;
     }
 
@@ -421,25 +431,26 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         }
     }
 
-    /** List of items in the platform to check when parsing it. These paths are relative to the
-     * platform root folder. */
-    private static final String[] sPlatformContentList = new String[] {
-        SdkConstants.FN_FRAMEWORK_LIBRARY,
-        SdkConstants.FN_FRAMEWORK_AIDL,
+    /**
+     * List of items in the platform to check when parsing it. These paths are relative to the
+     * platform root folder.
+     */
+    private static final String[] sPlatformContentList = new String[]{
+            SdkConstants.FN_FRAMEWORK_LIBRARY,
+            SdkConstants.FN_FRAMEWORK_AIDL,
     };
 
     /**
      * Checks the given platform has all the required files, and returns true if they are all
-     * present.
-     * <p/>This checks the presence of the following files: android.jar, framework.aidl, aapt(.exe),
-     * aidl(.exe), dx(.bat), and dx.jar
+     * present. <p/>This checks the presence of the following files: android.jar, framework.aidl,
+     * aapt(.exe), aidl(.exe), dx(.bat), and dx.jar
      *
-     * @param fileOp File operation wrapper.
+     * @param fileOp   File operation wrapper.
      * @param platform The folder containing the platform.
      * @return An error description if platform is rejected; null if no error is detected.
      */
     @NonNull
-    private static String checkPlatformContent(IFileOp fileOp, @NonNull File platform) {
+    private static String checkPlatformContent(FileOp fileOp, @NonNull File platform) {
         for (String relativePath : sPlatformContentList) {
             File f = new File(platform, relativePath);
             if (!fileOp.exists(f)) {

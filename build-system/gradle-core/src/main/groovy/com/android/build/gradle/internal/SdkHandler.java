@@ -27,7 +27,7 @@ import com.android.builder.sdk.PlatformLoader;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.SdkLoader;
 import com.android.builder.sdk.TargetInfo;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
@@ -77,7 +77,7 @@ public class SdkHandler {
 
     public void initTarget(
             @NonNull String targetHash,
-            @NonNull FullRevision buildToolRevision,
+            @NonNull Revision buildToolRevision,
             @NonNull Collection<LibraryRequest> usedLibraries,
             @NonNull AndroidBuilder androidBuilder) {
         Preconditions.checkNotNull(targetHash, "android.compileSdkVersion is missing!");

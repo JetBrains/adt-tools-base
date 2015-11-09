@@ -17,8 +17,8 @@
 package com.android.sdklib.internal.repository.updater;
 
 import com.android.annotations.NonNull;
-import com.android.sdklib.SdkManager;
 import com.android.sdklib.SdkManagerTestCase;
+import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.packages.MockEmptyPackage;
 import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.PkgProps;

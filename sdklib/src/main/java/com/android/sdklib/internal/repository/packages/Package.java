@@ -21,20 +21,24 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
+import com.android.repository.Revision;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.repository.IDescription;
-import com.android.sdklib.repository.IListDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkAddonSource;
 import com.android.sdklib.internal.repository.sources.SdkRepoSource;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.io.IFileOp;
-import com.android.sdklib.repository.*;
+import com.android.sdklib.repository.IDescription;
+import com.android.sdklib.repository.IListDescription;
+import com.android.sdklib.repository.License;
+import com.android.sdklib.repository.PkgProps;
+import com.android.sdklib.repository.SdkAddonConstants;
+import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
-
 import com.android.sdklib.repository.descriptors.PkgDesc;
+
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.w3c.dom.Node;
 
@@ -376,7 +380,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * Can be 0 if this is a local package of unknown revision.
      */
     @NonNull
-    public abstract FullRevision getRevision();
+    public abstract Revision getRevision();
 
     /**
      * Returns the optional description for all packages (platform, add-on, tool, doc) or
@@ -657,14 +661,14 @@ public abstract class Package implements IDescription, IListDescription, Compara
      *
      * @param archive The archive that is being installed.
      * @param monitor The {@link ITaskMonitor} to display errors.
-     * @param fileOp The {@link IFileOp} used by the archive installer.
+     * @param fileOp The {@link FileOp} used by the archive installer.
      * @param unzippedFile The file that has just been unzipped in the install temp directory.
      * @param zipEntry The {@link ZipArchiveEntry} that has just been unzipped.
      */
     public void postUnzipFileHook(
             Archive archive,
             ITaskMonitor monitor,
-            IFileOp fileOp,
+            FileOp fileOp,
             File unzippedFile,
             ZipArchiveEntry zipEntry) {
 
@@ -703,6 +707,19 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * @return true if the item as equivalent.
      */
     public abstract boolean sameItemAs(Package pkg);
+
+    /**
+     * Returns whether the give package represents the same item as the current package.
+     * <p/>
+     * Two packages are considered the same if they represent the same thing, except for the
+     * revision number.
+     * @param pkg the package to compare.
+     * @param previewComparison Ignored. To be used when overridden in subclasses.
+     * @return true if the item as equivalent.
+     */
+    public boolean sameItemAs(Package pkg, Revision.PreviewComparison previewComparison) {
+        return sameItemAs(pkg);
+    }
 
     /**
      * Computes whether the given package is a suitable update for the current package.
@@ -824,7 +841,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
         // Append revision number
         // Note: pad revision numbers to 4 digits (e.g. make sure 12>3 by comparing 0012 and 0003)
         sb.append("|r:");                                                       //$NON-NLS-1$
-        FullRevision rev = getRevision();
+        Revision rev = getRevision();
         sb.append(String.format("%1$04d.%2$04d.%3$04d.",                        //$NON-NLS-1$
                                 rev.getMajor(),
                                 rev.getMinor(),

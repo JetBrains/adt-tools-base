@@ -19,7 +19,7 @@ package com.android.sdklib.internal.repository.packages;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.internal.androidTarget.MockPlatformTarget;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 
 import java.util.Properties;
@@ -61,11 +61,11 @@ public class MockPlatformPackage extends PlatformPackage {
      * Creates a {@link MockPlatformTarget} with the requested API and revision
      * and then a {@link MockPlatformPackage} wrapping it.
      *
-     * Also sets the min-tools-rev of the platform using a {@link FullRevision}.
+     * Also sets the min-tools-rev of the platform using a {@link Revision}.
      *
      * By design, this package contains one and only one archive.
      */
-    public MockPlatformPackage(int apiLevel, int revision, FullRevision min_tools_rev) {
+    public MockPlatformPackage(int apiLevel, int revision, Revision min_tools_rev) {
         this(null /*source*/,
              new MockPlatformTarget(apiLevel, revision),
              createProps(min_tools_rev));
@@ -87,7 +87,7 @@ public class MockPlatformPackage extends PlatformPackage {
         return props;
     }
 
-    private static Properties createProps(FullRevision min_tools_rev) {
+    private static Properties createProps(Revision min_tools_rev) {
         Properties props = new Properties();
         props.setProperty(PkgProps.MIN_TOOLS_REV, min_tools_rev.toShortString());
         return props;

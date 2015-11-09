@@ -72,8 +72,8 @@ public class ExtraPackageTest_Base extends PackageTest {
         props.setProperty(PkgProps.EXTRA_PATH,           "the_path");
         props.setProperty(PkgProps.EXTRA_NAME_DISPLAY,   "Vendor The Path");
 
-        // Extra revision is now a NoPreviewRevision and writes its full major.minor.micro
-        props.setProperty(PkgProps.PKG_REVISION, "42.0.0");
+        // Extra revision is now a Revision and writes its full major.minor.micro
+        props.setProperty(PkgProps.PKG_REVISION, "42");
 
         // MinToolsPackage properties
         props.setProperty(PkgProps.MIN_TOOLS_REV, "3.0.1");

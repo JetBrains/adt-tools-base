@@ -16,11 +16,12 @@
 
 package com.android.sdklib.internal.repository.sources;
 
+import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.MockMonitor;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.packages.SystemImagePackage;
-import com.android.sdklib.io.FileOp;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.repository.SdkSysImgConstants;
 
 import org.w3c.dom.Document;
@@ -271,13 +272,13 @@ public class SdkSysImgSourceTest extends TestCase {
             }
         }
         assertEquals(Arrays.toString(new File[] {
-                FileOp.append("root", "system-images", "android-45", "tag-name-is-sanitized-if-display-is-missing", "mips"),
-                FileOp.append("root", "system-images", "android-44", "mips-only", "mips"),
-                FileOp.append("root", "system-images", "android-42", "default", "armeabi"),
-                FileOp.append("root", "system-images", "android-42", "default", "mips"),
-                FileOp.append("root", "system-images", "android-2" , "default", "armeabi-v7a"),
-                FileOp.append("root", "system-images", "android-2" , "default", "x86"),
-                FileOp.append("root", "system-images", "android-2" , "other",   "armeabi-v7a"),
+                FileOpUtils.append("root", "system-images", "android-45", "tag-name-is-sanitized-if-display-is-missing", "mips"),
+                FileOpUtils.append("root", "system-images", "android-44", "mips-only", "mips"),
+                FileOpUtils.append("root", "system-images", "android-42", "default", "armeabi"),
+                FileOpUtils.append("root", "system-images", "android-42", "default", "mips"),
+                FileOpUtils.append("root", "system-images", "android-2" , "default", "armeabi-v7a"),
+                FileOpUtils.append("root", "system-images", "android-2" , "default", "x86"),
+                FileOpUtils.append("root", "system-images", "android-2" , "other",   "armeabi-v7a"),
                 }).replace(File.separatorChar, '/'),
                 Arrays.toString(sysImgPath.toArray()).replace(File.separatorChar, '/'));
 
@@ -402,21 +403,21 @@ public class SdkSysImgSourceTest extends TestCase {
             }
         }
         assertEquals(Arrays.toString(new File[] {
-                FileOp.append("root", "system-images", "android-45", "tag-name-is-sanitized-if-display-is-missing", "mips"),
-                FileOp.append("root", "system-images", "android-44", "mips-only",  "mips"),
-                FileOp.append("root", "system-images", "android-42", "default",    "armeabi"),
-                FileOp.append("root", "system-images", "android-42", "default",    "mips64"),
-                FileOp.append("root", "system-images", "android-2" , "default",    "arm64-v8a"),
-                FileOp.append("root", "system-images", "android-2" , "default",    "armeabi-v7a"),
-                FileOp.append("root", "system-images", "android-2" , "default",    "x86_64"),
-                FileOp.append("root", "system-images", "android-2" , "default",    "x86"),
-                FileOp.append("root", "system-images", "android-2" , "other",      "armeabi-v7a"),
-                FileOp.append("root", "system-images", "android-2" , "some-addon", "arm64-v8a"),
-                FileOp.append("root", "system-images", "android-2" , "some-addon", "armeabi-v7a"),
-                FileOp.append("root", "system-images", "android-2" , "some-addon", "x86_64"),
-                FileOp.append("root", "system-images", "android-2" , "some-addon", "x86"),
-                FileOp.append("root", "system-images", "android-2" , "some-addon", "mips64"),
-                FileOp.append("root", "system-images", "android-2" , "some-addon", "mips"),
+                FileOpUtils.append("root", "system-images", "android-45", "tag-name-is-sanitized-if-display-is-missing", "mips"),
+                FileOpUtils.append("root", "system-images", "android-44", "mips-only",  "mips"),
+                FileOpUtils.append("root", "system-images", "android-42", "default",    "armeabi"),
+                FileOpUtils.append("root", "system-images", "android-42", "default",    "mips64"),
+                FileOpUtils.append("root", "system-images", "android-2" , "default",    "arm64-v8a"),
+                FileOpUtils.append("root", "system-images", "android-2" , "default",    "armeabi-v7a"),
+                FileOpUtils.append("root", "system-images", "android-2" , "default",    "x86_64"),
+                FileOpUtils.append("root", "system-images", "android-2" , "default",    "x86"),
+                FileOpUtils.append("root", "system-images", "android-2" , "other",      "armeabi-v7a"),
+                FileOpUtils.append("root", "system-images", "android-2" , "some-addon", "arm64-v8a"),
+                FileOpUtils.append("root", "system-images", "android-2" , "some-addon", "armeabi-v7a"),
+                FileOpUtils.append("root", "system-images", "android-2" , "some-addon", "x86_64"),
+                FileOpUtils.append("root", "system-images", "android-2" , "some-addon", "x86"),
+                FileOpUtils.append("root", "system-images", "android-2" , "some-addon", "mips64"),
+                FileOpUtils.append("root", "system-images", "android-2" , "some-addon", "mips"),
                 }).replace(File.separatorChar, '/').replace(", ", "\n"),
                 Arrays.toString(sysImgPath.toArray()).replace(File.separatorChar, '/').replace(", ", "\n"));
 

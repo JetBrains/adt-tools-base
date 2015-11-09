@@ -25,7 +25,7 @@ import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.internal.PngException;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.testutils.TestUtils;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
@@ -64,17 +64,17 @@ public class NinePatchAaptProcessorTestUtils {
 
     /**
      * Returns the lastest build tools that's at least the passed version.
-     * @param fullRevision the minimum required build tools version.
+     * @param revision the minimum required build tools version.
      * @return the latest build tools.
-     * @throws RuntimeException if the latest build tools is older than fullRevision.
+     * @throws RuntimeException if the latest build tools is older than revision.
      */
-    static File getAapt(FullRevision fullRevision) {
+    static File getAapt(Revision revision) {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), logger);
         assert sdkManager != null;
         BuildToolInfo buildToolInfo = sdkManager.getLatestBuildTool();
-        if (buildToolInfo == null || buildToolInfo.getRevision().compareTo(fullRevision) < 0) {
-            throw new RuntimeException("Test requires build-tools " + fullRevision.toShortString());
+        if (buildToolInfo == null || buildToolInfo.getRevision().compareTo(revision) < 0) {
+            throw new RuntimeException("Test requires build-tools " + revision.toShortString());
         }
         return new File(buildToolInfo.getPath(BuildToolInfo.PathId.AAPT));
     }

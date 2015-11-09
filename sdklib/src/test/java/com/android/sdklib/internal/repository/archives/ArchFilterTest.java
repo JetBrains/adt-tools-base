@@ -17,8 +17,7 @@
 package com.android.sdklib.internal.repository.archives;
 
 import com.android.annotations.NonNull;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.repository.Revision;
 
 import junit.framework.TestCase;
 
@@ -29,19 +28,19 @@ public class ArchFilterTest extends TestCase {
         assertEquals(HostOs.WINDOWS, f1.getHostOS());
         assertEquals(BitSize._64, f1.getHostBits());
         assertEquals(BitSize._64, f1.getJvmBits());
-        assertEquals(new FullRevision(1, 7, 0), f1.getMinJvmVersion());
+        assertEquals(new Revision(1, 7, 0), f1.getMinJvmVersion());
 
         ArchFilter f2 = makeCurrent("Mac OS X", "x86_64", "1.7.0_51");
         assertEquals(HostOs.MACOSX, f2.getHostOS());
         assertEquals(BitSize._64, f2.getHostBits());
         assertEquals(BitSize._64, f2.getJvmBits());
-        assertEquals(new FullRevision(1, 7, 0), f2.getMinJvmVersion());
+        assertEquals(new Revision(1, 7, 0), f2.getMinJvmVersion());
 
         ArchFilter f3 = makeCurrent("Linux", "x86", "1.6.42_43");
         assertEquals(HostOs.LINUX, f3.getHostOS());
         assertEquals(BitSize._32, f3.getHostBits());
         assertEquals(BitSize._32, f3.getJvmBits());
-        assertEquals(new FullRevision(1, 6, 42), f3.getMinJvmVersion());
+        assertEquals(new Revision(1, 6, 42), f3.getMinJvmVersion());
     }
 
     public void testIsCompatibleWith() {
@@ -59,11 +58,11 @@ public class ArchFilterTest extends TestCase {
         assertTrue (new ArchFilter(null, null, BitSize._64, null).isCompatibleWith(f1));
         assertFalse(new ArchFilter(null, null, BitSize._32, null).isCompatibleWith(f1));
 
-        assertTrue (new ArchFilter(null, null, null, new NoPreviewRevision(1, 6, 42)).isCompatibleWith(f1));
-        assertTrue (new ArchFilter(null, null, null, new NoPreviewRevision(1, 7,  0)).isCompatibleWith(f1));
-        assertFalse(new ArchFilter(null, null, null, new NoPreviewRevision(1, 7,  1)).isCompatibleWith(f1));
-        assertFalse(new ArchFilter(null, null, null, new NoPreviewRevision(1, 8,  0)).isCompatibleWith(f1));
-        assertFalse(new ArchFilter(null, null, null, new NoPreviewRevision(2, 0,  0)).isCompatibleWith(f1));
+        assertTrue (new ArchFilter(null, null, null, new Revision(1, 6, 42)).isCompatibleWith(f1));
+        assertTrue (new ArchFilter(null, null, null, new Revision(1, 7,  0)).isCompatibleWith(f1));
+        assertFalse(new ArchFilter(null, null, null, new Revision(1, 7,  1)).isCompatibleWith(f1));
+        assertFalse(new ArchFilter(null, null, null, new Revision(1, 8,  0)).isCompatibleWith(f1));
+        assertFalse(new ArchFilter(null, null, null, new Revision(2, 0,  0)).isCompatibleWith(f1));
     }
 
     // ---- helpers ---

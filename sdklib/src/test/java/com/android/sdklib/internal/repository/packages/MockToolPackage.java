@@ -17,7 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 
 import java.util.Properties;
@@ -65,7 +65,7 @@ public class MockToolPackage extends ToolPackage {
      */
     public MockToolPackage(
             SdkSource source,
-            FullRevision revision,
+            Revision revision,
             int minPlatformToolsRev) {
         super(
                 source, // source,
@@ -86,8 +86,8 @@ public class MockToolPackage extends ToolPackage {
      */
     public MockToolPackage(
             SdkSource source,
-            FullRevision revision,
-            FullRevision minPlatformToolsRev) {
+            Revision revision,
+            Revision minPlatformToolsRev) {
         super(
                 source, // source,
                 createProps(revision, minPlatformToolsRev), // props,
@@ -99,15 +99,15 @@ public class MockToolPackage extends ToolPackage {
                 );
     }
 
-    private static Properties createProps(FullRevision revision, int minPlatformToolsRev) {
-        Properties props = FullRevisionPackageTest.createProps(revision);
+    private static Properties createProps(Revision revision, int minPlatformToolsRev) {
+        Properties props = PreciseRevisionPackageTest.createProps(revision);
         props.setProperty(PkgProps.MIN_PLATFORM_TOOLS_REV,
                           Integer.toString((minPlatformToolsRev)));
         return props;
     }
 
-    private static Properties createProps(FullRevision revision, FullRevision minPlatformToolsRev) {
-        Properties props = FullRevisionPackageTest.createProps(revision);
+    private static Properties createProps(Revision revision, Revision minPlatformToolsRev) {
+        Properties props = PreciseRevisionPackageTest.createProps(revision);
         props.setProperty(PkgProps.MIN_PLATFORM_TOOLS_REV,
                           minPlatformToolsRev.toShortString());
         return props;

@@ -78,7 +78,7 @@ public final class AndroidLocation {
      * @throws AndroidLocationException
      */
     @NonNull
-    public static final String getFolder() throws AndroidLocationException {
+    public static String getFolder() throws AndroidLocationException {
         if (sPrefsLocation == null) {
             String home = findValidPath(new EnvVar[] { EnvVar.ANDROID_SDK_HOME,
                                                        EnvVar.USER_HOME,

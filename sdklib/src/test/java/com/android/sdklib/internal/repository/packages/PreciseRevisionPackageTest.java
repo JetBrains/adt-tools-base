@@ -16,7 +16,7 @@
 
 package com.android.sdklib.internal.repository.packages;
 
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 
 import java.util.ArrayList;
@@ -26,13 +26,13 @@ import java.util.Properties;
 
 import junit.framework.TestCase;
 
-public class FullRevisionPackageTest extends TestCase {
+public class PreciseRevisionPackageTest extends TestCase {
 
     /**
-     * Helper that creates the {@link Properties} from a {@link FullRevision}
-     * as expected by {@link FullRevisionPackage}.
+     * Helper that creates the {@link Properties} from a {@link Revision}
+     * as expected by {@link RevisionPackage}.
      */
-    public static Properties createProps(FullRevision revision) {
+    public static Properties createProps(Revision revision) {
         Properties props = new Properties();
         if (revision != null) {
             props.setProperty(PkgProps.PKG_REVISION, revision.toString());
@@ -41,24 +41,24 @@ public class FullRevisionPackageTest extends TestCase {
     }
 
     public void testCompareTo() throws Exception {
-        // Test order of full revision packages.
+        // Test order of revision packages.
         //
         // Note that Package.compareTo() is designed to return the desired
         // ordering for a list display and as such a final/release package
         // needs to be listed before its rc/preview package.
         //
-        // This differs from the order used by FullRevision.compareTo().
+        // This differs from the order used by Revision.compareTo().
 
         ArrayList<Package> list = new ArrayList<Package>();
 
-        list.add(new MockToolPackage(null, new FullRevision(1, 0, 0, 0), 8));
-        list.add(new MockToolPackage(null, new FullRevision(1, 0, 0, 1), 8));
-        list.add(new MockToolPackage(null, new FullRevision(1, 0, 1, 0), 8));
-        list.add(new MockToolPackage(null, new FullRevision(1, 0, 1, 1), 8));
-        list.add(new MockToolPackage(null, new FullRevision(1, 1, 0, 0), 8));
-        list.add(new MockToolPackage(null, new FullRevision(1, 1, 0, 1), 8));
-        list.add(new MockToolPackage(null, new FullRevision(2, 1, 1, 0), 8));
-        list.add(new MockToolPackage(null, new FullRevision(2, 1, 1, 1), 8));
+        list.add(new MockToolPackage(null, new Revision(1, 0, 0, 0), 8));
+        list.add(new MockToolPackage(null, new Revision(1, 0, 0, 1), 8));
+        list.add(new MockToolPackage(null, new Revision(1, 0, 1, 0), 8));
+        list.add(new MockToolPackage(null, new Revision(1, 0, 1, 1), 8));
+        list.add(new MockToolPackage(null, new Revision(1, 1, 0, 0), 8));
+        list.add(new MockToolPackage(null, new Revision(1, 1, 0, 1), 8));
+        list.add(new MockToolPackage(null, new Revision(2, 1, 1, 0), 8));
+        list.add(new MockToolPackage(null, new Revision(2, 1, 1, 1), 8));
 
         Collections.sort(list);
 

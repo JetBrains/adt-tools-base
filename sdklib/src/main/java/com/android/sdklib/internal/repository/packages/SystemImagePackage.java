@@ -33,6 +33,8 @@ import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
+import com.android.repository.Revision;
+
 import org.w3c.dom.Node;
 
 import java.io.File;
@@ -49,7 +51,7 @@ import java.util.regex.Pattern;
  * com.android.tools.idea.sdk.remote.internal.
  */
 @Deprecated
-public class SystemImagePackage extends MajorRevisionPackage
+public class SystemImagePackage extends PreciseRevisionPackage
         implements IAndroidVersionProvider, IPlatformDependency {
 
     /** The package version, for platform, add-on and doc packages. */
@@ -113,7 +115,7 @@ public class SystemImagePackage extends MajorRevisionPackage
         if (addonNode == null) {
             // A platform system-image
             desc = setDescriptions(PkgDesc.Builder
-                    .newSysImg(mVersion, mTag, mAbi, (MajorRevision) getRevision()))
+                    .newSysImg(mVersion, mTag, mAbi, getRevision()))
                     .create();
         } else {
             // An add-on system-image
@@ -131,7 +133,7 @@ public class SystemImagePackage extends MajorRevisionPackage
             vendor = new IdDisplay(vendorId, vendorDisp);
 
             desc = setDescriptions(PkgDesc.Builder
-                    .newAddonSysImg(mVersion, vendor, mTag, mAbi, (MajorRevision) getRevision()))
+                    .newAddonSysImg(mVersion, vendor, mTag, mAbi, getRevision()))
                     .create();
         }
 
@@ -182,7 +184,7 @@ public class SystemImagePackage extends MajorRevisionPackage
 
         if (vendorId == null) {
             // A platform system-image
-            desc = setDescriptions(PkgDesc.Builder.newSysImg(mVersion, mTag, mAbi, (MajorRevision)getRevision())).create();
+            desc = setDescriptions(PkgDesc.Builder.newSysImg(mVersion, mTag, mAbi, getRevision())).create();
         }
         else {
             // An add-on system-image
@@ -191,7 +193,7 @@ public class SystemImagePackage extends MajorRevisionPackage
 
             vendor = new IdDisplay(vendorId, vendorDisp);
 
-            desc = setDescriptions(PkgDesc.Builder.newAddonSysImg(mVersion, vendor, mTag, mAbi, (MajorRevision)getRevision())).create();
+            desc = setDescriptions(PkgDesc.Builder.newAddonSysImg(mVersion, vendor, mTag, mAbi, getRevision())).create();
         }
 
         mPkgDesc = desc;
@@ -309,7 +311,7 @@ public class SystemImagePackage extends MajorRevisionPackage
                 .newSysImg(version != null ? version : new AndroidVersion(0, null),
                            tag,
                            abiType,
-                           new MajorRevision(MajorRevision.MISSING_MAJOR_REV))
+                           new Revision(Revision.MISSING_MAJOR_REV))
                 .setDescriptionShort(shortDesc)
                 .create();
 

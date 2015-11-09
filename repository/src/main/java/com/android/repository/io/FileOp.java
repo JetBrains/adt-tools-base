@@ -33,6 +33,8 @@ import java.util.Properties;
  */
 public interface FileOp {
 
+    File[] EMPTY_FILE_ARRAY = new File[0];
+
     /**
      * Helper to delete a file or a directory.
      * For a directory, recursively deletes all of its content.

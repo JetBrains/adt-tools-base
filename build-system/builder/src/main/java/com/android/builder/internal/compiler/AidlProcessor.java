@@ -25,7 +25,7 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.process.ProcessResult;
-import com.android.sdklib.io.FileOp;
+import com.android.repository.io.FileOpUtils;
 import com.android.utils.FileUtils;
 import com.google.common.io.Files;
 
@@ -111,7 +111,7 @@ public class AidlProcessor implements SourceSearcher.SourceFileProcessor {
 
             boolean isParcelable = data.getOutputFiles().isEmpty();
 
-            String relative = FileOp.makeRelative(sourceFolder, sourceFile);
+            String relative = FileOpUtils.makeRelative(sourceFolder, sourceFile);
             boolean isWhiteListed =
                     mPackageWhiteList != null && mPackageWhiteList.contains(relative);
 

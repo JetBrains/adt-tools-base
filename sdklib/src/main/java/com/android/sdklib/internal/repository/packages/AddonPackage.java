@@ -27,7 +27,7 @@ import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.AddonManifestIniProps;
 import com.android.sdklib.repository.IDescription;
-import com.android.sdklib.repository.MajorRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
@@ -36,7 +36,6 @@ import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.local.LocalAddonPkgInfo;
 import com.android.utils.Pair;
-import com.google.common.collect.ImmutableList;
 
 import org.w3c.dom.Node;
 
@@ -216,7 +215,7 @@ public class AddonPackage extends MajorRevisionPackage
         mLayoutlibVersion = new LayoutlibVersionMixin(packageNode);
 
         mPkgDesc = setDescriptions(
-                PkgDesc.Builder.newAddon(mVersion, (MajorRevision) getRevision(),
+                PkgDesc.Builder.newAddon(mVersion, getRevision(),
                         new IdDisplay(mVendorId, mVendorDisplay),
                         new IdDisplay(mNameId, mDisplayName)))
                 .create();
@@ -322,7 +321,7 @@ public class AddonPackage extends MajorRevisionPackage
         }
 
         mPkgDesc = setDescriptions(
-                PkgDesc.Builder.newAddon(mVersion, (MajorRevision) getRevision(),
+                PkgDesc.Builder.newAddon(mVersion, getRevision(),
                         new IdDisplay(mVendorId, mVendorDisplay),
                         new IdDisplay(mNameId, mDisplayName)))
                 .create();
@@ -400,14 +399,14 @@ public class AddonPackage extends MajorRevisionPackage
             apiLevel = Integer.parseInt(api);
         } catch(NumberFormatException ignore) {}
 
-        int intRevision = MajorRevision.MISSING_MAJOR_REV;
+        int intRevision = Revision.MISSING_MAJOR_REV;
         try {
             intRevision = Integer.parseInt(revision);
         } catch (NumberFormatException ignore) {}
 
         IPkgDesc desc = PkgDesc.Builder
                 .newAddon(new AndroidVersion(apiLevel, null),
-                          new MajorRevision(intRevision),
+                          new Revision(intRevision),
                           new IdDisplay(vendorId, vendorDisp),
                           new IdDisplay(nameId, nameDisp))
                 .setDescriptionShort(shortDesc)

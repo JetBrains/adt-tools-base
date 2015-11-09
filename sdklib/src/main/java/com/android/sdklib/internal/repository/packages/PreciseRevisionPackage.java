@@ -17,8 +17,8 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
-import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.repository.Revision;
+import com.android.repository.Revision.PreviewComparison;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 
@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * Represents a package in an SDK repository that has a {@link FullRevision},
+ * Represents a package in an SDK repository that has a {@link Revision},
  * which is a multi-part revision number (major.minor.micro) and an optional preview revision.
  *
  * @deprecated
@@ -36,10 +36,10 @@ import java.util.Properties;
  * com.android.tools.idea.sdk.remote.internal.
  */
 @Deprecated
-public abstract class FullRevisionPackage extends Package
-        implements IFullRevisionProvider {
+public abstract class PreciseRevisionPackage extends Package
+        implements IPreciseRevisionProvider {
 
-    private final FullRevision mPreviewVersion;
+    private final Revision mPreviewVersion;
 
     /**
      * Creates a new package from the attributes and elements of the given XML node.
@@ -51,13 +51,13 @@ public abstract class FullRevisionPackage extends Package
      *          parameters that vary according to the originating XML schema.
      * @param licenses The licenses loaded from the XML originating document.
      */
-    FullRevisionPackage(SdkSource source,
+    PreciseRevisionPackage(SdkSource source,
             Node packageNode,
             String nsUri,
             Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
 
-        mPreviewVersion = PackageParserUtils.parseFullRevisionElement(
+        mPreviewVersion = PackageParserUtils.parseRevisionElement(
                 PackageParserUtils.findChildElement(packageNode, SdkRepoConstants.NODE_REVISION));
     }
 
@@ -70,7 +70,7 @@ public abstract class FullRevisionPackage extends Package
      * <p/>
      * By design, this creates a package with one and only one archive.
      */
-    public FullRevisionPackage(
+    public PreciseRevisionPackage(
             SdkSource source,
             Properties props,
             int revision,
@@ -80,15 +80,15 @@ public abstract class FullRevisionPackage extends Package
             String archiveOsPath) {
         super(source, props, revision, license, description, descUrl, archiveOsPath);
 
-        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+        Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
         if (rev == null) {
-            rev = new FullRevision(revision);
+            rev = new Revision(revision);
         }
         mPreviewVersion = rev;
     }
 
     @Override
-    public FullRevision getRevision() {
+    public Revision getRevision() {
         return mPreviewVersion;
     }
 
@@ -114,10 +114,10 @@ public abstract class FullRevisionPackage extends Package
         if (!super.equals(obj)) {
             return false;
         }
-        if (!(obj instanceof FullRevisionPackage)) {
+        if (!(obj instanceof PreciseRevisionPackage)) {
             return false;
         }
-        FullRevisionPackage other = (FullRevisionPackage) obj;
+        PreciseRevisionPackage other = (PreciseRevisionPackage) obj;
         if (mPreviewVersion == null) {
             if (other.mPreviewVersion != null) {
                 return false;

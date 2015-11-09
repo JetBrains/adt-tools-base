@@ -19,7 +19,7 @@ package com.android.sdklib.internal.repository.packages;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
@@ -30,7 +30,7 @@ import java.util.Properties;
  * A mock empty package, of no particular subpackage type.
  * {@link #sameItemAs(Package)} will return true if these packages have the same handle.
  */
-public class MockEmptyPackage extends MajorRevisionPackage {
+public class MockEmptyPackage extends PreciseRevisionPackage {
     private final String mTestHandle;
 
     /**
@@ -125,8 +125,8 @@ public class MockEmptyPackage extends MajorRevisionPackage {
     @Override
     public IPkgDesc getPkgDesc() {
         return PkgDesc.Builder.newTool(
-                new FullRevision(1, 2, 3, 4),
-                FullRevision.NOT_SPECIFIED).create();
+                new Revision(1, 2, 3, 4),
+                Revision.NOT_SPECIFIED).create();
     }
 
     public Archive getLocalArchive() {

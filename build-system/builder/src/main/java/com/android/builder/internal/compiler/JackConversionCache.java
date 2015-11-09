@@ -23,7 +23,7 @@ import com.android.ide.common.process.JavaProcessExecutor;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.io.Files;
@@ -65,7 +65,7 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
     protected KeyFactory<Key> getKeyFactory() {
         return new KeyFactory<Key>() {
             @Override
-            public Key of(@NonNull File sourceFile, @NonNull FullRevision revision,
+            public Key of(@NonNull File sourceFile, @NonNull Revision revision,
                     @NonNull NamedNodeMap attrMap) {
                 return Key.of(sourceFile, revision);
             }

@@ -24,7 +24,7 @@ import com.android.sdklib.internal.repository.packages.IAndroidVersionProvider;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.packages.Package.UpdateInfo;
 import com.android.sdklib.internal.repository.sources.SdkSource;
-import com.android.sdklib.repository.FullRevision;
+import com.android.repository.Revision;
 
 /**
  * A {@link PkgItem} represents one main {@link Package} combined with its state
@@ -98,7 +98,7 @@ public class PkgItem implements Comparable<PkgItem> {
         return mMainPkg.getListDescription();
     }
 
-    public FullRevision getRevision() {
+    public Revision getRevision() {
         return mMainPkg.getRevision();
     }
 
