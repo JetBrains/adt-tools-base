@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -66,35 +67,53 @@ public class DexWrapper {
 
     private static final String MAIN_RUN = "run";
 
-    private File mDexJar;
-
-    private Method mRunMethod;
-
-    private Method mSetOut;
-
     private Constructor<?> mArgConstructor;
+
+    private Field mAddToDexFutures;
+
+    private Field mArgFileNames;
+
+    private Field mArgJarOutput;
 
     private Field mArgOutName;
 
     private Field mArgVerbose;
 
-    private Field mOptimize;
-
-    private Field mMultiDex;
-
-    private Field mMainDexListFile;
-
-    private Field mArgJarOutput;
-
-    private Field mArgFileNames;
-
-    private Field mConsoleOut;
+    private Field mClassesInMainDex;
 
     private Field mConsoleErr;
 
-    private Field mNumThreads;
+    private Field mConsoleOut;
+
+    private Field mDexOutputArrays;
+
+    private Field mDexOutputFutures;
 
     private Field mForceJumbo;
+
+    private Field mHumanOutWriter;
+
+    private Field mMainDexListFile;
+
+    private Field mMaxFieldIdsInProcess;
+
+    private Field mMaxMethodIdsInProcess;
+
+    private Field mMinimumFileAge;
+
+    private Field mMultiDex;
+
+    private Field mNumThreads;
+
+    private Field mOptimize;
+
+    private File mDexJar;
+
+    private Method mClearList;
+
+    private Method mRunMethod;
+
+    private Method mSetOut;
 
     static {
         CACHE = CacheBuilder.newBuilder()
@@ -115,6 +134,8 @@ public class DexWrapper {
                     }
                 });
     }
+
+    private Class<?> mMainClass;
 
     /**
      * Get an instance of {@link DexWrapper} for the given dx.jar file.
@@ -153,9 +174,8 @@ public class DexWrapper {
      * Loads the dex library from a file path.
      *
      * @param dxJarFile the location of the dx.jar file.
-     * @param logger
      */
-    private void loadDex(@NonNull File dxJarFile, ILogger logger) {
+    private void loadDex(@NonNull File dxJarFile, @NonNull ILogger logger) {
         logger.info("Loading jar into dexer: %s", mDexJar.getAbsolutePath());
 
         try {
@@ -167,13 +187,19 @@ public class DexWrapper {
             URLClassLoader loader = new URLClassLoader(new URL[]{url},
                     DexWrapper.class.getClassLoader());
             // get the classes.
-            Class<?> mainClass = loader.loadClass(DEX_MAIN);
+            mMainClass = loader.loadClass(DEX_MAIN);
             Class<?> consoleClass = loader.loadClass(DEX_CONSOLE);
             Class<?> argClass = loader.loadClass(DEX_ARGS);
             Class<?> systemClass = loader.loadClass("java.lang.System");
-            // now get the fields/methods we need
-            mRunMethod = mainClass.getMethod(MAIN_RUN, argClass);
+            Class<?> listClass = loader.loadClass("java.util.List");
+
+            // Now get the fields/methods we need:
             mArgConstructor = argClass.getConstructor();
+
+            mRunMethod = mMainClass.getMethod(MAIN_RUN, argClass);
+            mSetOut = systemClass.getMethod("setOut", loader.loadClass("java.io.PrintStream"));
+            mClearList = listClass.getMethod("clear");
+
             mArgOutName = argClass.getField("outName");
             mArgJarOutput = argClass.getField("jarOutput");
             mArgFileNames = argClass.getField("fileNames");
@@ -183,9 +209,18 @@ public class DexWrapper {
             mForceJumbo = argClass.getField("forceJumbo");
             mMainDexListFile = argClass.getField("mainDexListFile");
             mNumThreads = argClass.getField("numThreads");
+
             mConsoleOut = consoleClass.getField("out");
             mConsoleErr = consoleClass.getField("err");
-            mSetOut = systemClass.getMethod("setOut", loader.loadClass("java.io.PrintStream"));
+
+            mAddToDexFutures = getPrivateStaticField("addToDexFutures");
+            mClassesInMainDex = getPrivateStaticField("classesInMainDex");
+            mDexOutputArrays = getPrivateStaticField("dexOutputArrays");
+            mDexOutputFutures = getPrivateStaticField("dexOutputFutures");
+            mHumanOutWriter = getPrivateStaticField("humanOutWriter");
+            mMaxFieldIdsInProcess = getPrivateStaticField("maxFieldIdsInProcess");
+            mMaxMethodIdsInProcess = getPrivateStaticField("maxMethodIdsInProcess");
+            mMinimumFileAge = getPrivateStaticField("minimumFileAge");
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         } catch (MalformedURLException e) {
@@ -195,6 +230,12 @@ public class DexWrapper {
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private Field getPrivateStaticField(String addToDexFutures) throws NoSuchFieldException {
+        Field declaredField = mMainClass.getDeclaredField(addToDexFutures);
+        declaredField.setAccessible(true);
+        return declaredField;
     }
 
     /**
@@ -237,6 +278,7 @@ public class DexWrapper {
             setInputs(args, processBuilder);
             setOtherOptions(args, processBuilder, dexOptions);
 
+            clearState();
 
             // Call the run method.
             Stopwatch stopwatch = Stopwatch.createStarted();
@@ -260,14 +302,28 @@ public class DexWrapper {
         }
     }
 
-    private void setInputs(Object args, @NonNull DexProcessBuilder processBuilder)
+    /**
+     * Clears all state stored in static fields.
+     */
+    private void clearState() throws IllegalAccessException, InvocationTargetException {
+        mClearList.invoke(mAddToDexFutures.get(null));
+        mClearList.invoke(mDexOutputFutures.get(null));
+        mMaxMethodIdsInProcess.set(null, 0);
+        mMaxFieldIdsInProcess.set(null, 0);
+        mMinimumFileAge.set(null, 0);
+        mClassesInMainDex.set(null, null);
+        mClearList.invoke(mDexOutputArrays.get(null));
+        mHumanOutWriter.set(null, null);
+    }
+
+    private void setInputs(@NonNull Object args, @NonNull DexProcessBuilder processBuilder)
             throws IllegalAccessException, ProcessException {
         mArgFileNames.set(args, Iterables.toArray(processBuilder.getFilesToAdd(), String.class));
     }
 
-    private void setOutput(Object args, @NonNull DexProcessBuilder processBuilder)
+    private void setOutput(@NonNull  Object args, @NonNull DexProcessBuilder processBuilder)
             throws IllegalAccessException {
-        if (processBuilder.getOutputFile().isDirectory()) {
+        if (processBuilder.getOutputFile().isDirectory() && !processBuilder.isMultiDex()) {
             mArgOutName.set(args, new File(processBuilder.getOutputFile(), "classes.dex").getPath());
             mArgJarOutput.set(args, false);
         } else {
