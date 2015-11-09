@@ -26,6 +26,7 @@ import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
@@ -68,7 +69,7 @@ public class InstantRunDex extends Transform {
         RELOAD {
             @NonNull
             @Override
-            File getOutputFolder(VariantScope variantScope) {
+            public File getOutputFolder(VariantScope variantScope) {
                 return variantScope.getReloadDexOutputFolder();
             }
         },
@@ -79,13 +80,13 @@ public class InstantRunDex extends Transform {
         RESTART {
             @NonNull
             @Override
-            File getOutputFolder(VariantScope variantScope) {
+            public File getOutputFolder(VariantScope variantScope) {
                 return variantScope.getRestartDexOutputFolder();
             }
         };
 
         @NonNull
-        abstract File getOutputFolder(VariantScope variantScope);
+        public abstract File getOutputFolder(VariantScope variantScope);
     }
 
     @NonNull
@@ -131,9 +132,7 @@ public class InstantRunDex extends Transform {
 
         if (buildType == BuildType.RELOAD) {
             // if we are in reload mode, we should check the result of the verifier.
-            InstantRunVerifierTransform.VerificationResult verificationResult =
-                    variantScope.getVerificationResult();
-            if (verificationResult == null || !verificationResult.isCompatible()) {
+            if (!variantScope.getInstantRunBuildContext().hasPassedVerification()) {
                 // changes are incompatible, we therefore do not produce a reload dex file.
                 // Android Studio will take that as a cue to do a cold swap.
                 FileUtils.emptyFolder(outputFolder);
@@ -185,6 +184,8 @@ public class InstantRunDex extends Transform {
         inputFiles.add(classesJar);
 
         try {
+            variantScope.getInstantRunBuildContext().startRecording(
+                    InstantRunBuildContext.TaskType.INSTANT_RUN_DEX);
             androidBuilder.convertByteCode(inputFiles.build(),
                     outputFolder,
                     false /* multiDexEnabled */,
@@ -196,6 +197,9 @@ public class InstantRunDex extends Transform {
                     new LoggedProcessOutputHandler(logger));
         } catch (ProcessException e) {
             throw new TransformException(e);
+        } finally {
+            variantScope.getInstantRunBuildContext().stopRecording(
+                    InstantRunBuildContext.TaskType.INSTANT_RUN_DEX);
         }
     }
 

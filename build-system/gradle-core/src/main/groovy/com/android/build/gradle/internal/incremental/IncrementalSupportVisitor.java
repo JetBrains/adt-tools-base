@@ -143,7 +143,10 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         MethodVisitor defaultVisitor = super.visitMethod(access, name, desc, signature, exceptions);
         MethodNode method = getMethodByNameInClass(name, desc, classNode);
-        boolean hasIncompatibleChange = InstantRunMethodVerifier.verifyMethod(method) != null;
+        // does the method use blacklisted APIs.
+        boolean hasIncompatibleChange = InstantRunMethodVerifier.verifyMethod(method)
+                != InstantRunVerifierStatus.COMPATIBLE;
+
         if (hasIncompatibleChange || disableRedirectionForClass
                 || !isAccessCompatibleWithInstantRun(access)
                 || name.equals(AsmUtils.CLASS_INITIALIZER)) {

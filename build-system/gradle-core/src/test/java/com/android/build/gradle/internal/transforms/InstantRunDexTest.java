@@ -26,9 +26,8 @@ import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.dsl.DexOptions;
-import com.android.build.gradle.internal.incremental.IncompatibleChange;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform.VerificationResult;
 import com.android.builder.core.AndroidBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -59,6 +58,9 @@ public class InstantRunDexTest {
     TransformOutputProvider TransformOutputProvider;
 
     @Mock
+    InstantRunBuildContext instantRunBuildContext;
+
+    @Mock
     DexOptions dexOptions;
 
     @Mock
@@ -75,8 +77,8 @@ public class InstantRunDexTest {
         File oldDexFile = new File(outputFolder, "reload.dex");
         assertTrue(oldDexFile.createNewFile());
 
-        when(variantScope.getVerificationResult()).thenReturn(
-                new VerificationResult(IncompatibleChange.FIELD_ADDED));
+        when(instantRunBuildContext.hasPassedVerification()).thenReturn(Boolean.FALSE);
+        when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
         when(variantScope.getReloadDexOutputFolder()).thenReturn(outputFolder);
 
         InstantRunDex instantRunDex = new InstantRunDex(

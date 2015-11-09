@@ -25,6 +25,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
@@ -897,17 +898,12 @@ public class VariantScopeImpl implements VariantScope {
         this.coverageReportTask = coverageReportTask;
     }
 
-    @Nullable
-    InstantRunVerifierTransform.VerificationResult verificationResult;
+    @NonNull
+    InstantRunBuildContext instantRunBuildContext = new InstantRunBuildContext();
 
     @Override
-    public void setVerificationResult(
-            InstantRunVerifierTransform.VerificationResult verificationResult) {
-        this.verificationResult = verificationResult;
-    }
-
-    @Override
-    public InstantRunVerifierTransform.VerificationResult getVerificationResult() {
-        return verificationResult;
+    @NonNull
+    public InstantRunBuildContext getInstantRunBuildContext() {
+        return instantRunBuildContext;
     }
 }

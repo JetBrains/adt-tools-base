@@ -51,7 +51,7 @@ public class InstantRunMethodVerifierTest {
             if (method.name.equals(AsmUtils.CONSTRUCTOR)) {
                 continue;
             }
-            assertEquals("Failed when checking " + method.name, IncompatibleChange.REFLECTION_USED,
+            assertEquals("Failed when checking " + method.name, InstantRunVerifierStatus.REFLECTION_USED,
                     InstantRunMethodVerifier.verifyMethod(method));
         }
     }

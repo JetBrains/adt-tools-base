@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.scope;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
@@ -338,7 +339,6 @@ public interface VariantScope extends BaseScope {
 
     void setCoverageReportTask(AndroidTask<?> coverageReportTask);
 
-    void setVerificationResult(InstantRunVerifierTransform.VerificationResult verificationResult);
-
-    InstantRunVerifierTransform.VerificationResult getVerificationResult();
+    @NonNull
+    InstantRunBuildContext getInstantRunBuildContext();
 }
