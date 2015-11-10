@@ -171,7 +171,7 @@ public class LocalSdkTest extends TestCase {
 
         BuildToolInfo bt = mLS.getLatestBuildTool();
         assertNotNull(bt);
-        assertEquals(new Revision(16), bt.getRevision());
+        assertEquals(new Revision(16, 0, 0), bt.getRevision());
         assertEquals(new File("/sdk/platform-tools"), bt.getLocation());
         assertEquals("/sdk/platform-tools/" + SdkConstants.FN_AAPT,
                      mFOp.getAgnosticAbsPath(bt.getPath(PathId.AAPT)));
@@ -778,11 +778,11 @@ public class LocalSdkTest extends TestCase {
                 "com.blah.lib2=blah.jar;API for Blah\n");
 
         assertEquals(
-                "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2>>]",
+                "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2.0.0>>]",
                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
         assertEquals(
                 "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 Rev=1 MinToolsRev=21.0.0>>, " +
-                 "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2>>]",
+                 "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2.0.0>>]",
                  Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ALL)));
 
         LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_ADDON, "Some Vendor:Some Name:18");
@@ -791,7 +791,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(mLS, pi.getLocalSdk());
         assertEquals(null, pi.getLoadError());
         assertEquals(new AndroidVersion(18, null), pi.getDesc().getAndroidVersion());
-        assertEquals(new Revision(2), pi.getDesc().getRevision());
+        assertEquals(new Revision(2, 0, 0), pi.getDesc().getRevision());
         assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
         assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
@@ -855,11 +855,11 @@ public class LocalSdkTest extends TestCase {
                 "}\n");
 
         assertEquals(
-                "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2>>]",
+                "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2.0.0>>]",
                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
         assertEquals(
                 "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 Rev=1 MinToolsRev=21.0.0>>, " +
-                 "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2>>]",
+                 "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2.0.0>>]",
                  Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ALL)));
 
         LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_ADDON, "Some Vendor:Some Name:18");
@@ -868,7 +868,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(mLS, pi.getLocalSdk());
         assertEquals(null, pi.getLoadError());
         assertEquals(new AndroidVersion(18, null), pi.getDesc().getAndroidVersion());
-        assertEquals(new Revision(2), pi.getDesc().getRevision());
+        assertEquals(new Revision(2, 0, 0), pi.getDesc().getRevision());
         assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
         assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
@@ -961,11 +961,11 @@ public class LocalSdkTest extends TestCase {
                 "}\n");
 
         assertEquals(
-                "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2>>]",
+                "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2.0.0>>]",
                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
         assertEquals(
                 "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 Rev=1 MinToolsRev=21.0.0>>, " +
-                 "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2>>]",
+                 "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2.0.0>>]",
                  Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ALL)));
 
         LocalPkgInfo pi = mLS.getPkgInfo(PkgType.PKG_ADDON, "Some Vendor:Some Name:18");
@@ -974,7 +974,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(mLS, pi.getLocalSdk());
         assertEquals(null, pi.getLoadError());
         assertEquals(new AndroidVersion(18, null), pi.getDesc().getAndroidVersion());
-        assertEquals(new Revision(2), pi.getDesc().getRevision());
+        assertEquals(new Revision(2, 0, 0), pi.getDesc().getRevision());
         assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
         assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
@@ -1104,13 +1104,13 @@ public class LocalSdkTest extends TestCase {
                         + "Intel x86 Atom System Image, Some Vendor API 18, revision 1>>]",
                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGE)));
         assertEquals(
-                "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2>>]",
+                "[<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2.0.0>>]",
                 Arrays.toString(mLS.getPkgsInfos(PkgType.PKG_ADDON)));
         assertEquals(
                 "[<LocalPlatformPkgInfo <PkgDesc Type=platform Android=API 18 Path=android-18 "
                         + "Rev=1 MinToolsRev=21.0.0>>, " +
                         "<LocalAddonPkgInfo <PkgDesc Type=addon Android=API 18 "
-                        + "Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2"
+                        + "Vendor=vendor [Some Vendor] Path=Some Vendor:Some Name:18 Rev=2.0.0"
                         + ">>, " +
                         "<LocalAddonSysImgPkgInfo <PkgDesc Type=addon_sys_image Android=API 18 "
                         + "Vendor=vendor [Some Vendor] Tag=name [Some Name] Path=armeabi-v7a "
@@ -1130,7 +1130,7 @@ public class LocalSdkTest extends TestCase {
         assertSame(mLS, pi.getLocalSdk());
         assertEquals(null, pi.getLoadError());
         assertEquals(new AndroidVersion(18, null), pi.getDesc().getAndroidVersion());
-        assertEquals(new Revision(2), pi.getDesc().getRevision());
+        assertEquals(new Revision(2, 0, 0), pi.getDesc().getRevision());
         assertEquals("Some Vendor:Some Name:18", pi.getDesc().getPath());
         assertEquals("Some Name, Android 18, rev 2", pi.getListDescription());
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
