@@ -276,7 +276,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("20"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(new Revision(20, 0, 0));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 20");
         }
@@ -324,7 +324,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("21"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(new Revision(21, 0, 0));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -374,7 +374,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("21"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(new Revision(21, 0, 0));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -429,7 +429,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("21"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(new Revision(21, 0, 0));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -485,7 +485,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("20"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(new Revision(20, 0, 0));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 20");
         }
@@ -537,7 +537,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("21"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(new Revision(21, 0, 0));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -591,7 +591,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("21"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(new Revision(21, 0, 0));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
@@ -639,7 +639,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(Revision.parseRevision("21"));
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(new Revision(21, 0, 0));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
         }
