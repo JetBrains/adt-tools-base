@@ -221,7 +221,7 @@ public abstract class RepoManager {
      * currently-registered {@link SchemaModule}s by namespace.
      */
     @NonNull
-    public abstract LSResourceResolver getResourceResolver();
+    public abstract LSResourceResolver getResourceResolver(@NonNull ProgressIndicator progress);
 
     /**
      * Callback for when repository load is completed/partially completed. Can optionally run on the

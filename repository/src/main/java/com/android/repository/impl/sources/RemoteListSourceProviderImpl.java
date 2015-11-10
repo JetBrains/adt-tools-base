@@ -173,7 +173,7 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
             schemas.add(mSourceListModule);
         }
         LSResourceResolver resourceResolver = SchemaModuleUtil
-                .createResourceResolver(schemas);
+                .createResourceResolver(schemas, progress);
         SiteList sl = (SiteList) SchemaModuleUtil
                 .unmarshal(xml, schemas, resourceResolver, progress);
         List<RepositorySource> result = Lists.newArrayList();

@@ -242,12 +242,12 @@ public class RepoManagerImpl extends RepoManager {
     }
 
     @Override
-    @NonNull
-    public LSResourceResolver getResourceResolver() {
+    @Nullable
+    public LSResourceResolver getResourceResolver(@NonNull  ProgressIndicator progress) {
         List<SchemaModule> allModules = ImmutableList.<SchemaModule>builder().addAll(
                 getSchemaModules()).add(
                 getCommonModule()).build();
-        return SchemaModuleUtil.createResourceResolver(allModules);
+        return SchemaModuleUtil.createResourceResolver(allModules, progress);
     }
 
     @Override
@@ -420,7 +420,7 @@ public class RepoManagerImpl extends RepoManager {
 
                 if (!mSourceProviders.isEmpty() && mDownloader != null) {
                     RemoteRepoLoader remoteLoader = new RemoteRepoLoader(mSourceProviders,
-                            getResourceResolver(), mFallbackRemoteRepoLoader);
+                            getResourceResolver(indicator), mFallbackRemoteRepoLoader);
                     Multimap<String, RemotePackage> remotes = remoteLoader
                             .fetchPackages(indicator, mDownloader, mSettings);
                     indicator.setText("Computing updates...");

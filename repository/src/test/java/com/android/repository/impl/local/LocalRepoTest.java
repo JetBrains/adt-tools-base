@@ -122,14 +122,15 @@ public class LocalRepoTest extends TestCase {
         repo.setLocalPackage(p);
         repo.getLicense().add(license);
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        SchemaModuleUtil.marshal(repo.createFactory().generateElement(repo), ImmutableSet.of(manager.getCommonModule()), output, manager.getResourceResolver(), progress);
+        SchemaModuleUtil.marshal(repo.createFactory().generateElement(repo), ImmutableSet.of(manager.getCommonModule()), output, manager.getResourceResolver(progress), progress);
         progress.assertNoErrorsOrWarnings();
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
         dbf.setNamespaceAware(true);
         dbf.setSchema(SchemaModuleUtil.getSchema(ImmutableSet.of(manager.getCommonModule()),
-                SchemaModuleUtil.createResourceResolver(ImmutableSet.of(manager.getCommonModule())),
+                SchemaModuleUtil.createResourceResolver(ImmutableSet.of(manager.getCommonModule()),
+                        progress),
                 progress));
         progress.assertNoErrorsOrWarnings();
         DocumentBuilder db = dbf.newDocumentBuilder();
