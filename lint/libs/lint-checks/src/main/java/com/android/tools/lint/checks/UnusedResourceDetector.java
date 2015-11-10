@@ -39,6 +39,10 @@ import static com.android.utils.SdkUtils.getResourceFieldName;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.ClassField;
+import com.android.builder.model.Variant;
 import com.android.ide.common.resources.ResourceUrl;
 import com.android.resources.ResourceType;
 import com.android.tools.lint.detector.api.Category;
@@ -199,9 +203,40 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
         }
     }
 
+    private static Map<String, Location> findDynamicResourcesWithLocation(
+            @NonNull Context context) {
+        Map<String, Location> resources = new HashMap<String, Location>();
+        Project project = context.getProject();
+        AndroidProject model = project.getGradleProjectModel();
+        if (model != null) {
+            Variant selectedVariant = project.getCurrentVariant();
+            if (selectedVariant != null) {
+                for (BuildTypeContainer container : model.getBuildTypes()) {
+                    if (selectedVariant.getBuildType().equals(container.getBuildType().getName())) {
+                        addLocations(resources, project, container.getBuildType().getResValues());
+                    }
+                }
+            }
+            addLocations(
+              resources, project, model.getDefaultConfig().getProductFlavor().getResValues());
+        }
+        return resources;
+    }
+
+    private static void addLocations(@NonNull Map<String, Location> resources,
+            @NonNull Project project, @NonNull Map<String, ClassField> resValues) {
+        for (String name : resValues.keySet()) {
+            ClassField field = resValues.get(name);
+            String resource = R_PREFIX + field.getType() + '.' + name;
+            resources.put(resource, LintUtils.guessGradleLocation(project));
+        }
+    }
+
     @Override
     public void afterCheckProject(@NonNull Context context) {
         if (context.getPhase() == 1) {
+            Map<String, Location> dynamicResources = findDynamicResourcesWithLocation(context);
+            mDeclarations.addAll(dynamicResources.keySet());
             mDeclarations.removeAll(mReferences);
             Set<String> unused = mDeclarations;
             mReferences = null;
@@ -234,6 +269,11 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                 mUnused = new HashMap<String, Location>(unused.size());
                 for (String resource : unused) {
                     mUnused.put(resource, null);
+                }
+                for (String resource : dynamicResources.keySet()) {
+                    if (mUnused.containsKey(resource)) {
+                        mUnused.put(resource, dynamicResources.get(resource));
+                    }
                 }
 
                 // Request another pass, and in the second pass we'll gather location

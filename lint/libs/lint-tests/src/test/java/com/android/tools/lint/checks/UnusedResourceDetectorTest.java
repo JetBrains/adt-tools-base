@@ -16,11 +16,26 @@
 
 package com.android.tools.lint.checks;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.BuildType;
+import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.ClassField;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.Variant;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Project;
+import com.google.common.collect.ImmutableMap;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Map;
 
 @SuppressWarnings("javadoc")
 public class UnusedResourceDetectorTest extends AbstractCheckTest {
@@ -390,4 +405,112 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
                                 + "</resources>")
                 ));
     }
+
+    public void testDynamicResources() throws Exception {
+        assertEquals(""
+                        + "UnusedResourceDetectorTest_testDynamicResources: Warning: The resource R.string.cat appears to be unused [UnusedResources]\n"
+                        + "UnusedResourceDetectorTest_testDynamicResources: Warning: The resource R.string.dog appears to be unused [UnusedResources]\n"
+                        + "0 errors, 2 warnings\n",
+
+                lintProject(
+                        "res/layout/layout1.xml=>res/layout/main.xml",
+                        "src/test/pkg/UnusedReferenceDynamic.java.txt=>src/test/pkg/UnusedReferenceDynamic.java",
+                        "AndroidManifest.xml"));
+    }
+
+    @Override
+    protected TestLintClient createClient() {
+        if (!getName().startsWith("testDynamicResources")) {
+            return super.createClient();
+        }
+
+        // Set up a mock project model for the resource configuration test(s)
+        // where we provide a subset of densities to be included
+
+        return new TestLintClient() {
+            @NonNull
+            @Override
+            protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                return new Project(this, dir, referenceDir) {
+                    @Override
+                    public boolean isGradleProject() {
+                        return true;
+                    }
+
+                    @Nullable
+                    @Override
+                    public AndroidProject getGradleProjectModel() {
+                        /*
+                        Simulate dynamic resources in this setup:
+                            defaultConfig {
+                                ...
+                                resValue "string", "cat", "Some Data"
+                            }
+                            buildTypes {
+                                debug {
+                                    ...
+                                    resValue "string", "foo", "Some Data"
+                                }
+                                release {
+                                    ...
+                                    resValue "string", "xyz", "Some Data"
+                                    resValue "string", "dog", "Some Data"
+                                }
+                            }
+                         */
+                        ClassField foo = mock(ClassField.class);
+                        when(foo.getName()).thenReturn("foo");
+                        when(foo.getType()).thenReturn("string");
+                        ClassField xyz = mock(ClassField.class);
+                        when(xyz.getName()).thenReturn("xyz");
+                        when(xyz.getType()).thenReturn("string");
+                        ClassField cat = mock(ClassField.class);
+                        when(cat.getName()).thenReturn("cat");
+                        when(cat.getType()).thenReturn("string");
+                        ClassField dog = mock(ClassField.class);
+                        when(dog.getName()).thenReturn("dog");
+                        when(dog.getType()).thenReturn("string");
+
+                        Map<String, ClassField> debugResValues = ImmutableMap.of("foo", foo);
+                        BuildType type1 = mock(BuildType.class);
+                        when(type1.getName()).thenReturn("debug");
+                        when(type1.getResValues()).thenReturn(debugResValues);
+                        Map<String, ClassField> releaseResValues =
+                                ImmutableMap.of("xyz", xyz, "dog", dog);
+                        BuildType type2 = mock(BuildType.class);
+                        when(type2.getName()).thenReturn("release");
+                        when(type2.getResValues()).thenReturn(releaseResValues);
+
+                        BuildTypeContainer container1 = mock(BuildTypeContainer.class);
+                        when(container1.getBuildType()).thenReturn(type1);
+                        BuildTypeContainer container2 = mock(BuildTypeContainer.class);
+                        when(container2.getBuildType()).thenReturn(type2);
+
+                        Map<String, ClassField> defaultResValues = ImmutableMap.of("cat", cat);
+                        ProductFlavor defaultFlavor = mock(ProductFlavor.class);
+                        when(defaultFlavor.getResValues()).thenReturn(defaultResValues);
+
+                        ProductFlavorContainer defaultContainer =
+                                mock(ProductFlavorContainer.class);
+                        when(defaultContainer.getProductFlavor()).thenReturn(defaultFlavor);
+
+                        AndroidProject project = mock(AndroidProject.class);
+                        when(project.getDefaultConfig()).thenReturn(defaultContainer);
+                        when(project.getBuildTypes())
+                                .thenReturn(Arrays.asList(container1, container2));
+                        return project;
+                    }
+
+                    @Nullable
+                    @Override
+                    public Variant getCurrentVariant() {
+                        Variant variant = mock(Variant.class);
+                        when(variant.getBuildType()).thenReturn("release");
+                        return variant;
+                    }
+                };
+            }
+        };
+    }
+
 }
