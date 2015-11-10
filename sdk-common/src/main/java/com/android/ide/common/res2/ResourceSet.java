@@ -18,6 +18,7 @@ package com.android.ide.common.res2;
 
 import static com.android.ide.common.res2.ResourceFile.ATTR_QUALIFIER;
 import static com.google.common.base.Objects.firstNonNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.android.SdkConstants;
@@ -59,14 +60,15 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
     public ResourceSet(String name, boolean validateEnabled) {
         super(name, validateEnabled);
+        mPreprocessor = new NoOpResourcePreprocessor();
     }
 
     public void setGeneratedSet(ResourceSet generatedSet) {
         mGeneratedSet = generatedSet;
     }
 
-    public void setPreprocessor(ResourcePreprocessor preprocessor) {
-        mPreprocessor = preprocessor;
+    public void setPreprocessor(@NonNull ResourcePreprocessor preprocessor) {
+        mPreprocessor = checkNotNull(preprocessor);
     }
 
     @Override
@@ -252,7 +254,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         }
 
         ResourceFile generatedSetResourceFile = mGeneratedSet.getDataFile(changedFile);
-        boolean needsPreprocessing = needsPreprocessing(changedFile);
+        boolean needsPreprocessing = mPreprocessor.needsPreprocessing(changedFile);
 
         if (resourceFile != null && generatedSetResourceFile == null && needsPreprocessing) {
             // It didn't use to need preprocessing, but it does now.
@@ -405,7 +407,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
             }
             String name = getNameForFile(file);
 
-            if (needsPreprocessing(file)) {
+            if (mPreprocessor.needsPreprocessing(file)) {
                 return ResourceFile.generatedFiles(
                         file,
                         getResourceItemsForGeneratedFiles(file),
@@ -427,10 +429,6 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 throw e;
             }
         }
-    }
-
-    private boolean needsPreprocessing(@NonNull File file) {
-        return mPreprocessor != null && mPreprocessor.needsPreprocessing(file);
     }
 
     @NonNull
