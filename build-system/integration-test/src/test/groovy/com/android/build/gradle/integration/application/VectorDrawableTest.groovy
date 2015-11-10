@@ -325,7 +325,11 @@ class VectorDrawableTest {
         project.execute(["-PcheckDefaultDensities=true"], "clean", "assembleDebug")
         File apk = project.getApk("debug")
         assertThatApk(apk).containsResource("drawable-anydpi-v21/heart.xml")
+        assertThatApk(apk).containsResource("drawable-xxxhdpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable-xxhdpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable-xhdpi-v4/heart.png")
         assertThatApk(apk).containsResource("drawable-hdpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable-mdpi-v4/heart.png")
         assertThatApk(apk).containsResource("drawable-ldpi-v4/heart.png")
         assertThatApk(apk).containsResource("drawable/icon.png")
         assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml")
@@ -348,7 +352,6 @@ class VectorDrawableTest {
         assertThatApk(apk).containsResource("drawable/special_heart.xml")
         assertThatApk(apk).doesNotContainResource("drawable-anydpi-v16/modern_heart.xml")
         assertThatApk(apk).doesNotContainResource("drawable-anydpi-v21/heart.xml")
-        assertThatApk(apk).doesNotContainResource("drawable-anydpi-v21/heart.xml")
         assertThatApk(apk).doesNotContainResource("drawable-anydpi-v22/no_need.xml")
         assertThatApk(apk).doesNotContainResource("drawable-anydpi/heart.xml")
         assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml")
@@ -358,6 +361,93 @@ class VectorDrawableTest {
         assertThatApk(apk).doesNotContainResource("drawable-v21/heart.xml")
         assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v21/heart.xml")
         assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart.png")
+    }
+
+    @Test
+    public void "disabling PNG generation"() throws Exception {
+        project.buildFile << "android.defaultConfig.generatedDensities = []"
+
+        project.execute("clean", "assembleDebug")
+        File apk = project.getApk("debug")
+        assertThatApk(apk).containsResource("drawable/heart.xml")
+        // For some reason AAPT seems to be creating this copy.
+        assertThatApk(apk).containsResource("drawable-v21/heart.xml")
+        assertThatApk(apk).containsResource("drawable/icon.png")
+        assertThatApk(apk).containsResource("drawable-v22/no_need.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-anydpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v22/no_need.png")
+        assertThatApk(apk).doesNotContainResource("drawable-nodpi-v4/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v21/heart.xml")
+    }
+
+    @Test
+    public void "incremental build: disabling PNG generation"() throws Exception {
+        File apk = project.getApk("debug")
+
+        project.execute("clean", "assembleDebug")
+        assertThatApk(apk).containsResource("drawable-anydpi-v21/heart.xml")
+        assertThatApk(apk).containsResource("drawable-hdpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable-v22/no_need.xml")
+        assertThatApk(apk).containsResource("drawable-xhdpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable/icon.png")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v22/no_need.png")
+        assertThatApk(apk).doesNotContainResource("drawable-nodpi-v4/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable/heart.xml")
+
+        project.buildFile << "android.defaultConfig.generatedDensities = []"
+
+        project.execute("assembleDebug")
+        assertThatApk(apk).containsResource("drawable/heart.xml")
+        // For some reason AAPT seems to be creating this copy.
+        assertThatApk(apk).containsResource("drawable-v21/heart.xml")
+        assertThatApk(apk).containsResource("drawable/icon.png")
+        assertThatApk(apk).containsResource("drawable-v22/no_need.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-anydpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v22/no_need.png")
+        assertThatApk(apk).doesNotContainResource("drawable-nodpi-v4/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v21/heart.xml")
+    }
+
+    @Test
+    public void "incremental build: changing densities"() throws Exception {
+        File apk = project.getApk("debug")
+
+        project.execute("clean", "assembleDebug")
+        assertThatApk(apk).containsResource("drawable-anydpi-v21/heart.xml")
+        assertThatApk(apk).containsResource("drawable-hdpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable-v22/no_need.xml")
+        assertThatApk(apk).containsResource("drawable-xhdpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable/icon.png")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v22/no_need.png")
+        assertThatApk(apk).doesNotContainResource("drawable-nodpi-v4/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable/heart.xml")
+
+        project.buildFile << "android.defaultConfig.generatedDensities = ['hdpi']"
+
+        project.execute("assembleDebug")
+        assertThatApk(apk).containsResource("drawable-anydpi-v21/heart.xml")
+        assertThatApk(apk).containsResource("drawable-hdpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable-v22/no_need.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart.png")
+        assertThatApk(apk).containsResource("drawable/icon.png")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v22/no_need.png")
+        assertThatApk(apk).doesNotContainResource("drawable-nodpi-v4/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v21/heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable/heart.xml")
     }
 
     private void checkIncrementalBuild() {
