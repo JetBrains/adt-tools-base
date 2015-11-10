@@ -125,4 +125,11 @@ public enum Abi {
     public String getDisplayName() {
         return mDisplayName;
     }
+
+    /**
+     * Returns true if we support SMP on this CPU architecture.
+     */
+    public boolean supportsMultipleCpuCores() {
+        return this == X86 || this == X86_64;
+    }
 }
