@@ -815,6 +815,8 @@ public class LocalSdk {
         if (rev == null) {
             return null;
         }
+        rev = fullySpecifyRevision(rev);
+
 
         Revision minPlatToolsRev =
             PackageParserUtils.getRevisionProperty(props, PkgProps.MIN_PLATFORM_TOOLS_REV);
@@ -850,6 +852,23 @@ public class LocalSdk {
         return info;
     }
 
+  /**
+   * Creates a new revision with at least three components (major, minor, micro)
+   * based on the given revision. This is important since in the past we would
+   * sometimes write out revisions with only one component when internally we
+   * required that they have more, and would convert using the specific Revision
+   * subclass.
+   * @param rev
+   * @return
+   */
+    private static Revision fullySpecifyRevision(Revision rev) {
+        // Since we used to require a complete revision
+        if (!rev.isPreview()) {
+            rev = new Revision(rev.getMajor(), rev.getMinor(), rev.getMicro());
+        }
+        return rev;
+    }
+
     /**
      * Try to find a platform-tools package at the given location.
      * Returns null if not found.
@@ -861,6 +880,8 @@ public class LocalSdk {
         if (rev == null) {
             return null;
         }
+        // Since we used to require a complete revision
+        rev = fullySpecifyRevision(rev);
 
         LocalPlatformToolPkgInfo info = new LocalPlatformToolPkgInfo(this, ptFolder, props, rev);
         return info;
@@ -963,6 +984,9 @@ public class LocalSdk {
                 continue; // skip, no revision
             }
 
+            // Since we used to require a complete revision
+            rev = fullySpecifyRevision(rev);
+
             BuildToolInfo btInfo = new BuildToolInfo(rev, buildToolDir);
             LocalBuildToolPkgInfo pkgInfo =
                 new LocalBuildToolPkgInfo(this, buildToolDir, props, rev, btInfo);
@@ -1012,6 +1036,8 @@ public class LocalSdk {
             if (rev == null) {
                 continue; // skip, no revision
             }
+            // Since we used to require a complete revision
+            rev = fullySpecifyRevision(rev);
 
             try {
                 AndroidVersion vers = new AndroidVersion(props);
@@ -1211,6 +1237,8 @@ public class LocalSdk {
                 if (rev == null) {
                     continue; // skip, no revision
                 }
+                // Since we used to require a three-part revision
+                rev = fullySpecifyRevision(rev);
 
                 String oldPaths =
                     PackageParserUtils.getProperty(props, PkgProps.EXTRA_OLD_PATHS, null);
