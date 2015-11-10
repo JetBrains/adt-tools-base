@@ -28,11 +28,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.png.QueuedCruncher;
 import com.android.builder.png.VectorDrawableRenderer;
 import com.android.ide.common.internal.PngCruncher;
-import com.android.ide.common.process.BaseProcessOutputHandler;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
-import com.android.ide.common.process.ProcessException;
-import com.android.ide.common.process.ProcessOutput;
-import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.res2.FileValidity;
 import com.android.ide.common.res2.GeneratedResourceSet;
@@ -46,6 +42,7 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.tasks.Input;
@@ -57,8 +54,6 @@ import org.gradle.api.tasks.ParallelizableTask;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -69,6 +64,9 @@ import java.util.regex.Pattern;
 
 @ParallelizableTask
 public class MergeResources extends IncrementalTask {
+
+    private static final List<Pattern> IGNORED_WARNINGS = Lists.newArrayList(
+            Pattern.compile("Not recognizing known sRGB profile that has been edited"));
 
     // ----- PUBLIC TASK API -----
 
@@ -124,20 +122,65 @@ public class MergeResources extends IncrementalTask {
         if (getUseNewCruncher()) {
             // At this point ensureTargetSetup() has been called, so no NPE below.
             // noinspection ConstantConditions
-            if (getBuilder().getTargetInfo().getBuildTools().getRevision().getMajor() >= 22) {
+            BuildToolInfo buildTools = getBuilder().getTargetInfo().getBuildTools();
+            if (buildTools.getRevision().getMajor() >= 22) {
                 return QueuedCruncher.Builder.INSTANCE.newCruncher(
-                        getBuilder().getTargetInfo().getBuildTools().getPath(
-                                BuildToolInfo.PathId.AAPT), getILogger());
+                        buildTools.getPath(BuildToolInfo.PathId.AAPT),
+                        getFilteringLogger());
             }
             getLogger().info("New PNG cruncher will be enabled with build tools 22 and above.");
         }
 
-        final FilterProcessOutputHandler handler = new FilterProcessOutputHandler(
-                new LoggedProcessOutputHandler(getBuilder().getLogger()), getBuilder().getLogger());
-        handler.addFilter(Pattern.compile(".*libpng warning: iCCP: "
-                + "Not recognizing known sRGB profile that has been edited.*"));
+        return getBuilder().getAaptCruncher(new LoggedProcessOutputHandler(getFilteringLogger()));
+    }
 
-        return getBuilder().getAaptCruncher(handler);
+    /**
+     * Returns an {@link ILogger} that degrades certain warnings to INFO level.
+     */
+    @NonNull
+    private ILogger getFilteringLogger() {
+        final ILogger delegate = getILogger();
+
+        return new ILogger() {
+            @Override
+            public void error(@Nullable Throwable t, @Nullable String msgFormat, Object... args) {
+                if (msgFormat != null && isIgnored(msgFormat, args)) {
+                    delegate.info(Strings.nullToEmpty(msgFormat), args);
+                } else {
+                    delegate.error(t, msgFormat, args);
+                }
+            }
+
+            @Override
+            public void warning(@NonNull String msgFormat, Object... args) {
+                if (isIgnored(msgFormat, args)) {
+                    delegate.info(msgFormat, args);
+                } else {
+                    delegate.warning(msgFormat, args);
+                }
+            }
+
+            @Override
+            public void info(@NonNull String msgFormat, Object... args) {
+                delegate.info(msgFormat, args);
+            }
+
+            @Override
+            public void verbose(@NonNull String msgFormat, Object... args) {
+                delegate.verbose(msgFormat, args);
+            }
+
+            private boolean isIgnored(String msgFormat, Object... args) {
+                String message = String.format(msgFormat, args);
+                for (Pattern pattern : IGNORED_WARNINGS) {
+                    if (pattern.matcher(message).find()) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        };
     }
 
     @Override
@@ -487,69 +530,6 @@ public class MergeResources extends IncrementalTask {
             mergeResourcesTask.setGeneratedPngsOutputDir(scope.getGeneratedPngsOutputDir());
 
             variantData.mergeResourcesTask = mergeResourcesTask;
-        }
-    }
-
-    /**
-     * Process output handler that will delegate output to another handler but allows filtering
-     * of stderr lines writing them to a logger as warning.
-     */
-    private static class FilterProcessOutputHandler extends BaseProcessOutputHandler {
-        @NonNull private ProcessOutputHandler mDelegate;
-        @NonNull private List<Pattern> mFilters;
-        @NonNull private ILogger mLogger;
-
-        /**
-         * Creates a new output handler that wraps the provided delegate.
-         * @param delegate the delegate that is being wrapped
-         */
-        FilterProcessOutputHandler(@NonNull ProcessOutputHandler delegate,
-                @NonNull ILogger logger) {
-            mDelegate = delegate;
-            mFilters = Lists.newArrayList();
-            mLogger = logger;
-        }
-
-
-        /**
-         * Adds a new filter pattern.
-         */
-        void addFilter(@NonNull Pattern p) {
-            mFilters.add(p);
-        }
-
-        @Override
-        public void handleOutput(@NonNull ProcessOutput processOutput)
-                throws ProcessException {
-            BaseProcessOutput output = (BaseProcessOutput) processOutput;
-
-            ProcessOutput delOutput = mDelegate.createOutput();
-
-            try {
-                // stdout goes unmodified.
-                delOutput.getStandardOutput().write(output.getStandardOutput().toByteArray());
-
-                String[] lines = output.getErrorOutputAsString().split(
-                        System.getProperty("line.separator"));
-                Writer errWriter = new OutputStreamWriter(delOutput.getErrorOutput());
-                boolean hasPrev = false;
-                for (String l : lines) {
-                    for (Pattern p : mFilters) {
-                        if (p.matcher(l).matches()) {
-                            mLogger.info(l);
-                        } else {
-                            if (hasPrev) {
-                                errWriter.write(System.getProperty("line.separator"));
-                            }
-
-                            errWriter.write(l);
-                            hasPrev = true;
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                throw new ProcessException(e);
-            }
         }
     }
 }
