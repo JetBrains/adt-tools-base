@@ -14,19 +14,28 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal
-import com.android.annotations.NonNull
-import com.android.annotations.concurrency.GuardedBy
-import com.google.common.collect.Maps
-import org.gradle.api.Action
-import org.gradle.api.Project
-import org.gradle.api.file.CopySpec
-import org.gradle.api.file.FileCopyDetails
-import org.gradle.api.file.RelativePath
+package com.android.build.gradle.internal;
 
-import java.util.concurrent.CountDownLatch
+import static com.android.SdkConstants.FD_JARS;
 
-import static com.android.SdkConstants.FD_JARS
+import com.android.annotations.NonNull;
+import com.android.annotations.concurrency.GuardedBy;
+import com.google.common.collect.Maps;
+import com.google.common.io.Files;
+
+import org.gradle.api.Action;
+import org.gradle.api.Project;
+import org.gradle.api.file.CopySpec;
+import org.gradle.api.file.FileCopyDetails;
+import org.gradle.api.file.RelativePath;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+
+import groovy.lang.Closure;
+
 /**
  * Cache to library prepareTask.
  *
@@ -39,67 +48,77 @@ import static com.android.SdkConstants.FD_JARS
 public class LibraryCache {
 
     @NonNull
-    private static final LibraryCache sCache = new LibraryCache()
+    private static final LibraryCache sCache = new LibraryCache();
 
     @NonNull
     public static LibraryCache getCache() {
-        return sCache
+        return sCache;
     }
 
-    public synchronized unload() {
+    public synchronized void unload() {
         bundleLatches.clear();
     }
 
     @GuardedBy("this")
-    private final Map<String, CountDownLatch> bundleLatches = Maps.newHashMap()
+    private final Map<String, CountDownLatch> bundleLatches = Maps.newHashMap();
 
     public void unzipLibrary(
             @NonNull String taskName,
             @NonNull Project project,
             @NonNull File bundle,
-            @NonNull File folderOut) {
+            @NonNull File folderOut) throws IOException {
 
         // only synchronize access to the latch so that unzipping 2+ different
         // libraries in parallel will work.
         boolean newItem = false;
         CountDownLatch latch;
         synchronized (this) {
-            String path = bundle.getCanonicalPath()
-            latch = bundleLatches.get(path)
+            String path = bundle.getCanonicalPath();
+            latch = bundleLatches.get(path);
             if (latch == null) {
-                latch = new CountDownLatch(1)
-                bundleLatches.put(path, latch)
-                newItem = true
+                latch = new CountDownLatch(1);
+                bundleLatches.put(path, latch);
+                newItem = true;
             }
         }
 
         if (newItem) {
             try {
-                project.logger.debug("$taskName: ERASE ${folderOut.getPath()}")
+                project.getLogger().debug("$taskName: ERASE ${folderOut.getPath()}");
 
-                unzipAar(bundle, folderOut, project)
+                unzipAar(bundle, folderOut, project);
 
-                project.logger.debug("$taskName: UNZIP ${bundle.getPath()} -> ${folderOut.getPath()}")
+                project.getLogger().debug(
+                        "$taskName: UNZIP ${bundle.getPath()} -> ${folderOut.getPath()}");
             } finally {
-                latch.countDown()
+                latch.countDown();
             }
         } else {
-            latch.await()
+            while (true) {
+                try {
+                    latch.await();
+                    break;
+                } catch (InterruptedException e) {
+                    // Cycle again.
+                }
+            }
         }
     }
 
-    public static void unzipAar(File bundle, File folderOut, Project project) {
-        folderOut.deleteDir()
-        folderOut.mkdirs()
+    public static void unzipAar(final File bundle, final File folderOut, final Project project) {
+        for (File f : Files.fileTreeTraverser().postOrderTraversal(folderOut)) {
+            f.delete();
+        }
 
-        project.copy(new Action<CopySpec>() {
-            @Override
-            void execute(CopySpec spec) {
-                spec.from(project.zipTree(bundle));
-                spec.into(folderOut);
-                spec.filesMatching("**/*.jar", new Action<FileCopyDetails>() {
+        folderOut.mkdirs();
+
+        project.copy(new Closure(LibraryCache.class) {
+            public Object doCall(CopySpec cs) {
+                cs.from(project.zipTree(bundle));
+                cs.into(folderOut);
+                cs.filesMatching("**/*.jar", new Action<FileCopyDetails>() {
                     @Override
-                    void execute(FileCopyDetails details) {
+                    public void execute(FileCopyDetails details) {
                         /*
                          * For each jar, check where it is. /classes.jar, /lint.jar and jars in
                          * /libs are moved inside the FD_JARS directory. Jars inside /assets or
@@ -110,7 +129,7 @@ public class LibraryCache {
                         if (path.equals("classes.jar") || path.equals("lint.jar")
                                 || path.startsWith("libs/")) {
                             details.setRelativePath(new RelativePath(false, FD_JARS).plus(
-                                    details.relativePath));
+                                    details.getRelativePath()));
                         } else if (!path.startsWith("res/raw/*") && !path.startsWith("assets/*")) {
                             project.getLogger().warn("Jar found at unexpected path (" + path
                                     + ") in " + bundle + " and will be ignored. Jars should be "
@@ -119,6 +138,8 @@ public class LibraryCache {
                         }
                     }
                 });
+
+                return cs;
             }
         });
     }
