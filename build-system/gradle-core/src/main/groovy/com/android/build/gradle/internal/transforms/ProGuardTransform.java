@@ -82,7 +82,12 @@ public class ProGuardTransform extends BaseProguardAction {
             @NonNull VariantScope variantScope,
             boolean asJar) {
         this.variantScope = variantScope;
-        this.asJar = asJar;
+
+        // TODO: Allow asJar to be true, once we make sure input jars have unique file names.
+        // There cannot be duplicate classes.jar inputs for example. This confuses ProGuard in
+        // "directory output" mode.
+        this.asJar = true;
+
         isLibrary = variantScope.getVariantData() instanceof LibraryVariantData;
         isTest = variantScope.getTestedVariantData() != null;
 
