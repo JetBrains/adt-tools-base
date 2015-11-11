@@ -40,7 +40,6 @@ public interface FileOp {
      * For a directory, recursively deletes all of its content.
      * Files that cannot be deleted right away are marked for deletion on exit.
      * It's ok for the file or folder to not exist at all.
-     * The argument can be null.
      */
     void deleteFileOrFolder(@NonNull File fileOrFolder);
 
@@ -95,6 +94,9 @@ public interface FileOp {
 
     /** Invokes {@link File#isDirectory()} on the given {@code file}. */
     boolean isDirectory(@NonNull File file);
+
+    /** Invokes {@link File#canWrite()} on the given {@code file}. */
+    boolean canWrite(@NonNull File file);
 
     /** Invokes {@link File#length()} on the given {@code file}. */
     long length(@NonNull File file);

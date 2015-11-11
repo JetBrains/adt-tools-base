@@ -192,4 +192,13 @@ public class MockFileOpTest extends TestCase {
                  "</dir1/dir2/forgot to close: (stream not closed properly)>]",
                 Arrays.toString(m.getOutputStreams()));
     }
+
+    public void testReadOnlyFile() throws Exception {
+        File f1 = createFile("/root", "writable.txt");
+        File f2 = createFile("/root", "readonly.txt");
+        m.setReadOnly(f2);
+
+        assertTrue(m.canWrite(f1));
+        assertFalse(m.canWrite(f2));
+    }
 }

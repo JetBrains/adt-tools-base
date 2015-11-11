@@ -32,8 +32,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Properties;
-import java.util.regex.Pattern;
-
 
 /**
  * Wraps some common {@link File} operations on files and folders.
@@ -68,75 +66,53 @@ public class FileOpImpl implements FileOp {
         }
     }
 
-    /**
-     * Helper to delete a file or a directory.
-     * For a directory, recursively deletes all of its content.
-     * Files that cannot be deleted right away are marked for deletion on exit.
-     * It's ok for the file or folder to not exist at all.
-     * The argument can be null.
-     */
     @Override
     public void deleteFileOrFolder(@NonNull File fileOrFolder) {
-        if (fileOrFolder != null) {
-            if (isDirectory(fileOrFolder)) {
-                // Must delete content recursively first
-                File[] files = fileOrFolder.listFiles();
-                if (files != null) {
-                    for (File item : files) {
-                        deleteFileOrFolder(item);
-                    }
+        if (isDirectory(fileOrFolder)) {
+            // Must delete content recursively first
+            File[] files = fileOrFolder.listFiles();
+            if (files != null) {
+                for (File item : files) {
+                    deleteFileOrFolder(item);
+                }
+            }
+        }
+
+        // Don't try to delete it if it doesn't exist.
+        if (!exists(fileOrFolder)) {
+            return;
+        }
+
+        if (FileOpUtils.isWindows()) {
+            // Trying to delete a resource on windows might fail if there's a file
+            // indexer locking the resource. Generally retrying will be enough to
+            // make it work.
+            //
+            // Try for half a second before giving up.
+
+            for (int i = 0; i < 5; i++) {
+                if (fileOrFolder.delete()) {
+                    return;
+                }
+
+                try {
+                    Thread.sleep(100 /*ms*/);
+                } catch (InterruptedException e) {
+                    // Ignore.
                 }
             }
 
-            // Don't try to delete it if it doesn't exist.
-            if (!exists(fileOrFolder)) {
-                return;
-            }
+            fileOrFolder.deleteOnExit();
 
-            if (FileOpUtils.isWindows()) {
-                // Trying to delete a resource on windows might fail if there's a file
-                // indexer locking the resource. Generally retrying will be enough to
-                // make it work.
-                //
-                // Try for half a second before giving up.
+        } else {
+            // On Linux or Mac, just straight deleting it should just work.
 
-                for (int i = 0; i < 5; i++) {
-                    if (fileOrFolder.delete()) {
-                        return;
-                    }
-
-                    try {
-                        Thread.sleep(100 /*ms*/);
-                    } catch (InterruptedException e) {
-                        // Ignore.
-                    }
-                }
-
+            if (!fileOrFolder.delete()) {
                 fileOrFolder.deleteOnExit();
-
-            } else {
-                // On Linux or Mac, just straight deleting it should just work.
-
-                if (!fileOrFolder.delete()) {
-                    fileOrFolder.deleteOnExit();
-                }
             }
         }
     }
 
-    /**
-     * Sets the executable Unix permission (+x) on a file or folder.
-     * <p/>
-     * This attempts to use File#setExecutable through reflection if
-     * it's available.
-     * If this is not available, this invokes a chmod exec instead,
-     * so there is no guarantee of it being fast.
-     * <p/>
-     * Caller must make sure to not invoke this under Windows.
-     *
-     * @param file The file to set permissions on.
-     * @throws IOException If an I/O error occurs
-     */
     @Override
     public void setExecutablePermission(@NonNull File file) throws IOException {
         if (FileOpUtils.isWindows()) {
@@ -165,14 +141,6 @@ public class FileOpImpl implements FileOp {
         file.setReadOnly();
     }
 
-    /**
-     * Copies a binary file.
-     *
-     * @param source the source file to copy.
-     * @param dest the destination file to write.
-     * @throws FileNotFoundException if the source file doesn't exist.
-     * @throws IOException if there's a problem reading or writing the file.
-     */
     @Override
     public void copyFile(@NonNull File source, @NonNull File dest) throws IOException {
         byte[] buffer = new byte[8192];
@@ -206,14 +174,6 @@ public class FileOpImpl implements FileOp {
         }
     }
 
-    /**
-     * Checks whether 2 binary files are the same.
-     *
-     * @param file1 the source file to copy
-     * @param file2 the destination file to write
-     * @throws FileNotFoundException if the source files don't exist.
-     * @throws IOException if there's a problem reading the files.
-     */
     @Override
     public boolean isSameFile(@NonNull File file1, @NonNull File file2) throws IOException {
 
@@ -269,50 +229,41 @@ public class FileOpImpl implements FileOp {
         return true;
     }
 
-    /** Invokes {@link File#isFile()} on the given {@code file}. */
     @Override
     public boolean isFile(@NonNull File file) {
         return file.isFile();
     }
 
-    /** Invokes {@link File#isDirectory()} on the given {@code file}. */
     @Override
     public boolean isDirectory(@NonNull File file) {
         return file.isDirectory();
     }
 
-    /** Invokes {@link File#exists()} on the given {@code file}. */
     @Override
     public boolean exists(@NonNull File file) {
         return file.exists();
     }
 
-    /** Invokes {@link File#length()} on the given {@code file}. */
+    @Override
+    public boolean canWrite(@NonNull File file) {
+        return file.canWrite();
+    }
+
     @Override
     public long length(@NonNull File file) {
         return file.length();
     }
 
-    /**
-     * Invokes {@link File#delete()} on the given {@code file}.
-     * Note: for a recursive folder version, consider {@link #deleteFileOrFolder(File)}.
-     */
     @Override
     public boolean delete(@NonNull File file) {
         return file.delete();
     }
 
-    /** Invokes {@link File#mkdirs()} on the given {@code file}. */
     @Override
     public boolean mkdirs(@NonNull File file) {
         return file.mkdirs();
     }
 
-    /**
-     * Invokes {@link File#listFiles()} on the given {@code file}.
-     * Contrary to the Java API, this returns an empty array instead of null when the
-     * directory does not exist.
-     */
     @Override
     @NonNull
     public File[] listFiles(@NonNull File file) {
@@ -324,20 +275,17 @@ public class FileOpImpl implements FileOp {
         }
     }
 
-    /** Invokes {@link File#renameTo(File)} on the given files. */
     @Override
     public boolean renameTo(@NonNull File oldFile, @NonNull File newFile) {
         return oldFile.renameTo(newFile);
     }
 
-    /** Creates a new {@link OutputStream} for the given {@code file}. */
     @Override
     @NonNull
     public OutputStream newFileOutputStream(@NonNull File file) throws FileNotFoundException {
         return new FileOutputStream(file);
     }
 
-    /** Creates a new {@link InputStream} for the given {@code file}. */
     @Override
     @NonNull
     public InputStream newFileInputStream(@NonNull File file) throws FileNotFoundException {
