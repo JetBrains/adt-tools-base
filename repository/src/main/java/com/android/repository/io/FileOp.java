@@ -95,6 +95,9 @@ public interface FileOp {
     /** Invokes {@link File#isDirectory()} on the given {@code file}. */
     boolean isDirectory(@NonNull File file);
 
+    /** Invokes {@link File#canWrite()} on the given {@code file}. */
+    boolean canWrite(@NonNull File file);
+
     /** Invokes {@link File#length()} on the given {@code file}. */
     long length(@NonNull File file);
 

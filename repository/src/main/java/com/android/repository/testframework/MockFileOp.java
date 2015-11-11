@@ -61,6 +61,7 @@ public class MockFileOp implements FileOp {
 
     private final Map<String, FileInfo> mExistingFiles = Maps.newTreeMap();
     private final Set<String> mExistingFolders = Sets.newTreeSet();
+    private final Set<String> mReadOnlyFiles = Sets.newTreeSet();
     private final List<StringOutputStream> mOutputStreams = new ArrayList<StringOutputStream>();
 
     public MockFileOp() {
@@ -70,6 +71,7 @@ public class MockFileOp implements FileOp {
     public void reset() {
         mExistingFiles.clear();
         mExistingFolders.clear();
+        mReadOnlyFiles.clear();
         mOutputStreams.clear();
     }
 
@@ -271,14 +273,10 @@ public class MockFileOp implements FileOp {
         // pass
     }
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     * <em>Note: this mock version does nothing.</em>
-     */
     @Override
     public void setReadOnly(@NonNull File file) {
-        // pass
+        mReadOnlyFiles.add(getAgnosticAbsPath(file));
+        recordExistingFile(file);
     }
 
     @Override
@@ -357,6 +355,11 @@ public class MockFileOp implements FileOp {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean canWrite(@NonNull File file) {
+        return !mReadOnlyFiles.contains(getAgnosticAbsPath(file));
     }
 
     @Override

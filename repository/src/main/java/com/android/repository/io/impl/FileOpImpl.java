@@ -245,6 +245,11 @@ public class FileOpImpl implements FileOp {
     }
 
     @Override
+    public boolean canWrite(@NonNull File file) {
+        return file.canWrite();
+    }
+
+    @Override
     public long length(@NonNull File file) {
         return file.length();
     }
