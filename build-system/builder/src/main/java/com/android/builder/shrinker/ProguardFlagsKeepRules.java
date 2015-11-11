@@ -50,10 +50,12 @@ class ProguardFlagsKeepRules implements KeepRules {
 
         for (ClassSpecification spec : mFlags.getKeepClassSpecs()) {
             if (matchesClass(klass, spec, graph)) {
-                result.put(klass, DependencyType.REQUIRED);
-                result.put(graph.getMemberReference(graph.getClassName(klass), "<init>", "()V"), DependencyType.REQUIRED);
+                result.put(klass, DependencyType.REQUIRED_CLASS_STRUCTURE);
+                result.put(
+                        graph.getMemberReference(graph.getClassName(klass), "<init>", "()V"),
+                        DependencyType.REQUIRED_CLASS_STRUCTURE);
                 for (T member : findMatchingMembers(klass, spec, graph)) {
-                    result.put(member, DependencyType.REQUIRED);
+                    result.put(member, DependencyType.REQUIRED_CLASS_STRUCTURE);
                 }
             }
         }
@@ -70,7 +72,7 @@ class ProguardFlagsKeepRules implements KeepRules {
         for (ClassSpecification spec : mFlags.getKeepClassesWithMembersSpecs()) {
             if (matchesClass(klass, spec, graph)) {
                 for (T t : handleKeepClassesWithMembers(spec, klass, graph)) {
-                    result.put(t, DependencyType.REQUIRED);
+                    result.put(t, DependencyType.REQUIRED_CLASS_STRUCTURE);
                 }
             }
         }
