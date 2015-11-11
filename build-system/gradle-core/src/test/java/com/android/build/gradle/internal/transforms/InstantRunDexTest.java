@@ -25,7 +25,9 @@ import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.dsl.DexOptions;
+import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.builder.core.AndroidBuilder;
@@ -50,6 +52,9 @@ public class InstantRunDexTest {
 
     @Mock
     VariantScope variantScope;
+
+    @Mock
+    GlobalScope globalScope;
 
     @Mock
     AndroidBuilder androidBuilder;
@@ -80,10 +85,13 @@ public class InstantRunDexTest {
         when(instantRunBuildContext.hasPassedVerification()).thenReturn(Boolean.FALSE);
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
         when(variantScope.getReloadDexOutputFolder()).thenReturn(outputFolder);
+        when(variantScope.getGlobalScope()).thenReturn(globalScope);
+        when(globalScope.isActive(OptionalCompilationStep.RESTART_DEX_ONLY))
+                .thenReturn(Boolean.FALSE);
 
         InstantRunDex instantRunDex = new InstantRunDex(
                 variantScope,
-                InstantRunDex.BuildType.RELOAD,
+                InstantRunBuildType.RELOAD,
                 androidBuilder,
                 dexOptions,
                 logger,

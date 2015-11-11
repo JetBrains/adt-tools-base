@@ -316,6 +316,13 @@ public class VariantScopeImpl implements VariantScope {
 
     @NonNull
     @Override
+    public File getInstantRunSupportDir() {
+        return new File(globalScope.getIntermediatesDir(), "/instant-run-support/" +
+                variantData.getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    @Override
     public File getIncrementalRuntimeSupportJar() {
         return new File(globalScope.getIntermediatesDir(), "/incremental-runtime-classes/" +
                 variantData.getVariantConfiguration().getDirName() + "/instant-run.jar");

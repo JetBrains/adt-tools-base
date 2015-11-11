@@ -24,7 +24,7 @@ package com.android.build.gradle;
 public enum OptionalCompilationStep {
 
     /**
-     * presence will turn on the InstantDev (name still tbd) feature.
+     * presence will turn on the InstantRun feature.
      */
     INSTANT_DEV,
     /**
@@ -34,5 +34,11 @@ public enum OptionalCompilationStep {
     /**
      * presence will disable all tasks before resource merger.
      */
-    LOCAL_RES_ONLY
+    LOCAL_RES_ONLY,
+    /**
+     * presence will force production of the restart.dex (instead of potentially producing it
+     * depending on the verifier result). The reload.dex will not be produced when this flag is
+     * set.
+     */
+    RESTART_DEX_ONLY
 }
