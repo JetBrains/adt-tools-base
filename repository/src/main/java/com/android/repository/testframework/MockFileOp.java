@@ -252,15 +252,13 @@ public class MockFileOp implements FileOp {
 
     @Override
     public void deleteFileOrFolder(@NonNull File fileOrFolder) {
-        if (fileOrFolder != null) {
-            if (isDirectory(fileOrFolder)) {
-                // Must delete content recursively first
-                for (File item : listFiles(fileOrFolder)) {
-                    deleteFileOrFolder(item);
-                }
+        if (isDirectory(fileOrFolder)) {
+            // Must delete content recursively first
+            for (File item : listFiles(fileOrFolder)) {
+                deleteFileOrFolder(item);
             }
-            delete(fileOrFolder);
         }
+        delete(fileOrFolder);
     }
 
     /**
@@ -379,7 +377,6 @@ public class MockFileOp implements FileOp {
             return true;
         }
 
-        boolean hasSubfiles = false;
         for (String folder : mExistingFolders) {
             if (folder.startsWith(path) && !folder.equals(path)) {
                 // the File.delete operation is not recursive and would fail to remove
@@ -387,13 +384,12 @@ public class MockFileOp implements FileOp {
                 return false;
             }
         }
-        if (!hasSubfiles) {
-            for (String filePath : mExistingFiles.keySet()) {
-                if (filePath.startsWith(path) && !filePath.equals(path)) {
-                    // the File.delete operation is not recursive and would fail to remove
-                    // a root dir that is not empty.
-                    return false;
-                }
+
+        for (String filePath : mExistingFiles.keySet()) {
+            if (filePath.startsWith(path) && !filePath.equals(path)) {
+                // the File.delete operation is not recursive and would fail to remove
+                // a root dir that is not empty.
+                return false;
             }
         }
 
@@ -402,8 +398,9 @@ public class MockFileOp implements FileOp {
 
     @Override
     public boolean mkdirs(@NonNull File file) {
-        for (; file != null; file = file.getParentFile()) {
-            String path = getAgnosticAbsPath(file);
+        File currFile = file;
+        for (; currFile != null; currFile = currFile.getParentFile()) {
+            String path = getAgnosticAbsPath(currFile);
             mExistingFolders.add(path);
         }
         return true;
