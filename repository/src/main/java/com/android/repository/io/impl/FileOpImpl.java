@@ -32,6 +32,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.regex.Pattern;
+
 
 /**
  * Wraps some common {@link File} operations on files and folders.
@@ -68,47 +70,49 @@ public class FileOpImpl implements FileOp {
 
     @Override
     public void deleteFileOrFolder(@NonNull File fileOrFolder) {
-        if (isDirectory(fileOrFolder)) {
-            // Must delete content recursively first
-            File[] files = fileOrFolder.listFiles();
-            if (files != null) {
-                for (File item : files) {
-                    deleteFileOrFolder(item);
-                }
-            }
-        }
-
-        // Don't try to delete it if it doesn't exist.
-        if (!exists(fileOrFolder)) {
-            return;
-        }
-
-        if (FileOpUtils.isWindows()) {
-            // Trying to delete a resource on windows might fail if there's a file
-            // indexer locking the resource. Generally retrying will be enough to
-            // make it work.
-            //
-            // Try for half a second before giving up.
-
-            for (int i = 0; i < 5; i++) {
-                if (fileOrFolder.delete()) {
-                    return;
-                }
-
-                try {
-                    Thread.sleep(100 /*ms*/);
-                } catch (InterruptedException e) {
-                    // Ignore.
+        if (fileOrFolder != null) {
+            if (isDirectory(fileOrFolder)) {
+                // Must delete content recursively first
+                File[] files = fileOrFolder.listFiles();
+                if (files != null) {
+                    for (File item : files) {
+                        deleteFileOrFolder(item);
+                    }
                 }
             }
 
-            fileOrFolder.deleteOnExit();
+            // Don't try to delete it if it doesn't exist.
+            if (!exists(fileOrFolder)) {
+                return;
+            }
 
-        } else {
-            // On Linux or Mac, just straight deleting it should just work.
+            if (FileOpUtils.isWindows()) {
+                // Trying to delete a resource on windows might fail if there's a file
+                // indexer locking the resource. Generally retrying will be enough to
+                // make it work.
+                //
+                // Try for half a second before giving up.
 
-            if (!fileOrFolder.delete()) {
+                for (int i = 0; i < 5; i++) {
+                    if (fileOrFolder.delete()) {
+                        return;
+                    }
+
+                    try {
+                        Thread.sleep(100 /*ms*/);
+                    } catch (InterruptedException e) {
+                        // Ignore.
+                    }
+                }
+
                 fileOrFolder.deleteOnExit();
+
+            } else {
+                // On Linux or Mac, just straight deleting it should just work.
+
+                if (!fileOrFolder.delete()) {
+                    fileOrFolder.deleteOnExit();
+                }
             }
         }
     }
