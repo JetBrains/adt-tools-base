@@ -1,4 +1,4 @@
-<resources>>
+<resources>
     <#if !themeExistsNoActionBar>
         <style name="${themeNameNoActionBar}"<#if !implicitParentTheme> parent="${themeName}"</#if>>
             <item name="windowActionBar">false</item>
