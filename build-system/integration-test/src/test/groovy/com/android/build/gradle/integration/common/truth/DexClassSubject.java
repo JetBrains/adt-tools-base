@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.truth;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.utils.XmlHelper;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
@@ -24,6 +25,7 @@ import com.google.common.truth.SubjectFactory;
 
 import org.w3c.dom.Node;
 
+@SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
 public class DexClassSubject extends Subject<DexClassSubject, Node> {
 
     static class Factory extends SubjectFactory<DexClassSubject, Node> {
@@ -42,42 +44,70 @@ public class DexClassSubject extends Subject<DexClassSubject, Node> {
         }
     }
 
-
-    public DexClassSubject(FailureStrategy failureStrategy,
-            Node subject) {
+    public DexClassSubject(
+            @NonNull FailureStrategy failureStrategy,
+            @Nullable Node subject) {
         super(failureStrategy, subject);
-        named(subject.getAttributes().getNamedItem("name").getTextContent());
     }
 
-    public void hasMethod(String name) {
-        if (!checkHasMethod(name)) {
+    public void hasMethod(@NonNull String name) {
+        failIfSubjectIsNull();
+        if (getSubject() != null && !checkHasMethod(name)) {
             fail("does not contain method", name);
         }
     }
 
-    public void hasField(String name) {
-        if (!checkHasField(name)) {
+    public void hasMethods(@NonNull String ... names) {
+        for (String name: names) {
+            hasMethod(name);
+        }
+    }
+
+    public void hasField(@NonNull String name) {
+        failIfSubjectIsNull();
+        if (getSubject() != null && !checkHasField(name)) {
             fail("does not contain field", name);
         }
     }
 
-    public void doesNotHaveField(String name) {
-        if (checkHasField(name)) {
+    public void doesNotHaveField(@NonNull String name) {
+        failIfSubjectIsNull();
+        if (getSubject() != null &&  checkHasField(name)) {
             fail("should not contain field", name);
         }
     }
 
-    public void doesNotHaveMethod(String name) {
-        if (checkHasMethod(name)) {
+    public void doesNotHaveMethod(@NonNull String name) {
+        failIfSubjectIsNull();
+        if (getSubject() != null &&  checkHasMethod(name)) {
             fail("should not contain method", name);
         }
     }
 
-    private boolean checkHasMethod(String name) {
+    private boolean checkHasMethod(@NonNull String name) {
         return XmlHelper.findChildWithTagAndAttrs(getSubject(), "method", "name", name) != null;
     }
 
-    private boolean checkHasField(String name) {
+    private boolean checkHasField(@NonNull String name) {
         return XmlHelper.findChildWithTagAndAttrs(getSubject(), "field", "name", name) != null;
+    }
+
+    private void failIfSubjectIsNull() {
+        if (getSubject() == null) {
+            fail("Cannot assert about the contents of a dex class that does not exist.");
+        }
+    }
+
+    @Override
+    protected String getDisplaySubject() {
+        String subjectName = null;
+        if (getSubject() != null) {
+            subjectName = getSubject().getAttributes().getNamedItem("name").getTextContent();
+        }
+        if (internalCustomName() != null) {
+            return internalCustomName() + " (<" + subjectName + ">)";
+        } else {
+            return "<" + subjectName + ">";
+        }
     }
 }

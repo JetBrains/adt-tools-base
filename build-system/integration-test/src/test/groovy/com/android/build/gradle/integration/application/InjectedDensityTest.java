@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.integration.application;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestApp;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
@@ -85,7 +83,7 @@ public class InjectedDensityTest {
 
     private void checkFullBuild() throws IOException, ProcessException {
         sProject.execute("assembleDebug");
-        ApkSubject debug = expect.about(ApkSubject.Factory.get()).that(sProject.getApk("debug"));
+        ApkSubject debug = expect.about(ApkSubject.FACTORY).that(sProject.getApk("debug"));
         debug.containsResource("drawable-xxxhdpi-v4/abc_ic_clear_mtrl_alpha.png");
         debug.containsResource("drawable-xxhdpi-v4/abc_ic_clear_mtrl_alpha.png");
         debug.containsResource("drawable-xhdpi-v4/abc_ic_clear_mtrl_alpha.png");
@@ -97,7 +95,7 @@ public class InjectedDensityTest {
         sProject.execute(
                 ImmutableList.of("-P" + AndroidProject.PROPERTY_BUILD_DENSITY + "=xxhdpi"),
                 "assembleDebug");
-        ApkSubject debug = expect.about(ApkSubject.Factory.get()).that(sProject.getApk("debug"));
+        ApkSubject debug = expect.about(ApkSubject.FACTORY).that(sProject.getApk("debug"));
         debug.doesNotContainResource("drawable-xxxhdpi-v4/abc_ic_clear_mtrl_alpha.png");
         debug.containsResource("drawable-xxhdpi-v4/abc_ic_clear_mtrl_alpha.png");
         debug.doesNotContainResource("drawable-xhdpi-v4/abc_ic_clear_mtrl_alpha.png");
