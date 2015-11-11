@@ -178,7 +178,7 @@ public class ShrinkResourcesTransform extends Transform {
         // there should be only one input since this transform is always applied after
         // proguard.
         TransformInput input = Iterables.getOnlyElement(referencedInputs);
-        File minifiedOutFolder = Iterables.getOnlyElement(input.getDirectoryInputs()).getFile();
+        File minifiedOutJar = Iterables.getOnlyElement(input.getJarInputs()).getFile();
 
         BaseVariantData<?> variantData = variantOutputData.variantData;
         ProcessAndroidResources processResourcesTask = variantData.generateRClassTask;
@@ -187,7 +187,7 @@ public class ShrinkResourcesTransform extends Transform {
             // Analyze resources and usages and strip out unused
             ResourceUsageAnalyzer analyzer = new ResourceUsageAnalyzer(
                     sourceDir,
-                    minifiedOutFolder,
+                    minifiedOutJar,
                     mergedManifest,
                     mappingFile,
                     resourceDir);
