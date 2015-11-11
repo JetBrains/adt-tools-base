@@ -42,6 +42,7 @@ import org.gradle.model.ModelMap;
 import org.gradle.model.internal.core.ModelPath;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.model.internal.type.ModelType;
+import org.gradle.model.internal.type.ModelTypes;
 import org.gradle.platform.base.BinaryContainer;
 import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
@@ -78,37 +79,15 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
     }
 
     /**
-     * Methods for creating ModelType with parameterized type using ModelType.returnType.  The
-     * method is public to allow Gradle's reflection to work.
+     * Return the ModelType for a parameterized Multimap.
      */
-    public static ModelMap<NdkAbiOptions> abiOptionType() {
-        return null;
-    }
-
-    public static Multimap<String, NativeDependencyResolveResult> nativeDependenciesType() {
-        return null;
-    }
-
-    /**
-     * A hack to create a ModelType with parameterized type.  Note that this won't be necessary when
-     * Gradle release a public API for creating tooling model in the component model plugin.
-     */
-    private ModelType<ModelMap<NdkAbiOptions>> getAbiOptionModelType() {
-        try {
-            return ModelType.returnType(getClass().getMethod("abiOptionType"));
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Should not happen.  "
-                    + "ComponenetModelBuilder is missing method 'abiOptionsType'.");
-        }
-    }
-
-    private ModelType<Multimap<String, NativeDependencyResolveResult>> getNativeDependenciesType() {
-        try {
-            return ModelType.returnType(getClass().getMethod("nativeDependenciesType"));
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Should not happen.  "
-                    + "ComponenetModelBuilder is missing methed 'nativeDependenciesType'.");
-        }
+    private static <K, V> ModelType<Multimap<K, V>> multimapModelType(
+            Class<K> keyClass,
+            Class<V> valueClass) {
+        return new ModelType.Builder<Multimap<K, V>>() {}
+                .where(new ModelType.Parameter<K>() {}, ModelType.of(keyClass))
+                .where(new ModelType.Parameter<V>() {}, ModelType.of(valueClass))
+                .build();
     }
 
     private ModelBuilder createModelBuilder() {
@@ -140,10 +119,10 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
                 ModelType.of(BinaryContainer.class));
         ModelMap<NdkAbiOptions> abiOptions = registry.realize(
                 new ModelPath(ModelConstants.ABI_OPTIONS),
-                getAbiOptionModelType());
+                ModelTypes.modelMap(NdkAbiOptions.class));
         Multimap<String, NativeDependencyResolveResult> nativeDependencies = registry.realize(
                 new ModelPath(ModelConstants.JNILIBS_DEPENDENCIES),
-                getNativeDependenciesType());
+                multimapModelType(String.class, NativeDependencyResolveResult.class));
 
         return new ModelBuilder(
                 androidBuilder,

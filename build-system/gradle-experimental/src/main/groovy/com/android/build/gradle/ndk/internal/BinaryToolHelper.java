@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.ndk.internal;
 
-import org.gradle.api.plugins.ExtensionAware;
-import org.gradle.language.nativeplatform.internal.DefaultPreprocessingTool;
-import org.gradle.platform.base.BinarySpec;
+import org.gradle.nativeplatform.NativeBinarySpec;
+import org.gradle.nativeplatform.internal.DefaultPreprocessingTool;
+import org.gradle.nativeplatform.internal.NativeBinarySpecInternal;
 
 /**
  * Gradle's LanguageRegistration dynamically add the cCompiler and cppCompiler tool to the library.
@@ -29,11 +29,11 @@ import org.gradle.platform.base.BinarySpec;
  * This helper class hide the details for accessing the tools.
  */
 public class BinaryToolHelper {
-    public static DefaultPreprocessingTool getCCompiler(BinarySpec binary) {
-        return (DefaultPreprocessingTool) ((ExtensionAware) binary).getExtensions().getByName("cCompiler");
+    public static DefaultPreprocessingTool getCCompiler(NativeBinarySpec binary) {
+        return (DefaultPreprocessingTool) ((NativeBinarySpecInternal)binary).getcCompiler();
     }
 
-    public static DefaultPreprocessingTool getCppCompiler(BinarySpec binary) {
-        return (DefaultPreprocessingTool) ((ExtensionAware) binary).getExtensions().getByName("cppCompiler");
+    public static DefaultPreprocessingTool getCppCompiler(NativeBinarySpec binary) {
+        return (DefaultPreprocessingTool) ((NativeBinarySpecInternal)binary).getCppCompiler();
     }
 }
