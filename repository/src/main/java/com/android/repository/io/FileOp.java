@@ -40,6 +40,7 @@ public interface FileOp {
      * For a directory, recursively deletes all of its content.
      * Files that cannot be deleted right away are marked for deletion on exit.
      * It's ok for the file or folder to not exist at all.
+     * The argument can be null.
      */
     void deleteFileOrFolder(@NonNull File fileOrFolder);
 
