@@ -250,12 +250,6 @@ public class MockFileOp implements FileOp {
         return result;
     }
 
-    /**
-     * Helper to delete a file or a directory.
-     * For a directory, recursively deletes all of its content.
-     * Files that cannot be deleted right away are marked for deletion on exit.
-     * The argument can be null.
-     */
     @Override
     public void deleteFileOrFolder(@NonNull File fileOrFolder) {
         if (fileOrFolder != null) {
@@ -289,10 +283,6 @@ public class MockFileOp implements FileOp {
         // pass
     }
 
-    /**
-     * {@inheritDoc}
-     * <p/>
-     */
     @Override
     public void copyFile(@NonNull File source, @NonNull File dest) throws IOException {
         InputStream in = newFileInputStream(source);
@@ -306,14 +296,6 @@ public class MockFileOp implements FileOp {
         recordExistingFile(dest.getAbsolutePath(), baos.toByteArray());
     }
 
-    /**
-     * Checks whether 2 binary files are the same.
-     *
-     * @param file1 the source file to copy
-     * @param file2 the destination file to write
-     * @throws FileNotFoundException if the source files don't exist.
-     * @throws IOException if there's a problem reading the files.
-     */
     @Override
     public boolean isSameFile(@NonNull File file1, @NonNull File file2) throws IOException {
         String path1 = getAgnosticAbsPath(file1);
@@ -346,14 +328,12 @@ public class MockFileOp implements FileOp {
         return Arrays.equals(content1, content2);
     }
 
-    /** Invokes {@link File#isFile()} on the given {@code file}. */
     @Override
     public boolean isFile(@NonNull File file) {
         String path = getAgnosticAbsPath(file);
         return mExistingFiles.containsKey(path);
     }
 
-    /** Invokes {@link File#isDirectory()} on the given {@code file}. */
     @Override
     public boolean isDirectory(@NonNull File file) {
         String path = getAgnosticAbsPath(file);
@@ -381,13 +361,11 @@ public class MockFileOp implements FileOp {
         return false;
     }
 
-    /** Invokes {@link File#exists()} on the given {@code file}. */
     @Override
     public boolean exists(@NonNull File file) {
         return isFile(file) || isDirectory(file);
     }
 
-    /** Invokes {@link File#length()} on the given {@code file}. */
     @Override
     public long length(@NonNull File file) {
         throw new UnsupportedOperationException("MockFileUtils.length is not supported."); //$NON-NLS-1$
@@ -422,7 +400,6 @@ public class MockFileOp implements FileOp {
         return mExistingFolders.remove(path);
     }
 
-    /** Invokes {@link File#mkdirs()} on the given {@code file}. */
     @Override
     public boolean mkdirs(@NonNull File file) {
         for (; file != null; file = file.getParentFile()) {
@@ -433,9 +410,7 @@ public class MockFileOp implements FileOp {
     }
 
     /**
-     * Invokes {@link File#listFiles()} on the given {@code file}.
-     * The returned list is sorted by alphabetic absolute path string.
-     * Might return an empty array but never null.
+     * {@inheritDoc}
      *
      * TODO: this incorrectly recursively returns all files in subfolders
      */
@@ -462,7 +437,6 @@ public class MockFileOp implements FileOp {
         return files.toArray(new File[files.size()]);
     }
 
-    /** Invokes {@link File#renameTo(File)} on the given files. */
     @Override
     public boolean renameTo(@NonNull File oldFile, @NonNull File newFile) {
         boolean renamed = false;
@@ -554,10 +528,6 @@ public class MockFileOp implements FileOp {
         }
     }
 
-    /**
-     * Returns an OutputStream that will capture the bytes written and associate
-     * them with the given file.
-     */
     @NonNull
     @Override
     public OutputStream newFileOutputStream(@NonNull File file) throws FileNotFoundException {
