@@ -641,6 +641,14 @@ public abstract class TaskManager {
 
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         GradleVariantConfiguration config = variantData.getVariantConfiguration();
+
+        if (config.getRenderscriptSupportModeEnabled() && config.getRenderscriptTarget() >= 21) {
+            androidBuilder.getErrorReporter().handleSyncError(
+                    "",
+                    SyncIssue.TYPE_GENERIC,
+                    "Renderscript support mode is not currently supported with renderscript target 21+");
+        }
+
         // get single output for now.
         BaseVariantOutputData variantOutputData = variantData.getOutputs().get(0);
 
