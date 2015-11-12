@@ -354,10 +354,13 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         }
 
         // Now we need to add the new items to the resource file and the main map
-        resourceFile.addItems(addedItems.values());
         for (Map.Entry<String, ResourceItem> entry : addedItems.entrySet()) {
+            // Clear the item from the old file so it can be added to the new one.
+            entry.getValue().setSource(null);
             addItem(entry.getValue(), entry.getKey());
         }
+
+        resourceFile.addItems(addedItems.values());
     }
 
     /**
