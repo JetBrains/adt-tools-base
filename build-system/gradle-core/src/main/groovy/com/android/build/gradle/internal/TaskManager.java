@@ -992,6 +992,7 @@ public abstract class TaskManager {
                 scope.getGlobalScope().getIntermediatesDir(), "splits/" + config.getDirName()));
         variantOutputData.packageSplitAbiTask.setAndroidBuilder(androidBuilder);
         variantOutputData.packageSplitAbiTask.setVariantName(config.getFullName());
+        variantOutputData.packageSplitAbiTask.setMinSdkVersion(config.getMinSdkVersion());
         variantOutputData.packageSplitAbiTask.dependsOn(generateSplitAbiRes);
         variantOutputData.packageSplitAbiTask.dependsOn(scope.getNdkBuildable());
 

@@ -121,6 +121,11 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
                 content.trim());
     }
 
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void containsFileWithMatch(@NonNull String path, @NonNull String pattern) {
+        check().that(extractContentAsString(path)).containsMatch(pattern);
+    }
+
     /**
      * Asserts the zip file contains a file with the specified byte array content.
      */
@@ -134,9 +139,12 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      * <b>anywhere</b> in the file
      */
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void containsFileWithoutContent(@NonNull String path, @NonNull byte[] sub) {
+    public void containsFileWithoutContent(@NonNull String path, @NonNull String sub) {
         byte[] contents = extractContentAsByte(path);
-        int index = Bytes.indexOf(contents, sub);
+        if (contents == null) {
+            failWithRawMessage("No entry with path " + path);
+        }
+        int index = Bytes.indexOf(contents, sub.getBytes());
         if (index != -1) {
             failWithRawMessage("Found byte sequence at " + index + " in class file " + path);
         }

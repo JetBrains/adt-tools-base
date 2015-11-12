@@ -31,7 +31,6 @@ import com.android.builder.signing.SignedJarBuilder;
 import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.utils.ILogger;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.io.Closeables;
 
@@ -47,7 +46,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -185,14 +183,16 @@ public final class Packager implements IArchiveBuilder {
      * @param resLocation the file representing the packaged resource file.
      * @param certificateInfo the signing information used to sign the package. Optional the OS path to the debug keystore, if needed or null.
      * @param logger the logger.
+     * @param minSdkVersion minSdkVersion of the package.
      * @throws com.android.builder.packaging.PackagerException
      */
     public Packager(
             @NonNull String apkLocation,
             @NonNull String resLocation,
-            CertificateInfo certificateInfo,
+            @NonNull CertificateInfo certificateInfo,
             @Nullable String createdBy,
-            ILogger logger) throws PackagerException {
+            @NonNull ILogger logger,
+            int minSdkVersion) throws PackagerException {
 
         try {
             File apkFile = new File(apkLocation);
@@ -208,7 +208,8 @@ public final class Packager implements IArchiveBuilder {
                     certificateInfo != null ? certificateInfo.getKey() : null,
                     certificateInfo != null ? certificateInfo.getCertificate() : null,
                     getLocalVersion(),
-                    createdBy);
+                    createdBy,
+                    minSdkVersion);
 
             mLogger.verbose("Packaging %s", apkFile.getName());
 
