@@ -23,9 +23,9 @@ import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemoteListSourceProvider;
 import com.android.repository.api.RemoteSource;
 import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepositorySource;
 import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SchemaModule;
-import com.android.repository.api.RepositorySource;
 import com.android.repository.api.SettingsController;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.google.common.collect.ImmutableList;
@@ -82,14 +82,13 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
      * Create a {@code RemoteListSourceProviderImpl}
      *
      * @param url                    The URL to download from
-     * @param sourceListModule       The concrete {@link SchemaModule} specifying the schema of the
-     *                               downloaded file.
+     * @param sourceListModule       Extension to the common source list schema, if any.
      * @param permittedSchemaModules Map of concrete {@link RepositorySource} type, as defined in
      *                               {@code sourceListModule}, to collection of {@link
      *                               SchemaModule}s allowed to be used by that source type.
      * @throws URISyntaxException If {@code url} can't be parsed into a URL.
      */
-    public RemoteListSourceProviderImpl(@NonNull String url, @NonNull SchemaModule sourceListModule,
+    public RemoteListSourceProviderImpl(@NonNull String url, @Nullable SchemaModule sourceListModule,
             @NonNull Map<Class<? extends RepositorySource>,
                          Collection<SchemaModule>> permittedSchemaModules)
             throws URISyntaxException {
@@ -111,7 +110,9 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
      * Gets the sources from this provider.
      *
      * @param downloader         The {@link Downloader} to use to download the source list.
+     *                           Required.
      * @param settingsController The {@link SettingsController} to use for the download settings.
+     *                           Required if required by the downloader.
      * @param progress           {@link ProgressIndicator} for logging.
      * @param forceRefresh       If true, this provider should refresh its list of sources, rather
      *                           than return cached ones.
@@ -119,9 +120,12 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
      */
     @NonNull
     @Override
-    public List<RepositorySource> getSources(@NonNull Downloader downloader,
+    public List<RepositorySource> getSources(@Nullable Downloader downloader,
             @Nullable SettingsController settingsController, @NonNull ProgressIndicator progress,
             boolean forceRefresh) {
+        if (downloader == null) {
+            throw new IllegalArgumentException("downloader must not be null");
+        }
         if (mSources != null && !forceRefresh) {
             return mSources;
         }
@@ -130,7 +134,10 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
         InputStream xml = null;
 
         URL url = null;
-        for (int version = mSourceListModule.getNamespaceVersionMap().size();
+        SchemaModule sourceModule = mSourceListModule == null ? sAddonListModule
+                : mSourceListModule;
+
+        for (int version = sourceModule.getNamespaceVersionMap().size();
                 xml == null && version > 0; version--) {
             String urlStr = String.format(mUrl, version);
             try {
@@ -149,10 +156,10 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
 
         if (xml != null) {
             result = parse(xml, progress, url);
-            if (result != null) {
-                mSources = result;
-                return mSources;
-            }
+            mSources = result;
+            return mSources;
+        } else {
+            progress.logWarning("Failed to download any source lists!");
         }
 
         return ImmutableList.of();
@@ -161,29 +168,33 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
     @NonNull
     private List<RepositorySource> parse(@NonNull InputStream xml,
             @NonNull ProgressIndicator progress, @NonNull URL url) {
-        LSResourceResolver resourceResolver = SchemaModuleUtil
-                .createResourceResolver(
-                        ImmutableList.of(sAddonListModule, mSourceListModule));
-        SiteList sl = (SiteList) SchemaModuleUtil
-                .unmarshal(xml, ImmutableList.of(mSourceListModule), resourceResolver, progress);
-        List<RepositorySource> result = Lists.newArrayList();
-        for (RemoteSource s : sl.getSite()) {
-            for (Class<? extends RepositorySource> c : mAllowedModules.keySet()) {
-                if (c.isInstance(s)) {
-                    s.setPermittedSchemaModules(mAllowedModules.get(c));
-                }
-            }
-            String urlStr = s.getUrl();
-            try {
-                URL fullUrl = new URL(url, urlStr);
-                s.setUrl(fullUrl.toExternalForm());
-            } catch (MalformedURLException e) {
-                progress.logWarning("Failed to parse URL in remote source list", e);
-            }
-            s.setProvider(this);
-            result.add(s);
+        List<SchemaModule> schemas = Lists.newArrayList(sAddonListModule);
+        if (mSourceListModule != null) {
+            schemas.add(mSourceListModule);
         }
-
+        LSResourceResolver resourceResolver = SchemaModuleUtil
+                .createResourceResolver(schemas);
+        SiteList sl = (SiteList) SchemaModuleUtil
+                .unmarshal(xml, schemas, resourceResolver, progress);
+        List<RepositorySource> result = Lists.newArrayList();
+        if (sl != null) {
+            for (RemoteSource s : sl.getSite()) {
+                for (Class<? extends RepositorySource> c : mAllowedModules.keySet()) {
+                    if (c.isInstance(s)) {
+                        s.setPermittedSchemaModules(mAllowedModules.get(c));
+                    }
+                }
+                String urlStr = s.getUrl();
+                try {
+                    URL fullUrl = new URL(url, urlStr);
+                    s.setUrl(fullUrl.toExternalForm());
+                } catch (MalformedURLException e) {
+                    progress.logWarning("Failed to parse URL in remote source list", e);
+                }
+                s.setProvider(this);
+                result.add(s);
+            }
+        }
         return result;
     }
 
@@ -254,5 +265,4 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
             throw new UnsupportedOperationException();
         }
     }
-
 }

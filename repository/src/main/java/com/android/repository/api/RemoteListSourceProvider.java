@@ -17,6 +17,7 @@
 package com.android.repository.api;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.repository.impl.sources.RemoteListSourceProviderImpl;
 
 import java.net.URISyntaxException;
@@ -33,20 +34,22 @@ public abstract class RemoteListSourceProvider implements RepositorySourceProvid
      * Creates a new provider.
      *
      * @param url                    The URL to download from.
-     * @param sourceListModule       The {@link SchemaModule} used to parse the downloaded
-     *                               XML.
-     * @param permittedSchemaModules The {@link SchemaModule}s that are allowed to be used
-     *                               by the {@link RepositorySource}s created by this provider,
-     *                               depending on the actual type of site.
+     * @param sourceListModule       Extension to the common source list schema, if any, used to
+     *                               parse the downloaded xml.
+     * @param permittedSchemaModules The {@link SchemaModule}s that are allowed to be used by the
+     *                               {@link RepositorySource}s created by this provider, depending
+     *                               on the actual type of site.
      * @return The created provider.
      * @throws URISyntaxException If {@code url} is invalid.
      */
     @NonNull
     public static RemoteListSourceProvider create(@NonNull String url,
-            @NonNull SchemaModule sourceListModule,
+            @Nullable SchemaModule sourceListModule,
             @NonNull Map<Class<? extends RepositorySource>,
                     Collection<SchemaModule>> permittedSchemaModules)
             throws URISyntaxException {
         return new RemoteListSourceProviderImpl(url, sourceListModule, permittedSchemaModules);
     }
+
+    public interface GenericSite extends RepositorySource {}
 }

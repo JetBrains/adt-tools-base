@@ -27,7 +27,8 @@
          -episode repository/src/main/java/com/android/repository/api/common.xjb \
          -p com.android.repository.impl.generated.v1 \
          repository/src/main/java/com/android/repository/api/repo-common-01.xsd \
-         -extension -Xandroid-inheritance -d repository/src/main/java/
+         -extension -Xandroid-inheritance -d repository/src/main/java/ \
+         -b repository/src/main/java/com/android/repository/api/global.xjb
     from tools/base with jaxb-inheritance-plugin.jar, repository classes, guava, and the
     transitive dependencies of org.glassfish.jaxb:jaxb-xjc:17.0 on the classpath.
 
@@ -93,7 +94,7 @@
                  time a new package is generated. -->
             <xsd:element name="revision" type="repo:revisionType"/>
             <!-- User-friendly name for this package -->
-            <xsd:element name="display-name" type="xsd:normalizedString"/>
+            <xsd:element name="display-name" type="xsd:string"/>
             <!-- The optional license of this package. If present, users will have
                  to agree to it before downloading. -->
             <xsd:element name="uses-license" minOccurs="0" type="repo:licensesType"/>
@@ -246,7 +247,7 @@
         <xsd:simpleContent>
             <xsd:extension base="xsd:string">
                 <xsd:attribute name="id" type="xsd:ID"/>
-                <xsd:attribute name="type" type="xsd:token" fixed="text"/>
+                <xsd:attribute name="type" type="xsd:string" fixed="text"/>
             </xsd:extension>
         </xsd:simpleContent>
     </xsd:complexType>

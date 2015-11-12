@@ -38,7 +38,7 @@ public interface RepositorySourceProvider {
     @NonNull
     List<RepositorySource> getSources(@Nullable Downloader downloader,
             @Nullable SettingsController settings,
-            @Nullable ProgressIndicator logger, boolean forceRefresh);
+            @NonNull ProgressIndicator logger, boolean forceRefresh);
 
     /**
      * Add a source to this provider, if this provider is editable. Changes will be reflected in
