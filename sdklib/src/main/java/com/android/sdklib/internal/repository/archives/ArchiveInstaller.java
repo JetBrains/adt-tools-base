@@ -150,7 +150,9 @@ public class ArchiveInstaller {
                 monitor.log("Installed %1$s", name);
                 // Delete the temp archive if it exists, only on success
                 mFileOp.deleteFileOrFolder(tmpFile);
-                mFileOp.deleteFileOrFolder(propsFile);
+                if (propsFile != null) {
+                    mFileOp.deleteFileOrFolder(propsFile);
+                }
                 return true;
             }
         }
@@ -747,7 +749,9 @@ public class ArchiveInstaller {
             }
 
             // Cleanup if the unzip folder is still set.
-            mFileOp.deleteFileOrFolder(oldDestFolder);
+            if (oldDestFolder != null) {
+                mFileOp.deleteFileOrFolder(oldDestFolder);
+            }
         }
     }
 
