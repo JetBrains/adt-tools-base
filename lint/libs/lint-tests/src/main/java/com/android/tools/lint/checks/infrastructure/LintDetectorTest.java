@@ -682,7 +682,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
 
             ResourceRepository repository = new ResourceRepository(false);
             ILogger logger = new StdLogger(StdLogger.Level.INFO);
-            ResourceMerger merger = new ResourceMerger();
+            ResourceMerger merger = new ResourceMerger(0);
 
             ResourceSet resourceSet = new ResourceSet(getName()) {
                 @Override
@@ -775,7 +775,10 @@ public abstract class LintDetectorTest extends SdkTestCase {
                                     } else if (qualifiers.equals("layout")) {
                                         qualifiers = "";
                                     }
-                                    idItem.setSource(new ResourceFile(file, item, qualifiers));
+
+                                    // Creating the resource file will set the source of
+                                    // idItem.
+                                    new ResourceFile(file, idItem, qualifiers);
                                     idMap.put(id, idItem);
                                 }
                             }

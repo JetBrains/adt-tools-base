@@ -24,9 +24,14 @@ import static com.android.ide.common.res2.ResourceFile.ATTR_QUALIFIER;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
+import com.android.utils.Pair;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Table;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -47,6 +52,26 @@ import javax.xml.parsers.ParserConfigurationException;
  */
 public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, ResourceSet> {
     private static final String NODE_MERGED_ITEMS = "mergedItems";
+
+    /**
+     * The value for the min SDK.
+     */
+    private int mMinSdk;
+
+    /**
+     * Cached resource keys that should not be in the final artifact. If null, then the
+     * cache will have to be recomputed. To clear the cache, use {@link #clearFilterCache()}.
+     */
+    @Nullable
+    private Set<String> mRejectCache;
+
+    /**
+     * Creates a new resource merger.
+     * @param minSdk the minimum SDK, used for filtering.
+     */
+    public ResourceMerger(int minSdk) {
+        mMinSdk = minSdk;
+    }
 
     /**
      * Override of the normal ResourceItem to handle merged item cases.
@@ -360,7 +385,167 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
 
     @Override
     public void addDataSet(ResourceSet resourceSet) {
-
         super.addDataSet(resourceSet);
+    }
+
+
+    /*
+     * Overridden to clear the cache filter between runs. Building the cache is relatively cheap
+     * and we're safer not reusing it between runs of mergeData.
+     */
+    @Override
+    public void mergeData(@NonNull MergeConsumer<ResourceItem> consumer, boolean doCleanUp)
+            throws MergingException {
+        clearFilterCache();
+        super.mergeData(consumer, doCleanUp);
+    }
+
+
+    @Override
+    protected boolean filterAccept(@NonNull ResourceItem dataItem) {
+        if (mRejectCache == null) {
+            buildCache();
+        }
+
+        /*
+         * We will accept all resources except those we explicitly know we can reject.
+         */
+        boolean accepted;
+        if (mRejectCache.contains(dataItem.getKey())) {
+            accepted = false;
+        } else {
+            accepted = true;
+        }
+
+        return accepted;
+    }
+
+    /**
+     * Builds the reject filter cache.
+     */
+    private void buildCache() {
+        mRejectCache = Sets.newHashSet();
+
+        /*
+         * Temporary cache. For each resource name, maps it to the best resource (min SDK and
+         * resource item) found so far. Because we need to filter by folder configuration, we
+         * maintain the best resource per folder configuration per resource.
+         *
+         * Only resource items whose min SDK is less
+         * than or equal to minSdk will be included here as all others will be accepted.
+         */
+        Table<String, FolderConfiguration, Pair<Integer, ResourceItem>> itemCache =
+                HashBasedTable.create();
+
+        /*
+         * Keys of resources we know we will accept. Only used to speed up resources with
+         * duplicate keys.
+         */
+        Set<String> acceptCache = Sets.newHashSet();
+
+        for (ResourceSet resourceSet : getDataSets()) {
+            ListMultimap<String, ResourceItem> map = resourceSet.getDataMap();
+            for (ResourceItem resourceItem : map.values()) {
+                /*
+                 * Resources in different libraries may end up with the same key.
+                 */
+                String resourceKey = resourceItem.getKey();
+
+                if (acceptCache.contains(resourceKey) || mRejectCache.contains(resourceKey)) {
+                    /*
+                     * Second time we're seeing this resource. We already know whether to
+                     * accept or reject it, so there's nothing to do.
+                     */
+                    continue;
+                }
+
+                if (resourceItem.getSourceType() != FileType.SINGLE_FILE) {
+                    /*
+                     * This is a resource that is contained in a file that has multiple items.
+                     * We never filter these out.
+                     */
+                    acceptCache.add(resourceKey);
+                    continue;
+                }
+
+                /*
+                 * Compute what the resource's qualifier is. Keep the SDK version separate
+                 * because we'll handle that in a special way.
+                 */
+                FolderConfiguration config = resourceItem.getConfiguration();
+                FolderConfiguration qualifierWithoutSdk;
+
+                int resourceMinSdk;
+                if (config.getVersionQualifier() == null
+                        || !config.getVersionQualifier().isValid()) {
+                    resourceMinSdk = 0;
+                    qualifierWithoutSdk = config;
+                } else {
+                    resourceMinSdk = config.getVersionQualifier().getVersion();
+                    qualifierWithoutSdk = FolderConfiguration.copyOf(config);
+                    qualifierWithoutSdk.removeQualifier(
+                            qualifierWithoutSdk.getVersionQualifier());
+                }
+
+                if (resourceMinSdk > mMinSdk) {
+                    /*
+                     * We only filter resources that have min SDK <= minSdk because others
+                     * cannot be guaranteed that won't be needed.
+                     */
+                    acceptCache.add(resourceKey);
+                    continue;
+                }
+
+                /*
+                 * Get the cache entry for the resource. resourceCacheId will contains a string
+                 * which is unique for resource type / resource name. Resources with the same
+                 * type or name but different qualifiers will have the same cache ID.
+                 */
+                String resourceCacheId = resourceItem.getType().getName()
+                        + SdkConstants.RES_QUALIFIER_SEP + resourceItem.getName();
+                Pair<Integer, ResourceItem> selectedResource = itemCache.get(resourceCacheId,
+                        qualifierWithoutSdk);
+
+                if (selectedResource == null) {
+                    /*
+                     * We have never found a resource for this folder configuration with an
+                     * SDK lower than or equal to minSdk.
+                     */
+                    selectedResource = Pair.of(resourceMinSdk, resourceItem);
+                    itemCache.put(resourceCacheId, qualifierWithoutSdk, selectedResource);
+                    acceptCache.add(resourceKey);
+                    continue;
+                }
+
+                if (selectedResource.getFirst() > resourceMinSdk) {
+                    /*
+                     * Cache has a better resource that is still lower than or equal to minSdk.
+                     * The current resource will never be used so it will be added to the
+                     * reject set.
+                     */
+                    mRejectCache.add(resourceKey);
+                } else {
+                    /*
+                     * The current resource is better than or equal to the one in the cache
+                     * and is still lower than or equal to minSdk. This means we will
+                     * want to use the current one instead of the one we placed in the cache.
+                     */
+                    String removeKey = selectedResource.getSecond().getKey();
+                    acceptCache.remove(removeKey);
+                    mRejectCache.add(removeKey);
+                    acceptCache.add(resourceKey);
+
+                    selectedResource = Pair.of(resourceMinSdk, resourceItem);
+                    itemCache.put(resourceCacheId, qualifierWithoutSdk, selectedResource);
+                }
+            }
+        }
+    }
+
+    /**
+     * Clears the filter cache.
+     */
+    private void clearFilterCache() {
+        mRejectCache = null;
     }
 }
