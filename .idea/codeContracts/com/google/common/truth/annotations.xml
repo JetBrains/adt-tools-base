@@ -1,0 +1,7 @@
+<root>
+  <item name='com.google.common.truth.Subject void failWithRawMessage(java.lang.String, java.lang.Object...)'>
+    <annotation name='org.jetbrains.annotations.Contract'>
+      <val val="&quot;_, _ -&gt; fail&quot;"/>
+    </annotation>
+  </item>
+</root>
