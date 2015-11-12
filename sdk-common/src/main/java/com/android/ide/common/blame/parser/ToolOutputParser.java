@@ -86,7 +86,7 @@ public class ToolOutputParser {
                 }
             }
             else {
-                // If none of the standard parsers recogni ze the input, include it as info such
+                // If none of the standard parsers recognize the input, include it as info such
                 // that users don't miss potentially vital output such as gradle plugin exceptions.
                 // If there is predictable useless input we don't want to appear here, add a custom
                 // parser to digest it.
