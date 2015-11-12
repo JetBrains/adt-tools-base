@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,184 +14,289 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.tasks
+package com.android.build.gradle.tasks;
 
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.build.FilterData
-import com.android.build.OutputFile.FilterType
-import com.android.build.OutputFile.OutputType
-import com.android.build.gradle.api.ApkOutputFile
-import com.android.build.gradle.internal.model.FilterDataImpl
-import com.google.common.collect.ImmutableList
-import com.google.common.util.concurrent.Callables
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.OutputFiles
-import org.gradle.api.tasks.ParallelizableTask
-import org.gradle.api.tasks.TaskAction
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.FilterData;
+import com.android.build.OutputFile.FilterType;
+import com.android.build.OutputFile.OutputType;
+import com.android.build.gradle.api.ApkOutputFile;
+import com.android.build.gradle.internal.model.FilterDataImpl;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.Callables;
 
-import java.util.regex.Matcher
-import java.util.regex.Pattern
+import org.gradle.api.Action;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.OutputFiles;
+import org.gradle.api.tasks.ParallelizableTask;
+import org.gradle.api.tasks.TaskAction;
+import org.gradle.process.ExecSpec;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Task to zip align all the splits
  */
 @ParallelizableTask
-class SplitZipAlign extends SplitRelatedTask {
+public class SplitZipAlign extends SplitRelatedTask {
+
+    private List<File> densityOrLanguageInputFiles = new ArrayList<File>();
+
+    private List<File> abiInputFiles = new ArrayList<File>();
+
+    private String outputBaseName;
+
+    private Set<String> densityFilters;
+
+    private Set<String> abiFilters;
+
+    private Set<String> languageFilters;
+
+    private File outputDirectory;
+
+    private File zipAlignExe;
+
+    @Nullable
+    private File apkMetadataFile;
 
     @InputFiles
-    List<File> densityOrLanguageInputFiles = new ArrayList<>();
+    public List<File> getDensityOrLanguageInputFiles() {
+        return densityOrLanguageInputFiles;
+    }
 
     @InputFiles
-    List<File> abiInputFiles = new ArrayList<>()
+    public List<File> getAbiInputFiles() {
+        return abiInputFiles;
+    }
 
     @Input
-    String outputBaseName;
+    public String getOutputBaseName() {
+        return outputBaseName;
+    }
+
+    public void setOutputBaseName(String outputBaseName) {
+        this.outputBaseName = outputBaseName;
+    }
 
     @Input
-    Set<String> densityFilters;
+    public Set<String> getDensityFilters() {
+        return densityFilters;
+    }
+
+    public void setDensityFilters(Set<String> densityFilters) {
+        this.densityFilters = densityFilters;
+    }
 
     @Input
-    Set<String> abiFilters;
+    public Set<String> getAbiFilters() {
+        return abiFilters;
+    }
+
+    public void setAbiFilters(Set<String> abiFilters) {
+        this.abiFilters = abiFilters;
+    }
 
     @Input
-    Set<String> languageFilters;
+    public Set<String> getLanguageFilters() {
+        return languageFilters;
+    }
 
-    File outputDirectory;
+    public void setLanguageFilters(Set<String> languageFilters) {
+        this.languageFilters = languageFilters;
+    }
+
+    public File getOutputDirectory() {
+        return outputDirectory;
+    }
+
+    public void setOutputDirectory(File outputDirectory) {
+        this.outputDirectory = outputDirectory;
+    }
 
     @InputFile
-    File zipAlignExe
+    public File getZipAlignExe() {
+        return zipAlignExe;
+    }
+
+    public void setZipAlignExe(File zipAlignExe) {
+        this.zipAlignExe = zipAlignExe;
+    }
+
+    @Override
+    @OutputFile
+    @Nullable
+    public File getApkMetadataFile() {
+        return apkMetadataFile;
+    }
+
+    public void setApkMetadataFile(@Nullable File apkMetadataFile) {
+        this.apkMetadataFile = apkMetadataFile;
+    }
 
     @OutputFiles
     public List<File> getOutputFiles() {
-        getOutputSplitFiles()*.getOutputFile()
-    }
-
-    @OutputFile
-    @Nullable
-    File apkMetadataFile
-
-    @NonNull
-    List<File> getInputFiles() {
-        return getDensityOrLanguageInputFiles() + getAbiInputFiles();
-    }
-
-    @NonNull
-    public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
-
-        ImmutableList.Builder<ApkOutputFile> outputFiles = ImmutableList.builder();
-        Closure addingLogic = { String split, File file ->
-            outputFiles.add(new ApkOutputFile(OutputType.SPLIT,
-                    ImmutableList.<FilterData>of(
-                            FilterDataImpl.build(
-                                    getFilterType(split).toString(), getFilter(split))),
-                    Callables.<File>returning(
-                            new File(outputDirectory,
-                                    "${project.archivesBaseName}-${outputBaseName}_${split}.apk"))))
+        ImmutableList.Builder<File> builder = ImmutableList.builder();
+        for (ApkOutputFile outputFile : getOutputSplitFiles()) {
+            builder.add(outputFile.getOutputFile());
         }
-
-        forEachUnalignedInput(addingLogic)
-        forEachUnsignedInput(addingLogic)
-        return outputFiles.build()
+        return builder.build();
     }
 
-    FilterType getFilterType(String filter) {
+    @NonNull
+    public List<File> getInputFiles() {
+        return ImmutableList.copyOf(
+                Iterables.concat(getDensityOrLanguageInputFiles(), getAbiInputFiles()));
+    }
+
+    @Override
+    @NonNull
+    public synchronized ImmutableList<ApkOutputFile> getOutputSplitFiles() {
+        final String archivesBaseName = (String)getProject().getProperties().get("archivesBaseName");
+
+        final ImmutableList.Builder<ApkOutputFile> outputFiles = ImmutableList.builder();
+        InputProcessor addingLogic = new InputProcessor() {
+            @Override
+            public void process(String split, File file) {
+                outputFiles.add(new ApkOutputFile(
+                        OutputType.SPLIT,
+                        ImmutableList.of(
+                                FilterDataImpl.build(
+                                        getFilterType(split).toString(),
+                                        getFilter(split))),
+                        Callables.returning(
+                                new File(
+                                        outputDirectory,
+                                        archivesBaseName + "-" + outputBaseName + "_" + split
+                                                + ".apk"))));
+
+            }
+        };
+
+        forEachUnalignedInput(addingLogic);
+        forEachUnsignedInput(addingLogic);
+        return outputFiles.build();
+    }
+
+    public FilterType getFilterType(String filter) {
         String languageName = PackageSplitRes.unMangleSplitName(filter);
         if (languageFilters.contains(languageName)) {
-            return FilterType.LANGUAGE
+            return FilterType.LANGUAGE;
         }
+
         if (abiFilters.contains(filter)) {
-            return FilterType.ABI
+            return FilterType.ABI;
         }
-        return FilterType.DENSITY
+
+        return FilterType.DENSITY;
     }
 
-    String getFilter(String filterWithPossibleSuffix) {
-        FilterType type = getFilterType(filterWithPossibleSuffix)
+    public String getFilter(String filterWithPossibleSuffix) {
+        FilterType type = getFilterType(filterWithPossibleSuffix);
         if (type == FilterType.DENSITY) {
             for (String density : densityFilters) {
                 if (filterWithPossibleSuffix.startsWith(density)) {
-                    return density
+                    return density;
                 }
             }
         }
+
         if (type == FilterType.LANGUAGE) {
-            return PackageSplitRes.unMangleSplitName(filterWithPossibleSuffix)
+            return PackageSplitRes.unMangleSplitName(filterWithPossibleSuffix);
         }
-        return filterWithPossibleSuffix
+        return filterWithPossibleSuffix;
     }
 
     /**
      * Returns true if the passed string is one of the filter we must process potentially followed
      * by a prefix (some density filters get V4, V16, etc... appended).
      */
-    boolean isFilter(String potentialFilterWithSuffix) {
+    public boolean isFilter(String potentialFilterWithSuffix) {
         for (String density : densityFilters) {
             if (potentialFilterWithSuffix.startsWith(density)) {
-                return true
+                return true;
             }
         }
-        if (abiFilters.contains(potentialFilterWithSuffix)) {
-            return true
-        }
-        if (languageFilters.contains(
-                PackageSplitRes.unMangleSplitName(potentialFilterWithSuffix))) {
-            return true
-        }
-        return false
+
+        return abiFilters.contains(potentialFilterWithSuffix)
+                || languageFilters.contains(
+                        PackageSplitRes.unMangleSplitName(potentialFilterWithSuffix));
+
     }
 
-    private void forEachUnalignedInput(Closure closure) {
+    private interface InputProcessor {
+        void process(String split, File file);
+    }
+
+    private void forEachUnalignedInput(InputProcessor processor) {
+        String archivesBaseName = (String)getProject().getProperties().get("archivesBaseName");
         Pattern unalignedPattern = Pattern.compile(
-                "${project.archivesBaseName}-${outputBaseName}_(.*)-unaligned.apk")
+                archivesBaseName + "-" + outputBaseName + "_(.*)-unaligned.apk");
 
         for (File file : getInputFiles()) {
-            Matcher unaligned = unalignedPattern.matcher(file.getName())
+            Matcher unaligned = unalignedPattern.matcher(file.getName());
             if (unaligned.matches() && isFilter(unaligned.group(1))) {
-                closure(unaligned.group(1), file);
+                processor.process(unaligned.group(1), file);
             }
         }
     }
 
-    private void forEachUnsignedInput(Closure closure) {
+    private void forEachUnsignedInput(InputProcessor processor) {
+        String archivesBaseName = (String)getProject().getProperties().get("archivesBaseName");
         Pattern unsignedPattern = Pattern.compile(
-                "${project.archivesBaseName}-${outputBaseName}_(.*)-unsigned.apk")
+                archivesBaseName + "-" + outputBaseName + "_(.*)-unsigned.apk");
 
         for (File file : getInputFiles()) {
-            Matcher unsigned = unsignedPattern.matcher(file.getName())
+            Matcher unsigned = unsignedPattern.matcher(file.getName());
             if (unsigned.matches() && isFilter(unsigned.group(1))) {
-                closure(unsigned.group(1), file)
+                processor.process(unsigned.group(1), file);
             }
+
         }
+
     }
 
     @TaskAction
-    void splitZipAlign() {
+    public void splitZipAlign() throws IOException {
+        final String archivesBaseName = (String)getProject().getProperties().get("archivesBaseName");
 
-        Closure zipAlignIt = { String split, File file ->
-            File out = new File(getOutputDirectory(),
-                    "${project.archivesBaseName}-${outputBaseName}_${split}.apk")
-            project.exec {
-                executable = getZipAlignExe()
-                args '-f', '4'
-                args file.absolutePath
-                args out
+        InputProcessor zipAlignIt = new InputProcessor() {
+            @Override
+            public void process(final String split, final File file) {
+                final File out = new File(getOutputDirectory(),
+                        archivesBaseName + "-" + outputBaseName + "_" + split + ".apk");
+                getProject().exec(new Action<ExecSpec>() {
+                    @Override
+                    public void execute(ExecSpec execSpec) {
+                        execSpec.setExecutable(getZipAlignExe());
+                        execSpec.args("-f", "4");
+                        execSpec.args(file.getAbsolutePath());
+                        execSpec.args(out);
+                    }
+                });
             }
-        }
-        forEachUnalignedInput(zipAlignIt)
-        forEachUnsignedInput(zipAlignIt)
-        saveApkMetadataFile()
+        };
+        forEachUnalignedInput(zipAlignIt);
+        forEachUnsignedInput(zipAlignIt);
+        saveApkMetadataFile();
     }
 
     @Override
-    List<FilterData> getSplitsData() {
+    public List<FilterData> getSplitsData() {
         ImmutableList.Builder<FilterData> filterDataBuilder = ImmutableList.builder();
-        addAllFilterData(filterDataBuilder, densityFilters, FilterType.DENSITY);
-        addAllFilterData(filterDataBuilder, languageFilters, FilterType.LANGUAGE);
-        addAllFilterData(filterDataBuilder, abiFilters, FilterType.ABI);
+        SplitRelatedTask.addAllFilterData(filterDataBuilder, densityFilters, FilterType.DENSITY);
+        SplitRelatedTask.addAllFilterData(filterDataBuilder, languageFilters, FilterType.LANGUAGE);
+        SplitRelatedTask.addAllFilterData(filterDataBuilder, abiFilters, FilterType.ABI);
         return filterDataBuilder.build();
     }
 }
