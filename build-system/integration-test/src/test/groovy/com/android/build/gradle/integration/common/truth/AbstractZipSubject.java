@@ -36,6 +36,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 /**
@@ -49,8 +50,14 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
         new FileSubject(failureStrategy, subject).exists();
     }
 
+    @Nullable
     private ZipFile getZip() throws IOException {
-        return new ZipFile(subject);
+        try {
+            return new ZipFile(subject);
+        } catch (ZipException e) {
+            failWithRawMessage("Problem opening zip %s", subject);
+            return null;
+        }
     }
 
     /**
@@ -59,6 +66,9 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void contains(@NonNull String path) throws IOException {
         ZipFile zip = getZip();
+        if (zip == null) {
+            return;
+        }
         try {
             if (zip.getEntry(path) == null) {
                 failWithRawMessage("'%s' does not contain '%s'", zip.getName(), path);
@@ -73,6 +83,9 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      */
     public void doesNotContain(@NonNull String path) throws IOException {
         ZipFile zip = getZip();
+        if (zip == null) {
+            return;
+        }
         try {
             if (zip.getEntry(path) != null) {
                 failWithRawMessage("'%s' unexpectedly contains '%s'", zip.getName(), path);

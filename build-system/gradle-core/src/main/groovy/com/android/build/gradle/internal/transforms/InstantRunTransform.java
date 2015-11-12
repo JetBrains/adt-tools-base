@@ -113,7 +113,7 @@ public class InstantRunTransform extends Transform {
     @NonNull
     @Override
     public Set<QualifiedContent.Scope> getScopes() {
-        return Sets.immutableEnumSet(Scope.PROJECT);
+        return Sets.immutableEnumSet(Scope.PROJECT, Scope.SUB_PROJECTS);
     }
 
     @NonNull
@@ -121,8 +121,7 @@ public class InstantRunTransform extends Transform {
     public Set<Scope> getReferencedScopes() {
         return Sets.immutableEnumSet(Scope.EXTERNAL_LIBRARIES,
                 Scope.PROJECT_LOCAL_DEPS,
-                Scope.SUB_PROJECTS_LOCAL_DEPS,
-                Scope.SUB_PROJECTS);
+                Scope.SUB_PROJECTS_LOCAL_DEPS);
     }
 
     @Override
@@ -171,10 +170,10 @@ public class InstantRunTransform extends Transform {
                     getScopes(), Format.DIRECTORY);
 
             for (TransformInput input : inputs) {
-                for (DirectoryInput DirectoryInput : input.getDirectoryInputs()) {
-                    File inputDir = DirectoryInput.getFile();
+                for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
+                    File inputDir = directoryInput.getFile();
                     if (isIncremental) {
-                        for (Map.Entry<File, Status> fileEntry : DirectoryInput.getChangedFiles()
+                        for (Map.Entry<File, Status> fileEntry : directoryInput.getChangedFiles()
                                 .entrySet()) {
 
                             File inputFile = fileEntry.getKey();
@@ -219,7 +218,6 @@ public class InstantRunTransform extends Transform {
                     } else {
                         // non incremental mode, we need to traverse the TransformInput#getFiles() folder}
                         for (File file : Files.fileTreeTraverser().breadthFirstTraversal(inputDir)) {
-
                             if (file.isDirectory()) {
                                 continue;
                             }
@@ -314,8 +312,8 @@ public class InstantRunTransform extends Transform {
     private static void addAllClassLocations(TransformInput transformInput, List<URL> into)
             throws MalformedURLException {
 
-        for (DirectoryInput DirectoryInput : transformInput.getDirectoryInputs()) {
-            into.add(DirectoryInput.getFile().toURI().toURL());
+        for (DirectoryInput directoryInput : transformInput.getDirectoryInputs()) {
+            into.add(directoryInput.getFile().toURI().toURL());
         }
         for (JarInput jarInput : transformInput.getJarInputs()) {
             into.add(new URL("jar:" + jarInput.getFile().toURI().toURL() + "!/"));

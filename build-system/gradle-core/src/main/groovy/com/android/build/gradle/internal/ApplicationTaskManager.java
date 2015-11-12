@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
@@ -24,6 +25,7 @@ import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.transforms.ExtractJarsTransform;
 import com.android.build.gradle.internal.transforms.InstantRunTransform;
 import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
@@ -35,6 +37,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
 
 import org.gradle.api.Project;
@@ -261,8 +264,14 @@ public class ApplicationTaskManager extends TaskManager {
     protected void createIncrementalSupportTasks(TaskFactory tasks, VariantScope variantScope) {
 
         if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
-
             TransformManager transformManager = variantScope.getTransformManager();
+
+            ExtractJarsTransform extractJarsTransform = new ExtractJarsTransform(
+                    ImmutableSet.<QualifiedContent.ContentType>of(
+                            QualifiedContent.DefaultContentType.CLASSES),
+                    ImmutableSet.of(Scope.SUB_PROJECTS));
+            AndroidTask<TransformTask> extractJarsTask = transformManager
+                    .addTransform(tasks, variantScope, extractJarsTransform);
 
             // always run the verifier first, since if it detects incompatible changes, we
             // should skip bytecode enhancements of the changed classes.
@@ -270,6 +279,7 @@ public class ApplicationTaskManager extends TaskManager {
                     new InstantRunVerifierTransform(variantScope);
             AndroidTask<TransformTask> verifierTask = transformManager
                     .addTransform(tasks, variantScope, verifierTransform);
+            verifierTask.dependsOn(tasks, extractJarsTask);
 
             InstantRunTransform instantRunTransform = new InstantRunTransform(variantScope);
             AndroidTask<TransformTask> instantRunTask = transformManager

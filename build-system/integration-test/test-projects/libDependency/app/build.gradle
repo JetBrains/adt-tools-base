@@ -1,0 +1,13 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion rootProject.latestCompileSdk
+    buildToolsVersion = rootProject.buildToolsVersion
+}
+
+//
+// A basic Android application split over a library and a main project.
+//
+dependencies {
+    compile project(':lib')
+}
