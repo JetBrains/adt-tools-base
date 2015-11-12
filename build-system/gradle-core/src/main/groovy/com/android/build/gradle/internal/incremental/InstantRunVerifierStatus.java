@@ -19,7 +19,13 @@ package com.android.build.gradle.internal.incremental;
 /**
  * Changes to a class that cannot be hot swapped with the current InstantRun runtime
  */
-public enum IncompatibleChange {
+public enum InstantRunVerifierStatus {
+
+    // changes are compatible with current InstantRun features.
+    COMPATIBLE,
+
+    // the verifier did not run successfully.
+    NOT_RUN,
 
     // InstantRun disabled on element like a method, class or package.
     INSTANT_RUN_DISABLED,

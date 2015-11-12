@@ -22,6 +22,9 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
@@ -33,7 +36,6 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
-import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.builder.core.AndroidBuilder;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
@@ -63,7 +65,13 @@ public class InstantRunTransformTest {
     Context context;
 
     @Mock
+    VariantScope variantScope;
+
+    @Mock
     GlobalScope globalScope;
+
+    @Mock
+    InstantRunBuildContext instantRunBuildContext;
 
     @Before
     public void setUpMock() {
@@ -71,6 +79,8 @@ public class InstantRunTransformTest {
         AndroidBuilder mockBuilder = Mockito.mock(AndroidBuilder.class);
         when(mockBuilder.getBootClasspath(true)).thenReturn(ImmutableList.<File>of());
         when(globalScope.getAndroidBuilder()).thenReturn(mockBuilder);
+        when(variantScope.getGlobalScope()).thenReturn(globalScope);
+        when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
     }
 
     @Test
@@ -79,7 +89,7 @@ public class InstantRunTransformTest {
         final ImmutableList.Builder<File> filesElectedForClasses2Transformation = ImmutableList.builder();
         final ImmutableList.Builder<File> filesElectedForClasses3Transformation = ImmutableList.builder();
 
-        InstantRunTransform transform = new InstantRunTransform(globalScope) {
+        InstantRunTransform transform = new InstantRunTransform(variantScope) {
             @Override
             protected void transformToClasses2Format(
                     @NonNull File inputDir, @NonNull File inputFile, @NonNull File outputDir, @NonNull RecordingPolicy recordingPolicy)
@@ -185,7 +195,7 @@ public class InstantRunTransformTest {
         final ImmutableList.Builder<File> filesElectedForClasses2Transformation = ImmutableList.builder();
         final ImmutableList.Builder<File> filesElectedForClasses3Transformation = ImmutableList.builder();
 
-        InstantRunTransform transform = new InstantRunTransform(globalScope) {
+        InstantRunTransform transform = new InstantRunTransform(variantScope) {
             @Override
             protected void transformToClasses2Format(
                     @NonNull File inputDir, @NonNull File inputFile, @NonNull File outputDir, @NonNull RecordingPolicy recordingPolicy)

@@ -36,9 +36,11 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.IncrementalChangeVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalSupportVisitor;
 import com.android.build.gradle.internal.incremental.IncrementalVisitor;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Throwables;
@@ -75,11 +77,11 @@ public class InstantRunTransform extends Transform {
     private final ImmutableList.Builder<String> generatedClasses2Files = ImmutableList.builder();
     private final ImmutableList.Builder<String> generatedClasses3Names = ImmutableList.builder();
     private final ImmutableList.Builder<String> generatedClasses3Files = ImmutableList.builder();
-    private final GlobalScope globalScope;
+    private final VariantScope variantScope;
 
 
-    public InstantRunTransform(GlobalScope globalScope) {
-        this.globalScope = globalScope;
+    public InstantRunTransform(VariantScope variantScope) {
+        this.variantScope = variantScope;
     }
 
     enum RecordingPolicy {RECORD, DO_NOT_RECORD}
@@ -152,6 +154,8 @@ public class InstantRunTransform extends Transform {
 
         ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
         try {
+            variantScope.getInstantRunBuildContext().startRecording(
+                    InstantRunBuildContext.TaskType.INSTANT_RUN_TRANSFORM);
             Thread.currentThread().setContextClassLoader(urlClassLoader);
 
             File classesTwoOutput = outputProvider.getContentLocation("main",
@@ -235,6 +239,8 @@ public class InstantRunTransform extends Transform {
             wrapUpOutputs(classesTwoOutput, classesThreeOutput);
         } finally {
             Thread.currentThread().setContextClassLoader(currentClassLoader);
+            variantScope.getInstantRunBuildContext().stopRecording(
+                    InstantRunBuildContext.TaskType.INSTANT_RUN_TRANSFORM);
         }
     }
 
@@ -267,7 +273,7 @@ public class InstantRunTransform extends Transform {
         List<URL> referencedInputUrls = new ArrayList<URL>();
 
         // add the bootstrap classpath for jars like android.jar
-        for (File file : globalScope.getAndroidBuilder().getBootClasspath(
+        for (File file : variantScope.getGlobalScope().getAndroidBuilder().getBootClasspath(
                 true /* includeOptionalLibraries */)) {
             referencedInputUrls.add(file.toURI().toURL());
         }

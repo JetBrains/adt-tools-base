@@ -28,7 +28,8 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
-import com.android.build.gradle.internal.incremental.IncompatibleChange;
+import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.utils.FileUtils;
@@ -69,9 +70,13 @@ public class InstantRunVerifierTransformTest {
     @Mock
     TransformOutputProvider TransformOutputProvider;
 
+    @Mock
+    InstantRunBuildContext instantRunBuildContext;
+
     @Before
     public void setUpMock() {
         when(variantScope.getIncrementalVerifierDir()).thenReturn(backupDir);
+        when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
     }
 
     @Test
@@ -191,7 +196,7 @@ public class InstantRunVerifierTransformTest {
         // changed class should have been verified
         assertThat(recordedVerification).hasSize(1);
         assertThat(recordedVerification).containsEntry(
-                changedFile, lastIterationChangedFile);
+                lastIterationChangedFile, changedFile);
 
         // new classes should have been copied, and changed ones updated.
         assertThat(recordedCopies).hasSize(2);
@@ -323,7 +328,7 @@ public class InstantRunVerifierTransformTest {
         // input class should have been verified.
         assertThat(recordedVerification).hasSize(5);
         for (int i=0; i<5; i++) {
-            assertThat(recordedVerification).containsEntry(files[i], lastIterationFiles[i]);
+            assertThat(recordedVerification).containsEntry(lastIterationFiles[i], files[i]);
         }
         // and updated...
         assertThat(recordedCopies).hasSize(5);
@@ -335,15 +340,16 @@ public class InstantRunVerifierTransformTest {
 
         return new InstantRunVerifierTransform(variantScope) {
 
+            @NonNull
             @Override
-            protected IncompatibleChange runVerifier(String name,
-                    final InstantRunVerifier.ClassBytesProvider originalClass ,
-                    final InstantRunVerifier.ClassBytesProvider updatedClass) throws IOException {
+            protected InstantRunVerifierStatus runVerifier(String name,
+                    @NonNull final InstantRunVerifier.ClassBytesProvider originalClass ,
+                    @NonNull final InstantRunVerifier.ClassBytesProvider updatedClass) throws IOException {
 
                 recordedVerification.put(
                         ((InstantRunVerifier.ClassBytesFileProvider) originalClass).getFile(),
                         ((InstantRunVerifier.ClassBytesFileProvider) updatedClass).getFile());
-                return null;
+                return InstantRunVerifierStatus.COMPATIBLE;
             }
 
             @Override

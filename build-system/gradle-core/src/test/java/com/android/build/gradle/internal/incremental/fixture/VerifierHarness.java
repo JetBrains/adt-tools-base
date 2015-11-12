@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.incremental.fixture;
 
-import com.android.build.gradle.internal.incremental.IncompatibleChange;
+import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier;
 
 import java.io.File;
@@ -39,7 +39,7 @@ public class VerifierHarness {
         baseFolder = new File(incrementalTestClasses, "base");
     }
 
-    public IncompatibleChange verify(Class clazz, String patchLevel) throws IOException {
+    public InstantRunVerifierStatus verify(Class clazz, String patchLevel) throws IOException {
         String fqcn = clazz.getName();
         File originalFile = new File(baseFolder, fqcn.replace('.', File.separatorChar) + ".class");
         File patchedFile;

@@ -29,7 +29,8 @@ import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.internal.LoggerWrapper;
-import com.android.build.gradle.internal.incremental.IncompatibleChange;
+import com.android.build.gradle.internal.incremental.InstantRunVerifierStatus;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier;
 import com.android.build.gradle.internal.incremental.InstantRunVerifier.ClassBytesJarEntryProvider;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -39,7 +40,6 @@ import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -83,10 +83,10 @@ public class InstantRunVerifierTransform extends Transform {
     public static class VerificationResult {
 
         @Nullable
-        private final IncompatibleChange changes;
+        private final InstantRunVerifierStatus changes;
 
         @VisibleForTesting
-        VerificationResult(@Nullable IncompatibleChange changes) {
+        VerificationResult(@Nullable InstantRunVerifierStatus changes) {
             this.changes = changes;
         }
 
@@ -111,13 +111,17 @@ public class InstantRunVerifierTransform extends Transform {
             @Nullable TransformOutputProvider outputProvider, boolean isIncremental)
             throws IOException, TransformException, InterruptedException {
 
-        long startTime = System.currentTimeMillis();
         if (referencedInputs.isEmpty()) {
             throw new RuntimeException("Empty list of referenced inputs");
         }
-        doTransform(referencedInputs, isIncremental);
-        LOGGER.info(String.format("Wall time for verifier : %1$d ms",
-                System.currentTimeMillis() - startTime));
+        try {
+            variantScope.getInstantRunBuildContext().startRecording(
+                    InstantRunBuildContext.TaskType.VERIFIER);
+            doTransform(referencedInputs, isIncremental);
+        } finally {
+            variantScope.getInstantRunBuildContext().stopRecording(
+                    InstantRunBuildContext.TaskType.VERIFIER);
+        }
     }
 
     public void doTransform(@NonNull Collection<TransformInput> inputs, boolean isIncremental)
@@ -129,21 +133,20 @@ public class InstantRunVerifierTransform extends Transform {
             FileUtils.mkdirs(outputDir);
         }
 
-        Optional<IncompatibleChange> resultSoFar = Optional.absent();
+        InstantRunVerifierStatus resultSoFar = InstantRunVerifierStatus.COMPATIBLE;
         for (TransformInput transformInput : inputs) {
             resultSoFar = processFolderInputs(isIncremental, transformInput);
             resultSoFar = processJarInputs(resultSoFar, transformInput);
         }
-        // So far, a null changes means success.
-        variantScope.setVerificationResult(new VerificationResult(resultSoFar.orNull()));
+        variantScope.getInstantRunBuildContext().setVerifierResult(resultSoFar);
     }
 
     @NonNull
-    private Optional<IncompatibleChange> processFolderInputs(
+    private InstantRunVerifierStatus processFolderInputs(
             boolean isIncremental,
             @NonNull TransformInput transformInput) throws IOException {
 
-        Optional<IncompatibleChange> verificationResult = Optional.absent();
+        InstantRunVerifierStatus verificationResult = InstantRunVerifierStatus.COMPATIBLE;
         for (DirectoryInput DirectoryInput : transformInput.getDirectoryInputs()) {
 
             File inputDir = DirectoryInput.getFile();
@@ -186,9 +189,13 @@ public class InstantRunVerifierTransform extends Transform {
                         // a new version of the class has been compiled, we should compare
                         // it with the one saved during the last iteration on the file, but only
                         // if we have not failed any verification so far.
-                        if (!verificationResult.isPresent()) {
-                            verificationResult = Optional.fromNullable(
-                                    verifyAndSaveFile(inputFile, lastIterationFile));
+                        if (verificationResult == InstantRunVerifierStatus.COMPATIBLE
+                                && lastIterationFile.exists()) {
+                            verificationResult = runVerifier(inputFile.getName(),
+                                    new InstantRunVerifier.ClassBytesFileProvider(lastIterationFile),
+                                    new InstantRunVerifier.ClassBytesFileProvider(inputFile));
+                            LOGGER.verbose("%1$s : verifier result : %2$s",
+                                    inputFile.getName(), verificationResult);
                         }
 
                         // always copy the new file over to our private backup directory for the
@@ -204,13 +211,12 @@ public class InstantRunVerifierTransform extends Transform {
 
             }
         }
-        // all changes are compatible.
         return verificationResult;
     }
 
     @NonNull
-    private Optional<IncompatibleChange> processJarInputs(
-            @NonNull Optional<IncompatibleChange> resultSoFar,
+    private InstantRunVerifierStatus processJarInputs(
+            @NonNull InstantRunVerifierStatus resultSoFar,
             @NonNull TransformInput transformInput) throws IOException {
 
         // can jarInput have colliding names ?
@@ -229,13 +235,12 @@ public class InstantRunVerifierTransform extends Transform {
                     break;
                 case CHANGED:
                     // get a Map of the back up jar entries indexed by name.
-                    if (!resultSoFar.isPresent()) {
+                    if (resultSoFar != InstantRunVerifierStatus.COMPATIBLE) {
                         JarFile backupJarFile = new JarFile(backupJar);
                         try {
                             JarFile jarFile = new JarFile(jarInput.getFile());
                             try {
-                                resultSoFar = Optional.fromNullable(
-                                        processChangedJar(backupJarFile, jarFile));
+                                resultSoFar = processChangedJar(backupJarFile, jarFile);
                             } finally {
                                 jarFile.close();
                             }
@@ -252,11 +257,11 @@ public class InstantRunVerifierTransform extends Transform {
                             + jarInput.getStatus());
             }
         }
-        // all changes are compatible.
         return resultSoFar;
     }
 
-    private IncompatibleChange processChangedJar(JarFile backupJar, JarFile newJar)
+    @NonNull
+    private InstantRunVerifierStatus processChangedJar(JarFile backupJar, JarFile newJar)
             throws IOException {
 
         Map<String, JarEntry> backupEntries = new HashMap<String, JarEntry>();
@@ -272,51 +277,42 @@ public class InstantRunVerifierTransform extends Transform {
             if (jarEntry.getName().endsWith(".class")) {
                 JarEntry backupEntry = backupEntries.get(jarEntry.getName());
                 if (backupEntry != null) {
-                    IncompatibleChange verificationResult =
+                    InstantRunVerifierStatus verificationResult =
                             runVerifier(
                                     newJar.getName() + ":" + jarEntry.getName(),
                                     new ClassBytesJarEntryProvider(backupJar, backupEntry),
                                     new ClassBytesJarEntryProvider(newJar, jarEntry));
-                    if (verificationResult != null) {
+                    if (verificationResult != InstantRunVerifierStatus.COMPATIBLE) {
                         return verificationResult;
                     }
                 }
 
             }
         }
-        return null;
-    }
-
-    @Nullable
-    private IncompatibleChange verifyAndSaveFile(
-            @NonNull File lastIterationFile,
-            @NonNull File newFile) throws IOException {
-
-        IncompatibleChange verificationResult = null;
-        if (lastIterationFile.exists()) {
-            verificationResult = runVerifier(newFile.getName(),
-                    new InstantRunVerifier.ClassBytesFileProvider(lastIterationFile),
-                    new InstantRunVerifier.ClassBytesFileProvider(newFile));
-            LOGGER.verbose(
-                    "%1$s : verifier result : %2$s", newFile.getName(), verificationResult);
-        }
-        return verificationResult;
+        return InstantRunVerifierStatus.COMPATIBLE;
     }
 
     @VisibleForTesting
-    @Nullable
-    protected IncompatibleChange runVerifier(String name,
+    @NonNull
+    protected InstantRunVerifierStatus runVerifier(String name,
             @NonNull final InstantRunVerifier.ClassBytesProvider originalClass ,
             @NonNull final InstantRunVerifier.ClassBytesProvider updatedClass) throws IOException {
 
-        return ThreadRecorder.get().record(ExecutionType.TASK_FILE_VERIFICATION,
-                new Recorder.Block<IncompatibleChange>() {
+        InstantRunVerifierStatus status = ThreadRecorder.get().record(
+                ExecutionType.TASK_FILE_VERIFICATION,
+                new Recorder.Block<InstantRunVerifierStatus>() {
                     @Override
-                    public IncompatibleChange call() throws Exception {
+                    @NonNull
+                    public InstantRunVerifierStatus call() throws Exception {
                         return InstantRunVerifier.run(originalClass, updatedClass);
                     }
                 }, new Recorder.Property("target", name)
         );
+        if (status == null) {
+            LOGGER.warning("No verifier result provided for %1$s", name);
+            return InstantRunVerifierStatus.NOT_RUN;
+        }
+        return status;
     }
 
     @VisibleForTesting

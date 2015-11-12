@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.*;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -134,31 +136,31 @@ public class InstantRunVerifier {
     }
 
 
-    public static IncompatibleChange run(File original, File updated) throws IOException {
+    public static InstantRunVerifierStatus run(File original, File updated) throws IOException {
         return run(new ClassBytesFileProvider(original), new ClassBytesFileProvider(updated));
     }
 
     // ASM API not generified.
     @SuppressWarnings("unchecked")
-    @Nullable
-    public static IncompatibleChange run(ClassBytesProvider original, ClassBytesProvider updated)
+    @NonNull
+    public static InstantRunVerifierStatus run(ClassBytesProvider original, ClassBytesProvider updated)
             throws IOException {
 
         ClassNode originalClass = loadClass(original);
         ClassNode updatedClass = loadClass(updated);
 
         if (!originalClass.superName.equals(updatedClass.superName)) {
-            return IncompatibleChange.PARENT_CLASS_CHANGED;
+            return PARENT_CLASS_CHANGED;
         }
 
         if (diffList(originalClass.interfaces, updatedClass.interfaces,
                 OBJECT_COMPARATOR) != Diff.NONE) {
-            return IncompatibleChange.IMPLEMENTED_INTERFACES_CHANGE;
+            return IMPLEMENTED_INTERFACES_CHANGE;
         }
 
         if (diffList(originalClass.visibleAnnotations, updatedClass.visibleAnnotations,
                 ANNOTATION_COMPARATOR) != Diff.NONE) {
-            return IncompatibleChange.CLASS_ANNOTATION_CHANGE;
+            return CLASS_ANNOTATION_CHANGE;
         }
 
         // check if the class is InstantRunDisabled.
@@ -171,21 +173,21 @@ public class InstantRunVerifier {
                     // potentially, we could try to see if anything has really changed between
                     // the two classes but the fact that we got an updated class means so far that
                     // we have a new version and should restart.
-                    return IncompatibleChange.INSTANT_RUN_DISABLED;
+                    return INSTANT_RUN_DISABLED;
                 }
             }
         }
 
-        IncompatibleChange fieldChange = verifyFields(originalClass, updatedClass);
-        if (fieldChange != null) {
+        InstantRunVerifierStatus fieldChange = verifyFields(originalClass, updatedClass);
+        if (fieldChange != COMPATIBLE) {
             return fieldChange;
         }
 
         return verifyMethods(originalClass, updatedClass);
     }
 
-    @Nullable
-    private static IncompatibleChange verifyFields(
+    @NonNull
+    private static InstantRunVerifierStatus verifyFields(
             @NonNull ClassNode originalClass,
             @NonNull ClassNode updatedClass) {
 
@@ -207,20 +209,20 @@ public class InstantRunVerifier {
         });
         switch (diff) {
             case NONE:
-                return null;
+                return COMPATIBLE;
             case ADDITION:
-                return IncompatibleChange.FIELD_ADDED;
+                return FIELD_ADDED;
             case REMOVAL:
-                return IncompatibleChange.FIELD_REMOVED;
+                return FIELD_REMOVED;
             case CHANGE:
-                return IncompatibleChange.FIELD_TYPE_CHANGE;
+                return FIELD_TYPE_CHANGE;
             default:
                 throw new RuntimeException("Unhandled action : " + diff);
         }
     }
 
-    @Nullable
-    private static IncompatibleChange verifyMethods(
+    @NonNull
+    private static InstantRunVerifierStatus verifyMethods(
             @NonNull ClassNode originalClass, @NonNull ClassNode updatedClass) {
 
         @SuppressWarnings("unchecked") // ASM API.
@@ -237,47 +239,47 @@ public class InstantRunVerifier {
                 // methods and would still see the deleted methods. To be prudent, restart.
                 // However, if the class initializer got removed, it's always fine.
                 return methodNode.name.equals(AsmUtils.CLASS_INITIALIZER)
-                        ? null
-                        : IncompatibleChange.METHOD_DELETED;
+                        ? COMPATIBLE
+                        : METHOD_DELETED;
             }
 
             // remove the method from the visited ones on the updated class.
             nonVisitedMethodsOnUpdatedClass.remove(updatedMethod);
 
-            IncompatibleChange change = methodNode.name.equals(AsmUtils.CLASS_INITIALIZER)
+            InstantRunVerifierStatus change = methodNode.name.equals(AsmUtils.CLASS_INITIALIZER)
                     ? visitClassInitializer(methodNode, updatedMethod)
                     : verifyMethod(methodNode, updatedMethod);
 
-            if (change!=null) {
+            if (change != COMPATIBLE) {
                 return change;
             }
         }
 
         if (!nonVisitedMethodsOnUpdatedClass.isEmpty()) {
-            return IncompatibleChange.METHOD_ADDED;
+            return METHOD_ADDED;
         }
-        return null;
+        return COMPATIBLE;
     }
 
-    @Nullable
-    private static IncompatibleChange visitClassInitializer(MethodNode originalClassInitializer,
+    @NonNull
+    private static InstantRunVerifierStatus visitClassInitializer(MethodNode originalClassInitializer,
             MethodNode updateClassInitializer) {
 
         return METHOD_COMPARATOR.areEqual(originalClassInitializer, updateClassInitializer)
-                ? null
-                : IncompatibleChange.STATIC_INITIALIZER_CHANGE;
+                ? COMPATIBLE
+                : STATIC_INITIALIZER_CHANGE;
     }
 
     @SuppressWarnings("unchecked") // ASM API
-    @Nullable
-    private static IncompatibleChange verifyMethod(
+    @NonNull
+    private static InstantRunVerifierStatus verifyMethod(
             MethodNode methodNode,
             MethodNode updatedMethod) {
 
         // check for annotations changes
         if (diffList(methodNode.visibleAnnotations, updatedMethod.visibleAnnotations,
                 new AnnotationNodeComparator()) != Diff.NONE) {
-            return IncompatibleChange.METHOD_ANNOTATION_CHANGE;
+            return METHOD_ANNOTATION_CHANGE;
         }
 
         // the method exist in both classes, check if the original method was disabled for
@@ -294,7 +296,8 @@ public class InstantRunVerifier {
             }
         }
 
-        boolean usingBlackListedAPIs = InstantRunMethodVerifier.verifyMethod(updatedMethod) != null;
+        boolean usingBlackListedAPIs =
+                InstantRunMethodVerifier.verifyMethod(updatedMethod) != COMPATIBLE;
 
         // either disabled or using blacklisted APIs, let it through only if the method
         // implementation is unchanged.
@@ -302,11 +305,11 @@ public class InstantRunVerifier {
                 !METHOD_COMPARATOR.areEqual(methodNode, updatedMethod)) {
 
             return disabledMethod
-                    ? IncompatibleChange.INSTANT_RUN_DISABLED
-                    : IncompatibleChange.REFLECTION_USED;
+                    ? INSTANT_RUN_DISABLED
+                    : REFLECTION_USED;
 
         }
-        return null;
+        return COMPATIBLE;
     }
 
     @Nullable

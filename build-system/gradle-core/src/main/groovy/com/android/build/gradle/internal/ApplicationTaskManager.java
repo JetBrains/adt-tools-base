@@ -18,8 +18,6 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.AndroidConfig;
-import com.android.build.gradle.OptionalCompilationStep;
-import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
@@ -272,7 +270,7 @@ public class ApplicationTaskManager extends TaskManager {
             AndroidTask<TransformTask> verifierTask = transformManager
                     .addTransform(tasks, variantScope, verifierTransform);
 
-            InstantRunTransform instantRunTransform = new InstantRunTransform(getGlobalScope());
+            InstantRunTransform instantRunTransform = new InstantRunTransform(variantScope);
             AndroidTask<TransformTask> instantRunTask = transformManager
                     .addTransform(tasks, variantScope, instantRunTransform);
             instantRunTask.dependsOn(tasks, verifierTask);

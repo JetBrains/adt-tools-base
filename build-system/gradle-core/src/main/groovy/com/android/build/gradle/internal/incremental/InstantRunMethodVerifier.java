@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMultimap;
@@ -34,15 +35,15 @@ public class InstantRunMethodVerifier {
     /**
      * Verifies a method implementation against the blacklisted list of APIs.
      * @param method the method to verify
-     * @return a {@link IncompatibleChange} instance or null if the method is not making any
+     * @return a {@link InstantRunVerifierStatus} instance or null if the method is not making any
      * blacklisted calls.
      */
-    @Nullable
-    public static IncompatibleChange verifyMethod(MethodNode method) {
+    @NonNull
+    public static InstantRunVerifierStatus verifyMethod(MethodNode method) {
 
         VerifierMethodVisitor mv = new VerifierMethodVisitor(method);
         method.accept(mv);
-        return mv.incompatibleChange.orNull();
+        return mv.incompatibleChange.or(InstantRunVerifierStatus.COMPATIBLE);
     }
 
     /**
@@ -52,7 +53,7 @@ public class InstantRunMethodVerifier {
      */
     public static class VerifierMethodVisitor extends MethodNode {
 
-        Optional<IncompatibleChange> incompatibleChange = Optional.absent();
+        Optional<InstantRunVerifierStatus> incompatibleChange = Optional.absent();
 
         public VerifierMethodVisitor(MethodNode method) {
             super(Opcodes.ASM5, method.access, method.name, method.desc, method.signature,
@@ -68,7 +69,7 @@ public class InstantRunMethodVerifier {
                 if (opcode == Opcodes.INVOKEVIRTUAL && blackListedMethods.containsKey(receiver)) {
                     for (Method method : blackListedMethods.get(receiver)) {
                         if (method.getName().equals(name) && method.getDescriptor().equals(desc)) {
-                            incompatibleChange = Optional.of(IncompatibleChange.REFLECTION_USED);
+                            incompatibleChange = Optional.of(InstantRunVerifierStatus.REFLECTION_USED);
                         }
                     }
                 }

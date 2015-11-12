@@ -46,7 +46,7 @@ import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.incremental.InstantRunAnchorTaskConfigAction;
+import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -2089,8 +2089,8 @@ public abstract class TaskManager {
 
             // create the anchor task, no other tasks depend on this, it must be invoked by
             // the user directly.
-            AndroidTask<Task> instantRunAnchor = androidTasks.create(tasks,
-                    new InstantRunAnchorTaskConfigAction(scope));
+            AndroidTask<InstantRunAnchorTask> instantRunAnchor = androidTasks.create(tasks,
+                    new InstantRunAnchorTask.InstantRunAnchorTaskConfigAction(scope, getLogger()));
 
             instantRunAnchor.dependsOn(tasks, transformTwoTask, transformThreeTask);
         }

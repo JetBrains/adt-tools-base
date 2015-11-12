@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import static com.android.build.gradle.internal.incremental.InstantRunVerifierStatus.COMPATIBLE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 import com.android.build.gradle.internal.incremental.fixture.VerifierHarness;
 import com.verifier.tests.AddClassAnnotation;
@@ -61,201 +61,203 @@ public class InstantRunVerifierTest {
 
     @Test
     public void testUnchangedClass() throws IOException {
-        IncompatibleChange changes = harness.verify(UnchangedClass.class, "verifier");
-        assertNull(changes);
+        InstantRunVerifierStatus changes = harness.verify(UnchangedClass.class, "verifier");
+        assertEquals(COMPATIBLE,changes);
     }
 
     @Test
     public void testSuperClassChanged() throws IOException {
         // not changing the super class name should be ok.
-        assertNull(harness.verify(ChangeSuperClass.class, null));
-        IncompatibleChange change = harness.verify(ChangeSuperClass.class, "verifier");
-        assertEquals(IncompatibleChange.PARENT_CLASS_CHANGED, change);
+        assertEquals(COMPATIBLE, harness.verify(ChangeSuperClass.class, null));
+        InstantRunVerifierStatus change = harness.verify(ChangeSuperClass.class, "verifier");
+        assertEquals(InstantRunVerifierStatus.PARENT_CLASS_CHANGED, change);
     }
 
     @Test
     public void testMethodAdded() throws IOException {
         // not adding a method should be ok.
-        assertNull(harness.verify(MethodAddedClass.class, null));
-        IncompatibleChange changes = harness.verify(MethodAddedClass.class, "verifier");
-        assertEquals(IncompatibleChange.METHOD_ADDED, changes);
+        assertEquals(COMPATIBLE, harness.verify(MethodAddedClass.class, null));
+        InstantRunVerifierStatus changes = harness.verify(MethodAddedClass.class, "verifier");
+        assertEquals(InstantRunVerifierStatus.METHOD_ADDED, changes);
     }
 
     @Test
     public void testClassAnnotationAdded() throws IOException {
         // not adding a class annotation should be ok.
-        assertNull(harness.verify(AddClassAnnotation.class, null));
-        IncompatibleChange changes = harness.verify(AddClassAnnotation.class, "verifier");
-        assertEquals(IncompatibleChange.CLASS_ANNOTATION_CHANGE, changes);
+        assertEquals(COMPATIBLE, harness.verify(AddClassAnnotation.class, null));
+        InstantRunVerifierStatus changes = harness.verify(AddClassAnnotation.class, "verifier");
+        assertEquals(InstantRunVerifierStatus.CLASS_ANNOTATION_CHANGE, changes);
     }
 
     @Test
     public void testClassAnnotationRemoved() throws IOException {
         // not removing a class annotation should be ok.
-        assertNull(harness.verify(RemoveClassAnnotation.class, null));
-        IncompatibleChange changes = harness.verify(RemoveClassAnnotation.class, "verifier");
-        assertEquals(IncompatibleChange.CLASS_ANNOTATION_CHANGE, changes);
+        assertEquals(COMPATIBLE, harness.verify(RemoveClassAnnotation.class, null));
+        InstantRunVerifierStatus changes = harness.verify(RemoveClassAnnotation.class, "verifier");
+        assertEquals(InstantRunVerifierStatus.CLASS_ANNOTATION_CHANGE, changes);
     }
 
     @Test
     public void testNotRuntimeClassAnnotationAdded() throws IOException {
         // not adding a non runtime visible class annotation should be ok.
-        assertNull(harness.verify(AddNotRuntimeClassAnnotation.class, null));
+        assertEquals(COMPATIBLE, harness.verify(AddNotRuntimeClassAnnotation.class, null));
         // and adding it should still be fine.
-        assertNull(harness.verify(AddNotRuntimeClassAnnotation.class, "verifier"));
+        assertEquals(COMPATIBLE, harness.verify(AddNotRuntimeClassAnnotation.class, "verifier"));
     }
 
     @Test
     public void testNotRuntimeClassAnnotationRemoved() throws IOException {
         // not removing a non runtime visible class annotation should be ok.
-        assertNull(harness.verify(RemoveNotRuntimeClassAnnotation.class, null));
+        assertEquals(COMPATIBLE, harness.verify(RemoveNotRuntimeClassAnnotation.class, null));
         // and removing it should still be fine.
-        assertNull(harness.verify(RemoveNotRuntimeClassAnnotation.class, "verifier"));
+        assertEquals(COMPATIBLE, harness.verify(RemoveNotRuntimeClassAnnotation.class, "verifier"));
     }
 
     @Test
     public void testMethodAnnotationAdded() throws IOException {
         // not adding a method annotation should be ok.
-        assertNull(harness.verify(AddMethodAnnotation.class, null));
-        IncompatibleChange changes = harness.verify(AddMethodAnnotation.class, "verifier");
-        assertEquals(IncompatibleChange.METHOD_ANNOTATION_CHANGE, changes);
+        assertEquals(COMPATIBLE, harness.verify(AddMethodAnnotation.class, null));
+        InstantRunVerifierStatus changes = harness.verify(AddMethodAnnotation.class, "verifier");
+        assertEquals(InstantRunVerifierStatus.METHOD_ANNOTATION_CHANGE, changes);
     }
 
     @Test
     public void testMethodAnnotationRemoved() throws IOException {
         // not removing a class annotation should be ok.
-        assertNull(harness.verify(RemoveMethodAnnotation.class, null));
-        IncompatibleChange changes = harness.verify(RemoveMethodAnnotation.class, "verifier");
-        assertEquals(IncompatibleChange.METHOD_ANNOTATION_CHANGE, changes);
+        assertEquals(COMPATIBLE, harness.verify(RemoveMethodAnnotation.class, null));
+        InstantRunVerifierStatus changes = harness.verify(RemoveMethodAnnotation.class, "verifier");
+        assertEquals(InstantRunVerifierStatus.METHOD_ANNOTATION_CHANGE, changes);
     }
 
     @Test
     public void testInterfaceImplementationAdded() throws IOException {
         // not removing a class annotation should be ok.
-        assertNull(harness.verify(AddInterfaceImplementation.class, null));
-        IncompatibleChange changes = harness.verify(AddInterfaceImplementation.class, "verifier");
-        assertEquals(IncompatibleChange.IMPLEMENTED_INTERFACES_CHANGE, changes);
+        assertEquals(COMPATIBLE, harness.verify(AddInterfaceImplementation.class, null));
+        InstantRunVerifierStatus changes = harness.verify(AddInterfaceImplementation.class, "verifier");
+        assertEquals(InstantRunVerifierStatus.IMPLEMENTED_INTERFACES_CHANGE, changes);
     }
 
     @Test
     public void testInterfaceImplementationRemoved() throws IOException {
         // not removing a class annotation should be ok.
-        assertNull(harness.verify(RemoveInterfaceImplementation.class, null));
-        IncompatibleChange changes = harness.verify(RemoveInterfaceImplementation.class, "verifier");
-        assertEquals(IncompatibleChange.IMPLEMENTED_INTERFACES_CHANGE, changes);
+        assertEquals(COMPATIBLE, harness.verify(RemoveInterfaceImplementation.class, null));
+        InstantRunVerifierStatus changes = harness.verify(RemoveInterfaceImplementation.class, "verifier");
+        assertEquals(InstantRunVerifierStatus.IMPLEMENTED_INTERFACES_CHANGE, changes);
     }
 
     @Test
     public void testMethodCollisionRemoved() throws IOException {
         // not adding/removing overloaded methods should be ok.
-        assertNull(harness.verify(MethodCollisionClass.class, null));
-        IncompatibleChange changes = harness.verify(MethodCollisionClass.class, "verifier");
-        assertEquals(IncompatibleChange.METHOD_DELETED, changes);
+        assertEquals(COMPATIBLE, harness.verify(MethodCollisionClass.class, null));
+        InstantRunVerifierStatus changes = harness.verify(MethodCollisionClass.class, "verifier");
+        assertEquals(InstantRunVerifierStatus.METHOD_DELETED, changes);
     }
 
     @Test
     public void testUnchangedClassInitializer() throws IOException {
-        assertNull(harness.verify(UnchangedClassInitializer1.class, null));
-        assertNull(harness.verify(UnchangedClassInitializer1.class, "verifier"));
-        assertNull(harness.verify(UnchangedClassInitializer1.class, "lineChangingVerifier"));
+        assertEquals(COMPATIBLE, harness.verify(UnchangedClassInitializer1.class, null));
+        assertEquals(COMPATIBLE, harness.verify(UnchangedClassInitializer1.class, "verifier"));
+        assertEquals(
+                COMPATIBLE, harness.verify(UnchangedClassInitializer1.class, "lineChangingVerifier"));
     }
 
     @Test
     public void testChangedClassInitializer() throws IOException {
-        assertEquals(IncompatibleChange.STATIC_INITIALIZER_CHANGE,
+        assertEquals(InstantRunVerifierStatus.STATIC_INITIALIZER_CHANGE,
                 harness.verify(ChangedClassInitializer1.class, "verifier"));
-        assertEquals(IncompatibleChange.STATIC_INITIALIZER_CHANGE,
+        assertEquals(InstantRunVerifierStatus.STATIC_INITIALIZER_CHANGE,
                 harness.verify(ChangedClassInitializer2.class, "verifier"));
-        assertEquals(IncompatibleChange.STATIC_INITIALIZER_CHANGE,
+        assertEquals(InstantRunVerifierStatus.STATIC_INITIALIZER_CHANGE,
                 harness.verify(ChangedClassInitializer3.class, "verifier"));
     }
 
     @Test
     public void testAddingInstanceField() throws IOException {
         // not adding an instance field should be ok.
-        assertNull(harness.verify(AddInstanceField.class, null));
-        assertEquals(IncompatibleChange.FIELD_ADDED,
+        assertEquals(COMPATIBLE, harness.verify(AddInstanceField.class, null));
+        assertEquals(InstantRunVerifierStatus.FIELD_ADDED,
                 harness.verify(AddInstanceField.class, "verifier"));
     }
 
     @Test
     public void testChangingAnInstanceFieldIntoStatic() throws IOException {
         // not changing anything in an instance field should be ok.
-        assertNull(harness.verify(ChangeInstanceFieldToStatic.class, null));
-        assertEquals(IncompatibleChange.FIELD_TYPE_CHANGE,
+        assertEquals(COMPATIBLE, harness.verify(ChangeInstanceFieldToStatic.class, null));
+        assertEquals(InstantRunVerifierStatus.FIELD_TYPE_CHANGE,
                 harness.verify(ChangeInstanceFieldToStatic.class, "verifier"));
     }
 
     @Test
     public void testChangingStaticFieldIntoAnInstance() throws IOException {
         // not changing anything in a static field should be ok.
-        assertNull(harness.verify(ChangeStaticFieldToInstance.class, null));
-        assertEquals(IncompatibleChange.FIELD_TYPE_CHANGE,
+        assertEquals(COMPATIBLE, harness.verify(ChangeStaticFieldToInstance.class, null));
+        assertEquals(InstantRunVerifierStatus.FIELD_TYPE_CHANGE,
                 harness.verify(ChangeStaticFieldToInstance.class, "verifier"));
     }
 
     @Test
     public void testChangingFieldType() throws IOException {
         // not changing a field type should be ok.
-        assertNull(harness.verify(ChangeFieldType.class, null));
-        assertEquals(IncompatibleChange.FIELD_TYPE_CHANGE,
+        assertEquals(COMPATIBLE, harness.verify(ChangeFieldType.class, null));
+        assertEquals(InstantRunVerifierStatus.FIELD_TYPE_CHANGE,
                 harness.verify(ChangeFieldType.class, "verifier"));
     }
 
     @Test
     public void testChangingInstanceFieldVisibility() throws IOException {
         // not changing a field type should be ok.
-        assertNull(harness.verify(ChangeInstanceFieldVisibility.class, null));
-        assertEquals(IncompatibleChange.FIELD_TYPE_CHANGE,
-                harness.verify(ChangeInstanceFieldVisibility.class, "verifier"));
+        assertEquals(COMPATIBLE, harness.verify(ChangeInstanceFieldVisibility.class, null));
+        assertEquals(InstantRunVerifierStatus.FIELD_TYPE_CHANGE, harness.verify(ChangeInstanceFieldVisibility.class, "verifier"));
     }
 
     @Test
     public void testChangingStaticFieldVisibility() throws IOException {
         // not changing a field type should be ok.
-        assertNull(harness.verify(ChangeStaticFieldVisibility.class, null));
-        assertEquals(IncompatibleChange.FIELD_TYPE_CHANGE,
-                harness.verify(ChangeStaticFieldVisibility.class, "verifier"));
+        assertEquals(COMPATIBLE, harness.verify(ChangeStaticFieldVisibility.class, null));
+        assertEquals(InstantRunVerifierStatus.FIELD_TYPE_CHANGE, harness.verify(ChangeStaticFieldVisibility.class, "verifier"));
     }
 
     @Test
     public void testClassNewInstanceReflectionUser() throws IOException {
         // not changing a method implementation that uses reflection should be ok.
-        assertNull(harness.verify(NewInstanceReflectionUser.class, null));
-        assertEquals(IncompatibleChange.REFLECTION_USED,
+        assertEquals(COMPATIBLE, harness.verify(NewInstanceReflectionUser.class, null));
+        assertEquals(InstantRunVerifierStatus.REFLECTION_USED,
                 harness.verify(NewInstanceReflectionUser.class, "verifier"));
     }
 
     @Test
     public void testReflectiveUserNotChanging() throws IOException {
         // not changing a method implementation that uses reflection should be ok.
-        assertNull(harness.verify(ReflectiveUserNotChanging.class, null));
+        assertEquals(COMPATIBLE,
+                harness.verify(ReflectiveUserNotChanging.class, null));
         // changing other methods should be fine.
-        assertNull(harness.verify(ReflectiveUserNotChanging.class, "verifier"));
+        assertEquals(COMPATIBLE,
+                harness.verify(ReflectiveUserNotChanging.class, "verifier"));
     }
 
     @Test
     public void testDisabledClassNotChanging() throws IOException {
         // even though nothing changed, the verifier will flag it as a new version is available.
-        assertEquals(IncompatibleChange.INSTANT_RUN_DISABLED,
+        assertEquals(InstantRunVerifierStatus.INSTANT_RUN_DISABLED,
                 harness.verify(DisabledClassNotChanging.class, null));
     }
 
     @Test
     public void testDisabledClassChanging() throws IOException {
         // not changing a method implementation from a disabled class should be ok.
-        //assertNull(harness.verify(DisabledClassChanging.class, null));
+        //assertEquals(InstantRunVerifierStatus.COMPATIBLE, harness.verify(DisabledClassChanging.class, null));
         // changing a method implementation from a disabled class should be flagged.
-        assertEquals(IncompatibleChange.INSTANT_RUN_DISABLED,
+        assertEquals(InstantRunVerifierStatus.INSTANT_RUN_DISABLED,
                 harness.verify(DisabledClassChanging.class, "verifier"));
     }
 
     @Test
     public void testDisabledMethodChanging() throws IOException {
         // not changing a method implementation from a disabled class should be ok.
-        assertNull(harness.verify(DisabledMethodChanging.class, null));
+        assertEquals(COMPATIBLE,
+                harness.verify(DisabledMethodChanging.class, null));
         // changing a method implementation from a disabled class should be flagged.
-        assertEquals(IncompatibleChange.INSTANT_RUN_DISABLED,
+        assertEquals(InstantRunVerifierStatus.INSTANT_RUN_DISABLED,
                 harness.verify(DisabledMethodChanging.class, "verifier"));
     }
 }
