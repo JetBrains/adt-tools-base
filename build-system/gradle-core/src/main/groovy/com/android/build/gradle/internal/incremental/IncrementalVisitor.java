@@ -224,7 +224,12 @@ public class IncrementalVisitor extends ClassVisitor {
         Iterable<String> classPathStrings = Splitter.on(File.pathSeparatorChar).split(args[2]);
         List<URL> classPath = Lists.newArrayList();
         for (String classPathString : classPathStrings) {
-            classPath.add(new File(classPathString).toURI().toURL());
+            File path = new File(classPathString);
+            if (!path.exists()) {
+                throw new IllegalArgumentException(
+                        String.format("Invalid class path element %s", classPathString));
+            }
+            classPath.add(path.toURI().toURL());
         }
         classPath.add(srcLocation.toURI().toURL());
         URL[] classPathArray = Iterables.toArray(classPath, URL.class);
