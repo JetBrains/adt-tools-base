@@ -43,6 +43,7 @@ import java.util.Set;
 public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     public static final Revision MIN_MULTIDEX_BUILD_TOOLS_REV = new Revision(21, 0, 0);
     public static final Revision MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV = new Revision(22, 0, 2);
+    private static final Revision FIXED_DX_MERGER = new Revision(23, 0, 2);
 
     @NonNull
     private final File mOutputFile;
@@ -145,13 +146,14 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
             @NonNull BuildToolInfo buildToolInfo,
             @NonNull DexOptions dexOptions) throws ProcessException {
 
+        Revision buildToolsRevision = buildToolInfo.getRevision();
         checkState(
                 !mMultiDex
-                        || buildToolInfo.getRevision().compareTo(MIN_MULTIDEX_BUILD_TOOLS_REV) >= 0,
+                        || buildToolsRevision.compareTo(MIN_MULTIDEX_BUILD_TOOLS_REV) >= 0,
                 "Multi dex requires Build Tools " +
                         MIN_MULTIDEX_BUILD_TOOLS_REV.toString() +
                         " / Current: " +
-                        buildToolInfo.getRevision().toShortString());
+                        buildToolsRevision.toShortString());
 
 
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
@@ -190,7 +192,7 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
         }
 
         // only change thread count is build tools is 22.0.2+
-        if (buildToolInfo.getRevision().compareTo(MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV) >= 0) {
+        if (buildToolsRevision.compareTo(MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV) >= 0) {
             Integer threadCount = dexOptions.getThreadCount();
             if (threadCount == null) {
                 builder.addArgs("--num-threads=4");
@@ -217,13 +219,14 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
         builder.addArgs("--output", mOutputFile.getAbsolutePath());
 
         // input
-        builder.addArgs(getFilesToAdd());
+        builder.addArgs(getFilesToAdd(buildToolsRevision));
 
         return builder.createJavaProcess();
     }
 
     @NonNull
-    public List<String> getFilesToAdd() throws ProcessException {
+    public List<String> getFilesToAdd(@Nullable Revision buildToolsRevision)
+            throws ProcessException {
         // remove non-existing files.
         Set<File> existingFiles = Sets.filter(mInputs, new Predicate<File>() {
             @Override
@@ -236,26 +239,32 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
             throw new ProcessException("No files to pass to dex.");
         }
 
-        // sort the inputs
-        List<File> sortedList = Lists.newArrayList(existingFiles);
-        Collections.sort(sortedList, new Comparator<File>() {
-            @Override
-            public int compare(File file, File file2) {
-                boolean file2IsDir = file2.isDirectory();
-                if (file.isDirectory()) {
-                    return file2IsDir ? 0 : -1;
-                } else if (file2IsDir) {
-                    return 1;
-                }
+        Collection<File> files = existingFiles;
 
-                long diff = file.length() - file2.length();
-                return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
-            }
-        });
+        // sort the inputs
+        if (buildToolsRevision != null && buildToolsRevision.compareTo(FIXED_DX_MERGER) < 0) {
+            List<File> sortedList = Lists.newArrayList(existingFiles);
+            Collections.sort(sortedList, new Comparator<File>() {
+                @Override
+                public int compare(File file, File file2) {
+                    boolean file2IsDir = file2.isDirectory();
+                    if (file.isDirectory()) {
+                        return file2IsDir ? 0 : -1;
+                    } else if (file2IsDir) {
+                        return 1;
+                    }
+
+                    long diff = file.length() - file2.length();
+                    return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
+                }
+            });
+
+            files = sortedList;
+        }
 
         // convert to String-based paths.
-        List<String> filePathList = Lists.newArrayListWithCapacity(sortedList.size());
-        for (File f : sortedList) {
+        List<String> filePathList = Lists.newArrayListWithCapacity(files.size());
+        for (File f : files) {
             filePathList.add(f.getAbsolutePath());
         }
 
