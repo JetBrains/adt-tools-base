@@ -38,9 +38,13 @@ import com.android.build.api.transform.TransformOutputProvider;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.builder.sdk.TargetInfo;
+import com.android.ide.common.blame.ParsingProcessOutputHandler;
+import com.android.ide.common.blame.parser.DexStderrParser;
+import com.android.ide.common.blame.parser.DexStdoutParser;
+import com.android.ide.common.blame.parser.PatternAwareOutputParser;
+import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
-import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.sdklib.BuildToolInfo;
@@ -211,6 +215,11 @@ public class DexTransform extends Transform {
             directoryInputs.addAll(input.getDirectoryInputs());
         }
 
+        ProcessOutputHandler outputHandler = new ParsingProcessOutputHandler(
+                new ToolOutputParser(new DexStdoutParser(), logger),
+                new ToolOutputParser(new DexStderrParser(), logger),
+                androidBuilder.getErrorReporter());
+
         try {
             // if only one scope or no per-scope dexing, just do a single pass that
             // runs dx on everything.
@@ -243,7 +252,7 @@ public class DexTransform extends Transform {
                         null,
                         false,
                         true,
-                        new LoggedProcessOutputHandler(logger));
+                        outputHandler);
             } else {
                 // Figure out if we need to do a dx merge.
                 // The ony case we don't need it is in native multi-dex mode when doing debug
@@ -325,7 +334,6 @@ public class DexTransform extends Transform {
                 }
 
                 WaitableExecutor<Void> executor = new WaitableExecutor<Void>();
-                ProcessOutputHandler outputHandler = new LoggedProcessOutputHandler(logger);
 
                 for (Map.Entry<File, File> entry : inputFiles.entrySet()) {
                     Callable<Void> action = new PreDexTask(
@@ -397,7 +405,7 @@ public class DexTransform extends Transform {
                             null,
                             false,
                             true,
-                            new LoggedProcessOutputHandler(logger));
+                            outputHandler);
                 }
             }
         } catch (LoggedErrorException e) {
