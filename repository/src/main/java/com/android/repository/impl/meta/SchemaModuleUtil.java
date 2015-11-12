@@ -74,15 +74,8 @@ public class SchemaModuleUtil {
                 for (SchemaModule ext : modules) {
                     version = ext.getNamespaceVersionMap().get(namespaceURI);
                     if (version != null) {
-                        try {
-                            return new DOMInputImpl(
-                                    version.getNamespace(),
-                                    null, null,
-                                    new FileInputStream(version.getXsd()),
-                                    null);
-                        } catch (FileNotFoundException e) {
-                            // shouldn't ever happen
-                        }
+                        return new DOMInputImpl(version.getNamespace(), null, null,
+                                version.getXsd(), null);
                     }
                 }
                 return null;
@@ -151,11 +144,7 @@ public class SchemaModuleUtil {
             for (SchemaModule.SchemaModuleVersion version : module
                     .getNamespaceVersionMap()
                     .values()) {
-                try {
-                    sources.add(new StreamSource(new FileInputStream(version.getXsd())));
-                } catch (FileNotFoundException e) {
-                    // Shouldn't ever happen
-                }
+                sources.add(new StreamSource(version.getXsd()));
             }
         }
 
