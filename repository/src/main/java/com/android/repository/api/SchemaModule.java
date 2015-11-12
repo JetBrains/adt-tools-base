@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.google.common.collect.Maps;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
@@ -49,6 +50,11 @@ public class SchemaModule {
     private final SchemaModuleVersion mLatestVersion;
 
     /**
+     * Class used with {@link Class#getResourceAsStream(String)} to look up xsd resources.
+     */
+    private final Class mResourceRoot;
+
+    /**
      * @param ofPattern Fully-qualified class name of the JAXB {@code ObjectFactory} classes
      *                  making up this module. Should have a single %d parameter, corresponding to
      *                  the 1-indexed version of the schema.
@@ -75,18 +81,15 @@ public class SchemaModule {
             } catch (ClassNotFoundException e) {
                 break;
             }
-            URL xsdUrl = resourceRoot.getResource(String.format(xsdPattern, i));
-            if (xsdUrl == null) {
-                break;
-            }
-            File xsd = new File(xsdUrl.toURI());
-            version = new SchemaModuleVersion(objectFactory, xsd);
+            String xsdLocation = String.format(xsdPattern, i);
+            version = new SchemaModuleVersion(objectFactory, xsdLocation);
             mVersions.put(version.getNamespace(), version);
         }
         mLatestVersion = version;
         if (mVersions.isEmpty()) {
             throw new InstantiationException("No versions found");
         }
+        mResourceRoot = resourceRoot;
     }
 
     /**
@@ -118,10 +121,10 @@ public class SchemaModule {
      * Represents a single version of a schema, including a single XSD and a single
      * {@code ObjectFactory}.
      */
-    public static class SchemaModuleVersion {
+    public class SchemaModuleVersion {
 
         private final Class mObjectFactory;
-        private final File mXsd;
+        private final String mXsdLocation;
         private final String mNamespace;
 
         /**
@@ -131,9 +134,9 @@ public class SchemaModule {
          *                      giving the XML namespace of this schema.
          * @param xsd The XSD file for this schema.
          */
-        public SchemaModuleVersion(@NonNull Class objectFactory, @NonNull File xsd) {
+        public SchemaModuleVersion(@NonNull Class objectFactory, @NonNull String xsdLocation) {
             mObjectFactory = objectFactory;
-            mXsd = xsd;
+            mXsdLocation = xsdLocation;
             String namespace = objectFactory.getPackage().getAnnotation(XmlSchema.class)
                     .namespace();
 
@@ -153,8 +156,8 @@ public class SchemaModule {
          * Gets the XSD file for this schema version.
          */
         @NonNull
-        public File getXsd() {
-            return mXsd;
+        public InputStream getXsd() {
+            return mResourceRoot.getResourceAsStream(mXsdLocation);
         }
 
         /**
