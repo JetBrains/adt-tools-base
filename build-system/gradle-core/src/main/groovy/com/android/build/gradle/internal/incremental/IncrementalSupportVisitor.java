@@ -109,7 +109,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
         super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
             "$change", getRuntimeTypeName(CHANGE_TYPE), null, null);
-        access = transformAccessForInstantRun(access);
+        access = transformClassAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
     }
 
@@ -184,20 +184,39 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
     }
 
     /**
-     * If a class/method/field is package private, make it public. This is the workaround the fact
+     * If a class is package private, make it public so instrumented code living in a different
+     * class loader can instantiate them.
+     *
+     * @param access the original class/method/field access.
+     * @return the new access or the same one depending on the original access rights.
+     */
+    private static int transformClassAccessForInstantRun(int access) {
+        AccessRight accessRight = AccessRight.fromNodeAccess(access);
+        return accessRight == AccessRight.PACKAGE_PRIVATE ? access | Opcodes.ACC_PUBLIC : access;
+    }
+
+    /**
+     * If a method/field is not private, make it public. This is to workaround the fact
      * <ul>Our restart.dex files are loaded with a different class loader than the main dex file
      * class loader on restart. so we need methods/fields to be public</ul>
      * <ul>Our reload.dex are loaded from a different class loader as well but methods/fields
      * are accessed through reflection, yet you need class visibility.</ul>
+     *
+     * remember that in Java, protected methods or fields can be acessed by classes in the same
+     * package :
+     * {@see https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html}
+     *
      * @param access the original class/method/field access.
      * @return the new access or the same one depending on the original access rights.
      */
     private static int transformAccessForInstantRun(int access) {
-        // if a method is package private, make it public. This is to workaround the fact
-        // out patch files are loaded in a different class loaders that the original class loader
-        // on restart.
         AccessRight accessRight = AccessRight.fromNodeAccess(access);
-        return accessRight == AccessRight.PACKAGE_PRIVATE ? access | Opcodes.ACC_PUBLIC : access;
+        if (accessRight != AccessRight.PRIVATE) {
+            access &= ~Opcodes.ACC_PROTECTED;
+            access &= ~Opcodes.ACC_PRIVATE;
+            return access | Opcodes.ACC_PUBLIC;
+        }
+        return access;
     }
 
     private class ISMethodVisitor extends GeneratorAdapter {

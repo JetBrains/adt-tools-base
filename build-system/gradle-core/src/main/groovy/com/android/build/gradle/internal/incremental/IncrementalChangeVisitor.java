@@ -262,7 +262,10 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 // enough to know if has seen this class before or not so we must assume the field
                 // is *not* accessible from the $override class which lives in a different
                 // hierarchy and package.
-                accessRight = guessAccessRight(owner);
+                // However, since we made all package-private and protected fields public, and it
+                // cannot be private since the visitedClassName is not the "owner", we can safely
+                // assume it's public.
+                accessRight = AccessRight.PUBLIC;
             } else {
                 // check the field access bits.
                 FieldNode fieldNode = getFieldByName(name);
@@ -754,7 +757,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
                 }
                 accessRight = AccessRight.fromNodeAccess(methodByName.access);
             } else {
-                accessRight = guessAccessRight(owner);
+                // we are accessing another class method, and since we make all protected and
+                // package-private methods public, we can safely assume it is public.
+                accessRight = AccessRight.PUBLIC;
             }
             return accessRight;
         }
@@ -996,30 +1001,6 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
      */
     public static void main(String[] args) throws IOException {
         IncrementalVisitor.main(args, VISITOR_BUILDER);
-    }
-
-    /**
-     * A method or field in the passed owner class is accessed from the visited class.
-     *
-     * Returns the safest (meaning the most restrictive) {@link AccessRight} this field or method
-     * can have considering the calling class.
-     *
-     * Since it is originally being called from the visited class, it cannot be a private field or
-     * method.
-     *
-     * If the visited class name and the method or field owner class are not in the same package,
-     * the method or field cannot be package private.
-     *
-     * If the method or field owner is not a super class of the visited class name, the method or
-     * field cannot be protected.
-     *
-     * @param owner owner class of a field or method being accessed from the visited class
-     * @return the most restrictive {@link AccessRight} the field or method can have.
-     */
-    private AccessRight guessAccessRight(String owner) {
-        return !isInSamePackage(owner) && !isAnAncestor(owner)
-                ? AccessRight.PUBLIC
-                : AccessRight.PACKAGE_PRIVATE;
     }
 
     /**
