@@ -197,9 +197,11 @@ public class BootstrapApplication extends Application {
 
     @Override
     public void onCreate() {
-        MonkeyPatcher.monkeyPatchApplication(BootstrapApplication.this, realApplication,
-                externalResourcePath);
-        MonkeyPatcher.monkeyPatchExistingResources(externalResourcePath, null);
+        MonkeyPatcher.monkeyPatchApplication(
+                BootstrapApplication.this, BootstrapApplication.this,
+                realApplication, externalResourcePath);
+        MonkeyPatcher.monkeyPatchExistingResources(BootstrapApplication.this,
+                externalResourcePath, null);
         super.onCreate();
         if (AppInfo.applicationId != null) {
             Server.create(AppInfo.applicationId, BootstrapApplication.this);

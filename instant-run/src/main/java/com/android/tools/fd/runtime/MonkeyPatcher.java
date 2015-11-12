@@ -2,6 +2,7 @@ package com.android.tools.fd.runtime;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.os.Build;
@@ -12,14 +13,16 @@ import android.view.ContextThemeWrapper;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
 
-//
 /**
  * A utility class which uses reflection hacks to replace the application instance and
  * the resource data for the current app.
@@ -56,7 +59,8 @@ import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
  */
 public class MonkeyPatcher {
     @SuppressWarnings("unchecked")  // Lots of conversions with generic types
-    public static void monkeyPatchApplication(@Nullable Application bootstrap,
+    public static void monkeyPatchApplication(@Nullable Context context,
+                                              @Nullable Application bootstrap,
                                               @Nullable Application realApplication,
                                               @Nullable String externalResourceFile) {
         /*
@@ -131,9 +135,7 @@ public class MonkeyPatcher {
         try {
             // Find the ActivityThread instance for the current thread
             Class<?> activityThread = Class.forName("android.app.ActivityThread");
-            Method m = activityThread.getMethod("currentActivityThread");
-            m.setAccessible(true);
-            Object currentActivityThread = m.invoke(null);
+            Object currentActivityThread = getActivityThread(context, activityThread);
 
             // Find the mInitialApplication field of the ActivityThread to the real application
             Field mInitialApplication = activityThread.getDeclaredField("mInitialApplication");
@@ -217,7 +219,35 @@ public class MonkeyPatcher {
         }
     }
 
-    public static void monkeyPatchExistingResources(@Nullable String externalResourceFile,
+    @Nullable
+    public static Object getActivityThread(@Nullable Context context,
+                                            @Nullable Class<?> activityThread) {
+        try {
+            if (activityThread == null) {
+                activityThread = Class.forName("android.app.ActivityThread");
+            }
+            Method m = activityThread.getMethod("currentActivityThread");
+            m.setAccessible(true);
+            Object currentActivityThread = m.invoke(null);
+            if (currentActivityThread == null && context != null) {
+                // In older versions of Android (prior to frameworks/base 66a017b63461a22842)
+                // the currentActivityThread was built on thread locals, so we'll need to try
+                // even harder
+                Field mLoadedApk = context.getClass().getField("mLoadedApk");
+                mLoadedApk.setAccessible(true);
+                Object apk = mLoadedApk.get(context);
+                Field mActivityThreadField = apk.getClass().getDeclaredField("mActivityThread");
+                mActivityThreadField.setAccessible(true);
+                currentActivityThread = mActivityThreadField.get(apk);
+            }
+            return currentActivityThread;
+        } catch (Throwable ignore) {
+            return null;
+        }
+    }
+
+    public static void monkeyPatchExistingResources(@Nullable Context context,
+                                                    @Nullable String externalResourceFile,
                                                     @Nullable Collection<Activity> activities) {
         if (externalResourceFile == null) {
             return;
@@ -271,12 +301,6 @@ public class MonkeyPatcher {
             mEnsureStringBlocks.setAccessible(true);
             mEnsureStringBlocks.invoke(newAssetManager);
 
-            // Find the singleton instance of ResourcesManager
-            Class<?> clazz = Class.forName("android.app.ResourcesManager");
-            Method mGetInstance = clazz.getDeclaredMethod("getInstance");
-            mGetInstance.setAccessible(true);
-            Object resourcesManager = mGetInstance.invoke(null);
-
             Field mAssets = Resources.class.getDeclaredField("mAssets");
             mAssets.setAccessible(true);
 
@@ -312,24 +336,39 @@ public class MonkeyPatcher {
                 }
             }
 
+            // Iterate over all known Resources objects
+            Collection<WeakReference<Resources>> references;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                // Iterate over all known Resources objects
-                Field fMActiveResources = clazz.getDeclaredField("mActiveResources");
+                // Find the singleton instance of ResourcesManager
+                Class<?> resourcesManagerClass = Class.forName("android.app.ResourcesManager");
+                Method mGetInstance = resourcesManagerClass.getDeclaredMethod("getInstance");
+                mGetInstance.setAccessible(true);
+                Object resourcesManager = mGetInstance.invoke(null);
+                Field fMActiveResources = resourcesManagerClass.getDeclaredField("mActiveResources");
                 fMActiveResources.setAccessible(true);
                 @SuppressWarnings("unchecked")
                 ArrayMap<?, WeakReference<Resources>> arrayMap =
                         (ArrayMap<?, WeakReference<Resources>>) fMActiveResources.get(resourcesManager);
-                for (WeakReference<Resources> wr : arrayMap.values()) {
-                    Resources resources = wr.get();
-                    if (resources != null) {
-                        // Set the AssetManager of the Resources instance to our brand new one
-                        mAssets.set(resources, newAssetManager);
+                references = arrayMap.values();
+            } else {
+                Class<?> activityThread = Class.forName("android.app.ActivityThread");
+                Field fMActiveResources = activityThread.getDeclaredField("mActiveResources");
+                fMActiveResources.setAccessible(true);
+                Object thread = getActivityThread(context, activityThread);
+                @SuppressWarnings("unchecked")
+                HashMap<?, WeakReference<Resources>> map =
+                        (HashMap<?, WeakReference<Resources>>) fMActiveResources.get(thread);
+                references = map.values();
+            }
+            for (WeakReference<Resources> wr : references) {
+                Resources resources = wr.get();
+                if (resources != null) {
+                    // Set the AssetManager of the Resources instance to our brand new one
+                    mAssets.set(resources, newAssetManager);
 
-                        resources.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
-                    }
+                    resources.updateConfiguration(resources.getConfiguration(), resources.getDisplayMetrics());
                 }
             }
-
         } catch (Throwable e) {
             throw new IllegalStateException(e);
         }

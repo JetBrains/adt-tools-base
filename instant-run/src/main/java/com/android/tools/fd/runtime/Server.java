@@ -243,7 +243,7 @@ public class Server {
                         // Send an "ack" back to the IDE.
                         // The value of the boolean is true only when the app is in the
                         // foreground.
-                        boolean active = Restarter.getForegroundActivity() != null;
+                        boolean active = Restarter.getForegroundActivity(mApplication) != null;
                         output.writeBoolean(active);
                         if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                             Log.i(LOG_TAG, "Received Ping message from the IDE; " +
@@ -291,7 +291,7 @@ public class Server {
                             return;
                         }
 
-                        Activity activity = Restarter.getForegroundActivity();
+                        Activity activity = Restarter.getForegroundActivity(mApplication);
                         if (activity != null) {
                             if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                                 Log.i(LOG_TAG, "Restarting activity per user request");
@@ -326,7 +326,7 @@ public class Server {
 
                     case MESSAGE_SHOW_TOAST: {
                         String text = input.readUTF();
-                        Activity foreground = Restarter.getForegroundActivity();
+                        Activity foreground = Restarter.getForegroundActivity(mApplication);
                         if (foreground != null) {
                             Restarter.showToast(foreground, text);
                         } else if (Log.isLoggable(LOG_TAG, Log.INFO)) {
@@ -480,7 +480,7 @@ public class Server {
             }
 
             if (toast) {
-                Activity foreground = Restarter.getForegroundActivity();
+                Activity foreground = Restarter.getForegroundActivity(mApplication);
                 if (foreground != null) {
                     Restarter.showToast(foreground, "Applied code changes without activity " +
                             "restart");
@@ -491,7 +491,7 @@ public class Server {
             return;
         }
 
-        List<Activity> activities = Restarter.getActivities(false);
+        List<Activity> activities = Restarter.getActivities(mApplication, false);
 
         if (incrementalResources && updateMode == UPDATE_MODE_WARM_SWAP) {
             // Try to just replace the resources on the fly!
@@ -504,15 +504,15 @@ public class Server {
 
             if (file != null) {
                 String resources = file.getPath();
-                MonkeyPatcher.monkeyPatchApplication(null, null, resources);
-                MonkeyPatcher.monkeyPatchExistingResources(resources, activities);
+                MonkeyPatcher.monkeyPatchApplication(mApplication, null, null, resources);
+                MonkeyPatcher.monkeyPatchExistingResources(mApplication, resources, activities);
             } else {
                 Log.e(LOG_TAG, "No resource file found to apply");
                 updateMode = UPDATE_MODE_COLD_SWAP;
             }
         }
 
-        Activity activity = Restarter.getForegroundActivity();
+        Activity activity = Restarter.getForegroundActivity(mApplication);
         if (updateMode == UPDATE_MODE_WARM_SWAP) {
             if (activity != null) {
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
@@ -565,6 +565,6 @@ public class Server {
             Log.i(LOG_TAG, "Performing full app restart");
         }
 
-        Restarter.restartApp(activities, toast);
+        Restarter.restartApp(mApplication, activities, toast);
     }
 }

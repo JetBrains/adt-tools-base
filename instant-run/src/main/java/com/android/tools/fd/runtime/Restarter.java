@@ -69,10 +69,12 @@ public class Restarter {
      * (Dianne says to put the app in the background, kill it then restart it; need to
      * figure out how to do this.)
      */
-    public static void restartApp(@NonNull Collection<Activity> knownActivities, boolean toast) {
+    public static void restartApp(@Nullable Context appContext,
+                                  @NonNull Collection<Activity> knownActivities,
+                                  boolean toast) {
         if (!knownActivities.isEmpty()) {
             // Can't live patch resources; instead, try to restart the current activity
-            Activity foreground = getForegroundActivity();
+            Activity foreground = getForegroundActivity(appContext);
 
             if (foreground != null) {
                 // http://stackoverflow.com/questions/6609414/howto-programatically-restart-android-app
@@ -84,7 +86,7 @@ public class Restarter {
                     Log.i(LOG_TAG, "RESTARTING APP");
                 }
                 @SuppressWarnings("UnnecessaryLocalVariable") // fore code clarify
-                        Context context = foreground;
+                Context context = foreground;
                 Intent intent = new Intent(context, foreground.getClass());
                 int intentId = 0;
                 PendingIntent pendingIntent = PendingIntent.getActivity(context, intentId,
@@ -139,19 +141,18 @@ public class Restarter {
     }
 
     @Nullable
-    public static Activity getForegroundActivity() {
-        List<Activity> list = getActivities(true);
+    public static Activity getForegroundActivity(@Nullable Context context) {
+        List<Activity> list = getActivities(context, true);
         return list.isEmpty() ? null : list.get(0);
     }
 
     // http://stackoverflow.com/questions/11411395/how-to-get-current-foreground-activity-context-in-android
     @NonNull
-    public static List<Activity> getActivities(boolean foregroundOnly) {
+    public static List<Activity> getActivities(@Nullable Context context, boolean foregroundOnly) {
         List<Activity> list = new ArrayList<Activity>();
         try {
             Class activityThreadClass = Class.forName("android.app.ActivityThread");
-            @SuppressWarnings("unchecked")
-            Object activityThread = activityThreadClass.getMethod("currentActivityThread").invoke(null);
+            Object activityThread = MonkeyPatcher.getActivityThread(context, activityThreadClass);
             Field activitiesField = activityThreadClass.getDeclaredField("mActivities");
             activitiesField.setAccessible(true);
 
