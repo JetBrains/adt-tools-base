@@ -21,6 +21,8 @@ import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.repository.api.Dependency;
 import com.android.repository.api.License;
+import com.android.repository.api.LocalPackage;
+import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoPackage;
 import com.google.common.collect.ImmutableList;
 
@@ -134,11 +136,25 @@ public abstract class RepoPackageImpl implements RepoPackage {
     // TODO: reevaluate if we want to include other info in comparison
     @Override
     public int compareTo(@NonNull RepoPackage o) {
+        if ((this instanceof LocalPackage ^ o instanceof LocalPackage) ||
+            (this instanceof RemotePackage ^ o instanceof RemotePackage)) {
+            return getClass().getName().compareTo(o.getClass().getName());
+        }
         int result = getPath().compareTo(o.getPath());
         if (result != 0) {
             return result;
         }
         return getVersion().compareTo(o.getVersion());
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof RepoPackage && compareTo((RepoPackage)obj) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return getPath().hashCode() * 37 + getVersion().hashCode();
     }
 
     protected void setRevision(@NonNull RevisionType revision) {
