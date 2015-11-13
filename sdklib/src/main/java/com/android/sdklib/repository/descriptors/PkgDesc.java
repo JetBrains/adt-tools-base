@@ -22,11 +22,11 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.repository.Revision;
 import com.android.repository.Revision.PreviewComparison;
+import com.android.repository.api.License;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SystemImage;
-import com.android.sdklib.repository.License;
 
 import java.io.File;
 import java.util.Locale;
@@ -686,9 +686,9 @@ public class PkgDesc implements IPkgDesc {
         }
 
         if (mLicense != null) {
-            builder.append(" License['").append(mLicense.getLicenseRef())           //NON-NLS-1$
-                   .append("]=")                                                    //NON-NLS-1$
-                   .append(mLicense.getLicense().length()).append(" chars");        //NON-NLS-1$
+            builder.append(" License['").append(mLicense.getId())           //NON-NLS-1$
+                    .append("]=")                                                    //NON-NLS-1$
+                    .append(mLicense.getValue().length()).append(" chars");        //NON-NLS-1$
         }
 
         if (isObsolete()) {

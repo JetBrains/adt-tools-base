@@ -21,7 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.repository.IListDescription;
-import com.android.sdklib.repository.License;
+import com.android.repository.api.License;
 
 import java.io.File;
 
@@ -70,7 +70,7 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
     /**
      * Returns the package's {@link Revision}.
      */
-    @Nullable
+    @NonNull
     Revision getRevision();
 
   /**

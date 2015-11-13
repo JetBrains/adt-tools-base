@@ -12,5 +12,6 @@
     <orderEntry type="library" name="guava-tools" level="project" />
     <orderEntry type="library" name="xjc" level="project" />
     <orderEntry type="module" module-name="repository" />
+    <orderEntry type="module" module-name="sdklib-base" />
   </component>
 </module>
