@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.os.Build;
 import android.support.annotation.NonNull;
@@ -113,6 +114,17 @@ public class Restarter {
             @Override
             public void run() {
                 try {
+                    Context context = activity.getApplicationContext();
+                    if (context instanceof ContextWrapper) {
+                        Context base = ((ContextWrapper) context).getBaseContext();
+                        if (base == null) {
+                            if (Log.isLoggable(LOG_TAG, Log.WARN)) {
+                                Log.w(LOG_TAG, "Couldn't show toast: no base context");
+                            }
+                            return;
+                        }
+                    }
+
                     // Avoid crashing when not available, e.g.
                     //   java.lang.RuntimeException: Can't create handler inside thread that has
                     //        not called Looper.prepare()
