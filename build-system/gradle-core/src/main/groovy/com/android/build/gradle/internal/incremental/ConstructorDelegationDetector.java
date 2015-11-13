@@ -17,10 +17,13 @@ package com.android.build.gradle.internal.incremental;
 
 import com.android.annotations.NonNull;
 
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
@@ -32,7 +35,9 @@ import org.objectweb.asm.tree.analysis.BasicValue;
 import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.tree.analysis.Value;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Utilities to detect and manipulate constructor methods.
@@ -216,6 +221,9 @@ public class ConstructorDelegationDetector {
             insn.accept(initArgs);
             insn = insn.getNext();
         }
+        LabelNode labelBefore = new LabelNode();
+        labelBefore.accept(initArgs);
+
         GeneratorAdapter mv = new GeneratorAdapter(initArgs, initArgs.access, initArgs.name, initArgs.desc);
         // Copy the arguments back to the argument array
         // The init_args part cannot access the "this" object and can have side effects on the
@@ -236,7 +244,8 @@ public class ConstructorDelegationDetector {
         }
         // Create the args array with the values to send to the delegated constructor
         Type[] returnTypes = Type.getArgumentTypes(delegation.desc);
-        mv.push(returnTypes.length + 1); // The extra element if for the qualified name of the constuctor.
+        // The extra element for the qualified name of the constructor.
+        mv.push(returnTypes.length + 1);
         mv.newArray(Type.getType(Object.class));
         int args = mv.newLocal(Type.getType("[Ljava/lang/Object;"));
         mv.storeLocal(args);
@@ -260,9 +269,17 @@ public class ConstructorDelegationDetector {
         mv.returnValue();
 
         newDesc = method.desc.replace("(", "(L" + owner + ";");
-        MethodNode body = new MethodNode(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "init$body", newDesc, null, exceptions);
+        MethodNode body = new MethodNode(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+                "init$body", newDesc, null, exceptions);
+        LabelNode labelAfter = new LabelNode();
+        labelAfter.accept(body);
+        Set<LabelNode> bodyLabels = new HashSet<LabelNode>();
+
         insn = delegation.getNext();
         while (insn != null) {
+            if (insn instanceof LabelNode) {
+                bodyLabels.add((LabelNode) insn);
+            }
             insn.accept(body);
             insn = insn.getNext();
         }
@@ -271,11 +288,35 @@ public class ConstructorDelegationDetector {
         // "init$body" method. The labels were transferred just above so we can reuse them.
 
         //noinspection unchecked
-        for (TryCatchBlockNode tryCatchBlockNode : (List<TryCatchBlockNode>) method.tryCatchBlocks) {
-            body.visitTryCatchBlock(tryCatchBlockNode.start.getLabel(),
-                    tryCatchBlockNode.end.getLabel(),
-                    tryCatchBlockNode.handler.getLabel(),
-                    tryCatchBlockNode.type);
+        for (TryCatchBlockNode tryCatch : (List<TryCatchBlockNode>) method.tryCatchBlocks) {
+            tryCatch.accept(body);
+        }
+
+        //noinspection unchecked
+        for (LocalVariableNode variable : (List<LocalVariableNode>) method.localVariables) {
+            boolean startsInBody = bodyLabels.contains(variable.start);
+            boolean endsInBody = bodyLabels.contains(variable.end);
+            if (!startsInBody && !endsInBody) {
+                if (variable.index != 0) { // '#0' on init$args is not 'this'
+                    variable.accept(initArgs);
+                }
+            } else if (startsInBody && endsInBody) {
+                variable.accept(body);
+            } else if (!startsInBody && endsInBody) {
+                // The variable spans from the args to the end of the method, create two:
+                if (variable.index != 0) { // '#0' on init$args is not 'this'
+                    LocalVariableNode var0 = new LocalVariableNode(variable.name,
+                            variable.desc, variable.signature,
+                            variable.start, labelBefore, variable.index);
+                    var0.accept(initArgs);
+                }
+                LocalVariableNode var1 = new LocalVariableNode(variable.name,
+                        variable.desc, variable.signature,
+                        labelAfter, variable.end, variable.index);
+                var1.accept(body);
+            } else {
+                throw new IllegalStateException("Local variable starts after it ends.");
+            }
         }
 
         return new Constructor(loadThis, initArgs, delegation, body);
