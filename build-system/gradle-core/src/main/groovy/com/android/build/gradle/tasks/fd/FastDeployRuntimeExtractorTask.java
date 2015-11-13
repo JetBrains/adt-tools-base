@@ -61,7 +61,8 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
     // don't have to deal with AppInfo replacement.
     @TaskAction
     public void extract() throws IOException {
-        URL fdrJar = FastDeployRuntimeExtractorTask.class.getResource("/fdr/fdr.jar");
+        URL fdrJar = FastDeployRuntimeExtractorTask.class
+                .getResource("instant-run/instant-run.jar");
         if (fdrJar == null) {
             throw new RuntimeException("Couldn't find Instant-Run runtime library");
         }
