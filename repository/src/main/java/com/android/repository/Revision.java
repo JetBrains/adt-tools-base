@@ -60,21 +60,23 @@ public class Revision implements Comparable<Revision> {
     private final String mPreviewSeparator;
 
     /**
-     * Parses a string of format "major.minor.micro rcPreview" and returns
-     * a new {@link Revision} for it.
+     * Parses a string of format "major.minor.micro rcPreview" and returns a new {@link Revision}
+     * for it.
      *
-     * All the fields except major are optional.
-     * <p/>
-     * @param revision A non-null revision to parse.
+     * All the fields except major are optional. <p/>
+     *
+     * @param revisionString   A non-null revisionString to parse.
+     * @param minimumPrecision Create a {@code Revision} with at least the given precision,
+     *                         regardless of how precise the {@code revisionString} is.
      * @return A new non-null {@link Revision}.
      * @throws NumberFormatException if the parsing failed.
      */
     @NonNull
-    public static Revision parseRevision(@NonNull String revision)
+    public static Revision parseRevision(@NonNull String revisionString, int minimumPrecision)
             throws NumberFormatException {
         Throwable cause = null;
         try {
-            Matcher m = FULL_REVISION_PATTERN.matcher(revision);
+            Matcher m = FULL_REVISION_PATTERN.matcher(revisionString);
             if (m.matches()) {
                 int major = Integer.parseInt(m.group(1));
 
@@ -103,6 +105,10 @@ public class Revision implements Comparable<Revision> {
                     precision = PRECISION_PREVIEW;
                 }
 
+                if (minimumPrecision > precision) {
+                    precision = minimumPrecision;
+                }
+
                 return new Revision(major, minor, micro, preview, precision,
                         previewSeparator);
             }
@@ -111,31 +117,65 @@ public class Revision implements Comparable<Revision> {
         }
 
         NumberFormatException n = new NumberFormatException(
-                "Invalid revision: " + revision);
+                "Invalid revision: " + revisionString);
         if (cause != null) {
             n.initCause(cause);
         }
         throw n;
     }
 
+    /**
+     * Parses a string of format "major.minor.micro rcPreview" and returns a new {@code Revision}
+     * for it.
+     *
+     * All the fields except major are optional. <p/>
+     *
+     * @param revisionString A non-null revisionString to parse.
+     * @return A new non-null {@link Revision}, with precision depending on the precision of {@code
+     *         revisionString}.
+     * @throws NumberFormatException if the parsing failed.
+     */
+    public static Revision parseRevision(@NonNull String revisionString)
+            throws NumberFormatException {
+        return parseRevision(revisionString, 0);
+    }
+
+    /**
+     * Creates a new {@code Revision} with the specified major revision and no other revision
+     * components.
+     */
     public Revision(int major) {
         this(major, IMPLICIT_MINOR_REV, IMPLICIT_MICRO_REV, NOT_A_PREVIEW, PRECISION_MAJOR,
                 DEFAULT_SEPARATOR);
     }
 
+    /**
+     * Creates a new {@code Revision} with the specified major and minor revision components and no
+     * others.
+     */
     public Revision(int major, int minor) {
         this(major, minor, IMPLICIT_MICRO_REV, NOT_A_PREVIEW, PRECISION_MINOR, DEFAULT_SEPARATOR);
     }
 
+    /**
+     * Creates a copy of the specified {@code Revision}.
+     */
     public Revision(@NonNull Revision revision) {
         this(revision.getMajor(), revision.getMinor(), revision.getMicro(), revision.getPreview(),
                 revision.mPrecision, revision.getSeparator());
     }
 
+    /**
+     * Creates a new {@code Revision} with the specified major, minor, and micro revision components
+     * and no preview component.
+     */
     public Revision(int major, int minor, int micro) {
         this(major, minor, micro, NOT_A_PREVIEW, PRECISION_MICRO, DEFAULT_SEPARATOR);
     }
 
+    /**
+     * Creates a new {@code Revision} with the specified components.
+     */
     public Revision(int major, int minor, int micro, int preview) {
         this(major, minor, micro, preview, PRECISION_PREVIEW, DEFAULT_SEPARATOR);
     }
@@ -150,6 +190,10 @@ public class Revision implements Comparable<Revision> {
         mPrecision = precision;
     }
 
+    /**
+     * Creates a new {@code Revision} with the specified components. The precision will be exactly
+     * sufficient to include all non-null components.
+     */
     public Revision(int major, @Nullable Integer minor, @Nullable Integer micro,
             @Nullable Integer preview) {
         this(major, minor == null ? IMPLICIT_MINOR_REV : minor,
@@ -214,6 +258,10 @@ public class Revision implements Comparable<Revision> {
         return result;
     }
 
+    /**
+     * Returns {@code true} if this revision is equal, <b>including in precision</b> to {@code rhs}.
+     * That is, {@code (new Revision(20)).equals(new Revision(20, 0, 0)} will return {@code false}.
+     */
     @Override
     public boolean equals(Object rhs) {
         if (this == rhs) {
