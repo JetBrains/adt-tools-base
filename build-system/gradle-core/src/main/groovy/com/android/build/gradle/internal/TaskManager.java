@@ -1103,11 +1103,11 @@ public abstract class TaskManager {
      * of whether Jack is used or not, but assemble will not depend on them if it is. They are
      * always used when running unit tests.
      */
-    public AndroidTask<JavaCompile> createJavacTask(
+    public AndroidTask<? extends JavaCompile> createJavacTask(
             @NonNull final TaskFactory tasks,
             @NonNull final VariantScope scope) {
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
-        final AndroidTask<JavaCompile> javacTask = androidTasks.create(tasks,
+        final AndroidTask<? extends JavaCompile> javacTask = androidTasks.create(tasks,
                 new JavaCompileConfigAction(scope));
         scope.setJavacTask(javacTask);
 
@@ -1286,7 +1286,7 @@ public abstract class TaskManager {
                 variantScope.getProcessJavaResourcesTask(),
                 testedVariantData.getScope().getProcessJavaResourcesTask());
 
-        AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
+        AndroidTask<? extends JavaCompile> javacTask = createJavacTask(tasks, variantScope);
         setJavaCompilerTask(javacTask, tasks, variantScope);
         createRunUnitTestTask(tasks, variantScope);
 
@@ -1366,7 +1366,7 @@ public abstract class TaskManager {
         if (variantData.getVariantConfiguration().getUseJack()) {
             createJackTask(tasks, variantScope);
         } else {
-            AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
+            AndroidTask<? extends JavaCompile> javacTask = createJavacTask(tasks, variantScope);
             setJavaCompilerTask(javacTask, tasks, variantScope);
             createPostCompilationTasks(tasks, variantScope);
         }

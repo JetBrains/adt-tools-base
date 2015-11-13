@@ -244,7 +244,8 @@ public class LibraryTaskManager extends TaskManager {
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
-                        AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
+                        AndroidTask<? extends JavaCompile> javacTask =
+                                createJavacTask(tasks, variantScope);
                         TaskManager.setJavaCompilerTask(javacTask, tasks, variantScope);
                         return null;
                     }

@@ -168,7 +168,8 @@ public class ApplicationTaskManager extends TaskManager {
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
-                        AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
+                        AndroidTask<? extends JavaCompile> javacTask =
+                                createJavacTask(tasks, variantScope);
 
                         if (variantData.getVariantConfiguration().getUseJack()) {
                             createJackTask(tasks, variantScope);

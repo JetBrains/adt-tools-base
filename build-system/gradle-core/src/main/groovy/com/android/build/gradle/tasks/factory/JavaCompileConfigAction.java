@@ -22,7 +22,7 @@ import java.util.concurrent.Callable;
 /**
  * Configuration Action for a JavaCompile task.
  */
-public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
+public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaCompile> {
 
     private VariantScope scope;
 
@@ -38,14 +38,15 @@ public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
 
     @NonNull
     @Override
-    public Class<JavaCompile> getType() {
-        return JavaCompile.class;
+    public Class<AndroidJavaCompile> getType() {
+        return AndroidJavaCompile.class;
     }
 
     @Override
-    public void execute(@NonNull final JavaCompile javacTask) {
+    public void execute(@NonNull final AndroidJavaCompile javacTask) {
         final BaseVariantData testedVariantData = scope.getTestedVariantData();
         scope.getVariantData().javacTask = javacTask;
+        javacTask.mBuildContext = scope.getInstantRunBuildContext();
 
         javacTask.setSource(scope.getVariantData().getJavaSources());
 

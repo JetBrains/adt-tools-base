@@ -32,6 +32,7 @@ import javax.xml.parsers.ParserConfigurationException;
 public class InstantRunBuildContext {
 
     public enum TaskType {
+        JAVAC,
         INSTANT_RUN_DEX,
         INSTANT_RUN_TRANSFORM,
         VERIFIER

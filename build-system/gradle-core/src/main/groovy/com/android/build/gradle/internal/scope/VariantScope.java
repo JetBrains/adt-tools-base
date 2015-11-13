@@ -328,9 +328,9 @@ public interface VariantScope extends BaseScope {
     void setJackTask(@Nullable AndroidTask<JackTask> jackTask);
 
     @Nullable
-    AndroidTask<JavaCompile> getJavacTask();
+    AndroidTask<? extends JavaCompile> getJavacTask();
 
-    void setJavacTask(@Nullable AndroidTask<JavaCompile> javacTask);
+    void setJavacTask(@Nullable AndroidTask<? extends JavaCompile> javacTask);
 
     void setJavaCompilerTask(@NonNull AndroidTask<? extends AbstractCompile> javaCompileTask);
 

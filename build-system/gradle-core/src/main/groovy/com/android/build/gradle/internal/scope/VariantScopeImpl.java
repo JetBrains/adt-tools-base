@@ -124,7 +124,7 @@ public class VariantScopeImpl implements VariantScope {
     @Nullable
     private AndroidTask<? extends AbstractCompile> javaCompilerTask;
     @Nullable
-    private AndroidTask<JavaCompile> javacTask;
+    private AndroidTask<? extends JavaCompile> javacTask;
     @Nullable
     private AndroidTask<JackTask> jackTask;
 
@@ -868,13 +868,13 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     @Nullable
-    public AndroidTask<JavaCompile> getJavacTask() {
+    public AndroidTask<? extends  JavaCompile> getJavacTask() {
         return javacTask;
     }
 
     @Override
     public void setJavacTask(
-            @Nullable AndroidTask<JavaCompile> javacTask) {
+            @Nullable AndroidTask<? extends JavaCompile> javacTask) {
         this.javacTask = javacTask;
     }
 
