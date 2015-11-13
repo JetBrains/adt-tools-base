@@ -21,6 +21,21 @@ sourceSets {
     }
 }
 
+javadoc {
+  classpath += configurations.provided
+  options.links("http://docs.oracle.com/javase/7/docs/api/", "https://docs.gradle.org/current/javadoc/")
+
+  if (JavaVersion.current().isJava8Compatible()) {
+      options.addStringOption 'Xdoclint:none', '-quiet'
+  }
+}
+
+task javadocZip(type: Zip) {
+  dependsOn javadoc
+  from javadoc.destinationDir
+  baseName 'javadoc'
+}
+
 group = 'com.android.tools.build'
 archivesBaseName = 'transform-api'
 version = rootProject.ext.buildVersion
