@@ -423,7 +423,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 new File(scope.getRestartDexOutputFolder(), "classes.dex"),
                 new File(scope.getReloadDexOutputFolder(), "classes.dex"),
                 // todo : move this to a shared location.
-                new File(scope.getReloadDexOutputFolder(), "build-info.xml"));
+                InstantRunAnchorTask.InstantRunAnchorTaskConfigAction.getBuildInfoFile(scope));
 
         return new AndroidArtifactImpl(
                 name,
