@@ -25,6 +25,7 @@ import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.utils.StringHelper;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -40,6 +41,7 @@ import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.tooling.BuildException;
 
 import java.io.File;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -216,6 +218,13 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             logger.error("\t}");
             throw new BuildException(e.getMessage(), e);
         } catch (Exception e) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            Throwable rootCause = Throwables.getRootCause(e);
+            if (rootCause instanceof NoSuchAlgorithmException) {
+                throw new BuildException(
+                        rootCause.getMessage() + ": try using a newer JVM to build your application.",
+                        rootCause);
+            }
             throw new BuildException(e.getMessage(), e);
         }
     }

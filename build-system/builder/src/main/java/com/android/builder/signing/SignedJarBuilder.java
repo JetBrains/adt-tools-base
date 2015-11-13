@@ -466,12 +466,8 @@ public class SignedJarBuilder {
         JcaCertStore certs = new JcaCertStore(certList);
 
         CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
-        // Digest algorithms in JCA Signature algorithms do not use the hyphen.
-        // For example, SHA-256 becomes SHA256withRSA.
-        String signatureAlgorithm =
-                mMessageDigestAlgorithm.replace("-", "") + "with" + privateKey.getAlgorithm();
-        ContentSigner sha1Signer = new JcaContentSignerBuilder(signatureAlgorithm)
-                                   .build(privateKey);
+        ContentSigner sha1Signer =
+                new JcaContentSignerBuilder(getSignatureAlgorithm(privateKey)).build(privateKey);
         gen.addSignerInfoGenerator(
             new JcaSignerInfoGeneratorBuilder(
                 new JcaDigestCalculatorProviderBuilder()
@@ -482,11 +478,34 @@ public class SignedJarBuilder {
         CMSSignedData sigData = gen.generate(data, false);
 
         ASN1InputStream asn1 = new ASN1InputStream(sigData.getEncoded());
-        DEROutputStream dos = new DEROutputStream(mOutputJar);
-        dos.writeObject(asn1.readObject());
+        try {
+            DEROutputStream dos = new DEROutputStream(mOutputJar);
+            try {
+                dos.writeObject(asn1.readObject());
+            } finally {
+                dos.flush();
+                dos.close();
+            }
+        } finally {
+            asn1.close();
+        }
+    }
 
-        dos.flush();
-        dos.close();
-        asn1.close();
+    private String getSignatureAlgorithm(PrivateKey privateKey) {
+        String keyAlgorithm = privateKey.getAlgorithm();
+        String digestAlgorithm = mMessageDigestAlgorithm.replace("-", "");
+
+        if ("RSA".equalsIgnoreCase(keyAlgorithm)) {
+            // Digest algorithms in JCA Signature algorithms do not use the hyphen.
+            // For example, SHA-256 becomes SHA256withRSA.
+            return digestAlgorithm + "withRSA";
+        } else if ("EC".equalsIgnoreCase(keyAlgorithm)) {
+            return digestAlgorithm + "withECDSA";
+        } else if ("DSA".equalsIgnoreCase(keyAlgorithm)) {
+            return digestAlgorithm + "withDSA";
+        } else {
+            throw new IllegalArgumentException(
+                "Unsupported key algorithm for signing: " + keyAlgorithm);
+        }
     }
 }
