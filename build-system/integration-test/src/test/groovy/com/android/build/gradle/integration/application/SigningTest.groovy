@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.utils.FileHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.SigningConfigHelper
@@ -33,6 +34,8 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
@@ -44,9 +47,10 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASS
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD
 /**
- * Integration test with signing overrider.
+ * Integration test for all signing-related features.
  */
 @CompileStatic
+@RunWith(FilterableParameterized)
 class SigningTest {
 
     public static final String STORE_PASSWORD = "store_password"
@@ -54,6 +58,28 @@ class SigningTest {
     public static final String ALIAS_NAME = "alias_name"
 
     public static final String KEY_PASSWORD = "key_password"
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() {
+        def parameters = [
+                ["rsa_keystore.jks", "CERT.RSA"] as Object[],
+        ]
+
+        // These are not available on 1.6. To test, run the following (with proper JAVA_HOME):
+        // JAVA_FOR_TESTS=1.8 ./gradlew :b:i:testPrebuilts --tests=*.SigningTest
+        if (!System.getProperty("java.version").startsWith("1.6")) {
+            parameters.add(["ec_keystore.jks", "CERT.EC"] as Object[])
+            parameters.add(["dsa_keystore.jks", "CERT.DSA"] as Object[])
+        }
+
+        return parameters
+    }
+
+    @Parameterized.Parameter(0)
+    public String keystoreName
+
+    @Parameterized.Parameter(1)
+    public String certEntryName
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
@@ -64,11 +90,10 @@ class SigningTest {
 
     @Before
     public void setUp() throws Exception {
-        this.keystore = project.file("the.keystore")
-        def keystoreBytes =
-                Resources.toByteArray(
-                        Resources.getResource(SigningTest, "SigningTest/debug.keystore"))
-        keystore << keystoreBytes
+        keystore = project.file("the.keystore")
+
+
+        createKeystoreFile(keystoreName, keystore)
 
         project.buildFile << """
                 apply plugin: 'com.android.application'
@@ -80,7 +105,7 @@ class SigningTest {
 
                     signingConfigs {
                         customDebug {
-                            storeFile file("the.keystore")
+                            storeFile file("${keystore.name}")
                             storePassword "$STORE_PASSWORD"
                             keyAlias "$ALIAS_NAME"
                             keyPassword "$KEY_PASSWORD"
@@ -109,10 +134,17 @@ class SigningTest {
 
     }
 
+    private void createKeystoreFile(String resourceName, File keystore) {
+        def keystoreBytes =
+                Resources.toByteArray(
+                        Resources.getResource(SigningTest, "SigningTest/" + resourceName))
+        keystore << keystoreBytes
+    }
+
     @Test
     void "signing DSL"() throws Exception {
         project.execute("assembleDebug")
-        assertThatZip(project.getApk("debug")).contains("META-INF/CERT.RSA")
+        assertThatZip(project.getApk("debug")).contains("META-INF/$certEntryName")
     }
 
     @Test
@@ -127,7 +159,7 @@ class SigningTest {
         project.execute(args, "assembleRelease")
 
         // Check for signing file inside the archive.
-        assertThatZip(project.getApk("release")).contains("META-INF/CERT.RSA")
+        assertThatZip(project.getApk("release")).contains("META-INF/$certEntryName")
     }
 
     @Test
