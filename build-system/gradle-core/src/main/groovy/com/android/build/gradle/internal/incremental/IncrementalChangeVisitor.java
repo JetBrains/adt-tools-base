@@ -137,6 +137,9 @@ public class IncrementalChangeVisitor extends IncrementalVisitor {
         mv.visitInsn(Opcodes.RETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
+
+        super.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_STATIC,
+                "$obsolete", "Z", null, null);
     }
 
     @Override
