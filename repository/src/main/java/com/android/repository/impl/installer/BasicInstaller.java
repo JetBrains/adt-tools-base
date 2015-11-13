@@ -169,7 +169,7 @@ public class BasicInstaller implements PackageInstaller {
             try {
                 SchemaModuleUtil
                         .marshal(element, p.getSource().getPermittedModules(), fos,
-                                manager.getResourceResolver(), progress);
+                                manager.getResourceResolver(progress), progress);
             } finally {
                 fos.close();
             }

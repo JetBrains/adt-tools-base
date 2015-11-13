@@ -168,7 +168,8 @@ public final class LocalRepoLoader {
             repo.addLicense(impl.getLicense());
 
             SchemaModuleUtil.marshal(p.getTypeDetails().createFactory().generateElement(repo),
-                    mRepoManager.getSchemaModules(), fos, mRepoManager.getResourceResolver(), progress);
+                    mRepoManager.getSchemaModules(), fos,
+                    mRepoManager.getResourceResolver(progress), progress);
         } catch (FileNotFoundException e) {
             progress.logWarning("File not found while marshalling " + packageXml, e);
         } finally {
@@ -191,7 +192,8 @@ public final class LocalRepoLoader {
         Repository repo;
         try {
             repo = (Repository) SchemaModuleUtil.unmarshal(mFop.newFileInputStream(packageXml),
-                    mRepoManager.getSchemaModules(), mRepoManager.getResourceResolver(), progress);
+                    mRepoManager.getSchemaModules(), mRepoManager.getResourceResolver(progress),
+                    progress);
         } catch (FileNotFoundException e) {
             // This shouldn't ever happen
             progress.logError(String.format("XML file %s doesn't exist", packageXml), e);

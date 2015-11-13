@@ -23,8 +23,9 @@ import com.android.repository.api.SchemaModule;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import com.sun.org.apache.xerces.internal.dom.DOMInputImpl;
 
+import org.w3c.dom.bootstrap.DOMImplementationRegistry;
+import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.ErrorHandler;
@@ -58,24 +59,36 @@ import javax.xml.validation.SchemaFactory;
 public class SchemaModuleUtil {
 
     /**
-     * Create an {@link LSResourceResolver} that will used the supplied {@link SchemaModule}s to
+     * Create an {@link LSResourceResolver} that will use the supplied {@link SchemaModule}s to
      * find an XSD from its namespace. This must be used when marshalling/unmarshalling if any
      * {@link SchemaModule}s contain XSDs which import others without specifying a complete
      * {@code schemaLocation}.
      */
-    @NonNull
+    @Nullable
     public static LSResourceResolver createResourceResolver(
-            @NonNull final Collection<SchemaModule> modules) {
+            @NonNull final Collection<SchemaModule> modules, @NonNull ProgressIndicator progress) {
+
+        DOMImplementationRegistry registry;
+        try {
+            registry = DOMImplementationRegistry.newInstance();
+        } catch (Exception e) {
+            progress.logError("Error during resolver creation: ", e);
+            return null;
+        }
+        final DOMImplementationLS ls = (DOMImplementationLS)registry.getDOMImplementation("LS");
+
         return new LSResourceResolver() {
             @Override
             public LSInput resolveResource(String type, String namespaceURI, String publicId,
                     String systemId, String baseURI) {
-                SchemaModule.SchemaModuleVersion version = null;
+                SchemaModule.SchemaModuleVersion version;
                 for (SchemaModule ext : modules) {
                     version = ext.getNamespaceVersionMap().get(namespaceURI);
                     if (version != null) {
-                        return new DOMInputImpl(version.getNamespace(), null, null,
-                                version.getXsd(), null);
+                        LSInput input = ls.createLSInput();
+                        input.setSystemId(version.getNamespace());
+                        input.setByteStream(version.getXsd());
+                        return input;
                     }
                 }
                 return null;
@@ -107,8 +120,8 @@ public class SchemaModuleUtil {
     /**
      * Creates a {@link Schema} from a collection of {@link SchemaModule}s, with a given
      * {@link LSResourceResolver} (probably obtained from
-     * {@link #createResourceResolver(Collection)}. Any warnings or errors are logged to the
-     * given {@link ProgressIndicator}.
+     * {@link #createResourceResolver(Collection, ProgressIndicator)}. Any warnings or errors are
+     * logged to the given {@link ProgressIndicator}.
      */
     @VisibleForTesting
     @NonNull
@@ -161,7 +174,7 @@ public class SchemaModuleUtil {
      * @param xml The XML to read. The stream will be closed after being read.
      * @param possibleModules The {@link SchemaModule}s that are available to parse the XML.
      * @param resourceResolver Resolver for any imported XSDs.
-     * @param progress For loggin.
+     * @param progress For logging.
      * @return The unmarshalled object.
      *
      * TODO: maybe templatize and return a nicer type.
