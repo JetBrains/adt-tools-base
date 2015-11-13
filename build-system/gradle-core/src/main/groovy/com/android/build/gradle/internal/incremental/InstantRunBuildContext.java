@@ -69,15 +69,13 @@ public class InstantRunBuildContext {
     }
 
     /**
-     * Returns true if the verifier did not find any incompatible changes for InstantRun
+     * Returns true if the verifier did not find any incompatible changes for InstantRun or was not
+     * run due to no code changes.
      * @return true to use hot swapping, false otherwise.
-     * @throws IllegalStateException if the verifier did not run.
      */
     public boolean hasPassedVerification() {
-        if (!verifierResult.isPresent()) {
-            throw new IllegalStateException("verifier not run !");
-        }
-        return verifierResult.get() == InstantRunVerifierStatus.COMPATIBLE;
+        return !verifierResult.isPresent()
+                || verifierResult.get() == InstantRunVerifierStatus.COMPATIBLE;
     }
 
     /**
