@@ -31,6 +31,7 @@ import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Project;
+import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -107,7 +108,35 @@ public class LintGradleClient extends LintCliClient {
     @Override
     @NonNull
     protected LintRequest createLintRequest(@NonNull List<File> files) {
-        return new LintGradleRequest(this, mModelProject, mGradleProject, mVariantName, files);
+        LintRequest lintRequest = new LintRequest(this, files);
+        Variant variant = findVariant(mModelProject, mVariantName);
+        if (variant == null) {
+            lintRequest.setProjects(Lists.<Project>newArrayList());
+        } else {
+            Pair<LintGradleProject,List<File>> result = LintGradleProject.create(
+                    this, mModelProject, variant, mGradleProject);
+            lintRequest.setProjects(Collections.<Project>singletonList(result.getFirst()));
+            setCustomRules(result.getSecond());
+        }
+
+        return lintRequest;
+    }
+
+    private static Variant findVariant(@NonNull AndroidProject project,
+            @Nullable String variantName) {
+        if (variantName != null) {
+            for (Variant variant : project.getVariants()) {
+                if (variantName.equals(variant.getName())) {
+                    return variant;
+                }
+            }
+        }
+
+        if (!project.getVariants().isEmpty()) {
+            return project.getVariants().iterator().next();
+        }
+
+        return null;
     }
 
     /** Run lint with the given registry and return the resulting warnings */
