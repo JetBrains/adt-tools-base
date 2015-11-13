@@ -109,7 +109,7 @@ public class LegacyLocalRepoTest extends TestCase {
         Repository repo = (Repository) SchemaModuleUtil.unmarshal(
                 mockFop.newFileInputStream(new File("/sdk/tools/package.xml")),
                 extensions,
-                mgr.getResourceResolver(), progress);
+                mgr.getResourceResolver(progress), progress);
         progress.assertNoErrorsOrWarnings();
         LocalPackage local = repo.getLocalPackage();
         local.setRepositoryRoot(mgr.getLocalPath());

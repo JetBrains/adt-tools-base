@@ -52,8 +52,8 @@ public class UnmarshalTest extends TestCase {
         SchemaModule addonEx = handler.getAddonModule(progress);
         RepoManager mgr = handler.getSdkManager(progress);
         Repository repo = (Repository) SchemaModuleUtil
-                .unmarshal(xmlStream, ImmutableList.of(repoEx, addonEx), mgr.getResourceResolver(),
-                        progress);
+                .unmarshal(xmlStream, ImmutableList.of(repoEx, addonEx),
+                        mgr.getResourceResolver(progress), progress);
         progress.assertNoErrorsOrWarnings();
         List<? extends License> licenses = repo.getLicense();
         assertEquals(licenses.size(), 2);
