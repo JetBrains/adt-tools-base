@@ -16,9 +16,15 @@
 
 package com.android.build.gradle.tasks;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.dsl.AaptOptions;
+import com.android.build.gradle.internal.dsl.AbiSplitOptions;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.builder.core.AaptPackageProcessBuilder;
+import com.android.builder.core.VariantConfiguration;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessException;
 
@@ -36,6 +42,7 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * Generates all metadata (like AndroidManifest.xml) necessary for a ABI dimension split APK.
@@ -186,5 +193,58 @@ public class GenerateSplitAbiRes extends BaseTask {
 
     public void setAaptOptions(AaptOptions aaptOptions) {
         this.aaptOptions = aaptOptions;
+    }
+
+    // ----- ConfigAction -----
+
+    public static class ConfigAction implements TaskConfigAction<GenerateSplitAbiRes> {
+
+        private VariantScope scope;
+
+        public ConfigAction(VariantScope scope) {
+            this.scope = scope;
+        }
+
+        @Override
+        @NonNull
+        public String getName() {
+            return scope.getTaskName("generate", "SplitAbiRes");
+        }
+
+        @Override
+        @NonNull
+        public Class<GenerateSplitAbiRes> getType() {
+            return GenerateSplitAbiRes.class;
+        }
+
+        @Override
+        public void execute(@NonNull GenerateSplitAbiRes generateSplitAbiRes) {
+            final VariantConfiguration config = scope.getVariantConfiguration();
+            Set<String> filters = AbiSplitOptions.getAbiFilters(
+                    scope.getGlobalScope().getExtension().getSplits().getAbiFilters());
+
+            generateSplitAbiRes.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            generateSplitAbiRes.setVariantName(config.getFullName());
+
+            generateSplitAbiRes.setOutputDirectory(scope.getGenerateSplitAbiResOutputDirectory());
+            generateSplitAbiRes.setSplits(filters);
+            generateSplitAbiRes.setOutputBaseName(config.getBaseName());
+            generateSplitAbiRes.setApplicationId(config.getApplicationId());
+            generateSplitAbiRes.setVersionCode(config.getVersionCode());
+            generateSplitAbiRes.setVersionName(config.getVersionName());
+            ConventionMappingHelper.map(generateSplitAbiRes, "debuggable", new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return config.getBuildType().isDebuggable();
+                }
+            });
+            ConventionMappingHelper.map(generateSplitAbiRes, "aaptOptions",
+                    new Callable<AaptOptions>() {
+                        @Override
+                        public AaptOptions call() throws Exception {
+                            return scope.getGlobalScope().getExtension().getAaptOptions();
+                        }
+                    });
+        }
     }
 }

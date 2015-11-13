@@ -31,11 +31,10 @@ import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
-import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.MergeResources;
+import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.signing.SignedJarBuilder;
 
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
@@ -45,7 +44,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 
 /**
  * A scope containing data for a specific variant.
@@ -210,6 +209,18 @@ public interface VariantScope extends BaseScope {
     File getProcessAndroidResourcesProguardOutputFile();
 
     File getMappingFile();
+
+    @NonNull
+    File getGenerateSplitAbiResOutputDirectory();
+
+    @NonNull
+    File getSplitOutputDirectory();
+
+    @NonNull
+    List<File> getSplitAbiResOutputFiles();
+
+    @NonNull
+    List<File> getPackageSplitAbiOutputFiles();
 
     @NonNull
     File getAaptFriendlyManifestOutputFile();

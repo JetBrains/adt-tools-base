@@ -188,4 +188,9 @@ public class GlobalScope {
                 AndroidGradleOptions.getApkLocation(project),
                 getDefaultApkLocation());
     }
+
+    @NonNull
+    public String getArchivesBaseName() {
+        return (String)getProject().getProperties().get("archivesBaseName");
+    }
 }

@@ -16,13 +16,27 @@
 
 package com.android.build.gradle.tasks;
 
+import static com.android.build.OutputFile.FilterType.ABI;
+import static com.android.build.OutputFile.FilterType.DENSITY;
+import static com.android.build.OutputFile.FilterType.LANGUAGE;
+import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.FilterData;
 import com.android.build.OutputFile.FilterType;
 import com.android.build.OutputFile.OutputType;
 import com.android.build.gradle.api.ApkOutputFile;
+import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.model.FilterDataImpl;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.core.VariantConfiguration;
+import com.android.builder.sdk.TargetInfo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.Callables;
@@ -42,6 +56,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -298,5 +313,74 @@ public class SplitZipAlign extends SplitRelatedTask {
         SplitRelatedTask.addAllFilterData(filterDataBuilder, languageFilters, FilterType.LANGUAGE);
         SplitRelatedTask.addAllFilterData(filterDataBuilder, abiFilters, FilterType.ABI);
         return filterDataBuilder.build();
+    }
+
+    // ----- ConfigAction -----
+
+    public static class ConfigAction implements TaskConfigAction<SplitZipAlign> {
+
+        private VariantScope scope;
+
+        public ConfigAction(VariantScope scope) {
+            this.scope = scope;
+        }
+
+        @Override
+        @NonNull
+        public String getName() {
+            return scope.getTaskName("zipAlign", "SplitPackages");
+        }
+
+        @Override
+        @NonNull
+        public Class<SplitZipAlign> getType() {
+            return SplitZipAlign.class;
+        }
+
+        @Override
+        public void execute(@NonNull SplitZipAlign zipAlign) {
+            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+            List<? extends BaseVariantOutputData> outputs = variantData.getOutputs();
+            final BaseVariantOutputData variantOutputData = outputs.get(0);
+
+            final VariantConfiguration config = scope.getVariantConfiguration();
+            Set<String> densityFilters = variantData.getFilters(DENSITY);
+            Set<String> abiFilters = variantData.getFilters(ABI);
+            Set<String> languageFilters = variantData.getFilters(LANGUAGE);
+
+            zipAlign.setVariantName(config.getFullName());
+            ConventionMappingHelper.map(zipAlign, "zipAlignExe", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    final TargetInfo info =
+                            scope.getGlobalScope().getAndroidBuilder().getTargetInfo();
+                    if (info == null) {
+                        return null;
+                    }
+                    String path = info.getBuildTools().getPath(ZIP_ALIGN);
+                    if (path == null) {
+                        return null;
+                    }
+                    return new File(path);
+                }
+            });
+
+            zipAlign.setOutputDirectory(new File(scope.getGlobalScope().getBuildDir(), "outputs/apk"));
+            ConventionMappingHelper.map(zipAlign, "densityOrLanguageInputFiles",
+                    new Callable<List<File>>() {
+                        @Override
+                        public List<File> call() {
+                            return variantOutputData.packageSplitResourcesTask.getOutputFiles();
+                        }
+                    });
+            zipAlign.setOutputBaseName(config.getBaseName());
+            zipAlign.setAbiFilters(abiFilters);
+            zipAlign.setLanguageFilters(languageFilters);
+            zipAlign.setDensityFilters(densityFilters);
+            File metadataDirectory = new File(zipAlign.getOutputDirectory().getParentFile(),
+                    "metadata");
+            zipAlign.setApkMetadataFile(new File(metadataDirectory, config.getFullName() + ".mtd"));
+            ((ApkVariantOutputData) variantOutputData).splitZipAlign = zipAlign;
+        }
     }
 }
