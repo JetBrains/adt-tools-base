@@ -40,9 +40,6 @@ import java.io.File;
  */
 public class InstantRunAnchorTask extends BaseTask {
 
-    @Input
-    File restartDexFile;
-
     @OutputFile
     File buildInfoFile;
 
@@ -108,8 +105,6 @@ public class InstantRunAnchorTask extends BaseTask {
             task.buildInfoFile = getBuildInfoFile(variantScope);
             task.instantRunBuildContext = variantScope.getInstantRunBuildContext();
             task.logger = logger;
-            task.restartDexFile = new File(
-                    InstantRunDex.BuildType.RESTART.getOutputFolder(variantScope), "classes.dex");
         }
     }
 }

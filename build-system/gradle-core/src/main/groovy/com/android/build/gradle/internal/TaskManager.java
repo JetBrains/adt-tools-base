@@ -1995,7 +1995,8 @@ public abstract class TaskManager {
 
         // ----- 10x support
 
-        createIncrementalPostCompilationTasks(tasks, variantScope);
+        AndroidTask<InstantRunAnchorTask> incrementalPostCompilationTasks
+                = createIncrementalPostCompilationTasks(tasks, variantScope);
 
         // ----- Multi-Dex support
 
@@ -2049,15 +2050,14 @@ public abstract class TaskManager {
                 tasks, variantScope, dexTransform);
         // need to manually make dex task depend on MultiDexTransform since there's no stream
         // consumption making this automatic
-        dexTask.optionalDependsOn(tasks, multiDexClassListTask);
+        dexTask.optionalDependsOn(tasks, multiDexClassListTask, incrementalPostCompilationTasks);
     }
 
     /**
      * Creates all InstantRun related transforms after compilation.
-     * @param tasks
-     * @param scope
      */
-    public void createIncrementalPostCompilationTasks(
+    @Nullable
+    public AndroidTask<InstantRunAnchorTask> createIncrementalPostCompilationTasks(
             TaskFactory tasks, @NonNull final VariantScope scope) {
 
         if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.NONE) {
@@ -2087,13 +2087,12 @@ public abstract class TaskManager {
             AndroidTask<TransformTask> transformThreeTask = scope.getTransformManager()
                     .addTransform(tasks, scope, classesThreeTransform);
 
-            // create the anchor task, no other tasks depend on this, it must be invoked by
-            // the user directly.
             AndroidTask<InstantRunAnchorTask> instantRunAnchor = androidTasks.create(tasks,
                     new InstantRunAnchorTask.InstantRunAnchorTaskConfigAction(scope, getLogger()));
-
             instantRunAnchor.dependsOn(tasks, transformTwoTask, transformThreeTask);
+            return instantRunAnchor;
         }
+        return null;
     }
 
     protected void handleJacocoDependencies(@NonNull VariantScope variantScope) {
