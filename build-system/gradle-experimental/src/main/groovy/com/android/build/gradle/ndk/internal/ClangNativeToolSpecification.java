@@ -66,6 +66,7 @@ public class ClangNativeToolSpecification extends AbstractNativeToolSpecificatio
                             "-msoft-float",
                             "-mthumb",
                             "-Os",
+                            "-g",
                             "-DNDEBUG",
                             "-fomit-frame-pointer",
                             "-fstrict-aliasing"))
@@ -80,6 +81,7 @@ public class ClangNativeToolSpecification extends AbstractNativeToolSpecificatio
                             "-mfpu=vfpv3-d16",
                             "-mthumb",
                             "-Os",
+                            "-g",
                             "-DNDEBUG",
                             "-fomit-frame-pointer",
                             "-fstrict-aliasing"))
@@ -90,6 +92,7 @@ public class ClangNativeToolSpecification extends AbstractNativeToolSpecificatio
                             "-fstack-protector",
                             "-no-canonical-prefixes",
                             "-O2",
+                            "-g",
                             "-DNDEBUG",
                             "-fomit-frame-pointer",
                             "-fstrict-aliasing"))
@@ -100,6 +103,7 @@ public class ClangNativeToolSpecification extends AbstractNativeToolSpecificatio
                             "-fPIC",
                             "-no-canonical-prefixes",
                             "-O2",
+                            "-g",
                             "-DNDEBUG",
                             "-fomit-frame-pointer",
                             "-fstrict-aliasing"))
@@ -110,6 +114,7 @@ public class ClangNativeToolSpecification extends AbstractNativeToolSpecificatio
                             "-fPIC",
                             "-no-canonical-prefixes",
                             "-O2",
+                            "-g",
                             "-DNDEBUG",
                             "-fomit-frame-pointer",
                             "-fstrict-aliasing"))
