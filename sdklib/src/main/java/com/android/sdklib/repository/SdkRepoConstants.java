@@ -18,6 +18,7 @@ package com.android.sdklib.repository;
 
 
 import com.android.annotations.NonNull;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 
 import java.io.InputStream;
 import java.util.regex.Matcher;
@@ -34,7 +35,7 @@ public class SdkRepoConstants extends RepoConstants {
      * The latest version of the sdk-repository XML Schema.
      * Valid version numbers are between 1 and this number, included.
      */
-    public static final int NS_LATEST_VERSION = 12;
+    public static final int NS_LATEST_VERSION = AndroidSdkHandler.LATEST_LEGACY_VERSION;
 
     /**
      * The min version of the sdk-repository XML Schema we'll try to load.

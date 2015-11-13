@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.sun.codemodel.JAnnotationArrayMember;
-import com.sun.codemodel.JAnnotationUse;
 import com.sun.codemodel.JBlock;
 import com.sun.codemodel.JClass;
 import com.sun.codemodel.JCodeModel;
@@ -53,7 +52,6 @@ import javax.xml.bind.JAXBIntrospector;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.transform.dom.DOMSource;
 
 /**
@@ -146,9 +144,14 @@ public class InheritancePlugin extends Plugin {
                 convertMethod(supers, model, classOutline, method);
             }
 
-            // Add a method to each class to create the corresponding ObjectFactory
-            JMethod getOf = classOutline.implClass.method(JMod.PUBLIC, objFactory, "createFactory");
-            getOf.body()._return(JExpr._new(objFactory));
+            // Add a method to each class to create the corresponding ObjectFactory (only if it's a
+            // concrete class, since otherwise overriding methods in other modules will have
+            // clashing return types).
+            if (!classOutline.implClass.isAbstract()) {
+                JMethod getOf = classOutline.implClass
+                        .method(JMod.PUBLIC, objFactory, "createFactory");
+                getOf.body()._return(JExpr._new(objFactory));
+            }
         }
 
         return true;

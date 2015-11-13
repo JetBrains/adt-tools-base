@@ -22,6 +22,10 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.repository.Revision;
+import com.android.repository.api.ConsoleProgressIndicator;
+import com.android.repository.api.License;
+import com.android.repository.api.RepoManager;
+import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.io.FileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkManager;
@@ -32,12 +36,12 @@ import com.android.sdklib.internal.repository.sources.SdkRepoSource;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.IListDescription;
-import com.android.sdklib.repository.License;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.w3c.dom.Node;
@@ -159,7 +163,11 @@ public abstract class Package implements IDescription, IListDescription, Compara
 
         license = getProperty(props, PkgProps.PKG_LICENSE, license);
         if (license != null) {
-            mLicense = new License(license, getProperty(props, PkgProps.PKG_LICENSE_REF, null));
+            AndroidSdkHandler handler = AndroidSdkHandler.getInstance();
+            RepoManager sdkManager = handler.getSdkManager(new ConsoleProgressIndicator());
+            CommonFactory f = (CommonFactory) sdkManager.getCommonModule().createLatestFactory();
+            mLicense = f
+                    .createLicenseType(license, getProperty(props, PkgProps.PKG_LICENSE_REF, null));
         }
         else {
             mLicense = null;
@@ -266,11 +274,11 @@ public abstract class Package implements IDescription, IListDescription, Compara
      */
     public void saveProperties(@NonNull Properties props) {
         if (mLicense != null) {
-            String license = mLicense.getLicense();
+            String license = mLicense.getValue();
             if (license != null && !license.isEmpty()) {
                 props.setProperty(PkgProps.PKG_LICENSE, license);
             }
-            String licenseRef = mLicense.getLicenseRef();
+            String licenseRef = mLicense.getId();
             if (licenseRef != null && !licenseRef.isEmpty()) {
                 props.setProperty(PkgProps.PKG_LICENSE_REF, licenseRef);
             }
@@ -312,7 +320,10 @@ public abstract class Package implements IDescription, IListDescription, Compara
             Node ref = usesLicense.getAttributes().getNamedItem(SdkRepoConstants.ATTR_REF);
             if (ref != null) {
                 String licenseRef = ref.getNodeValue();
-                return new License(licenses.get(licenseRef), licenseRef);
+                AndroidSdkHandler handler = AndroidSdkHandler.getInstance();
+                RepoManager sdkManager = handler.getSdkManager(new ConsoleProgressIndicator());
+                CommonFactory f = (CommonFactory) sdkManager.getCommonModule().createLatestFactory();
+                return f.createLicenseType(licenses.get(licenseRef), licenseRef);
             }
         }
         return null;

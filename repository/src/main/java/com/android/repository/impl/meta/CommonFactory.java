@@ -73,6 +73,18 @@ public abstract class CommonFactory extends ElementFactory<Repository> {
     @NonNull
     public abstract RepoPackageImpl.UsesLicense createLicensesType();
 
+    /**
+     * Convenience method to create a license with the given id and value.
+     */
+    @NonNull
+    public License createLicenseType(String value, String id) {
+        License l = createLicenseType();
+        l.setValue(value);
+        l.setId(id);
+        l.setType("text");
+        return l;
+    }
+
     @NonNull
     public abstract License createLicenseType();
 

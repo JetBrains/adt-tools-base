@@ -59,7 +59,7 @@ import java.util.concurrent.TimeUnit;
  *     </li>
  * </ul>
  * <p>
- * To load the local and remote packages, use {@link #load(long, boolean, List, List, List, boolean,
+ * To load the local and remote packages, use {@link #load(long, List, List, List, boolean,
  * ProgressRunner, Downloader, SettingsController, boolean)}
  * <br>
  * TODO: it would be nice if this could be redesigned such that load didn't need to be called
@@ -82,8 +82,7 @@ public abstract class RepoManager {
      * @return A new {@code RepoManager}.
      */
     @NonNull
-    public static RepoManager create(@NonNull FileOp fop)
-            throws URISyntaxException, InstantiationException {
+    public static RepoManager create(@NonNull FileOp fop) {
         return new RepoManagerImpl(fop);
     }
 
@@ -204,9 +203,9 @@ public abstract class RepoManager {
             boolean sync);
 
     /**
-     * Causes cached results to be considered expired. The next time {@link #load(long, boolean,
-     * List, List, List, boolean, ProgressRunner, Downloader, SettingsController, boolean)} is
-     * called, a complete load will be done.
+     * Causes cached results to be considered expired. The next time {@link #load(long, List, List,
+     * List, boolean, ProgressRunner, Downloader, SettingsController, boolean)} is called, a
+     * complete load will be done.
      */
     public abstract void markInvalid();
 
@@ -231,8 +230,8 @@ public abstract class RepoManager {
 
         /**
          * @param packages The packages that have been loaded so far. When this callback is used in
-         *                 the {@code onLocalComplete} argument to {@link #load(long, boolean, List,
-         *                 List, List, boolean, ProgressRunner, Downloader, SettingsController,
+         *                 the {@code onLocalComplete} argument to {@link #load(long, List, List,
+         *                 List, boolean, ProgressRunner, Downloader, SettingsController,
          *                 boolean)} {@code packages} will only include local packages.
          */
         void doRun(@NonNull RepositoryPackages packages);

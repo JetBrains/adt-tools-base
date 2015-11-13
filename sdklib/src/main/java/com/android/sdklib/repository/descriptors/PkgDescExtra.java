@@ -20,7 +20,8 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.repository.License;
+import com.android.repository.api.License;
+import com.android.repository.Revision;
 
 /**
  * Implementation detail of {@link IPkgDescExtra} for extra packages.

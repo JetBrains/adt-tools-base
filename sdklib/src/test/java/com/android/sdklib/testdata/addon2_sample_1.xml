@@ -1,0 +1,171 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright (C) 2015 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<sdk:sdk-addon
+        xmlns:sdk="http://schemas.android.com/sdk/android/addon2/01"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <!-- Define a couple of licenses. These will be referenced by uses-license later. -->
+
+    <license type="text" id="license1">
+        This is the license
+        for this platform.
+    </license>
+
+    <license id="license2">
+        Licenses are only of type 'text' right now, so this is implied.
+    </license>
+
+    <!-- Inner elements must be either platform, add-on, doc or tool.
+         There can be 0 or more of each, in any order. -->
+
+    <package path="addon;uno">
+        <uiName>My First Add-on for API 5, rev 0</uiName>
+
+        <type-details xsi:type="sdk:addonDetailsType">
+            <vendor>
+                <id>John_Doe</id>
+                <display>John Doe</display>
+            </vendor>
+            <api-level>1</api-level>
+        </type-details>
+
+        <revision>
+            <major>1</major>
+        </revision>
+        <uses-license ref="license2"/>
+
+        <archives>
+            <archive>
+                <size>65536</size>
+                <checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</checksum>
+                <url>http://www.example.com/add-ons/first.zip</url>
+            </archive>
+        </archives>
+        <!-- The libs node is mandatory, however it can be empty.
+        TODO: libs and layoutlib?-->
+    </package>
+
+    <package path="addon;dos">
+        <uiName>My Second add-on</uiName>
+        <type-details xsi:type="sdk:addonDetailsType">
+            <vendor>
+                <id>John_Deer</id>
+                <display>John Deer</display>
+            </vendor>
+            <api-level>2</api-level>
+        </type-details>
+
+        <revision>
+            <major>42</major>
+            <minor>0</minor>
+            <micro>1</micro>
+        </revision>
+        <archives>
+            <archive>
+                <host-os>windows</host-os>
+                <host-bits>64</host-bits>
+                <size>65536</size>
+                <checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</checksum>
+                <url>distrib/second-42-win.zip</url>
+            </archive>
+            <archive>
+                <host-os>linux</host-os>
+                <host-bits>64</host-bits>
+                <size>65536</size>
+                <checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</checksum>
+                <url>distrib/second-42-linux.tar.bz2</url>
+            </archive>
+        </archives>
+        <uses-license ref="license2" />
+        <!-- No layoutlib element in this package. It's optional. -->
+    </package>
+
+    <package path="extra;one" obsolete="true">
+        <uiName>Random name, not an id!</uiName>
+        <type-details xsi:type="sdk:extraDetailsType">
+            <vendor>
+                <id>cyclop</id>
+                <display>The big bus</display>
+            </vendor>
+        </type-details>
+        <uses-license ref="license2" />
+        <revision>
+            <major>43</major>
+            <minor>42</minor>
+            <micro>41</micro>
+        </revision>
+        <archives>
+            <archive>
+                <host-os>windows</host-os>
+                <host-bits>32</host-bits>
+                <size>65536</size>
+                <checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</checksum>
+                <url>distrib/extraduff.zip</url>
+            </archive>
+        </archives>
+        <dependencies>
+            <dependency id="tools">
+                <min-revision>
+                    <major>3</major>
+                    <minor>2</minor>
+                    <micro>1</micro>
+                </min-revision>
+            </dependency>
+        </dependencies>
+    </package>
+
+    <package path="extra;two">
+        <uiName>Yet another extra, by Android</uiName>
+        <type-details xsi:type="sdk:extraDetailsType">
+            <vendor>
+                <id>android_vendor</id>
+                <display>Android Vendor</display>
+            </vendor>
+        </type-details>
+
+        <uses-license ref="license2" />
+        <revision>
+            <major>2</major>
+            <micro>1</micro>
+        </revision>
+        <archives>
+            <archive>
+                <host-os>windows</host-os>
+                <host-bits>64</host-bits>
+                <jvm-bits>32</jvm-bits>
+                <min-jvm-version>1.7</min-jvm-version>
+                <size>65536</size>
+                <checksum type="sha1">2822ae37115ebf13412bbef91339ee0d9454525e</checksum>
+                <url>distrib/extra_mega_duff.zip</url>
+            </archive>
+        </archives>
+        <dependencies>
+            <dependency id="tools">
+                <min-revision>
+                    <major>3</major>
+                </min-revision>
+            </dependency>
+            <dependency id="platforms;android-42">
+                <min-revision>
+                    <major>1</major>
+                </min-revision>
+            </dependency>
+        </dependencies>
+
+    </package>
+
+</sdk:sdk-addon>

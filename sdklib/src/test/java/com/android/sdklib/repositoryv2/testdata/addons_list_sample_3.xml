@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (C) 2015 The Android Open Source Project
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<sdk:sdk-addons-list
+    xmlns:sdk="http://schemas.android.com/sdk/android/addons-list/3"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+    <site xsi:type="sdk:addonSiteType">
+        <url>http://www.example.com/my_addons2.xml</url>
+        <displayName> <!-- we'll ignore leading/trailing spacing -->
+            My Example Add-ons.
+        </displayName>
+    </site>
+
+    <site xsi:type="sdk:addonSiteType">
+        <url>http://www.example.co.jp/addons.xml</url>
+        <!-- this file is UTF-8 so we support character sets -->
+        <displayName>ありがとうございます。</displayName>
+    </site>
+
+    <site xsi:type="sdk:addonSiteType">
+        <url>http://www.example.com/</url>
+        <displayName>Example of directory URL.</displayName>
+    </site>
+
+    <site xsi:type="sdk:sysImgSiteType">
+        <url>http://www.example.com/</url>
+        <displayName>Example of sys-img URL using the default xml filename.</displayName>
+    </site>
+
+    <site xsi:type="sdk:sysImgSiteType">
+        <url>http://www.example.com/specific_file.xml</url>
+        <displayName>Example of sys-img URL using a specific xml filename.</displayName>
+    </site>
+
+    <site xsi:type="sdk:addonSiteType">
+        <url>relative/url.xml</url>
+        <displayName>Relative URL.</displayName>
+    </site>
+
+</sdk:sdk-addons-list>
