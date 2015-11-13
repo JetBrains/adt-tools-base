@@ -33,7 +33,7 @@ import com.android.sdklib.internal.repository.NullTaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.archives.ArchiveInstaller;
 import com.android.sdklib.internal.repository.packages.AddonPackage;
-import com.android.sdklib.repository.License;
+import com.android.repository.api.License;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.packages.PlatformToolPackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
@@ -1073,7 +1073,7 @@ public class UpdaterData implements IUpdaterData {
             mSdkLog.info("Used by: \n - %1$s\n",
                     Joiner.on("\n  - ").skipNulls().join(lidPkgNames.get(lid)));
             mSdkLog.info("-------------------------------\n\n");
-            mSdkLog.info("%1$s\n", lic.getLicense());
+            mSdkLog.info("%1$s\n", lic.getValue());
 
             int retries = numRetries;
             tryAgain: while(true) {
@@ -1143,10 +1143,10 @@ public class UpdaterData implements IUpdaterData {
             if (p != null) {
                 License lic = p.getLicense();
                 if (lic != null &&
-                        lic.getLicenseRef() != null &&
-                        !lic.getLicense().isEmpty() &&
-                        lic.getLicense() != null &&
-                        !lic.getLicense().isEmpty()) {
+                        lic.getId() != null &&
+                        !lic.getValue().isEmpty() &&
+                        lic.getValue() != null &&
+                        !lic.getValue().isEmpty()) {
                     return lic;
                 }
             }
@@ -1157,8 +1157,8 @@ public class UpdaterData implements IUpdaterData {
 
     private String getLicenseId(License lic) {
         return String.format("%1$s-%2$08x",       //$NON-NLS-1$
-                lic.getLicenseRef(),
-                lic.getLicense().hashCode());
+                lic.getId(),
+                lic.getValue().hashCode());
     }
 
     @SuppressWarnings("unchecked")

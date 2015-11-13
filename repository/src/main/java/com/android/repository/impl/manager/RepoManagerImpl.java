@@ -136,11 +136,17 @@ public class RepoManagerImpl extends RepoManager {
      * @param fop {@link FileOp} to use for local file operations. Should only be null if you're
      *            never planning to load a local repo using this {@code RepoManagerImpl}.
      */
-    public RepoManagerImpl(@Nullable FileOp fop)
-            throws URISyntaxException, InstantiationException {
+    public RepoManagerImpl(@Nullable FileOp fop) {
         mFop = fop;
-        mCommonModule = new SchemaModule(COMMON_OBJECT_FACTORY_PATTERN, COMMON_XSD_PATTERN,
-                RepoManager.class);
+        SchemaModule m = null;
+        try {
+            m = new SchemaModule(COMMON_OBJECT_FACTORY_PATTERN, COMMON_XSD_PATTERN,
+                    RepoManager.class);
+        } catch (Exception e) {
+            // This should never happen unless there's something wrong with the common repo schema.
+            assert false : "Failed to create RepoManager: " + e;
+        }
+        mCommonModule = m;
         registerSchemaModule(mCommonModule);
     }
 

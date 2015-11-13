@@ -33,8 +33,8 @@ import java.io.File;
 public interface FallbackLocalRepoLoader {
 
     /**
-     * Try to find a package at the given location. If found, return a {@link LocalPackage}
-     * with the package's information. Otherwise return {@code null}.
+     * Try to find a package at the given location. If found, return a {@link LocalPackage} with the
+     * package's information. Otherwise return {@code null}.
      */
     @Nullable
     LocalPackage parseLegacyLocalPackage(@NonNull File f, @NonNull ProgressIndicator progress);

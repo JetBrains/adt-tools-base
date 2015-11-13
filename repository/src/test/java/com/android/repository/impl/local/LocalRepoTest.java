@@ -102,10 +102,7 @@ public class LocalRepoTest extends TestCase {
         CommonFactory factory = (CommonFactory)manager.getCommonModule().createLatestFactory();
         Repository repo = factory.createRepositoryType();
         LocalPackageImpl p = factory.createLocalPackage();
-        License license = factory.createLicenseType();
-        license.setId("license1");
-        license.setValue("some license text");
-        license.setType("text");
+        License license = factory.createLicenseType("some license text", "license1");
         p.setLicense(license);
         p.setPath("dummy;path");
         p.setVersion(new Revision(1, 2));

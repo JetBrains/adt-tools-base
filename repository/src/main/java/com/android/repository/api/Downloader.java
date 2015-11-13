@@ -27,16 +27,18 @@ import java.net.URL;
  * Implementations provide a general mechanism for downloading files.
  */
 public interface Downloader {
+
     /**
-     * Gets a stream associated with the content at the given URL. This could be achieved by downloading the file completely, streaming
-     * it directly, or some combination.
-     * @param url The URL to fetch.
-     * @param settings Settings (e.g. proxy configuration) for the connection.
+     * Gets a stream associated with the content at the given URL. This could be achieved by
+     * downloading the file completely, streaming it directly, or some combination.
+     *
+     * @param url       The URL to fetch.
+     * @param settings  Settings (e.g. proxy configuration) for the connection.
      * @param indicator Facility for showing download progress and logging.
-     * @return An InputStream corresponding to the specified content.
-     * @throws IOException
+     * @return An InputStream corresponding to the specified content, or {@code null} if the
+     *         download is cancelled.
      */
-    @NonNull
+    @Nullable
     InputStream download(@NonNull URL url, @Nullable SettingsController settings,
             @NonNull ProgressIndicator indicator) throws IOException;
 }

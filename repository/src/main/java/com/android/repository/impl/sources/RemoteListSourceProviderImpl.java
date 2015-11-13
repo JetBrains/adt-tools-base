@@ -33,6 +33,8 @@ import com.google.common.collect.Lists;
 
 import org.w3c.dom.ls.LSResourceResolver;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -150,7 +152,8 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
             } catch (MalformedURLException e) {
                 progress.logWarning("Invalid URL: " + urlStr);
             } catch (IOException e) {
-                progress.logWarning("IOException: " + urlStr, e);
+                progress.logInfo("IOException: " + urlStr);
+                progress.logInfo(e.toString());
             }
         }
 

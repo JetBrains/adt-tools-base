@@ -19,7 +19,9 @@ package com.android.repository.impl.meta;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
-import com.android.repository.api.*;
+import com.android.repository.api.Dependency;
+import com.android.repository.api.License;
+import com.android.repository.api.RepoPackage;
 import com.google.common.collect.ImmutableList;
 
 import java.util.Collection;
@@ -35,6 +37,7 @@ public abstract class RepoPackageImpl implements RepoPackage {
 
     @Override
     @Nullable
+    @XmlTransient
     public TypeDetails getTypeDetails() {
         // Stub
         return null;
