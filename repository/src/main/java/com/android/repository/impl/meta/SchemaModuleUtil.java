@@ -99,7 +99,7 @@ public class SchemaModuleUtil {
         try {
             jc = JAXBContext.newInstance(Joiner.on(":").join(packages));
         } catch (JAXBException e1) {
-            assert false : "Failed to create context!";
+            assert false : "Failed to create context!\n" + e1.toString();
         }
         return jc;
     }

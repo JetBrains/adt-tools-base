@@ -89,8 +89,7 @@ public class LocalRepoTest extends TestCase {
         LocalPackage p = localLoader.getPackages(progress).get("random");
         progress.assertNoErrorsOrWarnings();
         assertEquals(new Revision(3), p.getVersion());
-        assertEquals("This is the license\n        for this platform.",
-                p.getLicense().getValue().trim());
+        assertEquals("This is the license for this platform.", p.getLicense().getValue());
         assertTrue(p.getTypeDetails() == null);
         assertEquals("The first Android platform ever", p.getDisplayName());
         // TODO: validate package in more detail

@@ -27,7 +27,8 @@
          -episode repository/src/main/java/com/android/repository/api/list-common.xjb \
          -p com.android.repository.impl.sources.generated.v1 \
          repository/src/main/java/com/android/repository/api/repo-sites-common-1.xsd \
-         -extension -Xandroid-inheritance -d repository/src/main/java/
+         -extension -Xandroid-inheritance -d repository/src/main/java/ \
+         -b repository/src/main/java/com/android/repository/api/global.xjb
 
     from tools/base with jaxb-inheritance-plugin.jar, repository classes, guava, and the
     transitive dependencies of org.glassfish.jaxb:jaxb-xjc:17.0 on the classpath.
@@ -79,7 +80,7 @@
             <xsd:element name="url"  type="xsd:token" />
 
             <!-- The user-friendly name of the site. -->
-            <xsd:element name="displayName" type="xsd:normalizedString" />
+            <xsd:element name="displayName" type="xsd:string" />
         </xsd:all>
     </xsd:complexType>
 
@@ -88,6 +89,9 @@
             <xsd:documentation>
                 A trivial implementation of siteType.
             </xsd:documentation>
+            <xsd:appinfo>
+                <plugin:super name="com.android.repository.api.RemoteListSourceProvider$GenericSite"/>
+            </xsd:appinfo>
         </xsd:annotation>
         <xsd:complexContent>
             <xsd:extension base="sl:siteType"/>
