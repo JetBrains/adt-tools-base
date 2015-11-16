@@ -96,7 +96,8 @@ public class HotSwapTest {
                 .hasClass("Lcom/example/helloworld/HelloWorld$override;")
                 .that().hasMethod("onCreate");
 
-        checkRestartDexHelloWorldClass(instantRunModel);
+        // the restart.dex should not be present.
+        expect.about(FileSubject.FACTORY).that(instantRunModel.getRestartDexFile()).doesNotExist();
     }
 
     /**
