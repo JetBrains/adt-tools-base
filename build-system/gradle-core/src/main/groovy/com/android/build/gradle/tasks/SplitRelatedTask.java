@@ -14,79 +14,94 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.tasks
+package com.android.build.gradle.tasks;
 
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.build.FilterData
-import com.android.build.OutputFile
-import com.android.build.gradle.api.ApkOutputFile
-import com.android.build.gradle.internal.model.FilterDataImpl
-import com.android.build.gradle.internal.publishing.FilterDataPersistence
-import com.android.build.gradle.internal.tasks.BaseTask
-import com.android.build.gradle.internal.tasks.FileSupplier
-import com.android.build.gradle.internal.tasks.SplitFileSupplier
-import com.google.common.base.Supplier
-import com.google.common.collect.ImmutableList
-import org.gradle.api.Task
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
+import com.android.build.OutputFile.FilterType;
+import com.android.build.gradle.api.ApkOutputFile;
+import com.android.build.gradle.internal.model.FilterDataImpl;
+import com.android.build.gradle.internal.publishing.FilterDataPersistence;
+import com.android.build.gradle.internal.tasks.BaseTask;
+import com.android.build.gradle.internal.tasks.SplitFileSupplier;
+import com.google.common.base.Predicate;
+import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+
+import org.gradle.api.Task;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Common code for all split related tasks
  */
-abstract class SplitRelatedTask extends BaseTask {
+public abstract class SplitRelatedTask extends BaseTask {
 
     @Nullable
     public abstract File getApkMetadataFile();
 
     /**
-     * Calculates the list of output files, coming from the list of input files, mangling the
-     * output file name.
+     * Calculates the list of output files, coming from the list of input files, mangling the output
+     * file name.
      */
-    public abstract List<ApkOutputFile> getOutputSplitFiles()
+    public abstract List<ApkOutputFile> getOutputSplitFiles();
 
     /**
      * Returns the list of split information for this task. Each split is a unique combination of
      * filter type and identifier.
      */
-    abstract List<FilterData> getSplitsData()
+    public abstract List<FilterData> getSplitsData();
 
     /**
      * Returns a list of {@link Supplier<File>} for each split APK file
      */
-    List<SplitFileSupplier> getOutputFileSuppliers() {
+    public List<SplitFileSupplier> getOutputFileSuppliers() {
         ImmutableList.Builder<SplitFileSupplier> suppliers = ImmutableList.builder();
-        for (FilterData filterData : getSplitsData()) {
+        for (final FilterData filterData : getSplitsData()) {
 
-            ApkOutputFile outputFile = getOutputSplitFiles().find {
-                filterData.identifier.equals(it.getFilter(filterData.filterType))
-            }
+            ApkOutputFile outputFile =
+                    Iterables.find(getOutputSplitFiles(), new Predicate<ApkOutputFile>() {
+                        @Override
+                        public boolean apply(ApkOutputFile apkOutputFile) {
+                            return filterData.getIdentifier().equals(
+                                    apkOutputFile.getFilter(filterData.getFilterType()));
+                        }
+                    });
+
             if (outputFile != null) {
                 // make final references to not confused the groovy runtime...
                 final File file = outputFile.getOutputFile();
-                final data = filterData;
+                final FilterData data = filterData;
 
                 suppliers.add(new SplitFileSupplier() {
 
                     @Override
-                    File get() {
+                    public File get() {
                         return file;
                     }
 
                     @NonNull
                     @Override
-                    Task getTask() {
-                        return SplitRelatedTask.this
+                    public Task getTask() {
+                        return SplitRelatedTask.this;
                     }
 
                     @NonNull
                     @Override
-                    FilterData getFilterData() {
+                    public FilterData getFilterData() {
                         return data;
                     }
-                })
+                });
             }
         }
-        return suppliers.build()
+        return suppliers.build();
     }
 
     /**
@@ -103,7 +118,7 @@ abstract class SplitRelatedTask extends BaseTask {
             metadataFile.getParentFile().mkdirs();
             fileWriter = new FileWriter(metadataFile);
             FilterDataPersistence persistence = new FilterDataPersistence();
-            persistence.persist(outputFileSuppliers, fileWriter);
+            persistence.persist(getOutputFileSuppliers(), fileWriter);
 
         } finally {
             if (fileWriter != null) {
@@ -115,15 +130,15 @@ abstract class SplitRelatedTask extends BaseTask {
     /**
      * Creates a new FilterData for each identifiers for a particular {@link FilterType} and store
      * it in the to builder.
-     * @param to the builder to store the new FilterData instances in.
+     * @param to          the builder to store the new FilterData instances in.
      * @param identifiers the list of filter identifiers
-     * @param filterType the filter type.
+     * @param filterType  the filter type.
      */
     protected static void addAllFilterData(ImmutableList.Builder<FilterData> to,
             Collection<String> identifiers,
             OutputFile.FilterType filterType) {
         for (String identifier : identifiers) {
-            to.add(FilterDataImpl.build(filterType.toString(), identifier))
+            to.add(FilterDataImpl.build(filterType.toString(), identifier));
         }
     }
 }
