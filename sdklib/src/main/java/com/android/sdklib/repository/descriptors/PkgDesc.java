@@ -254,6 +254,7 @@ public class PkgDesc implements IPkgDesc {
             sb.append(mType.getFolderName());
             break;
 
+        case PKG_LLDB:
         case PKG_BUILD_TOOLS:
             sb.append(mType.getFolderName()).append('-');
             // Add version number without the preview revision number. This is to make preview
@@ -320,10 +321,6 @@ public class PkgDesc implements IPkgDesc {
 
         case PKG_NDK:
             sb.append("ndk");
-            break;
-
-        case PKG_LLDB:
-            sb.append("lldb");
             break;
 
         default:
