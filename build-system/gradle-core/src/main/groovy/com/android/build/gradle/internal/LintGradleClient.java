@@ -44,7 +44,12 @@ import java.util.Map;
 
 public class LintGradleClient extends LintCliClient {
     private final AndroidProject mModelProject;
-    private final String mVariantName;
+
+    /**
+     * Variant to run the client on.
+     */
+    @NonNull private Variant mVariant;
+
     private final org.gradle.api.Project mGradleProject;
     private List<File> mCustomRules = Lists.newArrayList();
     private File mSdkHome;
@@ -56,15 +61,15 @@ public class LintGradleClient extends LintCliClient {
             @NonNull org.gradle.api.Project gradleProject,
             @NonNull AndroidProject modelProject,
             @Nullable File sdkHome,
-            @Nullable String variantName,
+            @NonNull Variant variant,
             @Nullable BuildToolInfo buildToolInfo) {
         super(flags);
         mGradleProject = gradleProject;
         mModelProject = modelProject;
-        mVariantName = variantName;
         mSdkHome = sdkHome;
         mRegistry = registry;
         mBuildToolInfo = buildToolInfo;
+        mVariant = variant;
     }
 
     public void setCustomRules(List<File> customRules) {
@@ -109,34 +114,16 @@ public class LintGradleClient extends LintCliClient {
     @NonNull
     protected LintRequest createLintRequest(@NonNull List<File> files) {
         LintRequest lintRequest = new LintRequest(this, files);
-        Variant variant = findVariant(mModelProject, mVariantName);
-        if (variant == null) {
+        if (mVariant == null) {
             lintRequest.setProjects(Lists.<Project>newArrayList());
         } else {
             Pair<LintGradleProject,List<File>> result = LintGradleProject.create(
-                    this, mModelProject, variant, mGradleProject);
+                    this, mModelProject, mVariant, mGradleProject);
             lintRequest.setProjects(Collections.<Project>singletonList(result.getFirst()));
             setCustomRules(result.getSecond());
         }
 
         return lintRequest;
-    }
-
-    private static Variant findVariant(@NonNull AndroidProject project,
-            @Nullable String variantName) {
-        if (variantName != null) {
-            for (Variant variant : project.getVariants()) {
-                if (variantName.equals(variant.getName())) {
-                    return variant;
-                }
-            }
-        }
-
-        if (!project.getVariants().isEmpty()) {
-            return project.getVariants().iterator().next();
-        }
-
-        return null;
     }
 
     /** Run lint with the given registry and return the resulting warnings */

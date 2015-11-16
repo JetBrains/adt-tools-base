@@ -34,6 +34,7 @@ import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Severity
 import com.google.common.collect.Maps
+import com.google.common.collect.Sets
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaBasePlugin
@@ -70,9 +71,13 @@ public class Lint extends BaseTask {
     public void lint() {
         def modelProject = createAndroidProject(project)
         if (getVariantName() != null) {
-            lintSingleVariant(modelProject, getVariantName())
+            for (Variant variant : modelProject.getVariants()) {
+                if (variant.getName().equals(getVariantName())) {
+                    lintSingleVariant(modelProject, variant);
+                }
+            }
         } else {
-            lintAllVariants(modelProject)
+            lintAllVariants(modelProject);
         }
     }
 
@@ -84,7 +89,7 @@ public class Lint extends BaseTask {
         Map<Variant,List<Warning>> warningMap = Maps.newHashMap()
         for (Variant variant : modelProject.getVariants()) {
             try {
-                List<Warning> warnings = runLint(modelProject, variant.getName(), false)
+                List<Warning> warnings = runLint(modelProject, variant, false)
                 warningMap.put(variant, warnings)
             } catch (IOException e) {
                 throw new GradleException("Invalid arguments.", e)
@@ -115,18 +120,34 @@ public class Lint extends BaseTask {
             }
         }
 
-        IssueRegistry registry = new BuiltinIssueRegistry()
-        LintCliFlags flags = new LintCliFlags()
-        LintGradleClient client = new LintGradleClient(registry, flags, project, modelProject,
-                mSdkHome, null, getBuildTools())
-        syncOptions(mLintOptions, client, flags, null, project, true, mFatalOnly)
+        /*
+         * We pick the first variant to generate the full report and don't generate if we don't
+         * have any variants.
+         */
+        if (modelProject.getVariants().size() > 0) {
+            Set<Variant> allVariants = Sets.newTreeSet(new Comparator<Variant>() {
+                @Override
+                int compare(Variant v1, Variant v2) {
+                    v1.getName().compareTo(v2.getName());
+                }
+            });
 
-        for (Reporter reporter : flags.getReporters()) {
-            reporter.write(errorCount, warningCount, mergedWarnings)
-        }
+            allVariants.addAll(modelProject.getVariants());
+            Variant variant = allVariants.iterator().next();
 
-        if (flags.isSetExitCode() && errorCount > 0) {
-            abort()
+            IssueRegistry registry = new BuiltinIssueRegistry()
+            LintCliFlags flags = new LintCliFlags()
+            LintGradleClient client = new LintGradleClient(registry, flags, project, modelProject,
+                    mSdkHome, variant, getBuildTools())
+            syncOptions(mLintOptions, client, flags, variant, project, true, mFatalOnly)
+
+            for (Reporter reporter : flags.getReporters()) {
+                reporter.write(errorCount, warningCount, mergedWarnings)
+            }
+
+            if (flags.isSetExitCode() && errorCount > 0) {
+                abort()
+            }
         }
     }
 
@@ -167,26 +188,26 @@ public class Lint extends BaseTask {
     /**
      * Runs lint on a single specified variant
      */
-    public void lintSingleVariant(@NonNull AndroidProject modelProject, String variantName) {
-        runLint(modelProject, variantName, true)
+    public void lintSingleVariant(@NonNull AndroidProject modelProject, @NonNull Variant variant) {
+        runLint(modelProject, variant, true)
     }
 
     /** Runs lint on the given variant and returns the set of warnings */
     private List<Warning> runLint(
             @NonNull AndroidProject modelProject,
-            @NonNull String variantName,
+            @NonNull Variant variant,
             boolean report) {
         IssueRegistry registry = createIssueRegistry()
         LintCliFlags flags = new LintCliFlags()
         LintGradleClient client = new LintGradleClient(registry, flags, project, modelProject,
-                mSdkHome, variantName, getBuildTools())
+                mSdkHome, variant, getBuildTools())
         if (mFatalOnly) {
             if (!mLintOptions.isCheckReleaseBuilds()) {
                 return Collections.emptyList()
             }
             flags.setFatalOnly(true)
         }
-        syncOptions(mLintOptions, client, flags, variantName, project, report, mFatalOnly)
+        syncOptions(mLintOptions, client, flags, variant, project, report, mFatalOnly)
         if (!report || mFatalOnly) {
             flags.setQuiet(true)
         }
@@ -209,11 +230,11 @@ public class Lint extends BaseTask {
             @NonNull LintOptions options,
             @NonNull LintGradleClient client,
             @NonNull LintCliFlags flags,
-            @NonNull String variantName,
+            @NonNull Variant variant,
             @NonNull Project project,
             boolean report,
             boolean fatalOnly) {
-        options.syncTo(client, flags, variantName, project, report)
+        options.syncTo(client, flags, variant.getName(), project, report)
 
         if (fatalOnly || flags.quiet) {
             for (Reporter reporter : flags.getReporters()) {
