@@ -86,8 +86,10 @@ import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.nativeplatform.BuildTypeContainer;
 import org.gradle.nativeplatform.FlavorContainer;
 import org.gradle.nativeplatform.NativeBinarySpec;
+import org.gradle.nativeplatform.NativeLibraryBinary;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.nativeplatform.NativeLibrarySpec;
+import org.gradle.nativeplatform.SharedLibraryBinary;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 import org.gradle.nativeplatform.StaticLibraryBinarySpec;
 import org.gradle.nativeplatform.platform.NativePlatform;
@@ -524,6 +526,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                             binary.getName(),
                             nativeBinary.getTargetPlatform().getName(),
                             linkage);
+
                     artifactContainer.getNativeArtifacts().create(
                             name,
                             new CreateNativeLibraryArtifactAction(
@@ -593,11 +596,12 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 Abi abi = Abi.getByName(nativeBinary.getTargetPlatform().getName());
                 assert abi != null;
                 for (NativeDependencyResolveResult dependency : dependencies) {
-                    Iterables.addAll(
-                            artifact.getLibraries(),
-                            Iterables.filter(
-                                    dependency.getLibraryFiles().get(abi),
-                                    SHARED_OBJECT_FILTER));
+                    for (NativeLibraryBinary lib : dependency.getPrebuiltLibraries()) {
+                        if (lib instanceof SharedLibraryBinary
+                                && abi.getName().equals(lib.getTargetPlatform().getName())) {
+                            artifact.getLibraries().add(((SharedLibraryBinary) lib).getSharedLibraryFile());
+                        }
+                    }
                     Collection<NativeLibraryArtifact> artifacts = dependency.getNativeArtifacts();
                     for (NativeLibraryArtifact dep : artifacts) {
                         if (abi.getName().equals(dep.getAbi())) {

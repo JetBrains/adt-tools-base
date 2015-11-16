@@ -39,7 +39,10 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import org.gradle.model.ModelMap;
+import org.gradle.nativeplatform.NativeLibraryBinary;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
+import org.gradle.nativeplatform.SharedLibraryBinary;
+import org.gradle.nativeplatform.StaticLibraryBinary;
 import org.gradle.platform.base.BinaryContainer;
 
 import java.io.File;
@@ -169,8 +172,15 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
                     debuggableLibDir.add(lib.getParentFile());
                 }
             }
-            for (File lib : dependency.getLibraryFiles().get(abi)) {
-                debuggableLibDir.add(lib.getParentFile());
+            for (final NativeLibraryBinary nativeBinary : dependency.getPrebuiltLibraries()) {
+                if (nativeBinary.getTargetPlatform().getName().equals(abi.getName())) {
+                    File output = nativeBinary instanceof SharedLibraryBinary
+                            ? ((SharedLibraryBinary) nativeBinary).getSharedLibraryFile()
+                            : ((StaticLibraryBinary) nativeBinary).getStaticLibraryFile();
+                    if (output != null) {
+                        debuggableLibDir.add(output.getParentFile());
+                    }
+                }
             }
         }
         return ImmutableList.copyOf(debuggableLibDir);

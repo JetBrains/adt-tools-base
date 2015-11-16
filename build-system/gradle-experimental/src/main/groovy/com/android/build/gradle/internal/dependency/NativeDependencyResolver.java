@@ -19,23 +19,28 @@ package com.android.build.gradle.internal.dependency;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
-import com.android.build.gradle.internal.core.Abi;
 import com.android.utils.StringHelper;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.InvalidUserDataException;
-import org.gradle.api.internal.file.FileResolver;
+import org.gradle.api.NamedDomainObjectSet;
 import org.gradle.api.internal.resolve.ProjectModelResolver;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.internal.resolve.LibraryResolveException;
 import org.gradle.model.internal.core.ModelPath;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.model.internal.type.ModelType;
+import org.gradle.nativeplatform.NativeLibraryBinary;
+import org.gradle.nativeplatform.PrebuiltLibraries;
+import org.gradle.nativeplatform.PrebuiltLibrary;
+import org.gradle.nativeplatform.Repositories;
+import org.gradle.nativeplatform.SharedLibraryBinary;
+import org.gradle.nativeplatform.StaticLibraryBinary;
+import org.gradle.nativeplatform.internal.prebuilt.PrebuiltLibraryResolveException;
 
-import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -70,20 +75,65 @@ public class NativeDependencyResolver {
             if (dependency.getProjectPath() != null) {
                 result.getNativeArtifacts().addAll(resolveForNativeBinaries(dependency));
             } else if (dependency.getLibraryPath() != null) {
-                Preconditions.checkState(dependency.getAbi() != null);
-                result.getLibraryFiles().put(
-                        Abi.getByName(dependency.getAbi()),
-                        resolveForFiles(dependency));
+                resolveForPrebuiltLibraries(result, dependency);
             }
         }
 
         return result;
     }
 
-    @NonNull
-    private File resolveForFiles(AndroidNativeDependencySpec dependency) {
-        FileResolver fileResolver = serviceRegistry.get(FileResolver.class);
-        return fileResolver.resolve(dependency.getLibraryPath());
+    private void resolveForPrebuiltLibraries(
+            NativeDependencyResolveResult result,
+            AndroidNativeDependencySpec dependency) {
+        NativeDependencyLinkage linkage =
+                Objects.firstNonNull(dependency.getLinkage(), defaultDependencySpec.getLinkage());
+        for (NativeLibraryBinary binary : getBinaries(dependency.getLibraryPath())) {
+            if (linkage.equals(NativeDependencyLinkage.STATIC)) {
+                if (binary instanceof StaticLibraryBinary
+                        && ((StaticLibraryBinary) binary).getStaticLibraryFile() != null) {
+                    result.getPrebuiltLibraries().add(binary);
+                }
+            } else {
+                if (binary instanceof SharedLibraryBinary
+                        && ((SharedLibraryBinary) binary).getSharedLibraryFile() != null) {
+                    result.getPrebuiltLibraries().add(binary);
+                }
+            }
+        }
+    }
+
+    private Collection<NativeLibraryBinary> getBinaries(String library) {
+        ModelRegistry projectModel = serviceRegistry.get(ModelRegistry.class);
+        NamedDomainObjectSet<PrebuiltLibraries> repositories = projectModel.realize(
+                ModelPath.path("repositories"),
+                ModelType.of(Repositories.class)).withType(PrebuiltLibraries.class);
+        projectModel.realize(
+                ModelPath.path("repositories"),
+                ModelType.of(Repositories.class));
+        if (repositories.isEmpty()) {
+            throw new PrebuiltLibraryResolveException(
+                    "Project does not have any prebuilt library repositories.");
+        }
+        PrebuiltLibrary prebuiltLibrary = getPrebuiltLibrary(repositories, library);
+
+        return prebuiltLibrary.getBinaries();
+    }
+
+    private static PrebuiltLibrary getPrebuiltLibrary(
+            NamedDomainObjectSet<PrebuiltLibraries> repositories, String libraryName) {
+        List<String> repositoryNames = new ArrayList<String>();
+        for (PrebuiltLibraries prebuiltLibraries : repositories) {
+            repositoryNames.add(prebuiltLibraries.getName());
+            PrebuiltLibrary prebuiltLibrary = prebuiltLibraries.resolveLibrary(libraryName);
+            if (prebuiltLibrary != null) {
+                return prebuiltLibrary;
+            }
+        }
+        throw new PrebuiltLibraryResolveException(
+                String.format(
+                        "Prebuilt library with name '%s' not found in repositories '%s'.",
+                        libraryName,
+                        repositoryNames));
     }
 
     /**
@@ -201,33 +251,5 @@ public class NativeDependencyResolver {
             }
         }
         return builder.build();
-    }
-
-
-    private static class ArtifactFilter implements Predicate<NativeLibraryArtifact> {
-        @Nullable
-        private final String buildType;
-        @Nullable
-        private final String productFlavor;
-        @Nullable
-        private final NativeDependencyLinkage linkage;
-
-        public ArtifactFilter(
-                @Nullable String buildType,
-                @Nullable String productFlavor,
-                @Nullable NativeDependencyLinkage linkage) {
-            this.buildType = buildType;
-            this.productFlavor = productFlavor;
-            this.linkage = linkage;
-        }
-
-        @Override
-        public boolean apply(NativeLibraryArtifact artifact) {
-            return ((buildType == null || buildType.equals(artifact.getBuildType()))
-                    && (productFlavor == null
-                            || productFlavor.equals(StringHelper.combineAsCamelCase(artifact.getProductFlavors())))
-                    && (linkage == null
-                            || linkage.equals(artifact.getLinkage())));
-        }
     }
 }
