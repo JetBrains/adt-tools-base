@@ -23,14 +23,12 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.integration.common.utils.ApkHelper;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
-import com.android.build.gradle.integration.common.utils.XmlHelper;
 import com.android.builder.core.ApkInfoParser;
 import com.android.ide.common.process.DefaultProcessExecutor;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
-import com.android.utils.XmlUtils;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.common.truth.FailureStrategy;
@@ -38,8 +36,6 @@ import com.google.common.truth.IterableSubject;
 import com.google.common.truth.SubjectFactory;
 
 import org.junit.Assert;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,11 +46,10 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 /**
  * Truth support for apk files.
  */
+@SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
 public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
 
     private static final Pattern PATTERN_CLASS_DESC = Pattern.compile(
@@ -63,26 +58,16 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     private static final Pattern PATTERN_MAX_SDK_VERSION = Pattern.compile(
             "^maxSdkVersion\\W*:\\W*'(.+)'$");
 
-    public static class Factory extends SubjectFactory<ApkSubject, File> {
-        @NonNull
-        public static Factory get() {
-            return new Factory();
-        }
+    public static final SubjectFactory<ApkSubject, File> FACTORY =
+            new SubjectFactory<ApkSubject, File> () {
+                @Override
+                public ApkSubject getSubject(
+                        @NonNull FailureStrategy failureStrategy,
+                        @NonNull File subject) {
+                    return new ApkSubject(failureStrategy, subject);
+                }
+            };
 
-        private Factory() {}
-
-        @Override
-        public ApkSubject getSubject(
-                @NonNull FailureStrategy failureStrategy,
-                @NonNull File subject) {
-            return new ApkSubject(failureStrategy, subject);
-        }
-    }
-
-    /**
-     * XMLDump of the main dex file via dexdump
-     */
-    private Node mainDexDump;
 
     public ApkSubject(
             @NonNull FailureStrategy failureStrategy,
@@ -90,47 +75,16 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         super(failureStrategy, subject);
     }
 
-    public Node getClassDexDump(@NonNull String className)
-            throws SAXException, ParserConfigurationException, ProcessException, IOException {
-        if (!className.startsWith("L") || !className.endsWith(";")) {
-            throw new RuntimeException("class name must be in the format Lcom/foo/Main;");
-        }
-        className = className.substring(1, className.length() - 1).replace('/', '.');
-        final int lastDot = className.lastIndexOf('.');
-        final String pkg;
-        final String name;
-        if (lastDot < 0) {
-            name = className;
-            pkg = "";
-        } else {
-            pkg = className.substring(0, lastDot);
-            name = className.substring(lastDot + 1);
-        }
-        Node mainDexDump = getMainDexDump();
-        Node packageNode = XmlHelper
-                .findChildWithTagAndAttrs(mainDexDump, "package", "name", pkg);
-        if (packageNode == null) {
-            fail("%s does not contain package %s", getSubject(), pkg);
-        }
-        Node classNode = XmlHelper.findChildWithTagAndAttrs(packageNode, "class", "name", name);
-        if (classNode == null) {
-            fail("%s does not cointain class %s", getSubject(), className);
-        }
-        return classNode;
-    }
-
-    private Node getMainDexDump()
-            throws SAXException, ParserConfigurationException, ProcessException, IOException {
-        if (mainDexDump != null) {
-            return mainDexDump;
-        }
-
-        File apkFile = getSubject();
-
-        // get the dexdump exec
-        File dexDumpExe = SdkHelper.getDexDump();
-        mainDexDump = loadDexDump(apkFile, dexDumpExe);
-        return mainDexDump;
+    @NonNull
+    public IndirectSubject<DexFileSubject> hasMainDexFile() throws IOException {
+        contains("classes.dex");
+        return new IndirectSubject<DexFileSubject>() {
+            @Override
+            @NonNull
+            public DexFileSubject that() {
+                return new DexFileSubject(failureStrategy, getSubject());
+            }
+        };
     }
 
     @NonNull
@@ -145,7 +99,6 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         return check().that(locales);
     }
 
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void hasPackageName(@NonNull String packageName) throws ProcessException {
         File apk = getSubject();
 
@@ -158,7 +111,6 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         }
     }
 
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void hasVersionCode(int versionCode) throws ProcessException {
         File apk = getSubject();
 
@@ -174,7 +126,6 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         }
     }
 
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void hasVersionName(@NonNull String versionName) throws ProcessException {
         File apk = getSubject();
 
@@ -190,7 +141,6 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         }
     }
 
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void hasMaxSdkVersion(int maxSdkVersion) throws ProcessException {
 
         List<String> output = ApkHelper.getApkBadging(getSubject());
@@ -284,7 +234,6 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
      * Content is trimmed when compared.
      */
     @Override
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void containsJavaResourceWithContent(@NonNull String path, @NonNull String content)
             throws IOException, ProcessException {
         containsFileWithContent(path, content);
@@ -295,25 +244,9 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
      * byte array content.
      */
     @Override
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void containsJavaResourceWithContent(@NonNull String path, @NonNull byte[] content)
             throws IOException, ProcessException {
         containsFileWithContent(path, content);
-    }
-
-    /**
-     * Exports the dex information in XML format and returns it as a Document.
-     */
-    private static Node loadDexDump(@NonNull File file, @NonNull File dexDumpExe)
-            throws IOException, SAXException, ParserConfigurationException, ProcessException {
-        ProcessExecutor executor = new DefaultProcessExecutor(new StdLogger(StdLogger.Level.ERROR));
-
-        ProcessInfoBuilder builder = new ProcessInfoBuilder();
-        builder.setExecutable(dexDumpExe);
-        builder.addArgs("-l", "xml", "-d", file.getAbsolutePath());
-
-        String output = ApkHelper.runAndGetRawOutput(builder.createProcess(), executor);
-        return XmlUtils.parseDocument(output, false).getChildNodes().item(0);
     }
 
     /**

@@ -29,7 +29,6 @@ import org.xml.sax.SAXException;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatDexClass;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,9 +79,8 @@ public class DataBindingIncrementalTest {
         project.execute("assembleDebug");
         assertNotUpToDate();
 
-        ApkSubject apk = assertThatApk(project.getApk("debug"));
-        DexClassSubject bindingClass = assertThatDexClass(
-                apk.getClassDexDump(MAIN_ACTIVITY_BINDING_CLASS));
+        DexClassSubject bindingClass = assertThatApk(project.getApk("debug")).hasMainDexFile()
+                .that().hasClass(MAIN_ACTIVITY_BINDING_CLASS).that();
         bindingClass.doesNotHaveMethod("setFoo");
         bindingClass.hasMethod("setFoo2");
     }
@@ -96,11 +94,9 @@ public class DataBindingIncrementalTest {
         project.getStdout().reset();
         project.execute("assembleDebug");
         assertNotUpToDate();
-        ApkSubject apk = assertThatApk(project.getApk("debug"));
-        DexClassSubject bindingClass = assertThatDexClass(
-                apk.getClassDexDump(MAIN_ACTIVITY_BINDING_CLASS));
-        bindingClass.hasMethod("setFoo");
-        bindingClass.hasMethod("setFoo2");
+        assertThatApk(project.getApk("debug")).hasMainDexFile()
+                .that().hasClass(MAIN_ACTIVITY_BINDING_CLASS)
+                .that().hasMethods("setFoo", "setFoo2");
     }
 
     @Test
@@ -112,17 +108,15 @@ public class DataBindingIncrementalTest {
         project.getStdout().reset();
         project.execute("assembleDebug");
         assertNotUpToDate();
-        ApkSubject apk = assertThatApk(project.getApk("debug"));
-        DexClassSubject bindingClass = assertThatDexClass(
-                apk.getClassDexDump(MAIN_ACTIVITY_BINDING_CLASS));
-        bindingClass.hasField("myTextView");
+        assertThatApk(project.getApk("debug")).hasMainDexFile()
+                .that().hasClass(MAIN_ACTIVITY_BINDING_CLASS)
+                .that().hasField("myTextView");
         project.replaceLine(ACTIVITY_MAIN_XML, 30, "");
         project.getStdout().reset();
         project.execute("assembleDebug");
-        apk = assertThatApk(project.getApk("debug"));
-        bindingClass = assertThatDexClass(
-                apk.getClassDexDump(MAIN_ACTIVITY_BINDING_CLASS));
-        bindingClass.doesNotHaveField("myTextView");
+        assertThatApk(project.getApk("debug")).hasMainDexFile()
+                .that().hasClass(MAIN_ACTIVITY_BINDING_CLASS)
+                .that().doesNotHaveField("myTextView");
     }
 
     @Test
@@ -130,23 +124,22 @@ public class DataBindingIncrementalTest {
             throws IOException, ProcessException, SAXException, ParserConfigurationException {
         project.execute("assembleDebug");
         project.getStdout().reset();
-        File mainActiviy = new File(project.getTestDir(), ACTIVITY_MAIN_XML);
-        File activity2 = new File(mainActiviy.getParentFile(), "activity2.xml");
-        Files.copy(mainActiviy, activity2);
+        File mainActivity = new File(project.getTestDir(), ACTIVITY_MAIN_XML);
+        File activity2 = new File(mainActivity.getParentFile(), "activity2.xml");
+        Files.copy(mainActivity, activity2);
         project.getStdout().reset();
         project.execute("assembleDebug");
         assertNotUpToDate();
-        ApkSubject apk = assertThatApk(project.getApk("debug"));
-        DexClassSubject bindingClass = assertThatDexClass(
-                apk.getClassDexDump("Landroid/databinding/testapp/databinding/Activity2Binding;"));
-        bindingClass.hasMethod("setFoo");
+        assertThatApk(project.getApk("debug")).hasMainDexFile()
+                .that().hasClass("Landroid/databinding/testapp/databinding/Activity2Binding;")
+                .that().hasMethod("setFoo");
     }
 
     @Test
     public void removeLayout() throws IOException, ProcessException {
-        File mainActiviy = new File(project.getTestDir(), ACTIVITY_MAIN_XML);
-        File activity2 = new File(mainActiviy.getParentFile(), "activity2.xml");
-        Files.copy(mainActiviy, activity2);
+        File mainActivity = new File(project.getTestDir(), ACTIVITY_MAIN_XML);
+        File activity2 = new File(mainActivity.getParentFile(), "activity2.xml");
+        Files.copy(mainActivity, activity2);
         project.getStdout().reset();
         project.execute("assembleDebug");
         assertThatApk(project.getApk("debug")).containsClass(
@@ -161,9 +154,9 @@ public class DataBindingIncrementalTest {
     @Test
     public void renameLayout() throws IOException, ProcessException {
         String activity2ClassName = "Landroid/databinding/testapp/databinding/Activity2Binding;";
-        File mainActiviy = new File(project.getTestDir(), ACTIVITY_MAIN_XML);
-        File activity2 = new File(mainActiviy.getParentFile(), "activity2.xml");
-        Files.copy(mainActiviy, activity2);
+        File mainActivity = new File(project.getTestDir(), ACTIVITY_MAIN_XML);
+        File activity2 = new File(mainActivity.getParentFile(), "activity2.xml");
+        Files.copy(mainActivity, activity2);
         project.getStdout().reset();
         project.execute("assembleDebug");
         assertThatApk(project.getApk("debug")).containsClass(
