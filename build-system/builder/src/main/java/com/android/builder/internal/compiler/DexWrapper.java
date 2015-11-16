@@ -318,7 +318,7 @@ public class DexWrapper {
 
     private void setInputs(@NonNull Object args, @NonNull DexProcessBuilder processBuilder)
             throws IllegalAccessException, ProcessException {
-        mArgFileNames.set(args, Iterables.toArray(processBuilder.getFilesToAdd(), String.class));
+        mArgFileNames.set(args, Iterables.toArray(processBuilder.getFilesToAdd(null), String.class));
     }
 
     private void setOutput(@NonNull  Object args, @NonNull DexProcessBuilder processBuilder)
