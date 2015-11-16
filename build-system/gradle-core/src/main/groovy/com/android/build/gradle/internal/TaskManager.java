@@ -81,9 +81,8 @@ import com.android.build.gradle.internal.tasks.multidex.CreateManifestKeepList;
 import com.android.build.gradle.internal.test.TestDataImpl;
 import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.transforms.DexTransform;
+import com.android.build.gradle.internal.transforms.InstantRunBuildType;
 import com.android.build.gradle.internal.transforms.InstantRunDex;
-import com.android.build.gradle.internal.transforms.InstantRunTransform;
-import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.transforms.JacocoTransform;
 import com.android.build.gradle.internal.transforms.JarMergingTransform;
 import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
@@ -124,8 +123,6 @@ import com.android.build.gradle.tasks.ZipAlign;
 import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
 import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
 import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
-import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
-import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
 import com.android.build.gradle.tasks.fd.InjectBootstrapApplicationTask;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.DefaultContentType;
@@ -2065,19 +2062,18 @@ public abstract class TaskManager {
             DexOptions dexOptions = scope.getGlobalScope().getExtension().getDexOptions();
             InstantRunDex classesTwoTransform = new InstantRunDex(
                     scope,
-                    InstantRunDex.BuildType.RESTART,
+                    InstantRunBuildType.RESTART,
                     androidBuilder,
                     dexOptions,
                     getLogger(),
                     ImmutableSet.<ContentType>of(
                             DefaultContentType.CLASSES));
-
-            AndroidTask<TransformTask> transformTwoTask = scope.getTransformManager()
-                    .addTransform(tasks, scope, classesTwoTransform);
+            AndroidTask<TransformTask> transformTwoTask =
+                    scope.getTransformManager().addTransform(tasks, scope, classesTwoTransform);
 
             InstantRunDex classesThreeTransform = new InstantRunDex(
                     scope,
-                    InstantRunDex.BuildType.RELOAD,
+                    InstantRunBuildType.RELOAD,
                     androidBuilder,
                     dexOptions,
                     getLogger(),

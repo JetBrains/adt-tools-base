@@ -25,9 +25,11 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform.VerificationResult;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
@@ -59,36 +61,6 @@ import java.util.jar.JarOutputStream;
  */
 public class InstantRunDex extends Transform {
 
-    /**
-     * Expected dex file use.
-     */
-    public enum BuildType {
-        /**
-         * dex file will contain files that can be used to reload classes in a running application.
-         */
-        RELOAD {
-            @NonNull
-            @Override
-            public File getOutputFolder(VariantScope variantScope) {
-                return variantScope.getReloadDexOutputFolder();
-            }
-        },
-        /**
-         * dex file will contain the delta files (from the last incremental build) that can be used
-         * to restart the application
-         */
-        RESTART {
-            @NonNull
-            @Override
-            public File getOutputFolder(VariantScope variantScope) {
-                return variantScope.getRestartDexOutputFolder();
-            }
-        };
-
-        @NonNull
-        public abstract File getOutputFolder(VariantScope variantScope);
-    }
-
     @NonNull
     private final AndroidBuilder androidBuilder;
 
@@ -102,14 +74,14 @@ public class InstantRunDex extends Transform {
     private final Set<QualifiedContent.ContentType> inputTypes;
 
     @NonNull
-    private final BuildType buildType;
+    private final InstantRunBuildType buildType;
 
     @NonNull
     private final VariantScope variantScope;
 
     public InstantRunDex(
             @NonNull VariantScope variantScope,
-            @NonNull BuildType buildType,
+            @NonNull InstantRunBuildType buildType,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull DexOptions dexOptions,
             @NonNull Logger logger,
@@ -130,14 +102,28 @@ public class InstantRunDex extends Transform {
 
         File outputFolder = buildType.getOutputFolder(variantScope);
 
-        if (buildType == BuildType.RELOAD) {
-            // if we are in reload mode, we should check the result of the verifier.
-            if (!variantScope.getInstantRunBuildContext().hasPassedVerification()) {
-                // changes are incompatible, we therefore do not produce a reload dex file.
-                // Android Studio will take that as a cue to do a cold swap.
-                FileUtils.emptyFolder(outputFolder);
-                return;
-            }
+        boolean changesAreCompatible =
+                variantScope.getInstantRunBuildContext().hasPassedVerification();
+        boolean restartDexRequested =
+                variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_DEX_ONLY);
+
+        switch(buildType) {
+            case RELOAD:
+                if (!changesAreCompatible || restartDexRequested) {
+                    FileUtils.emptyFolder(outputFolder);
+                    return;
+                }
+                break;
+            case RESTART:
+                if (changesAreCompatible && !restartDexRequested) {
+                    // do nothing, let the incrementalChanges.txt accumulate all changes until
+                    // we are asked to produce a restart.dex or the verifier flagged the changes.
+                    FileUtils.emptyFolder(outputFolder);
+                    return;
+                }
+                break;
+            default:
+                throw new RuntimeException("Unhandled build type " + buildType);
         }
 
         // create a tmp jar file.
@@ -149,18 +135,23 @@ public class InstantRunDex extends Transform {
         JarOutputStream jarOutputStream = null;
 
         try {
+
             for (TransformInput input : referencedInputs) {
                 for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
                     if (!directoryInput.getContentTypes().containsAll(inputTypes)) {
                         continue;
                     }
                     File folder = directoryInput.getFile();
-                    File incremental = new File(folder, "incrementalChanges.txt");
+                    File incremental = buildType.getIncrementalChangesFile(variantScope);
                     if (!incremental.exists()) {
                         // done
                         continue;
                     }
                     List<String> filesToProcess = Files.readLines(incremental, Charsets.UTF_8);
+                    // delete the incremental changes file to reset the list of changes
+                    if (!incremental.delete()) {
+                        throw new RuntimeException("Cannot delete " + incremental);
+                    }
                     if (filesToProcess == null || filesToProcess.isEmpty()) {
                         return;
                     }
@@ -170,10 +161,10 @@ public class InstantRunDex extends Transform {
                     }
 
                     for (String fileToProcess : filesToProcess) {
+                        // todo: check that file to process belongs to folder.
                         copyFileInJar(folder, new File(fileToProcess), jarOutputStream);
                     }
                 }
-
             }
         } finally {
             if (jarOutputStream != null) {

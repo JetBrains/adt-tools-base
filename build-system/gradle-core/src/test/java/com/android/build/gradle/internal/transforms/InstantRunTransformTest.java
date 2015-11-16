@@ -104,7 +104,7 @@ public class InstantRunTransformTest {
             }
 
             @Override
-            protected void wrapUpOutputs(File classes2Output, File classes3Output)
+            protected void wrapUpOutputs(File classes2Folder, File classes3Folder)
                     throws IOException {
 
             }
@@ -210,7 +210,7 @@ public class InstantRunTransformTest {
             }
 
             @Override
-            protected void wrapUpOutputs(File classes2Output, File classes3Output)
+            protected void wrapUpOutputs(File classes2Folder, File classes3Folder)
                     throws IOException {
 
             }

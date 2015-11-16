@@ -39,10 +39,13 @@ import com.android.build.gradle.internal.incremental.IncrementalVisitor;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.api.transform.QualifiedContent.ContentType;
+import com.android.builder.model.InstantRun;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
+import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -74,7 +77,7 @@ public class InstantRunTransform extends Transform {
 
     protected static final ILogger LOGGER =
             new LoggerWrapper(Logging.getLogger(InstantRunTransform.class));
-    private final ImmutableList.Builder<String> generatedClasses2Files = ImmutableList.builder();
+    private final ImmutableSet.Builder<String> generatedClasses2Files = ImmutableSet.builder();
     private final ImmutableList.Builder<String> generatedClasses3Names = ImmutableList.builder();
     private final ImmutableList.Builder<String> generatedClasses3Files = ImmutableList.builder();
     private final VariantScope variantScope;
@@ -229,7 +232,11 @@ public class InstantRunTransform extends Transform {
                                 throw new RuntimeException("Exception while preparing "
                                         + file.getAbsolutePath());
                             }
-
+                        }
+                        File incremental =
+                                InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope);
+                        if (incremental.exists() && !incremental.delete()) {
+                            LOGGER.warning("Cannot delete " + incremental);
                         }
                     }
 
@@ -244,15 +251,25 @@ public class InstantRunTransform extends Transform {
         }
     }
 
-    protected void wrapUpOutputs(File classes2Output, File classes3Output)
+    protected void wrapUpOutputs(File classes2Folder, File classes3Folder)
             throws IOException {
 
         // generate the patch file and add to the list of files to process next.
-        File patchFile = writePatchFileContents(generatedClasses3Names.build(), classes3Output);
+        File patchFile = writePatchFileContents(generatedClasses3Names.build(), classes3Folder);
         generatedClasses3Files.add(patchFile.getAbsolutePath());
 
-        writeIncrementalChanges(generatedClasses2Files.build(), classes2Output);
-        writeIncrementalChanges(generatedClasses3Files.build(), classes3Output);
+        // read the previous iterations output and append it to this iteration changes.
+        File incremental = InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope);
+        if (incremental.exists()) {
+            List<String> previousIterationIncrementalChanges =
+                    Files.readLines(incremental, Charsets.UTF_8);
+            generatedClasses2Files.addAll(previousIterationIncrementalChanges);
+        }
+
+        writeIncrementalChanges(
+                InstantRunBuildType.RESTART, generatedClasses2Files.build(), variantScope);
+        writeIncrementalChanges(
+                InstantRunBuildType.RELOAD, generatedClasses3Files.build(), variantScope);
     }
 
 
@@ -436,9 +453,14 @@ public class InstantRunTransform extends Transform {
         }
     }
 
-    private static void writeIncrementalChanges(List<String> changes, File outputDir) throws IOException {
+    private static void writeIncrementalChanges(
+            InstantRunBuildType buildType,
+            Collection<String> changes,
+            VariantScope variantScope) throws IOException {
 
-        FileWriter fileWriter = new FileWriter(new File(outputDir, "incrementalChanges.txt"));
+        File incrementalChangesFile = buildType.getIncrementalChangesFile(variantScope);
+        Files.createParentDirs(incrementalChangesFile);
+        FileWriter fileWriter = new FileWriter(incrementalChangesFile);
         try {
             for (String change : changes) {
                 fileWriter.write(change);

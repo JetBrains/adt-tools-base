@@ -99,6 +99,9 @@ public interface VariantScope extends BaseScope {
     File getJavaOutputDir();
 
     @NonNull
+    File getInstantRunSupportDir();
+
+    @NonNull
     File getIncrementalRuntimeSupportJar();
 
     @NonNull
