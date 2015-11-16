@@ -191,6 +191,19 @@ public class InstantRunVerifier {
             @NonNull ClassNode originalClass,
             @NonNull ClassNode updatedClass) {
 
+        // Special case resource classes; we're okay with fields to be added/removed in
+        // R classes since these are never instantiated.
+        // These look like name=some/pkg/R$string
+        String name = originalClass.name;
+        int index = name.lastIndexOf('/');
+        if (index != -1 &&
+                name.startsWith("R$", index + 1) &&
+                (originalClass.access & Opcodes.ACC_PUBLIC) != 0 &&
+                originalClass.outerClass == null &&
+                name.length() > 3 && Character.isLowerCase(name.charAt(2))) {
+            return COMPATIBLE;
+        }
+
         //noinspection unchecked
         Diff diff = diffList(originalClass.fields, updatedClass.fields, new Comparator<FieldNode>()
         {
