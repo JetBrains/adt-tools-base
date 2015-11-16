@@ -36,15 +36,15 @@ public abstract class AbstractNativeDependentSourceSet extends BaseLanguageSourc
         return super.getMayHaveSources() || !dependencyContainer.isEmpty();
     }
 
-    public AndroidNativeDependencySpecContainer getDependencies() {
+    public AndroidNativeDependencySpecContainer getDependencyContainer() {
         return dependencyContainer;
     }
 
     @SuppressWarnings("unused")  // External API
     public AndroidNativeDependencySpecContainer dependencies(
             Action<AndroidNativeDependencySpecContainer> configureAction) {
-        configureAction.execute(getDependencies());
-        return getDependencies();
+        configureAction.execute(getDependencyContainer());
+        return getDependencyContainer();
     }
 
 }

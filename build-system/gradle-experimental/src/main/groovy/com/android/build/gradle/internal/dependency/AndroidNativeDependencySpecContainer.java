@@ -49,7 +49,7 @@ public class AndroidNativeDependencySpecContainer {
         });
     }
 
-    public AndroidNativeDependencySpec.Builder library(final File value) {
+    public AndroidNativeDependencySpec.Builder library(final String value) {
         return doCreate(new Action<AndroidNativeDependencySpec.Builder>() {
             @Override
             public void execute(AndroidNativeDependencySpec.Builder builder) {
@@ -72,15 +72,6 @@ public class AndroidNativeDependencySpecContainer {
             @Override
             public void execute(AndroidNativeDependencySpec.Builder builder) {
                 builder.productFlavor(value);
-            }
-        });
-    }
-
-    public AndroidNativeDependencySpec.Builder abi(final String value) {
-        return doCreate(new Action<AndroidNativeDependencySpec.Builder>() {
-            @Override
-            public void execute(AndroidNativeDependencySpec.Builder builder) {
-                builder.abi(value);
             }
         });
     }

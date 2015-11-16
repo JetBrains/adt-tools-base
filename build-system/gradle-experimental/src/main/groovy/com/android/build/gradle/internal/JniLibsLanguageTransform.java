@@ -25,8 +25,10 @@ import com.android.build.gradle.model.AndroidBinary;
 import com.android.build.gradle.model.DefaultAndroidBinary;
 import com.android.build.gradle.model.JniLibsSourceSet;
 import com.android.build.gradle.tasks.StripDependenciesTask;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.InvalidUserDataException;
@@ -35,6 +37,8 @@ import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.internal.SourceTransformTaskConfig;
 import org.gradle.language.base.internal.registry.LanguageTransform;
+import org.gradle.nativeplatform.NativeLibraryBinary;
+import org.gradle.nativeplatform.SharedLibraryBinary;
 import org.gradle.platform.base.BinarySpec;
 
 import java.io.File;
@@ -83,7 +87,7 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
 
         @Override
         public String getTaskPrefix() {
-            return "copyJniLibs";
+            return "process";
         }
 
         @Override
@@ -106,7 +110,7 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
             JniLibsSourceSet sourceSet = (JniLibsSourceSet) languageSourceSet;
 
             for (final AndroidNativeDependencySpec dependencySpec :
-                    sourceSet.getDependencies().getDependencies()) {
+                    sourceSet.getDependencyContainer().getDependencies()) {
                 dependencySpec.validate();
                 if (dependencySpec.getLinkage() != null) {
                     throw new InvalidUserDataException(
@@ -116,13 +120,12 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
             NativeDependencyResolveResult dependencies =
                     new NativeDependencyResolver(
                             serviceRegistry,
-                            sourceSet.getDependencies(),
+                            sourceSet.getDependencyContainer(),
                             new AndroidNativeDependencySpec(
                                     null,
                                     null,
                                     binaryBuildType,
                                     binaryProductFlavor,
-                                    null,
                                     NativeDependencyLinkage.SHARED)).resolve();
 
             Map<File, Abi> inputFiles = Maps.newHashMap();
@@ -143,14 +146,19 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
                 }
             }
 
-            Map<File, Abi> stripedFiles = Maps.newHashMap();
-            for (final Map.Entry<Abi, File> entry : dependencies.getLibraryFiles().entries()) {
-                System.out.println(entry.getValue());
+            Multimap<File, Abi> stripedFiles = ArrayListMultimap.create();
+            for (final NativeLibraryBinary nativeBinary : dependencies.getPrebuiltLibraries()) {
                 // For dependency on a library file, there is no way to know if it contains debug
                 // symbol, and NDK may not not be set.  We may not have access to the strip tool,
                 // therefore, we assume the library do not have debug symbols and simply copy the
                 // file.
-                stripedFiles.put(entry.getValue(), entry.getKey());
+                if (nativeBinary instanceof SharedLibraryBinary) {
+                    File output = ((SharedLibraryBinary) nativeBinary).getSharedLibraryFile();
+                    Abi abi = Abi.getByName(nativeBinary.getTargetPlatform().getName());
+                    if (output != null && abi != null) {
+                        stripedFiles.put(output, abi);
+                    }
+                }
             }
 
             new StripDependenciesTask.ConfigAction(binary.getBuildType().getName(),

@@ -47,7 +47,7 @@ import java.util.Collection;
  */
 public class StripDebugSymbolTask extends DefaultTask {
 
-    private File stripCommand;
+    private File stripExecutable;
 
     private File inputFolder;
 
@@ -61,12 +61,12 @@ public class StripDebugSymbolTask extends DefaultTask {
      * Strip command found in the NDK.
      */
     @Input
-    public File getStripCommand() {
-        return stripCommand;
+    public File getStripExecutable() {
+        return stripExecutable;
     }
 
-    public void setStripCommand(File stripCommand) {
-        this.stripCommand = stripCommand;
+    public void setStripExecutable(File stripExecutable) {
+        this.stripExecutable = stripExecutable;
     }
 
     /**
@@ -134,7 +134,7 @@ public class StripDebugSymbolTask extends DefaultTask {
         }
 
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
-        builder.setExecutable(getStripCommand());
+        builder.setExecutable(getStripExecutable());
         builder.addArgs("--strip-unneeded");
         builder.addArgs("-o");
         builder.addArgs(output.toString());
@@ -178,7 +178,7 @@ public class StripDebugSymbolTask extends DefaultTask {
             task.setOutputFolder(new File(
                     buildDir,
                     NdkNamingScheme.getOutputDirectoryName(binary)));
-            task.setStripCommand(handler.getStripCommand(
+            task.setStripExecutable(handler.getStripCommand(
                     Abi.getByName(binary.getTargetPlatform().getName())));
             task.dependsOn(binary);
         }

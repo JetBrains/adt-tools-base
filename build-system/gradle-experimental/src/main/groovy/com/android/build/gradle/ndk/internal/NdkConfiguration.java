@@ -22,6 +22,7 @@ import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCppCompi
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
 import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
+import com.android.build.gradle.internal.dependency.NativeLibraryArtifactAdaptor;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
@@ -33,6 +34,7 @@ import com.android.build.gradle.tasks.GdbSetupTask;
 import com.android.build.gradle.tasks.StripDebugSymbolTask;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -48,18 +50,19 @@ import org.gradle.language.c.CSourceSet;
 import org.gradle.language.c.tasks.CCompile;
 import org.gradle.language.cpp.CppSourceSet;
 import org.gradle.language.cpp.tasks.CppCompile;
+import org.gradle.language.nativeplatform.DependentSourceSet;
 import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.NativeBinarySpec;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.nativeplatform.NativeLibrarySpec;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 import org.gradle.nativeplatform.StaticLibraryBinarySpec;
+import org.gradle.nativeplatform.internal.resolve.DefaultNativeDependencySet;
 import org.gradle.platform.base.BinarySpec;
 import org.gradle.platform.base.binary.BaseBinarySpec;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -225,13 +228,12 @@ public class NdkConfiguration {
             @NonNull NativeSourceSet jniSource) {
         return new NativeDependencyResolver(
                 serviceRegistry,
-                jniSource.getDependencies(),
+                jniSource.getDependencyContainer(),
                 new AndroidNativeDependencySpec(
                         null,
                         null,
                         binary.getBuildType().getName(),
                         binary.getFlavor().getName(),
-                        binary.getTargetPlatform().getName(),
                         NativeDependencyLinkage.SHARED)).resolve();
     }
 
@@ -248,21 +250,7 @@ public class NdkConfiguration {
                                 task.dependsOn(artifacts.getBuiltBy());
                             }
                         });
-
-                for (File dir : artifacts.getExportedHeaderDirectories()) {
-                    getCCompiler(binary).args("-I" + dir);
-                    getCppCompiler(binary).args("-I" + dir);
-                }
-                for(File lib : artifacts.getLibraries()) {
-                    if (lib.getName().endsWith(".so") || lib.getName().endsWith(".a")) {
-                        binary.getLinker().args(lib.getPath());
-                    }
-                }
-            }
-        }
-        for (final Map.Entry<Abi, File> entry : dependency.getLibraryFiles().entries()) {
-            if (entry.getKey().getName().equals(binary.getTargetPlatform().getName())) {
-                binary.getLinker().args(entry.getValue().getPath());
+                binary.lib(new DefaultNativeDependencySet(new NativeLibraryArtifactAdaptor(artifacts)));
             }
         }
     }
@@ -323,6 +311,7 @@ public class NdkConfiguration {
                                         files.source(jni.getExportedHeaders());
                                     }
                                 });
+                                configurePrebuiltDependency(source, jni);
                             }
                         });
                 languageSourceSets.create(
@@ -346,10 +335,27 @@ public class NdkConfiguration {
                                         files.source(jni.getExportedHeaders());
                                     }
                                 });
+                                configurePrebuiltDependency(source, jni);
                             }
                         });
             }
         });
+    }
+
+    private static void configurePrebuiltDependency(
+            DependentSourceSet source,
+            NativeSourceSet jni) {
+        for(AndroidNativeDependencySpec dependencySpec :
+                jni.getDependencyContainer().getDependencies()) {
+            if (dependencySpec.getLibraryPath() != null) {
+                ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+                builder.put("library", dependencySpec.getLibraryPath());
+                if (dependencySpec.getLinkage() != null) {
+                    builder.put("linkage", dependencySpec.getLinkage().getName());
+                }
+                source.lib(builder.build());
+            }
+        }
     }
 
     public static void createTasks(
@@ -432,15 +438,11 @@ public class NdkConfiguration {
             String buildTaskName) {
 
         final String taskName = NdkNamingScheme.getTaskName(binary, "stripSymbols");
-        Abi abi = Abi.getByName(binary.getTargetPlatform().getName());
 
         List<File> libs = Lists.newArrayList();
         final Collection<NativeDependencyResolveResult> dependencies =
                 dependencyMap.get(binary.getName());
         for (NativeDependencyResolveResult dependency : dependencies) {
-            for (File lib : dependency.getLibraryFiles().get(abi)) {
-                libs.add(lib);
-            }
             Collection<NativeLibraryArtifact> artifacts =
                     dependency.getNativeArtifacts();
             for (NativeLibraryArtifact artifact : artifacts) {
