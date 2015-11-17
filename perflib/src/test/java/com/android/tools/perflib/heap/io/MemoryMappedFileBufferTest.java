@@ -133,8 +133,8 @@ public class MemoryMappedFileBufferTest extends TestCase {
     private static void assertSnapshotCorrect(@NonNull Snapshot snapshot) {
         assertEquals(11182, snapshot.getGCRoots().size());
         assertEquals(38, snapshot.getHeap(65).getClasses().size());
-        assertEquals(1406, snapshot.getHeap(65).getInstances().size());
+        assertEquals(1406, snapshot.getHeap(65).getInstancesCount());
         assertEquals(3533, snapshot.getHeap(90).getClasses().size());
-        assertEquals(38710, snapshot.getHeap(90).getInstances().size());
+        assertEquals(38710, snapshot.getHeap(90).getInstancesCount());
     }
 }

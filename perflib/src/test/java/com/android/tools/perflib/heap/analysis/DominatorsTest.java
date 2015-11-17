@@ -246,7 +246,7 @@ public class DominatorsTest extends TestCase {
 
         long totalInstanceCount = 0;
         for (Heap heap : mSnapshot.getHeaps()) {
-            totalInstanceCount += heap.getInstances().size();
+            totalInstanceCount += heap.getInstancesCount();
             totalInstanceCount += heap.getClasses().size();
         }
         assertEquals(43687, totalInstanceCount);

@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 import java.util.*;
 
 import gnu.trove.TIntStack;
+import gnu.trove.TObjectProcedure;
 
 /**
  * Computes dominators based on the union-find data structure with path compression and linking by
@@ -48,12 +49,20 @@ public final class LinkEvalDominators extends DominatorsBase {
     public LinkEvalDominators(@NonNull Snapshot snapshot) {
         super(snapshot);
 
-        Map<Instance, LinkEvalNode> instanceNodeMap = new HashMap<Instance, LinkEvalNode>();
-        for (Heap heap : mSnapshot.getHeaps()) {
-            for (Instance instance : Iterables.concat(heap.getClasses(), heap.getInstances())) {
+        final Map<Instance, LinkEvalNode> instanceNodeMap = new HashMap<Instance, LinkEvalNode>();
+        TObjectProcedure<Instance> mapProcedure = new TObjectProcedure<Instance>() {
+            @Override
+            public boolean execute(Instance instance) {
                 LinkEvalNode node = new LinkEvalNode(instance);
                 instanceNodeMap.put(instance, node);
+                return true;
             }
+        };
+        for (Heap heap : mSnapshot.getHeaps()) {
+            for (Instance instance : heap.getClasses()) {
+                mapProcedure.execute(instance);
+            }
+            heap.forEachInstance(mapProcedure);
         }
 
         for (LinkEvalNode node : instanceNodeMap.values()) {

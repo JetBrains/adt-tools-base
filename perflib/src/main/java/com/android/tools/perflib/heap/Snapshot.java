@@ -35,6 +35,7 @@ import java.util.List;
 import gnu.trove.THashSet;
 import gnu.trove.TIntObjectHashMap;
 import gnu.trove.TLongObjectHashMap;
+import gnu.trove.TObjectProcedure;
 
 /*
  * A snapshot of all of the heaps, and related meta-data, for the runtime at a given instant.
@@ -362,12 +363,18 @@ public class Snapshot extends Capture {
                 }
                 classObj.setSize(classSize);
             }
-            for (Instance instance : heap.getInstances()) {
-                ClassObj classObj = instance.getClassObj();
-                if (classObj != null) {
-                    classObj.addInstance(heap.getId(), instance);
+
+            final int heapId = heap.getId();
+            heap.forEachInstance(new TObjectProcedure<Instance>() {
+                @Override
+                public boolean execute(Instance instance) {
+                    ClassObj classObj = instance.getClassObj();
+                    if (classObj != null) {
+                        classObj.addInstance(heapId, instance);
+                    }
+                    return true;
                 }
-            }
+            });
         }
     }
 
@@ -385,17 +392,25 @@ public class Snapshot extends Capture {
             for (ClassObj clazz : heap.getClasses()) {
                 clazz.resolveReferences();
             }
-            for (Instance instance : heap.getInstances()) {
-                instance.resolveReferences();
-            }
+            heap.forEachInstance(new TObjectProcedure<Instance>() {
+                @Override
+                public boolean execute(Instance instance) {
+                    instance.resolveReferences();
+                    return true;
+                }
+            });
         }
     }
 
     public void compactMemory() {
         for (Heap heap : getHeaps()) {
-            for (Instance instance : heap.getInstances()) {
-                instance.compactMemory();
-            }
+            heap.forEachInstance(new TObjectProcedure<Instance>() {
+                @Override
+                public boolean execute(Instance instance) {
+                    instance.compactMemory();
+                    return true;
+                }
+            });
         }
     }
 
