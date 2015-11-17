@@ -43,7 +43,7 @@ import java.util.Set;
 public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     public static final Revision MIN_MULTIDEX_BUILD_TOOLS_REV = new Revision(21, 0, 0);
     public static final Revision MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV = new Revision(22, 0, 2);
-    private static final Revision FIXED_DX_MERGER = new Revision(23, 0, 2);
+    public static final Revision FIXED_DX_MERGER = new Revision(23, 0, 2);
 
     @NonNull
     private final File mOutputFile;
