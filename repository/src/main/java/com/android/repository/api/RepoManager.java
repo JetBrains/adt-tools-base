@@ -133,7 +133,7 @@ public abstract class RepoManager {
      * Gets the currently registered {@link RepositorySourceProvider}s. Should only be needed for
      * testing.
      */
-    @Nullable
+    @NonNull
     @VisibleForTesting
     public abstract Set<RepositorySourceProvider> getSourceProviders();
 
