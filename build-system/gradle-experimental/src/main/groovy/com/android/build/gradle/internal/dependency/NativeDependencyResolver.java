@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.dependency;
 
+import static com.android.build.gradle.model.ModelConstants.ARTIFACTS;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
@@ -148,7 +150,7 @@ public class NativeDependencyResolver {
         ProjectModelResolver projectModelResolver = serviceRegistry.get(ProjectModelResolver.class);
         ModelRegistry projectModel = projectModelResolver.resolveProjectModel(project);
         ArtifactContainer artifactContainer = projectModel.find(
-                ModelPath.path("artifacts"),
+                ModelPath.path(ARTIFACTS),
                 ModelType.of(ArtifactContainer.class));
         if (artifactContainer == null) {
             throw new InvalidUserDataException(
