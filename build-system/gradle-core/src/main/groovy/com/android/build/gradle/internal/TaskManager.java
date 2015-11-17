@@ -1120,7 +1120,6 @@ public abstract class TaskManager {
         } else if (incrementalMode != IncrementalMode.LOCAL_JAVA_ONLY) {
             javacTask.optionalDependsOn(tasks, scope.getSourceGenTask());
             javacTask.dependsOn(tasks, scope.getVariantData().prepareDependenciesTask);
-
             // TODO - dependency information for the compile classpath is being lost.
             // Add a temporary approximation
             javacTask.dependsOn(tasks,
@@ -2160,18 +2159,6 @@ public abstract class TaskManager {
     }
 
     protected void createDataBindingTasks(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
-        dataBindingBuilder.setDebugLogEnabled(getLogger().isDebugEnabled());
-        AndroidTask<DataBindingProcessLayoutsTask> processLayoutsTask = androidTasks
-                .create(tasks, new DataBindingProcessLayoutsTask.ConfigAction(scope));
-        scope.getGenerateRClassTask().dependsOn(tasks, processLayoutsTask);
-        processLayoutsTask.dependsOn(tasks, scope.getMergeResourcesTask());
-
-        AndroidTask<DataBindingExportBuildInfoTask> exportBuildInfo = androidTasks
-                .create(tasks, new DataBindingExportBuildInfoTask.ConfigAction(scope,
-                        dataBindingBuilder.getPrintMachineReadableOutput()));
-        exportBuildInfo.dependsOn(tasks, processLayoutsTask);
-        scope.getSourceGenTask().dependsOn(tasks, exportBuildInfo);
-
         if (scope.getVariantConfiguration().getUseJack()) {
             androidBuilder.getErrorReporter().handleSyncError(
                     scope.getVariantConfiguration().getFullName(),
@@ -2179,6 +2166,31 @@ public abstract class TaskManager {
                     "Data Binding does not support Jack builds yet"
             );
         }
+
+        dataBindingBuilder.setDebugLogEnabled(getLogger().isDebugEnabled());
+        AndroidTask<DataBindingProcessLayoutsTask> processLayoutsTask = androidTasks
+                .create(tasks, new DataBindingProcessLayoutsTask.ConfigAction(scope));
+        scope.setDataBindingProcessLayoutsTask(processLayoutsTask);
+
+        scope.getGenerateRClassTask().dependsOn(tasks, processLayoutsTask);
+        processLayoutsTask.dependsOn(tasks, scope.getMergeResourcesTask());
+
+        AndroidTask<DataBindingExportBuildInfoTask> exportBuildInfo = androidTasks
+                .create(tasks, new DataBindingExportBuildInfoTask.ConfigAction(scope,
+                        dataBindingBuilder.getPrintMachineReadableOutput()));
+        scope.setDataBindingExportInfoTask(exportBuildInfo);
+
+        // handle incremental compilation
+        IncrementalMode incrementalMode = getIncrementalMode(scope.getVariantConfiguration());
+        if (incrementalMode == IncrementalMode.LOCAL_RES_ONLY) {
+            AndroidTask<? extends AbstractCompile> javaCompilerTask = scope.getJavaCompilerTask();
+            if (javaCompilerTask != null) {
+                javaCompilerTask.dependsOn(tasks, exportBuildInfo);
+            }
+        }
+
+        exportBuildInfo.dependsOn(tasks, processLayoutsTask);
+        scope.getSourceGenTask().dependsOn(tasks, exportBuildInfo);
     }
 
     /**

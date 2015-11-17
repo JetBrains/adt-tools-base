@@ -20,6 +20,7 @@ import static com.android.build.api.transform.QualifiedContent.ContentType;
 import static com.android.build.api.transform.QualifiedContent.DefaultContentType;
 import static com.android.build.api.transform.QualifiedContent.Scope;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.Context;
@@ -332,12 +333,13 @@ public class InstantRunTransform extends Transform {
             @NonNull final File outputDir,
             @NonNull final RecordingPolicy recordingPolicy)
             throws IOException {
+        if (inputFile.getPath().endsWith(SdkConstants.DOT_CLASS)) {
+            File outputFile = IncrementalVisitor.instrumentClass(
+                    inputDir, inputFile, outputDir, IncrementalSupportVisitor.VISITOR_BUILDER);
 
-        File outputFile = IncrementalVisitor.instrumentClass(
-                inputDir, inputFile, outputDir, IncrementalSupportVisitor.VISITOR_BUILDER);
-
-        if (outputFile != null && recordingPolicy == RecordingPolicy.RECORD) {
-            generatedClasses2Files.add(outputFile.getAbsolutePath());
+            if (outputFile != null && recordingPolicy == RecordingPolicy.RECORD) {
+                generatedClasses2Files.add(outputFile.getAbsolutePath());
+            }
         }
     }
 

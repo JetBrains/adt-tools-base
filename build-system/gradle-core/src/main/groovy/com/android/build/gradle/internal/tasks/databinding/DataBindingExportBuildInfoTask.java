@@ -117,7 +117,6 @@ public class DataBindingExportBuildInfoTask extends DefaultTask {
             task.setExportClassListTo(variantData.getType().isExportDataBindingClassList() ?
                     variantScope.getGeneratedClassListOutputFileForDataBinding() : null);
             task.setPrintMachineReadableErrors(printMachineReadableErrors);
-            //variantData.addJavaSourceFoldersToModel(variantScope.getClassOutputForDataBinding());
             variantData.registerJavaGeneratingTask(task,
                     variantScope.getClassOutputForDataBinding());
         }

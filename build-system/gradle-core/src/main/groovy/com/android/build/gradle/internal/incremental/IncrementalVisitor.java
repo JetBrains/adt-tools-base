@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.FileUtils;
@@ -288,6 +289,13 @@ public class IncrementalVisitor extends ClassVisitor {
             @NonNull VisitorBuilder visitorBuilder) throws IOException {
 
         byte[] classBytes;
+        String path = FileUtils.relativePath(inputFile, inputRootDirectory);
+        if (!inputFile.getPath().endsWith(SdkConstants.DOT_CLASS)) {
+            File outputFile = new File(outputDirectory, path);
+            Files.createParentDirs(outputFile);
+            Files.copy(inputFile, outputFile);
+            return outputFile;
+        }
         classBytes = Files.toByteArray(inputFile);
         ClassReader classReader = new ClassReader(classBytes);
         // override the getCommonSuperClass to use the thread context class loader instead of
@@ -324,9 +332,6 @@ public class IncrementalVisitor extends ClassVisitor {
 
         ClassNode classNode = new ClassNode();
         classReader.accept(classNode, ClassReader.EXPAND_FRAMES);
-
-        String path = FileUtils.relativePath(inputFile, inputRootDirectory);
-
 
         // when dealing with interface, we just copy the inputFile over without any changes unless
         // this is a package private interface.
