@@ -444,7 +444,11 @@ public class NdkConfiguration {
             Collection<NativeLibraryArtifact> artifacts =
                     dependency.getNativeArtifacts();
             for (NativeLibraryArtifact artifact : artifacts) {
-                libs.addAll(artifact.getLibraries());
+                for (File lib : artifact.getLibraries()) {
+                    if (lib.getName().endsWith(".so")) {
+                        libs.add(lib);
+                    }
+                }
             }
         }
         tasks.create(

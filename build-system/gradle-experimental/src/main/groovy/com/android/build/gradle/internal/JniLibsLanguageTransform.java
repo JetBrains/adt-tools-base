@@ -138,7 +138,9 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
                     // Debug libraries created from another subproject may have debug symbols,
                     // therefore, the library is stripped before packaging.
                     for (File output : artifacts.getLibraries()) {
-                        inputFiles.put(output, Abi.getByName(abi));
+                        if (output.getName().endsWith(".so")) {
+                            inputFiles.put(output, Abi.getByName(abi));
+                        }
                     }
                 }
             }
