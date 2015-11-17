@@ -16,45 +16,37 @@
 
 package com.android.build.gradle.managed;
 
-import com.android.annotations.NonNull;
-
 import org.gradle.model.Managed;
-import org.gradle.model.ModelMap;
-import org.gradle.model.ModelSet;
-import org.gradle.model.Unmanaged;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 /**
- * Configuration model for a native project.
+ * Managed type for specifying a JSON configurations file.
  */
 @Managed
-public interface NativeBuildConfig {
+public interface JsonConfigFile {
 
     /**
-     * Collection of files that affects the build.
+     * A JSON data file for configuring the ExternalNativeComponentPlugin.
+     */
+    File getConfig();
+    void setConfig(File file);
+
+    /**
+     * Command for generating a JSON data file.
      *
-     * These files may be monitored to determine if the JSON data file needs to be updated.
+     * If a JSON data file is used to configure this plugin and the data file is generated from
+     * another program, the command to generate the data file can be specified such that it will be
+     * invoke by the generateBuildData task.
      */
-    Set<File> getBuildFiles();
+    List<String> getCommand();
 
     /**
-     * Arguments to the executable for building the project.
+     * Command string for generating a JSON data file.
+     *
+     * Same as getCommand, but allows command to be specified as a single String.
      */
-    List<String> getArgs();
-
-    /**
-     * Configurations for each native artifact.
-     */
-    @NonNull
-    ModelMap<NativeLibrary> getLibraries();
-
-    /**
-     * NDK toolchains used for compilation.
-     */
-    @NonNull
-    ModelMap<NativeToolchain> getToolchains();
+    String getCommandString();
+    void setCommandString(String command);
 }

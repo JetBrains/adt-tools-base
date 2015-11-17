@@ -49,7 +49,9 @@ apply plugin: 'com.android.model.external'
 
 model {
     nativeBuild {
-        configFile = file("config.json")
+        create {
+            config = file("config.json")
+        }
     }
 }
 """
@@ -90,15 +92,106 @@ model {
     }
 
     @Test
-    public void "check configurations using plugin DSL"() {
+    public void "check configurations with multiple JSON data file"() {
         project.getBuildFile() << """
 apply plugin: 'com.android.model.external'
 
 model {
     nativeBuild {
+        create {
+            config = file("config1.json")
+            commandString = "./generate_config1.sh"
+        }
+        create {
+            config = file("config2.json")
+        }
+    }
+}
+"""
+        project.file("generate_config1.sh") << """echo '
+{
+    "buildFiles" : ["CMakeLists.txt"],
+    "libraries" : {
+        "foo" : {
+            "executable" : "touch",
+            "args" : ["foo.txt"],
+            "toolchain" : "toolchain1",
+            "output" : "build/libfoo.so"
+        }
+    },
+    "toolchains" : {
+        "toolchain1" : {
+            "cCompilerExecutable" : "clang",
+            "cppCompilerExecutable" : "clang++"
+        }
+    }
+}' > config1.json
+"""
+        project.file("generate_config1.sh").setExecutable(true)
+
+        project.file("config2.json") << """
+{
+    "buildFiles" : ["CMakeLists.txt"],
+    "libraries" : {
+        "bar" : {
+            "executable" : "touch",
+            "args" : ["bar.txt"],
+            "toolchain" : "toolchain2",
+            "output" : "build/libbar.so"
+        }
+    },
+    "toolchains" : {
+        "toolchain2" : {
+            "cCompilerExecutable" : "gcc",
+            "cppCompilerExecutable" : "g++"
+        }
+    }
+}
+"""
+        assertThat(project.file("config1.json")).doesNotExist()
+        project.execute("generateConfigfile")
+        assertThat(project.file("config1.json")).exists()
+
+        NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
+
+        assertThat(model.artifacts).hasSize(2)
+        for (NativeArtifact artifact : model.artifacts) {
+            if (artifact.getName().equals("foo")) {
+                assertThat(artifact.getName()).isEqualTo("foo")
+                assertThat(artifact.getToolChain()).isEqualTo("toolchain1")
+                assertThat(artifact.getOutputFile()).hasName("libfoo.so")
+            } else {
+                assertThat(artifact.getName()).isEqualTo("bar")
+                assertThat(artifact.getToolChain()).isEqualTo("toolchain2")
+                assertThat(artifact.getOutputFile()).hasName("libbar.so")
+            }
+        }
+
+        assertThat(model.getToolChains()).hasSize(2)
+        for (NativeToolchain toolchain : model.getToolChains()) {
+            if (toolchain.getName().equals("toolchain1")) {
+
+                assertThat(toolchain.getName()).isEqualTo("toolchain1")
+                assertThat(toolchain.getCCompilerExecutable().getName()).isEqualTo("clang")
+                assertThat(toolchain.getCppCompilerExecutable().getName()).isEqualTo("clang++")
+            } else {
+                assertThat(toolchain.getName()).isEqualTo("toolchain2")
+                assertThat(toolchain.getCCompilerExecutable().getName()).isEqualTo("gcc")
+                assertThat(toolchain.getCppCompilerExecutable().getName()).isEqualTo("g++")
+            }
+        }
+    }
+
+    @Test
+    public void "check configurations using plugin DSL"() {
+        project.getBuildFile() << """
+apply plugin: 'com.android.model.external'
+
+model {
+    nativeBuildConfig {
         buildFiles.addAll([file("CMakeLists.txt")])
     }
-    nativeBuild.libraries {
+    nativeBuildConfig.libraries {
         create("foo") {
             executable = "touch"
             args.addAll(["output.txt"])
@@ -120,7 +213,7 @@ model {
 
         }
     }
-    nativeBuild.toolchains {
+    nativeBuildConfig.toolchains {
         create("toolchain1") {
             CCompilerExecutable = file("clang")
             cppCompilerExecutable = file("clang++")
