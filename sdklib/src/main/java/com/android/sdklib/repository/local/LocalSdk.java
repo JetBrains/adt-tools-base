@@ -937,14 +937,15 @@ public class LocalSdk {
      */
     @Nullable
     private LocalLLDBPkgInfo scanLLDB(@NonNull File lldbFolder) {
+        File pinnedLLDBFolder = new File(lldbFolder, LocalLLDBPkgInfo.PINNED_REVISION.toString());
         // Can we find some properties?
-        Properties props = parseProperties(new File(lldbFolder, SdkConstants.FN_SOURCE_PROP));
+        Properties props = parseProperties(new File(pinnedLLDBFolder, SdkConstants.FN_SOURCE_PROP));
         Revision rev = PackageParserUtils.getRevisionProperty(props, PkgProps.PKG_REVISION);
         if (rev == null) {
             return null;
         }
 
-        return new LocalLLDBPkgInfo(this, lldbFolder, props, rev);
+        return new LocalLLDBPkgInfo(this, pinnedLLDBFolder, props, rev);
     }
 
     /**
