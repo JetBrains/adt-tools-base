@@ -242,13 +242,13 @@ public class NativeDependencyResolver {
 
         ImmutableList.Builder<NativeLibraryArtifact> builder = ImmutableList.builder();
         for (NativeLibraryArtifact artifact : artifacts) {
-            if ((buildType == null || buildType.equals(artifact.getBuildType())
+            if ((buildType == null || buildType.equals(artifact.getBuildType()))
                     && (productFlavor == null
                             || productFlavor.equals(
                                     StringHelper.combineAsCamelCase(artifact.getProductFlavors())))
                     && (linkage == null
                             || linkage.equals(artifact.getLinkage())
-                            || artifact.getLinkage() == null))) {
+                            || artifact.getLinkage() == null)) {
                 builder.add(artifact);
             }
         }

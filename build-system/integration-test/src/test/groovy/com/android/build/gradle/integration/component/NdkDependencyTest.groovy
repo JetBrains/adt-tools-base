@@ -197,6 +197,7 @@ model {
         File apk = project.getSubproject("app").getApk("debug")
         assertThatZip(apk).contains("lib/x86/libhello-jni.so")
         assertThatZip(apk).contains("lib/x86/libstlport_shared.so")
+        assertThatZip(apk).contains("lib/x86/libget-string.so")
 
         NativeLibrary libModel = findNativeLibraryByAbi(model, "debug", "x86")
         assertThat(libModel.getDebuggableLibraryFolders()).containsAllOf(
@@ -204,6 +205,46 @@ model {
                 lib1.file("build/intermediates/binaries/debug/obj/x86"),
                 lib2.file("build/intermediates/binaries/debug/obj/x86"),
         )
+    }
+
+    @Test
+    void "check static linkage"() {
+        GradleTestProject lib1 = project.getSubproject("lib1")
+        lib1.buildFile.delete()
+        lib1.buildFile << """
+apply plugin: "com.android.model.native"
+
+model {
+    android {
+        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+    }
+    android.ndk {
+        moduleName = "hello-jni"
+    }
+    android.sources {
+        main {
+            jni {
+                dependencies {
+                    project ":lib2" linkage "static"
+                }
+                exportedHeaders {
+                    srcDir "src/main/headers"
+                }
+            }
+        }
+    }
+}
+"""
+        project.execute("clean", ":app:assembleDebug")
+        File apk = project.getSubproject("app").getApk("debug")
+        assertThatZip(apk).contains("lib/x86/libhello-jni.so")
+        assertThatZip(apk).contains("lib/x86/libstlport_shared.so")
+        assertThatZip(apk).doesNotContain("lib/x86/libget-string.so")
+
+        // Check that the static library is compiled, but not the shared library.
+        GradleTestProject lib2 = project.getSubproject("lib2")
+        assertThat(lib2.file("build/intermediates/binaries/debug/obj/x86/libget-string.a")).exists()
+        assertThat(lib2.file("build/intermediates/binaries/debug/obj/x86/libget-string.so")).doesNotExist()
     }
 
     @Test
