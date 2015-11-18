@@ -56,7 +56,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.PreDexCache;
-import com.android.builder.model.DataBindingOptions;
+import com.android.builder.model.SyncIssue;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.ProcessRecorderFactory;
 import com.android.builder.profile.Recorder;
@@ -64,13 +64,10 @@ import com.android.builder.profile.ThreadRecorder;
 import com.android.builder.sdk.TargetInfo;
 import com.android.ide.common.internal.ExecutorSingleton;
 import com.android.utils.ILogger;
-import com.google.common.base.Objects;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import android.databinding.tool.DataBindingBuilder;
-import com.android.SdkConstants;
 
 import org.gradle.BuildListener;
 import org.gradle.BuildResult;
@@ -89,8 +86,9 @@ import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.plugins.JavaPlugin;
 import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.internal.reflect.Instantiator;
-import org.gradle.tooling.BuildException;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+
+import android.databinding.tool.DataBindingBuilder;
 
 import java.io.File;
 import java.io.IOException;
@@ -114,8 +112,8 @@ import java.util.regex.Pattern;
  */
 public abstract class BasePlugin {
 
-    private static final String GRADLE_MIN_VERSION = "2.2";
-    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.([2-9]|\\d{2,}).*");
+    private static final String GRADLE_MIN_VERSION = "2.8";
+    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.([8-9]|\\d{2,}).*");
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck";
     private static final String SKIP_PATH_CHECK_PROPERTY =
@@ -340,8 +338,8 @@ public abstract class BasePlugin {
     }
 
     protected void configureProject() {
-        checkGradleVersion();
         extraModelInfo = new ExtraModelInfo(project, isLibrary());
+        checkGradleVersion();
         sdkHandler = new SdkHandler(project, getLogger());
         androidBuilder = new AndroidBuilder(
                 project == project.getRootProject() ? project.getName() : project.getPath(),
@@ -588,7 +586,8 @@ public abstract class BasePlugin {
                 getLogger().warning("As %s is set, continuing anyways.",
                         GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY);
             } else {
-                throw new BuildException(errorMessage, null);
+                extraModelInfo.handleSyncError(
+                        GRADLE_MIN_VERSION, SyncIssue.TYPE_GRADLE_TOO_OLD, errorMessage);
             }
         }
     }
