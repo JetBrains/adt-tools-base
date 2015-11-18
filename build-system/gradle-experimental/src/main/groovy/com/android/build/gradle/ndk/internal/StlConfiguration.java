@@ -17,6 +17,7 @@
 package com.android.build.gradle.ndk.internal;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.NdkHandler;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
@@ -100,10 +101,14 @@ public class StlConfiguration {
             @NonNull final File buildDir,
             @NonNull NdkHandler ndkHandler,
             @NonNull String stl,
+            @Nullable String stlVersion,
             @NonNull String buildTaskName) {
         if (stl.endsWith("_shared")) {
-            final StlNativeToolSpecification stlConfig = new StlNativeToolSpecification(ndkHandler,
-                    stl, binary.getTargetPlatform());
+            final StlNativeToolSpecification stlConfig = new StlNativeToolSpecification(
+                    ndkHandler,
+                    stl,
+                    stlVersion,
+                    binary.getTargetPlatform());
 
             final String copyTaskName = NdkNamingScheme.getTaskName(binary, "copy", "StlSo");
             tasks.create(copyTaskName, Copy.class, new Action<Copy>() {

@@ -50,6 +50,8 @@ public class NdkConfigImpl implements NdkConfig {
 
     String stl;
 
+    String stlVersion;
+
     Boolean isDebuggable;
 
     Boolean renderscriptNdkMode;
@@ -127,6 +129,16 @@ public class NdkConfigImpl implements NdkConfig {
     @Override
     public void setStl(@NonNull String stl) {
         this.stl = stl;
+    }
+
+    @Override
+    public String getStlVersion() {
+        return this.stlVersion;
+    }
+
+    @Override
+    public void setStlVersion(String stlVersion) {
+        this.stlVersion = stlVersion;
     }
 
     @Override

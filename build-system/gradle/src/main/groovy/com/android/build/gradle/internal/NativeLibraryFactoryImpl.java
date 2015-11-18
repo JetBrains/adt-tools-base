@@ -72,7 +72,7 @@ public class NativeLibraryFactoryImpl implements NativeLibraryFactory {
                 Collections.<File>emptyList(),  /*cIncludeDirs*/
                 Collections.<File>emptyList(),  /*cppIncludeDirs*/
                 Collections.<File>emptyList(),  /*cSystemIncludeDirs*/
-                ndkHandler.getStlIncludes(ndkConfig.getStl(), abi),
+                ndkHandler.getStlIncludes(ndkConfig.getStl(), null /*stlVersion*/, abi),
                 Collections.<String>emptyList(),  /*cDefines*/
                 Collections.<String>emptyList(),  /*cppDefines*/
                 cFlags,

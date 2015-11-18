@@ -77,6 +77,9 @@ public interface NdkOptions {
     String getStl();
     void setStl(@NonNull String stl);
 
+    String getStlVersion();
+    void setStlVersion(String stlVersion);
+
     Boolean getRenderscriptNdkMode();
     void setRenderscriptNdkMode(Boolean renderscriptNdkMode);
 }
