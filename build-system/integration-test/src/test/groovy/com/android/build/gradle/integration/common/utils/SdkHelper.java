@@ -57,7 +57,8 @@ public class SdkHelper {
     @NonNull
     public static File getAapt() {
         return getBuildTool(
-                Revision.parseRevision(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION),
+                Revision.parseRevision(
+                        GradleTestProject.DEFAULT_BUILD_TOOL_VERSION, Revision.Precision.MICRO),
                 BuildToolInfo.PathId.AAPT);
     }
 
@@ -69,7 +70,8 @@ public class SdkHelper {
     @NonNull
     public static File getDexDump() {
         return getBuildTool(
-                Revision.parseRevision(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION),
+                Revision.parseRevision(
+                        GradleTestProject.DEFAULT_BUILD_TOOL_VERSION, Revision.Precision.MICRO),
                 BuildToolInfo.PathId.DEXDUMP);
     }
 

@@ -37,15 +37,29 @@ public class Revision implements Comparable<Revision> {
 
     public static final Revision NOT_SPECIFIED = new Revision(MISSING_MAJOR_REV);
 
-    /** Only major revision specified: 1 term */
-    protected static final int PRECISION_MAJOR = 1;
-    /** Only major and minor revisions specified: 2 terms (x.y) */
-    protected static final int PRECISION_MINOR = 2;
-    /** Major, minor and micro revisions specified: 3 terms (x.y.z) */
-    protected static final int PRECISION_MICRO = 3;
-    /** Major, minor, micro and preview revisions specified: 4 terms (x.y.z-rcN) */
-    protected static final int PRECISION_PREVIEW = 4;
+    public enum Precision {
 
+        /** Only major revision specified: 1 term */
+        MAJOR(1),
+
+        /** Only major and minor revisions specified: 2 terms (x.y) */
+        MINOR(2),
+
+        /** Major, minor and micro revisions specified: 3 terms (x.y.z) */
+        MICRO(3),
+
+        /** Major, minor, micro and preview revisions specified: 4 terms (x.y.z-rcN) */
+        PREVIEW(4);
+
+        private final int mTermCount;
+        Precision(int termCount) {
+            mTermCount = termCount;
+        }
+
+        int getTermCount() {
+            return mTermCount;
+        }
+    }
     private static final Pattern FULL_REVISION_PATTERN =
             //                   1=major       2=minor       3=micro     4=separator  5=previewType  6=preview
             Pattern.compile("\\s*([0-9]+)(?:\\.([0-9]+)(?:\\.([0-9]+))?)?([\\s-]*)?(?:(rc|alpha|beta)([0-9]+))?\\s*");
@@ -56,7 +70,7 @@ public class Revision implements Comparable<Revision> {
     private final int mMinor;
     private final int mMicro;
     private final int mPreview;
-    private final int mPrecision;
+    private final Precision mPrecision;
     private final String mPreviewSeparator;
 
     /**
@@ -72,7 +86,8 @@ public class Revision implements Comparable<Revision> {
      * @throws NumberFormatException if the parsing failed.
      */
     @NonNull
-    public static Revision parseRevision(@NonNull String revisionString, int minimumPrecision)
+    public static Revision parseRevision(@NonNull String revisionString,
+            @NonNull Precision minimumPrecision)
             throws NumberFormatException {
         Throwable cause = null;
         try {
@@ -83,29 +98,29 @@ public class Revision implements Comparable<Revision> {
                 int minor = IMPLICIT_MINOR_REV;
                 int micro = IMPLICIT_MICRO_REV;
                 int preview = NOT_A_PREVIEW;
-                int precision = PRECISION_MAJOR;
+                Precision precision = Precision.MAJOR;
                 String previewSeparator = " ";
 
                 String s = m.group(2);
                 if (s != null) {
                     minor = Integer.parseInt(s);
-                    precision = PRECISION_MINOR;
+                    precision = Precision.MINOR;
                 }
 
                 s = m.group(3);
                 if (s != null) {
                     micro = Integer.parseInt(s);
-                    precision = PRECISION_MICRO;
+                    precision = Precision.MICRO;
                 }
 
                 s = m.group(6);
                 if (s != null) {
                     preview = Integer.parseInt(s);
                     previewSeparator = m.group(4);
-                    precision = PRECISION_PREVIEW;
+                    precision = Precision.PREVIEW;
                 }
 
-                if (minimumPrecision > precision) {
+                if (minimumPrecision.compareTo(precision) >= 0) {
                     precision = minimumPrecision;
                 }
 
@@ -137,7 +152,7 @@ public class Revision implements Comparable<Revision> {
      */
     public static Revision parseRevision(@NonNull String revisionString)
             throws NumberFormatException {
-        return parseRevision(revisionString, 0);
+        return parseRevision(revisionString, Precision.MAJOR);
     }
 
     /**
@@ -145,7 +160,7 @@ public class Revision implements Comparable<Revision> {
      * components.
      */
     public Revision(int major) {
-        this(major, IMPLICIT_MINOR_REV, IMPLICIT_MICRO_REV, NOT_A_PREVIEW, PRECISION_MAJOR,
+        this(major, IMPLICIT_MINOR_REV, IMPLICIT_MICRO_REV, NOT_A_PREVIEW, Precision.MAJOR,
                 DEFAULT_SEPARATOR);
     }
 
@@ -154,7 +169,7 @@ public class Revision implements Comparable<Revision> {
      * others.
      */
     public Revision(int major, int minor) {
-        this(major, minor, IMPLICIT_MICRO_REV, NOT_A_PREVIEW, PRECISION_MINOR, DEFAULT_SEPARATOR);
+        this(major, minor, IMPLICIT_MICRO_REV, NOT_A_PREVIEW, Precision.MINOR, DEFAULT_SEPARATOR);
     }
 
     /**
@@ -170,17 +185,17 @@ public class Revision implements Comparable<Revision> {
      * and no preview component.
      */
     public Revision(int major, int minor, int micro) {
-        this(major, minor, micro, NOT_A_PREVIEW, PRECISION_MICRO, DEFAULT_SEPARATOR);
+        this(major, minor, micro, NOT_A_PREVIEW, Precision.MICRO, DEFAULT_SEPARATOR);
     }
 
     /**
      * Creates a new {@code Revision} with the specified components.
      */
     public Revision(int major, int minor, int micro, int preview) {
-        this(major, minor, micro, preview, PRECISION_PREVIEW, DEFAULT_SEPARATOR);
+        this(major, minor, micro, preview, Precision.PREVIEW, DEFAULT_SEPARATOR);
     }
 
-    Revision(int major, int minor, int micro, int preview, int precision,
+    Revision(int major, int minor, int micro, int preview, @NonNull Precision precision,
             @NonNull String separator) {
         mMajor = major;
         mMinor = minor;
@@ -199,8 +214,8 @@ public class Revision implements Comparable<Revision> {
         this(major, minor == null ? IMPLICIT_MINOR_REV : minor,
                 micro == null ? IMPLICIT_MICRO_REV : micro,
                 preview == null ? NOT_A_PREVIEW : preview,
-                preview != null ? PRECISION_PREVIEW : micro != null ? PRECISION_MICRO
-                        : minor != null ? PRECISION_MINOR : PRECISION_MAJOR, DEFAULT_SEPARATOR);
+                preview != null ? Precision.PREVIEW : micro != null ? Precision.MICRO
+                        : minor != null ?  Precision.MINOR :  Precision.MAJOR, DEFAULT_SEPARATOR);
     }
 
     /**
@@ -212,11 +227,11 @@ public class Revision implements Comparable<Revision> {
         StringBuilder sb = new StringBuilder();
         sb.append(getMajor());
 
-        if (mPrecision >= PRECISION_MINOR) {
+        if (mPrecision.compareTo(Precision.MINOR) >= 0) {
             sb.append('.').append(getMinor());
-            if (mPrecision >= PRECISION_MICRO) {
+            if (mPrecision.compareTo(Precision.MICRO) >= 0) {
                 sb.append('.').append(getMicro());
-                if (mPrecision >= PRECISION_PREVIEW && isPreview()) {
+                if (mPrecision.compareTo(Precision.PREVIEW) >= 0 && isPreview()) {
                     sb.append(getSeparator()).append("rc").append(getPreview());
                 }
             }
@@ -237,20 +252,20 @@ public class Revision implements Comparable<Revision> {
      */
     public int[] toIntArray(boolean includePreview) {
         int[] result;
-        if (mPrecision >= PRECISION_PREVIEW) {
+        if (mPrecision.compareTo(Precision.PREVIEW) >= 0) {
             if (includePreview) {
-                result = new int[mPrecision];
+                result = new int[mPrecision.getTermCount()];
                 result[3] = getPreview();
             } else {
-                result = new int[mPrecision - 1];
+                result = new int[mPrecision.getTermCount() - 1];
             }
         } else {
-            result = new int[mPrecision];
+            result = new int[mPrecision.getTermCount()];
         }
         result[0] = getMajor();
-        if (mPrecision >= PRECISION_MINOR) {
+        if (mPrecision.compareTo(Precision.MINOR) >= 0) {
             result[1] = getMinor();
-            if (mPrecision >= PRECISION_MICRO) {
+            if (mPrecision.compareTo(Precision.MICRO) >= 0) {
                 result[2] = getMicro();
             }
         }
@@ -263,7 +278,7 @@ public class Revision implements Comparable<Revision> {
      * That is, {@code (new Revision(20)).equals(new Revision(20, 0, 0)} will return {@code false}.
      */
     @Override
-    public boolean equals(Object rhs) {
+    public boolean equals(@Nullable Object rhs) {
         if (this == rhs) {
             return true;
         }
@@ -319,6 +334,7 @@ public class Revision implements Comparable<Revision> {
      * #toString()} except it omits minor, micro or preview versions when they are zero. For example
      * it would return "18 rc1" instead of "18.0.0 rc1", or "18.1 rc2" instead of "18.1.0 rc2".
      */
+    @NonNull
     public String toShortString() {
         StringBuilder sb = new StringBuilder();
         sb.append(mMajor);
@@ -343,7 +359,7 @@ public class Revision implements Comparable<Revision> {
         result = prime * result + mMinor;
         result = prime * result + mMicro;
         result = prime * result + mPreview;
-        result = prime * result + mPrecision;
+        result = prime * result + mPrecision.getTermCount();
         return result;
     }
 
