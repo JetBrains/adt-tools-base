@@ -96,6 +96,21 @@
         </xsd:complexContent>
     </xsd:complexType>
 
+    <xsd:complexType name="mavenType">
+        <xsd:annotation>
+            <xsd:appinfo>
+                <plugin:super name="com.android.sdklib.repositoryv2.meta.DetailsTypes$MavenType"/>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:complexContent>
+            <xsd:extension base="common:typeDetails">
+                <xsd:all>
+                    <xsd:element name="vendor" type="sdk-common:idDisplayType"/>
+                </xsd:all>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
     <xsd:complexType name="_xjcWorkaround">
         <xsd:annotation>
             <xsd:documentation>

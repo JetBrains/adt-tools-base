@@ -154,4 +154,11 @@ public final class DetailsTypes {
 
         void setVendor(@Nullable IdDisplay vendor);
     }
+
+    /**
+     * Details type for packages that will be installed as maven artifacts in our local maven
+     * repository.
+     */
+    @XmlTransient
+    public interface MavenType {}
 }

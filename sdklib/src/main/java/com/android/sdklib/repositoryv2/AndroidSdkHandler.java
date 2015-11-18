@@ -23,13 +23,17 @@ import com.android.repository.api.FallbackRemoteRepoLoader;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemoteListSourceProvider;
 import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
 import com.android.repository.api.Repository;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SchemaModule;
+import com.android.repository.impl.installer.BasicInstaller;
+import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.impl.sources.LocalSourceProvider;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
+import com.android.sdklib.repositoryv2.meta.DetailsTypes;
 import com.android.sdklib.repositoryv2.sources.RemoteSiteType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -431,5 +435,12 @@ public final class AndroidSdkHandler {
             mUserSourceProvider.setRepoManager(result);
             return result;
         }
+    }
+
+    public static PackageInstaller findBestInstaller(RepoPackage p) {
+        if (p.getTypeDetails() instanceof DetailsTypes.MavenType) {
+            return new MavenInstaller();
+        }
+        return new BasicInstaller();
     }
 }
