@@ -62,14 +62,14 @@ class SigningTest {
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
         def parameters = [
-                ["rsa_keystore.jks", "CERT.RSA"] as Object[],
+                ["rsa_keystore.jks", "CERT.RSA", 1] as Object[],
         ]
 
         // These are not available on 1.6. To test, run the following (with proper JAVA_HOME):
         // JAVA_FOR_TESTS=1.8 ./gradlew :b:i:testPrebuilts --tests=*.SigningTest
         if (!System.getProperty("java.version").startsWith("1.6")) {
-            parameters.add(["ec_keystore.jks", "CERT.EC"] as Object[])
-            parameters.add(["dsa_keystore.jks", "CERT.DSA"] as Object[])
+            parameters.add(["dsa_keystore.jks", "CERT.DSA", 1] as Object[])
+            parameters.add(["ec_keystore.jks", "CERT.EC", 18] as Object[])
         }
 
         return parameters
@@ -80,6 +80,9 @@ class SigningTest {
 
     @Parameterized.Parameter(1)
     public String certEntryName
+
+    @Parameterized.Parameter(2)
+    public int minSdkVersion
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
@@ -102,6 +105,9 @@ class SigningTest {
                     compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                     buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
 
+                    defaultConfig {
+                        minSdkVersion ${minSdkVersion}
+                    }
 
                     signingConfigs {
                         customDebug {
@@ -218,16 +224,19 @@ class SigningTest {
 
     @Test
     public void 'SHA algorithm change'() throws Exception {
-        project.buildFile << "android.defaultConfig.minSdkVersion 15"
-        project.execute("assembleDebug")
-
         File apk = project.getApk("debug")
-        assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA1-Digest");
-        assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-256-Digest");
-        assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA1-Digest");
-        assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-256-Digest");
 
-        FileHelper.searchAndReplace(project.buildFile, "minSdkVersion 15", "minSdkVersion 18")
+        if (minSdkVersion < 18) {
+            project.execute("assembleDebug")
+
+            assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/CERT.SF", "SHA-256-Digest");
+            assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA1-Digest");
+            assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-256-Digest");
+
+            FileHelper.searchAndReplace(project.buildFile, "minSdkVersion \\d+", "minSdkVersion 18")
+        }
+
         project.execute("assembleDebug")
 
         assertThatApk(apk).containsFileWithMatch("META-INF/CERT.SF", "SHA-256-Digest");
@@ -239,10 +248,11 @@ class SigningTest {
     @Test
     @Category(DeviceTests)
     public void 'SHA algorithm change - on device'() throws Exception {
-        project.buildFile << "android.defaultConfig.minSdkVersion 15"
         project.executeConnectedCheck()
 
-        FileHelper.searchAndReplace(project.buildFile, "minSdkVersion 15", "minSdkVersion 18")
-        project.executeConnectedCheck()
+        if (minSdkVersion < 18) {
+            FileHelper.searchAndReplace(project.buildFile, "minSdkVersion \\d+", "minSdkVersion 18")
+            project.executeConnectedCheck()
+        }
     }
 }
