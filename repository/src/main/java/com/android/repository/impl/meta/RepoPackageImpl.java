@@ -35,6 +35,7 @@ import javax.xml.bind.annotation.XmlTransient;
  * A local or remote {@link RepoPackage}. Primarily a superclass for xjc-generated classes.
  */
 @SuppressWarnings("MethodMayBeStatic")
+@XmlTransient
 public abstract class RepoPackageImpl implements RepoPackage {
 
     @Override

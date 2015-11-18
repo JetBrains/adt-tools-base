@@ -33,8 +33,8 @@ public interface LocalPackage extends RepoPackage {
     File getLocation();
 
     /**
-     * Specifies the repository root in which this package is installed. This should be called
+     * Specifies the path at which this package is installed. This should be called
      * directly after the package is created.
      */
-    void setRepositoryRoot(@NonNull File root);
+    void setInstalledPath(@NonNull File root);
 }

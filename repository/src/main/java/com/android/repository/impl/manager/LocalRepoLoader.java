@@ -208,7 +208,7 @@ public final class LocalRepoLoader {
                 progress.logWarning("Didn't find any local package in repository");
                 return null;
             }
-            p.setRepositoryRoot(mRepoManager.getLocalPath());
+            p.setInstalledPath(packageXml.getParentFile());
             return p;
         }
     }

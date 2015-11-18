@@ -27,7 +27,6 @@ import com.android.repository.io.FileOpUtils;
 import org.w3c.dom.ls.LSResourceResolver;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -166,29 +165,32 @@ public abstract class RepoManager {
     /**
      * Load the local and remote repositories.
      *
-     * @param cacheExpirationMs       How long must have passed since the last load for us to reload even if
-     *                        {@code forceRefresh} isn't specified.
-     * @param onLocalComplete When loading, the local repo load happens first, and should be
-     *                        relatively fast. When complete, the {@code onLocalComplete} {@link
-     *                        RepoLoadedCallback}s are run. Will be called with a {@link
-     *                        RepositoryPackages} that contains only the local packages.
-     * @param onSuccess       Callbacks that are run when the entire load (local and remote) has
-     *                        completed successfully. Called with an {@link RepositoryPackages}
-     *                        containing both the local and remote packages.
-     * @param onError         Callbacks that are run when there's an error at some point during the
-     *                        load.
-     * @param forceRefresh    If true, reload the local and remote packages even if {@code
-     *                        cacheExpirationMs} has not passed.
-     * @param runner          The {@link ProgressRunner} to use for any tasks started during the
-     *                        load, including running the callbacks.
-     * @param downloader      The {@link Downloader} to use for downloading remote files, including
-     *                        any remote list of repo sources and the remote repositories
-     *                        themselves.
-     * @param settings        The settings to use during the load, including for example proxy
-     *                        settings used when fetching remote files.
-     * @param sync            If true, load synchronously. If false, load asynchronously (this
-     *                        method should return quickly, and the {@code onSuccess} callbacks can
-     *                        be used to process the completed results).
+     * In callbacks, be careful of invoking tasks synchronously on other threads (e.g. the swing ui
+     * thread), since they might also be used by the {@link ProgressRunner) passed in.
+     *
+     * @param cacheExpirationMs How long must have passed since the last load for us to reload even
+     *                          if {@code forceRefresh} isn't specified.
+     * @param onLocalComplete   When loading, the local repo load happens first, and should be
+     *                          relatively fast. When complete, the {@code onLocalComplete} {@link
+     *                          RepoLoadedCallback}s are run. Will be called with a {@link
+     *                          RepositoryPackages} that contains only the local packages.
+     * @param onSuccess         Callbacks that are run when the entire load (local and remote) has
+     *                          completed successfully. Called with an {@link RepositoryPackages}
+     *                          containing both the local and remote packages.
+     * @param onError           Callbacks that are run when there's an error at some point during
+     *                          the load.
+     * @param forceRefresh      If true, reload the local and remote packages even if {@code
+     *                          cacheExpirationMs} has not passed.
+     * @param runner            The {@link ProgressRunner} to use for any tasks started during the
+     *                          load, including running the callbacks.
+     * @param downloader        The {@link Downloader} to use for downloading remote files,
+     *                          including any remote list of repo sources and the remote
+     *                          repositories themselves.
+     * @param settings          The settings to use during the load, including for example proxy
+     *                          settings used when fetching remote files.
+     * @param sync              If true, load synchronously. If false, load asynchronously (this
+     *                          method should return quickly, and the {@code onSuccess} callbacks
+     *                          can be used to process the completed results).
      * @return {@code true} if a load was performed. {@code false} if cached results were fresh
      * enough.
      */
@@ -223,8 +225,7 @@ public abstract class RepoManager {
     public abstract LSResourceResolver getResourceResolver(@NonNull ProgressIndicator progress);
 
     /**
-     * Callback for when repository load is completed/partially completed. Can optionally run on the
-     * dispatch thread.
+     * Callback for when repository load is completed/partially completed.
      */
     public interface RepoLoadedCallback {
 

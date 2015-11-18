@@ -24,22 +24,25 @@ import com.android.repository.api.RepoPackage;
 
 import java.io.File;
 
+import javax.xml.bind.annotation.XmlTransient;
+
 /**
  * Implementation of {@link LocalPackage} that can be saved and loaded using JAXB.
  */
+@XmlTransient
 public abstract class LocalPackageImpl extends RepoPackageImpl implements LocalPackage {
-    private File mRepoRoot;
+    @XmlTransient
+    private File mInstalledPath;
 
     @Override
     @NonNull
     public File getLocation() {
-        assert mRepoRoot != null : "getLocation called without root set!";
-        return new File(mRepoRoot, getPath());
+        return mInstalledPath;
     }
 
     @Override
-    public void setRepositoryRoot(@NonNull File root) {
-        mRepoRoot = root;
+    public void setInstalledPath(@NonNull File path) {
+        mInstalledPath = path;
     }
 
     /**
@@ -54,7 +57,6 @@ public abstract class LocalPackageImpl extends RepoPackageImpl implements LocalP
         CommonFactory f = (CommonFactory)repoManager.getCommonModule().createLatestFactory();
         LocalPackageImpl result = f.createLocalPackage();
         result.setVersion(p.getVersion());
-        result.setRepositoryRoot(repoManager.getLocalPath());
         result.setLicense(p.getLicense());
         result.setPath(p.getPath());
         for (Dependency d : p.getAllDependencies()) {

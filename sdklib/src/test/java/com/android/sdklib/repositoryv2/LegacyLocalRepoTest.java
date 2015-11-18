@@ -112,7 +112,7 @@ public class LegacyLocalRepoTest extends TestCase {
                 mgr.getResourceResolver(progress), progress);
         progress.assertNoErrorsOrWarnings();
         LocalPackage local = repo.getLocalPackage();
-        local.setRepositoryRoot(mgr.getLocalPath());
+        local.setInstalledPath(mgr.getLocalPath());
         assertTrue(local.getTypeDetails() instanceof DetailsTypes.ToolDetailsType);
         assertEquals("Terms and Conditions", local.getLicense().getValue());
         int[] revision = local.getVersion().toIntArray(false);

@@ -27,6 +27,7 @@ import javax.xml.bind.annotation.XmlTransient;
  * A dependency of one package on another. Concrete instances should be created by
  * {@link CommonFactory}.
  */
+@XmlTransient
 public abstract class Dependency {
 
     /**

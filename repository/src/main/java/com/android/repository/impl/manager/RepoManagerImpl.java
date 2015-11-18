@@ -43,7 +43,6 @@ import com.google.common.collect.Sets;
 import org.w3c.dom.ls.LSResourceResolver;
 
 import java.io.File;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Semaphore;

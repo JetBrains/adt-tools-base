@@ -228,7 +228,7 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         }
 
         @Override
-        public void setRepositoryRoot(@Nullable File root) {
+        public void setInstalledPath(File root) {
             // Ignore, we already know our whole path.
         }
     }

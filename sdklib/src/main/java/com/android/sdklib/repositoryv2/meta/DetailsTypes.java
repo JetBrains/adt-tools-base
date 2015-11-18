@@ -144,6 +144,9 @@ public final class DetailsTypes {
     @XmlTransient
     public interface ExtraDetailsType {
         void setVendor(@NonNull IdDisplay vendor);
+
+        @NonNull
+        IdDisplay getVendor();
     }
 
     /**
@@ -152,6 +155,9 @@ public final class DetailsTypes {
     @XmlTransient
     public interface AddonDetailsType extends ApiDetailsType {
         void setVendor(@NonNull IdDisplay vendor);
+
+        @NonNull
+        IdDisplay getVendor();
     }
 
     /**
@@ -166,5 +172,4 @@ public final class DetailsTypes {
 
         void setVendor(@Nullable IdDisplay vendor);
     }
-
 }

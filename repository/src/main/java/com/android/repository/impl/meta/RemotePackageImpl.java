@@ -31,6 +31,7 @@ import javax.xml.bind.annotation.XmlTransient;
  * An implementation of {@link RemotePackage} that can be created as part of a {@link Repository}
  * by JAXB.
  */
+@XmlTransient
 public abstract class RemotePackageImpl extends RepoPackageImpl implements RemotePackage {
     @XmlTransient
     private RepositorySource mSource;
