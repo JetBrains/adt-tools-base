@@ -1,5 +1,8 @@
 <component name="libraryTable">
   <library name="truth">
+    <ANNOTATIONS>
+      <root url="file://$PROJECT_DIR$/.idea/codeContracts" />
+    </ANNOTATIONS>
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/google/truth/truth/0.26/truth-0.26.jar!/" />
     </CLASSES>
