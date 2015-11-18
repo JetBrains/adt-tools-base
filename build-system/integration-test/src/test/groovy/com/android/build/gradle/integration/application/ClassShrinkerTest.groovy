@@ -15,20 +15,17 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import groovy.transform.CompileStatic
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-
 /**
  * Tests for integration of the new class shrinker with Gradle.
  */
@@ -60,7 +57,6 @@ class ClassShrinkerTest {
         assertThatApk(project.getApk("debug")).containsClass("Lcom/example/helloworld/HelloWorld;")
     }
 
-    @Ignore // Broken for now...
     @Test
     @Category(DeviceTests)
     public void connectedCheck() throws Exception {
