@@ -45,28 +45,24 @@ public class AndroidNativeDependencySpec {
     @Nullable
     private final String projectPath;
     @Nullable
-    private final File libraryPath;
+    private final String libraryPath;
     @Nullable
     private final String buildType;
     @Nullable
     private final String productFlavor;
     @Nullable
-    private final String abi;
-    @Nullable
     private final NativeDependencyLinkage linkage;
 
     public AndroidNativeDependencySpec(
             @Nullable String projectPath,
-            @Nullable File libraryPath,
+            @Nullable String libraryPath,
             @Nullable String buildType,
             @Nullable String productFlavor,
-            @Nullable String abi,
             @Nullable NativeDependencyLinkage linkage) {
         this.projectPath = projectPath;
         this.libraryPath = libraryPath;
         this.buildType = buildType;
         this.productFlavor = productFlavor;
-        this.abi = abi;
         this.linkage = linkage;
     }
 
@@ -76,7 +72,7 @@ public class AndroidNativeDependencySpec {
     }
 
     @Nullable
-    public File getLibraryPath() {
+    public String getLibraryPath() {
         return libraryPath;
     }
 
@@ -88,11 +84,6 @@ public class AndroidNativeDependencySpec {
     @Nullable
     public String getProductFlavor() {
         return productFlavor;
-    }
-
-    @Nullable
-    public String getAbi() {
-        return abi;
     }
 
     @Nullable
@@ -109,11 +100,6 @@ public class AndroidNativeDependencySpec {
             throw new InvalidUserDataException(
                     "Native dependency cannot contain both project and library");
         }
-
-        if (libraryPath != null && abi == null) {
-            throw new InvalidUserDataException(
-                    "ABI must be specified with for library: " + libraryPath.toString());
-        }
     }
 
     public static class Builder {
@@ -121,13 +107,11 @@ public class AndroidNativeDependencySpec {
         @Nullable
         private String projectPath;
         @Nullable
-        private File libraryPath;
+        private String libraryPath;
         @Nullable
         private String buildType;
         @Nullable
         private String productFlavor;
-        @Nullable
-        private String abi;
         @Nullable
         NativeDependencyLinkage linkage;
 
@@ -136,7 +120,7 @@ public class AndroidNativeDependencySpec {
             return this;
         }
 
-        public Builder library(File value) {
+        public Builder library(String value) {
             libraryPath = value;
             return this;
         }
@@ -148,11 +132,6 @@ public class AndroidNativeDependencySpec {
 
         public Builder productFlavor(String value) {
             productFlavor = value;
-            return this;
-        }
-
-        public Builder abi(String value) {
-            abi = value;
             return this;
         }
 
@@ -172,7 +151,6 @@ public class AndroidNativeDependencySpec {
                     libraryPath,
                     buildType,
                     productFlavor,
-                    abi,
                     linkage);
         }
     }

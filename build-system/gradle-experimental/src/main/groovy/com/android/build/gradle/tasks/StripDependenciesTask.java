@@ -25,9 +25,11 @@ import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.FileUtils;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
 
 import org.gradle.api.Action;
@@ -51,12 +53,12 @@ import java.util.Map;
  */
 public class StripDependenciesTask extends DefaultTask {
 
-    private Map<Abi, File> stripCommands = Maps.newHashMap();
+    private Map<Abi, File> stripExecutables = Maps.newHashMap();
 
     private Map<File, Abi> inputFiles = Maps.newHashMap();
 
     @NonNull
-    private Map<File, Abi> stripedFiles = Maps.newHashMap();
+    private Multimap<File, Abi> stripedFiles = ArrayListMultimap.create();
 
     private File outputFolder;
 
@@ -68,12 +70,12 @@ public class StripDependenciesTask extends DefaultTask {
      */
     @SuppressWarnings("unused")  // Used for task input monitoring.
     @Input
-    public Collection<File> getStripCommands() {
-        return ImmutableList.copyOf(stripCommands.values());
+    public Collection<File> getStripExecutables() {
+        return ImmutableList.copyOf(stripExecutables.values());
     }
 
-    public void addStripCommands(Map<Abi, File> stripCommands) {
-        this.stripCommands.putAll(stripCommands);
+    public void addStripExecutables(Map<Abi, File> stripCommands) {
+        this.stripExecutables.putAll(stripCommands);
     }
 
     @OutputDirectory
@@ -95,7 +97,7 @@ public class StripDependenciesTask extends DefaultTask {
         inputFiles.putAll(files);
     }
 
-    public void addStripedFiles(Map<File, Abi> files) {
+    public void addStripedFiles(Multimap<File, Abi> files) {
         stripedFiles.putAll(files);
     }
     // ----- PRIVATE API -----
@@ -106,21 +108,23 @@ public class StripDependenciesTask extends DefaultTask {
             @Override
             public void execute(InputFileDetails inputFileDetails) {
                 File input = inputFileDetails.getFile();
-                Abi abi = inputFiles.get(input);
-                if (abi == null) {
-                    abi = stripedFiles.get(input);
-                    assert abi != null;
-
-                    File output = FileUtils.join(getOutputFolder(), abi.getName(), input.getName());
-                    try {
-                        FileUtils.mkdirs(output.getParentFile());
-                        Files.copy(input, output);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                } else {
+                if (inputFiles.containsKey(input)) {
+                    Abi abi = inputFiles.get(input);
                     File output = FileUtils.join(getOutputFolder(), abi.getName(), input.getName());
                     stripFile(input, output, abi);
+                } else {
+                    for (Abi abi : stripedFiles.get(input)) {
+                        File output = FileUtils.join(
+                                getOutputFolder(),
+                                abi.getName(),
+                                input.getName());
+                        try {
+                            FileUtils.mkdirs(output.getParentFile());
+                            Files.copy(input, output);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
                 }
             }
         });
@@ -128,18 +132,24 @@ public class StripDependenciesTask extends DefaultTask {
             @Override
             public void execute(InputFileDetails inputFileDetails) {
                 File input = inputFileDetails.getFile();
-                Abi abi = inputFiles.get(input);
-                if (abi == null) {
-                    abi = stripedFiles.get(input);
-                }
-                File output = FileUtils.join(getOutputFolder(), abi.getName(), input.getName());
-                try {
-                    FileUtils.deleteIfExists(output);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                if (inputFiles.containsKey(input)) {
+                    removeFile(input, inputFiles.get(input));
+                } else {
+                    for (Abi abi : stripedFiles.get(input)) {
+                        removeFile(input, abi);
+                    }
                 }
             }
         });
+    }
+
+    private void removeFile(File file, Abi abi) {
+        File output = FileUtils.join(getOutputFolder(), abi.getName(), file.getName());
+        try {
+            FileUtils.deleteIfExists(output);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void stripFile(File input, File output, Abi abi) {
@@ -153,7 +163,7 @@ public class StripDependenciesTask extends DefaultTask {
         }
 
         ProcessInfoBuilder builder = new ProcessInfoBuilder();
-        builder.setExecutable(stripCommands.get(abi));
+        builder.setExecutable(stripExecutables.get(abi));
         builder.addArgs("--strip-unneeded");
         builder.addArgs("-o");
         builder.addArgs(output.toString());
@@ -174,7 +184,7 @@ public class StripDependenciesTask extends DefaultTask {
         @NonNull
         private final Map<File, Abi> inputFiles;
         @NonNull
-        private final Map<File, Abi> stripedFiles;
+        private final Multimap<File, Abi> stripedFiles;
         @NonNull
         private final File buildDir;
         @NonNull
@@ -184,7 +194,7 @@ public class StripDependenciesTask extends DefaultTask {
                 @NonNull String buildType,
                 @NonNull String flavor,
                 @NonNull Map<File, Abi> inputFiles,
-                @NonNull Map<File, Abi> stripedFiles,
+                @NonNull Multimap<File, Abi> stripedFiles,
                 @NonNull File buildDir,
                 @NonNull NdkHandler handler) {
             this.buildType = buildType;
@@ -206,7 +216,7 @@ public class StripDependenciesTask extends DefaultTask {
             if (handler.isNdkDirConfigured()) {
                 for(Abi abi : handler.getSupportedAbis()) {
                     stripCommands.put(abi, handler.getStripCommand(abi));
-                    task.addStripCommands(stripCommands);
+                    task.addStripExecutables(stripCommands);
                 }
             }
         }

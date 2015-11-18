@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
@@ -63,8 +64,11 @@ import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A scope containing data for a specific variant.
@@ -645,6 +649,59 @@ public class VariantScopeImpl implements VariantScope {
     public File getMappingFile() {
         return new File(globalScope.getOutputsDir(),
                 "/mapping/" + getVariantConfiguration().getDirName() + "/mapping.txt");
+    }
+
+    @Override
+    @NonNull
+    public File getGenerateSplitAbiResOutputDirectory() {
+        return new File(globalScope.getIntermediatesDir(),
+                "abi/" + getVariantConfiguration().getDirName());
+    }
+
+    @Override
+    @NonNull
+    public File getSplitOutputDirectory() {
+        return new File(globalScope.getIntermediatesDir(),
+                "splits/" + getVariantConfiguration().getDirName());
+    }
+
+
+    @Override
+    @NonNull
+    public List<File> getSplitAbiResOutputFiles() {
+        Set<String> filters = AbiSplitOptions.getAbiFilters(
+                globalScope.getExtension().getSplits().getAbiFilters());
+        List<File> outputFiles = new ArrayList<File>();
+        for (String split : filters) {
+            outputFiles.add(getOutputFileForSplit(split));
+        }
+        return outputFiles;
+    }
+
+    private File getOutputFileForSplit(final String split) {
+        return new File(getGenerateSplitAbiResOutputDirectory(),
+                "resources-" + getVariantConfiguration().getBaseName() + "-" + split + ".ap_");
+    }
+
+    @Override
+    @NonNull
+    public List<File> getPackageSplitAbiOutputFiles() {
+        ImmutableList.Builder<File> builder = ImmutableList.builder();
+        for (String split : globalScope.getExtension().getSplits().getAbiFilters()) {
+            String apkName = getApkName(split);
+            builder.add(new File(getSplitOutputDirectory(), apkName));
+        }
+        return builder.build();
+    }
+
+    private String getApkName(final String split) {
+        String archivesBaseName = globalScope.getArchivesBaseName();
+        String apkName =
+                archivesBaseName + "-" + getVariantConfiguration().getBaseName() + "_" + split;
+        return apkName
+                + (getVariantConfiguration().getSigningConfig() == null
+                        ? "-unsigned.apk"
+                        : "-unaligned.apk");
     }
 
     @NonNull

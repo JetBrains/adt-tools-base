@@ -30,7 +30,10 @@ import static com.google.common.base.Preconditions.checkState;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.OutputFile;
+import com.android.build.api.transform.QualifiedContent.ContentType;
+import com.android.build.api.transform.QualifiedContent.DefaultContentType;
+import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.OptionalCompilationStep;
@@ -41,7 +44,6 @@ import com.android.build.gradle.internal.coverage.JacocoReportTask;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
-import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.DexOptions;
@@ -859,93 +861,46 @@ public abstract class TaskManager {
      * all --split provided parameters. These split packages should be signed and moved unchanged to
      * the APK build output directory.
      */
-    public void createSplitResourcesTasks(@NonNull VariantScope scope) {
+    @NonNull
+    public AndroidTask<PackageSplitRes> createSplitResourcesTasks(
+            @NonNull TaskFactory tasks,
+            @NonNull VariantScope scope) {
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
 
         checkState(variantData.getSplitHandlingPolicy().equals(
                         BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY),
                 "Can only create split resources tasks for pure splits.");
 
-        final VariantConfiguration config = variantData.getVariantConfiguration();
-        Set<String> densityFilters = variantData.getFilters(OutputFile.FilterType.DENSITY);
-        Set<String> abiFilters = variantData.getFilters(OutputFile.FilterType.ABI);
-        Set<String> languageFilters = variantData.getFilters(OutputFile.FilterType.LANGUAGE);
-
         List<? extends BaseVariantOutputData> outputs = variantData.getOutputs();
+        final BaseVariantOutputData variantOutputData = outputs.get(0);
         if (outputs.size() != 1) {
             throw new RuntimeException(
                     "In release 21 and later, there can be only one main APK, " +
                             "found " + outputs.size());
         }
 
-        final BaseVariantOutputData variantOutputData = outputs.get(0);
         VariantOutputScope variantOutputScope = variantOutputData.getScope();
-        variantOutputData.packageSplitResourcesTask = project.getTasks().create(
-                scope.getTaskName("package", "SplitResources"),
-                PackageSplitRes.class);
-        variantOutputData.packageSplitResourcesTask.setInputDirectory(
-                variantOutputScope.getProcessResourcePackageOutputFile().getParentFile());
-        variantOutputData.packageSplitResourcesTask.setDensitySplits(densityFilters);
-        variantOutputData.packageSplitResourcesTask.setLanguageSplits(languageFilters);
-        variantOutputData.packageSplitResourcesTask.setOutputBaseName(config.getBaseName());
-        variantOutputData.packageSplitResourcesTask.setSigningConfig(config.getSigningConfig());
-        variantOutputData.packageSplitResourcesTask.setOutputDirectory(new File(
-                scope.getGlobalScope().getIntermediatesDir(), "splits/" + config.getDirName()));
-        variantOutputData.packageSplitResourcesTask.setAndroidBuilder(androidBuilder);
-        variantOutputData.packageSplitResourcesTask.setVariantName(config.getFullName());
-        variantOutputData.packageSplitResourcesTask.dependsOn(
+        AndroidTask<PackageSplitRes> packageSplitRes =
+                androidTasks.create(tasks, new PackageSplitRes.ConfigAction(scope));
+        packageSplitRes.dependsOn(tasks,
                 variantOutputScope.getProcessResourcesTask().getName());
-
-        SplitZipAlign zipAlign = project.getTasks().create(
-                scope.getTaskName("zipAlign", "SplitPackages"),
-                SplitZipAlign.class);
-        zipAlign.setVariantName(config.getFullName());
-        ConventionMappingHelper.map(zipAlign, "zipAlignExe", new Callable<File>() {
-            @Override
-            public File call() throws Exception {
-                final TargetInfo info = androidBuilder.getTargetInfo();
-                if (info == null) {
-                    return null;
-                }
-                String path = info.getBuildTools().getPath(ZIP_ALIGN);
-                if (path == null) {
-                    return null;
-                }
-                return new File(path);
-            }
-        });
-
-        zipAlign.setOutputDirectory(new File(scope.getGlobalScope().getBuildDir(), "outputs/apk"));
-        ConventionMappingHelper.map(zipAlign, "densityOrLanguageInputFiles",
-                new Callable<List<File>>() {
-                    @Override
-                    public List<File> call() {
-                        return variantOutputData.packageSplitResourcesTask.getOutputFiles();
-                    }
-                });
-        zipAlign.setOutputBaseName(config.getBaseName());
-        zipAlign.setAbiFilters(abiFilters);
-        zipAlign.setLanguageFilters(languageFilters);
-        zipAlign.setDensityFilters(densityFilters);
-        File metadataDirectory = new File(zipAlign.getOutputDirectory().getParentFile(),
-                "metadata");
-        zipAlign.setApkMetadataFile(new File(metadataDirectory, config.getFullName() + ".mtd"));
-        ((ApkVariantOutputData) variantOutputData).splitZipAlign = zipAlign;
-        zipAlign.dependsOn(variantOutputData.packageSplitResourcesTask);
+        return packageSplitRes;
     }
 
-    public void createSplitAbiTasks(@NonNull final VariantScope scope) {
+    @Nullable
+    public AndroidTask<PackageSplitAbi> createSplitAbiTasks(
+            @NonNull TaskFactory tasks,
+            @NonNull final VariantScope scope) {
         ApplicationVariantData variantData = (ApplicationVariantData) scope.getVariantData();
 
         checkState(variantData.getSplitHandlingPolicy().equals(
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY),
                 "split ABI tasks are only compatible with pure splits.");
 
-        final VariantConfiguration config = variantData.getVariantConfiguration();
         Set<String> filters = AbiSplitOptions.getAbiFilters(
                 getExtension().getSplits().getAbiFilters());
         if (filters.isEmpty()) {
-            return;
+            return null;
         }
 
         List<ApkVariantOutputData> outputs = variantData.getOutputs();
@@ -956,85 +911,51 @@ public abstract class TaskManager {
         }
 
         BaseVariantOutputData variantOutputData = outputs.get(0);
-        // first create the split APK resources.
-        GenerateSplitAbiRes generateSplitAbiRes = project.getTasks().create(
-                scope.getTaskName("generate", "SplitAbiRes"),
-                GenerateSplitAbiRes.class);
-        generateSplitAbiRes.setAndroidBuilder(androidBuilder);
-        generateSplitAbiRes.setVariantName(config.getFullName());
 
-        generateSplitAbiRes.setOutputDirectory(new File(
-                scope.getGlobalScope().getIntermediatesDir(), "abi/" + config.getDirName()));
-        generateSplitAbiRes.setSplits(filters);
-        generateSplitAbiRes.setOutputBaseName(config.getBaseName());
-        generateSplitAbiRes.setApplicationId(config.getApplicationId());
-        generateSplitAbiRes.setVersionCode(config.getVersionCode());
-        generateSplitAbiRes.setVersionName(config.getVersionName());
-        ConventionMappingHelper.map(generateSplitAbiRes, "debuggable", new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return config.getBuildType().isDebuggable();
-            }
-        });
-        ConventionMappingHelper.map(generateSplitAbiRes, "aaptOptions",
-                new Callable<AaptOptions>() {
-                    @Override
-                    public AaptOptions call() throws Exception {
-                        return getExtension().getAaptOptions();
-                    }
-                });
-        generateSplitAbiRes.dependsOn(
+        // first create the split APK resources.
+        AndroidTask<GenerateSplitAbiRes> generateSplitAbiRes =
+                androidTasks.create(tasks, new GenerateSplitAbiRes.ConfigAction(scope));
+        generateSplitAbiRes.dependsOn(tasks,
                 variantOutputData.getScope().getProcessResourcesTask().getName());
 
         // then package those resources with the appropriate JNI libraries.
-        variantOutputData.packageSplitAbiTask = project.getTasks().create(
-                scope.getTaskName("package", "SplitAbi"), PackageSplitAbi.class);
-        variantOutputData.packageSplitAbiTask.setInputFiles(generateSplitAbiRes.getOutputFiles());
-        variantOutputData.packageSplitAbiTask.setSplits(filters);
-        variantOutputData.packageSplitAbiTask.setOutputBaseName(config.getBaseName());
-        variantOutputData.packageSplitAbiTask.setSigningConfig(config.getSigningConfig());
-        variantOutputData.packageSplitAbiTask.setOutputDirectory(new File(
-                scope.getGlobalScope().getIntermediatesDir(), "splits/" + config.getDirName()));
-        variantOutputData.packageSplitAbiTask.setAndroidBuilder(androidBuilder);
-        variantOutputData.packageSplitAbiTask.setVariantName(config.getFullName());
-        variantOutputData.packageSplitAbiTask.setMinSdkVersion(config.getMinSdkVersion());
-        variantOutputData.packageSplitAbiTask.dependsOn(generateSplitAbiRes);
-        variantOutputData.packageSplitAbiTask.dependsOn(scope.getNdkBuildable());
+        AndroidTask<PackageSplitAbi> packageSplitAbiTask =
+                androidTasks.create(tasks, new PackageSplitAbi.ConfigAction(scope));
 
-        ConventionMappingHelper.map(variantOutputData.packageSplitAbiTask, "jniFolders",
-                new Callable<Set<File>>() {
-                    @Override
-                    public Set<File> call() throws Exception {
-                        return scope.getTransformManager().getPipelineOutput(
-                                PackageApplication.sNativeLibsFilter).keySet();
-                    }
-        });
-
-        ConventionMappingHelper.map(variantOutputData.packageSplitAbiTask, "jniDebuggable",
-                new Callable<Boolean>() {
-                    @Override
-                    public Boolean call() throws Exception {
-                        return config.getBuildType().isJniDebuggable();
-                    }
-                });
-
-        ((ApkVariantOutputData) variantOutputData).splitZipAlign.getAbiInputFiles().addAll(
-                variantOutputData.packageSplitAbiTask.getOutputFiles());
-
-        ((ApkVariantOutputData) variantOutputData).splitZipAlign.dependsOn(
-                variantOutputData.packageSplitAbiTask);
+        packageSplitAbiTask.dependsOn(tasks, generateSplitAbiRes);
+        packageSplitAbiTask.dependsOn(tasks, scope.getNdkBuildable());
 
         // set up dependency on the jni merger.
         for (TransformStream stream : scope.getTransformManager().getStreams(
                 PackageApplication.sNativeLibsFilter)) {
-            variantOutputData.packageSplitAbiTask.dependsOn(stream.getDependencies());
+            packageSplitAbiTask.dependsOn(tasks, stream.getDependencies());
         }
+        return packageSplitAbiTask;
     }
 
-    private static <T> void addAllIfNotNull(@NonNull Collection<T> main, @Nullable Collection<T> toAdd) {
-        if (toAdd != null) {
-            main.addAll(toAdd);
+    public void createSplitTasks(@NonNull TaskFactory tasks, @NonNull final VariantScope scope) {
+        AndroidTask<PackageSplitRes> packageSplitResourcesTask =
+                createSplitResourcesTasks(tasks, scope);
+        final AndroidTask<PackageSplitAbi> packageSplitAbiTask = createSplitAbiTasks(tasks, scope);
+
+        AndroidTask<SplitZipAlign> zipAlign =
+                androidTasks.create(tasks, new SplitZipAlign.ConfigAction(scope));
+        //noinspection VariableNotUsedInsideIf - only need to check if task exist.
+        if (packageSplitAbiTask != null) {
+            zipAlign.configure(tasks, new Action<Task>() {
+                @Override
+                public void execute(Task task) {
+                    ((SplitZipAlign)task).getAbiInputFiles().addAll(
+                            scope.getPackageSplitAbiOutputFiles());
+                }
+            });
         }
+        zipAlign.dependsOn(tasks, packageSplitResourcesTask);
+        zipAlign.optionalDependsOn(tasks, packageSplitAbiTask);
+
+        BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+        VariantOutputScope outputScope = variantData.getOutputs().get(0).getScope();
+        outputScope.setSplitZipAlignTask(zipAlign);
     }
 
     /**
@@ -2192,7 +2113,7 @@ public abstract class TaskManager {
         GradleVariantConfiguration config = variantData.getVariantConfiguration();
 
         boolean signedApk = variantData.isSigned();
-        File apkLocation = new File(variantScope.getGlobalScope().getApkLocation());
+        final File apkLocation = new File(variantScope.getGlobalScope().getApkLocation());
 
         boolean multiOutput = variantData.getOutputs().size() > 1;
 
@@ -2238,8 +2159,8 @@ public abstract class TaskManager {
                     AndroidTask<ZipAlign> zipAlignTask = androidTasks.create(
                             tasks, new ZipAlign.ConfigAction(variantOutputScope));
                     zipAlignTask.dependsOn(tasks, packageApp);
-                    if (variantOutputData.splitZipAlign != null) {
-                        zipAlignTask.dependsOn(tasks, variantOutputData.splitZipAlign);
+                    if (variantOutputScope.getSplitZipAlignTask() != null) {
+                        zipAlignTask.dependsOn(tasks, variantOutputScope.getSplitZipAlignTask());
                     }
 
                     appTask = zipAlignTask;
@@ -2265,12 +2186,21 @@ public abstract class TaskManager {
                 // in case we are not signing the resulting APKs and we have some pure splits
                 // we should manually copy them from the intermediate location to the final
                 // apk location unmodified.
-                Copy copyTask = project.getTasks().create(
-                        variantOutputScope.getTaskName("copySplit"), Copy.class);
-                copyTask.setDestinationDir(apkLocation);
-                copyTask.from(variantOutputData.packageSplitResourcesTask.getOutputDirectory());
-                variantOutputData.assembleTask.dependsOn(copyTask);
-                copyTask.mustRunAfter(appTask.getName());
+                final String appTaskName = appTask.getName();
+                AndroidTask<Copy> copySplitTask = androidTasks.create(
+                        tasks,
+                        variantOutputScope.getTaskName("copySplit"),
+                        Copy.class,
+                        new Action<Copy>() {
+                            @Override
+                            public void execute(Copy copyTask) {
+                                copyTask.setDestinationDir(apkLocation);
+                                copyTask.from(variantOutputData.packageSplitResourcesTask.getOutputDirectory());
+                                variantOutputData.assembleTask.dependsOn(copyTask);
+                                copyTask.mustRunAfter(appTaskName);
+                            }
+                        });
+                variantOutputData.assembleTask.dependsOn(copySplitTask.getName());
             }
             variantOutputData.assembleTask.dependsOn(appTask.getName());
 

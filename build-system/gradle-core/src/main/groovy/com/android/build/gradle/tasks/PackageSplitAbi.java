@@ -21,7 +21,14 @@ import com.android.annotations.Nullable;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
+import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.model.FilterDataImpl;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.DuplicateFileException;
@@ -47,6 +54,7 @@ import java.io.FileNotFoundException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -77,8 +85,9 @@ public class PackageSplitAbi extends SplitRelatedTask {
     @OutputFiles
     public List<File> getOutputFiles() {
         ImmutableList.Builder<File> builder = ImmutableList.builder();
-        for (ApkOutputFile apk : getOutputSplitFiles()) {
-            builder.add(apk.getOutputFile());
+        for (String split : splits) {
+            String apkName = getApkName(split);
+            builder.add(new File(outputDirectory, apkName));
         }
         return builder.build();
     }
@@ -239,5 +248,66 @@ public class PackageSplitAbi extends SplitRelatedTask {
     @Input
     public int getMinSdkVersion() {
         return minSdkVersion.getApiLevel();
+    }
+
+    // ----- ConfigAction -----
+
+    public static class ConfigAction implements TaskConfigAction<PackageSplitAbi> {
+
+        private VariantScope scope;
+
+        public ConfigAction(VariantScope scope) {
+            this.scope = scope;
+        }
+
+        @Override
+        @NonNull
+        public String getName() {
+            return scope.getTaskName("package", "SplitAbi");
+        }
+
+        @Override
+        @NonNull
+        public Class<PackageSplitAbi> getType() {
+            return PackageSplitAbi.class;
+        }
+
+        @Override
+        public void execute(@NonNull PackageSplitAbi packageSplitAbiTask) {
+            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+            List<? extends BaseVariantOutputData> outputs = variantData.getOutputs();
+            final BaseVariantOutputData variantOutputData = outputs.get(0);
+            final VariantConfiguration config = scope.getVariantConfiguration();
+
+            variantOutputData.packageSplitAbiTask = packageSplitAbiTask;
+
+            Set<String> filters = AbiSplitOptions.getAbiFilters(
+                    scope.getGlobalScope().getExtension().getSplits().getAbiFilters());
+            packageSplitAbiTask.setInputFiles(scope.getSplitAbiResOutputFiles());
+            packageSplitAbiTask.setSplits(filters);
+            packageSplitAbiTask.setOutputBaseName(config.getBaseName());
+            packageSplitAbiTask.setSigningConfig(config.getSigningConfig());
+            packageSplitAbiTask.setOutputDirectory(scope.getSplitOutputDirectory());
+            packageSplitAbiTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            packageSplitAbiTask.setVariantName(config.getFullName());
+            packageSplitAbiTask.setMinSdkVersion(config.getMinSdkVersion());
+
+            ConventionMappingHelper.map(packageSplitAbiTask, "jniFolders",
+                    new Callable<Set<File>>() {
+                        @Override
+                        public Set<File> call() throws Exception {
+                            return scope.getTransformManager().getPipelineOutput(
+                                    PackageApplication.sNativeLibsFilter).keySet();
+                        }
+                    });
+
+            ConventionMappingHelper.map(packageSplitAbiTask, "jniDebuggable",
+                    new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return config.getBuildType().isJniDebuggable();
+                        }
+                    });
+        }
     }
 }

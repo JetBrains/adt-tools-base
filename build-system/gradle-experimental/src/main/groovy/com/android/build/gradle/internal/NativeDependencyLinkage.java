@@ -16,10 +16,24 @@
 
 package com.android.build.gradle.internal;
 
+import com.android.annotations.NonNull;
+
 /**
  * Enumeration for describing dependency linkage.
  */
 public enum NativeDependencyLinkage {
-    SHARED,
-    STATIC
+    SHARED("shared"),
+    STATIC("static");
+
+    @NonNull
+    private String name;
+
+    NativeDependencyLinkage(@NonNull String name) {
+        this.name = name;
+    }
+
+    @NonNull
+    public String getName() {
+        return name;
+    }
 }

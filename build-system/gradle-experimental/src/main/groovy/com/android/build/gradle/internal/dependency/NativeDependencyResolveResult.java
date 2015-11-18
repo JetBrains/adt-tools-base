@@ -17,13 +17,13 @@
 package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.core.Abi;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
-import java.io.File;
+import org.gradle.nativeplatform.NativeLibraryBinary;
+
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * Result of resolving dependencies for a native project.
@@ -34,7 +34,7 @@ public class NativeDependencyResolveResult {
     private Collection<NativeLibraryArtifact> nativeArtifacts = Lists.newArrayList();
 
     @NonNull
-    private ListMultimap<Abi, File> libraryFiles = ArrayListMultimap.create();
+    private Set<NativeLibraryBinary> prebuiltLibraries = Sets.newHashSet();
 
     @NonNull
     public Collection<NativeLibraryArtifact> getNativeArtifacts() {
@@ -42,7 +42,7 @@ public class NativeDependencyResolveResult {
     }
 
     @NonNull
-    public ListMultimap<Abi, File> getLibraryFiles() {
-        return libraryFiles;
+    public Set<NativeLibraryBinary> getPrebuiltLibraries() {
+        return prebuiltLibraries;
     }
 }

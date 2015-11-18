@@ -208,4 +208,9 @@ public class GlobalScope {
     public boolean isActive(OptionalCompilationStep step) {
         return optionalCompilationSteps.contains(step);
     }
+
+    @NonNull
+    public String getArchivesBaseName() {
+        return (String)getProject().getProperties().get("archivesBaseName");
+    }
 }

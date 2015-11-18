@@ -25,13 +25,16 @@ import com.android.build.gradle.internal.dependency.ArtifactContainer;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.gson.FileGsonTypeAdaptor;
 import com.android.build.gradle.internal.gson.NativeBuildConfigValue;
+import com.android.build.gradle.managed.JsonConfigFile;
 import com.android.build.gradle.managed.NativeBuildConfig;
 import com.android.build.gradle.managed.NativeLibrary;
 import com.android.utils.StringHelper;
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.gradle.api.Action;
+import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -39,9 +42,10 @@ import org.gradle.api.internal.file.FileResolver;
 import org.gradle.api.tasks.Exec;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.plugins.ComponentModelBasePlugin;
-import org.gradle.model.Finalize;
+import org.gradle.model.Defaults;
 import org.gradle.model.Model;
 import org.gradle.model.ModelMap;
+import org.gradle.model.ModelSet;
 import org.gradle.model.Mutate;
 import org.gradle.model.RuleSource;
 import org.gradle.model.internal.registry.ModelRegistry;
@@ -56,6 +60,7 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -103,30 +108,39 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
         public static void createNativeBuildModel(NativeBuildConfig config) {
         }
 
+        @Model(ModelConstants.EXTERNAL_CONFIG_FILES)
+        public static void createConfigFilesModel(ModelSet<JsonConfigFile> configFiles) {
+        }
+
         /**
          * Parses the JSON file to populate the NativeBuildConfig.
-         * Overwrites all existing values in the config.
-         *
-         * TODO: NativeBuildConfig should not be set if JSON is used.  Verify this and throws an
-         * error if any field is set.
          */
-        @Finalize
+        @Defaults
         public static void readJson(
                 NativeBuildConfig config,
+                ModelSet<JsonConfigFile> configFiles,
                 ServiceRegistry registry) throws IOException {
-            File configFile = config.getConfigFile();
-            if (configFile == null) {
-                return;
+            for (JsonConfigFile configFile : configFiles) {
+                if (configFile.getConfig() == null) {
+                    throw new InvalidUserDataException("Config file cannot be null");
+                }
+
+                // If JSON file does not exists, the plugin will not be configured.  But it's not
+                // an error to allow the plugin to create tasks for generating the file.
+                if (!configFile.getConfig().exists()) {
+                    continue;
+                }
+
+                FileResolver fileResolver = registry.get(FileResolver.class);
+                Gson gson = new GsonBuilder()
+                        .registerTypeAdapter(File.class, new FileGsonTypeAdaptor(fileResolver))
+                        .create();
+
+                NativeBuildConfigValue jsonConfig = gson.fromJson(
+                        new FileReader(configFile.getConfig()),
+                        NativeBuildConfigValue.class);
+                jsonConfig.copyTo(config);
             }
-
-            FileResolver fileResolver = registry.get(FileResolver.class);
-            Gson gson = new GsonBuilder()
-                    .registerTypeAdapter(File.class, new FileGsonTypeAdaptor(fileResolver))
-                    .create();
-
-            NativeBuildConfigValue jsonConfig =
-                    gson.fromJson(new FileReader(configFile), NativeBuildConfigValue.class);
-            jsonConfig.copyTo(config);
         }
 
         @Mutate
@@ -167,6 +181,51 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                             exec.args(binary.getConfig().getArgs());
                         }
                     });
+        }
+
+        @Mutate
+        public static void createGeneratorTasks(
+                ModelMap<Task> tasks,
+                ModelSet<JsonConfigFile> configFiles) {
+            final List<String> generatorTasks = Lists.newLinkedList();
+            for (final JsonConfigFile configFile : configFiles) {
+                if (configFile.getCommand().isEmpty() && configFile.getCommandString() == null) {
+                    continue;
+                }
+                if (!configFile.getCommand().isEmpty() && configFile.getCommandString() != null) {
+                    throw new InvalidUserDataException(
+                            "Cannot set both command and commandString for JSON config file: "
+                                    + configFile.getConfig());
+                }
+                String taskName = "generate" + StringHelper.capitalize(
+                        configFile.getConfig().getName());
+                generatorTasks.add(taskName);
+                tasks.create(
+                        taskName,
+                        Exec.class,
+                        new Action<Exec>() {
+                            @Override
+                            public void execute(Exec task) {
+                                if (!configFile.getCommand().isEmpty()) {
+                                    task.commandLine(configFile.getCommand());
+                                } else {
+                                    task.commandLine(StringHelper.tokenizeCommand(
+                                            configFile.getCommandString()));
+                                }
+                            }
+                        });
+            }
+            tasks.create("generateConfigFile",
+                    new Action<Task>() {
+                        @Override
+                        public void execute(Task task) {
+                            task.setDescription("Create configuration files for the plugin.");
+                            task.dependsOn(generatorTasks);
+                        }
+                    }
+            );
+
+
         }
 
         @Model(ARTIFACTS)
