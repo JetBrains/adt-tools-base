@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -30,7 +31,6 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.fd.FastDeployRuntimeExtractorTask;
 import com.android.build.gradle.tasks.fd.GenerateInstantRunAppInfoTask;
-import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
@@ -226,8 +226,7 @@ public class ApplicationTaskManager extends TaskManager {
                     new Recorder.Block<Void>() {
                         @Override
                         public Void call() {
-                            createSplitResourcesTasks(variantScope);
-                            createSplitAbiTasks(variantScope);
+                            createSplitTasks(tasks, variantScope);
                             return null;
                         }
                     });
