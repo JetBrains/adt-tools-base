@@ -243,11 +243,21 @@ public abstract class AbstractShrinker<T> {
     /**
      * Walks the entire graph, starting from the roots, and increments counters for reachable nodes.
      */
-    protected void setCounters(@NonNull CounterSet counterSet) {
+    protected void setCounters(@NonNull final CounterSet counterSet) {
         Map<T, DependencyType> roots = mGraph.getRoots(counterSet);
-        for (Map.Entry<T, DependencyType> toIncrementEntry : roots.entrySet()) {
-            incrementCounter(toIncrementEntry.getKey(), toIncrementEntry.getValue(), counterSet);
+        for (final Map.Entry<T, DependencyType> toIncrementEntry : roots.entrySet()) {
+            mExecutor.execute(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    incrementCounter(
+                            toIncrementEntry.getKey(),
+                            toIncrementEntry.getValue(),
+                            counterSet);
+                    return null;
+                }
+            });
         }
+        waitForAllTasks();
     }
 
     @NonNull
@@ -263,31 +273,39 @@ public abstract class AbstractShrinker<T> {
             @NonNull List<File> classFilesToDelete,
             @NonNull Collection<TransformInput> inputs,
             @NonNull TransformOutputProvider output) throws IOException {
-        for (T klass : classesToWrite) {
-            File classFile = mGraph.getClassFile(klass);
-            Optional<File> outputFile = chooseOutputFile(klass, classFile, inputs, output);
+        for (final T klass : classesToWrite) {
+            final File classFile = mGraph.getClassFile(klass);
+            final Optional<File> outputFile = chooseOutputFile(klass, classFile, inputs, output);
             if (!outputFile.isPresent()) {
                 // The class is from code we don't control.
                 continue;
             }
             Files.createParentDirs(outputFile.get());
-            Files.write(
-                    rewrite(
-                            mGraph.getClassName(klass),
-                            classFile,
-                            mGraph.getReachableMembers(klass, CounterSet.SHRINK),
-                            new Predicate<String>() {
-                                @Override
-                                public boolean apply(String input) {
-                                    return mGraph.keepInterface(input, CounterSet.SHRINK);
-                                }
-                            }),
-                    outputFile.get());
+            mExecutor.execute(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    Files.write(
+                            rewrite(
+                                    mGraph.getClassName(klass),
+                                    classFile,
+                                    mGraph.getReachableMembers(klass, CounterSet.SHRINK),
+                                    new Predicate<String>() {
+                                        @Override
+                                        public boolean apply(String input) {
+                                            return mGraph.keepInterface(input, CounterSet.SHRINK);
+                                        }
+                                    }),
+                            outputFile.get());
+                    return null;
+                }
+            });
         }
 
         for (File classFile : classFilesToDelete) {
             FileUtils.delete(classFile);
         }
+
+        waitForAllTasks();
     }
 
     protected void waitForAllTasks() {
