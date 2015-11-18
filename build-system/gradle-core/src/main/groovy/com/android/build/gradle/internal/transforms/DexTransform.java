@@ -51,7 +51,6 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -522,27 +521,11 @@ public class DexTransform extends Transform {
 
     @NonNull
     private String getFilename(@NonNull File inputFile) {
-        String name = Files.getNameWithoutExtension(inputFile.getName());
-
-        // add a hash of the original file path.
-        String input = inputFile.getAbsolutePath();
-        HashFunction hashFunction = Hashing.sha1();
-        HashCode hashCode = hashFunction.hashString(input, Charsets.UTF_16LE);
-
         // If multidex is enabled, this name will be used for a folder and classes*.dex files will
         // inside of it.
         String suffix = multiDex ? "" : SdkConstants.DOT_JAR;
 
-        if (name.equals("classes") && inputFile.getAbsolutePath().contains("exploded-aar")) {
-            // This naming scheme is coming from DependencyManager#computeArtifactPath.
-            File versionDir = inputFile.getParentFile().getParentFile();
-            File artifactDir = versionDir.getParentFile();
-            File groupDir = artifactDir.getParentFile();
-
-            name = Joiner.on('-').join(
-                    groupDir.getName(), artifactDir.getName(), versionDir.getName());
-        }
-
-        return name + "_" + hashCode.toString() + suffix;
+        return FileUtils.getDirectoryNameForJar(inputFile) + suffix;
     }
+
 }

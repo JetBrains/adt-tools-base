@@ -113,6 +113,15 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                     });
                 }
             }
+
+            for (final File jarFile : getAllJars(input)) {
+                processJarFile(jarFile, new ByteCodeConsumer() {
+                    @Override
+                    public void process(byte[] bytes) throws IOException {
+                        processLibraryClass(bytes);
+                    }
+                });
+            }
         }
 
         for (TransformInput input : programInputs) {
@@ -121,7 +130,8 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                     mExecutor.execute(new Callable<Void>() {
                         @Override
                         public Void call() throws Exception {
-                            processProgramClass(
+                            processProgramClassFile(
+                                    Files.toByteArray(classFile),
                                     classFile,
                                     virtualMethods,
                                     multipleInheritance,
@@ -130,6 +140,20 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                         }
                     });
                 }
+            }
+
+            for (final File jarFile : getAllJars(input)) {
+                processJarFile(jarFile, new ByteCodeConsumer() {
+                    @Override
+                    public void process(byte[] bytes) throws IOException {
+                        processProgramClassFile(
+                                bytes,
+                                jarFile,
+                                virtualMethods,
+                                multipleInheritance,
+                                unresolvedReferences);
+                    }
+                });
             }
         }
         waitForAllTasks();
@@ -313,8 +337,8 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
     /**
      * Updates the graph with nodes and edges based on the given class file.
      */
-    private void processProgramClass(
-            @NonNull File classFile,
+    private void processProgramClassFile(
+            byte[] bytes, @NonNull File classFile,
             @NonNull final Set<T> virtualMethods,
             @NonNull final Set<T> multipleInheritance,
             @NonNull final Set<UnresolvedReference<T>> unresolvedReferences) throws IOException {
@@ -345,37 +369,51 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                 };
         ClassVisitor structureVisitor =
                 new ClassStructureVisitor<T>(mGraph, classFile, depsFinder);
-        ClassReader classReader = new ClassReader(Files.toByteArray(classFile));
+        ClassReader classReader = new ClassReader(bytes);
         classReader.accept(structureVisitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+    }
+
+    private interface ByteCodeConsumer {
+        void process(byte[] bytes) throws IOException;
     }
 
     private void readPlatformJars() throws IOException {
         for (File platformJar : mPlatformJars) {
-            JarFile jarFile = new JarFile(platformJar);
-            try {
-                for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements();) {
-                    JarEntry entry = entries.nextElement();
-                    if (!entry.getName().endsWith(".class")) {
-                        continue;
-                    }
-                    final InputStream inputStream = jarFile.getInputStream(entry);
-                    try {
-                        final byte[] source = ByteStreams.toByteArray(inputStream);
-                        // TODO: See if doing this in parallel actually improves performance.
-                        mExecutor.execute(new Callable<Void>() {
-                            @Override
-                            public Void call() throws Exception {
-                                processLibraryClass(source);
-                                return null;
-                            }
-                        });
-                    } finally {
-                        inputStream.close();
-                    }
+            processJarFile(platformJar, new ByteCodeConsumer() {
+                @Override
+                public void process(byte[] bytes) throws IOException {
+                    processLibraryClass(bytes);
                 }
-            } finally {
-                jarFile.close();
+            });
+        }
+    }
+
+    private void processJarFile(File platformJar, final ByteCodeConsumer consumer)
+            throws IOException {
+        JarFile jarFile = new JarFile(platformJar);
+        try {
+            for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements();) {
+                JarEntry entry = entries.nextElement();
+                if (!entry.getName().endsWith(".class")) {
+                    continue;
+                }
+                final InputStream inputStream = jarFile.getInputStream(entry);
+                try {
+                    final byte[] bytes = ByteStreams.toByteArray(inputStream);
+                    // TODO: See if doing this in parallel actually improves performance.
+                    mExecutor.execute(new Callable<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            consumer.process(bytes);
+                            return null;
+                        }
+                    });
+                } finally {
+                    inputStream.close();
+                }
             }
+        } finally {
+            jarFile.close();
         }
     }
 

@@ -107,7 +107,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
         }
 
         if (variantType.isForTesting()) {
-            throw new IllegalStateException("New class shrinker is not supported in test variants.");
+            set.add(Scope.TESTED_CODE);
         }
 
         set.add(Scope.PROVIDED_ONLY);

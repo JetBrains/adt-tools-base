@@ -2284,7 +2284,7 @@ public class TestClasses implements Opcodes {
             MethodVisitor mv;
             AnnotationVisitor av0;
 
-            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "testclasses/Main",
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main",
                     null, "java/lang/Object", null);
 
             {
@@ -2307,20 +2307,17 @@ public class TestClasses implements Opcodes {
                 mv.visitTryCatchBlock(l2, l3, l2, null);
                 mv.visitLabel(l0);
                 mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "testclasses/Main",
-                        "helper", "()V", false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/Main", "helper", "()V", false);
                 mv.visitLabel(l1);
                 mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "testclasses/Main",
-                        "helper", "()V", false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/Main", "helper", "()V", false);
                 Label l4 = new Label();
                 mv.visitJumpInsn(GOTO, l4);
                 mv.visitLabel(l2);
                 mv.visitVarInsn(ASTORE, 1);
                 mv.visitLabel(l3);
                 mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "testclasses/Main",
-                        "helper", "()V", false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/Main", "helper", "()V", false);
                 mv.visitVarInsn(ALOAD, 1);
                 mv.visitInsn(ATHROW);
                 mv.visitLabel(l4);
