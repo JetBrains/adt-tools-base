@@ -1352,8 +1352,7 @@ public class AndroidBuilder {
             throws ProcessException, IOException {
         if (dexOptions.getDexInProcess()) {
             // Version that supports all flags that we know about, including numThreads.
-            Revision minimumBuildTools =
-                    DexProcessBuilder.MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV;
+            Revision minimumBuildTools = DexProcessBuilder.FIXED_DX_MERGER;
             Revision buildToolsVersion = mTargetInfo.getBuildTools().getRevision();
             if (buildToolsVersion.compareTo(minimumBuildTools) < 0) {
                 throw new IllegalStateException(
