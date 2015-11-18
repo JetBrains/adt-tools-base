@@ -332,7 +332,10 @@ public abstract class BaseExtension implements AndroidConfig {
 
     public void buildToolsVersion(String version) {
         checkWritability();
-        buildToolsRevision = Revision.parseRevision(version);
+        //The underlying Revision class has the maven artifact semantic,
+        // so 20 is not the same as 20.0. For the build tools revision this
+        // is not the desired behavior, so normalize e.g. to 20.0.0.
+        buildToolsRevision = Revision.parseRevision(version, Revision.Precision.MICRO);
     }
 
     /**

@@ -28,6 +28,8 @@ public class RevisionTest extends TestCase {
         assertEquals("5.0", Revision.parseRevision("5.0").toString());
         assertEquals("5.0.0", Revision.parseRevision("5.0.0").toString());
         assertEquals("5.1.4", Revision.parseRevision("5.1.4").toString());
+        assertEquals("5.0.0", Revision.parseRevision("5", Revision.Precision.MICRO).toString());
+        assertEquals("5.1.0", Revision.parseRevision("5.1", Revision.Precision.MICRO).toString());
 
         Revision p = new Revision(5);
         assertEquals(5, p.getMajor());

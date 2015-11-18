@@ -135,8 +135,13 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         public static void finalizeAndroidModel(AndroidConfig androidModel) {
             if (androidModel.getBuildToolsRevision() == null
                     && androidModel.getBuildToolsVersion() != null) {
+                //The underlying Revision class has the maven artifact semantic,
+                // so 20 is not the same as 20.0. For the build tools revision this
+                // is not the desired behavior, so normalize e.g. to 20.0.0.
                 androidModel.setBuildToolsRevision(
-                        Revision.parseRevision(androidModel.getBuildToolsVersion()));
+                        Revision.parseRevision(
+                                androidModel.getBuildToolsVersion(),
+                                Revision.Precision.MICRO));
             }
 
             if (androidModel.getCompileSdkVersion() != null
