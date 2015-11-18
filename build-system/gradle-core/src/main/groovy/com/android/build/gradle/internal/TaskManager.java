@@ -2306,7 +2306,11 @@ public abstract class TaskManager {
             @Nullable Configuration mappingConfiguration,
             boolean createJarFile) {
         if (AndroidGradleOptions.useNewShrinker(project)) {
-            createNewShrinkerTransform(variantScope, taskFactory);
+            // Since the built-in class shrinker does not obfuscate, there's no point running
+            // it on the test APK (it also doesn't have a -dontshrink mode).
+            if (variantScope.getTestedVariantData() == null) {
+                createNewShrinkerTransform(variantScope, taskFactory);
+            }
         } else {
             createProguardTransform(taskFactory, variantScope, mappingConfiguration, createJarFile);
         }
