@@ -25,13 +25,13 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.List;
 
 public final class FileUtils {
 
@@ -224,4 +224,26 @@ public final class FileUtils {
         return COMMA_SEPARATED_JOINER.join(Iterables.transform(files, GET_NAME));
     }
 
+    /**
+     * Chooses a directory name, based on a JAR file name, considering exploded-aar and classes.jar.
+     */
+    @NonNull
+    public static String getDirectoryNameForJar(@NonNull File inputFile) {
+        // add a hash of the original file path.
+        HashFunction hashFunction = Hashing.sha1();
+        HashCode hashCode = hashFunction.hashString(inputFile.getAbsolutePath(), Charsets.UTF_16LE);
+
+        String name = Files.getNameWithoutExtension(inputFile.getName());
+        if (name.equals("classes") && inputFile.getAbsolutePath().contains("exploded-aar")) {
+            // This naming scheme is coming from DependencyManager#computeArtifactPath.
+            File versionDir = inputFile.getParentFile().getParentFile();
+            File artifactDir = versionDir.getParentFile();
+            File groupDir = artifactDir.getParentFile();
+
+            name = Joiner.on('-').join(
+                    groupDir.getName(), artifactDir.getName(), versionDir.getName());
+        }
+        name = name + "_" + hashCode.toString();
+        return name;
+    }
 }

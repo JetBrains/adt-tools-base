@@ -120,7 +120,7 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
 
         // All keys that remained in oldState should be deleted.
         for (T klass : oldState.keySet()) {
-            Optional<File> outputFile = chooseOutputFile(mGraph.getClassFile(klass), inputs, output);
+            Optional<File> outputFile = chooseOutputFile(klass, mGraph.getClassFile(klass), inputs, output);
             if (!outputFile.isPresent()) {
                 throw new IllegalStateException(
                         "Can't determine path of " + mGraph.getClassName(klass));
