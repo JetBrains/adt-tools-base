@@ -51,7 +51,11 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     @Nullable
     private Boolean useJack;
 
-    private boolean shrinkResources = false; // opt-in for now until we've validated it in the field
+    /** Opt-in for now until we've validated it in the field. */
+    private boolean shrinkResources = false;
+
+    /** Opt-in for now until we've validated the new shrinker in the field. */
+    private boolean useProguard = true;
 
     public BuildType(@NonNull String name,
                      @NonNull Project project,
@@ -298,6 +302,19 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     @Override
     public boolean isShrinkResources() {
         return shrinkResources;
+    }
+
+    @Override
+    public boolean isUseProguard() {
+        return useProguard;
+    }
+
+    public void setUseProguard(boolean useProguard) {
+        this.useProguard = useProguard;
+    }
+
+    public void useProguard(boolean useProguard) {
+        setUseProguard(useProguard);
     }
 
     public void setShrinkResources(boolean shrinkResources) {

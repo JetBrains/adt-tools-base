@@ -31,8 +31,6 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  */
 @CompileStatic
 class ClassShrinkerTest {
-    private static final List<String> ENABLE_SHRINKER = ["-P", "android.newShrinker=true"]
-
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
@@ -44,6 +42,7 @@ class ClassShrinkerTest {
             android {
                 buildTypes.debug {
                     minifyEnabled true
+                    useProguard false
                     proguardFiles getDefaultProguardFile('proguard-android.txt')
                 }
             }
@@ -52,7 +51,7 @@ class ClassShrinkerTest {
 
     @Test
     public void "APK is correct"() throws Exception {
-        project.execute(ENABLE_SHRINKER, "assembleDebug")
+        project.execute("assembleDebug")
         checkShrinkerWasUsed()
         assertThatApk(project.getApk("debug")).containsClass("Lcom/example/helloworld/HelloWorld;")
     }
@@ -60,7 +59,7 @@ class ClassShrinkerTest {
     @Test
     @Category(DeviceTests)
     public void connectedCheck() throws Exception {
-        project.executeConnectedCheck(ENABLE_SHRINKER)
+        project.executeConnectedCheck()
         checkShrinkerWasUsed()
     }
 
