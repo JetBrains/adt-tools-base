@@ -16,6 +16,8 @@
 
 package com.android.builder.signing;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -66,6 +68,8 @@ import java.util.zip.ZipInputStream;
  * A Jar file builder with signature support.
  */
 public class SignedJarBuilder {
+
+    private final int mMinSdkVersion;
 
     /** Write to another stream and track how many bytes have been
      *  written.
@@ -178,6 +182,7 @@ public class SignedJarBuilder {
                             @Nullable String createdBy,
                             int minSdkVersion)
             throws IOException, NoSuchAlgorithmException {
+        mMinSdkVersion = minSdkVersion;
         mOutputJar = new JarOutputStream(new BufferedOutputStream(out));
         mOutputJar.setLevel(9);
         mKey = key;
@@ -195,7 +200,7 @@ public class SignedJarBuilder {
             }
 
             String digestAttributeDigestAlgorithm;
-            if (minSdkVersion < 18) {
+            if (mMinSdkVersion < 18) {
                 // Android 2.3 (API Level 9) to 4.2 (API Level 17) (inclusive) do not support SHA-2
                 // JAR signatures.
                 mMessageDigestAlgorithm = "SHA-1";
@@ -500,6 +505,10 @@ public class SignedJarBuilder {
             // For example, SHA-256 becomes SHA256withRSA.
             return digestAlgorithm + "withRSA";
         } else if ("EC".equalsIgnoreCase(keyAlgorithm)) {
+            checkArgument(
+                    mMinSdkVersion >= 18,
+                    "ECDSA signatures are not supported on API levels older than 18. Please increase "
+                            + "your minSdkVersion or use RSA.");
             return digestAlgorithm + "withECDSA";
         } else if ("DSA".equalsIgnoreCase(keyAlgorithm)) {
             return digestAlgorithm + "withDSA";
