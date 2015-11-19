@@ -58,6 +58,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
+import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Sync;
@@ -95,6 +96,7 @@ public class VariantScopeImpl implements VariantScope {
     private File mergeResourceOutputDir;
 
     // Tasks
+    private AndroidTask<DefaultTask> assembleTask;
     private AndroidTask<Task> preBuildTask;
     private AndroidTask<PrepareDependenciesTask> prepareDependenciesTask;
     private AndroidTask<ProcessAndroidResources> generateRClassTask;
@@ -740,6 +742,16 @@ public class VariantScopeImpl implements VariantScope {
     }
 
     // Tasks getters/setters.
+
+    @Override
+    public AndroidTask<DefaultTask> getAssembleTask() {
+        return assembleTask;
+    }
+
+    @Override
+    public void setAssembleTask(@NonNull AndroidTask<DefaultTask> assembleTask) {
+        this.assembleTask = assembleTask;
+    }
 
     @Override
     public AndroidTask<Task> getPreBuildTask() {

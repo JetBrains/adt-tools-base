@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.scope;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.TaskFactory;
+import com.google.common.base.Objects;
 
 import org.gradle.api.Action;
 import org.gradle.api.Task;
@@ -168,5 +169,13 @@ public class AndroidTask<T extends Task> {
     @SuppressWarnings("unchecked")
     public T get(TaskFactory taskFactory) {
         return (T) taskFactory.named(name);
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("name", name)
+                .add("taskType", taskType)
+                .toString();
     }
 }

@@ -28,6 +28,8 @@ import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.utils.StringHelper;
 
+import org.gradle.api.DefaultTask;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
@@ -43,6 +45,8 @@ public class VariantOutputScope implements BaseScope {
     private BaseVariantOutputData variantOutputData;
 
     // Tasks
+    private AndroidTask<DefaultTask> assembleTask;
+
     private AndroidTask<CompatibleScreensManifest> compatibleScreensManifestTask;
 
     private AndroidTask<? extends ManifestProcessorTask> manifestProcessorTask;
@@ -172,6 +176,14 @@ public class VariantOutputScope implements BaseScope {
     }
 
     // Tasks
+    public AndroidTask<DefaultTask> getAssembleTask() {
+        return assembleTask;
+    }
+
+    public void setAssembleTask(@NonNull AndroidTask<DefaultTask> assembleTask) {
+        this.assembleTask = assembleTask;
+    }
+
     @Nullable
     public AndroidTask<CompatibleScreensManifest> getCompatibleScreensManifestTask() {
         return compatibleScreensManifestTask;

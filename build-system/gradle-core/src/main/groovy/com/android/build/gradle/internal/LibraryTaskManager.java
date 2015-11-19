@@ -122,7 +122,7 @@ public class LibraryTaskManager extends TaskManager {
         createAnchorTasks(tasks, variantScope);
 
         // Create all current streams (dependencies mostly at this point)
-        createDependencyStreams(variantScope);
+        createDependencyStreams(tasks, variantScope);
 
         createCheckManifestTask(tasks, variantScope);
 
@@ -430,8 +430,8 @@ public class LibraryTaskManager extends TaskManager {
         LibVariantOutputData variantOutputData = libVariantData.getOutputs().get(0);
         variantOutputData.packageLibTask = bundle;
 
-        variantData.assembleVariantTask.dependsOn(bundle);
-        variantOutputData.assembleTask = variantData.assembleVariantTask;
+        variantScope.getAssembleTask().dependsOn(tasks, bundle);
+        variantOutputData.getScope().setAssembleTask(variantScope.getAssembleTask());
 
         if (getExtension().getDefaultPublishConfig().equals(variantConfig.getFullName())) {
             VariantHelper.setupDefaultConfig(project,
@@ -440,7 +440,7 @@ public class LibraryTaskManager extends TaskManager {
             // add the artifact that will be published
             project.getArtifacts().add("default", bundle);
 
-            getAssembleDefault().dependsOn(variantData.assembleVariantTask);
+            getAssembleDefault().dependsOn(variantScope.getAssembleTask().getName());
         }
 
         // also publish the artifact with its full config name

@@ -41,7 +41,7 @@ public class AndroidTaskRegistry {
             @NonNull TaskFactory taskFactory,
             @NonNull String taskName,
             @NonNull Class<T> taskClass,
-            Action<T> configAction) {
+            Action<? super T> configAction) {
 
         taskFactory.create(taskName, taskClass, configAction);
         final AndroidTask<T> newTask = new AndroidTask<T>(taskName, taskClass);
@@ -60,6 +60,13 @@ public class AndroidTaskRegistry {
         tasks.put(taskName, newTask);
 
         return newTask;
+    }
+
+    public synchronized AndroidTask<DefaultTask> create(
+            TaskFactory taskFactory,
+            String taskName,
+            Action<Task> configAction) {
+        return create(taskFactory, taskName, DefaultTask.class, configAction);
     }
 
     public synchronized <T extends Task> AndroidTask<T> create(
