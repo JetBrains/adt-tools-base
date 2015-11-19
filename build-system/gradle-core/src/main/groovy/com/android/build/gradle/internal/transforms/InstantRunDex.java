@@ -27,6 +27,7 @@ import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.incremental.BuildInfoGeneratorTask;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform.VerificationResult;
@@ -118,7 +119,14 @@ public class InstantRunDex extends Transform {
                 if (changesAreCompatible && !restartDexRequested) {
                     // do nothing, let the incrementalChanges.txt accumulate all changes until
                     // we are asked to produce a restart.dex or the verifier flagged the changes.
-                    FileUtils.emptyFolder(outputFolder);
+                    if (outputFolder.exists()) {
+                        for (File file : outputFolder.listFiles()) {
+                            if (!file.getName().equals("build-info.xml") &&
+                                    !file.delete()) {
+                                logger.warning("Cannot delete " + file);
+                            }
+                        }
+                    }
                     return;
                 }
                 break;
