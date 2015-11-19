@@ -95,8 +95,7 @@
         name="Package name"
         type="string"
         constraints="package"
-        default="com.mycompany.myapp"
-        help="The package this activity will be installed into" />
+        default="com.mycompany.myapp" />
 
     <!-- 128x128 thumbnails relative to template.xml -->
     <thumbs>
