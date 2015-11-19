@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.internal.coverage;
+import com.android.annotations.Nullable;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Action;
@@ -76,24 +77,38 @@ public class JacocoPlugin implements Plugin<Project> {
                 });
     }
 
+    @Nullable
     private String getJacocoVersion() {
-        Set<ResolvedArtifact> resolvedArtifacts =
-                project.getRootProject().getBuildscript().getConfigurations().getByName("classpath")
-                        .getResolvedConfiguration().getResolvedArtifacts();
-        for (ResolvedArtifact artifact: resolvedArtifacts) {
-            ModuleVersionIdentifier moduleVersion = artifact.getModuleVersion().getId();
-            if ("org.jacoco.core".equals(moduleVersion.getName())) {
-                return moduleVersion.getVersion();
+        Project candidateProject = project;
+        boolean shouldFailWithException = false;
+
+        while (candidateProject != null) {
+            Set<ResolvedArtifact> resolvedArtifacts =
+                    candidateProject.getBuildscript().getConfigurations().getByName("classpath")
+                            .getResolvedConfiguration().getResolvedArtifacts();
+            for (ResolvedArtifact artifact : resolvedArtifacts) {
+                ModuleVersionIdentifier moduleVersion = artifact.getModuleVersion().getId();
+                if ("org.jacoco.core".equals(moduleVersion.getName())) {
+                    return moduleVersion.getVersion();
+                }
             }
+            if (!resolvedArtifacts.isEmpty()) {
+                // not in the DSL test case, where nothing will have been resolved.
+                shouldFailWithException = true;
+            }
+
+            candidateProject = candidateProject.getParent();
         }
-        if (resolvedArtifacts.isEmpty()) {
-            // DSL test case, dependencies are not loaded.
-            project.getLogger().error(
-                    "No resolved dependencies found when searching for the jacoco version.");
-            return null;
+
+        if (shouldFailWithException) {
+            throw new IllegalStateException(
+                    "Could not find project build script dependency on org.jacoco.core");
         }
-        throw new IllegalStateException(
-                "Could not find project build script dependency on org.jacoco.core");
+
+        project.getLogger().error(
+                "No resolved dependencies found when searching for the jacoco version.");
+        return null;
+
     }
 
     /**
