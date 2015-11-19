@@ -255,6 +255,12 @@ public class PkgDesc implements IPkgDesc {
             break;
 
         case PKG_LLDB:
+            Revision rev = getRevision();
+            sb.append(mType.getFolderName()).append('-');
+            sb.append(rev.getMajor());
+            sb.append('.');
+            sb.append(rev.getMinor());
+            break;
         case PKG_BUILD_TOOLS:
             sb.append(mType.getFolderName()).append('-');
             // Add version number without the preview revision number. This is to make preview
