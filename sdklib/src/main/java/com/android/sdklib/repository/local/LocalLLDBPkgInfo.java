@@ -28,17 +28,16 @@ import java.util.Properties;
  * Local package representing the Android LLDB.
  */
 public class LocalLLDBPkgInfo extends LocalPkgInfo {
-  // The LLDB SDK package version currently compatible with Android Studio is
-  // pinned here.
-  public static final Revision PINNED_REVISION = new Revision(2, 0, 2416668);
+  // The LLDB SDK package revision's major and minor numbers are pinned in Android Studio.
+  public static final Revision PINNED_REVISION = new Revision(2, 0);
 
   @NonNull
   private final IPkgDesc mDesc;
 
   protected LocalLLDBPkgInfo(@NonNull LocalSdk localSdk,
-                            @NonNull File localDir,
-                            @NonNull Properties sourceProps,
-                            @NonNull Revision revision) {
+                             @NonNull File localDir,
+                             @NonNull Properties sourceProps,
+                             @NonNull Revision revision) {
     super(localSdk, localDir, sourceProps);
     mDesc = PkgDesc.Builder.newLLDB(revision).setDescriptionShort("LLDB").setListDisplay("LLDB").create();
   }
