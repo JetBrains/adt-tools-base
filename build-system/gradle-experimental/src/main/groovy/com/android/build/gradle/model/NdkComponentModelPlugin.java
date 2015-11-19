@@ -54,6 +54,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
@@ -82,7 +83,10 @@ import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
 import org.gradle.model.Validate;
+import org.gradle.model.internal.core.ModelPath;
 import org.gradle.model.internal.registry.ModelRegistry;
+import org.gradle.model.internal.type.ModelType;
+import org.gradle.model.internal.type.ModelTypes;
 import org.gradle.nativeplatform.BuildTypeContainer;
 import org.gradle.nativeplatform.FlavorContainer;
 import org.gradle.nativeplatform.NativeBinarySpec;
@@ -95,6 +99,7 @@ import org.gradle.nativeplatform.StaticLibraryBinarySpec;
 import org.gradle.nativeplatform.platform.NativePlatform;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
 import org.gradle.platform.base.BinaryContainer;
+import org.gradle.platform.base.BinarySpec;
 import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.platform.base.PlatformContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
@@ -709,14 +714,18 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             // moment.
             return Collections.emptyList();
         }
-        BinaryContainer binaries = (BinaryContainer) project.getExtensions().getByName("binaries");
-        return binaries.withType(AndroidBinary.class).matching(
-                new Spec<AndroidBinary>() {
-                    @Override
-                    public boolean isSatisfiedBy(AndroidBinary binary) {
-                        return (binary.getName().equals(variantConfig.getFullName()));
-                    }
-                }
-        );
+
+        ModelMap<BinarySpec> binaries = modelRegistry.realize(
+                new ModelPath("binaries"),
+                ModelTypes.modelMap(ModelType.of(BinarySpec.class)));
+
+        List<AndroidBinary> matches = Lists.newArrayList();
+        for (BinarySpec binary : binaries.values()) {
+            if (binary instanceof AndroidBinary
+                    && binary.getName().equals(variantConfig.getFullName())) {
+                matches.add((AndroidBinary)binary);
+            }
+        }
+        return matches;
     }
 }
