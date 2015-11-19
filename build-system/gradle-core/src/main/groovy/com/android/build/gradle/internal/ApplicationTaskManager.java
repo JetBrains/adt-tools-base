@@ -35,6 +35,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
+import com.google.common.collect.Iterators;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -286,10 +287,20 @@ public class ApplicationTaskManager extends TaskManager {
                     .setDependency(extractorTask.get(tasks))
                     .build());
 
+            AndroidTask<GenerateInstantRunAppInfoTask> generateAppInfoAndroidTask
+                    = getAndroidTasks()
+                    .create(tasks, new GenerateInstantRunAppInfoTask.ConfigAction(
+                            variantScope));
+
             // create the AppInfo.class for this variant.
             GenerateInstantRunAppInfoTask generateInstantRunAppInfoTask
-                    = getAndroidTasks().create(tasks, new GenerateInstantRunAppInfoTask.ConfigAction(
-                    variantScope)).get(tasks);
+                    = generateAppInfoAndroidTask.get(tasks);
+
+            // make the task that generates the AppInfo dependent on the first merge manifest task
+            // so we can get its output file.
+            BaseVariantOutputData outputData = Iterators
+                    .get(variantScope.getVariantData().getOutputs().iterator(), 0);
+            generateAppInfoAndroidTask.dependsOn(tasks, outputData.manifestProcessorTask);
 
             // also add a new stream for the injector task output.
             variantScope.getTransformManager().addStream(OriginalStream.builder()

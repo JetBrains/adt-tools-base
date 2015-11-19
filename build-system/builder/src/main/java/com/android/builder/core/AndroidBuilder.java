@@ -1299,6 +1299,8 @@ public class AndroidBuilder {
      * @param dexOptions dex options
      * @param additionalParameters list of additional parameters to give to dx
      * @param incremental true if it should attempt incremental dex if applicable
+     * @param instantRunMode true if we are invoking dex to convert classes while creating
+     *                       instant-run related artifacts.
      *
      * @throws IOException
      * @throws InterruptedException
@@ -1313,7 +1315,8 @@ public class AndroidBuilder {
             @Nullable List<String> additionalParameters,
             boolean incremental,
             boolean optimize,
-            @NonNull ProcessOutputHandler processOutputHandler)
+            @NonNull ProcessOutputHandler processOutputHandler,
+            boolean instantRunMode)
             throws IOException, InterruptedException, ProcessException {
         checkNotNull(inputs, "inputs cannot be null.");
         checkNotNull(outDexFolder, "outDexFolder cannot be null.");
@@ -1342,36 +1345,46 @@ public class AndroidBuilder {
             builder.additionalParameters(additionalParameters);
         }
 
-        runDexer(builder, dexOptions, processOutputHandler);
+        runDexer(builder, dexOptions, processOutputHandler, instantRunMode);
     }
 
     private void runDexer(
             @NonNull DexProcessBuilder builder,
             @NonNull DexOptions dexOptions,
-            @NonNull ProcessOutputHandler processOutputHandler)
+            @NonNull ProcessOutputHandler processOutputHandler,
+            boolean instantRunMode)
             throws ProcessException, IOException {
         if (dexOptions.getDexInProcess()) {
             // Version that supports all flags that we know about, including numThreads.
             Revision minimumBuildTools = DexProcessBuilder.FIXED_DX_MERGER;
             Revision buildToolsVersion = mTargetInfo.getBuildTools().getRevision();
             if (buildToolsVersion.compareTo(minimumBuildTools) < 0) {
-                throw new IllegalStateException(
-                        "Running dex in-process requires build tools "
-                                + minimumBuildTools.toShortString());
+                // in instant run mode, where we set the dexInProcess to true for the user, just
+                // display a warning.
+                if (instantRunMode) {
+                    getLogger().warning(
+                            "Running dex in-process requires build tools "
+                                    + minimumBuildTools.toShortString());
+                } else {
+                    throw new RuntimeException("Running dex in-process requires build tools "
+                            + minimumBuildTools.toShortString());
+                }
+            } else {
+                File dxJar = new File(
+                        mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.DX_JAR));
+                DexWrapper dexWrapper = DexWrapper.obtain(dxJar);
+                try {
+                    dexWrapper.run(builder, dexOptions, processOutputHandler, mLogger);
+                } finally {
+                    dexWrapper.release();
+                }
+                return;
             }
-            File dxJar = new File(mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.DX_JAR));
-            DexWrapper dexWrapper = DexWrapper.obtain(dxJar);
-            try {
-                dexWrapper.run(builder, dexOptions, processOutputHandler, mLogger);
-            } finally {
-                dexWrapper.release();
-            }
-
-        } else {
-            JavaProcessInfo javaProcessInfo = builder.build(mTargetInfo.getBuildTools(), dexOptions);
-            ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
-            result.rethrowFailure().assertNormalExitValue();
         }
+        // fall through, use external process.
+        JavaProcessInfo javaProcessInfo = builder.build(mTargetInfo.getBuildTools(), dexOptions);
+        ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
+        result.rethrowFailure().assertNormalExitValue();
     }
 
     public Set<String> createMainDexList(
@@ -1470,7 +1483,7 @@ public class AndroidBuilder {
                 .setMultiDex(multiDex)
                 .addInput(inputFile);
 
-        runDexer(builder, dexOptions, processOutputHandler);
+        runDexer(builder, dexOptions, processOutputHandler, false /* instantRunMode */);
 
         if (multiDex) {
             File[] files = outFile.listFiles(new FilenameFilter() {

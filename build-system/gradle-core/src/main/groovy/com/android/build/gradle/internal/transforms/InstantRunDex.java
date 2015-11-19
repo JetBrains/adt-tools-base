@@ -185,7 +185,8 @@ public class InstantRunDex extends Transform {
                     ImmutableList.<String>of() /* getAdditionalParameters */,
                     false /* incremental */,
                     true /* optimize */,
-                    new LoggedProcessOutputHandler(logger));
+                    new LoggedProcessOutputHandler(logger),
+                    true);
         } catch (ProcessException e) {
             throw new TransformException(e);
         } finally {
