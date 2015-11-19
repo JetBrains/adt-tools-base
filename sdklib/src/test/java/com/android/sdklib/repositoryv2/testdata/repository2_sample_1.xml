@@ -34,13 +34,7 @@
     <remotePackage path="platforms;android-22">
         <type-details xsi:type="sdk:platformDetailsType">
             <api-level>1</api-level>
-            <layoutlib>
-                <api>5</api>
-                <revision>
-                    <major>1</major>
-                    <minor>2</minor>
-                </revision>
-            </layoutlib>
+            <layoutlib api="5"/>
         </type-details>
         <revision>
                 <major>3</major>

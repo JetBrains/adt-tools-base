@@ -122,7 +122,8 @@ public class UpdatablePackage implements Comparable<UpdatablePackage> {
 
     public boolean isUpdate(boolean includePreview) {
         RemotePackage remote = getRemote(includePreview);
-        return mLocalInfo != null && remote != null && mLocalInfo.compareTo(remote) < 0;
+        return mLocalInfo != null && remote != null
+                && mLocalInfo.getVersion().compareTo(remote.getVersion()) < 0;
     }
 
     @NonNull

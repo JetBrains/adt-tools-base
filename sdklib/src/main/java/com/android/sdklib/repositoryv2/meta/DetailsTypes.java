@@ -105,24 +105,6 @@ public final class DetailsTypes {
             public abstract void setApi(int api);
 
             public abstract int getApi();
-
-            public void setRevision(@Nullable RevisionType revision) {
-                // Stub
-            }
-
-            /**
-             * Convenience method to get the revision as a {@link Revision}.
-             */
-            @Nullable
-            public Revision getPreciseRevision() {
-                return getRevision() != null ? getRevision().toRevision() : null;
-            }
-
-            @Nullable
-            protected RevisionType getRevision() {
-                // Stub
-                return null;
-            }
         }
     }
 

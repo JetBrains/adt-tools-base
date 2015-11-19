@@ -81,7 +81,6 @@ public class UnmarshalTest extends TestCase {
                 .getTypeDetails();
         assertEquals(1, details.getApiLevel());
         assertEquals(5, details.getLayoutlib().getApi());
-        assertEquals(new Revision(1, 2), details.getLayoutlib().getPreciseRevision());
 
         List<Archive> archives = ((RemotePackageImpl) platform22).getAllArchives();
         assertEquals(2, archives.size());

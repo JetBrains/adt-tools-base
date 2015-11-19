@@ -81,8 +81,6 @@ public class LegacyRepoUtils {
                 DetailsTypes.PlatformDetailsType.LayoutlibType layoutLib = repoFactory
                         .createLayoutlibType();
                 layoutLib.setApi(layoutLibVersion.getApi());
-                layoutLib.setRevision(commonFactory
-                        .createRevisionType(new Revision(layoutLibVersion.getRevision())));
                 details.setLayoutlib(layoutLib);
             }
             return (TypeDetails) details;

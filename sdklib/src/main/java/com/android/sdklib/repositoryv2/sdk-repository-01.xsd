@@ -92,20 +92,13 @@
     <xsd:complexType name="layoutlibType">
         <xsd:annotation>
             <xsd:documentation>
-                Version information for a layoutlib included in a platform.
+                The API level used by the LayoutLib included in a platform to communicate with the IDE.
             </xsd:documentation>
             <xsd:appinfo>
                 <plugin:super name="com.android.sdklib.repositoryv2.meta.DetailsTypes$PlatformDetailsType$LayoutlibType"/>
             </xsd:appinfo>
         </xsd:annotation>
-        <xsd:all>
-            <!-- The layoutlib API level, an int > 0,
-                 incremented with each new incompatible lib. -->
-            <xsd:element name="api"          type="xsd:int" />
-            <!-- The incremental minor revision for that API, e.g. in case of bug fixes.
-                 Optional. An int >= 0, assumed to be 0 if the element is missing. -->
-            <xsd:element name="revision"     type="common:revisionType" minOccurs="0" />
-        </xsd:all>
+        <xsd:attribute name="api" type="xsd:int" use="required"/>
     </xsd:complexType>
 
     <xsd:complexType name="sourceDetailsType">
