@@ -251,7 +251,8 @@ public class DexTransform extends Transform {
                         null,
                         false,
                         true,
-                        outputHandler);
+                        outputHandler,
+                        false /* instantRunMode */);
             } else {
                 // Figure out if we need to do a dx merge.
                 // The ony case we don't need it is in native multi-dex mode when doing debug
@@ -404,7 +405,8 @@ public class DexTransform extends Transform {
                             null,
                             false,
                             true,
-                            outputHandler);
+                            outputHandler,
+                            false /* instantRunMode */);
                 }
             }
         } catch (LoggedErrorException e) {
