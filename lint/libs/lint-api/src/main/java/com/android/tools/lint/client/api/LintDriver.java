@@ -728,13 +728,15 @@ public class LintDriver {
 
         // Ensure that we have absolute paths such that if you lint
         //  "foo bar" in "baz" we can show baz/ as the root
-        if (files.size() > 1) {
-            List<File> absolute = new ArrayList<File>(files.size());
-            for (File file : files) {
-                absolute.add(file.getAbsoluteFile());
-            }
-            files = absolute;
+        List<File> absolute = new ArrayList<File>(files.size());
+        for (File file : files) {
+            absolute.add(file.getAbsoluteFile());
+        }
+        // Always use absoluteFiles so that we can check the file's getParentFile()
+        // which is null if the file is not absolute.
+        files = absolute;
 
+        if (files.size() > 1) {
             sharedRoot = LintUtils.getCommonParent(files);
             if (sharedRoot != null && sharedRoot.getParentFile() == null) { // "/" ?
                 sharedRoot = null;
