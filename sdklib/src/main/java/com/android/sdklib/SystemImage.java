@@ -19,10 +19,10 @@ package com.android.sdklib;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.Revision;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.devices.Abi;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
-import com.android.repository.io.FileOp;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.google.common.base.Objects;
 
@@ -47,6 +47,7 @@ public class SystemImage implements ISystemImage {
     private final String mAbiType;
     private final File mLocation;
     private final File[] mSkins;
+    private final Revision mRevision;
 
     /**
      * Creates a {@link SystemImage} description for an existing platform system image folder.
@@ -58,14 +59,16 @@ public class SystemImage implements ISystemImage {
      *          {@link SdkConstants#ABI_ARMEABI_V7A}, {@link SdkConstants#ABI_INTEL_ATOM} or
      *          {@link SdkConstants#ABI_MIPS}.
      * @param skins A non-null, possibly empty list of skins specific to this system image.
+     * @param revision The revision of this image.
      */
     public SystemImage(
             @NonNull  File location,
             @NonNull  LocationType locationType,
             @NonNull  IdDisplay tag,
             @NonNull  String abiType,
-            @NonNull  File[] skins) {
-        this(location, locationType, tag, null /*addonVendor*/, abiType, skins);
+            @NonNull  File[] skins,
+            @NonNull  Revision revision) {
+        this(location, locationType, tag, null /*addonVendor*/, abiType, skins, revision);
     }
 
     /**
@@ -81,6 +84,7 @@ public class SystemImage implements ISystemImage {
      *          {@link SdkConstants#ABI_ARMEABI_V7A}, {@link SdkConstants#ABI_INTEL_ATOM} or
      *          {@link SdkConstants#ABI_MIPS}.
      * @param skins A non-null, possibly empty list of skins specific to this system image.
+     * @param revision The revision of this image.
      */
     public SystemImage(
             @NonNull  File location,
@@ -88,13 +92,15 @@ public class SystemImage implements ISystemImage {
             @NonNull  IdDisplay tagName,
             @Nullable IdDisplay addonVendor,
             @NonNull  String abiType,
-            @NonNull  File[] skins) {
+            @NonNull  File[] skins,
+            @NonNull  Revision revision) {
         mLocation = location;
         mLocationtype = locationType;
         mTag = tagName;
         mAddonVendor = addonVendor;
         mAbiType = abiType;
         mSkins = skins;
+        mRevision = revision;
     }
 
     /**
@@ -108,6 +114,7 @@ public class SystemImage implements ISystemImage {
      *          {@link SdkConstants#ABI_ARMEABI_V7A}, {@link SdkConstants#ABI_INTEL_ATOM} or
      *          {@link SdkConstants#ABI_MIPS}.
      * @param skins A non-null, possibly empty list of skins specific to this system image.
+     * @param revision The revision of this image.
      * @throws IllegalArgumentException if the {@code target} used for
      *         {@link ISystemImage.LocationType#IN_SYSTEM_IMAGE} is not a {@link PlatformTarget}.
      */
@@ -117,8 +124,9 @@ public class SystemImage implements ISystemImage {
             @NonNull  LocationType locationType,
             @NonNull  IdDisplay tag,
             @NonNull  String abiType,
-            @NonNull  File[] skins) {
-        this(sdkManager, target, locationType, tag, null /*addonVendor*/, abiType, skins);
+            @NonNull  File[] skins,
+            @NonNull  Revision revision) {
+        this(sdkManager, target, locationType, tag, null /*addonVendor*/, abiType, skins, revision);
     }
 
 
@@ -135,6 +143,7 @@ public class SystemImage implements ISystemImage {
      *          {@link SdkConstants#ABI_ARMEABI_V7A}, {@link SdkConstants#ABI_INTEL_ATOM} or
      *          {@link SdkConstants#ABI_MIPS}.
      * @param skins A non-null, possibly empty list of skins specific to this system image.
+     * @param revision The revision of this image.
      * @throws IllegalArgumentException if the {@code target} used for
      *         {@link ISystemImage.LocationType#IN_SYSTEM_IMAGE} is not a {@link PlatformTarget}.
      */
@@ -145,12 +154,14 @@ public class SystemImage implements ISystemImage {
             @NonNull  IdDisplay tag,
             @Nullable IdDisplay addonVendor,
             @NonNull  String abiType,
-            @NonNull  File[] skins) {
+            @NonNull  File[] skins,
+            @NonNull  Revision revision) {
         mLocationtype = locationType;
         mTag = tag;
         mAddonVendor = addonVendor;
         mAbiType = abiType;
         mSkins = skins;
+        mRevision = revision;
 
         File location = null;
         switch(locationType) {
@@ -270,6 +281,12 @@ public class SystemImage implements ISystemImage {
     @Override
     public File[] getSkins() {
         return mSkins;
+    }
+
+    @NonNull
+    @Override
+    public Revision getRevision() {
+        return mRevision;
     }
 
     /**

@@ -483,7 +483,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                             SystemImage.DEFAULT_TAG,
                             mAddonDesc.getVendor(),
                             abi,
-                            FileOp.EMPTY_FILE_ARRAY));
+                            FileOp.EMPTY_FILE_ARRAY,
+                            mAddonDesc.getRevision()));
                     tagToAbiFound.put(defaultTag, abi);
                 }
             } else if (!hasImgFiles && fileOp.isFile(file)) {
@@ -505,7 +506,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                     LocationType.IN_LEGACY_FOLDER,
                     SystemImage.DEFAULT_TAG,
                     SdkConstants.ABI_ARMEABI,
-                    FileOp.EMPTY_FILE_ARRAY));
+                    FileOp.EMPTY_FILE_ARRAY,
+                    mAddonDesc.getRevision()));
         }
 
         return found.toArray(new ISystemImage[found.size()]);

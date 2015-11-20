@@ -110,12 +110,14 @@ public class SdkManagerTest extends SdkManagerTestCase {
                 LocationType.IN_IMAGES_SUBFOLDER,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_ARMEABI_V7A,
-                FileOp.EMPTY_FILE_ARRAY), null);
+                FileOp.EMPTY_FILE_ARRAY,
+                new Revision(23, 1)), null);
         makeSystemImageFolder(new SystemImage(sdkman, t,
                 LocationType.IN_IMAGES_SUBFOLDER,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_INTEL_ATOM,
-                FileOp.EMPTY_FILE_ARRAY), null);
+                FileOp.EMPTY_FILE_ARRAY,
+                new Revision(23, 1)), null);
 
         sdkman.reloadSdk(getLog());
         assertEquals("[PlatformTarget API 0 rev 1]", Arrays.toString(sdkman.getTargets()));
@@ -135,12 +137,14 @@ public class SdkManagerTest extends SdkManagerTestCase {
                 LocationType.IN_SYSTEM_IMAGE,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_ARMEABI,
-                FileOp.EMPTY_FILE_ARRAY), null);
+                FileOp.EMPTY_FILE_ARRAY,
+                new Revision(23, 1)), null);
         makeSystemImageFolder(new SystemImage(sdkman, t,
                 LocationType.IN_SYSTEM_IMAGE,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_ARMEABI_V7A,
-                FileOp.EMPTY_FILE_ARRAY), null);
+                FileOp.EMPTY_FILE_ARRAY,
+                new Revision(23, 1)), null);
 
         sdkman.reloadSdk(getLog());
         assertEquals("[PlatformTarget API 0 rev 1]", Arrays.toString(sdkman.getTargets()));
@@ -158,7 +162,8 @@ public class SdkManagerTest extends SdkManagerTestCase {
                 LocationType.IN_SYSTEM_IMAGE,
                 new IdDisplay("tag-1", "My Tag 1"),
                 SdkConstants.ABI_ARMEABI_V7A,
-                FileOp.EMPTY_FILE_ARRAY), null);
+                FileOp.EMPTY_FILE_ARRAY,
+                new Revision(23, 1)), null);
 
         sdkman.reloadSdk(getLog());
         assertEquals("[PlatformTarget API 0 rev 1]", Arrays.toString(sdkman.getTargets()));
@@ -192,7 +197,8 @@ public class SdkManagerTest extends SdkManagerTestCase {
                 LocationType.IN_SYSTEM_IMAGE,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_INTEL_ATOM,
-                FileOp.EMPTY_FILE_ARRAY), null);
+                FileOp.EMPTY_FILE_ARRAY,
+                new Revision(23, 1)), null);
 
         sdkman.reloadSdk(getLog());
         assertEquals("[PlatformTarget API 0 rev 1]", Arrays.toString(sdkman.getTargets()));
@@ -210,7 +216,8 @@ public class SdkManagerTest extends SdkManagerTestCase {
                 LocationType.IN_SYSTEM_IMAGE,
                 SystemImage.DEFAULT_TAG,
                 SdkConstants.ABI_ARMEABI,
-                FileOp.EMPTY_FILE_ARRAY), null);
+                FileOp.EMPTY_FILE_ARRAY,
+                new Revision(23, 1)), null);
 
 
         sdkman.reloadSdk(getLog());
@@ -232,7 +239,7 @@ public class SdkManagerTest extends SdkManagerTestCase {
      * Also all the Windows path separators are converted to unix-like / separators
      * and ".exe" and ".bat" are removed (e.g. for build-tools binaries).
      */
-    private String cleanPath(SdkManager sdkman, String string) {
+    private static String cleanPath(SdkManager sdkman, String string) {
         return string
             .replaceAll(Pattern.quote(sdkman.getLocation()), "\\$SDK")  //$NON-NLS-1$
             .replaceAll("\\.(?:bat|exe)", "")                           //$NON-NLS-1$ //$NON-NLS-2$
