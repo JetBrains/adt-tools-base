@@ -73,6 +73,7 @@ public class MavenInstaller implements PackageInstaller {
             progress.logWarning("Failed to uninstall " + p);
             return false;
         }
+        manager.markInvalid();
         return removeVersion(p, fop, progress);
     }
 
@@ -113,7 +114,7 @@ public class MavenInstaller implements PackageInstaller {
                 throw new IOException("Failed to create temp dir");
             }
 
-            InstallerUtil.unzip(in, out, fop, progress);
+            InstallerUtil.unzip(in, out, fop, p.getArchive().getComplete().getSize(), progress);
 
             // Archives must contain a single top-level directory.
             File[] topDirContents = fop.listFiles(out);
@@ -130,6 +131,7 @@ public class MavenInstaller implements PackageInstaller {
             PackageInfo info = parsePackageInfo(dest, p);
             addVersion(new File(dest.getParentFile(), MAVEN_METADATA_FILE_NAME), info, progress,
                     fop);
+            manager.markInvalid();
             return true;
         } catch (IOException e) {
             progress.logWarning("An error occurred during installation.", e);

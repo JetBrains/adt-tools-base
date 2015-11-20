@@ -30,8 +30,8 @@ public class TrimStringAdapter extends XmlAdapter<String, String> {
         if (v == null) {
             return null;
         }
-        return v.replaceAll("(?<=\\s)[ \t]*", "")    // remove spaces and tabs preceded by space, tab,
-                                                     // or newline.
+        return v.replaceAll("(?<=\\s)[ \t]*", "")    // remove spaces and tabs preceded by space,
+                                                     // tab, or newline.
                 .replaceAll("(?<!\n)\n(?!\n)", " ")  // replace lone newlines with space
                 .replaceAll(" +", " ")               // remove duplicate spaces possibly caused
                                                      // by previous step

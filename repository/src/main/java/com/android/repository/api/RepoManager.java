@@ -23,6 +23,7 @@ import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
+import com.google.common.collect.ImmutableList;
 
 import org.w3c.dom.ls.LSResourceResolver;
 
@@ -30,6 +31,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Primary interface for interacting with repository packages.
@@ -58,8 +60,8 @@ import java.util.concurrent.TimeUnit;
  *     </li>
  * </ul>
  * <p>
- * To load the local and remote packages, use {@link #load(long, List, List, List, boolean,
- * ProgressRunner, Downloader, SettingsController, boolean)}
+ * To load the local and remote packages, use {@link #load(long, List, List, List, ProgressRunner,
+ * Downloader, SettingsController, boolean)}
  * <br>
  * TODO: it would be nice if this could be redesigned such that load didn't need to be called
  * explicitly, or there was a better way to know if packages were or need to be loaded.
@@ -195,8 +197,8 @@ public abstract class RepoManager {
      * In callbacks, be careful of invoking tasks synchronously on other threads (e.g. the swing ui
      * thread), since they might also be used by the {@link ProgressRunner) passed in.
      *
-     * @param cacheExpirationMs How long must have passed since the last load for us to reload even
-     *                          if {@code forceRefresh} isn't specified.
+     * @param cacheExpirationMs How long must have passed since the last load for us to reload.
+     *                          Specify {@code 0} to reload immediately.
      * @param onLocalComplete   When loading, the local repo load happens first, and should be
      *                          relatively fast. When complete, the {@code onLocalComplete} {@link
      *                          RepoLoadedCallback}s are run. Will be called with a {@link
@@ -206,8 +208,6 @@ public abstract class RepoManager {
      *                          containing both the local and remote packages.
      * @param onError           Callbacks that are run when there's an error at some point during
      *                          the load.
-     * @param forceRefresh      If true, reload the local and remote packages even if {@code
-     *                          cacheExpirationMs} has not passed.
      * @param runner            The {@link ProgressRunner} to use for any tasks started during the
      *                          load, including running the callbacks.
      * @param downloader        The {@link Downloader} to use for downloading remote files,
@@ -225,16 +225,57 @@ public abstract class RepoManager {
             @NonNull List<RepoLoadedCallback> onLocalComplete,
             @NonNull List<RepoLoadedCallback> onSuccess,
             @NonNull List<Runnable> onError,
-            boolean forceRefresh,
             @NonNull ProgressRunner runner,
             @Nullable Downloader downloader,
             @Nullable SettingsController settings,
             boolean sync);
 
     /**
+     * Load the local and remote repositories synchronously.
+     *
+     * @param cacheExpirationMs How long must have passed since the last load for us to reload.
+     *                          Specify {@code 0} to reload immediately.
+     * @param progress          The {@link ProgressIndicator} to use for showing progress and
+     *                          logging.
+     * @param downloader        The {@link Downloader} to use for downloading remote files,
+     *                          including any remote list of repo sources and the remote
+     *                          repositories themselves.
+     * @param settings          The settings to use during the load, including for example proxy
+     *                          settings used when fetching remote files.
+     * @return {@code true} if the load was successful (including if cached results were returned), false otherwise.
+     */
+    public final boolean loadSynchronously(long cacheExpirationMs, @NonNull final ProgressIndicator progress,
+            @Nullable Downloader downloader, @Nullable SettingsController settings) {
+        final AtomicBoolean result = new AtomicBoolean(true);
+        load(cacheExpirationMs, ImmutableList.<RepoLoadedCallback>of(),
+          ImmutableList.<RepoLoadedCallback>of(), ImmutableList.<Runnable>of(new Runnable() {
+              @Override
+              public void run() {
+                result.set(false);
+              }
+          }), new ProgressRunner() {
+              @Override
+              public void runAsyncWithProgress(@NonNull ProgressRunnable r) {
+                  r.run(progress, this);
+              }
+
+              @Override
+              public void runSyncWithProgress(@NonNull ProgressRunnable r) {
+                  r.run(progress, this);
+              }
+
+              @Override
+              public void runSyncWithoutProgress(@NonNull Runnable r) {
+                  r.run();
+              }
+          }, downloader, settings, true);
+
+        return result.get();
+    }
+    /**
      * Causes cached results to be considered expired. The next time {@link #load(long, List, List,
-     * List, boolean, ProgressRunner, Downloader, SettingsController, boolean)} is called, a
-     * complete load will be done.
+     * List, ProgressRunner, Downloader, SettingsController, boolean)} is called, a complete load
+     * will be done.
      */
     public abstract void markInvalid();
 
@@ -259,8 +300,8 @@ public abstract class RepoManager {
         /**
          * @param packages The packages that have been loaded so far. When this callback is used in
          *                 the {@code onLocalComplete} argument to {@link #load(long, List, List,
-         *                 List, boolean, ProgressRunner, Downloader, SettingsController,
-         *                 boolean)} {@code packages} will only include local packages.
+         *                 List, ProgressRunner, Downloader, SettingsController, boolean)}
+         *                 {@code packages} will only include local packages.
          */
         void doRun(@NonNull RepositoryPackages packages);
     }

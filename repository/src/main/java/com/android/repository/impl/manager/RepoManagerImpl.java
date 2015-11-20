@@ -238,13 +238,12 @@ public class RepoManagerImpl extends RepoManager {
             @NonNull List<RepoLoadedCallback> onLocalComplete,
             @NonNull List<RepoLoadedCallback> onSuccess,
             @NonNull List<Runnable> onError,
-            boolean forceRefresh,
             @NonNull ProgressRunner runner,
             @Nullable Downloader downloader,
             @Nullable SettingsController settings,
             boolean sync) {
         // If we're not going to refresh, just run the callbacks.
-        if (!forceRefresh && System.currentTimeMillis() - mLastRefreshMs < cacheExpirationMs) {
+        if (System.currentTimeMillis() - mLastRefreshMs < cacheExpirationMs) {
             for (RepoLoadedCallback localComplete : onLocalComplete) {
                 runner.runSyncWithoutProgress(new CallbackRunnable(localComplete, mPackages));
             }

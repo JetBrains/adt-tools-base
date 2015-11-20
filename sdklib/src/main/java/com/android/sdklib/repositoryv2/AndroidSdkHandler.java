@@ -311,13 +311,11 @@ public final class AndroidSdkHandler {
 
                 try {
                     // Specify what modules are allowed to be used by what sites.
-                    Map<Class<? extends RepositorySource>, Collection<SchemaModule>> siteTypes =
-                            ImmutableMap
-                                    .<Class<? extends RepositorySource>, Collection<SchemaModule>>builder()
-                                    .put(RemoteSiteType.AddonSiteType.class,
-                                            ImmutableSet.of(mAddonModule))
-                                    .put(RemoteSiteType.SysImgSiteType.class,
-                                            ImmutableSet.of(mSysImgModule)).build();
+                    Map<Class<? extends RepositorySource>, Collection<SchemaModule>> siteTypes
+                            = ImmutableMap.<Class<? extends RepositorySource>, Collection<SchemaModule>>builder()
+                            .put(RemoteSiteType.AddonSiteType.class, ImmutableSet.of(mAddonModule))
+                            .put(RemoteSiteType.SysImgSiteType.class,
+                                    ImmutableSet.of(mSysImgModule)).build();
                     mAddonsListSourceProvider = RemoteListSourceProvider
                             .create(getAddonListUrl(progress), addonListModule, siteTypes);
                 } catch (URISyntaxException e) {

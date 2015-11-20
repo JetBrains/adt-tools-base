@@ -17,14 +17,12 @@ package com.android.sdklib.repositoryv2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.repository.Revision;
 import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.FallbackRemoteRepoLoader;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.api.SchemaModule;
-import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SdkManager.LayoutlibVersion;
@@ -50,7 +48,6 @@ public class LegacyRepoUtils {
             @Nullable LayoutlibVersion layoutLibVersion, ProgressIndicator progress) {
 
         AndroidSdkHandler handler = AndroidSdkHandler.getInstance();
-        CommonFactory commonFactory = (CommonFactory) RepoManager.getCommonModule().createLatestFactory();
         SdkCommonFactory sdkFactory = (SdkCommonFactory) handler
                 .getCommonModule(progress).createLatestFactory();
         SchemaModule repoExt = handler.getRepositoryModule(progress);
@@ -86,6 +83,7 @@ public class LegacyRepoUtils {
         } else if (desc.getType() == PkgType.PKG_SYS_IMAGE ||
                 desc.getType() == PkgType.PKG_ADDON_SYS_IMAGE) {
             DetailsTypes.SysImgDetailsType details = sysImgFactory.createSysImgDetailsType();
+            //noinspection ConstantConditions
             details.setAbi(desc.getPath());
             assert androidVersion != null;
             details.setApiLevel(androidVersion.getApiLevel());

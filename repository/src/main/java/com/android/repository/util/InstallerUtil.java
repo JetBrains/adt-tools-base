@@ -32,8 +32,9 @@ import com.android.repository.impl.meta.LocalPackageImpl;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
-import com.google.common.io.ByteStreams;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,39 +57,61 @@ public class InstallerUtil {
      * @param in The (zipped) input stream.
      * @param out The directory into which to expand the files. Must exist.
      * @param fop The {@link FileOp} to use for file operations.
+     * @param expectedSize Compressed size of the stream.
      * @param progress Currently only used for logging.
      * @throws IOException If we're unable to read or write.
      */
     public static void unzip(@NonNull InputStream in, @NonNull File out, @NonNull FileOp fop,
-            @NonNull ProgressIndicator progress)
+            long expectedSize, @NonNull ProgressIndicator progress)
             throws IOException {
         if (!fop.exists(out) || !fop.isDirectory(out)) {
             throw new IllegalArgumentException("out must exist and be a directory.");
         }
-        ZipInputStream input = new ZipInputStream(in);
-        ZipEntry entry;
-        while ((entry = input.getNextEntry()) != null) {
-            File entryFile = new File(out, entry.getName());
-            if (entry.isDirectory()) {
-                if (fop.exists(entryFile)) {
-                    progress.logWarning(entryFile + " already exists");
-                } else {
-                    if (!fop.mkdirs(entryFile)) {
-                        progress.logWarning("failed to mkdirs " + entryFile);
+        progress.setText("Unzipping...");
+        double fraction = 0;
+        ZipInputStream input = new ZipInputStream(new BufferedInputStream(in));
+        try {
+            ZipEntry entry;
+            while ((entry = input.getNextEntry()) != null) {
+                String name = entry.getName();
+                File entryFile = new File(out, name);
+                progress.setSecondaryText(name);
+                if (entry.isDirectory()) {
+                    if (fop.exists(entryFile)) {
+                        progress.logWarning(entryFile + " already exists");
+                    }
+                    else {
+                        if (!fop.mkdirs(entryFile)) {
+                            progress.logWarning("failed to mkdirs " + entryFile);
+                        }
                     }
                 }
-            } else {
-                if (!fop.exists(entryFile) && !fop.createNewFile(entryFile)) {
-                    throw new IOException("Failed to create file " + entryFile);
-                }
-                byte[] bytes = ByteStreams.toByteArray(input);
-                if (bytes != null) {
-                    OutputStream os = fop.newFileOutputStream(entryFile);
-                    os.write(bytes);
-                    os.close();
-                }
-            }
+                else {
+                    if (!fop.exists(entryFile) && !fop.createNewFile(entryFile)) {
+                        throw new IOException("Failed to create file " + entryFile);
+                    }
 
+                    int size;
+                    byte[] buf = new byte[8192];
+                    BufferedOutputStream bos = new BufferedOutputStream(
+                            fop.newFileOutputStream(entryFile));
+                    try {
+                        while ((size = input.read(buf)) > -1) {
+                            bos.write(buf, 0, size);
+                            fraction += ((double) entry.getCompressedSize() / expectedSize) *
+                                    ((double) size / entry.getSize());
+                            progress.setFraction(fraction);
+                        }
+                    }
+                    finally {
+                        bos.close();
+                    }
+                }
+                input.closeEntry();
+            }
+        }
+        finally {
+            input.close();
         }
     }
 

@@ -80,9 +80,8 @@ public class MavenInstallerTest extends TestCase {
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // Load
-        mgr.load(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
-                ImmutableList.<RepoLoadedCallback>of(), ImmutableList.<RepoLoadedCallback>of(),
-                ImmutableList.<Runnable>of(), false, runner,
+        mgr.load(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, ImmutableList.<RepoLoadedCallback>of(),
+                ImmutableList.<RepoLoadedCallback>of(), ImmutableList.<Runnable>of(), runner,
                 downloader, new FakeSettingsController(false), true);
 
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
@@ -118,10 +117,9 @@ public class MavenInstallerTest extends TestCase {
                 contents[1]);
 
         // Reload
-        mgr.load(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
-                ImmutableList.<RepoLoadedCallback>of(), ImmutableList.<RepoLoadedCallback>of(),
-                ImmutableList.<Runnable>of(), true, runner,
-                downloader, new FakeSettingsController(false), true);
+        mgr.load(0, ImmutableList.<RepoLoadedCallback>of(), ImmutableList.<RepoLoadedCallback>of(),
+                ImmutableList.<Runnable>of(), runner, downloader, new FakeSettingsController(false),
+                true);
 
         // Ensure it was recognized as a package.
         Map<String, ? extends LocalPackage> locals = mgr.getPackages().getLocalPackages();
@@ -184,7 +182,7 @@ public class MavenInstallerTest extends TestCase {
         // Load
         mgr.load(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
                 ImmutableList.<RepoLoadedCallback>of(), ImmutableList.<RepoLoadedCallback>of(),
-                ImmutableList.<Runnable>of(), false, runner,
+                ImmutableList.<Runnable>of(), runner,
                 downloader, new FakeSettingsController(false), true);
 
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
@@ -220,10 +218,9 @@ public class MavenInstallerTest extends TestCase {
                 contents[1]);
 
         // Reload
-        mgr.load(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
-                ImmutableList.<RepoLoadedCallback>of(), ImmutableList.<RepoLoadedCallback>of(),
-                ImmutableList.<Runnable>of(), true, runner,
-                downloader, new FakeSettingsController(false), true);
+        mgr.load(0, ImmutableList.<RepoLoadedCallback>of(), ImmutableList.<RepoLoadedCallback>of(),
+                ImmutableList.<Runnable>of(), runner, downloader, new FakeSettingsController(false),
+                true);
 
         // Ensure it was recognized as a package.
         Map<String, ? extends LocalPackage> locals = mgr.getPackages().getLocalPackages();
@@ -294,10 +291,9 @@ public class MavenInstallerTest extends TestCase {
         FakeProgressRunner runner = new FakeProgressRunner();
         FakeDownloader downloader = new FakeDownloader();
         // Reload
-        mgr.load(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS,
-                ImmutableList.<RepoLoadedCallback>of(), ImmutableList.<RepoLoadedCallback>of(),
-                ImmutableList.<Runnable>of(), true, runner,
-                downloader, new FakeSettingsController(false), true);
+        mgr.load(0, ImmutableList.<RepoLoadedCallback>of(), ImmutableList.<RepoLoadedCallback>of(),
+                ImmutableList.<Runnable>of(), runner, downloader, new FakeSettingsController(false),
+                true);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
 
         Map<String, ? extends LocalPackage> locals = mgr.getPackages().getLocalPackages();

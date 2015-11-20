@@ -16,7 +16,6 @@
 
 package com.android.repository.impl.local;
 
-import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.Revision;
 import com.android.repository.api.Dependency;
 import com.android.repository.api.License;
@@ -29,6 +28,7 @@ import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
 import com.android.repository.impl.meta.RevisionType;
 import com.android.repository.impl.meta.SchemaModuleUtil;
+import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.MockFileOp;
 import com.google.common.collect.ImmutableSet;
 
@@ -84,7 +84,8 @@ public class LocalRepoTest extends TestCase {
         );
 
         RepoManager manager = RepoManager.create(mockFop);
-        LocalRepoLoader localLoader = new LocalRepoLoader(new File("/repo"), manager, null, mockFop);
+        LocalRepoLoader localLoader = new LocalRepoLoader(new File("/repo"), manager, null,
+                mockFop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         LocalPackage p = localLoader.getPackages(progress).get("random");
         progress.assertNoErrorsOrWarnings();
@@ -119,7 +120,9 @@ public class LocalRepoTest extends TestCase {
         repo.setLocalPackage(p);
         repo.getLicense().add(license);
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        SchemaModuleUtil.marshal(repo.createFactory().generateElement(repo), ImmutableSet.of(manager.getCommonModule()), output, manager.getResourceResolver(progress), progress);
+        SchemaModuleUtil.marshal(repo.createFactory().generateElement(repo),
+                ImmutableSet.of(manager.getCommonModule()), output,
+                manager.getResourceResolver(progress), progress);
         progress.assertNoErrorsOrWarnings();
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -160,7 +163,9 @@ public class LocalRepoTest extends TestCase {
                 + "<display-name>package name</display-name>"
                 + "<uses-license ref=\"license1\"/>"
                 + "<dependencies>"
-                + "<dependency path=\"depId1\"><min-revision><major>1</major><minor>2</minor><micro>3</micro></min-revision></dependency>"
+                + "<dependency path=\"depId1\">"
+                + "<min-revision><major>1</major><minor>2</minor><micro>3</micro></min-revision>"
+                + "</dependency>"
                 + "<dependency path=\"depId2\"/></dependencies></localPackage></ns2:repository>";
         Document doc = db.parse(new ByteArrayInputStream(output.toByteArray()));
         Document doc2 = db.parse(new ByteArrayInputStream(expected.getBytes()));

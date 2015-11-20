@@ -59,6 +59,7 @@ public class BasicInstaller implements PackageInstaller {
         File location = new File(manager.getLocalPath(), path);
 
         fop.deleteFileOrFolder(location);
+        manager.markInvalid();
 
         return !fop.exists(location);
     }
@@ -88,7 +89,7 @@ public class BasicInstaller implements PackageInstaller {
                 throw new IOException("Failed to create temp dir");
             }
 
-            InstallerUtil.unzip(in, out, fop, progress);
+            InstallerUtil.unzip(in, out, fop, p.getArchive().getComplete().getSize(), progress);
 
             // Archives must contain a single top-level directory.
             File[] topDirContents = fop.listFiles(out);
@@ -101,6 +102,7 @@ public class BasicInstaller implements PackageInstaller {
 
             // Move the final unzipped archive into place.
             FileOpUtils.safeRecursiveOverwrite(packageRoot, dest, fop, progress);
+            manager.markInvalid();
             return true;
         } catch (IOException e) {
             progress.logWarning("An error occurred during installation.", e);

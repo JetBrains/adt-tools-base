@@ -117,8 +117,8 @@ public abstract class Archive {
             if (sJvmVersion == null) {
                 Revision minJvmVersion = null;
                 String javav = System.getProperty("java.version");              //$NON-NLS-1$
-                // java Version is typically in the form "1.2.3_45" and we just need to keep up to "1.2.3"
-                // since our revision numbers are in 3-parts form (1.2.3).
+                // java Version is typically in the form "1.2.3_45" and we just need to keep up to
+                // "1.2.3" since our revision numbers are in 3-parts form (1.2.3).
                 Pattern p = Pattern.compile("((\\d+)(\\.\\d+)?(\\.\\d+)?).*");  //$NON-NLS-1$
                 Matcher m = p.matcher(javav);
                 if (m.matches()) {

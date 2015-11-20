@@ -85,7 +85,7 @@ public class MockFileOp implements FileOp {
         if (FileOpUtils.isWindows()) {
             // Try to convert the windows-looking path to a unix-looking one
             path = path.replace('\\', '/');
-            path = path.replaceAll("^[A-Z]:", "");      //$NON-NLS-1$ //$NON-NLS-2$
+            path = path.replaceAll("^[A-Z]:", "");
         }
         return path;
     }
@@ -340,8 +340,8 @@ public class MockFileOp implements FileOp {
         // If we defined a file or folder as a child of the requested file path,
         // then the directory exists implicitely.
         Pattern pathRE = Pattern.compile(
-                Pattern.quote(path + (path.endsWith("/") ? "" : '/')) +  //$NON-NLS-1$ //$NON-NLS-2$
-                ".*");                                                   //$NON-NLS-1$
+                Pattern.quote(path + (path.endsWith("/") ? "" : '/')) +
+                ".*");
 
         for (String folder : mExistingFolders) {
             if (pathRE.matcher(folder).matches()) {
@@ -369,7 +369,7 @@ public class MockFileOp implements FileOp {
 
     @Override
     public long length(@NonNull File file) {
-        throw new UnsupportedOperationException("MockFileUtils.length is not supported."); //$NON-NLS-1$
+        throw new UnsupportedOperationException("MockFileUtils.length is not supported.");
     }
 
     @Override
@@ -421,8 +421,8 @@ public class MockFileOp implements FileOp {
 
         String path = getAgnosticAbsPath(file);
         Pattern pathRE = Pattern.compile(
-                Pattern.quote(path + (path.endsWith("/") ? "" : '/')) +  //$NON-NLS-1$ //$NON-NLS-2$
-                "[^/]*");                                                   //$NON-NLS-1$
+                Pattern.quote(path + (path.endsWith("/") ? "" : '/')) +
+                "[^/]*");
 
         for (String folder : mExistingFolders) {
             if (pathRE.matcher(folder).matches()) {
@@ -444,8 +444,8 @@ public class MockFileOp implements FileOp {
         String oldPath = getAgnosticAbsPath(oldFile);
         String newPath = getAgnosticAbsPath(newFile);
         Pattern pathRE = Pattern.compile(
-                "^(" + Pattern.quote(oldPath) + //$NON-NLS-1$
-                ")($|/.*)");                    //$NON-NLS-1$
+                "^(" + Pattern.quote(oldPath) +
+                ")($|/.*)");
 
         Set<String> newFolders = Sets.newTreeSet();
         for (Iterator<String> it = mExistingFolders.iterator(); it.hasNext(); ) {
@@ -562,7 +562,7 @@ public class MockFileOp implements FileOp {
         @Override
         public void close() throws IOException {
             super.close();
-            mData = new String(toByteArray(), "UTF-8");                         //$NON-NLS-1$
+            mData = new String(toByteArray(), "UTF-8");
             recordExistingFile(mFile.getAbsolutePath(), mData);
         }
 
@@ -570,11 +570,11 @@ public class MockFileOp implements FileOp {
         @Override
         public synchronized String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append('<').append(getAgnosticAbsPath(mFile)).append(": ");      //$NON-NLS-1$
+            sb.append('<').append(getAgnosticAbsPath(mFile)).append(": ");
             if (mData == null) {
-                sb.append("(stream not closed properly)>");                     //$NON-NLS-1$
+                sb.append("(stream not closed properly)>");
             } else {
-                sb.append('\'').append(mData).append("'>");                     //$NON-NLS-1$
+                sb.append('\'').append(mData).append("'>");
             }
             return sb.toString();
         }
