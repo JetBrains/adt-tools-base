@@ -118,10 +118,13 @@ public class NewShrinkerTransform extends ProguardConfigurable {
     @NonNull
     @Override
     public Collection<File> getSecondaryFileInputs() {
-        return ImmutableList.<File>builder()
-                .addAll(getAllConfigurationFiles())
-                .add(this.incrementalDir)
-                .build();
+        return getAllConfigurationFiles();
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getSecondaryDirectoryOutputs() {
+        return ImmutableList.of(incrementalDir);
     }
 
     @Override
