@@ -56,18 +56,6 @@ import java.util.concurrent.Semaphore;
 public class RepoManagerImpl extends RepoManager {
 
     /**
-     * Pattern for fully-qualified name of the {@code ObjectFactory} used in {@link
-     * #mCommonModule}.
-     */
-    private static final String COMMON_OBJECT_FACTORY_PATTERN
-            = "com.android.repository.impl.generated.v%d.ObjectFactory";
-
-    /**
-     * Pattern for name of the xsd file used in {@link #mCommonModule}.
-     */
-    public static final String COMMON_XSD_PATTERN = "repo-common-%02d.xsd";
-
-    /**
      * The registered {@link SchemaModule}s.
      */
     private final Set<SchemaModule> mModules = Sets.newHashSet();
@@ -118,11 +106,6 @@ public class RepoManagerImpl extends RepoManager {
     private final Object mTaskLock = new Object();
 
     /**
-     * The base {@link SchemaModule} that is created by {@code RepoManagerImpl} itself.
-     */
-    private final SchemaModule mCommonModule;
-
-    /**
      * {@link FileOp} to be used for local file operations. Should be {@link FileOpImpl} for normal
      * operation.
      */
@@ -137,16 +120,7 @@ public class RepoManagerImpl extends RepoManager {
      */
     public RepoManagerImpl(@Nullable FileOp fop) {
         mFop = fop;
-        SchemaModule m = null;
-        try {
-            m = new SchemaModule(COMMON_OBJECT_FACTORY_PATTERN, COMMON_XSD_PATTERN,
-                    RepoManager.class);
-        } catch (Exception e) {
-            // This should never happen unless there's something wrong with the common repo schema.
-            assert false : "Failed to create RepoManager: " + e;
-        }
-        mCommonModule = m;
-        registerSchemaModule(mCommonModule);
+        registerSchemaModule(getCommonModule());
     }
 
     @Nullable
@@ -186,12 +160,6 @@ public class RepoManagerImpl extends RepoManager {
     public void setLocalPath(@Nullable File path) {
         mLocalPath = path;
         markInvalid();
-    }
-
-    @Override
-    @NonNull
-    public SchemaModule getCommonModule() {
-        return mCommonModule;
     }
 
     /**

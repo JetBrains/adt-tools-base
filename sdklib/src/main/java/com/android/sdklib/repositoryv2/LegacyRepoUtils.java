@@ -47,16 +47,15 @@ public class LegacyRepoUtils {
      * Convert a {@link IPkgDesc} and other old-style information into a {@link TypeDetails}.
      */
     public static TypeDetails createTypeDetails(@NonNull IPkgDesc desc,
-            @Nullable LayoutlibVersion layoutLibVersion,
-            RepoManager manager, ProgressIndicator progress) {
+            @Nullable LayoutlibVersion layoutLibVersion, ProgressIndicator progress) {
 
-        CommonFactory commonFactory = (CommonFactory) manager.getCommonModule()
-                .createLatestFactory();
-        SdkCommonFactory sdkFactory = (SdkCommonFactory) AndroidSdkHandler.getInstance()
+        AndroidSdkHandler handler = AndroidSdkHandler.getInstance();
+        CommonFactory commonFactory = (CommonFactory) RepoManager.getCommonModule().createLatestFactory();
+        SdkCommonFactory sdkFactory = (SdkCommonFactory) handler
                 .getCommonModule(progress).createLatestFactory();
-        SchemaModule repoExt = AndroidSdkHandler.getInstance().getRepositoryModule(progress);
-        SchemaModule addonExt = AndroidSdkHandler.getInstance().getAddonModule(progress);
-        SchemaModule sysImgExt = AndroidSdkHandler.getInstance().getSysImgModule(progress);
+        SchemaModule repoExt = handler.getRepositoryModule(progress);
+        SchemaModule addonExt = handler.getAddonModule(progress);
+        SchemaModule sysImgExt = handler.getSysImgModule(progress);
         RepoFactory repoFactory = (RepoFactory) repoExt.createLatestFactory();
         AddonFactory addonFactory = (AddonFactory) addonExt.createLatestFactory();
         SysImgFactory sysImgFactory = (SysImgFactory) sysImgExt.createLatestFactory();

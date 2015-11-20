@@ -67,13 +67,38 @@ import java.util.concurrent.TimeUnit;
  * To use the loaded packages, get an {@link RepositoryPackages} object from {@link #getPackages()}.
  */
 public abstract class RepoManager {
-
     /**
      * After loading the repository, this is the amount of time that must pass before we consider it
      * to be stale and need to be reloaded.
      */
     public static final long DEFAULT_EXPIRATION_PERIOD_MS = TimeUnit.DAYS.toMillis(1);
 
+    /**
+     * Pattern for name of the xsd file used in {@link #sCommonModule}.
+     */
+    private static final String COMMON_XSD_PATTERN = "repo-common-%02d.xsd";
+
+    /**
+     * Pattern for fully-qualified name of the {@code ObjectFactory} used in {@link
+     * #sCommonModule}.
+     */
+    private static final String COMMON_OBJECT_FACTORY_PATTERN
+            = "com.android.repository.impl.generated.v%d.ObjectFactory";
+
+    /**
+     * The base {@link SchemaModule} that is created by {@code RepoManagerImpl} itself.
+     */
+    private static SchemaModule sCommonModule;
+    static {
+        try {
+            sCommonModule = new SchemaModule(COMMON_OBJECT_FACTORY_PATTERN, COMMON_XSD_PATTERN,
+                    RepoManager.class);
+        }
+        catch (Exception e) {
+            // This should never happen unless there's something wrong with the common repo schema.
+            assert false : "Failed to create SchemaModule: " + e;
+        }
+    }
 
     /**
      * @param fop The {@link FileOp} to use for local filesystem operations. Probably
@@ -102,7 +127,9 @@ public abstract class RepoManager {
      * definition of repository, package, revision, etc.
      */
     @NonNull
-    public abstract SchemaModule getCommonModule();
+    public static SchemaModule getCommonModule() {
+        return sCommonModule;
+    }
 
     /**
      * Sets the path to the local repository root.
@@ -219,9 +246,9 @@ public abstract class RepoManager {
 
     /**
      * Gets an {@link LSResourceResolver} that can find the XSDs for all versions of the
-     * currently-registered {@link SchemaModule}s by namespace.
+     * currently-registered {@link SchemaModule}s by namespace. Returns null if there is an error.
      */
-    @NonNull
+    @Nullable
     public abstract LSResourceResolver getResourceResolver(@NonNull ProgressIndicator progress);
 
     /**

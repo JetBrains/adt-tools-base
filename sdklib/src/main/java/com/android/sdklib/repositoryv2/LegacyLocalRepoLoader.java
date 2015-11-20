@@ -144,7 +144,7 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
                 }
             }
             return LegacyRepoUtils
-                    .createTypeDetails(mWrapped.getDesc(), layoutVersion, mManager, mProgress);
+                    .createTypeDetails(mWrapped.getDesc(), layoutVersion, mProgress);
         }
 
         @NonNull
