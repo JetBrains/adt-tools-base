@@ -48,6 +48,7 @@ import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.incremental.BuildInfoGeneratorTask;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
@@ -1191,7 +1192,7 @@ public abstract class TaskManager {
         BaseVariantData testedVariantData = variantScope.getTestedVariantData();
         checkState(testedVariantData != null);
 
-        createPreBuildTasks(variantScope);
+        createPreBuildTasks(tasks, variantScope);
 
         // Create all current streams (dependencies mostly at this point)
         createDependencyStreams(variantScope);
@@ -2593,7 +2594,7 @@ public abstract class TaskManager {
     }
 
     public void createAnchorTasks(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
-        createPreBuildTasks(scope);
+        createPreBuildTasks(tasks, scope);
 
         // also create sourceGenTask
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
@@ -2648,13 +2649,19 @@ public abstract class TaskManager {
         createCompileAnchorTask(tasks, scope);
     }
 
-    private void createPreBuildTasks(@NonNull VariantScope scope) {
+    private void createPreBuildTasks(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         variantData.preBuildTask = project.getTasks().create(scope.getTaskName("pre", "Build"));
         variantData.preBuildTask.dependsOn(MAIN_PREBUILD);
 
+        // if we are in incremental mode, always write the build-info.xml file.
+        if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.NONE) {
+            androidTasks.create(tasks, new BuildInfoGeneratorTask.ConfigAction(scope, logger));
+            variantData.preBuildTask.dependsOn(BuildInfoGeneratorTask.ConfigAction.getName(scope));
+        }
+
         PrepareDependenciesTask prepareDependenciesTask = project.getTasks().create(
-                scope.getTaskName("prepare", "Dependencies"), PrepareDependenciesTask.class);
+        scope.getTaskName("prepare", "Dependencies"), PrepareDependenciesTask.class);
 
         variantData.prepareDependenciesTask = prepareDependenciesTask;
         prepareDependenciesTask.dependsOn(variantData.preBuildTask);
