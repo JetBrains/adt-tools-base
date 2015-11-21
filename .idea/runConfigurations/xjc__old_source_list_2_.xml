@@ -3,7 +3,7 @@
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
     <option name="MAIN_CLASS_NAME" value="com.sun.tools.xjc.Driver" />
     <option name="VM_PARAMETERS" value="" />
-    <option name="PROGRAM_PARAMETERS" value="-p com.android.sdklib.repositoryv2.sources.generated.v2 sdklib/src/main/java/com/android/sdklib/repositoryv2/sources/sdk-sites-list-2.xsd -extension -Xandroid-inheritance -d sdklib/src/main/java/ -no-header" />
+    <option name="PROGRAM_PARAMETERS" value="-p com.android.sdklib.repositoryv2.sources.generated.v2 sdklib/src/main/java/com/android/sdklib/repositoryv2/sources/sdk-sites-list-2.xsd -extension -Xandroid-inheritance -d sdklib/src/main/java/" />
     <option name="WORKING_DIRECTORY" value="" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" />

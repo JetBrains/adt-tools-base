@@ -16,6 +16,8 @@
 
 package com.android.builder.shrinker;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.JarInput;
@@ -24,9 +26,10 @@ import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.base.Optional;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.SetMultimap;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import org.objectweb.asm.ClassReader;
@@ -34,7 +37,6 @@ import org.objectweb.asm.ClassReader;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -71,20 +73,34 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
      *     run should be done instead.
      */
     public void incrementalRun(
-            @NonNull Collection<TransformInput> inputs,
+            @NonNull Iterable<TransformInput> inputs,
             @NonNull TransformOutputProvider output)
             throws IOException, IncrementalRunImpossibleException {
-        final List<T> classesToWrite = Lists.newArrayList();
-        final List<File> classFilesToDelete = Lists.newArrayList();
-        final Collection<UnresolvedReference<T>> unresolvedReferences = Lists.newArrayList();
+        final Set<T> classesToWrite = Sets.newConcurrentHashSet();
+        final Set<File> classFilesToDelete = Sets.newConcurrentHashSet();
+        final Set<UnresolvedReference<T>> unresolvedReferences = Sets.newConcurrentHashSet();
 
+        Stopwatch stopwatch = Stopwatch.createStarted();
         SetMultimap<T, String> oldState = resetState();
+        logTime("resetState()", stopwatch);
 
         processInputs(inputs, classesToWrite, unresolvedReferences);
+        logTime("processInputs", stopwatch);
+
         finishGraph(unresolvedReferences);
+        logTime("finish graph", stopwatch);
+
         setCounters(CounterSet.SHRINK);
+        logTime("set counters", stopwatch);
+
         chooseClassesToWrite(inputs, output, classesToWrite, classFilesToDelete, oldState);
+        logTime("choose classes", stopwatch);
+
         updateClassFiles(classesToWrite, classFilesToDelete, inputs, output);
+        logTime("update class files", stopwatch);
+
+        mGraph.saveState();
+        logTime("save state", stopwatch);
     }
 
     /**
@@ -92,16 +108,16 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
      * appropriate entries in the lists passed as arguments.
      */
     private void chooseClassesToWrite(
-            @NonNull Collection<TransformInput> inputs,
+            @NonNull Iterable<TransformInput> inputs,
             @NonNull TransformOutputProvider output,
-            @NonNull List<T> classesToWrite,
-            @NonNull List<File> classFilesToDelete,
+            @NonNull Collection<T> classesToWrite,
+            @NonNull Collection<File> classFilesToDelete,
             @NonNull SetMultimap<T, String> oldState) {
         for (T klass : mGraph.getReachableClasses(CounterSet.SHRINK)) {
             if (!oldState.containsKey(klass)) {
                 classesToWrite.add(klass);
             } else {
-                Set<String> newMembers = mGraph.getReachableMembers(klass, CounterSet.SHRINK);
+                Set<String> newMembers = mGraph.getReachableMembersLocalNames(klass, CounterSet.SHRINK);
                 Set<String> oldMembers = oldState.get(klass);
 
                 // Reverse of the trick above, where we store one artificial member for empty
@@ -120,7 +136,10 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
 
         // All keys that remained in oldState should be deleted.
         for (T klass : oldState.keySet()) {
-            Optional<File> outputFile = chooseOutputFile(klass, mGraph.getClassFile(klass), inputs, output);
+            File sourceFile = mGraph.getSourceFile(klass);
+            checkState(sourceFile != null, "One of the inputs has no source file.");
+
+            Optional<File> outputFile = chooseOutputFile(klass, sourceFile, inputs, output);
             if (!outputFile.isPresent()) {
                 throw new IllegalStateException(
                         "Can't determine path of " + mGraph.getClassName(klass));
@@ -138,7 +157,7 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
         SetMultimap<T, String> oldState = HashMultimap.create();
 
         for (T klass : mGraph.getReachableClasses(CounterSet.SHRINK)) {
-            Set<String> reachableMembers = mGraph.getReachableMembers(klass, CounterSet.SHRINK);
+            Set<String> reachableMembers = mGraph.getReachableMembersLocalNames(klass, CounterSet.SHRINK);
             for (String member : reachableMembers) {
                 oldState.put(klass, member);
             }
@@ -149,27 +168,29 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
             }
         }
 
-        mGraph.clearCounters();
+        mGraph.clearCounters(mExecutor);
+        waitForAllTasks();
         return oldState;
     }
 
-    private void finishGraph(@NonNull Collection<UnresolvedReference<T>> unresolvedReferences) {
+    private void finishGraph(@NonNull Iterable<UnresolvedReference<T>> unresolvedReferences) {
         resolveReferences(unresolvedReferences);
         waitForAllTasks();
     }
 
     private void processInputs(
-            @NonNull Collection<TransformInput> inputs,
-            @NonNull final List<T> classesToWrite,
-            @NonNull final Collection<UnresolvedReference<T>> unresolvedReferences) {
+            @NonNull Iterable<TransformInput> inputs,
+            @NonNull final Collection<T> classesToWrite,
+            @NonNull final Collection<UnresolvedReference<T>> unresolvedReferences)
+            throws IncrementalRunImpossibleException {
         for (final TransformInput input : inputs) {
             for (JarInput jarInput : input.getJarInputs()) {
                 switch (jarInput.getStatus()) {
                     case ADDED:
-                        break;
                     case REMOVED:
-                        break;
                     case CHANGED:
+                        throw new IncrementalRunImpossibleException();
+                    case NOTCHANGED:
                         break;
                 }
             }
@@ -181,9 +202,9 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
                         public Void call() throws Exception {
                             switch (changedFile.getValue()) {
                                 case ADDED:
-                                    throw todo("new file added");
+                                    throw new IncrementalRunImpossibleException();
                                 case REMOVED:
-                                    throw todo("removed file");
+                                    throw new IncrementalRunImpossibleException();
                                 case CHANGED:
                                     processChangedClassFile(
                                             changedFile.getKey(),

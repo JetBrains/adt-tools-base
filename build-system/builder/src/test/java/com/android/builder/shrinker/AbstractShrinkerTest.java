@@ -16,6 +16,7 @@
 
 package com.android.builder.shrinker;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -100,6 +101,29 @@ public abstract class AbstractShrinkerTest {
         assertFalse(
                 "Class " + className + " exists in output.",
                 getOutputClassFile(className).exists());
+    }
+
+    protected void assertImplements(String className, String interfaceName) throws IOException {
+        File classFile = getOutputClassFile(className);
+        assertThat(getInterfaceNames(classFile)).contains(interfaceName);
+    }
+
+    protected void assertDoesntImplement(String className, String interfaceName) throws IOException {
+        File classFile = getOutputClassFile(className);
+        assertThat(getInterfaceNames(classFile)).doesNotContain(interfaceName);
+    }
+
+    protected static Set<String> getInterfaceNames(File classFile) throws IOException {
+        ClassReader classReader = new ClassReader(Files.toByteArray(classFile));
+        ClassNode classNode = new ClassNode(Opcodes.ASM5);
+        classReader.accept(classNode, ClassReader.SKIP_CODE);
+
+        if (classNode.interfaces == null) {
+            return ImmutableSet.of();
+        } else {
+            //noinspection unchecked
+            return ImmutableSet.copyOf(classNode.interfaces);
+        }
     }
 
     protected void assertMembersLeft(String className, String... members) throws IOException {

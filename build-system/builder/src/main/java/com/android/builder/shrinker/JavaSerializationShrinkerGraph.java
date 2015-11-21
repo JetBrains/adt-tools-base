@@ -16,11 +16,13 @@
 
 package com.android.builder.shrinker;
 
+import static com.android.builder.shrinker.AbstractShrinker.isSdkPackage;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.shrinker.AbstractShrinker.CounterSet;
+import com.android.ide.common.internal.WaitableExecutor;
 import com.android.utils.FileUtils;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -32,6 +34,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -42,7 +45,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -137,32 +139,36 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         }
     }
 
+    @NonNull
     @Override
-    public String addMember(String owner, String name, String desc, int modifiers) {
+    public String addMember(@NonNull String owner, @NonNull String name, @NonNull String desc, int modifiers) {
         String fullName = getFullMethodName(owner, name, desc);
         mMembers.put(owner, fullName);
         mModifiers.put(fullName, modifiers);
         return fullName;
     }
 
+    @NonNull
     @Override
-    public String getMemberReference(String className, String memberName, String methodDesc) {
-        return getFullMethodName(className, memberName, methodDesc);
+    public String getMemberReference(@NonNull String className, @NonNull String memberName, @NonNull String desc) {
+        return getFullMethodName(className, memberName, desc);
     }
 
     @Override
-    public void addDependency(String source, String target, DependencyType type) {
+    public void addDependency(@NonNull String source, @NonNull String target, @NonNull DependencyType type) {
         Dependency<String> dep = new Dependency<String>(target, type);
         mDependencies.put(source, dep);
     }
 
+    @NonNull
     @Override
-    public Set<Dependency<String>> getDependencies(String member) {
+    public Set<Dependency<String>> getDependencies(@NonNull String member) {
         return Sets.newHashSet(mDependencies.get(member));
     }
 
+    @NonNull
     @Override
-    public Set<String> getMethods(String klass) {
+    public Set<String> getMethods(@NonNull String klass) {
         HashSet<String> members = Sets.newHashSet(mMembers.get(klass));
         for (Iterator<String> iterator = members.iterator(); iterator.hasNext(); ) {
             String member = iterator.next();
@@ -173,8 +179,9 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         return members;
     }
 
+    @NonNull
     @Override
-    public Set<String> getFields(String klass) {
+    public Set<String> getFields(@NonNull String klass) {
         HashSet<String> members = Sets.newHashSet(mMembers.get(klass));
         for (Iterator<String> iterator = members.iterator(); iterator.hasNext(); ) {
             String member = iterator.next();
@@ -186,10 +193,10 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public boolean incrementAndCheck(String member, DependencyType type, CounterSet counterSet) {
+    public boolean incrementAndCheck(@NonNull String memberOrClass, @NonNull DependencyType type, @NonNull CounterSet counterSet) {
         try {
 
-            return getCounters(counterSet).mReferenceCounters.get(member).incrementAndCheck(type);
+            return getCounters(counterSet).mReferenceCounters.get(memberOrClass).incrementAndCheck(type);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -197,11 +204,12 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @Override
     public void saveState() throws IOException {
+        File stateFile = getStateFile(mStateDir);
+        FileUtils.deleteIfExists(stateFile);
+        Files.createParentDirs(stateFile);
+
         ObjectOutputStream stream =
-                new ObjectOutputStream(
-                        new BufferedOutputStream(
-                                new FileOutputStream(
-                                        getStateFile(mStateDir))));
+                new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(stateFile)));
         try {
             stream.writeObject(mAnnotations);
             stream.writeObject(mClasses);
@@ -218,16 +226,16 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public boolean isReachable(String memberOrClass, CounterSet counterSet) {
+    public boolean isReachable(@NonNull String klass, @NonNull CounterSet counterSet) {
         try {
-            return getCounters(counterSet).mReferenceCounters.get(memberOrClass).isReachable();
+            return getCounters(counterSet).mReferenceCounters.get(klass).isReachable();
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void removeAllCodeDependencies(String source) {
+    public void removeAllCodeDependencies(@NonNull String source) {
         Set<Dependency<String>> dependencies = mDependencies.get(source);
         for (Iterator<Dependency<String>> iterator = dependencies.iterator(); iterator.hasNext(); ) {
             if (iterator.next().type == DependencyType.REQUIRED_CODE_REFERENCE) {
@@ -237,7 +245,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public String getSuperclass(String klass) throws ClassLookupException {
+    public String getSuperclass(@NonNull String klass) throws ClassLookupException {
         ClassInfo classInfo = mClasses.get(klass);
         if (classInfo == null) {
             throw new ClassLookupException(klass);
@@ -247,7 +255,12 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @Nullable
     @Override
-    public String findMatchingMethod(String klass, String method) {
+    public String findMatchingMethod(@NonNull String klass, @NonNull String method) {
+        // Common case:
+        if (mMembers.containsEntry(klass, method)) {
+            return method;
+        }
+
         String methodToLookFor = klass + "." + getMemberId(method);
         if (mMembers.containsEntry(klass, methodToLookFor)) {
             return methodToLookFor;
@@ -257,16 +270,16 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public boolean isLibraryMember(String method) {
-        return mClasses.get(getClassForMember(method)).isLibraryClass();
-    }
+    public boolean isLibraryClass(@NonNull String klass) {
+        if (isSdkPackage(klass)) {
+            return true;
+        }
 
-    @Override
-    public boolean isLibraryClass(String klass) {
         ClassInfo classInfo = mClasses.get(klass);
-        return classInfo != null && classInfo.isLibraryClass();
+        return classInfo == null || classInfo.isLibraryClass();
     }
 
+    @NonNull
     @Override
     public String[] getInterfaces(String klass) {
         return mClasses.get(klass).interfaces;
@@ -305,19 +318,10 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         }
     }
 
+    @NonNull
     @Override
-    public boolean keepInterface(String iface, CounterSet counterSet) {
-        return mClasses.get(iface).isLibraryClass() || isReachable(iface, counterSet);
-    }
-
-    @Override
-    public void removeStoredState() throws IOException {
-        FileUtils.emptyFolder(mStateDir);
-    }
-
-    @Override
-    public Collection<String> getReachableClasses(CounterSet counterSet) {
-        List<String> classesToKeep = Lists.newArrayList();
+    public Set<String> getReachableClasses(@NonNull CounterSet counterSet) {
+        Set<String> classesToKeep = Sets.newHashSet();
         for (Map.Entry<String, ClassInfo> entry : mClasses.entrySet()) {
             if (entry.getValue().isLibraryClass()) {
                 // Skip lib
@@ -332,12 +336,13 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public File getClassFile(String klass) {
+    public File getSourceFile(@NonNull String klass) {
         return mClasses.get(klass).classFile;
     }
 
+    @NonNull
     @Override
-    public Set<String> getReachableMembers(String klass, CounterSet counterSet) {
+    public Set<String> getReachableMembersLocalNames(@NonNull String klass, @NonNull CounterSet counterSet) {
         Set<String> memberIds = Sets.newHashSet();
         for (String member : mMembers.get(klass)) {
             if (isReachable(member, counterSet)) {
@@ -349,30 +354,35 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         return memberIds;
     }
 
+    @NonNull
     @Override
-    public String getClassForMember(String member) {
+    public String getClassForMember(@NonNull String member) {
         return member.substring(0, member.indexOf('.'));
     }
 
+    @NonNull
     @Override
-    public String getClassReference(String className) {
+    public String getClassReference(@NonNull String className) {
+        checkNotNull(className);
         return className;
     }
 
+    @NonNull
     @Override
     public String addClass(
-            String name,
+            @NonNull String name,
             String superName,
             String[] interfaces,
-            int access,
-            File classFile) {
+            int modifiers,
+            @Nullable File classFile) {
         //noinspection unchecked - ASM API
         ClassInfo classInfo = new ClassInfo(classFile, superName, interfaces);
         mClasses.put(name, classInfo);
-        mModifiers.put(name, access);
+        mModifiers.put(name, modifiers);
         return name;
     }
 
+    @NonNull
     @Override
     public Iterable<String> getAllProgramClasses() {
         List<String> classes = Lists.newArrayList();
@@ -386,58 +396,64 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
         return classes;
     }
 
+    @NonNull
     @Override
-    public String getClassName(String classOrMember) {
-        return classOrMember;
+    public String getClassName(@NonNull String klass) {
+        return klass;
     }
 
+    @NonNull
     @Override
-    public String getMethodNameAndDesc(String method) {
+    public String getMethodNameAndDesc(@NonNull String method) {
         return method.substring(method.indexOf('.') + 1);
     }
 
+    @NonNull
     @Override
-    public String getFieldName(String field) {
+    public String getFieldName(@NonNull String field) {
         return field.substring(field.indexOf('.') + 1, field.indexOf(':'));
     }
 
+    @NonNull
     @Override
-    public String getFieldDesc(String field) {
+    public String getFieldDesc(@NonNull String field) {
         return field.substring(field.indexOf(':') + 1);
     }
 
     @Override
-    public int getClassModifiers(String klass) {
+    public int getClassModifiers(@NonNull String klass) {
         return mModifiers.get(klass);
     }
 
     @Override
-    public int getMemberModifiers(String member) {
+    public int getMemberModifiers(@NonNull String member) {
         return mModifiers.get(member);
     }
 
     @Override
-    public void addAnnotation(String classOrMember, String desc) {
-        mAnnotations.put(classOrMember, desc);
+    public void addAnnotation(@NonNull String classOrMember, @NonNull String annotationName) {
+        mAnnotations.put(classOrMember, annotationName);
     }
 
+    @NonNull
     @Override
-    public Iterable<String> getAnnotations(String classOrMember) {
+    public Iterable<String> getAnnotations(@NonNull String classOrMember) {
         return mAnnotations.get(classOrMember);
     }
 
     @Override
-    public void addRoots(Map<String, DependencyType> symbolsToKeep, CounterSet counterSet) {
+    public void addRoots(@NonNull Map<String, DependencyType> symbolsToKeep, @NonNull CounterSet counterSet) {
         getCounters(counterSet).mRoots.putAll(symbolsToKeep);
     }
 
+    @NonNull
     @Override
-    public Map<String, DependencyType> getRoots(CounterSet counterSet) {
+    public Map<String, DependencyType> getRoots(@NonNull CounterSet counterSet) {
         return ImmutableMap.copyOf(getCounters(counterSet).mRoots);
     }
 
     @Override
-    public void clearCounters() {
+    public void clearCounters(@NonNull WaitableExecutor<Void> executor) {
         getCounters(CounterSet.SHRINK).mReferenceCounters.invalidateAll();
         getCounters(CounterSet.LEGACY_MULTIDEX).mReferenceCounters.invalidateAll();
     }

@@ -31,6 +31,7 @@ import com.android.utils.FileUtils;
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
@@ -68,6 +69,22 @@ public abstract class AbstractShrinker<T> {
     }
 
     /**
+     * Checks if a given class name starts with a package name that we assume to be an SDK class.
+     *
+     * <p>This way we can make the check cheaper in the common case and also filter out a lot of
+     * unnecessary edges from the graph early on, where we don't yet know which class is which.
+     */
+    static boolean isSdkPackage(String className) {
+        // TODO: Add a flag to disable these checks?
+        return className.startsWith("java/")
+                || className.startsWith("android/os/")
+                || className.startsWith("android/view/")
+                || className.startsWith("android/content/")
+                || className.startsWith("android/graphics/")
+                || className.startsWith("android/widget/");
+    }
+
+    /**
      * Tries to determine the output class file, for rewriting the given class file.
      *
      * <p>This will return {@link Optional#absent()} if the class is not part of the program to
@@ -77,7 +94,7 @@ public abstract class AbstractShrinker<T> {
     protected Optional<File> chooseOutputFile(
             @NonNull T klass,
             @NonNull File classFile,
-            @NonNull Collection<TransformInput> inputs,
+            @NonNull Iterable<TransformInput> inputs,
             @NonNull TransformOutputProvider output) {
         String classFilePath = classFile.getAbsolutePath();
 
@@ -150,7 +167,7 @@ public abstract class AbstractShrinker<T> {
     }
 
     /**
-     * Finds existing methods oe fields (graph nodes) which encountered opcodes refer to. Updates
+     * Finds existing methods or fields (graph nodes) which encountered opcodes refer to. Updates
      * the graph with additional edges accordingly.
      */
     protected void resolveReferences(
@@ -159,31 +176,33 @@ public abstract class AbstractShrinker<T> {
             mExecutor.execute(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    T startClass = mGraph.getClassForMember(unresolvedReference.target);
+                    T target = unresolvedReference.target;
+                    T source = unresolvedReference.method;
+                    T startClass = mGraph.getClassForMember(target);
 
                     if (unresolvedReference.opcode == Opcodes.INVOKESPECIAL) {
                         // With invokespecial we disregard the class in target and start walking up
                         // the type hierarchy, starting from the superclass of the caller.
                         startClass =
                                 mGraph.getSuperclass(
-                                        mGraph.getClassForMember(unresolvedReference.method));
+                                        mGraph.getClassForMember(source));
                         checkState(startClass != null);
                     }
 
                     TypeHierarchyTraverser<T> traverser = new TypeHierarchyTraverser<T>(mGraph);
                     for (T currentClass : traverser.preOrderTraversal(startClass)) {
-                        T target = mGraph.findMatchingMethod(
+                        T matchingMethod = mGraph.findMatchingMethod(
                                 currentClass,
-                                unresolvedReference.target);
-                        if (target != null) {
-                            if (!mGraph.isLibraryMember(target)) {
+                                target);
+                        if (matchingMethod != null) {
+                            if (isProgramClass(mGraph.getClassForMember(matchingMethod))) {
                                 mGraph.addDependency(
-                                        unresolvedReference.method,
+                                        source,
                                         currentClass,
                                         DependencyType.REQUIRED_CODE_REFERENCE);
                                 mGraph.addDependency(
-                                        unresolvedReference.method,
-                                        target,
+                                        source,
+                                        matchingMethod,
                                         DependencyType.REQUIRED_CODE_REFERENCE);
                             }
                             return null;
@@ -193,18 +212,22 @@ public abstract class AbstractShrinker<T> {
                     // TODO: Check -dontwarn.
                     String className = mGraph.getClassName(
                             mGraph.getClassForMember(
-                                    unresolvedReference.target));
+                                    target));
                     if (!className.startsWith("sun/misc/Unsafe")) {
                         System.out.println(
                                 String.format(
                                         "Unresolved reference: %s.%s",
                                         className,
-                                        mGraph.getMethodNameAndDesc(unresolvedReference.target)));
+                                        mGraph.getMethodNameAndDesc(target)));
                     }
                     return null;
                 }
             });
         }
+    }
+
+    protected boolean isProgramClass(T klass) {
+        return !mGraph.isLibraryClass(klass);
     }
 
     /**
@@ -270,32 +293,40 @@ public abstract class AbstractShrinker<T> {
      */
     protected void updateClassFiles(
             @NonNull Iterable<T> classesToWrite,
-            @NonNull List<File> classFilesToDelete,
-            @NonNull Collection<TransformInput> inputs,
+            @NonNull Iterable<File> classFilesToDelete,
+            @NonNull Iterable<TransformInput> inputs,
             @NonNull TransformOutputProvider output) throws IOException {
         for (final T klass : classesToWrite) {
-            final File classFile = mGraph.getClassFile(klass);
-            final Optional<File> outputFile = chooseOutputFile(klass, classFile, inputs, output);
+            final File sourceFile = mGraph.getSourceFile(klass);
+            checkState(sourceFile != null, "Program class has no source file.");
+
+            final Optional<File> outputFile = chooseOutputFile(klass, sourceFile, inputs, output);
             if (!outputFile.isPresent()) {
                 // The class is from code we don't control.
                 continue;
             }
             Files.createParentDirs(outputFile.get());
+
+            final Predicate<String> keepInterfacePredicate = new Predicate<String>() {
+                @Override
+                public boolean apply(String input) {
+                    T iface = mGraph.getClassReference(input);
+
+                    return !isProgramClass(iface)
+                            || mGraph.isReachable(iface, CounterSet.SHRINK);
+                }
+            };
+
             mExecutor.execute(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    Files.write(
-                            rewrite(
-                                    mGraph.getClassName(klass),
-                                    classFile,
-                                    mGraph.getReachableMembers(klass, CounterSet.SHRINK),
-                                    new Predicate<String>() {
-                                        @Override
-                                        public boolean apply(String input) {
-                                            return mGraph.keepInterface(input, CounterSet.SHRINK);
-                                        }
-                                    }),
-                            outputFile.get());
+                    byte[] newBytes = rewrite(
+                            mGraph.getClassName(klass),
+                            sourceFile,
+                            mGraph.getReachableMembersLocalNames(klass, CounterSet.SHRINK),
+                            keepInterfacePredicate);
+
+                    Files.write(newBytes, outputFile.get());
                     return null;
                 }
             });
@@ -347,6 +378,14 @@ public abstract class AbstractShrinker<T> {
                     .add("target", target)
                     .add("opcode", opcode)
                     .toString();
+        }
+    }
+
+    public static void logTime(String section, Stopwatch stopwatch) {
+        if (System.getProperty("android.newShrinker.profile") != null) {
+            System.out.println(section + ": " + stopwatch);
+            stopwatch.reset();
+            stopwatch.start();
         }
     }
 }

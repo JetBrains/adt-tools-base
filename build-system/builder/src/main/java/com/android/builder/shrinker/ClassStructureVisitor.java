@@ -16,6 +16,9 @@
 
 package com.android.builder.shrinker;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
@@ -30,12 +33,16 @@ import java.io.File;
  */
 public class ClassStructureVisitor<T> extends ClassVisitor {
 
+    @Nullable
     private final File mClassFile;
     private final ShrinkerGraph<T> mGraph;
 
     private T mClass;
 
-    public ClassStructureVisitor(ShrinkerGraph<T> graph, File classFile, ClassVisitor cv) {
+    public ClassStructureVisitor(
+            @NonNull ShrinkerGraph<T> graph,
+            @Nullable File classFile,
+            @Nullable ClassVisitor cv) {
         super(Opcodes.ASM5, cv);
         mClassFile = classFile;
         mGraph = graph;

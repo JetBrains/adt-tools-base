@@ -16,6 +16,8 @@
 
 package com.android.builder.shrinker;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.annotations.NonNull;
 import com.google.common.base.Objects;
 
@@ -32,8 +34,8 @@ public final class Dependency<T> implements Serializable {
     final DependencyType type;
 
     public Dependency(@NonNull T target, @NonNull DependencyType type) {
-        this.target = target;
-        this.type = type;
+        this.target = checkNotNull(target);
+        this.type = checkNotNull(type);
     }
 
     @Override

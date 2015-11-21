@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
 import com.android.ide.common.internal.WaitableExecutor;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
@@ -76,15 +77,19 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
             @NonNull TransformOutputProvider output,
             @NonNull ImmutableMap<CounterSet, KeepRules> keepRules,
             boolean saveState) throws IOException {
-        mGraph.removeStoredState();
         output.deleteAll();
 
         buildGraph(inputs, referencedClasses);
+
+        Stopwatch stopwatch = Stopwatch.createStarted();
         setCounters(keepRules);
+        logTime("Set counters", stopwatch);
         writeOutput(inputs, output);
+        logTime("Write output", stopwatch);
 
         if (saveState) {
             mGraph.saveState();
+            logTime("Saving state", stopwatch);
         }
     }
 
@@ -98,6 +103,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
         final Set<T> virtualMethods = Sets.newConcurrentHashSet();
         final Set<T> multipleInheritance = Sets.newConcurrentHashSet();
         final Set<UnresolvedReference<T>> unresolvedReferences = Sets.newConcurrentHashSet();
+        Stopwatch stopwatch = Stopwatch.createStarted();
 
         readPlatformJars();
 
@@ -157,11 +163,13 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
             }
         }
         waitForAllTasks();
+        logTime("Read input", stopwatch);
 
         handleOverrides(virtualMethods);
         handleMultipleInheritance(multipleInheritance);
         resolveReferences(unresolvedReferences);
         waitForAllTasks();
+        logTime("Finish graph", stopwatch);
 
         mGraph.checkDependencies();
     }
@@ -182,41 +190,42 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
      */
     private void handleMultipleInheritance(@NonNull Set<T> multipleInheritance) {
         for (final T klass : multipleInheritance) {
+
             mExecutor.execute(new Callable<Void>() {
+                Set<T> methods = mGraph.getMethods(klass);
+
                 @Override
                 public Void call() throws Exception {
+                    if (!isProgramClass(mGraph.getSuperclass(klass))) {
+                        // All the superclass methods are kept anyway.
+                        return null;
+                    }
+
                     T[] interfaces = mGraph.getInterfaces(klass);
-                    Set<T> methods = Sets.newHashSet();
                     // TODO: Handle interface inheritance.
                     for (T iface : interfaces) {
                         for (T method : mGraph.getMethods(iface)) {
-                            methods.add(method);
+                            handleMethod(method);
                         }
-                    }
-
-                    for (T method : methods) {
-                        handleMethod(method);
                     }
                     return null;
                 }
 
                 private void handleMethod(T method) {
-                    T matchingMethod = mGraph.findMatchingMethod(klass, method);
-
-                    //noinspection VariableNotUsedInsideIf
-                    if (matchingMethod != null) {
+                    if (this.methods.contains(method)) {
                         return;
                     }
 
                     try {
                         T current = mGraph.getSuperclass(klass);
                         while (current != null) {
-                            matchingMethod = mGraph.findMatchingMethod(current, method);
+                            if (!isProgramClass(current)) {
+                                // We will not remove the method anyway.
+                                return;
+                            }
+
+                            T matchingMethod = mGraph.findMatchingMethod(current, method);
                             if (matchingMethod != null) {
-                                if (mGraph.isLibraryClass(current)) {
-                                    // We will not remove it anyway.
-                                    return;
-                                }
                                 String name = mGraph.getMethodNameAndDesc(method);
                                 String desc = name.substring(name.indexOf(':') + 1);
                                 name = name.substring(0, name.indexOf(':'));
@@ -229,7 +238,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                                 mGraph.addDependency(fakeMethod, matchingMethod,
                                         DependencyType.REQUIRED_CLASS_STRUCTURE);
 
-                                if (mGraph.isLibraryMember(method)) {
+                                if (!isProgramClass(mGraph.getClassForMember(method))) {
                                     mGraph.addDependency(klass, fakeMethod,
                                             DependencyType.REQUIRED_CLASS_STRUCTURE);
                                 } else {
@@ -287,7 +296,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
 
                         T superMethod = mGraph.findMatchingMethod(klass, method);
                         if (superMethod != null && !superMethod.equals(method)) {
-                            if (mGraph.isLibraryMember(superMethod)) {
+                            if (!isProgramClass(mGraph.getClassForMember(superMethod))) {
                                 // If we override an SDK method, it just has to be there at runtime
                                 // (if the class itself is kept).
                                 mGraph.addDependency(
@@ -422,12 +431,19 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
      */
     private void setCounters(@NonNull ImmutableMap<CounterSet, KeepRules> allKeepRules) {
         // TODO: Support multidex.
-        CounterSet counterSet = CounterSet.SHRINK;
-        KeepRules keepRules = allKeepRules.get(counterSet);
+        final CounterSet counterSet = CounterSet.SHRINK;
+        final KeepRules keepRules = allKeepRules.get(counterSet);
 
-        for (T klass : mGraph.getAllProgramClasses()) {
-            mGraph.addRoots(keepRules.getSymbolsToKeep(klass, mGraph), counterSet);
+        for (final T klass : mGraph.getAllProgramClasses()) {
+            mExecutor.execute(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    mGraph.addRoots(keepRules.getSymbolsToKeep(klass, mGraph), counterSet);
+                    return null;
+                }
+            });
         }
+        waitForAllTasks();
 
         setCounters(counterSet);
     }

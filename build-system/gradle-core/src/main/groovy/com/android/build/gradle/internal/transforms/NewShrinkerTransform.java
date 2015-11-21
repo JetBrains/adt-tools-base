@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import static com.android.builder.shrinker.AbstractShrinker.logTime;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -41,6 +42,7 @@ import com.android.builder.shrinker.JavaSerializationShrinkerGraph;
 import com.android.builder.shrinker.ProguardConfigKeepRulesBuilder;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.sdklib.IAndroidTarget;
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -159,10 +161,11 @@ public class NewShrinkerTransform extends ProguardConfigurable {
             parser.parse(configFile);
         }
 
-        JavaSerializationShrinkerGraph graph =
-                JavaSerializationShrinkerGraph.empty(incrementalDir);
         FullRunShrinker<String> shrinker =
-                new FullRunShrinker<String>(new WaitableExecutor<Void>(), graph, platformJars);
+                new FullRunShrinker<String>(
+                        new WaitableExecutor<Void>(),
+                        JavaSerializationShrinkerGraph.empty(incrementalDir),
+                        platformJars);
 
         // Only save state if incremental mode is enabled.
         boolean saveState = this.isIncremental();
@@ -179,8 +182,11 @@ public class NewShrinkerTransform extends ProguardConfigurable {
             Collection<TransformInput> inputs,
             Collection<TransformInput> referencedInputs,
             TransformOutputProvider output) throws IOException {
+        Stopwatch stopwatch = Stopwatch.createStarted();
         JavaSerializationShrinkerGraph graph =
                 JavaSerializationShrinkerGraph.readFromDir(incrementalDir);
+        logTime("loading state", stopwatch);
+
         IncrementalShrinker<String> shrinker =
                 new IncrementalShrinker<String>(new WaitableExecutor<Void>(), graph);
 

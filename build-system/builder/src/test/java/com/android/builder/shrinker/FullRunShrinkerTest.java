@@ -16,6 +16,7 @@
 
 package com.android.builder.shrinker;
 
+import com.android.annotations.NonNull;
 import com.android.build.api.transform.TransformInput;
 import com.android.builder.shrinker.TestClasses.AbstractClasses;
 import com.android.builder.shrinker.TestClasses.Annotations;
@@ -23,16 +24,19 @@ import com.android.builder.shrinker.TestClasses.Fields;
 import com.android.builder.shrinker.TestClasses.InnerClasses;
 import com.android.builder.shrinker.TestClasses.Interfaces;
 import com.android.builder.shrinker.TestClasses.MultipleOverriddenMethods;
+import com.android.builder.shrinker.TestClasses.Primitives;
 import com.android.builder.shrinker.TestClasses.Reflection;
 import com.android.builder.shrinker.TestClasses.SdkTypes;
 import com.android.builder.shrinker.TestClasses.Signatures;
 import com.android.builder.shrinker.TestClasses.SimpleScenario;
 import com.android.builder.shrinker.TestClasses.StaticMembers;
+import com.android.builder.shrinker.TestClasses.InvalidReferences;
 import com.android.builder.shrinker.TestClasses.SuperCalls;
 import com.android.builder.shrinker.TestClasses.TryCatch;
 import com.android.builder.shrinker.TestClasses.VirtualCalls;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
 import org.junit.Before;
@@ -41,6 +45,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * Tests for {@link FullRunShrinker}.
@@ -53,8 +58,13 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     public void createShrinker() throws Exception {
         mShrinker = new FullRunShrinker<String>(
                 new WaitableExecutor<Void>(),
-                JavaSerializationShrinkerGraph.empty(mIncrementalDir),
+                buildGraph(),
                 getPlatformJars());
+    }
+
+    @NonNull
+    protected ShrinkerGraph<String> buildGraph() throws IOException {
+        return JavaSerializationShrinkerGraph.empty(mIncrementalDir);
     }
 
     @Test
@@ -204,6 +214,8 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
                 "<init>:()V");
         assertClassSkipped("MyInterface");
         assertClassSkipped("MyImpl");
+
+        assertImplements("MyCharSequence", "java/lang/CharSequence");
     }
 
     @Test
@@ -237,6 +249,8 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
                 "<init>:()V");
         assertClassSkipped("MyInterface");
         assertClassSkipped("MyImpl");
+
+        assertImplements("MyCharSequence", "java/lang/CharSequence");
     }
 
     @Test
@@ -274,6 +288,8 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
         assertMembersLeft(
                 "DoesSomething",
                 "doSomething:(Ljava/lang/Object;)V");
+
+        assertImplements("ImplementationFromSuperclass", "test/MyInterface");
     }
 
     @Test
@@ -333,6 +349,8 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
                 "<init>:()V",
                 "doSomething:(Ljava/lang/Object;)V");
         assertClassSkipped("MyCharSequence");
+
+        assertImplements("MyImpl", "test/MyInterface");
     }
 
     @Test
@@ -357,6 +375,8 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
         assertClassSkipped("MyInterface");
         assertMembersLeft("MyImpl", "doSomething:(Ljava/lang/Object;)V");
         assertClassSkipped("MyCharSequence");
+
+        assertDoesntImplement("MyImpl", "test/MyInterface");
     }
 
     @Test
@@ -383,6 +403,8 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
                 "MyImpl",
                 "someOtherMethod:()V");
         assertClassSkipped("MyCharSequence");
+
+        assertDoesntImplement("MyImpl", "test/MyInterface");
     }
 
     @Test
@@ -662,6 +684,32 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     }
 
     @Test
+    public void annotations_keepRules() throws Exception {
+        Files.write(Annotations.main_annotatedClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(Annotations.myAnnotation(), new File(mTestPackageDir, "MyAnnotation.class"));
+        Files.write(Annotations.nested(), new File(mTestPackageDir, "Nested.class"));
+        Files.write(Annotations.myEnum(), new File(mTestPackageDir, "MyEnum.class"));
+        Files.write(TestClasses.emptyClass("SomeClass"), new File(mTestPackageDir, "SomeClass.class"));
+        Files.write(TestClasses.emptyClass("SomeOtherClass"), new File(mTestPackageDir, "SomeOtherClass.class"));
+
+        run(new KeepRules() {
+            @Override
+            public <T> Map<T, DependencyType> getSymbolsToKeep(T klass, ShrinkerGraph<T> graph) {
+                Map<T, DependencyType> result = Maps.newHashMap();
+                for (String annotation : graph.getAnnotations(klass)) {
+                    if (annotation.equals("test/MyAnnotation")) {
+                        result.put(klass, DependencyType.REQUIRED_CLASS_STRUCTURE);
+                    }
+                }
+
+                return result;
+            }
+        });
+
+        assertMembersLeft("Main");
+    }
+
+    @Test
     public void signatures_classSignature() throws Exception {
         // Given:
         Files.write(Signatures.main(), new File(mTestPackageDir, "Main.class"));
@@ -863,13 +911,41 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
         assertMembersLeft("AbstractImpl", "helper:()V");
     }
 
+    @Test
+    public void primitives() throws Exception {
+        // Given:
+        Files.write(Primitives.main(), new File(mTestPackageDir, "Main.class"));
+
+        // When:
+        run("Main", "ldc:()Ljava/lang/Object;", "checkcast:(Ljava/lang/Object;)[I");
+
+        // Then:
+        assertMembersLeft("Main", "ldc:()Ljava/lang/Object;", "checkcast:(Ljava/lang/Object;)[I");
+    }
+
+    @Test
+    public void invalidReferences_sunMiscUnsafe() throws Exception {
+        // Given:
+        Files.write(InvalidReferences.main_sunMiscUnsafe(), new File(mTestPackageDir, "Main.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Then:
+        assertMembersLeft("Main", "main:()V");
+    }
+
     private void run(String className, String... methods) throws IOException {
+        run(new TestKeepRules(className, methods));
+    }
+
+    private void run(KeepRules keepRules) throws IOException {
         mShrinker.run(
                 mInputs,
                 Collections.<TransformInput>emptyList(),
                 mOutput,
                 ImmutableMap.<AbstractShrinker.CounterSet, KeepRules>of(
-                        AbstractShrinker.CounterSet.SHRINK, new TestKeepRules(className, methods)),
+                        AbstractShrinker.CounterSet.SHRINK, keepRules),
                 false);
     }
 }

@@ -16,6 +16,8 @@
 
 package com.android.builder.shrinker;
 
+import static com.android.builder.shrinker.AbstractShrinker.isSdkPackage;
+
 import com.android.annotations.Nullable;
 import com.android.builder.shrinker.AbstractShrinker.UnresolvedReference;
 import com.android.utils.AsmUtils;
@@ -68,7 +70,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
         // We don't create edges for interfaces, because interfaces can be removed by the shrinker,
         // if they are not used.
 
-        if (interfaces.length > 0 && !mGraph.isLibraryClass(mGraph.getClassReference(superName))) {
+        if (interfaces.length > 0) {
             // It's possible the superclass is implementing a method from the interface, we may need
             // to add more edges to the graph to represent this.
             handleMultipleInheritance(mKlass);
@@ -161,14 +163,12 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
         super.visitInnerClass(name, outerName, innerName, access);
     }
 
-    private T handleDeclarationType(T member, Type type) {
+    private void handleDeclarationType(T member, Type type) {
         String className = getClassName(type);
         if (className != null) {
             T classReference = mGraph.getClassReference(className);
             handleDependency(member, classReference, DependencyType.REQUIRED_CLASS_STRUCTURE);
-            return classReference;
         }
-        return null;
     }
 
     private void handleClassSignature(T source, String signature) {
@@ -240,8 +240,9 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
 
         @Override
         public void visitTypeInsn(int opcode, String type) {
-            T classReference = mGraph.getClassReference(getClassName(Type.getObjectType(type)));
-            if (classReference != null) {
+            String className = getClassName(Type.getObjectType(type));
+            if (className != null) {
+                T classReference = mGraph.getClassReference(className);
                 handleDependency(mMethod, classReference, DependencyType.REQUIRED_CODE_REFERENCE);
             }
             super.visitTypeInsn(opcode, type);
@@ -262,8 +263,9 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
         public void visitLdcInsn(Object cst) {
             if (cst instanceof Type) {
                 Type type = Type.getObjectType(((Type) cst).getInternalName());
-                T classReference = mGraph.getClassReference(getClassName(type));
-                if (classReference != null) {
+                String className = getClassName(type);
+                if (className != null) {
+                    T classReference = mGraph.getClassReference(className);
                     handleDependency(
                             mMethod,
                             classReference,
@@ -280,14 +282,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             // Just ignore it, we know arrays not declared in the program, so there's no point in
             // creating the dependency.
             Type type = Type.getType(owner);
-            if (type.getSort() != Type.ARRAY
-                    // TODO: Add a flag to disable these checks?
-                    && !owner.startsWith("java/")
-                    && !owner.startsWith("android/os/")
-                    && !owner.startsWith("android/view/")
-                    && !owner.startsWith("android/content/")
-                    && !owner.startsWith("android/graphics/")
-                    && !owner.startsWith("android/widget/")) {
+            if (type.getSort() != Type.ARRAY && !isSdkPackage(owner)) {
                 handleDependency(
                         mMethod,
                         mGraph.getClassReference(owner),
@@ -355,15 +350,16 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
         @Override
         public void visitEnum(String name, String desc, String value) {
             String internalName = getClassName(desc);
-
-            handleDependency(
-                    mSource,
-                    mGraph.getClassReference(internalName),
-                    DependencyType.REQUIRED_CLASS_STRUCTURE);
-            handleDependency(
-                    mSource,
-                    mGraph.getMemberReference(internalName, value, desc),
-                    DependencyType.REQUIRED_CLASS_STRUCTURE);
+            if (internalName != null) {
+                handleDependency(
+                        mSource,
+                        mGraph.getClassReference(internalName),
+                        DependencyType.REQUIRED_CLASS_STRUCTURE);
+                handleDependency(
+                        mSource,
+                        mGraph.getMemberReference(internalName, value, desc),
+                        DependencyType.REQUIRED_CLASS_STRUCTURE);
+            }
 
             super.visitEnum(name, desc, value);
         }
@@ -371,10 +367,12 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
         @Override
         public AnnotationVisitor visitAnnotation(String name, String desc) {
             String internalName = getClassName(desc);
-            handleDependency(
-                    mSource,
-                    mGraph.getClassReference(internalName),
-                    DependencyType.REQUIRED_CLASS_STRUCTURE);
+            if (internalName != null) {
+                handleDependency(
+                        mSource,
+                        mGraph.getClassReference(internalName),
+                        DependencyType.REQUIRED_CLASS_STRUCTURE);
+            }
             return new DependencyFinderAnnotationVisitor(
                     mAnnotationName,
                     mSource,
@@ -410,6 +408,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
             super.visitClassType(name);
         }
 
+        @SuppressWarnings("EmptyMethod")
         @Override
         public void visitInnerClassType(String name) {
             // TODO: support inner classes.

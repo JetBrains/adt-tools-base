@@ -2483,6 +2483,135 @@ public class TestClasses implements Opcodes {
         }
     }
 
+    public static class Primitives {
+        public static byte[] main() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            cw.visitSource("Main.java", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(22, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null, l0, l1,
+                        0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "ldc", "()Ljava/lang/Object;", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(24, l0);
+                mv.visitLdcInsn(Type.getType("[I"));
+                mv.visitInsn(ARETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null, l0, l1, 0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "checkcast", "(Ljava/lang/Object;)[I", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(28, l0);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitTypeInsn(CHECKCAST, "[I");
+                mv.visitTypeInsn(CHECKCAST, "[I");
+                mv.visitInsn(ARETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null, l0, l1,
+                        0);
+                mv.visitLocalVariable("o", "Ljava/lang/Object;", null, l0, l1, 1);
+                mv.visitMaxs(1, 2);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+    }
+
+    public static class InvalidReferences {
+        public static byte[] main_sunMiscUnsafe() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            cw.visitSource("Main.java", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(24, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null, l0, l1,
+                        0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "main", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(26, l0);
+                mv.visitMethodInsn(INVOKESTATIC, "sun/misc/Unsafe", "getUnsafe", "()Lsun/misc/Unsafe;",
+                        false);
+                mv.visitVarInsn(ASTORE, 1);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLineNumber(27, l1);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "sun/misc/Unsafe", "addressSize", "()I", false);
+                mv.visitInsn(POP);
+                Label l2 = new Label();
+                mv.visitLabel(l2);
+                mv.visitLineNumber(28, l2);
+                mv.visitInsn(RETURN);
+                Label l3 = new Label();
+                mv.visitLabel(l3);
+                mv.visitLocalVariable("this", "Ltest/Main;", null, l0, l3,
+                        0);
+                mv.visitLocalVariable("unsafe", "Lsun/misc/Unsafe;", null, l1, l3, 1);
+                mv.visitMaxs(1, 2);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+    }
+
     public static byte[] emptyClass(String name) throws Exception {
 
         ClassWriter cw = new ClassWriter(0);

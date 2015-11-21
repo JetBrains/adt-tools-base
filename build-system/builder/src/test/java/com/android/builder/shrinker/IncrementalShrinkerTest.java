@@ -118,6 +118,13 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
         assertClassSkipped("NotUsed");
 
         assertNotEquals(mainBytes, Files.toByteArray(getOutputClassFile("Main")));
+
+        Files.write(Cycle.main1(), new File(mTestPackageDir, "Main.class"));
+        incrementalRun("Main");
+        assertMembersLeft("Main", "main:()V");
+        assertMembersLeft("CycleOne", "<init>:()V");
+        assertMembersLeft("CycleTwo", "<init>:()V");
+        assertClassSkipped("NotUsed");
     }
 
     private void fullRun(String className, String... methods) throws IOException {

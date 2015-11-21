@@ -32,4 +32,8 @@ public class AsmUtils {
     public static String toInternalName(String className) {
         return className.replace('.', '/');
     }
+
+    public static String getFullMemberName(String className, String memberName, String desc) {
+        return String.format("%s.%s:%s", className, memberName, desc);
+    }
 }

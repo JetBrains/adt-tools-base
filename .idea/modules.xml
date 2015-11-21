@@ -21,7 +21,6 @@
       <module fileurl="file://$PROJECT_DIR$/build-system/gradle-core/gradle-core.iml" filepath="$PROJECT_DIR$/build-system/gradle-core/gradle-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/gradle-experimental/gradle-experimental.iml" filepath="$PROJECT_DIR$/build-system/gradle-experimental/gradle-experimental.iml" />
       <module fileurl="file://$PROJECT_DIR$/instant-run/instant-run-annotations/instant-run-annotations.iml" filepath="$PROJECT_DIR$/instant-run/instant-run-annotations/instant-run-annotations.iml" />
-      <module fileurl="file://$PROJECT_DIR$/instant-run/instant-run-annotations/instant-run-annotations.iml" filepath="$PROJECT_DIR$/instant-run/instant-run-annotations/instant-run-annotations.iml" />
       <module fileurl="file://$PROJECT_DIR$/instant-run/instant-run-client/instant-run-client.iml" filepath="$PROJECT_DIR$/instant-run/instant-run-client/instant-run-client.iml" />
       <module fileurl="file://$PROJECT_DIR$/instant-run/instant-run-common/instant-run-common.iml" filepath="$PROJECT_DIR$/instant-run/instant-run-common/instant-run-common.iml" />
       <module fileurl="file://$PROJECT_DIR$/instant-run/instant-run-runtime/instant-run-runtime.iml" filepath="$PROJECT_DIR$/instant-run/instant-run-runtime/instant-run-runtime.iml" />

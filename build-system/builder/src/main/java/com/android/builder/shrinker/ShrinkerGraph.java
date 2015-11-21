@@ -16,8 +16,10 @@
 
 package com.android.builder.shrinker;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.shrinker.AbstractShrinker.CounterSet;
+import com.android.ide.common.internal.WaitableExecutor;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,79 +31,109 @@ import java.util.Set;
  *
  * @param <T> Reference to a class member.
  */
-interface ShrinkerGraph<T> {
+public interface ShrinkerGraph<T> {
 
-    File getClassFile(T klass);
+    /**
+     * Returns the source file that this class was read from. Return null for library classes.
+     */
+    @Nullable
+    File getSourceFile(@NonNull T klass);
 
-    Iterable<T> getReachableClasses(CounterSet counterSet);
+    @NonNull
+    Set<T> getReachableClasses(@NonNull CounterSet counterSet);
 
-    Set<String> getReachableMembers(T klass, CounterSet counterSet);
+    /**
+     * Returns all the reachable members of the given class, in the name:desc format, without the
+     * class name at the front.
+     */
+    @NonNull
+    Set<String> getReachableMembersLocalNames(@NonNull T klass, @NonNull CounterSet counterSet);
 
-    Set<Dependency<T>> getDependencies(T member);
+    @NonNull
+    Set<Dependency<T>> getDependencies(@NonNull T member);
 
-    Set<T> getMethods(T klass);
+    @NonNull
+    Set<T> getMethods(@NonNull T klass);
 
-    Set<T> getFields(T klass);
+    @NonNull
+    Set<T> getFields(@NonNull T klass);
 
-    T addClass(String name, String superName, String[] interfaces, int access, File classFile);
+    @NonNull
+    T addClass(
+            @NonNull String name,
+            @Nullable String superName,
+            @Nullable String[] interfaces,
+            int modifiers,
+            @Nullable File classFile);
 
-    T addMember(T owner, String name, String desc, int modifiers);
+    @NonNull
+    T addMember(@NonNull T owner, @NonNull String name, @NonNull String desc, int modifiers);
 
-    T getClassForMember(T member);
+    @NonNull
+    T getClassForMember(@NonNull T member);
 
-    T getClassReference(String className);
+    @NonNull
+    T getClassReference(@NonNull String className);
 
-    T getMemberReference(String className, String memberName, String methodDesc);
+    @NonNull
+    T getMemberReference(@NonNull String className, @NonNull String memberName, @NonNull String desc);
 
-    boolean incrementAndCheck(T member, DependencyType dependencyType, CounterSet counterSet);
+    boolean incrementAndCheck(
+            @NonNull T memberOrClass,
+            @NonNull DependencyType dependencyType,
+            @NonNull CounterSet counterSet);
 
-    void addDependency(T source, T target, DependencyType type);
-
-    void removeStoredState() throws IOException;
+    void addDependency(@NonNull T source, @NonNull T target, @NonNull DependencyType type);
 
     void saveState() throws IOException;
 
-    boolean isReachable(T member, CounterSet counterSet);
+    boolean isReachable(@NonNull T klass, @NonNull CounterSet counterSet);
 
-    void removeAllCodeDependencies(T source);
-
-    @Nullable
-    T getSuperclass(T klass) throws ClassLookupException;
+    void removeAllCodeDependencies(@NonNull T source);
 
     @Nullable
-    T findMatchingMethod(T klass, T method);
+    T getSuperclass(@NonNull T klass) throws ClassLookupException;
 
-    boolean isLibraryMember(T method);
+    @Nullable
+    T findMatchingMethod(@NonNull T klass, @NonNull T method);
 
-    boolean isLibraryClass(T klass);
+    boolean isLibraryClass(@NonNull T klass);
 
+    @NonNull
     T[] getInterfaces(T klass);
 
     void checkDependencies();
 
-    boolean keepInterface(String klass, CounterSet counterSet);
-
+    @NonNull
     Iterable<T> getAllProgramClasses();
 
-    String getClassName(T classOrMember);
+    @NonNull
+    String getClassName(@NonNull T klass);
 
-    String getMethodNameAndDesc(T method);
+    @NonNull
+    String getMethodNameAndDesc(@NonNull T method);
 
-    String getFieldName(T field);
+    @NonNull
+    String getFieldName(@NonNull T field);
 
-    String getFieldDesc(T field);
+    @NonNull
+    String getFieldDesc(@NonNull T field);
 
-    int getClassModifiers(T klass);
+    int getClassModifiers(@NonNull T klass);
 
-    int getMemberModifiers(T member);
+    int getMemberModifiers(@NonNull T member);
 
-    void addAnnotation(T klass, String desc);
+    void addAnnotation(@NonNull T classOrMember, @NonNull String annotationName);
 
-    Iterable<String> getAnnotations(T classOrMember);
+    @NonNull
+    Iterable<String> getAnnotations(@NonNull T classOrMember);
 
-    void addRoots(Map<T, DependencyType> symbolsToKeep, CounterSet counterSet);
+    void addRoots(
+            @NonNull Map<T, DependencyType> symbolsToKeep,
+            @NonNull CounterSet counterSet);
 
-    Map<T,DependencyType> getRoots(CounterSet counterSet);
+    @NonNull
+    Map<T,DependencyType> getRoots(@NonNull CounterSet counterSet);
 
-    void clearCounters();
+    void clearCounters(@NonNull WaitableExecutor<Void> executor);
 }
