@@ -172,6 +172,8 @@ model {
                         assertThat(cppSettings.compilerFlags).doesNotContain(expectedCppFlag)
                     }
                 }
+                assertThat(cSettings.compilerFlags).contains("-I" + project.file("src/main/headers"))
+                assertThat(cppSettings.compilerFlags).contains("-I" + project.file("src/main/headers"))
             }
         }
     }

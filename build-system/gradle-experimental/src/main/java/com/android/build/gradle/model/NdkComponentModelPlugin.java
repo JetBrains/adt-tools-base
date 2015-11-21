@@ -492,6 +492,10 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 Set<File> srcFolders = Sets.newHashSet();
                 nativeLibrary.setGroupName(binary.getName());
 
+                final List<String> cFlags = BinaryToolHelper.getCCompiler(nativeBinary).getArgs();
+                final List<String> cppFlags =
+                        BinaryToolHelper.getCppCompiler(nativeBinary).getArgs();
+
                 for (LanguageSourceSet sourceSet : nativeBinary.getSources()) {
                     srcFolders.addAll(sourceSet.getSource().getSrcDirs());
                     if (sourceSet instanceof HeaderExportingSourceSet) {
@@ -501,13 +505,16 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                         for (File headerDir :headerDirs) {
                             if (!nativeLibrary.getExportedHeaders().contains(headerDir)) {
                                 nativeLibrary.getExportedHeaders().add(headerDir);
+
+                                // Exported headers are not part of the binary's flag.  Need to add
+                                // it manually.
+                                cFlags.add("-I" + headerDir);
+                                cppFlags.add("-I" + headerDir);
                             }
                         }
                     }
                 }
-                final List<String> cFlags = BinaryToolHelper.getCCompiler(nativeBinary).getArgs();
-                final List<String> cppFlags =
-                        BinaryToolHelper.getCppCompiler(nativeBinary).getArgs();
+
                 for (final File srcFolder : srcFolders) {
                     nativeLibrary.getFolders().create(
                             new Action<NativeSourceFolder>() {
