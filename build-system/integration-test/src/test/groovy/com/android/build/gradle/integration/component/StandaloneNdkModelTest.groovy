@@ -70,6 +70,13 @@ model {
     android.ndk {
         moduleName = "hello-jni"
     }
+    android.sources {
+        main {
+            jni {
+                exportedHeaders.srcDir("src/main/headers")
+            }
+        }
+    }
 }
 """
         NativeAndroidProject model =
@@ -124,6 +131,13 @@ model {
             }
         }
     }
+    android.sources {
+        main {
+            jni {
+                exportedHeaders.srcDir("src/main/headers")
+            }
+        }
+    }
 }
 """
         NativeAndroidProject model =
@@ -167,6 +181,16 @@ model {
             Set<String> buildTypes,
             Set<String> productFlavors) {
         Collection<NativeArtifact> artifacts = model.getArtifacts()
+
+        assertThat(model.getFileExtensions()).containsEntry("c", "c")
+        assertThat(model.getFileExtensions()).containsEntry("C", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("CPP", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("c++", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cc", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cp", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cpp", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cxx", "c++")
+
         productFlavors = productFlavors.isEmpty() ? ImmutableSet.of("") : productFlavors
         for(List<String> combo : Sets.cartesianProduct(buildTypes, productFlavors, ABIS)) {
             String buildType = combo.get(0)
@@ -184,6 +208,7 @@ model {
                 }
             }
 
+            assertThat(artifact.groupName).isEqualTo(variant)
             assertThat(artifact.outputFile).hasName("libhello-jni.so")
             assertThat(artifact.sourceFiles).isEmpty()
             assertThat(artifact.toolChain).endsWith(abi)
@@ -195,6 +220,7 @@ model {
                             .collect { project.file("src/" + it + "/jni") }
 
             assertThat(artifact.sourceFolders.collect { it.getFolderPath() }).containsAllIn(expectedSrc)
+            assertThat(artifact.exportedHeaders).containsExactly(project.file("src/main/headers"))
         }
     }
 }

@@ -45,6 +45,10 @@ public interface NativeLibrary extends Named {
     @NonNull
     List<String> getArgs();
 
+    @Nullable
+    String getGroupName();
+    void setGroupName(String groupName);
+
     /**
      * Target ABI.
      */
@@ -70,6 +74,9 @@ public interface NativeLibrary extends Named {
      */
     @NonNull
     ModelSet<NativeSourceFile> getFiles();
+
+    @NonNull
+    List<File> getExportedHeaders();
 
     /**
      * The output file.

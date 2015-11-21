@@ -38,9 +38,13 @@ public class NativeLibraryValue {
     @Nullable
     String toolchain;
     @Nullable
+    String groupName;
+    @Nullable
     Collection<NativeSourceFolderValue> folders;
     @Nullable
     Collection<NativeSourceFileValue> files;
+    @Nullable
+    Collection<File> exportedHeaders;
     @Nullable
     File output;
 
@@ -61,6 +65,9 @@ public class NativeLibraryValue {
                 });
             }
         }
+
+        library.setGroupName(groupName);
+
         if (files != null) {
             for (final NativeSourceFileValue folder : files) {
                 library.getFiles().create(new Action<NativeSourceFile>() {
@@ -70,6 +77,9 @@ public class NativeLibraryValue {
                     }
                 });
             }
+        }
+        if (exportedHeaders != null) {
+            library.getExportedHeaders().addAll(exportedHeaders);
         }
         library.setOutput(output);
     }

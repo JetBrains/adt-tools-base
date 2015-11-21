@@ -84,7 +84,9 @@ model {
             "cCompilerExecutable" : "clang",
             "cppCompilerExecutable" : "clang++"
         }
-    }
+    },
+    "cFileExtensions" : ["c"],
+    "cppFileExtensions" : ["cpp"]
 }
 """
         NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
@@ -153,6 +155,14 @@ model {
         assertThat(project.file("config1.json")).exists()
 
         NativeAndroidProject model = project.executeAndReturnModel(NativeAndroidProject.class, "assemble")
+        assertThat(model.getFileExtensions()).containsEntry("c", "c")
+        assertThat(model.getFileExtensions()).containsEntry("C", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("CPP", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("c++", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cc", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cp", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cpp", "c++")
+        assertThat(model.getFileExtensions()).containsEntry("cxx", "c++")
 
         assertThat(model.artifacts).hasSize(2)
         for (NativeArtifact artifact : model.artifacts) {
@@ -190,6 +200,8 @@ apply plugin: 'com.android.model.external'
 model {
     nativeBuildConfig {
         buildFiles.addAll([file("CMakeLists.txt")])
+        CFileExtensions.add("c")
+        cppFileExtensions.add("cpp")
     }
     nativeBuildConfig.libraries {
         create("foo") {
@@ -231,6 +243,9 @@ model {
         assertThat(project.file("output.txt")).exists()
 
         assertThat(model.artifacts).hasSize(1)
+
+        assertThat(model.getFileExtensions()).containsEntry("c", "c")
+        assertThat(model.getFileExtensions()).containsEntry("cpp", "c++")
 
         NativeArtifact artifact = model.artifacts.first()
         assertThat(artifact.getToolChain()).isEqualTo("toolchain1")

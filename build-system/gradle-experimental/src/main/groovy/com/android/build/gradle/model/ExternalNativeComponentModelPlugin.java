@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.gson.NativeBuildConfigValue;
 import com.android.build.gradle.managed.JsonConfigFile;
 import com.android.build.gradle.managed.NativeBuildConfig;
 import com.android.build.gradle.managed.NativeLibrary;
+import com.android.build.gradle.ndk.internal.NdkConfiguration;
 import com.android.utils.StringHelper;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -43,6 +44,7 @@ import org.gradle.api.tasks.Exec;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.plugins.ComponentModelBasePlugin;
 import org.gradle.model.Defaults;
+import org.gradle.model.Finalize;
 import org.gradle.model.Model;
 import org.gradle.model.ModelMap;
 import org.gradle.model.ModelSet;
@@ -140,6 +142,17 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                         new FileReader(configFile.getConfig()),
                         NativeBuildConfigValue.class);
                 jsonConfig.copyTo(config);
+            }
+        }
+
+        @Finalize
+        static void finalizeNativeBuildConfig(NativeBuildConfig config) {
+            // Configure default file extensions if not already set by user.
+            if (config.getCFileExtensions().isEmpty()) {
+                config.getCFileExtensions().addAll(NdkConfiguration.C_FILE_EXTENSIONS);
+            }
+            if (config.getCppFileExtensions().isEmpty()) {
+                config.getCppFileExtensions().addAll(NdkConfiguration.CPP_FILE_EXTENSIONS);
             }
         }
 

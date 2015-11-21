@@ -445,6 +445,10 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 NativeBuildConfig config,
                 ModelMap<DefaultAndroidBinary> binaries,
                 final NdkHandler ndkHandler) {
+
+            config.getCFileExtensions().addAll(NdkConfiguration.C_FILE_EXTENSIONS);
+            config.getCppFileExtensions().addAll(NdkConfiguration.CPP_FILE_EXTENSIONS);
+
             for (final DefaultAndroidBinary binary : binaries.values()) {
                 for (final NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
                     if (!(nativeBinary instanceof SharedLibraryBinarySpec)) {
@@ -453,34 +457,9 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                     final String abi = nativeBinary.getTargetPlatform().getName();
                     config.getLibraries().create(
                             binary.getName() + '-' + abi,
-                            new Action<NativeLibrary>() {
-                                @Override
-                                public void execute(NativeLibrary nativeLibrary) {
-                                    nativeLibrary.setOutput(
-                                            ((SharedLibraryBinarySpec) nativeBinary).getSharedLibraryFile());
-                                    Set<File> srcFolders = Sets.newHashSet();
-
-                                    for (LanguageSourceSet sourceSet : nativeBinary.getSources()) {
-                                        srcFolders.addAll(sourceSet.getSource().getSrcDirs());
-                                    }
-                                    final List<String> cFlags =
-                                            BinaryToolHelper.getCCompiler(nativeBinary).getArgs();
-                                    final List<String> cppFlags =
-                                            BinaryToolHelper.getCppCompiler(nativeBinary).getArgs();
-                                    for (final File srcFolder : srcFolders) {
-                                        nativeLibrary.getFolders().create(
-                                                new Action<NativeSourceFolder>() {
-                                                    @Override
-                                                    public void execute(NativeSourceFolder nativeSourceFolder) {
-                                                        nativeSourceFolder.setSrc(srcFolder);
-                                                        nativeSourceFolder.getCFlags().addAll(cFlags);
-                                                        nativeSourceFolder.getCppFlags().addAll(cppFlags);
-                                                    }
-                                                });
-                                    }
-                                    nativeLibrary.setToolchain("ndk-" + abi);
-                                }
-                            });
+                            new CreateNativeLibraryAction(
+                                    binary,
+                                    (SharedLibraryBinarySpec) nativeBinary));
                 }
             }
             for (final Abi abi : ndkHandler.getSupportedAbis()) {
@@ -494,6 +473,57 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                         ndkHandler.getCppCompiler(abi));
                             }
                         });
+            }
+        }
+        private static class CreateNativeLibraryAction implements Action<NativeLibrary> {
+            @NonNull
+            private final DefaultAndroidBinary binary;
+            @NonNull
+            private final SharedLibraryBinarySpec nativeBinary;
+
+            public CreateNativeLibraryAction(
+                    @NonNull DefaultAndroidBinary binary,
+                    @NonNull SharedLibraryBinarySpec nativeBinary) {
+                this.binary = binary;
+                this.nativeBinary = nativeBinary;
+            }
+
+            @Override
+            public void execute(NativeLibrary nativeLibrary) {
+                final String abi = nativeBinary.getTargetPlatform().getName();
+
+                nativeLibrary.setOutput(nativeBinary.getSharedLibraryFile());
+                Set<File> srcFolders = Sets.newHashSet();
+                nativeLibrary.setGroupName(binary.getName());
+
+                for (LanguageSourceSet sourceSet : nativeBinary.getSources()) {
+                    srcFolders.addAll(sourceSet.getSource().getSrcDirs());
+                    if (sourceSet instanceof HeaderExportingSourceSet) {
+                        Set<File> headerDirs =
+                                ((HeaderExportingSourceSet) sourceSet).getExportedHeaders()
+                                        .getSrcDirs();
+                        for (File headerDir :headerDirs) {
+                            if (!nativeLibrary.getExportedHeaders().contains(headerDir)) {
+                                nativeLibrary.getExportedHeaders().add(headerDir);
+                            }
+                        }
+                    }
+                }
+                final List<String> cFlags = BinaryToolHelper.getCCompiler(nativeBinary).getArgs();
+                final List<String> cppFlags =
+                        BinaryToolHelper.getCppCompiler(nativeBinary).getArgs();
+                for (final File srcFolder : srcFolders) {
+                    nativeLibrary.getFolders().create(
+                            new Action<NativeSourceFolder>() {
+                                @Override
+                                public void execute(NativeSourceFolder nativeSourceFolder) {
+                                    nativeSourceFolder.setSrc(srcFolder);
+                                    nativeSourceFolder.getCFlags().addAll(cFlags);
+                                    nativeSourceFolder.getCppFlags().addAll(cppFlags);
+                                }
+                            });
+                }
+                nativeLibrary.setToolchain("ndk-" + abi);
             }
         }
 
