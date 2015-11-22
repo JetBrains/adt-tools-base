@@ -299,7 +299,7 @@ public class InstantRunVerifierTransform extends Transform {
             @NonNull final InstantRunVerifier.ClassBytesProvider originalClass ,
             @NonNull final InstantRunVerifier.ClassBytesProvider updatedClass) throws IOException {
         if (!name.endsWith(SdkConstants.DOT_CLASS)) {
-            return null;
+            return InstantRunVerifierStatus.COMPATIBLE;
         }
         InstantRunVerifierStatus status = ThreadRecorder.get().record(
                 ExecutionType.TASK_FILE_VERIFICATION,

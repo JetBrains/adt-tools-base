@@ -177,6 +177,8 @@ public class InstantRunTransform extends Transform {
                                 .entrySet()) {
 
                             File inputFile = fileEntry.getKey();
+                            if (!inputFile.getName().endsWith(SdkConstants.DOT_CLASS))
+                                continue;
                             switch (fileEntry.getValue()) {
                                 case ADDED:
                                     // a new file was added, we only generate the classes.2 format
