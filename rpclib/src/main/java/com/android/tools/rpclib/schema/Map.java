@@ -17,11 +17,10 @@ package com.android.tools.rpclib.schema;
 
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
-import com.intellij.util.containers.HashMap;
-
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 
 public final class Map extends Type {
 
@@ -59,7 +58,7 @@ public final class Map extends Type {
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
         int size = (int) d.uint32();
-        HashMap<Object, Object> map = new HashMap<Object, Object>();
+        LinkedHashMap<Object, Object> map = new LinkedHashMap<Object, Object>();
         for (int i = 0; i < size; i++) {
             map.put(mKeyType.decodeValue(d), mValueType.decodeValue(d));
         }
