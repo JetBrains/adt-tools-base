@@ -116,4 +116,19 @@ public final class Entity {
         }
         return mSignature;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        } else if (!(obj instanceof Entity)) {
+            return false;
+        }
+        return signature().equals(((Entity)obj).signature());
+    }
+
+    @Override
+    public int hashCode() {
+        return signature().hashCode();
+    }
 }
