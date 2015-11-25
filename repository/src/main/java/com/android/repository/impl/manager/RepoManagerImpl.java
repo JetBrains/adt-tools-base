@@ -22,6 +22,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.FallbackRemoteRepoLoader;
+import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.ProgressRunner;
 import com.android.repository.api.RemotePackage;
@@ -44,6 +45,7 @@ import org.w3c.dom.ls.LSResourceResolver;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 
@@ -91,9 +93,14 @@ public class RepoManagerImpl extends RepoManager {
     private RepositoryPackages mPackages = new RepositoryPackages();
 
     /**
-     * When a load last happened.
+     * When we last loaded the remote packages.
      */
-    private long mLastRefreshMs;
+    private long mLastRemoteRefreshMs;
+
+    /**
+     * When we last loaded the local packages.
+     */
+    private long mLastLocalRefreshMs;
 
     /**
      * The task used to load packages. If non-null, a load is currently in progress.
@@ -110,6 +117,16 @@ public class RepoManagerImpl extends RepoManager {
      * operation.
      */
     private final FileOp mFop;
+
+    /**
+     * Listeners that will be called when the known local packages change.
+     */
+    private final List<RepoLoadedCallback> mLocalListeners = Lists.newArrayList();
+
+    /**
+     * Listeners that will be called when the known remote packages change.
+     */
+    private final List<RepoLoadedCallback> mRemoteListeners = Lists.newArrayList();
 
     /**
      * Create a new {@code RepoManagerImpl}. Before anything can be loaded, at least a local path
@@ -131,8 +148,8 @@ public class RepoManagerImpl extends RepoManager {
 
     /**
      * {@inheritDoc} This calls {@link  #markInvalid()}, so a complete load will occur the next time
-     * {@link #load(long, List, List, List, boolean, ProgressRunner, Downloader,
-     * SettingsController, boolean)} is called.
+     * {@link #load(long, List, List, List, ProgressRunner, Downloader, SettingsController,
+     * boolean)} is called.
      */
     @Override
     public void setFallbackLocalRepoLoader(@Nullable FallbackLocalRepoLoader fallback) {
@@ -142,8 +159,8 @@ public class RepoManagerImpl extends RepoManager {
 
     /**
      * {@inheritDoc} This calls {@link  #markInvalid()}, so a complete load will occur the next time
-     * {@link #load(long, List, List, List, boolean, ProgressRunner, Downloader,
-     * SettingsController, boolean)} is called.
+     * {@link #load(long, List, List, List, ProgressRunner, Downloader, SettingsController,
+     * boolean)} is called.
      */
     @Override
     public void setFallbackRemoteRepoLoader(@Nullable FallbackRemoteRepoLoader remote) {
@@ -153,8 +170,8 @@ public class RepoManagerImpl extends RepoManager {
 
     /**
      * {@inheritDoc} This calls {@link  #markInvalid()}, so a complete load will occur the next time
-     * {@link #load(long, List, List, List, boolean, ProgressRunner, Downloader,
-     * SettingsController, boolean)} is called.
+     * {@link #load(long, List, List, List, ProgressRunner, Downloader, SettingsController,
+     * boolean)} is called.
      */
     @Override
     public void setLocalPath(@Nullable File path) {
@@ -164,8 +181,8 @@ public class RepoManagerImpl extends RepoManager {
 
     /**
      * {@inheritDoc} This calls {@link  #markInvalid()}, so a complete load will occur the next time
-     * {@link #load(long, List, List, List, boolean, ProgressRunner, Downloader,
-     * SettingsController, boolean)} is called.
+     * {@link #load(long, List, List, List, ProgressRunner, Downloader, SettingsController,
+     * boolean)} is called.
      */
     @Override
     public void registerSourceProvider(@NonNull RepositorySourceProvider provider) {
@@ -183,7 +200,7 @@ public class RepoManagerImpl extends RepoManager {
     @Override
     @NonNull
     public Set<RepositorySource> getSources(@Nullable Downloader downloader,
-            @Nullable SettingsController settings, @Nullable ProgressIndicator progress,
+            @Nullable SettingsController settings, @NonNull ProgressIndicator progress,
             boolean forceRefresh) {
         Set<RepositorySource> result = Sets.newHashSet();
         for (RepositorySourceProvider provider : mSourceProviders) {
@@ -200,8 +217,8 @@ public class RepoManagerImpl extends RepoManager {
 
     /**
      * {@inheritDoc} This calls {@link  #markInvalid()}, so a complete load will occur the next time
-     * {@link #load(long, List, List, List, boolean, ProgressRunner, Downloader,
-     * SettingsController, boolean)} is called.
+     * {@link #load(long, List, List, List, ProgressRunner, Downloader, SettingsController,
+     * boolean)} is called.
      */
     @Override
     public void registerSchemaModule(@NonNull SchemaModule module) {
@@ -211,7 +228,8 @@ public class RepoManagerImpl extends RepoManager {
 
     @Override
     public void markInvalid() {
-        mLastRefreshMs = 0;
+        mLastRemoteRefreshMs = 0;
+        mLastLocalRefreshMs = 0;
     }
 
     @Override
@@ -243,7 +261,7 @@ public class RepoManagerImpl extends RepoManager {
             @Nullable SettingsController settings,
             boolean sync) {
         // If we're not going to refresh, just run the callbacks.
-        if (System.currentTimeMillis() - mLastRefreshMs < cacheExpirationMs) {
+        if (checkExpiration(mLocalPath != null, downloader != null, cacheExpirationMs)) {
             for (RepoLoadedCallback localComplete : onLocalComplete) {
                 runner.runSyncWithoutProgress(new CallbackRunnable(localComplete, mPackages));
             }
@@ -321,6 +339,33 @@ public class RepoManagerImpl extends RepoManager {
     }
 
     /**
+     * Checks to see whether the local and/or remote package caches have expired and should
+     * be reloaded.
+     *
+     * @param checkLocal Whether we should check whether the local packages have expired.
+     * @param checkRemote Whether we should check whether the remote packages have expired.
+     * @param timeoutPeriod The timeout to use for the cache.
+     * @return {@code true} if {@code checkLocal} is true and the local cache was last refreshed
+     * at least {@code timeoutPeriod} ago, and/or if {@code checkRemote} is true and the remote
+     * cache was last refreshed at least {@code timeoutPeriod} ago.
+     */
+    private boolean checkExpiration(boolean checkLocal, boolean checkRemote, long timeoutPeriod) {
+        long time = System.currentTimeMillis();
+        return (!checkLocal || mLastLocalRefreshMs + timeoutPeriod > time) &&
+                (!checkRemote || mLastRemoteRefreshMs + timeoutPeriod > time);
+    }
+
+    @Override
+    public void registerLocalChangeListener(@NonNull RepoLoadedCallback listener) {
+        mLocalListeners.add(listener);
+    }
+
+    @Override
+    public void registerRemoteChangeListener(@NonNull RepoLoadedCallback listener) {
+        mRemoteListeners.add(listener);
+    }
+
+    /**
      * A task to load the local and remote repos.
      */
     private class LoadTask implements ProgressRunner.ProgressRunnable {
@@ -347,7 +392,7 @@ public class RepoManagerImpl extends RepoManager {
 
         /**
          * Add callbacks to this task (if e.g. {@link #load(long, List, List, List,
-         * boolean, ProgressRunner, Downloader, SettingsController, boolean)} is called again while
+         * ProgressRunner, Downloader, SettingsController, boolean)} is called again while
          * a task is already running.
          */
         public void addCallbacks(@NonNull List<RepoLoadedCallback> onLocalComplete,
@@ -374,7 +419,13 @@ public class RepoManagerImpl extends RepoManager {
                     LocalRepoLoader local = new LocalRepoLoader(mLocalPath, RepoManagerImpl.this,
                             mFallbackLocalRepoLoader, mFop);
                     indicator.setText("Loading local repository...");
-                    packages.setLocalPkgInfos(local.getPackages(indicator));
+                    Map<String, LocalPackage> newLocals = local.getPackages(indicator);
+                    packages.setLocalPkgInfos(newLocals);
+                    if (mPackages == null || !newLocals.equals(mPackages.getLocalPackages())) {
+                        for (RepoLoadedCallback listener : mLocalListeners) {
+                            listener.doRun(packages);
+                        }
+                    }
                     indicator.setFraction(0.25);
                 }
                 if (indicator.isCanceled()) {
@@ -398,6 +449,15 @@ public class RepoManagerImpl extends RepoManager {
                     indicator.setText("Computing updates...");
                     indicator.setFraction(0.75);
                     packages.setRemotePkgInfos(remotes);
+                    if (mPackages == null || !remotes.equals(mPackages.getRemotePkgInfos())) {
+                        for (RepoLoadedCallback callback : mRemoteListeners) {
+                            callback.doRun(packages);
+                        }
+                    }
+                }
+                else if (mPackages != null) {
+                    // If we didn't reload the remotes, use the previous remotes.
+                    packages.setRemotePkgInfos(mPackages.getRemotePkgInfos());
                 }
 
                 mPackages = packages;
@@ -411,9 +471,13 @@ public class RepoManagerImpl extends RepoManager {
                     return;
                 }
                 success = true;
-                mLastRefreshMs = System.currentTimeMillis();
             } finally {
-                mLastRefreshMs = System.currentTimeMillis();
+                if (mDownloader != null) {
+                    mLastRemoteRefreshMs = System.currentTimeMillis();
+                }
+                if (mLocalPath != null) {
+                    mLastLocalRefreshMs = System.currentTimeMillis();
+                }
                 synchronized (mTaskLock) {
                     // The processing of the task is now complete.
                     // To ensure that no more callbacks are added, and to allow another task to be

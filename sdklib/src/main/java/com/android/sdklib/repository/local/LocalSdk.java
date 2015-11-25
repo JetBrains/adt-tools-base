@@ -744,7 +744,7 @@ public class LocalSdk {
     }
 
     @NonNull
-    public IAndroidTarget[] getMissingTargets() {
+    public MissingTarget[] getMissingTargets() {
         synchronized (mLocalPackages) {
             if (mCachedMissingTargets == null) {
                 Map<MissingTarget, MissingTarget> result = Maps.newHashMap();
@@ -768,13 +768,15 @@ public class LocalSdk {
                 }
                 mCachedMissingTargets = result.keySet();
             }
-            return mCachedMissingTargets.toArray(new IAndroidTarget[mCachedMissingTargets.size()]);
+            return mCachedMissingTargets.toArray(new MissingTarget[mCachedMissingTargets.size()]);
         }
     }
 
-    private static void addOrphanedSystemImage(ISystemImage image, IPkgDesc desc, Map<MissingTarget, MissingTarget> targets) {
+    private static void addOrphanedSystemImage(ISystemImage image, IPkgDesc desc,
+      Map<MissingTarget, MissingTarget> targets) {
         IdDisplay vendor = desc.getVendor();
-        MissingTarget target = new MissingTarget(vendor == null ? null : vendor.getDisplay(), desc.getTag().getDisplay(), desc.getAndroidVersion());
+        MissingTarget target = new MissingTarget(vendor == null ? null : vendor.getDisplay(),
+          desc.getTag().getDisplay(), desc.getAndroidVersion());
         MissingTarget existing = targets.get(target);
         if (existing == null) {
             existing = target;

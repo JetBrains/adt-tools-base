@@ -20,6 +20,7 @@ import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
 import com.android.repository.api.ConstantSourceProvider;
 import com.android.repository.api.FallbackRemoteRepoLoader;
+import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemoteListSourceProvider;
 import com.android.repository.api.RepoManager;
@@ -30,11 +31,20 @@ import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SchemaModule;
 import com.android.repository.impl.installer.BasicInstaller;
 import com.android.repository.impl.installer.PackageInstaller;
+import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.impl.sources.LocalSourceProvider;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
+import com.android.sdklib.BuildToolInfo;
+import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.repository.descriptors.PkgType;
+import com.android.sdklib.repository.local.LocalSdk;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
+import com.android.sdklib.repositoryv2.meta.SysImgFactory;
 import com.android.sdklib.repositoryv2.sources.RemoteSiteType;
+import com.android.sdklib.repositoryv2.targets.AndroidTargetManager;
+import com.android.sdklib.repositoryv2.targets.SystemImage;
+import com.android.sdklib.repositoryv2.targets.SystemImageManager;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -96,6 +106,29 @@ public final class AndroidSdkHandler {
     private RepoManager mRepoManager;
 
     /**
+     * {@link LocalSdk} instance, to use when {@link #useSdkV2()} is {@code false}.
+     * TODO: remove when migration to new system is complete.
+     * @deprecated
+     */
+    private LocalSdk mLocalSdk;
+
+    /**
+     * Finds all {@link SystemImage}s in packages known to {@link #mRepoManager};
+     */
+    private SystemImageManager mSystemImageManager;
+
+    /**
+     * Creates {@link IAndroidTarget}s based on the platforms and addons known to
+     * {@link #mRepoManager}.
+     */
+    private AndroidTargetManager mAndroidTargetManager;
+
+    /**
+     * Reference to our latest build tool package.
+     */
+    private BuildToolInfo mLatestBuildTool = null;
+
+    /**
      * {@link FileOp} to use for local file operations. For normal operation should be
      * {@link FileOpUtils#create()}.
      */
@@ -123,23 +156,30 @@ public final class AndroidSdkHandler {
     private RepoConfig mRepoConfig;
 
     /**
+     * Whether we should use the new SDK implementation or the legacy one.
+     */
+    private final boolean mUseSdkV2;
+
+    /**
      * Get a {@code AndroidSdkHandler} instance.
      */
     @NonNull
     public static AndroidSdkHandler getInstance() {
         if (sInstance == null) {
-            sInstance = new AndroidSdkHandler(FileOpUtils.create());
+            boolean v2 = Boolean.parseBoolean(System.getProperty("use.new.sdk", "false"));
+            sInstance = new AndroidSdkHandler(FileOpUtils.create(), v2);
         }
         return sInstance;
     }
 
     /**
      * Don't use this, use {@link #getInstance()}, unless you're in a unit test and need to specify
-     * a custom {@link FileOp}.
+     * a custom {@link FileOp}. For new code, useSdkV2 should probably be {@code true}.
      */
     @VisibleForTesting
-    AndroidSdkHandler(@NonNull FileOp fop) {
+    public AndroidSdkHandler(@NonNull FileOp fop, boolean useSdkV2) {
         mFop = fop;
+        mUseSdkV2 = useSdkV2;
     }
 
     /**
@@ -153,10 +193,59 @@ public final class AndroidSdkHandler {
         synchronized (MANAGER_LOCK) {
             if (result == null) {
                 mRepoManager = getRepoConfig(progress).createRepoManager();
+                // Invalidate system images, targets, the latest build tool, and the legacy local
+                // package manager when local packages change
+                mRepoManager.registerLocalChangeListener(new RepoManager.RepoLoadedCallback() {
+                    @Override
+                    public void doRun(@NonNull RepositoryPackages packages) {
+                        mSystemImageManager = null;
+                        mAndroidTargetManager = null;
+                        mLatestBuildTool = null;
+                        if (mLocalSdk != null) {
+                            mLocalSdk.clearLocalPkg(PkgType.PKG_ALL);
+                        }
+                    }
+                });
                 result = mRepoManager;
             }
         }
         return result;
+    }
+
+    /**
+     * Gets (and creates if necessary) a {@link SystemImageManager} based on our local sdk packages.
+     */
+    @NonNull
+    public SystemImageManager getSystemImageManager(@NonNull ProgressIndicator progress) {
+        if (mSystemImageManager == null) {
+            if (useSdkV2()) {
+                getSdkManager(progress);
+                mSystemImageManager = new SystemImageManager(mRepoManager,
+                        (SysImgFactory) getSysImgModule(progress).createLatestFactory(), mFop);
+            }
+            else {
+                mSystemImageManager = new SystemImageManager(getLocalSdk());
+            }
+        }
+        return mSystemImageManager;
+    }
+
+    /**
+     * Gets (and creates if necessary) an {@link AndroidTargetManager} based on our local sdk
+     * packages.
+     */
+    @NonNull
+    public AndroidTargetManager getAndroidTargetManager(@NonNull ProgressIndicator progress) {
+        if (mAndroidTargetManager == null) {
+            if (useSdkV2()) {
+                getSdkManager(progress);
+                mAndroidTargetManager = new AndroidTargetManager(this, mFop);
+            }
+            else {
+                mAndroidTargetManager = new AndroidTargetManager(getLocalSdk());
+            }
+        }
+        return mAndroidTargetManager;
     }
 
     /**
@@ -167,6 +256,7 @@ public final class AndroidSdkHandler {
         synchronized (MANAGER_LOCK) {
             mLocation = location;
             mRepoManager = null;
+            mLocalSdk = null;
         }
     }
 
@@ -235,6 +325,13 @@ public final class AndroidSdkHandler {
             mRepoConfig = new RepoConfig(progress);
         }
         return mRepoConfig;
+    }
+
+    private LocalSdk getLocalSdk() {
+        if (mLocalSdk == null) {
+            mLocalSdk = new LocalSdk(mLocation);
+        }
+        return mLocalSdk;
     }
 
     /**
@@ -435,10 +532,44 @@ public final class AndroidSdkHandler {
         }
     }
 
+    /**
+     * Finds the best {@link PackageInstaller} for the given {@link RepoPackage}.
+     */
     public static PackageInstaller findBestInstaller(RepoPackage p) {
         if (p.getTypeDetails() instanceof DetailsTypes.MavenType) {
             return new MavenInstaller();
         }
         return new BasicInstaller();
+    }
+
+    /**
+     * Temporary method indicating whether we should use {@link RepoManager} or the older
+     * {@link com.android.sdklib.repository.local.LocalSdk} etc.
+     *
+     * @return {@code true} if we should use {@link RepoManager}.
+     */
+    public boolean useSdkV2() {
+        return mUseSdkV2;
+    }
+
+    /**
+     * Gets a {@link BuildToolInfo} corresponding to the newest installed build tool
+     * {@link RepoPackage}, or {@code null} if none are installed.
+     */
+    @Nullable
+    public BuildToolInfo getLatestBuildTool(ProgressIndicator progress) {
+        if (mLatestBuildTool == null) {
+            RepoManager manager = getSdkManager(progress);
+            manager.loadSynchronously(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null);
+            BuildToolInfo info = null;
+            for (LocalPackage p : manager.getPackages().getLocalPackages().values()) {
+                if (p.getTypeDetails() instanceof DetailsTypes.BuildToolDetailsType &&
+                        (info == null || info.getRevision().compareTo(p.getVersion()) < 0)) {
+                     info = new BuildToolInfo(p.getVersion(), p.getLocation());
+                }
+            }
+            mLatestBuildTool = info;
+        }
+        return mLatestBuildTool;
     }
 }

@@ -24,7 +24,7 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.android.sdklib.repositoryv2.IdDisplay;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -54,7 +54,6 @@ public final class AddOnTarget implements IAndroidTarget {
     private File[] mSkins;
     private File mDefaultSkin;
     private ImmutableList<OptionalLibrary> mLibraries;
-    private int mVendorId = NO_USB_ID;
 
     /**
      * Creates a new add-on
@@ -306,23 +305,8 @@ public final class AddOnTarget implements IAndroidTarget {
     }
 
     @Override
-    public Integer getProperty(String name, Integer defaultValue) {
-        return mBasePlatform.getProperty(name, defaultValue);
-    }
-
-    @Override
-    public Boolean getProperty(String name, Boolean defaultValue) {
-        return mBasePlatform.getProperty(name, defaultValue);
-    }
-
-    @Override
     public Map<String, String> getProperties() {
         return mBasePlatform.getProperties();
-    }
-
-    @Override
-    public int getUsbVendorId() {
-        return mVendorId;
     }
 
     @Override
@@ -448,16 +432,5 @@ public final class AddOnTarget implements IAndroidTarget {
 
         mSkins = skinSet.toArray(new File[skinSet.size()]);
         Arrays.sort(mSkins);
-    }
-
-    /**
-     * Sets the USB vendor id in the add-on.
-     */
-    public void setUsbVendorId(int vendorId) {
-        if (vendorId == 0) {
-            throw new IllegalArgumentException( "VendorId must be > 0");
-        }
-
-        mVendorId = vendorId;
     }
 }

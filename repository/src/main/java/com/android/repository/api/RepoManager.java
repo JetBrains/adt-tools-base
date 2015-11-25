@@ -293,6 +293,19 @@ public abstract class RepoManager {
     public abstract LSResourceResolver getResourceResolver(@NonNull ProgressIndicator progress);
 
     /**
+     * Registers a listener that will be called whenever the local packages are reloaded and have
+     * changed. The {@link RepositoryPackages} instance passed to the callback will contain only
+     * the local packages.
+     */
+    public abstract void registerLocalChangeListener(@NonNull RepoLoadedCallback listener);
+
+    /**
+     * Register a listener that will be called whenever the remote packages are reloaded and have
+     * changed. The {@link RepositoryPackages} instance will contain the remote and local packages.
+     */
+    public abstract void registerRemoteChangeListener(@NonNull RepoLoadedCallback listener);
+
+    /**
      * Callback for when repository load is completed/partially completed.
      */
     public interface RepoLoadedCallback {

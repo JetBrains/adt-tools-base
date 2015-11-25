@@ -222,6 +222,7 @@
             <xsd:element name="dummy-patches" type="common:patchesType"/>
             <xsd:element name="dummy-api" type="sdk-common:apiDetailsType"/>
             <xsd:element name="dummy-iddisp" type="sdk-common:idDisplayType"/>
+            <xsd:element name="dummy-library" type="sdk-common:libraryType"/>
         </xsd:all>
     </xsd:complexType>
 </xsd:schema>

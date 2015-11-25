@@ -46,7 +46,7 @@ public class UnmarshalTest extends TestCase {
         InputStream xmlStream = getClass().getResourceAsStream(filename);
         assertNotNull("Missing test file: " + filename, xmlStream);
 
-        AndroidSdkHandler handler = new AndroidSdkHandler(new MockFileOp());
+        AndroidSdkHandler handler = new AndroidSdkHandler(new MockFileOp(), true);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         SchemaModule repoEx = handler.getRepositoryModule(progress);
         SchemaModule addonEx = handler.getAddonModule(progress);

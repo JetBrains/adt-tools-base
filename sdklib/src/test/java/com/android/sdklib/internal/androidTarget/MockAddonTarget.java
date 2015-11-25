@@ -28,7 +28,7 @@ import com.android.sdklib.ISystemImage;
 import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SystemImage;
 import com.android.repository.io.FileOp;
-import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.android.sdklib.repositoryv2.IdDisplay;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -159,16 +159,6 @@ public class MockAddonTarget implements IAndroidTarget {
     }
 
     @Override
-    public Integer getProperty(String name, Integer defaultValue) {
-        return defaultValue;
-    }
-
-    @Override
-    public Boolean getProperty(String name, Boolean defaultValue) {
-        return defaultValue;
-    }
-
-    @Override
     public Map<String, String> getProperties() {
         return null;
     }
@@ -182,11 +172,6 @@ public class MockAddonTarget implements IAndroidTarget {
     @Override
     public File[] getSkins() {
         return FileOp.EMPTY_FILE_ARRAY;
-    }
-
-    @Override
-    public int getUsbVendorId() {
-        return 0;
     }
 
     @NonNull

@@ -26,17 +26,28 @@ import com.sun.codemodel.JClass;
 import com.sun.codemodel.JCodeModel;
 import com.sun.codemodel.JDefinedClass;
 import com.sun.codemodel.JExpr;
+import com.sun.codemodel.JExpression;
 import com.sun.codemodel.JInvocation;
 import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JMod;
+import com.sun.codemodel.JOp;
 import com.sun.codemodel.JType;
 import com.sun.tools.xjc.Options;
 import com.sun.tools.xjc.Plugin;
+import com.sun.tools.xjc.model.CElementPropertyInfo;
 import com.sun.tools.xjc.model.CPluginCustomization;
+import com.sun.tools.xjc.model.CPropertyInfo;
 import com.sun.tools.xjc.model.CTypeInfo;
 import com.sun.tools.xjc.outline.ClassOutline;
 import com.sun.tools.xjc.outline.FieldOutline;
 import com.sun.tools.xjc.outline.Outline;
+import com.sun.xml.xsom.XSComponent;
+import com.sun.xml.xsom.XSElementDecl;
+import com.sun.xml.xsom.XSFacet;
+import com.sun.xml.xsom.XSParticle;
+import com.sun.xml.xsom.XSSimpleType;
+import com.sun.xml.xsom.XSTerm;
+import com.sun.xml.xsom.XSType;
 
 import org.w3c.dom.Element;
 import org.xml.sax.ErrorHandler;
@@ -123,6 +134,7 @@ public class InheritancePlugin extends Plugin {
                 continue;
             }
             addAndCollectParents(classOutline, supers);
+            addValidityChecks(classOutline, outline.getCodeModel());
         }
 
         createGenerateElementMethod(outline, objFactory, supers);
@@ -439,6 +451,57 @@ public class InheritancePlugin extends Plugin {
             }
         }
         return type;
+    }
+
+    /**
+     * Adds a method to a class allowing the caller to check whether a string value is valid with
+     * respect to the facets of a field.<br/>
+     * Currently only pattern facets are supported.
+     */
+    private static void addValidityChecks(ClassOutline classOutline, JCodeModel codeModel) {
+        for (FieldOutline field : classOutline.getDeclaredFields()) {
+            CPropertyInfo info = field.getPropertyInfo();
+            XSComponent component = info.getSchemaComponent();
+            List<JExpression> conditions = Lists.newArrayList();
+            if (component instanceof XSParticle) {
+                XSTerm term = ((XSParticle)component).getTerm();
+                if (term instanceof XSElementDecl) {
+                    XSType type = ((XSElementDecl)term).getType();
+                    if (type instanceof XSSimpleType) {
+                        // TODO: support other facets
+                        XSFacet facet = ((XSSimpleType)type).getFacet("pattern");
+                        if (facet != null) {
+                            String pattern = facet.getValue().toString();
+                            conditions.add(JExpr.direct("value.matches(\"^" + pattern + "$\")"));
+                        }
+                    }
+                }
+            }
+            if (!conditions.isEmpty()) {
+                JMethod method = classOutline.implClass
+                        .method(JMod.PUBLIC, codeModel.BOOLEAN,
+                                "isValid" + info.getName(true));
+                method.param(String.class, "value");
+                JBlock body = method.body();
+                JExpression combined;
+                Iterator<JExpression> conditionIter = conditions.iterator();
+                combined = conditionIter.next();
+                while (conditionIter.hasNext()) {
+                    combined = JOp.cand(combined, conditionIter.next());
+                }
+
+                if (combined != null) {
+                    if (info instanceof CElementPropertyInfo) {
+                        if (((CElementPropertyInfo) info).isRequired()) {
+                            combined = JOp.cand(JExpr.direct("value != null"), combined);
+                        } else {
+                            combined = JOp.cor(JExpr.direct("value == null"), combined);
+                        }
+                    }
+                }
+                body._return(combined);
+            }
+        }
     }
 
     /**

@@ -104,6 +104,27 @@
         </xsd:all>
     </xsd:complexType>
 
+    <xsd:complexType name="libraryType">
+        <xsd:annotation>
+            <xsd:documentation>
+                a library provided by this addon
+            </xsd:documentation>
+            <xsd:appinfo>
+                <plugin:super name="com.android.sdklib.repositoryv2.meta.DetailsTypes$Library"/>
+            </xsd:appinfo>
+        </xsd:annotation>
+        <xsd:sequence>
+            <xsd:element name="description" type="xsd:string" minOccurs="1"/>
+        </xsd:sequence>
+        <!-- Path to the library jar file relative to the libs directory in the package.-->
+        <xsd:attribute name="localJarPath" use="required" type="xsd:string"/>
+        <!-- Name of this library -->
+        <xsd:attribute name="name" use="required" type="xsd:string"/>
+        <!-- Whether a manifest file entry is required for this library -->
+        <xsd:attribute name="manifestEntryRequired" use="optional" default="true"
+                       type="xsd:boolean"/>
+    </xsd:complexType>
+
     <xsd:complexType name="_xjcWorkaround">
         <xsd:annotation>
             <xsd:documentation>

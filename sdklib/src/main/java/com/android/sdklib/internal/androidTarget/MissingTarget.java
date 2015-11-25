@@ -24,7 +24,7 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkVersionInfo;
-import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.android.sdklib.repositoryv2.IdDisplay;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -174,23 +174,8 @@ public class MissingTarget implements IAndroidTarget {
     }
 
     @Override
-    public Integer getProperty(String name, Integer defaultValue) {
-        return null;
-    }
-
-    @Override
-    public Boolean getProperty(String name, Boolean defaultValue) {
-        return null;
-    }
-
-    @Override
     public Map<String, String> getProperties() {
         return null;
-    }
-
-    @Override
-    public int getUsbVendorId() {
-        return 0;
     }
 
     @Override
@@ -225,7 +210,15 @@ public class MissingTarget implements IAndroidTarget {
 
     @Override
     public int compareTo(IAndroidTarget o) {
-        return 0;
+        int res = mVendor.compareTo(o.getVendor());
+        if (res != 0) {
+            return res;
+        }
+        res = mVersion.compareTo(o.getVersion());
+        if (res != 0) {
+            return res;
+        }
+        return mName.compareTo(o.getName());
     }
 
     @Override
@@ -234,11 +227,11 @@ public class MissingTarget implements IAndroidTarget {
             return false;
         }
         MissingTarget other = (MissingTarget) obj;
-        return Objects.equal(mVendor, other.mVendor) && Objects.equal(mVersion, other.mVersion);
+        return compareTo(other) == 0;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(mVendor, mVersion);
+        return Objects.hashCode(mVendor, mVersion, mName);
     }
 }

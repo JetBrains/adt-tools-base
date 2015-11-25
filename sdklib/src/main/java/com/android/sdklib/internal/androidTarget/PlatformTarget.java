@@ -25,7 +25,7 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkManager.LayoutlibVersion;
-import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.android.sdklib.repositoryv2.IdDisplay;
 import com.android.utils.SparseArray;
 import com.google.common.collect.ImmutableList;
 
@@ -315,15 +315,6 @@ public final class PlatformTarget implements IAndroidTarget {
         return new String[] { SdkConstants.ANDROID_TEST_RUNNER_LIB };
     }
 
-    /**
-     * The platform has no USB Vendor Id: always return {@link IAndroidTarget#NO_USB_ID}.
-     * {@inheritDoc}
-     */
-    @Override
-    public int getUsbVendorId() {
-        return NO_USB_ID;
-    }
-
     @Override
     public boolean canRunOn(IAndroidTarget target) {
         // basic test
@@ -408,30 +399,6 @@ public final class PlatformTarget implements IAndroidTarget {
     @Override
     public String getProperty(String name) {
         return mProperties.get(name);
-    }
-
-    @Override
-    public Integer getProperty(String name, Integer defaultValue) {
-        try {
-            String value = getProperty(name);
-            if (value != null) {
-                return Integer.decode(value);
-            }
-        } catch (NumberFormatException e) {
-            // ignore, return default value;
-        }
-
-        return defaultValue;
-    }
-
-    @Override
-    public Boolean getProperty(String name, Boolean defaultValue) {
-        String value = getProperty(name);
-        if (value != null) {
-            return Boolean.valueOf(value);
-        }
-
-        return defaultValue;
     }
 
     @Override

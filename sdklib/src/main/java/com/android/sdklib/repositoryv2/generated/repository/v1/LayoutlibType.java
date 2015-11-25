@@ -16,7 +16,7 @@ import javax.xml.bind.annotation.XmlType;
 
 /**
  * 
- *                 Version information for a layoutlib included in a platform.
+ *                 The API level used by the LayoutLib included in a platform to communicate with the IDE.
  *             
  * 
  * <p>Java class for layoutlibType complex type.

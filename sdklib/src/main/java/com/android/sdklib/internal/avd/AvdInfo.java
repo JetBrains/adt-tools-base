@@ -25,12 +25,9 @@ import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.devices.Abi;
 import com.android.sdklib.devices.Device;
-import com.android.sdklib.repository.descriptors.IdDisplay;
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
+import com.android.sdklib.repositoryv2.IdDisplay;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 

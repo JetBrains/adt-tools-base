@@ -89,7 +89,7 @@ public class LegacyLocalRepoTest extends TestCase {
 
         FakeProgressIndicator progress = new FakeProgressIndicator();
         File root = new File("/sdk");
-        RepoManager mgr = new AndroidSdkHandler(mockFop).getSdkManager(progress);
+        RepoManager mgr = new AndroidSdkHandler(mockFop, true).getSdkManager(progress);
 
         mgr.registerSchemaModule(AndroidSdkHandler.getInstance().getAddonModule(progress));
         mgr.registerSchemaModule(AndroidSdkHandler.getInstance().getRepositoryModule(progress));

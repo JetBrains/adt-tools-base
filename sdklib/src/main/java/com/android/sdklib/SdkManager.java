@@ -211,41 +211,6 @@ public class SdkManager {
     }
 
     /**
-     * Updates adb with the USB devices declared in the SDK add-ons.
-     * @throws AndroidLocationException
-     * @throws IOException
-     */
-    public void updateAdb() throws AndroidLocationException, IOException {
-        FileWriter writer = null;
-        try {
-            // get the android prefs location to know where to write the file.
-            File adbIni = new File(AndroidLocation.getFolder(), ADB_INI_FILE);
-            writer = new FileWriter(adbIni);
-
-            // first, put all the vendor id in an HashSet to remove duplicate.
-            HashSet<Integer> set = new HashSet<Integer>();
-            IAndroidTarget[] targets = getTargets();
-            for (IAndroidTarget target : targets) {
-                if (target.getUsbVendorId() != IAndroidTarget.NO_USB_ID) {
-                    set.add(target.getUsbVendorId());
-                }
-            }
-
-            // write file header.
-            writer.write(ADB_INI_HEADER);
-
-            // now write the Id in a text file, one per line.
-            for (Integer i : set) {
-                writer.write(String.format("0x%04x\n", i));                            //$NON-NLS-1$
-            }
-        } finally {
-            if (writer != null) {
-                writer.close();
-            }
-        }
-    }
-
-    /**
      * Returns the greatest {@link LayoutlibVersion} found amongst all platform
      * targets currently loaded in the SDK.
      * <p/>

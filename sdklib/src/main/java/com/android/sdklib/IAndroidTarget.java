@@ -18,7 +18,7 @@ package com.android.sdklib;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.android.sdklib.repositoryv2.IdDisplay;
 
 import java.io.File;
 import java.util.List;
@@ -72,12 +72,6 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     /** OS Path to the "uiautomator.jar" file. */
     int UI_AUTOMATOR_JAR    = 27;
 
-
-    /**
-     * Return value for {@link #getUsbVendorId()} meaning no USB vendor IDs are defined by the
-     * Android target.
-     */
-    int NO_USB_ID = 0;
 
     /** An optional library provided by an Android Target */
     interface OptionalLibrary {
@@ -257,40 +251,10 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     String getProperty(String name);
 
     /**
-     * Returns the value of a given property for this target as an Integer value.
-     * <p/> If the value is missing or is not an integer, the method will return the given default
-     * value.
-     * @param name the name of the property to return
-     * @param defaultValue the default value to return.
-     *
-     * @see Integer#decode(String)
-     */
-    Integer getProperty(String name, Integer defaultValue);
-
-    /**
-     * Returns the value of a given property for this target as a Boolean value.
-     * <p/> If the value is missing or is not an boolean, the method will return the given default
-     * value.
-     *
-     * @param name the name of the property to return
-     * @param defaultValue the default value to return.
-     *
-     * @see Boolean#valueOf(String)
-     */
-
-    Boolean getProperty(String name, Boolean defaultValue);
-
-    /**
      * Returns all the properties associated with this target. This can be null if the target has
      * no properties.
      */
     Map<String, String> getProperties();
-
-    /**
-     * Returns the USB Vendor ID for the vendor of this target.
-     * <p/>If the target defines no USB Vendor ID, then the method return 0.
-     */
-    int getUsbVendorId();
 
     /**
      * Returns an array of system images for this target.
