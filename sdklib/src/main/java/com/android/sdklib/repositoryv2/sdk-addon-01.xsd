@@ -26,7 +26,7 @@
          -b com/android/sdklib/repositoryv2/sdk-common.xjb \
          -p com.android.sdklib.repositoryv2.generated.addon.v1 \
          com/android/sdklib/repositoryv2/sdk-addon-01.xsd \
-         -extension -Xandroid-inheritance
+         -extension -Xandroid-inheritance -no-header
 
     with tools.jar, jaxb-inheritance-plugin.jar, and the repository classes on the classpath.
     Note that you can not use the xjc executable, as it does not support 3rd-party plugins.
