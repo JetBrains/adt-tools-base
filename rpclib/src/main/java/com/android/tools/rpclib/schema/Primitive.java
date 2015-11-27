@@ -140,4 +140,14 @@ public final class Primitive extends Type {
     public void signature(StringBuilder out) {
         out.append(mMethod);
     }
+
+    /**
+     * @return true if ty is a primitive of base type method.
+     */
+    public static boolean isMethod(Type ty, Method method) {
+        if (!(ty instanceof Primitive)) {
+            return false;
+        }
+        return ((Primitive)(ty)).mMethod.equals(method);
+    }
 }
