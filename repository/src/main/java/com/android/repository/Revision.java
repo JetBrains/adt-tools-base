@@ -150,6 +150,7 @@ public class Revision implements Comparable<Revision> {
      *         revisionString}.
      * @throws NumberFormatException if the parsing failed.
      */
+    @NonNull
     public static Revision parseRevision(@NonNull String revisionString)
             throws NumberFormatException {
         return parseRevision(revisionString, Precision.MAJOR);
@@ -250,6 +251,7 @@ public class Revision implements Comparable<Revision> {
      * If a preview component is specified and {@code includePreview} is true, the result will
      * always be of length 4.
      */
+    @NonNull
     public int[] toIntArray(boolean includePreview) {
         int[] result;
         if (mPrecision.compareTo(Precision.PREVIEW) >= 0) {
