@@ -215,8 +215,8 @@ public class DexTransform extends Transform {
         }
 
         ProcessOutputHandler outputHandler = new ParsingProcessOutputHandler(
-                new ToolOutputParser(new DexStdoutParser(), logger),
                 new ToolOutputParser(new DexStderrParser(), logger),
+                new ToolOutputParser(new DexStdoutParser(), logger),
                 androidBuilder.getErrorReporter());
 
         try {

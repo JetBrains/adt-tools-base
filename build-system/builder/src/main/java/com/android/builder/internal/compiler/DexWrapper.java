@@ -22,6 +22,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.builder.core.DexOptions;
 import com.android.builder.core.DexProcessBuilder;
+import com.android.ide.common.blame.parser.DexStderrParser;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
@@ -294,6 +295,15 @@ public class DexWrapper {
                 return (Integer) res;
             }
             return -1;
+        } catch(InvocationTargetException e) {
+            String exceptionMessage = e.getTargetException().getMessage();
+            logger.error(null /* throwable */, "Exception while dexing files : "
+                    + e.getTargetException().getMessage());
+            if (exceptionMessage.startsWith("trouble writing output: Too many method references:")
+                    || exceptionMessage.contains("method ID not in [0, 0xffff]")) {
+                logger.error(null /*throwable */, DexStderrParser.DEX_LIMIT_EXCEEDED_ERROR);
+            }
+            throw Throwables.propagate(e.getTargetException());
         } catch (Exception e) {
             throw Throwables.propagate(e);
         } finally {
