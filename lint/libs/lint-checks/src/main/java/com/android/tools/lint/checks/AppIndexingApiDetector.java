@@ -205,7 +205,7 @@ public class AppIndexingApiDetector extends Detector
                 }
             }
         }
-        if (!applicationHasActionView && !context.getProject().isLibrary()) {
+        if (!applicationHasActionView) {
             // Report warning if there is no activity that supports action view.
             context.report(ISSUE_APP_INDEXING, application, context.getLocation(application),
                            // This error message is more verbose than the other app indexing lint warnings, because it

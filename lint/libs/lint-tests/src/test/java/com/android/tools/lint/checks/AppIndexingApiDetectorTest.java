@@ -195,30 +195,6 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
                         + "</manifest>\n")));
     }
 
-    public void testNoWarningInLibraries() throws Exception {
-        // Regression test for https://code.google.com/p/android/issues/detail?id=194937
-        // 194937: App indexing lint check shouldn't apply to library projects
-        assertEquals(
-                "No warnings.",
-                lintProject(
-                        xml("AndroidManifest.xml", ""
-                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "    package=\"com.example.helloworld\" >\n"
-                        + "\n"
-                        + "    <application\n"
-                        + "        android:allowBackup=\"true\"\n"
-                        + "        android:icon=\"@mipmap/ic_launcher\"\n"
-                        + "        android:label=\"@string/app_name\"\n"
-                        + "        android:theme=\"@style/AppTheme\" >\n"
-                        + "        <meta-data android:name=\"com.google.android.gms.version\" android:value=\"@integer/google_play_services_version\" />"
-                        + "    </application>\n"
-                        + "\n"
-                        + "</manifest>\n"),
-                        // Mark project as library
-                        source("android.library=true\n", "project.properties")));
-    }
-
     public void testNoActionView() throws Exception {
         assertEquals(
                 ""
