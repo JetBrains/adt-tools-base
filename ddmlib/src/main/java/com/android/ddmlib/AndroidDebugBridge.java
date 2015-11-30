@@ -356,6 +356,7 @@ public final class AndroidDebugBridge {
     /**
      * Returns the current debug bridge. Can be <code>null</code> if none were created.
      */
+    @Nullable
     public static AndroidDebugBridge getBridge() {
         return sThis;
     }
