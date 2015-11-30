@@ -153,11 +153,12 @@ public class TransformManager extends FilterableStreamCollection {
             @NonNull T transform,
             @Nullable TransformTask.ConfigActionCallback<T> callback) {
 
-
-        if (!checkContentTypes(transform.getInputTypes())
-                || !checkContentTypes(transform.getOutputTypes())) {
+        if (!validateTransform(transform)) {
+            // validate either throws an exception, or records the problem during sync
+            // so it's safe to just return null here.
             return null;
         }
+
         List<TransformStream> inputStreams = Lists.newArrayList();
         String taskName = scope.getTaskName(getTaskNamePrefix(transform));
 
@@ -379,13 +380,42 @@ public class TransformManager extends FilterableStreamCollection {
         return streamMatches;
     }
 
-    private boolean checkContentTypes(Set<ContentType> contentTypes) {
+    private boolean validateTransform(@NonNull Transform transform) {
+        // check the content type are of the right Type.
+        if (!checkContentTypes(transform.getInputTypes(), transform)
+                || !checkContentTypes(transform.getOutputTypes(), transform)) {
+            return false;
+        }
+
+        // check some scopes are not consumed.
+        Set<Scope> scopes = transform.getScopes();
+        if (scopes.contains(Scope.PROVIDED_ONLY)) {
+            errorReporter.handleSyncError("", SyncIssue.TYPE_GENERIC,
+                    String.format("PROVIDED_ONLY scope cannot be consumed by Transform '%1$s'",
+                            transform.getName()));
+            return false;
+        }
+        if (scopes.contains(Scope.TESTED_CODE)) {
+            errorReporter.handleSyncError("", SyncIssue.TYPE_GENERIC,
+                    String.format("TESTED_CODE scope cannot be consumed by Transform '%1$s'",
+                            transform.getName()));
+            return false;
+
+        }
+
+
+        return true;
+    }
+
+    private boolean checkContentTypes(
+            @NonNull Set<ContentType> contentTypes,
+            @NonNull Transform transform) {
         for (ContentType contentType : contentTypes) {
             if (!(contentType instanceof QualifiedContent.DefaultContentType
                     || contentType instanceof ExtendedContentType)) {
                 errorReporter.handleSyncError("", SyncIssue.TYPE_GENERIC,
-                        String.format("Custom content type not supported : %1$s",
-                                contentType.name()));
+                        String.format("Custom content types (%1$s) are not supported in transforms (%2$s)",
+                                contentType.getClass().getName(), transform.getName()));
                 return false;
             }
         }

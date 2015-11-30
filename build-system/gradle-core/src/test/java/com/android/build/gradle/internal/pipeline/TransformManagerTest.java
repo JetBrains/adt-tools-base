@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.pipeline;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.api.transform.QualifiedContent.DefaultContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
@@ -613,4 +614,98 @@ public class TransformManagerTest extends TaskTestUtils {
         assertThat(transformTask.referencedInputStreams).isEmpty();
         assertThat(transformTask.outputStream).isSameAs(outStream);
     }
+
+    enum FakeContentType implements QualifiedContent.ContentType {
+        FOO;
+
+        @Override
+        public int getValue() {
+            return 0;
+        }
+    }
+
+    @Test
+    public void wrongInputType() {
+        Transform t = TestTransform.builder()
+                .setInputTypes(FakeContentType.FOO)
+                .setScopes(Scope.PROJECT)
+                .build();
+
+        // add the transform
+        AndroidTask<TransformTask> task = transformManager.addTransform(taskFactory, scope, t);
+
+        assertThat(task).isNull();
+
+        SyncIssue syncIssue = errorReporter.getSyncIssue();
+        assertThat(syncIssue).isNotNull();
+        assertThat(syncIssue.getMessage()).isEqualTo(
+                "Custom content types "
+                        + "(com.android.build.gradle.internal.pipeline.TransformManagerTest$FakeContentType)"
+                        + " are not supported in transforms (transform name)");
+        assertThat(syncIssue.getType()).isEqualTo(SyncIssue.TYPE_GENERIC);
+    }
+
+    @Test
+    public void wrongOutputType() {
+        // add a new transform
+        Transform t = TestTransform.builder()
+                .setInputTypes(DefaultContentType.CLASSES)
+                .setOutputTypes(FakeContentType.FOO)
+                .setScopes(Scope.PROJECT)
+                .build();
+
+        // add the transform
+        AndroidTask<TransformTask> task = transformManager.addTransform(taskFactory, scope, t);
+
+        assertThat(task).isNull();
+
+        SyncIssue syncIssue = errorReporter.getSyncIssue();
+        assertThat(syncIssue).isNotNull();
+        assertThat(syncIssue.getMessage()).isEqualTo(
+                "Custom content types "
+                        + "(com.android.build.gradle.internal.pipeline.TransformManagerTest$FakeContentType)"
+                        + " are not supported in transforms (transform name)");
+        assertThat(syncIssue.getType()).isEqualTo(SyncIssue.TYPE_GENERIC);
+    }
+
+    @Test
+    public void consumedProvidedOnlyScope() {
+        // add a new transform
+        Transform t = TestTransform.builder()
+                .setInputTypes(DefaultContentType.CLASSES)
+                .setScopes(Scope.PROVIDED_ONLY)
+                .build();
+
+        // add the transform
+        AndroidTask<TransformTask> task = transformManager.addTransform(taskFactory, scope, t);
+
+        assertThat(task).isNull();
+
+        SyncIssue syncIssue = errorReporter.getSyncIssue();
+        assertThat(syncIssue).isNotNull();
+        assertThat(syncIssue.getMessage()).isEqualTo(
+                "PROVIDED_ONLY scope cannot be consumed by Transform 'transform name'");
+        assertThat(syncIssue.getType()).isEqualTo(SyncIssue.TYPE_GENERIC);
+    }
+
+    @Test
+    public void consumedTestedScope() {
+        // add a new transform
+        Transform t = TestTransform.builder()
+                .setInputTypes(DefaultContentType.CLASSES)
+                .setScopes(Scope.TESTED_CODE)
+                .build();
+
+        // add the transform
+        AndroidTask<TransformTask> task = transformManager.addTransform(taskFactory, scope, t);
+
+        assertThat(task).isNull();
+
+        SyncIssue syncIssue = errorReporter.getSyncIssue();
+        assertThat(syncIssue).isNotNull();
+        assertThat(syncIssue.getMessage()).isEqualTo(
+                "TESTED_CODE scope cannot be consumed by Transform 'transform name'");
+        assertThat(syncIssue.getType()).isEqualTo(SyncIssue.TYPE_GENERIC);
+    }
+
 }
