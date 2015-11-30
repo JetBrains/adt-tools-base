@@ -51,6 +51,7 @@ public class ValueResourceNameValidatorTest {
                 { "1st", ResourceType.STRING, null, "The resource name must start with a letter"},
                 { "Foo#", ResourceType.STRING, null, "'#' is not a valid resource name character"},
                 { "void", ResourceType.STRING, null, "void is not a valid resource name (reserved Java keyword)"},
+                { "", ResourceType.STRING, null, "The resource name shouldn't be empty" }
         });
     }
 
