@@ -21,6 +21,7 @@ import com.android.tools.rpclib.binary.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class Dynamic implements BinaryObject {
 
@@ -58,6 +59,22 @@ public class Dynamic implements BinaryObject {
     @Override
     public Klass klass() {
         return mKlass;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        } else if (!(obj instanceof Dynamic)) {
+            return false;
+        }
+        Dynamic d = (Dynamic)obj;
+        return type().equals(d.type()) && Arrays.equals(mFields, d.mFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return mKlass.hashCode() + 31 * Arrays.hashCode(mFields);
     }
 
     public static class Klass implements BinaryClass {
@@ -99,6 +116,21 @@ public class Dynamic implements BinaryObject {
                 Field field = mType.getFields()[i];
                 o.mFields[i] = field.getType().decodeValue(d);
             }
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            } else if (!(obj instanceof Klass)) {
+                return false;
+            }
+            return entity().equals(((Klass)obj).entity());
+        }
+
+        @Override
+        public int hashCode() {
+            return mType.hashCode();
         }
     }
 }
