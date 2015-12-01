@@ -320,6 +320,18 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         }
     }
 
+    /**
+     * Decorated {@link MethodNode} that maintains a reference to the class declaring the method.
+     */
+    private static class MethodReference {
+        final MethodNode method;
+        final ClassNode owner;
+
+        private MethodReference(MethodNode method, ClassNode owner) {
+            this.method = method;
+            this.owner = owner;
+        }
+    }
     /***
      * Inserts a trampoline to this class so that the updated methods can make calls to super
      * class methods.
@@ -357,7 +369,8 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
         // Gather all methods from itself and its superclasses to generate a giant access$super
         // implementation.
         // This will work fine as long as we don't support adding methods to a class.
-        final Map<String, MethodNode> uniqueMethods = new HashMap<String, MethodNode>();
+        final Map<String, MethodReference> uniqueMethods =
+                new HashMap<String, MethodReference>();
         if (parentNodes.isEmpty()) {
             // if we cannot determine the parents for this class, let's blindly add all the
             // method of the current class as a gateway to a possible parent version.
@@ -377,11 +390,11 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
 
             @Override
             void visitCase(String methodName) {
-                MethodNode methodNode = uniqueMethods.get(methodName);
+                MethodReference methodRef = uniqueMethods.get(methodName);
 
                 mv.visitVarInsn(Opcodes.ALOAD, 0);
 
-                Type[] args = Type.getArgumentTypes(methodNode.desc);
+                Type[] args = Type.getArgumentTypes(methodRef.method.desc);
                 int argc = 0;
                 for (Type t : args) {
                     mv.visitVarInsn(Opcodes.ALOAD, 2);
@@ -392,14 +405,17 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                 }
 
                 if (TRACING_ENABLED) {
-                    trace(mv, "super selected ", methodNode.name, methodNode.desc);
+                    trace(mv, "super selected ", methodRef.owner.name,
+                            methodRef.method.name, methodRef.method.desc);
                 }
                 // Call super on the other object, yup this works cos we are on the right place to
                 // call from.
-                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, visitedSuperName, methodNode.name,
-                        methodNode.desc, false);
+                mv.visitMethodInsn(Opcodes.INVOKESPECIAL,
+                        methodRef.owner.name,
+                        methodRef.method.name,
+                        methodRef.method.desc, false);
 
-                Type ret = Type.getReturnType(methodNode.desc);
+                Type ret = Type.getReturnType(methodRef.method.desc);
                 if (ret.getSort() == Type.VOID) {
                     mv.visitInsn(Opcodes.ACONST_NULL);
                 } else {
@@ -528,7 +544,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
      * @param methods the methods already encountered in the ClassNode hierarchy
      * @param classNode the class to save all new methods from.
      */
-    private static void addAllNewMethods(Map<String, MethodNode> methods, ClassNode classNode) {
+    private static void addAllNewMethods(Map<String, MethodReference> methods, ClassNode classNode) {
         //noinspection unchecked
         for (MethodNode method : (List<MethodNode>) classNode.methods) {
             if (method.name.equals(AsmUtils.CONSTRUCTOR) || method.name.equals("<clinit>")) {
@@ -539,7 +555,7 @@ public class IncrementalSupportVisitor extends IncrementalVisitor {
                     && !methods.containsKey(name) &&
                     (method.access & Opcodes.ACC_STATIC) == 0 &&
                     (method.access & Opcodes.ACC_PRIVATE) == 0) {
-                methods.put(name, method);
+                methods.put(name, new MethodReference(method, classNode));
             }
         }
     }

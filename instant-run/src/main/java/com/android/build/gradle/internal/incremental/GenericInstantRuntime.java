@@ -261,4 +261,9 @@ public class GenericInstantRuntime {
         }
     }
 
+    public static void trace(String s1, String s2, String s3, String s4) {
+        if (logging != null) {
+            logging.log(Level.FINE, String.format("%s %s %s %s", s1, s2, s3, s4));
+        }
+    }
 }
