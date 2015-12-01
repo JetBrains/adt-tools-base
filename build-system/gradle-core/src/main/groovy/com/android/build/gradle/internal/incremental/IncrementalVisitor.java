@@ -184,6 +184,16 @@ public class IncrementalVisitor extends ClassVisitor {
                 Method.getMethod("void trace(String, String, String)"));
     }
 
+    protected static void trace(@NonNull GeneratorAdapter mv, @Nullable String s1,
+            @Nullable String s2, @Nullable String s3, @Nullable String s4) {
+        mv.push(s1);
+        mv.push(s2);
+        mv.push(s3);
+        mv.push(s4);
+        mv.invokeStatic(Type.getType(PACKAGE + ".AndroidInstantRuntime"),
+                Method.getMethod("void trace(String, String, String, String)"));
+    }
+
     protected static void trace(@NonNull GeneratorAdapter mv, int argsNumber) {
         StringBuilder methodSignature = new StringBuilder("void trace(String");
         for (int i=0 ; i < argsNumber-1; i++) {
