@@ -31,7 +31,7 @@ import java.util.List;
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
-    static final int INITIAL_CAPACITY = 244;
+    static final int INITIAL_CAPACITY = 245;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -95,6 +95,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(GradleDetector.DEPRECATED);
         issues.add(GradleDetector.GRADLE_GETTER);
         issues.add(GradleDetector.IDE_SUPPORT);
+        issues.add(GradleDetector.NOT_INTERPOLATED);
         issues.add(GradleDetector.PATH);
         issues.add(GradleDetector.PLUS);
         issues.add(GradleDetector.STRING_INTEGER);

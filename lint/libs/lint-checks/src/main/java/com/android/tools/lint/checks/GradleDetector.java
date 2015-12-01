@@ -16,7 +16,6 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.FD_BUILD_TOOLS;
-import static com.android.SdkConstants.FN_BUILD_GRADLE;
 import static com.android.SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION;
 import static com.android.SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION;
 import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
@@ -210,6 +209,20 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             8,
             Severity.ERROR,
             IMPLEMENTATION);
+
+    /** Attempting to use substitution with single quotes */
+    public static final Issue NOT_INTERPOLATED = Issue.create(
+          "NotInterpolated", //$NON-NLS-1$
+          "Incorrect Interpolation",
+
+          "To insert the value of a variable, you can use `${variable}` inside " +
+          "a string literal, but *only* if you are using double quotes!",
+
+          Category.CORRECTNESS,
+          8,
+          Severity.ERROR,
+          IMPLEMENTATION)
+          .addMoreInfo("http://www.groovy-lang.org/syntax.html#_string_interpolation");
 
     /** A newer version is available on a remote server */
     public static final Issue REMOTE_VERSION = Issue.create(
@@ -433,6 +446,14 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 if (dependency != null) {
                     GradleCoordinate gc = GradleCoordinate.parseCoordinateString(dependency);
                     if (gc != null && dependency.contains("$")) {
+                        if (value.startsWith("'") && value.endsWith("'") &&
+                            context.isEnabled(NOT_INTERPOLATED)) {
+                            String message = "It looks like you are trying to substitute a "
+                                             + "version variable, but using single quotes ('). For Groovy "
+                                             + "string interpolation you must use double quotes (\").";
+                            report(context, statementCookie, NOT_INTERPOLATED, message);
+                        }
+
                         gc = resolveCoordinate(context, gc);
                     }
                     if (gc != null) {
