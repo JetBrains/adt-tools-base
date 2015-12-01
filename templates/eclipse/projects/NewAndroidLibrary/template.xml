@@ -35,7 +35,7 @@
         <option id="none">None</option>
         <option id="holo_dark" minBuildApi="11">Holo Dark</option>
         <option id="holo_light" minBuildApi="11">Holo Light</option>
-        <option id="holo_light_darkactionbar" minBuildApi="14" default="true">Holo Light with Dark Action Bar</option>
+        <option id="holo_light_darkactionbar" minBuildApi="14">Holo Light with Dark Action Bar</option>
     </parameter>
 
     <parameter
