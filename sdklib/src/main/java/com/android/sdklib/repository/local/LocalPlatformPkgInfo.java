@@ -349,7 +349,8 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                             LocationType.IN_IMAGES_SUBFOLDER,
                             defaultTag,
                             abi,
-                            FileOp.EMPTY_FILE_ARRAY));
+                            FileOp.EMPTY_FILE_ARRAY,
+                            mDesc.getRevision()));
                     tagToAbiFound.put(defaultTag, abi);
                 }
             } else if (!hasImgFiles && fileOp.isFile(file)) {
@@ -370,7 +371,8 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                     LocationType.IN_LEGACY_FOLDER,
                     defaultTag,
                     SdkConstants.ABI_ARMEABI,
-                    FileOp.EMPTY_FILE_ARRAY));
+                    FileOp.EMPTY_FILE_ARRAY,
+                    mDesc.getRevision()));
         }
 
         return found.toArray(new ISystemImage[found.size()]);

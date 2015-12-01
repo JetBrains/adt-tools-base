@@ -140,7 +140,8 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
                 tag,
                 desc.getVendor(),
                 abi,
-                skins);
+                skins,
+                desc.getRevision());
     }
 
     public static String createListDescription(String listDisplay, IdDisplay tag, String abiDisplayName, boolean obsolete) {

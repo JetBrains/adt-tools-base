@@ -19,6 +19,7 @@ package com.android.sdklib;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.Revision;
 import com.android.sdklib.devices.Abi;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 
@@ -92,4 +93,10 @@ public interface ISystemImage extends Comparable<ISystemImage> {
      */
     @NonNull
     File[] getSkins();
+
+    /**
+     * Returns the revision of this system image.
+     */
+    @NonNull
+    Revision getRevision();
 }

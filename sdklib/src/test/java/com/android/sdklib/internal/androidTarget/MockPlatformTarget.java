@@ -19,6 +19,7 @@ package com.android.sdklib.internal.androidTarget;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.Revision;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.BuildToolInfo;
@@ -82,7 +83,8 @@ public class MockPlatformTarget implements IAndroidTarget {
                     LocationType.IN_LEGACY_FOLDER,
                     SystemImage.DEFAULT_TAG,
                     SdkConstants.ABI_ARMEABI,
-                    FileOp.EMPTY_FILE_ARRAY);
+                    FileOp.EMPTY_FILE_ARRAY,
+                    Revision.parseRevision("22.1.0"));
             mSystemImages = new SystemImage[] { si };
         }
         return mSystemImages;

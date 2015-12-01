@@ -134,6 +134,11 @@ public class AvdManager {
     public static final String AVD_INI_CPU_MODEL = "hw.cpu.model"; //$NON-NLS-1$
 
     /**
+     * AVD/config.ini key name representing the number of processors to emulate when SMP is supported.
+     */
+    public static final String AVD_INI_CPU_CORES = "hw.cpu.ncore"; //$NON-NLS-1$
+
+    /**
      * AVD/config.ini key name representing the manufacturer of the device this avd was based on.
      */
     public static final String AVD_INI_DEVICE_MANUFACTURER = "hw.device.manufacturer"; //$NON-NLS-1$
