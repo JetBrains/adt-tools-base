@@ -28,10 +28,11 @@ import java.util.List;
 
 public class DexStderrParser implements PatternAwareOutputParser {
 
+    final DexStdoutParser delegateStdoutParser = new DexStdoutParser();
     static final String DEX_TOOL_NAME = "Dex";
 
-    static final String DEX_LIMIT_EXCEEDED_ERROR =
-            "Your app has more methods than can fit in a single dex file.\n"
+    public static final String DEX_LIMIT_EXCEEDED_ERROR =
+            "Your app has more methods references than can fit in a single dex file.\n"
                     + "See https://developer.android.com/tools/building/multidex.html";
 
     static final String COULD_NOT_CONVERT_BYTECODE_TO_DEX = "Error converting bytecode to dex:\n"
@@ -41,6 +42,10 @@ public class DexStderrParser implements PatternAwareOutputParser {
     public boolean parse(@NonNull String line, @NonNull OutputLineReader reader,
             @NonNull List<Message> messages, @NonNull ILogger logger)
             throws ParsingFailedException {
+
+        if (delegateStdoutParser.parse(line, reader, messages, logger)) {
+            return true;
+        }
         if (!line.equals("UNEXPECTED TOP-LEVEL EXCEPTION:")) {
             return false;
         }
