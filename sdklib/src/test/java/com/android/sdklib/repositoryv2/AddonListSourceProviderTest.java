@@ -43,7 +43,7 @@ public class AddonListSourceProviderTest extends TestCase {
 
         downloader
                 .registerUrl(new URL("https://dl.google.com/android/repository/addons_list-1.xml"),
-                        getClass().getResourceAsStream("../testdata/addons_list_sample_1.xml"));
+                        getClass().getResourceAsStream("testdata/addons_list_sample_1.xml"));
         List<RepositorySource> sources = provider.getSources(downloader, null, progress, false);
         progress.assertNoErrorsOrWarnings();
         assertEquals(4, sources.size());
@@ -53,7 +53,7 @@ public class AddonListSourceProviderTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
         downloader
                 .registerUrl(new URL("https://dl.google.com/android/repository/addons_list-2.xml"),
-                        getClass().getResourceAsStream("../testdata/addons_list_sample_2.xml"));
+                        getClass().getResourceAsStream("testdata/addons_list_sample_2.xml"));
 
         sources = provider.getSources(downloader, null, progress, true);
         progress.assertNoErrorsOrWarnings();
@@ -83,7 +83,7 @@ public class AddonListSourceProviderTest extends TestCase {
 
     public void testLocalSource() throws Exception {
         MockFileOp fop = new MockFileOp();
-        File testFile = new File(getClass().getResource("../testdata/repositories.xml").toURI());
+        File testFile = new File(getClass().getResource("testdata/repositories.xml").toURI());
         fop.recordExistingFile(
                 new File(AndroidLocation.getFolder(), AndroidSdkHandler.LOCAL_ADDONS_FILENAME)
                         .getAbsolutePath(),
