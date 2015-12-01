@@ -46,6 +46,7 @@ import org.gradle.nativeplatform.StaticLibraryBinary;
 import org.gradle.platform.base.BinaryContainer;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -64,16 +65,20 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
     ModelMap<NdkAbiOptions> abiOptions;
     @NonNull
     Multimap<String, NativeDependencyResolveResult> nativeDependencies;
+    @NonNull
+    Multimap<String, NativeDependencyResolveResult> jniLibsDependencies;
 
     public ComponentNativeLibraryFactory(
             @NonNull BinaryContainer binaries,
             @NonNull NdkHandler ndkHandler,
             @NonNull ModelMap<NdkAbiOptions> abiOptions,
-            @NonNull Multimap<String, NativeDependencyResolveResult> nativeDependencies) {
+            @NonNull Multimap<String, NativeDependencyResolveResult> nativeDependencies,
+            @NonNull Multimap<String, NativeDependencyResolveResult> jniLibsDependencies) {
         this.binaries = binaries;
         this.ndkHandler = ndkHandler;
         this.abiOptions = abiOptions;
         this.nativeDependencies = nativeDependencies;
+        this.jniLibsDependencies = jniLibsDependencies;
     }
 
     @NonNull
@@ -165,8 +170,52 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
         Set<File> debuggableLibDir = Sets.newLinkedHashSet();
 
         debuggableLibDir.add(variantData.getScope().getNdkDebuggableLibraryFolders(abi));
+        addNativeDebuggableLib(debuggableLibDir, binary, abi, nativeDependencies);
+        addJniLibsDebuggableLib(debuggableLibDir, binary, abi, jniLibsDependencies);
 
-        for (NativeDependencyResolveResult dependency : nativeDependencies.get(binary.getName())) {
+        return ImmutableList.copyOf(debuggableLibDir);
+    }
+
+    private static void addNativeDebuggableLib(
+            @NonNull Collection<File> debuggableLibDir,
+            @NonNull AndroidBinary binary,
+            @NonNull final Abi abi,
+            @NonNull Multimap<String, NativeDependencyResolveResult> dependencyMap) {
+        NativeLibraryBinarySpec nativeBinary =
+                Iterables.find(
+                        ((DefaultAndroidBinary) binary).getNativeBinaries(),
+                        new Predicate<NativeLibraryBinarySpec>() {
+                            @Override
+                            public boolean apply(NativeLibraryBinarySpec nativeBinary) {
+                                return nativeBinary.getTargetPlatform().getName().equals(abi.getName());
+                            }
+                        },
+                        null);
+        if (nativeBinary != null) {
+            addDebuggableLib(
+                    debuggableLibDir,
+                    binary,
+                    abi,
+                    dependencyMap.get(nativeBinary.getName()));
+        }
+    }
+
+
+    private static void addJniLibsDebuggableLib(
+            @NonNull Collection<File> debuggableLibDir,
+            @NonNull AndroidBinary binary,
+            @NonNull Abi abi,
+            @NonNull Multimap<String, NativeDependencyResolveResult> dependencyMap) {
+        addDebuggableLib(debuggableLibDir, binary, abi, dependencyMap.get(binary.getName()));
+    }
+
+
+    private static void addDebuggableLib(
+            @NonNull Collection<File> debuggableLibDir,
+            @NonNull AndroidBinary binary,
+            @NonNull Abi abi,
+            @NonNull Iterable<NativeDependencyResolveResult> dependencies) {
+        for (NativeDependencyResolveResult dependency : dependencies) {
             for (NativeLibraryArtifact artifact : dependency.getNativeArtifacts()) {
                 for (File lib : artifact.getLibraries()) {
                     debuggableLibDir.add(lib.getParentFile());
@@ -183,6 +232,5 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
                 }
             }
         }
-        return ImmutableList.copyOf(debuggableLibDir);
     }
 }

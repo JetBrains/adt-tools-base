@@ -245,8 +245,9 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
                                         ? NativeDependencyLinkage.SHARED
                                         : NativeDependencyLinkage.STATIC);
                                 artifacts.setBuiltBy(
-                                        tasks.get(
-                                                "create" + StringHelper.capitalize(lib.getName())));
+                                        Lists.<Object>newArrayList(
+                                                tasks.get("create"
+                                                        + StringHelper.capitalize(lib.getName()))));
                             }
                         });
             }

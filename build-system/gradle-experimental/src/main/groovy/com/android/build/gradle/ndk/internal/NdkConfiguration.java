@@ -443,12 +443,13 @@ public class NdkConfiguration {
         final Collection<NativeDependencyResolveResult> dependencies =
                 dependencyMap.get(binary.getName());
         for (NativeDependencyResolveResult dependency : dependencies) {
-            Collection<NativeLibraryArtifact> artifacts =
-                    dependency.getNativeArtifacts();
+            Collection<NativeLibraryArtifact> artifacts = dependency.getNativeArtifacts();
             for (NativeLibraryArtifact artifact : artifacts) {
-                for (File lib : artifact.getLibraries()) {
-                    if (lib.getName().endsWith(".so")) {
-                        libs.add(lib);
+                if (binary.getTargetPlatform().getName().equals(artifact.getAbi())) {
+                    for (File lib : artifact.getLibraries()) {
+                        if (lib.getName().endsWith(".so")) {
+                            libs.add(lib);
+                        }
                     }
                 }
             }
