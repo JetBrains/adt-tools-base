@@ -98,6 +98,9 @@ public class RemoteRepoLoader {
         for (RepositorySourceProvider provider : mSourceProviders) {
             for (RepositorySource source : provider
                     .getSources(downloader, settings, progress, false)) {
+                if (!source.isEnabled()) {
+                    continue;
+                }
                 try {
                     InputStream repoStream = downloader
                             .download(new URL(source.getUrl()), settings, progress);
