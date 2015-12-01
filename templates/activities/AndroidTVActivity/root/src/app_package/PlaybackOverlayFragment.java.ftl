@@ -14,8 +14,8 @@
 
 package ${packageName};
 
-import android.app.Activity;
-import android.content.Context;
+<#if minApiLevel lt 23>import android.app.Activity;
+<#else>import android.content.Context;</#if>
 import android.media.MediaMetadataRetriever;
 import android.os.Build;
 import android.os.Bundle;
@@ -63,8 +63,6 @@ import java.util.List;
 public class PlaybackOverlayFragment extends android.support.v17.leanback.app.PlaybackOverlayFragment {
     private static final String TAG = "PlaybackControlsFragmnt";
 
-    private static Context sContext;
-
     private static final boolean SHOW_DETAIL = true;
     private static final boolean HIDE_MORE_ACTIONS = false;
     private static final int PRIMARY_CONTROLS = 5;
@@ -95,25 +93,22 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
     private Runnable mRunnable;
     private Movie mSelectedMovie;
 
-    OnPlayPauseClickedListener mCallback;
+    private OnPlayPauseClickedListener mCallback;
 
     // Container Activity must implement this interface
     public interface OnPlayPauseClickedListener {
-        public void onFragmentPlayPause(Movie movie, int position, Boolean playPause);
+        void onFragmentPlayPause(Movie movie, int position, Boolean playPause);
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        sContext = getActivity();
 
         mItems = new ArrayList<Movie>();
         mSelectedMovie = (Movie) getActivity()
                 .getIntent().getSerializableExtra(${detailsActivity}.MOVIE);
 
         List<Movie> movies = MovieList.list;
-
-        ArrayObjectAdapter listRowAdapter = new ArrayObjectAdapter(new CardPresenter());
 
         for (int j = 0; j < movies.size(); j++) {
             mItems.add(movies.get(j));
@@ -145,16 +140,14 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
         });
     }
 
+    <#if minApiLevel lt 23>@SuppressWarnings("deprecation")</#if>
     @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-
-        // This makes sure that the container activity has implemented
-        // the callback interface. If not, it throws an exception
-        try {
-            mCallback = (OnPlayPauseClickedListener) activity;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
+    public void onAttach(<#if minApiLevel lt 23>Activity<#else>Context</#if> context) {
+        super.onAttach(context);
+        if (context instanceof OnPlayPauseClickedListener) {
+            mCallback = (OnPlayPauseClickedListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
                     + " must implement OnPlayPauseClickedListener");
         }
     }
@@ -247,15 +240,15 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
         mPlaybackControlsRow.setPrimaryActionsAdapter(mPrimaryActionsAdapter);
         mPlaybackControlsRow.setSecondaryActionsAdapter(mSecondaryActionsAdapter);
 
-        mPlayPauseAction = new PlayPauseAction(sContext);
-        mRepeatAction = new RepeatAction(sContext);
-        mThumbsUpAction = new ThumbsUpAction(sContext);
-        mThumbsDownAction = new ThumbsDownAction(sContext);
-        mShuffleAction = new ShuffleAction(sContext);
-        mSkipNextAction = new PlaybackControlsRow.SkipNextAction(sContext);
-        mSkipPreviousAction = new PlaybackControlsRow.SkipPreviousAction(sContext);
-        mFastForwardAction = new PlaybackControlsRow.FastForwardAction(sContext);
-        mRewindAction = new PlaybackControlsRow.RewindAction(sContext);
+        mPlayPauseAction = new PlayPauseAction(getActivity());
+        mRepeatAction = new RepeatAction(getActivity());
+        mThumbsUpAction = new ThumbsUpAction(getActivity());
+        mThumbsDownAction = new ThumbsDownAction(getActivity());
+        mShuffleAction = new ShuffleAction(getActivity());
+        mSkipNextAction = new PlaybackControlsRow.SkipNextAction(getActivity());
+        mSkipPreviousAction = new PlaybackControlsRow.SkipPreviousAction(getActivity());
+        mFastForwardAction = new PlaybackControlsRow.FastForwardAction(getActivity());
+        mRewindAction = new PlaybackControlsRow.RewindAction(getActivity());
 
         if (PRIMARY_CONTROLS > 5) {
             mPrimaryActionsAdapter.add(mThumbsUpAction);
@@ -264,11 +257,11 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
         }
         mPrimaryActionsAdapter.add(mSkipPreviousAction);
         if (PRIMARY_CONTROLS > 3) {
-            mPrimaryActionsAdapter.add(new PlaybackControlsRow.RewindAction(sContext));
+            mPrimaryActionsAdapter.add(new PlaybackControlsRow.RewindAction(getActivity()));
         }
         mPrimaryActionsAdapter.add(mPlayPauseAction);
         if (PRIMARY_CONTROLS > 3) {
-            mPrimaryActionsAdapter.add(new PlaybackControlsRow.FastForwardAction(sContext));
+            mPrimaryActionsAdapter.add(new PlaybackControlsRow.FastForwardAction(getActivity()));
         }
         mPrimaryActionsAdapter.add(mSkipNextAction);
 
@@ -279,8 +272,8 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
         } else {
             mSecondaryActionsAdapter.add(mThumbsDownAction);
         }
-        mSecondaryActionsAdapter.add(new PlaybackControlsRow.HighQualityAction(sContext));
-        mSecondaryActionsAdapter.add(new PlaybackControlsRow.ClosedCaptioningAction(sContext));
+        mSecondaryActionsAdapter.add(new PlaybackControlsRow.HighQualityAction(getActivity()));
+        mSecondaryActionsAdapter.add(new PlaybackControlsRow.ClosedCaptioningAction(getActivity()));
     }
 
     private void notifyChanged(Action action) {
@@ -397,7 +390,7 @@ public class PlaybackOverlayFragment extends android.support.v17.leanback.app.Pl
     }
 
     protected void updateVideoImage(String uri) {
-        Glide.with(sContext)
+        Glide.with(getActivity())
                 .load(uri)
                 .centerCrop()
                 .into(new SimpleTarget<GlideDrawable>(CARD_WIDTH, CARD_HEIGHT) {

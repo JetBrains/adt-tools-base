@@ -40,7 +40,6 @@ public class PlaybackOverlayActivity extends Activity implements
     private LeanbackPlaybackState mPlaybackState = LeanbackPlaybackState.IDLE;
     private MediaSession mSession;
 
-
     /**
      * Called when the activity is first created.
      */
@@ -57,7 +56,6 @@ public class PlaybackOverlayActivity extends Activity implements
 
         mSession.setActive(true);
     }
-
 
     @Override
     public void onDestroy() {
@@ -246,8 +244,8 @@ public class PlaybackOverlayActivity extends Activity implements
     /*
      * List of various states that we can be in
      */
-    public static enum LeanbackPlaybackState {
-        PLAYING, PAUSED, BUFFERING, IDLE;
+    public enum LeanbackPlaybackState {
+        PLAYING, PAUSED, BUFFERING, IDLE
     }
 
     private class MediaSessionCallback extends MediaSession.Callback {
