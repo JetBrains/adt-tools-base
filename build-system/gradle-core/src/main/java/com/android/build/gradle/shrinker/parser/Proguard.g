@@ -29,7 +29,8 @@ prog [Flags flags, String baseDirectory]
     | ('-dontoptimize'  {$flags.setOptimize(false);})
     | ('-dontpreverify'  {$flags.setPreverify(false);})
     | ('-dontobfuscate' {$flags.setObfuscate(false);})
-    | ignoredFlag
+    | (igFlag=ignoredFlag {GrammarActions.ignoredFlag($igFlag.text, true);})
+    | (nopFlag=noOpFlag {GrammarActions.ignoredFlag($nopFlag.text, false);})
     | (unFlag=unsupportedFlag {GrammarActions.unsupportedFlag($unFlag.text);})
   )*
   EOF
@@ -38,59 +39,65 @@ prog [Flags flags, String baseDirectory]
     throw e;
   }
 
-private ignoredFlag
+private noOpFlag
   :
-  (   '-keepparameternames'
-    | ('-keepattributes' {FilterSpecification attribute_filter = new FilterSpecification();} filter[attribute_filter] )
-    | ('-keepclassmembernames' classSpec=classSpecification  )
-    | ('-keepclasseswithmembernames' classSpec=classSpecification  )
-    | ('-keepnames' classSpec=classSpecification )
-    | '-verbose'
-    | '-dontusemixedcaseclassnames'
-    | '-useuniqueclassmembernames'
+  (   '-verbose'
     // TODO: implement
     | ('-dontnote' {FilterSpecification class_filter = new FilterSpecification();} filter[class_filter])
     | ('-dontwarn' {FilterSpecification class_filter = new FilterSpecification();} filter[class_filter])
-    // TODO: do we need to handle these?
+    | '-ignorewarnings'
+    // These flags are used in the default SDK proguard rules, so there's no point warning about them:
+    | '-dontusemixedcaseclassnames'
     | '-dontskipnonpubliclibraryclasses'
     | '-dontskipnonpubliclibraryclassmembers'
-    | '-allowaccessmodification'
+    | '-skipnonpubliclibraryclasses'
+    // Similar flags as above:
+    | '-keepparameternames'
+    | ('-keepnames' classSpec=classSpecification )
+    | ('-keepclassmembernames' classSpec=classSpecification  )
+    | ('-keepclasseswithmembernames' classSpec=classSpecification  )
+    | ('-keepattributes' {FilterSpecification attribute_filter = new FilterSpecification();} filter[attribute_filter] )
+    | ('-keeppackagenames' {FilterSpecification package_filter = new FilterSpecification();} filter[package_filter] )
   )
   ;
 
-private unsupportedFlag
+private ignoredFlag
   :
-  ('-skipnonpubliclibraryclasses'
-    | ('-keepdirectories' {FilterSpecification directory_filter = new FilterSpecification();} filter[directory_filter])
-    | ('-target' NAME) //version
-    | '-forceprocessing'
-    | ('-printusage' NAME) //[filename]
-    | ('-whyareyoukeeping' classSpecification)
-    | ('-optimizations' {FilterSpecification optimization_filter = new FilterSpecification();} filter[optimization_filter])
+  (   ('-optimizations' {FilterSpecification optimization_filter = new FilterSpecification();} filter[optimization_filter])
+    | '-useuniqueclassmembernames'
+    | '-allowaccessmodification'
     | ('-optimizationpasses' NAME) //n
     | ('-assumenosideeffects' classSpecification)
     | '-mergeinterfacesaggressively'
     | '-overloadaggressively'
-    | '-microedition'
     | ('-renamesourcefileattribute' sourceFile=NAME?)
-    | '-ignorewarnings'
-    | ('-printconfiguration' NAME?) //[filename]
-    | ('-dump' NAME?) //[filename]
     | ('-adaptclassstrings' {FilterSpecification filter = new FilterSpecification();} filter[filter])
     | ('-applymapping' mapping=NAME )
     | '-obfuscationdictionary' obfuscationDictionary=NAME
     | '-classobfuscationdictionary' classObfuscationDictionary=NAME
     | '-packageobfuscationdictionary' packageObfuscationDictionary=NAME
-    | '-printmapping' outputMapping=NAME?
-    | ('-keeppackagenames' {FilterSpecification package_filter = new FilterSpecification();} filter[package_filter] )
     | ('-repackageclasses' ('\'' newPackage=NAME? '\'')? )
     | ('-flattenpackagehierarchy' ('\'' newPackage=NAME? '\'')? )
-    | ('-printseeds' seedOutputFile=NAME? )
     | ('-adaptresourcefilenames' {FilterSpecification file_filter = new FilterSpecification();} filter[file_filter] )
     | ('-adaptresourcefilecontents' {FilterSpecification file_filter = new FilterSpecification();} filter[file_filter] )
-    | '-injars' inJars=classpath
+  )
+  ;
+
+private unsupportedFlag
+  :
+  ( '-injars' inJars=classpath
     | '-outjars' outJars=classpath
     | '-libraryjars' libraryJars=classpath
+    | ('-target' NAME) //version
+    | '-forceprocessing'
+    | ('-printusage' NAME) //[filename]
+    | ('-whyareyoukeeping' classSpecification)
+    | '-microedition'
+    | ('-printconfiguration' NAME?) //[filename]
+    | ('-dump' NAME?) //[filename]
+    | '-printmapping' outputMapping=NAME?
+    | ('-printseeds' seedOutputFile=NAME? )
+    | ('-keepdirectories' {FilterSpecification directory_filter = new FilterSpecification();} filter[directory_filter])
   )
   ;
 

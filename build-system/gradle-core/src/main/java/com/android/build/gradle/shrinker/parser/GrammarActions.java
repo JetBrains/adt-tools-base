@@ -25,6 +25,8 @@ import org.antlr.runtime.ANTLRFileStream;
 import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +37,8 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings("unused") // These methods are called by the ANTLR-generated parser.
 public class GrammarActions {
+
+    private static Logger logger = LoggerFactory.getLogger(GrammarActions.class);
 
     public static void parse(
             @NonNull String proguardFileName,
@@ -248,8 +252,14 @@ public class GrammarActions {
     static void unsupportedFlag(String flag) {
         throw new IllegalArgumentException(
                 String.format(
-                        "Flag %s is not supported by the custom shrinker.",
+                        "Flag %s is not supported by the built-in shrinker.",
                         flag));
+    }
+
+    static void ignoredFlag(String flag, boolean printWarning) {
+        if (printWarning) {
+            logger.warn("Flag {} is ignored by the built-in shrinker.", flag);
+        }
     }
 
     @NonNull
