@@ -28,11 +28,14 @@ import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.base.Optional;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,7 +53,11 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
      * Exception thrown when the incremental shrinker detects incompatible changes and requests
      * a full run instead.
      */
-    public static class IncrementalRunImpossibleException extends Exception {}
+    public static class IncrementalRunImpossibleException extends RuntimeException {
+        public IncrementalRunImpossibleException(String message) {
+            super(message);
+        }
+    }
 
     public IncrementalShrinker(
             WaitableExecutor<Void> executor,
@@ -151,6 +158,8 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
     /**
      * Saves all reachable classes and members in a {@link SetMultimap} and clears all counters, so
      * that the graph can be traversed again, using the new edges.
+     *
+     * <p>Returns a multimap that contains names of all reachable members for every reachable class.
      */
     @NonNull
     private SetMultimap<T, String> resetState() {
@@ -189,7 +198,12 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
                     case ADDED:
                     case REMOVED:
                     case CHANGED:
-                        throw new IncrementalRunImpossibleException();
+                        //noinspection StringToUpperCaseOrToLowerCaseWithoutLocale
+                        throw new IncrementalRunImpossibleException(
+                                String.format(
+                                        "Input jar %s has been %s.",
+                                        jarInput.getFile(),
+                                        jarInput.getStatus().name().toLowerCase()));
                     case NOTCHANGED:
                         break;
                 }
@@ -202,9 +216,13 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
                         public Void call() throws Exception {
                             switch (changedFile.getValue()) {
                                 case ADDED:
-                                    throw new IncrementalRunImpossibleException();
+                                    throw new IncrementalRunImpossibleException(
+                                            String.format(
+                                                    "File %s added.", changedFile.getKey()));
                                 case REMOVED:
-                                    throw new IncrementalRunImpossibleException();
+                                    throw new IncrementalRunImpossibleException(
+                                            String.format(
+                                                    "File %s removed.", changedFile.getKey()));
                                 case CHANGED:
                                     processChangedClassFile(
                                             changedFile.getKey(),
@@ -239,17 +257,54 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
             @NonNull final Collection<UnresolvedReference<T>> unresolvedReferences,
             @NonNull final Collection<T> classesToWrite)
             throws IOException, IncrementalRunImpossibleException {
+        // TODO: Detect changes to modifiers and annotations.
+
         ClassReader classReader = new ClassReader(Files.toByteArray(file));
-        // TODO: Detect structure changes.
         DependencyFinderVisitor<T> finder = new DependencyFinderVisitor<T>(mGraph, null) {
+            private String mClassName;
+            private Set<T> mMethods;
+            private Set<T> mFields;
 
             @Override
             public void visit(int version, int access, String name, String signature,
                     String superName,
                     String[] interfaces) {
                 T klass = mGraph.getClassReference(name);
+                mClassName = name;
+                mMethods = mGraph.getMethods(klass);
+                mFields = mGraph.getFields(klass);
                 classesToWrite.add(klass);
                 super.visit(version, access, name, signature, superName, interfaces);
+            }
+
+            @Override
+            public FieldVisitor visitField(int access, String name, String desc, String signature,
+                    Object value) {
+                T field = mGraph.getMemberReference(mClassName, name, desc);
+                if (!mFields.remove(field)) {
+                    throw new IncrementalRunImpossibleException(
+                            String.format(
+                                    "Field %s.%s:%s added.",
+                                    mClassName,
+                                    name,
+                                    desc));
+                }
+                return super.visitField(access, name, desc, signature, value);
+            }
+
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String desc, String signature,
+                    String[] exceptions) {
+                T method = mGraph.getMemberReference(mClassName, name, desc);
+                if (!mMethods.remove(method)) {
+                    throw new IncrementalRunImpossibleException(
+                            String.format(
+                                    "Method %s.%s:%s added.",
+                                    mClassName,
+                                    name,
+                                    desc));
+                }
+                return super.visitMethod(access, name, desc, signature, exceptions);
             }
 
             @Override
@@ -271,8 +326,44 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
             protected void handleUnresolvedReference(UnresolvedReference<T> reference) {
                 unresolvedReferences.add(reference);
             }
+
+            @Override
+            public void visitEnd() {
+                T field = Iterables.getFirst(mFields, null);
+                if (field != null) {
+                    throw new IncrementalRunImpossibleException(
+                            String.format(
+                                    "Field %s.%s:%s removed.",
+                                    mClassName,
+                                    mGraph.getFieldName(field),
+                                    mGraph.getFieldDesc(field)));
+                }
+
+                T method = Iterables.getFirst(mMethods, null);
+                if (method != null) {
+                    throw new IncrementalRunImpossibleException(
+                            String.format(
+                                    "Method %s.%s removed.",
+                                    mClassName,
+                                    mGraph.getMethodNameAndDesc(method)));
+                }
+            }
         };
         DependencyRemoverVisitor<T> remover = new DependencyRemoverVisitor<T>(mGraph, finder);
+
         classReader.accept(remover, 0);
+    }
+
+    @Override
+    protected void waitForAllTasks() {
+        try {
+            super.waitForAllTasks();
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof IncrementalRunImpossibleException) {
+                throw (IncrementalRunImpossibleException) e.getCause();
+            } else {
+                throw e;
+            }
+        }
     }
 }

@@ -48,6 +48,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -58,6 +61,8 @@ import java.util.Set;
  * into the output folders (one per stream).
  */
 public class NewShrinkerTransform extends ProguardConfigurable {
+
+    private static final Logger logger = LoggerFactory.getLogger(NewShrinkerTransform.class);
 
     private static final String NAME = "newClassShrinker";
 
@@ -193,6 +198,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
         try {
             shrinker.incrementalRun(inputs, output);
         } catch (IncrementalShrinker.IncrementalRunImpossibleException e) {
+            logger.warn("Incremental shrinker run impossible: " + e.getMessage());
             fullRun(inputs, referencedInputs, output);
         }
     }
