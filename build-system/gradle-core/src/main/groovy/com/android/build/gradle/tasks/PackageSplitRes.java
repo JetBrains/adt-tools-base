@@ -142,8 +142,7 @@ public class PackageSplitRes extends SplitRelatedTask {
                 new SplitFileHandler() {
                     @Override
                     public void execute(String split, File file) {
-                            File outFile = new File(outputDirectory,
-                                    getOutputFileNameForSplit(split));
+                        File outFile = new File(outputDirectory, getOutputFileNameForSplit(split));
                         try {
                             getBuilder().signApk(file, signingConfig, outFile);
                         } catch (IOException e) {
