@@ -167,4 +167,6 @@ public interface FileOp {
      * Creates a new file. See {@link File#createNewFile()}.
      */
     boolean createNewFile(@NonNull File file) throws IOException;
+
+    boolean isWindows();
 }
