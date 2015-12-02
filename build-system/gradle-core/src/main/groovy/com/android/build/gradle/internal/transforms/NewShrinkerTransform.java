@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.transforms;
 
-import static com.android.builder.shrinker.AbstractShrinker.logTime;
+import static com.android.build.gradle.shrinker.AbstractShrinker.logTime;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -35,11 +35,11 @@ import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.builder.core.VariantType;
-import com.android.builder.shrinker.AbstractShrinker.CounterSet;
-import com.android.builder.shrinker.FullRunShrinker;
-import com.android.builder.shrinker.IncrementalShrinker;
-import com.android.builder.shrinker.JavaSerializationShrinkerGraph;
-import com.android.builder.shrinker.ProguardConfigKeepRulesBuilder;
+import com.android.build.gradle.shrinker.AbstractShrinker.CounterSet;
+import com.android.build.gradle.shrinker.FullRunShrinker;
+import com.android.build.gradle.shrinker.IncrementalShrinker;
+import com.android.build.gradle.shrinker.JavaSerializationShrinkerGraph;
+import com.android.build.gradle.shrinker.ProguardConfigKeepRulesBuilder;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.base.Stopwatch;

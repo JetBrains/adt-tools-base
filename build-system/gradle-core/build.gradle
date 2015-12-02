@@ -1,5 +1,3 @@
-import com.google.common.io.Files
-
 apply plugin: 'groovy'
 apply plugin: 'jacoco'
 apply plugin: 'clone-artifacts'
@@ -186,3 +184,35 @@ configurations {
 artifacts {
     incrementalTestClasses jarIncrementalTests
 }
+
+// Manual Antlr setup, remove once we switch to Gradle 2.3+:
+
+def generated = new File("${project.buildDir}/generated/java")
+
+sourceSets {
+    main {
+        java {
+            srcDir generated
+        }
+    }
+}
+
+configurations {
+    antlr3
+    compile.extendsFrom antlr3
+}
+
+dependencies {
+    antlr3 'org.antlr:antlr:3.5.2'
+    compile 'org.antlr:antlr-runtime:3.5.2'
+}
+
+
+task generateProguardParser(type:Exec) {
+    commandLine = ['java', '-cp',  configurations.antlr3.getAsPath(),
+                   'org.antlr.Tool',
+                   '-o', new File(generated, "com/android/build/gradle/shrinker/parser"),
+                   file('src/main/java/com/android/build/gradle/shrinker/parser/Proguard.g')]
+}
+
+tasks.compileJava.dependsOn generateProguardParser
