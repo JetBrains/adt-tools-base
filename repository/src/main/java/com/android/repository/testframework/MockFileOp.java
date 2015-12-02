@@ -63,8 +63,10 @@ public class MockFileOp implements FileOp {
     private final Set<String> mExistingFolders = Sets.newTreeSet();
     private final Set<String> mReadOnlyFiles = Sets.newTreeSet();
     private final List<StringOutputStream> mOutputStreams = new ArrayList<StringOutputStream>();
+    private boolean mIsWindows;
 
     public MockFileOp() {
+        mIsWindows = FileOpUtils.create().isWindows();
     }
 
     /** Resets the internal state, as if the object had been newly created. */
@@ -73,6 +75,17 @@ public class MockFileOp implements FileOp {
         mExistingFolders.clear();
         mReadOnlyFiles.clear();
         mOutputStreams.clear();
+        mIsWindows = FileOpUtils.create().isWindows();
+
+    }
+
+    @Override
+    public boolean isWindows() {
+        return mIsWindows;
+    }
+
+    public void setIsWindows(boolean isWindows) {
+        mIsWindows = isWindows;
     }
 
     @NonNull
@@ -82,7 +95,7 @@ public class MockFileOp implements FileOp {
 
     @NonNull
     public String getAgnosticAbsPath(@NonNull String path) {
-        if (FileOpUtils.isWindows()) {
+        if (isWindows()) {
             // Try to convert the windows-looking path to a unix-looking one
             path = path.replace('\\', '/');
             path = path.replaceAll("^[A-Z]:", "");

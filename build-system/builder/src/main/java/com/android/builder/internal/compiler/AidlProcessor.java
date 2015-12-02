@@ -111,7 +111,8 @@ public class AidlProcessor implements SourceSearcher.SourceFileProcessor {
 
             boolean isParcelable = data.getOutputFiles().isEmpty();
 
-            String relative = FileOpUtils.makeRelative(sourceFolder, sourceFile);
+            String relative = FileOpUtils
+                    .makeRelative(sourceFolder, sourceFile, FileOpUtils.create());
             boolean isWhiteListed =
                     mPackageWhiteList != null && mPackageWhiteList.contains(relative);
 

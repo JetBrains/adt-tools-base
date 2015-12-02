@@ -162,10 +162,6 @@ public final class FileOpUtils {
         return null;
     }
 
-    public static boolean isWindows() {
-        return System.getProperty("os.name").startsWith("Windows");
-    }
-
     /**
      * Appends the given {@code segments} to the {@code base} file.
      *
@@ -207,17 +203,18 @@ public final class FileOpUtils {
      *
      * @param baseDir The base directory to be relative to.
      * @param toBeRelative The file or directory to make relative to the base.
+     * @param fop FileOp, in this case just to determine the platform.
      * @return A path that makes toBeRelative relative to baseDir.
      * @throws IOException If drive letters don't match on Windows or path canonicalization fails.
      */
 
     @NonNull
-    public static String makeRelative(@NonNull File baseDir, @NonNull File toBeRelative)
+    public static String makeRelative(@NonNull File baseDir, @NonNull File toBeRelative, FileOp fop)
             throws IOException {
         return makeRelativeImpl(
                 baseDir.getCanonicalPath(),
                 toBeRelative.getCanonicalPath(),
-                FileOpUtils.isWindows(),
+                fop.isWindows(),
                 File.separator);
     }
 

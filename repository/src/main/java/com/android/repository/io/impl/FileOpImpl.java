@@ -83,7 +83,7 @@ public class FileOpImpl implements FileOp {
             return;
         }
 
-        if (FileOpUtils.isWindows()) {
+        if (isWindows()) {
             // Trying to delete a resource on windows might fail if there's a file
             // indexer locking the resource. Generally retrying will be enough to
             // make it work.
@@ -115,7 +115,7 @@ public class FileOpImpl implements FileOp {
 
     @Override
     public void setExecutablePermission(@NonNull File file) throws IOException {
-        if (FileOpUtils.isWindows()) {
+        if (isWindows()) {
             throw new IllegalStateException("Can't setExecutablePermission on windows!");
         }
         if (sFileSetExecutable != null) {
@@ -334,5 +334,10 @@ public class FileOpImpl implements FileOp {
     @Override
     public boolean createNewFile(@NonNull File file) throws IOException {
         return file.createNewFile();
+    }
+
+    @Override
+    public boolean isWindows() {
+        return System.getProperty("os.name").startsWith("Windows");
     }
 }

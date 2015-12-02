@@ -37,7 +37,6 @@ import com.android.sdklib.devices.DeviceManager;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus;
 import com.android.sdklib.internal.project.ProjectProperties;
-import com.android.repository.io.FileOp;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.local.LocalSdk;
 import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
@@ -62,7 +61,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -915,7 +921,8 @@ public class AvdManager {
                 // if skinFolder is in the sdk, use the relative path
                 if (skinFolder.getPath().startsWith(myLocalSdk.getLocation().getPath())) {
                     try {
-                        skinPath = FileOpUtils.makeRelative(myLocalSdk.getLocation(), skinFolder);
+                        skinPath = FileOpUtils.makeRelative(myLocalSdk.getLocation(), skinFolder,
+                                FileOpUtils.create());
                     } catch (IOException e) {
                         // In case it fails, just use the absolute path
                         skinPath = skinFolder.getAbsolutePath();
