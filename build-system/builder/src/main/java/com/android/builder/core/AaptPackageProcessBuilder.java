@@ -21,8 +21,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.dependency.SymbolFileProvider;
 import com.android.builder.model.AaptOptions;
+import com.android.builder.model.AndroidLibrary;
 import com.android.ide.common.process.ProcessEnvBuilder;
 import com.android.ide.common.process.ProcessInfo;
 import com.android.ide.common.process.ProcessInfoBuilder;
@@ -53,7 +53,7 @@ public class AaptPackageProcessBuilder extends ProcessEnvBuilder<AaptPackageProc
     private boolean mVerboseExec = false;
     @Nullable private String mSourceOutputDir;
     @Nullable private String mSymbolOutputDir;
-    @Nullable private List<? extends SymbolFileProvider> mLibraries;
+    @Nullable private List<? extends AndroidLibrary> mLibraries;
     @Nullable private String mResPackageOutput;
     @Nullable private String mProguardOutput;
     @Nullable private VariantType mType;
@@ -140,14 +140,14 @@ public class AaptPackageProcessBuilder extends ProcessEnvBuilder<AaptPackageProc
      * @return itself
      */
     public AaptPackageProcessBuilder setLibraries(
-            @NonNull List<? extends SymbolFileProvider> libraries) {
+            @NonNull List<? extends AndroidLibrary> libraries) {
         mLibraries = libraries;
         return this;
     }
 
     @NonNull
-    public List<? extends SymbolFileProvider> getLibraries() {
-        return mLibraries == null ? ImmutableList.<SymbolFileProvider>of() : mLibraries;
+    public List<? extends AndroidLibrary> getLibraries() {
+        return mLibraries == null ? ImmutableList.<AndroidLibrary>of() : mLibraries;
     }
 
     /**

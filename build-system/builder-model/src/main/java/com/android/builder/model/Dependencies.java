@@ -46,8 +46,11 @@ public interface Dependencies {
      * The list of project dependencies. This is only for non Android module dependencies (which
      * right now is Java-only modules).
      *
+     * This is only valid for version < 2.1
+     *
      * @return the list of projects.
      */
     @NonNull
+    @Deprecated
     Collection<String> getProjects();
 }

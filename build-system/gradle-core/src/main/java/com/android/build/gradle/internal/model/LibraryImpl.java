@@ -17,16 +17,24 @@
 package com.android.build.gradle.internal.model;
 
 import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.Immutable;
 import com.android.builder.model.Library;
 import com.android.builder.model.MavenCoordinates;
+import com.google.common.base.Objects;
 
 import java.io.Serializable;
 
 /**
- * Implementation of Library interface for the model.
+ * Serializable implementation of Library for use in the model.
  */
+@Immutable
 class LibraryImpl implements Library, Serializable {
     private static final long serialVersionUID = 1L;
+
+    @Nullable
+    private final String project;
+    @Nullable
+    private final String name;
 
     @Nullable
     private final MavenCoordinates requestedCoordinates;
@@ -35,11 +43,25 @@ class LibraryImpl implements Library, Serializable {
     private final MavenCoordinates resolvedCoordinates;
 
     LibraryImpl(
+            @Nullable String project,
             @Nullable MavenCoordinates requestedCoordinates,
             @Nullable MavenCoordinates resolvedCoordinates) {
-
+        this.project = project;
+        this.name = resolvedCoordinates != null ? resolvedCoordinates.toString() : null;
         this.requestedCoordinates = requestedCoordinates;
         this.resolvedCoordinates = resolvedCoordinates;
+    }
+
+    @Override
+    @Nullable
+    public String getProject() {
+        return project;
+    }
+
+    @Nullable
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Nullable
@@ -52,5 +74,14 @@ class LibraryImpl implements Library, Serializable {
     @Override
     public MavenCoordinates getResolvedCoordinates() {
         return resolvedCoordinates;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("name", name)
+                .add("requestedCoordinates", requestedCoordinates)
+                .add("resolvedCoordinates", resolvedCoordinates)
+                .toString();
     }
 }

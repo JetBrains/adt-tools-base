@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.Logcat;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.model.Variant;
 import com.google.common.annotations.GwtIncompatible;
@@ -125,6 +126,11 @@ public class TruthHelper {
 
     public static LogCatMessagesSubject assertThat(Logcat logcat) {
         return assert_().about(LogCatMessagesSubject.FACTORY).that(logcat);
+    }
+
+    @NonNull
+    public static MavenCoordinatesSubject assertThat(@Nullable MavenCoordinates coordinates) {
+        return assert_().about(MavenCoordinatesSubject.Factory.get()).that(coordinates);
     }
 
     // ---- helper method from com.google.common.truth.Truth

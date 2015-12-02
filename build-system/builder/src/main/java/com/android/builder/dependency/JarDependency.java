@@ -18,18 +18,19 @@ package com.android.builder.dependency;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * Represents a Jar dependency. This could be the output of a Java project.
  *
- * This is not meant to include transitive dependencies, as there's no need to record this
- * information when building.
  */
-public class JarDependency {
+public class JarDependency implements JavaLibrary {
 
     @NonNull
     private final File mJarFile;
@@ -70,6 +71,23 @@ public class JarDependency {
         this(jarFile, compiled, packaged, true, resolvedCoordinates, projectPath);
     }
 
+    @Nullable
+    @Override
+    public String getProject() {
+        return mProjectPath;
+    }
+
+    @Nullable
+    @Override
+    public String getName() {
+        if (mResolvedCoordinates != null) {
+            return mResolvedCoordinates.toString();
+        }
+
+        return mJarFile.getName();
+    }
+
+    @Override
     @NonNull
     public File getJarFile() {
         return mJarFile;
@@ -87,6 +105,24 @@ public class JarDependency {
         return mProguarded;
     }
 
+    @Override
+    public boolean isProvided() {
+        return mCompiled && !mPackaged;
+    }
+
+    @NonNull
+    @Override
+    public List<? extends JavaLibrary> getDependencies() {
+        return ImmutableList.of();
+    }
+
+    @Nullable
+    @Override
+    public MavenCoordinates getRequestedCoordinates() {
+        return null;
+    }
+
+    @Override
     @Nullable
     public MavenCoordinates getResolvedCoordinates() {
         return mResolvedCoordinates;

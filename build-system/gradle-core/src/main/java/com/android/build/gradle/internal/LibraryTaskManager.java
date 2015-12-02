@@ -26,6 +26,8 @@ import static com.android.builder.dependency.LibraryBundle.FN_PROGUARD_TXT;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.Transform;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
@@ -45,14 +47,11 @@ import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.VariantHelper;
 import com.android.build.gradle.tasks.ExtractAnnotations;
 import com.android.build.gradle.tasks.MergeResources;
-import com.android.build.api.transform.QualifiedContent.Scope;
-import com.android.build.api.transform.Transform;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.dependency.LibraryBundle;
-import com.android.builder.dependency.LibraryDependency;
-import com.android.builder.dependency.ManifestDependency;
 import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.profile.ExecutionType;
@@ -491,20 +490,14 @@ public class LibraryTaskManager extends TaskManager {
 
             @NonNull
             @Override
-            public List<LibraryDependency> getDependencies() {
-                return variantConfig.getDirectLibraries();
-            }
-
-            @NonNull
-            @Override
             public List<? extends AndroidLibrary> getLibraryDependencies() {
                 return variantConfig.getDirectLibraries();
             }
 
             @NonNull
             @Override
-            public List<? extends ManifestDependency> getManifestDependencies() {
-                return variantConfig.getDirectLibraries();
+            public Collection<? extends JavaLibrary> getJavaDependencies() {
+                return variantConfig.getExternalJarDependencies();
             }
 
             @Override

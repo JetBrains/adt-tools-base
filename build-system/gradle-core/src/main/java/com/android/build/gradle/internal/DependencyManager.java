@@ -29,7 +29,6 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dependency.JarInfo;
 import com.android.build.gradle.internal.dependency.LibInfo;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
-import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.model.MavenCoordinatesImpl;
 import com.android.build.gradle.internal.scope.AndroidTask;
@@ -39,7 +38,7 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.dependency.DependencyContainer;
 import com.android.builder.dependency.JarDependency;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
 import com.android.utils.ILogger;
@@ -124,7 +123,7 @@ public class DependencyManager {
             prepareLibTask.dependsOn(variantData.getScope().getPreBuildTask().getName());
         }
 
-        for (LibraryDependency childLib : lib.getDependencies()) {
+        for (AndroidLibrary childLib : lib.getLibraryDependencies()) {
             addDependencyToPrepareTask(
                     tasks,
                     variantData,
@@ -137,7 +136,7 @@ public class DependencyManager {
             @NonNull VariantDependencies variantDeps,
             @Nullable VariantDependencies testedVariantDeps,
             @Nullable String testedProjectPath) {
-        Multimap<LibraryDependency, VariantDependencies> reverseMap = ArrayListMultimap.create();
+        Multimap<AndroidLibrary, VariantDependencies> reverseMap = ArrayListMultimap.create();
 
         resolveDependencyForConfig(variantDeps, testedVariantDeps, testedProjectPath, reverseMap);
         processLibraries(variantDeps.getLibraries(), reverseMap);
@@ -145,19 +144,19 @@ public class DependencyManager {
 
     private void processLibraries(
             @NonNull Collection<LibraryDependencyImpl> libraries,
-            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
+            @NonNull Multimap<AndroidLibrary, VariantDependencies> reverseMap) {
         for (LibraryDependencyImpl lib : libraries) {
             setupPrepareLibraryTask(lib, reverseMap);
             //noinspection unchecked
             processLibraries(
-                    (Collection<LibraryDependencyImpl>) (List<?>) lib.getDependencies(),
+                    (Collection<LibraryDependencyImpl>) lib.getLibraryDependencies(),
                     reverseMap);
         }
     }
 
     private void setupPrepareLibraryTask(
             @NonNull LibraryDependencyImpl libDependency,
-            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
+            @NonNull Multimap<AndroidLibrary, VariantDependencies> reverseMap) {
         Task task = maybeCreatePrepareLibraryTask(libDependency, project);
 
         // Use the reverse map to find all the configurations that included this android
@@ -234,7 +233,7 @@ public class DependencyManager {
             @NonNull VariantDependencies variantDeps,
             @Nullable VariantDependencies testedVariantDeps,
             @Nullable String testedProjectPath,
-            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
+            @NonNull Multimap<AndroidLibrary, VariantDependencies> reverseMap) {
 
         Configuration compileClasspath = variantDeps.getCompileConfiguration();
         Configuration packageClasspath = variantDeps.getPackageConfiguration();
@@ -433,20 +432,18 @@ public class DependencyManager {
                 }
             }
 
-            List<? extends LibraryDependency> androidDependencies =
+            List<? extends AndroidLibrary> androidDependencies =
                     testedVariantDeps.getAndroidDependencies();
 
             Map<String, String> testedAndroidDeps = Maps.newHashMapWithExpectedSize(jarDependencies.size());
-            for (LibraryDependency androidDependency : androidDependencies) {
+            for (AndroidLibrary androidDependency : androidDependencies) {
                 MavenCoordinates coordinates = androidDependency.getResolvedCoordinates();
                 checkState(coordinates != null);
 
                 testedAndroidDeps.put(
                         computeVersionLessCoordinateKey(coordinates),
                         coordinates.getVersion());
-
             }
-
 
             for (LibInfo androidLibrary : libInfoSet) {
                 MavenCoordinates coordinates = androidLibrary.getResolvedCoordinates();
@@ -562,7 +559,7 @@ public class DependencyManager {
                 compiledAndroidLibraries, librariesToKeep, reverseMap);
 
         if (DEBUG_DEPENDENCY) {
-            for (LibraryDependency lib : libList) {
+            for (AndroidLibrary lib : libList) {
                 System.out.println("LIB: " + lib);
             }
             for (JarDependency jar : jars) {
@@ -617,8 +614,8 @@ public class DependencyManager {
 
     private static List<LibraryDependencyImpl> convertLibraryInfoIntoDependency(
             @NonNull List<LibInfo> libInfos,
-            Set<LibInfo> librariesToKeep,
-            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
+            @NonNull Set<LibInfo> librariesToKeep,
+            @NonNull Multimap<AndroidLibrary, VariantDependencies> reverseMap) {
         List<LibraryDependencyImpl> list = Lists.newArrayListWithCapacity(libInfos.size());
 
         // since the LibInfos is a graph and the previous "foundLibraries" map ensure we reuse
@@ -635,17 +632,18 @@ public class DependencyManager {
         return list;
     }
 
+    @NonNull
     private static LibraryDependencyImpl convertLibInfo(
             @NonNull LibInfo libInfo,
-            Set<LibInfo> librariesToKeep,
-            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap,
+            @NonNull Set<LibInfo> librariesToKeep,
+            @NonNull Multimap<AndroidLibrary, VariantDependencies> reverseMap,
             @NonNull Map<LibInfo, LibraryDependencyImpl> convertedMap) {
         LibraryDependencyImpl convertedLib = convertedMap.get(libInfo);
         if (convertedLib == null) {
             // first, convert the children.
             @SuppressWarnings("unchecked")
-            List<LibInfo> children = (List<LibInfo>) (List<?>) libInfo.getDependencies();
-            List<LibraryDependency> convertedChildren = Lists.newArrayListWithCapacity(children.size());
+            List<LibInfo> children = (List<LibInfo>) libInfo.getLibraryDependencies();
+            List<AndroidLibrary> convertedChildren = Lists.newArrayListWithCapacity(children.size());
 
             for (LibInfo child : children) {
                 if (librariesToKeep.contains(child)) {
@@ -781,7 +779,7 @@ public class DependencyManager {
             @NonNull Map<ModuleVersionIdentifier, List<LibInfo>> alreadyFoundLibraries,
             @NonNull Map<ModuleVersionIdentifier, List<JarInfo>> alreadyFoundJars,
             @NonNull Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap,
+            @NonNull Multimap<AndroidLibrary, VariantDependencies> reverseMap,
             @NonNull Set<String> currentUnresolvedDependencies,
             @Nullable String testedProjectPath,
             @NonNull List<String> projectChain,
@@ -914,7 +912,7 @@ public class DependencyManager {
                         LibInfo libInfo = new LibInfo(
                                 artifact.getFile(),
                                 explodedDir,
-                                (List<LibraryDependency>) (List<?>) nestedLibraries,
+                                (List<AndroidLibrary>) (List<?>) nestedLibraries,
                                 nestedJars,
                                 name,
                                 artifact.getClassifier(),
@@ -1099,21 +1097,6 @@ public class DependencyManager {
         addDependsOnTaskInOtherProjects(
                 project.getTasks().getByName(JavaBasePlugin.BUILD_DEPENDENTS_TASK_NAME), false,
                 JavaBasePlugin.BUILD_DEPENDENTS_TASK_NAME, "compile");
-    }
-
-    @NonNull
-    public static List<ManifestDependencyImpl> getManifestDependencies(
-            List<LibraryDependency> libraries) {
-
-        List<ManifestDependencyImpl> list = Lists.newArrayListWithCapacity(libraries.size());
-
-        for (LibraryDependency lib : libraries) {
-            // get the dependencies
-            List<ManifestDependencyImpl> children = getManifestDependencies(lib.getDependencies());
-            list.add(new ManifestDependencyImpl(lib.getName(), lib.getManifest(), children));
-        }
-
-        return list;
     }
 
     /**

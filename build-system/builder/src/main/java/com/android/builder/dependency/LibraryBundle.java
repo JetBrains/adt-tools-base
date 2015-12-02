@@ -31,6 +31,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
+import com.android.builder.model.AndroidLibrary;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
@@ -38,11 +39,11 @@ import java.io.File;
 import java.util.List;
 
 /**
- * Default implementation of the LibraryDependency interface that handles a default bundle project
+ * Default implementation of the AndroidLibrary interface that handles a default bundle project
  * structure.
  */
 @Immutable
-public abstract class LibraryBundle implements LibraryDependency {
+public abstract class LibraryBundle implements AndroidLibrary {
 
     public static final String FN_PROGUARD_TXT = "proguard.txt";
 
@@ -116,18 +117,6 @@ public abstract class LibraryBundle implements LibraryDependency {
     @NonNull
     public File getJarFile() {
         return new File(getJarsRootFolder(), FN_CLASSES_JAR);
-    }
-
-    @Override
-    @NonNull
-    public List<JarDependency> getLocalDependencies() {
-        List<File> jars = getLocalJars();
-        List<JarDependency> localDependencies = Lists.newArrayListWithCapacity(jars.size());
-        for (File jar : jars) {
-            localDependencies.add(new JarDependency(jar, true, true, null, null));
-        }
-
-        return localDependencies;
     }
 
     @NonNull

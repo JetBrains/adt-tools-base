@@ -32,6 +32,10 @@ public interface AndroidProject {
     String PROPERTY_BUILD_MODEL_ONLY =  "android.injected.build.model.only";
     // Sent by Studio 1.1+
     String PROPERTY_BUILD_MODEL_ONLY_ADVANCED =  "android.injected.build.model.only.advanced";
+    // Sent by Studio 2.1+. The value of the prop is a monotonically increasing integer.
+    // 0 is Studio 1.0, 1 is studio 1.x/2.0, 2 is studio 2.1+ (until we need to rev it up).
+    String PROPERTY_BUILD_MODEL_ONLY_VERSIONED =  "android.injected.build.model.only.versioned";
+
     // Sent by Studio 1.5+
     String PROPERTY_BUILD_API = "android.injected.build.api";
     String PROPERTY_BUILD_ABI = "android.injected.build.abi";

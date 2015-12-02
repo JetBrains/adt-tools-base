@@ -18,21 +18,25 @@ package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.annotations.concurrency.Immutable;
 import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
-import com.google.common.collect.Lists;
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Serializable implementation of AndroidLibrary for use in the model.
+ */
+@Immutable
 public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, Serializable {
     private static final long serialVersionUID = 1L;
 
-    @Nullable
-    private final String project;
     @Nullable
     private final String variant;
     @NonNull
@@ -43,8 +47,6 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     private final File manifest;
     @NonNull
     private final File jarFile;
-    @NonNull
-    private final Collection<File> localJars;
     @NonNull
     private final File resFolder;
     @NonNull
@@ -64,43 +66,45 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     @NonNull
     private final File publicResources;
     @NonNull
-    private final List<AndroidLibrary> dependencies;
+    private final File symbolFile;
+    @NonNull
+    private final List<AndroidLibrary> androidLibraries;
+    @NonNull
+    private final Collection<JavaLibrary> javaLibraries;
+    @NonNull
+    private final Collection<File> localJars;
     private final boolean isOptional;
 
     AndroidLibraryImpl(
-            @NonNull LibraryDependency libraryDependency,
-            @NonNull List<AndroidLibrary> dependencies,
-            @NonNull Collection<File> localJarOverride,
+            @NonNull AndroidLibrary clonedLibrary,
+            @NonNull List<AndroidLibrary> androidLibraries,
+            @NonNull Collection<JavaLibrary> javaLibraries,
+            @NonNull Collection<File> localJavaLibraries,
             @Nullable String project,
             @Nullable String variant,
             @Nullable MavenCoordinates requestedCoordinates,
             @Nullable MavenCoordinates resolvedCoordinates) {
-        super(requestedCoordinates, resolvedCoordinates);
-        this.dependencies = dependencies;
-        bundle = libraryDependency.getBundle();
-        folder = libraryDependency.getFolder();
-        manifest = libraryDependency.getManifest();
-        jarFile = libraryDependency.getJarFile();
-        localJars = Lists.newArrayList(localJarOverride);
-        resFolder = libraryDependency.getResFolder();
-        assetsFolder = libraryDependency.getAssetsFolder();
-        jniFolder = libraryDependency.getJniFolder();
-        aidlFolder = libraryDependency.getAidlFolder();
-        renderscriptFolder = libraryDependency.getRenderscriptFolder();
-        proguardRules = libraryDependency.getProguardRules();
-        lintJar = libraryDependency.getLintJar();
-        annotations = libraryDependency.getExternalAnnotations();
-        publicResources = libraryDependency.getPublicResources();
-        isOptional = libraryDependency.isOptional();
+        super(project, requestedCoordinates, resolvedCoordinates);
+        this.androidLibraries = ImmutableList.copyOf(androidLibraries);
+        this.javaLibraries = ImmutableList.copyOf(javaLibraries);
+        this.localJars = ImmutableList.copyOf(localJavaLibraries);
+        bundle = clonedLibrary.getBundle();
+        folder = clonedLibrary.getFolder();
+        manifest = clonedLibrary.getManifest();
+        jarFile = clonedLibrary.getJarFile();
+        resFolder = clonedLibrary.getResFolder();
+        assetsFolder = clonedLibrary.getAssetsFolder();
+        jniFolder = clonedLibrary.getJniFolder();
+        aidlFolder = clonedLibrary.getAidlFolder();
+        renderscriptFolder = clonedLibrary.getRenderscriptFolder();
+        proguardRules = clonedLibrary.getProguardRules();
+        lintJar = clonedLibrary.getLintJar();
+        annotations = clonedLibrary.getExternalAnnotations();
+        publicResources = clonedLibrary.getPublicResources();
+        isOptional = clonedLibrary.isOptional();
+        symbolFile = clonedLibrary.getSymbolFile();
 
-        this.project = project;
         this.variant = variant;
-    }
-
-    @Nullable
-    @Override
-    public String getProject() {
-        return project;
     }
 
     @Nullable
@@ -124,7 +128,19 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     @NonNull
     @Override
     public List<? extends AndroidLibrary> getLibraryDependencies() {
-        return dependencies;
+        return androidLibraries;
+    }
+
+    @NonNull
+    @Override
+    public Collection<? extends JavaLibrary> getJavaDependencies() {
+        return javaLibraries;
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getLocalJars() {
+        return localJars;
     }
 
     @NonNull
@@ -137,12 +153,6 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     @Override
     public File getJarFile() {
         return jarFile;
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getLocalJars() {
-        return localJars;
     }
 
     @NonNull
@@ -202,5 +212,40 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     @Override
     public boolean isOptional() {
         return isOptional;
+    }
+
+    @NonNull
+    @Override
+    public File getSymbolFile() {
+        return symbolFile;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("name", getName())
+                .add("project", getProject())
+                .add("variant", variant)
+                .add("requestedCoordinates", getRequestedCoordinates())
+                .add("resolvedCoordinates", getResolvedCoordinates())
+                .add("bundle", bundle)
+                .add("folder", folder)
+                .add("manifest", manifest)
+                .add("jarFile", jarFile)
+                .add("resFolder", resFolder)
+                .add("assetsFolder", assetsFolder)
+                .add("jniFolder", jniFolder)
+                .add("aidlFolder", aidlFolder)
+                .add("renderscriptFolder", renderscriptFolder)
+                .add("proguardRules", proguardRules)
+                .add("lintJar", lintJar)
+                .add("annotations", annotations)
+                .add("publicResources", publicResources)
+                .add("symbolFile", symbolFile)
+                .add("androidLibraries", androidLibraries)
+                .add("javaLibraries", javaLibraries)
+                .add("localJars", localJars)
+                .add("isOptional", isOptional)
+                .toString();
     }
 }

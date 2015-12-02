@@ -21,12 +21,14 @@ import com.android.build.gradle.internal.model.JavaLibraryImpl;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaLibrary;
+import com.google.common.collect.Sets;
 
 import org.gradle.api.artifacts.Configuration;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 /**
  * Implementation of {@link com.android.builder.model.Dependencies} over a Gradle
@@ -51,9 +53,15 @@ public class ConfigurationDependencies implements Dependencies {
     @NonNull
     @Override
     public Collection<JavaLibrary> getJavaLibraries() {
-        return configuration.getFiles().stream()
-                .map(file -> new JavaLibraryImpl(file, false /*provided*/, null, null))
-                .collect(Collectors.toSet());
+        Set<File> files = configuration.getFiles();
+        if (files.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<JavaLibrary> javaLibraries = Sets.newHashSet();
+        for (File file : files) {
+            javaLibraries.add(new JavaLibraryImpl(file, null, false, null, null));
+        }
+        return javaLibraries;
     }
 
     @NonNull

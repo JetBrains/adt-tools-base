@@ -17,6 +17,7 @@
 package com.android.builder.dependency;
 
 import com.android.annotations.NonNull;
+import com.android.builder.model.AndroidLibrary;
 
 import java.util.List;
 
@@ -35,7 +36,7 @@ public interface DependencyContainer {
      * @return a non null (but possibly empty) list.
      */
     @NonNull
-    List<? extends LibraryDependency> getAndroidDependencies();
+    List<? extends AndroidLibrary> getAndroidDependencies();
 
     @NonNull
     List<JarDependency> getJarDependencies();

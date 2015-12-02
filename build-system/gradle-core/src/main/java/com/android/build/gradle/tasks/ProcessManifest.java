@@ -25,7 +25,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantConfiguration;
-import com.android.builder.dependency.ManifestDependency;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ProductFlavor;
 import com.android.manifmerger.ManifestMerger2;
@@ -66,7 +66,7 @@ public class ProcessManifest extends ManifestProcessorTask {
         getBuilder().mergeManifests(
                 getMainManifest(),
                 getManifestOverlays(),
-                Collections.<ManifestDependency>emptyList(),
+                Collections.<AndroidLibrary>emptyList(),
                 getPackageOverride(),
                 getVersionCode(),
                 getVersionName(),

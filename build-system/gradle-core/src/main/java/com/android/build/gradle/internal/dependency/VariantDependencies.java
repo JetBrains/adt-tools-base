@@ -21,7 +21,8 @@ import com.android.build.gradle.internal.ConfigurationProvider;
 import com.android.builder.core.VariantType;
 import com.android.builder.dependency.DependencyContainer;
 import com.android.builder.dependency.JarDependency;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.dependency.LibraryBundle;
+import com.android.builder.model.AndroidLibrary;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -223,7 +224,7 @@ public class VariantDependencies implements DependencyContainer {
 
     @NonNull
     @Override
-    public List<? extends LibraryDependency> getAndroidDependencies() {
+    public List<? extends LibraryBundle> getAndroidDependencies() {
         return libraries;
     }
 
@@ -253,7 +254,7 @@ public class VariantDependencies implements DependencyContainer {
     }
 
     public boolean hasNonOptionalLibraries() {
-        for (LibraryDependency libraryDependency : libraries) {
+        for (AndroidLibrary libraryDependency : libraries) {
             if (!libraryDependency.isOptional()) {
                 return true;
             }

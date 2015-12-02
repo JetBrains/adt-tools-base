@@ -122,6 +122,24 @@ public class AndroidGradleOptions {
     }
 
     @Nullable
+    public static Integer buildModelOnlyVersion(@NonNull Project project) {
+        String revision = getString(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY_VERSIONED);
+        if (revision != null) {
+            return Integer.parseInt(revision);
+        }
+
+        if (getBoolean(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED)) {
+            return 1;
+        }
+
+        if (getBoolean(project, AndroidProject.PROPERTY_BUILD_MODEL_ONLY)) {
+            return 0;
+        }
+
+        return null;
+    }
+
+    @Nullable
     public static String getApkLocation(@NonNull Project project) {
         return getString(project, AndroidProject.PROPERTY_APK_LOCATION);
     }

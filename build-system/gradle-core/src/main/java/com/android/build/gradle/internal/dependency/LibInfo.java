@@ -18,7 +18,7 @@ package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.dependency.LibraryDependency;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.collect.ImmutableList;
 
@@ -27,12 +27,12 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Version of LibraryDependency that includes transitive jar dependencies as JarInfo.
+ * Version of AndroidLibrary that includes transitive jar dependencies as JarInfo.
  *
  * This is used as a temporary object as the dependencies are processed. This object contains
  * more information and can be mutated ({@link #setIsOptional(boolean)}) during the process.
  *
- * In the end the object will be converted into an immutable LibraryDependency instance.
+ * In the end the object will be converted into an immutable LibraryBundle instance.
  */
 public class LibInfo extends LibraryDependencyImpl {
 
@@ -43,7 +43,7 @@ public class LibInfo extends LibraryDependencyImpl {
 
     public LibInfo(@NonNull File bundle,
             @NonNull File explodedBundle,
-            @NonNull List<LibraryDependency> dependencies,
+            @NonNull List<AndroidLibrary> dependencies,
             @NonNull Collection<JarInfo> jarDependencies,
             @Nullable String name,
             @Nullable String variantName,
@@ -80,9 +80,9 @@ public class LibInfo extends LibraryDependencyImpl {
     @NonNull
     public List<LibInfo> getLibInfoDependencies() {
         ImmutableList.Builder<LibInfo> libInfoBuilder = ImmutableList.builder();
-        for (LibraryDependency libraryDependency : getDependencies()) {
-            if (libraryDependency instanceof LibInfo) {
-                libInfoBuilder.add((LibInfo) libraryDependency);
+        for (AndroidLibrary androidLibrary : getLibraryDependencies()) {
+            if (androidLibrary instanceof LibInfo) {
+                libInfoBuilder.add((LibInfo) androidLibrary);
             } else {
                 throw new RuntimeException("Mixed LibInfo and LibraryDependencies instances !");
             }

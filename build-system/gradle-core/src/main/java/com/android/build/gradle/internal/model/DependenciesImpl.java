@@ -20,13 +20,13 @@ import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.FD_JARS;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.concurrency.Immutable;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.dependency.JarDependency;
-import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaLibrary;
@@ -42,17 +42,25 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
+ * Serializable implementation of Dependencies for use in the model.
  */
+@Immutable
 public class DependenciesImpl implements Dependencies, Serializable {
     private static final long serialVersionUID = 1L;
 
-    private static final CreatingCache<LibraryDependency, AndroidLibrary> sCache =
-            new CreatingCache<>(DependenciesImpl::convertAndroidLibrary);
+    private static final CreatingCache<AndroidLibrary, AndroidLibraryImpl> sCache
+            = new CreatingCache<AndroidLibrary, AndroidLibraryImpl>(
+            new CreatingCache.ValueFactory<AndroidLibrary, AndroidLibraryImpl>() {
+                @Override
+                @NonNull
+                public AndroidLibraryImpl create(@NonNull AndroidLibrary key) {
+                    return convertAndroidLibrary(key);
+                }
+            });
 
     @NonNull
     private final List<AndroidLibrary> libraries;
@@ -82,7 +90,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
 
         List<AndroidLibrary> libraries;
         List<JavaLibrary> javaLibraries;
-        List<String> projects;
+        List<String> projects = Lists.newArrayList();
 
         List<LibraryDependencyImpl> libs = variantDependencies.getLibraries();
         libraries = Lists.newArrayListWithCapacity(libs.size());
@@ -97,7 +105,6 @@ public class DependenciesImpl implements Dependencies, Serializable {
         List<JarDependency> localDeps = variantDependencies.getLocalDependencies();
 
         javaLibraries = Lists.newArrayListWithExpectedSize(jarDeps.size() + localDeps.size());
-        projects = Lists.newArrayList();
 
         for (JarDependency jarDep : jarDeps) {
             // don't include package-only dependencies
@@ -112,6 +119,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
                     javaLibraries.add(
                             new JavaLibraryImpl(
                                     jarFile,
+                                    null /*project*/,
                                     !jarDep.isPackaged(),
                                     null,
                                     jarDep.getResolvedCoordinates()));
@@ -119,21 +127,30 @@ public class DependenciesImpl implements Dependencies, Serializable {
             }
         }
 
-        javaLibraries.addAll(localDeps.stream()
-                .filter(JarDependency::isCompiled) // don't include package-only dependencies
-                .map(jarDep -> new JavaLibraryImpl(
-                        jarDep.getJarFile(),
-                        !jarDep.isPackaged(),
-                        null,
-                        jarDep.getResolvedCoordinates()))
-                .collect(Collectors.toList()));
+        for (JarDependency jarDep : localDeps) {
+            // don't include package-only dependencies
+            if (jarDep.isCompiled()) {
+                javaLibraries.add(
+                        new JavaLibraryImpl(
+                                jarDep.getJarFile(),
+                                null /*project*/,
+                                !jarDep.isPackaged(),
+                                null,
+                                jarDep.getResolvedCoordinates()));
+            }
+        }
 
         GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
 
         if (variantConfig.getRenderscriptSupportModeEnabled()) {
             File supportJar = androidBuilder.getRenderScriptSupportJar();
             if (supportJar != null) {
-                javaLibraries.add(new JavaLibraryImpl(supportJar, false, null, null));
+                javaLibraries.add(new JavaLibraryImpl(
+                        supportJar,
+                        null /*project*/,
+                        false,
+                        null,
+                        null));
             }
         }
 
@@ -173,16 +190,19 @@ public class DependenciesImpl implements Dependencies, Serializable {
     }
 
     @NonNull
-    private static AndroidLibrary convertAndroidLibrary(
-            @NonNull LibraryDependency libraryDependency) {
-        List<LibraryDependency> deps = libraryDependency.getDependencies();
+    private static AndroidLibraryImpl convertAndroidLibrary(
+            @NonNull AndroidLibrary libraryDependency) {
+        List<? extends AndroidLibrary> deps = libraryDependency.getLibraryDependencies();
         List<AndroidLibrary> clonedDeps = Lists.newArrayListWithCapacity(deps.size());
-        for (LibraryDependency child : deps) {
+        for (AndroidLibrary child : deps) {
             AndroidLibrary clonedLib = sCache.get(child);
             if (clonedLib != null) {
                 clonedDeps.add(clonedLib);
             }
         }
+
+        // get the clones of the Java libraries
+        List<JavaLibrary> clonedJavaLibraries = Lists.newArrayList();
 
         // compute local jar even if the bundle isn't exploded.
         Collection<File> localJarOverride = findLocalJar(libraryDependency);
@@ -190,6 +210,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
         return new AndroidLibraryImpl(
                 libraryDependency,
                 clonedDeps,
+                clonedJavaLibraries,
                 localJarOverride,
                 libraryDependency.getProject(),
                 libraryDependency.getProjectVariant(),
@@ -207,7 +228,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
      * @return its local jars.
      */
     @NonNull
-    private static Collection<File> findLocalJar(LibraryDependency library) {
+    private static Collection<File> findLocalJar(@NonNull AndroidLibrary library) {
         // if the library is exploded, just use the normal method.
         File explodedFolder = library.getFolder();
         if (explodedFolder.isDirectory()) {
@@ -250,5 +271,15 @@ public class DependenciesImpl implements Dependencies, Serializable {
         }
 
         return Collections.emptyList();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("DependenciesImpl{");
+        sb.append("libraries=").append(libraries);
+        sb.append(", javaLibraries=").append(javaLibraries);
+        sb.append(", projects=").append(projects);
+        sb.append('}');
+        return sb.toString();
     }
 }

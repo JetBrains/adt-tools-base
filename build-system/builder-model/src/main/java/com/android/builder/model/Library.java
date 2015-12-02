@@ -20,6 +20,22 @@ package com.android.builder.model;
 import com.android.annotations.Nullable;
 
 public interface Library {
+
+    /**
+     * Returns an optional project identifier if the library is output
+     * by a module.
+     *
+     * @return the project identifier
+     */
+    @Nullable
+    String getProject();
+
+    /**
+     * Returns a user friendly name.
+     */
+    @Nullable
+    String getName();
+
     /**
      * Returns this library's Maven coordinates, as requested in the build file.
      */

@@ -19,13 +19,13 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.builder.dependency.LibraryBundle;
-import com.android.builder.dependency.LibraryDependency;
-import com.android.builder.dependency.ManifestDependency;
 import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.base.Objects;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -33,7 +33,7 @@ import java.util.List;
 public class LibraryDependencyImpl extends LibraryBundle {
 
     @NonNull
-    private final List<LibraryDependency> dependencies;
+    private final List<AndroidLibrary> dependencies;
 
     @Nullable
     private final String variantName;
@@ -49,7 +49,7 @@ public class LibraryDependencyImpl extends LibraryBundle {
     public LibraryDependencyImpl(
             @NonNull File bundle,
             @NonNull File explodedBundle,
-            @NonNull List<LibraryDependency> dependencies,
+            @NonNull List<AndroidLibrary> dependencies,
             @Nullable String name,
             @Nullable String variantName,
             @Nullable String projectPath,
@@ -70,16 +70,11 @@ public class LibraryDependencyImpl extends LibraryBundle {
         return dependencies;
     }
 
-    @Override
     @NonNull
-    public List<LibraryDependency> getDependencies() {
-        return dependencies;
-    }
-
     @Override
-    @NonNull
-    public List<? extends ManifestDependency> getManifestDependencies() {
-        return dependencies;
+    public Collection<? extends JavaLibrary> getJavaDependencies() {
+        // TODO
+        return null;
     }
 
     @Nullable
@@ -113,7 +108,7 @@ public class LibraryDependencyImpl extends LibraryBundle {
         return new LibraryDependencyImpl(
                 getBundle(),
                 getBundleFolder(),
-                Collections.<LibraryDependency>emptyList(),
+                Collections.<AndroidLibrary>emptyList(),
                 getName(),
                 variantName,
                 getProject(),

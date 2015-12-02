@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.Immutable;
 import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.MavenCoordinates;
 
@@ -26,16 +27,21 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Serializable implementation of JavaLibrary for use in the model.
+ */
+@Immutable
 public class JavaLibraryImpl extends LibraryImpl implements JavaLibrary, Serializable {
     private final File jarFile;
     private final boolean provided;
 
     public JavaLibraryImpl(
             @NonNull File jarFile,
-            boolean provided,
+            @Nullable String project,
+            @NonNull boolean provided,
             @Nullable MavenCoordinates requestedCoordinates,
             @Nullable MavenCoordinates resolvedCoordinates) {
-        super(requestedCoordinates, resolvedCoordinates);
+        super(project, requestedCoordinates, resolvedCoordinates);
         this.jarFile = jarFile;
         this.provided = provided;
     }

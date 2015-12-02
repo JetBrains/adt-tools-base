@@ -40,7 +40,6 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
-import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreJackOptions;
@@ -146,7 +145,6 @@ import com.android.builder.core.DefaultDexOptions;
 import com.android.builder.core.DexOptions;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
-import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.DataBindingOptions;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.sdk.TargetInfo;
@@ -2782,21 +2780,6 @@ public abstract class TaskManager {
                 androidTasks.create(tasks, new CheckManifest.ConfigAction(scope)));
         scope.getCheckManifestTask().dependsOn(tasks, scope.getPreBuildTask());
         scope.getPrepareDependenciesTask().dependsOn(tasks, scope.getCheckManifestTask());
-    }
-
-    @NonNull
-    private static List<ManifestDependencyImpl> getManifestDependencies(
-            List<LibraryDependency> libraries) {
-
-        List<ManifestDependencyImpl> list = Lists.newArrayListWithCapacity(libraries.size());
-
-        for (LibraryDependency lib : libraries) {
-            // get the dependencies
-            List<ManifestDependencyImpl> children = getManifestDependencies(lib.getDependencies());
-            list.add(new ManifestDependencyImpl(lib.getName(), lib.getManifest(), children));
-        }
-
-        return list;
     }
 
     @NonNull

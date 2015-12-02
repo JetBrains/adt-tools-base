@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,13 @@
 
 package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
-import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
-import com.android.builder.model.JavaLibrary;
 import com.android.builder.model.Variant;
+import com.android.ide.common.process.ProcessException;
 import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth;
 
@@ -35,6 +31,11 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
@@ -42,13 +43,13 @@ import java.util.Map;
 /**
  * test for compile jar in app through an aar dependency
  */
-public class AppWithCompileIndirectJarTest {
+public class AppWithCompileIndirectJavaProjectTest {
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
             .create();
-    public static Map<String, AndroidProject> models;
+    static Map<String, AndroidProject> models;
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -64,16 +65,24 @@ public class AppWithCompileIndirectJarTest {
 
         appendToFile(project.getSubproject("library").getBuildFile(),
 "\ndependencies {\n" +
-"    compile 'com.google.guava:guava:18.0'\n" +
+"    compile project(':jar')\n" +
 "}\n");
 
-        models = project.getAllModels();
+        models = project.executeAndReturnMultiModel("clean", ":app:assembleDebug");
     }
 
     @AfterClass
     public static void cleanUp() {
         project = null;
         models = null;
+    }
+
+    @Test
+    public void checkPackagedJar() throws IOException, ProcessException {
+        File apk = project.getSubproject("app").getApk("debug");
+
+        assertThatApk(apk).containsClass("Lcom/example/android/multiproject/person/People;");
+        assertThatApk(apk).containsClass("Lcom/example/android/multiproject/library/PersonView;");
     }
 
     @Test
@@ -88,14 +97,12 @@ public class AppWithCompileIndirectJarTest {
         AndroidLibrary androidLibrary = Iterables.getOnlyElement(libs);
         assertThat(androidLibrary.getProject()).named("app androidlib deps path").isEqualTo(":library");
 
-        assertThat(deps.getProjects()).named("app module dependency count").isEmpty();
+        Collection<String> projectDeps = deps.getProjects();
+        assertThat(projectDeps).named("app module dependency count").hasSize(1);
+        String projectDep = Iterables.getOnlyElement(projectDeps);
+        assertThat(projectDep).named("app dependency path").isEqualTo(":jar");
 
-        Collection<JavaLibrary> javaLibraries = deps.getJavaLibraries();
-        assertThat(javaLibraries).named("app java dependency count").hasSize(1);
-        JavaLibrary javaLib = Iterables.getOnlyElement(javaLibraries);
-        assertThat(javaLib.getResolvedCoordinates())
-                .named("app java lib resolved coordinates")
-                .isEqualTo("com.google.guava", "guava", "18.0");
+        assertThat(deps.getJavaLibraries()).named("app java dependency count").isEmpty();
 
         // ---
 
@@ -106,11 +113,11 @@ public class AppWithCompileIndirectJarTest {
 
         assertThat(deps.getLibraries()).named("lib androidlibrary deps count").isEmpty();
 
-        javaLibraries = deps.getJavaLibraries();
-        assertThat(javaLibraries).named("lib java dependency count").hasSize(1);
-        javaLib = Iterables.getOnlyElement(javaLibraries);
-        assertThat(javaLib.getResolvedCoordinates())
-                .named("lib java lib resolved coordinates")
-                .isEqualTo("com.google.guava", "guava", "18.0");
+        projectDeps = deps.getProjects();
+        assertThat(projectDeps).named("lib module dependency count").hasSize(1);
+        projectDep = Iterables.getOnlyElement(projectDeps);
+        assertThat(projectDep).named("lib dependency path").isEqualTo(":jar");
+
+        assertThat(deps.getJavaLibraries()).named("lib java dependency count").isEmpty();
     }
 }

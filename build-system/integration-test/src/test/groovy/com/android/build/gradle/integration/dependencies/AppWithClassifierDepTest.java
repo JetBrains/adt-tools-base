@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.dependencies;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -69,9 +70,13 @@ public class AppWithClassifierDepTest {
         assertEquals(1, javaLibs.size());
 
         JavaLibrary javaLib = javaLibs.iterator().next();
-        assertEquals(
-                new File(project.getTestDir(), "repo/com/foo/sample/1.0/sample-1.0.jar"),
-                javaLib.getJarFile());
+
+        assertThat(javaLib.getJarFile())
+                .named("jar location")
+                .isEqualTo(new File(project.getTestDir(), "repo/com/foo/sample/1.0/sample-1.0.jar"));
+        assertThat(javaLib.getResolvedCoordinates())
+                .named("resolved coordinates")
+                .isEqualTo("com.foo", "sample", "1.0");
     }
 
     @Test
@@ -92,5 +97,8 @@ public class AppWithClassifierDepTest {
         assertEquals(
                 new File(project.getTestDir(), "repo/com/foo/sample/1.0/sample-1.0-testlib.jar"),
                 javaLib.getJarFile());
+        assertThat(javaLib.getResolvedCoordinates())
+                .named("resolved coordinates")
+                .isEqualTo("com.foo", "sample", "1.0", null, "testlib");
     }
 }
