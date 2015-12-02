@@ -16,6 +16,9 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.DOT_NATIVE_LIBS;
+
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
@@ -29,6 +32,7 @@ import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
@@ -37,22 +41,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.EnumSet;
+import java.util.Collections;
 import java.util.List;
 
 import lombok.ast.AstVisitor;
 import lombok.ast.MethodInvocation;
 
 public class UnsafeNativeCodeDetector extends Detector
-        implements Detector.JavaScanner, Detector.OtherFileScanner {
+        implements Detector.JavaScanner {
 
-    private static final Implementation IMPLEMENTATION_JAVA = new Implementation(
+    private static final Implementation IMPLEMENTATION = new Implementation(
             UnsafeNativeCodeDetector.class,
             Scope.JAVA_FILE_SCOPE);
-
-    private static final Implementation IMPLEMENTATION_OTHER = new Implementation(
-            UnsafeNativeCodeDetector.class,
-            Scope.OTHER_SCOPE);
 
     public static final Issue LOAD = Issue.create(
             "UnsafeDynamicallyLoadedCode",
@@ -68,7 +68,7 @@ public class UnsafeNativeCodeDetector extends Detector
             Category.SECURITY,
             4,
             Severity.WARNING,
-            IMPLEMENTATION_JAVA);
+            IMPLEMENTATION);
 
     public static final Issue UNSAFE_NATIVE_CODE_LOCATION = Issue.create(
             "UnsafeNativeCodeLocation", //$NON-NLS-1$
@@ -84,7 +84,7 @@ public class UnsafeNativeCodeDetector extends Detector
             Category.SECURITY,
             4,
             Severity.WARNING,
-            IMPLEMENTATION_OTHER);
+            IMPLEMENTATION);
 
     private static final String RUNTIME_CLASS = "java.lang.Runtime"; //$NON-NLS-1$
     private static final String SYSTEM_CLASS = "java.lang.System"; //$NON-NLS-1$
@@ -102,7 +102,7 @@ public class UnsafeNativeCodeDetector extends Detector
     @Override
     public List<String> getApplicableMethodNames() {
         // Identify calls to Runtime.load() and System.load()
-        return Arrays.asList("load");
+        return Collections.singletonList("load");
     }
 
     @Override
@@ -119,60 +119,88 @@ public class UnsafeNativeCodeDetector extends Detector
                     context.report(LOAD, node, context.getLocation(node),
                             "Dynamically loading code using `load` is risky, please use " +
                                     "`loadLibrary` instead when possible");
-                    return;
                 }
             }
         }
     }
 
-    // ---- Implements Detector.OtherFileScanner ----
+    // ---- Look for code in resource and asset directories ----
+
+    @Override
+    public void afterCheckLibraryProject(@NonNull Context context) {
+        if (!context.getProject().getReportIssues()) {
+            // If this is a library project not being analyzed, ignore it
+            return;
+        }
+
+        checkResourceFolders(context, context.getProject());
+    }
+
+    @Override
+    public void afterCheckProject(@NonNull Context context) {
+        if (!context.getProject().getReportIssues()) {
+            // If this is a library project not being analyzed, ignore it
+            return;
+        }
+
+        checkResourceFolders(context, context.getProject());
+    }
 
     private static boolean isNativeCode(File file) {
         if (!file.isFile()) {
             return false;
         }
 
-        String path = file.getPath().toLowerCase();
-
-        // TODO: Currently this method never gets invoked on
-        // files in the assets directory (at least when testing
-        // with ./gradlew lint). Need to investigate why and
-        // fix.
-        if (!path.contains("res") && !path.contains("assets")) {
-            return false;
-        }
-
         try {
             FileInputStream fis = new FileInputStream(file);
-            byte[] bytes = new byte[4];
-            int length = fis.read(bytes);
-            fis.close();
-            if ((length == 4) && (Arrays.equals(ELF_MAGIC_VALUE, bytes))) {
-                return true;
-            } else {
-                return false;
+            try {
+                byte[] bytes = new byte[4];
+                int length = fis.read(bytes);
+                return (length == 4) && (Arrays.equals(ELF_MAGIC_VALUE, bytes));
+            } finally {
+                fis.close();
             }
         } catch (IOException ex) {
             return false;
         }
     }
 
-    @NonNull
-    @Override
-    public EnumSet<Scope> getApplicableFiles() {
-        return Scope.OTHER_SCOPE;
-    }
-
-    @Override
-    public void run(@NonNull Context context) {
-        if (!context.getProject().getReportIssues()) {
-            // If this is a library project not being analyzed, ignore it
+    private static void checkResourceFolders(Context context, @NonNull Project project) {
+        if (!context.getScope().contains(Scope.RESOURCE_FOLDER)) {
+            // Don't do work when doing in-editor analysis of Java files
             return;
         }
+        List<File> resourceFolders = project.getResourceFolders();
+        for (File res : resourceFolders) {
+            File[] folders = res.listFiles();
+            if (folders != null) {
+                for (File typeFolder : folders) {
+                    if (typeFolder.getName().startsWith(SdkConstants.FD_RES_RAW)) {
+                        File[] rawFiles = typeFolder.listFiles();
+                        if (rawFiles != null) {
+                            for (File rawFile : rawFiles) {
+                                checkFile(context, rawFile);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-        File file = context.file;
+        List<File> assetFolders = project.getAssetFolders();
+        for (File assetFolder : assetFolders) {
+            File[] assets = assetFolder.listFiles();
+            if (assets != null) {
+                for (File asset : assets) {
+                    checkFile(context, asset);
+                }
+            }
+        }
+    }
+
+    private static void checkFile(@NonNull Context context, @NonNull File file) {
         if (isNativeCode(file)) {
-            if (LintUtils.endsWith(file.getPath(), "so")) {
+            if (LintUtils.endsWith(file.getPath(), DOT_NATIVE_LIBS)) {
                 context.report(UNSAFE_NATIVE_CODE_LOCATION, Location.create(file),
                         "Shared libraries should not be placed in the res or assets " +
                         "directories. Please use the features of your development " +
@@ -189,5 +217,4 @@ public class UnsafeNativeCodeDetector extends Detector
             }
         }
     }
-
 }

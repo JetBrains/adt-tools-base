@@ -18,7 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.tools.lint.detector.api.Detector;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "JavaLangImport", "ClassNameDiffersFromFileName"})
 public class UnsafeNativeCodeDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
@@ -44,26 +44,51 @@ public class UnsafeNativeCodeDetectorTest extends AbstractCheckTest {
                         + "import java.lang.UnsatisfiedLinkError;\n"
                         + "\n"
                         + "public class Load {\n"
-                        + "    public void foo() {\n"
+                        + "    public static void foo() {\n"
                         + "        try {\n"
-			+ "            Runtime.getRuntime().load(\"/data/data/test.pkg/files/libhello.so\");\n"
-			+ "            Runtime.getRuntime().loadLibrary(\"hello\"); // ok\n"
+                        + "            Runtime.getRuntime().load(\"/data/data/test.pkg/files/libhello.so\");\n"
+                        + "            Runtime.getRuntime().loadLibrary(\"hello\"); // ok\n"
                         + "            System.load(\"/data/data/test.pkg/files/libhello.so\");\n"
                         + "            System.loadLibrary(\"hello\"); // ok\n"
-                        + "        } catch (SecurityException e) {\n"
-                        + "        } catch (UnsatisfiedLinkError e) {\n"
-                        + "        } catch (NullPointerException e) {\n"
+                        + "        } catch (SecurityException ignore) {\n"
+                        + "        } catch (UnsatisfiedLinkError ignore) {\n"
+                        + "        } catch (NullPointerException ignore) {\n"
                         + "        }\n"
                         + "    }\n"
                         + "}\n")));
     }
 
     public void testNativeCode() throws Exception {
+        assertEquals(""
+                + "assets/hello: Warning: Embedding non-shared library native executables into applications should be avoided when possible, as there is an increased risk that the executables could be tampered with after installation. Instead, native code should be placed in a shared library, and the features of the development environment should be used to place the shared library in the lib directory of the compiled APK. [UnsafeNativeCodeLocation]\n"
+                + "res/raw/hello: Warning: Embedding non-shared library native executables into applications should be avoided when possible, as there is an increased risk that the executables could be tampered with after installation. Instead, native code should be placed in a shared library, and the features of the development environment should be used to place the shared library in the lib directory of the compiled APK. [UnsafeNativeCodeLocation]\n"
+                + "assets/libhello-jni.so: Warning: Shared libraries should not be placed in the res or assets directories. Please use the features of your development environment to place shared libraries in the lib directory of the compiled APK. [UnsafeNativeCodeLocation]\n"
+                + "res/raw/libhello-jni.so: Warning: Shared libraries should not be placed in the res or assets directories. Please use the features of your development environment to place shared libraries in the lib directory of the compiled APK. [UnsafeNativeCodeLocation]\n"
+                + "0 errors, 4 warnings\n",
+               lintProject(
+                       copy("res/raw/hello"),
+                       copy("res/raw/libhello-jni.so"),
+                       copy("res/raw/hello", "assets/hello"),
+                       copy("res/raw/libhello-jni.so", "assets/libhello-jni.so"),
+                       copy("lib/armeabi/hello"),
+                       copy("lib/armeabi/libhello-jni.so")));
+    }
+
+    public void testNoWorkInInteractiveMode() throws Exception {
+        // Make sure we don't scan through all resource folders when just incrementally
+        // editing a Java file
         assertEquals(
-               "res/raw/hello: Warning: Embedding non-shared library native executables into applications should be avoided when possible, as there is an increased risk that the executables could be tampered with after installation. Instead, native code should be placed in a shared library, and the features of the development environment should be used to place the shared library in the lib directory of the compiled APK. [UnsafeNativeCodeLocation]\n" +
-               "res/raw/libhello-jni.so: Warning: Shared libraries should not be placed in the res or assets directories. Please use the features of your development environment to place shared libraries in the lib directory of the compiled APK. [UnsafeNativeCodeLocation]\n" +
-               "0 errors, 2 warnings\n",
-               lintProject("res/raw/hello", "res/raw/libhello-jni.so",
-                       "lib/armeabi/hello", "lib/armeabi/libhello-jni.so"));
+                "No warnings.",
+                lintProjectIncrementally(
+                        "src/test/pkg/Load.java",
+                        java("src/test/pkg/Load.java", ""
+                                + "package test.pkg;\n"
+                                + "public class Load { }\n"),
+                        copy("res/raw/hello"),
+                        copy("res/raw/libhello-jni.so"),
+                        copy("res/raw/hello", "assets/hello"),
+                        copy("res/raw/libhello-jni.so", "assets/libhello-jni.so"),
+                        copy("lib/armeabi/hello"),
+                        copy("lib/armeabi/libhello-jni.so")));
     }
 }

@@ -360,10 +360,27 @@ public class LintGradleProject extends Project {
                         mResourceFolders.add(file);
                     }
                 }
-
             }
 
             return mResourceFolders;
+        }
+
+        @NonNull
+        @Override
+        public List<File> getAssetFolders() {
+            if (mAssetFolders == null) {
+                mAssetFolders = Lists.newArrayList();
+                for (SourceProvider provider : getSourceProviders()) {
+                    Collection<File> dirs = provider.getAssetsDirectories();
+                    for (File dir : dirs) {
+                        if (dir.exists()) { // model returns path whether or not it exists
+                            mAssetFolders.add(dir);
+                        }
+                    }
+                }
+            }
+
+            return mAssetFolders;
         }
 
         @NonNull
@@ -629,6 +646,21 @@ public class LintGradleProject extends Project {
             }
 
             return mResourceFolders;
+        }
+
+        @NonNull
+        @Override
+        public List<File> getAssetFolders() {
+            if (mAssetFolders == null) {
+                File folder = mLibrary.getAssetsFolder();
+                if (folder.exists()) {
+                    mAssetFolders = Collections.singletonList(folder);
+                } else {
+                    mAssetFolders = Collections.emptyList();
+                }
+            }
+
+            return mAssetFolders;
         }
 
         @NonNull
