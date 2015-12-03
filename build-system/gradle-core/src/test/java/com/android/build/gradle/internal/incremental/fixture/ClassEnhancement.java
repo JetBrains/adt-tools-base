@@ -21,6 +21,7 @@ import static org.junit.Assert.assertNotNull;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.incremental.IncrementalChangeVisitor;
+import com.android.tools.fd.runtime.AndroidInstantRuntime;
 import com.android.utils.FileUtils;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -47,6 +48,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Map;
+import java.util.logging.Logger;
 
 public class ClassEnhancement implements TestRule {
 
@@ -120,7 +122,7 @@ public class ClassEnhancement implements TestRule {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-
+                AndroidInstantRuntime.setLogger(Logger.getLogger(description.getClassName()));
                 mInstrumentedPatchFolders = getCompileFolders(mInstrumentedPatchesFolder);
 
                 final URL[] classLoaderUrls = getClassLoaderUrls();
@@ -198,11 +200,11 @@ public class ClassEnhancement implements TestRule {
 
     private static URL[] getClassLoaderUrls() {
         URL resource = ClassEnhancement.class.getClassLoader().getResource(
-                "com/android/build/gradle/internal/incremental/AndroidInstantRuntime.class");
+                "com/android/tools/fd/runtime/AndroidInstantRuntime.class");
 
         assertNotNull(resource);
         String runtimeURL = resource.toString().substring(0, resource.toString().length() -
-                "com/android/build/gradle/internal/incremental/AndroidInstantRuntime.class"
+                "com/android/tools/fd/runtime/AndroidInstantRuntime.class"
                         .length());
 
         resource = ClassEnhancement.class.getClassLoader().getResource(

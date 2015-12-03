@@ -45,7 +45,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -65,8 +64,10 @@ public class IncrementalVisitor extends ClassVisitor {
         OVERRIDE
     }
 
-    protected static final String PACKAGE =
-            IncrementalVisitor.class.getPackage().getName().replace('.', '/');
+    public static final String PACKAGE = "com/android/tools/fd/runtime";
+    public static final String ABSTRACT_PATCHES_LOADER_IMPL =
+            PACKAGE + "/AbstractPatchesLoaderImpl";
+    public static final String APP_PATCHES_LOADER_IMPL = PACKAGE + "/AppPatchesLoaderImpl";
     protected static final Type INSTANT_RELOAD_EXCEPTION =
             Type.getType(PACKAGE + "/InstantReloadException");
     protected static final Type RUNTIME_TYPE = Type.getType("L" + PACKAGE + "/AndroidInstantRuntime;");

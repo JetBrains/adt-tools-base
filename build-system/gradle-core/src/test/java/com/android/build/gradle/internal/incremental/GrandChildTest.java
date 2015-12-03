@@ -36,8 +36,6 @@ public class GrandChildTest {
     @Test
     public void changeGrandChildImpl() throws Exception {
 
-        GenericInstantRuntime.setLogger(Logger.getLogger(ClassEnhancement.class.getName()));
-
         harness.reset();
         GrandChild grandChild = new GrandChild();
 

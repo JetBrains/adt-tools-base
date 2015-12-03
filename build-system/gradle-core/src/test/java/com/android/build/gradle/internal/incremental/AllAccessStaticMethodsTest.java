@@ -37,7 +37,6 @@ public class AllAccessStaticMethodsTest {
     @Test
     public void checkInitialByteCodeChanges() throws Exception {
 
-        GenericInstantRuntime.setLogger(Logger.getLogger(ClassEnhancement.class.getName()));
         harness.reset();
 
         StaticMethodsInvoker invoker = new StaticMethodsInvoker();
@@ -60,7 +59,6 @@ public class AllAccessStaticMethodsTest {
     @Test
     public void checkByteCodeEnhancedVersion() throws Exception {
 
-        GenericInstantRuntime.setLogger(Logger.getLogger(ClassEnhancement.class.getName()));
         harness.applyPatch("changeSubClass");
 
         StaticMethodsInvoker invoker = new StaticMethodsInvoker();

@@ -16,33 +16,22 @@
 
 package com.android.build.gradle.internal.incremental;
 
-import com.android.utils.AsmUtils;
 import com.google.common.base.Function;
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Ordering;
-import com.google.common.collect.TreeMultimap;
-import com.google.common.collect.TreeRangeMap;
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
-import org.objectweb.asm.tree.MethodNode;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap  ;
-import java.lang.RuntimeException;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 
 /**
@@ -67,9 +56,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * In the most common case of no hash collisions, only the hashCode level if switching is needed.
  */
 abstract class StringSwitch {
-    private static final String PACKAGE =
-            IncrementalVisitor.class.getPackage().getName().replace('.', '/');
-
     static Function<String, Integer> hashMethod = new Function<String, Integer>() {
         @Override
         public Integer apply(String input) {
@@ -85,7 +71,7 @@ abstract class StringSwitch {
     private static final Type OBJECT_TYPE = Type.getType(java.lang.Object.class);
     private static final Type STRING_TYPE = Type.getType(java.lang.String.class);
     private static final Type INSTANT_RELOAD_EXCEPTION_TYPE =
-            Type.getType(PACKAGE + "/InstantReloadException");
+            Type.getType(IncrementalVisitor.PACKAGE + "/InstantReloadException");
 
     // Methods overridden by caller to implement the switch behavior
 
