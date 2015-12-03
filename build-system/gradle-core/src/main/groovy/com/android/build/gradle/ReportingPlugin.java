@@ -14,18 +14,28 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle
-import com.android.build.gradle.internal.tasks.AndroidReportTask
-import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
-import com.android.build.gradle.internal.dsl.TestOptions
-import com.android.build.gradle.internal.test.report.ReportType
-import org.gradle.api.Project
-import org.gradle.api.plugins.JavaBasePlugin
-import org.gradle.api.tasks.TaskCollection
+package com.android.build.gradle;
+import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS;
+import static com.android.builder.core.BuilderConstants.FD_ANDROID_TESTS;
+import static com.android.builder.core.BuilderConstants.FD_REPORTS;
 
-import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS
-import static com.android.builder.core.BuilderConstants.FD_ANDROID_TESTS
-import static com.android.builder.core.BuilderConstants.FD_REPORTS
+import com.android.build.gradle.internal.dsl.TestOptions;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.tasks.AndroidReportTask;
+import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask;
+import com.android.build.gradle.internal.test.report.ReportType;
+
+import org.gradle.api.Action;
+import org.gradle.api.Project;
+import org.gradle.api.plugins.JavaBasePlugin;
+import org.gradle.api.tasks.TaskCollection;
+import org.gradle.execution.TaskGraphExecuter;
+
+import java.io.File;
+import java.util.concurrent.Callable;
+
+import groovy.lang.Closure;
+
 /**
  * Gradle plugin class for 'reporting' projects.
  *
@@ -34,48 +44,66 @@ import static com.android.builder.core.BuilderConstants.FD_REPORTS
  */
 class ReportingPlugin implements org.gradle.api.Plugin<Project> {
 
-    private TestOptions extension
+    private TestOptions extension;
 
     @Override
-    void apply(Project project) {
+    public void apply(final Project project) {
         // make sure this project depends on the evaluation of all sub projects so that
         // it's evaluated last.
-        project.evaluationDependsOnChildren()
+        project.evaluationDependsOnChildren();
 
-        extension = project.extensions.create('android', TestOptions)
+        extension = project.getExtensions().create("android", TestOptions.class);
 
-        AndroidReportTask mergeReportsTask = project.tasks.create("mergeAndroidReports",
-                AndroidReportTask)
-        mergeReportsTask.group = JavaBasePlugin.VERIFICATION_GROUP
-        mergeReportsTask.description = "Merges all the Android test reports from the sub projects."
-        mergeReportsTask.reportType = ReportType.MULTI_PROJECT
+        final AndroidReportTask mergeReportsTask = project.getTasks().create("mergeAndroidReports",
+                AndroidReportTask.class);
+        mergeReportsTask.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
+        mergeReportsTask.setDescription("Merges all the Android test reports from the sub "
+                + "projects.");
+        mergeReportsTask.setReportType(ReportType.MULTI_PROJECT);
 
-        mergeReportsTask.conventionMapping.resultsDir = {
-            String location = extension.resultsDir != null ?
-                extension.resultsDir : "$project.buildDir/$FD_ANDROID_RESULTS"
-
-            project.file(location)
-        }
-        mergeReportsTask.conventionMapping.reportsDir = {
-            String location = extension.reportDir != null ?
-                extension.reportDir : "$project.buildDir/$FD_REPORTS/$FD_ANDROID_TESTS"
-
-            project.file(location)
-        }
-
-        // gather the subprojects
-        project.afterEvaluate {
-            project.subprojects.each { p ->
-                TaskCollection<AndroidReportTask> tasks = p.tasks.withType(AndroidReportTask)
-                for (AndroidReportTask task : tasks) {
-                    mergeReportsTask.addTask(task)
-                }
-                TaskCollection<DeviceProviderInstrumentTestTask> tasks2 = p.tasks.withType(DeviceProviderInstrumentTestTask)
-                for (DeviceProviderInstrumentTestTask task : tasks2) {
-                    mergeReportsTask.addTask(task)
+        ConventionMappingHelper.map(mergeReportsTask, "resultsDir", new Callable<File>() {
+            @Override
+            public File call() throws Exception {
+                String resultsDir = extension.getResultsDir();
+                if (resultsDir == null) {
+                    return new File(project.getBuildDir(), FD_ANDROID_RESULTS);
+                } else {
+                    return project.file(resultsDir);
                 }
             }
-        }
+        });
+
+        ConventionMappingHelper.map(mergeReportsTask, "reportsDir", new Callable<File>() {
+            @Override
+            public File call() throws Exception {
+                String reportsDir = extension.getReportDir();
+                if (reportsDir == null) {
+                    return new File(new File(project.getBuildDir(),  FD_REPORTS), FD_ANDROID_TESTS);
+                } else {
+                    return project.file(reportsDir);
+                }
+            }
+        });
+
+        // gather the subprojects
+        project.afterEvaluate(new Action<Project>() {
+            @Override
+            public void execute(Project prj) {
+                for (Project p : prj.getSubprojects()) {
+                    TaskCollection<AndroidReportTask> tasks = p.getTasks().withType(
+                            AndroidReportTask.class);
+                    for (AndroidReportTask task : tasks) {
+                        mergeReportsTask.addTask(task);
+                    }
+
+                    TaskCollection<DeviceProviderInstrumentTestTask> tasks2 =
+                            p.getTasks().withType(DeviceProviderInstrumentTestTask.class);
+                    for (DeviceProviderInstrumentTestTask task : tasks2) {
+                        mergeReportsTask.addTask(task);
+                    }
+                }
+            }
+        });
 
         // If gradle is launched with --continue, we want to run all tests and generate an
         // aggregate report (to help with the fact that we may have several build variants).
@@ -84,12 +112,15 @@ class ReportingPlugin implements org.gradle.api.Plugin<Project> {
         // them ignore their error.
         // We cannot do that always: in case the test task is not going to run, we do want the
         // individual testFlavor tasks to fail.
-        if (mergeReportsTask != null && project.gradle.startParameter.continueOnFailure) {
-            project.gradle.taskGraph.whenReady { taskGraph ->
-                if (taskGraph.hasTask(mergeReportsTask)) {
-                    mergeReportsTask.setWillRun()
+        if (mergeReportsTask != null
+                && project.getGradle().getStartParameter().isContinueOnFailure()) {
+            project.getGradle().getTaskGraph().whenReady(new Closure(this) {
+                void doCall(TaskGraphExecuter taskGraph) {
+                    if (taskGraph.hasTask(mergeReportsTask)) {
+                        mergeReportsTask.setWillRun();
+                    }
                 }
-            }
+            });
         }
     }
 }
