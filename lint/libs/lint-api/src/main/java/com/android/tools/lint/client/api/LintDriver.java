@@ -103,6 +103,7 @@ import java.util.regex.Pattern;
 
 import lombok.ast.Annotation;
 import lombok.ast.AnnotationElement;
+import lombok.ast.AnnotationMethodDeclaration;
 import lombok.ast.AnnotationValue;
 import lombok.ast.ArrayInitializer;
 import lombok.ast.ConstructorDeclaration;
@@ -2430,6 +2431,12 @@ public class LintDriver {
             } else if (TypeDeclaration.class.isAssignableFrom(type)) {
                 // Class, annotation, enum, interface
                 TypeDeclaration declaration = (TypeDeclaration) scope;
+                if (isSuppressed(issue, declaration.astModifiers())) {
+                    return true;
+                }
+            } else if (type == AnnotationMethodDeclaration.class) {
+                // Look for annotations on the method
+                AnnotationMethodDeclaration declaration = (AnnotationMethodDeclaration) scope;
                 if (isSuppressed(issue, declaration.astModifiers())) {
                     return true;
                 }

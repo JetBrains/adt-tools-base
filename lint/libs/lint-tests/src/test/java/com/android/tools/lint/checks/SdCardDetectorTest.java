@@ -18,7 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.tools.lint.detector.api.Detector;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName"})
 public class SdCardDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
@@ -94,5 +94,16 @@ public class SdCardDetectorTest extends AbstractCheckTest {
             "",
 
             lintProject("src/test/pkg/Utf8BomTest.java.data=>src/test/pkg/Utf8BomTest.java"));
+    }
+
+    public void testSuppressInAnnotation() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(java("src/test/pkg/MyInterface.java", ""
+                        + "package test.pkg;\n"
+                        + "import android.annotation.SuppressLint;\n"
+                        + "public @interface MyInterface {\n"
+                        + "    @SuppressLint(\"SdCardPath\")\n"
+                        + "    String engineer() default \"/sdcard/this/is/wrong\";\n"
+                        + "}\n")));
     }
 }
