@@ -127,10 +127,6 @@ import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
 import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
 import com.android.build.gradle.tasks.factory.UnitTestConfigAction;
 import com.android.build.gradle.tasks.fd.InjectBootstrapApplicationTask;
-import com.android.build.api.transform.QualifiedContent.ContentType;
-import com.android.build.api.transform.QualifiedContent.DefaultContentType;
-import com.android.build.api.transform.QualifiedContent.Scope;
-import com.android.build.api.transform.Transform;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
@@ -1896,9 +1892,13 @@ public abstract class TaskManager {
             Transform transform = customTransforms.get(i);
             AndroidTask<TransformTask> task = transformManager
                     .addTransform(tasks, variantScope, transform);
-            List<Object> deps = customTransformsDependencies.get(i);
-            if (!deps.isEmpty()) {
-                task.dependsOn(tasks, deps);
+            // task could be null if the transform is invalid.
+            if (task != null) {
+                List<Object> deps = customTransformsDependencies.get(i);
+                if (!deps.isEmpty()) {
+                    task.dependsOn(tasks, deps);
+                }
+
             }
         }
 
