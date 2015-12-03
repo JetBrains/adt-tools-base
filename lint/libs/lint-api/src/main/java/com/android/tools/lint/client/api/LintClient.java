@@ -19,6 +19,7 @@ package com.android.tools.lint.client.api;
 import static com.android.SdkConstants.CLASS_FOLDER;
 import static com.android.SdkConstants.DOT_AAR;
 import static com.android.SdkConstants.DOT_JAR;
+import static com.android.SdkConstants.FD_ASSETS;
 import static com.android.SdkConstants.GEN_FOLDER;
 import static com.android.SdkConstants.LIBS_FOLDER;
 import static com.android.SdkConstants.RES_FOLDER;
@@ -270,6 +271,22 @@ public abstract class LintClient {
         File res = new File(project.getDir(), RES_FOLDER);
         if (res.exists()) {
             return Collections.singletonList(res);
+        }
+
+        return Collections.emptyList();
+    }
+
+    /**
+     * Returns the asset folders.
+     *
+     * @param project the project to look up the asset folder for
+     * @return a list of files pointing to the asset folders, possibly empty
+     */
+    @NonNull
+    public List<File> getAssetFolders(@NonNull Project project) {
+        File assets = new File(project.getDir(), FD_ASSETS);
+        if (assets.exists()) {
+            return Collections.singletonList(assets);
         }
 
         return Collections.emptyList();
