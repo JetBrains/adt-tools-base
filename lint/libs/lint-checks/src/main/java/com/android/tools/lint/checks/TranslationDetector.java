@@ -610,6 +610,21 @@ public class TranslationDetector extends ResourceXmlDetector {
                 }
                 mNonTranslatable.add(name);
                 return;
+            } else if (name.equals("gcm_defaultSenderId")
+                    || name.equals("google_app_id")
+                    || name.equals("ga_trackingID")) {
+                // These are keys used by misc developer services.
+                // Configuration files provided by for example
+                //   https://developers.google.com/cloud-messaging/android/client
+                // in earlier versions would omit translatable="false", which meant users
+                // would run into fatal translation errors at build time.
+                // See for example
+                //    https://code.google.com/p/android/issues/detail?id=195824
+                if (mNonTranslatable == null) {
+                    mNonTranslatable = new HashSet<String>();
+                }
+                mNonTranslatable.add(name);
+                return;
             }
 
             if (element.getTagName().equals(TAG_STRING_ARRAY) &&
