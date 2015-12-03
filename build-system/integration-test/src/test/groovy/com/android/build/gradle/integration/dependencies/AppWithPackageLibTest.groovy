@@ -39,12 +39,12 @@ class AppWithPackageLibTest {
 
     @BeforeClass
     static void setUp() {
-        project.getSubproject('app').getBuildFile() << """
-
-dependencies {
-    apk project(':library')
-}
-"""
+        project.getSubproject('app').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    apk project(':library')\n" +
+                "}\n"
         models = project.getAllModelsIgnoringSyncIssues()
     }
 

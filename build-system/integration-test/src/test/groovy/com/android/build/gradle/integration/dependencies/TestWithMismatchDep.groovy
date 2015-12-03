@@ -42,11 +42,11 @@ class TestWithMismatchDep {
 
     @Before
     public void setUp() {
-        project.getBuildFile() << """
-dependencies {
-    androidTestCompile 'com.google.guava:guava:15.0'
-}
-"""
+        project.getBuildFile() <<
+                "\n" +
+                "dependencies {\n" +
+                "    androidTestCompile 'com.google.guava:guava:15.0'\n" +
+                "}\n"
     }
 
     private final static String ERROR_MSG = 'Conflict with dependency \'com.google.guava:guava\'.' +

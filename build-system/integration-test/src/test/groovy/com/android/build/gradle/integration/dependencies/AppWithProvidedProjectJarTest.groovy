@@ -42,12 +42,12 @@ class AppWithProvidedProjectJarTest {
 
     @BeforeClass
     static void setUp() {
-        project.getSubproject('app').getBuildFile() << """
-
-dependencies {
-    provided project(':jar')
-}
-"""
+        project.getSubproject('app').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    provided project(':jar')\n" +
+                "}\n"
 
         models = project.executeAndReturnMultiModel("clean", ":app:assembleDebug")
     }

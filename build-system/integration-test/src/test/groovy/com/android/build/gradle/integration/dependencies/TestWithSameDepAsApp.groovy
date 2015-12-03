@@ -117,31 +117,34 @@ class TestWithSameDepAsApp {
 
     @Before
     public void setUp() {
-        project.getBuildFile() << """
-                dependencies {
-                    compile '${this.appDependency}'
-                    androidTestCompile '${this.testDependency}'
-                }
-
-                android.defaultConfig.minSdkVersion 16
-                """
+        project.getBuildFile() <<
+                '\n' +
+                'dependencies {\n' +
+                '    compile \'' + this.appDependency +
+                '\n' +
+                '    androidTestCompile ' + this.testDependency +
+                '\n' +
+                '}\n' +
+                '\n' +
+                'android.defaultConfig.minSdkVersion 16\n' +
+                ''
 
         FileHelper.addMethod(
                 project.file("src/main/java/com/example/helloworld/HelloWorld.java"),
-                """
-                public void useDependency() {
-                    ${this.appUsage}
-                }
-                """
+                '\n' +
+                        'public void useDependency() {\n' +
+                        '    ' + this.appUsage + '\n' +
+                        '}\n' +
+                        ''
         )
 
         FileHelper.addMethod(
                 project.file("src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
-                """
-                public void testDependency() {
-                    ${this.testUsage}
-                }
-                """
+                '\n' +
+                        'public void testDependency() {\n' +
+                        '    ' + this.testUsage + '\n' +
+                        '}\n' +
+                        ''
         )
     }
 

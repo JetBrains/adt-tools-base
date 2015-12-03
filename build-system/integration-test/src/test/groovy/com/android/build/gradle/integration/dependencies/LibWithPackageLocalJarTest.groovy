@@ -28,10 +28,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import java.util.zip.ZipFile
-
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
-import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
 /**
  * test for package (publish) local jar in libs
@@ -47,18 +44,22 @@ class LibWithPackageLocalJarTest {
 
     @BeforeClass
     static void setUp() {
-        project.getBuildFile() << """
-apply plugin: 'com.android.library'
-
-android {
-    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-}
-
-dependencies {
-    publish files('libs/util-1.0.jar')
-}
-"""
+        project.getBuildFile() <<
+                '\n' +
+                'apply plugin: \'com.android.library\'\n' +
+                '\n' +
+                'android {\n' +
+                '    compileSdkVersion ' +
+                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
+                '\n' +
+                '    buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
+                '\n' +
+                '}\n' +
+                '\n' +
+                'dependencies {\n' +
+                '    publish files(\'libs/util-1.0.jar\')\n' +
+                '}\n' +
+                ''
 
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }

@@ -47,12 +47,12 @@ class TestWithCompileLibTest {
 
     @BeforeClass
     static void setUp() {
-        project.getSubproject('app').getBuildFile() << """
-
-dependencies {
-    androidTestCompile project(':library')
-}
-"""
+        project.getSubproject('app').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    androidTestCompile project(':library')\n" +
+                "}\n"
         models = project.executeAndReturnMultiModel("clean", ":app:assembleDebugAndroidTest")
     }
 

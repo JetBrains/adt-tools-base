@@ -41,22 +41,26 @@ class LocalJarInAarInModelTest {
 
     @Before
     void setUp() {
-        project.getBuildFile() << """
-apply plugin: 'com.android.application'
-
-android {
-  compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-  buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-
-  defaultConfig {
-    minSdkVersion 4
-  }
-}
-
-dependencies {
-  compile 'com.android.support:support-v4:22.1.1'
-}
-"""
+        project.getBuildFile() <<
+                '\n' +
+                'apply plugin: \'com.android.application\'\n' +
+                '\n' +
+                'android {\n' +
+                '  compileSdkVersion ' +
+                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
+                '\n' +
+                '  buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
+                '\n' +
+                '\n' +
+                '  defaultConfig {\n' +
+                '    minSdkVersion 4\n' +
+                '  }\n' +
+                '}\n' +
+                '\n' +
+                'dependencies {\n' +
+                '  compile \'com.android.support:support-v4:22.1.1\'\n' +
+                '}\n' +
+                ''
     }
 
     @After

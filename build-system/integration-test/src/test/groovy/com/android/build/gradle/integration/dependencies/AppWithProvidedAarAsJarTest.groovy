@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.dependencies
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidProject
@@ -27,10 +26,8 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static org.junit.Assert.assertEquals
-
 /**
  * test for provided jar in library where the jar comes from a library project.
  */
@@ -45,26 +42,26 @@ class AppWithProvidedAarAsJarTest {
 
     @BeforeClass
     static void setUp() {
-        project.getSubproject('app').getBuildFile() << """
+        project.getSubproject('app').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    provided project(path: ':library', configuration: 'fakeJar')\n" +
+                "}\n"
 
-dependencies {
-    provided project(path: ':library', configuration: 'fakeJar')
-}
-"""
-
-        project.getSubproject('library').getBuildFile() << """
-configurations {
-    fakeJar
-}
-
-task makeFakeJar(type: Jar) {
-    from 'src/main/java'
-}
-
-artifacts {
-    fakeJar makeFakeJar
-}
-"""
+        project.getSubproject('library').getBuildFile() <<
+                "\n" +
+                "configurations {\n" +
+                "    fakeJar\n" +
+                "}\n" +
+                "\n" +
+                "task makeFakeJar(type: Jar) {\n" +
+                "    from 'src/main/java'\n" +
+                "}\n" +
+                "\n" +
+                "artifacts {\n" +
+                "    fakeJar makeFakeJar\n" +
+                "}\n"
 
         models = project.executeAndReturnMultiModel("clean", ":app:assembleDebug")
     }

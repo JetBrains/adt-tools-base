@@ -42,19 +42,19 @@ class AppWithCompileIndirectJarTest {
 
     @BeforeClass
     static void setUp() {
-        project.getSubproject('app').getBuildFile() << """
+        project.getSubproject('app').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    compile project(':library')\n" +
+                "}\n"
 
-dependencies {
-    compile project(':library')
-}
-"""
-
-        project.getSubproject('library').getBuildFile() << """
-
-dependencies {
-    compile project(':jar')
-}
-"""
+        project.getSubproject('library').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    compile project(':jar')\n" +
+                "}\n"
 
         models = project.executeAndReturnMultiModel("clean", ":app:assembleDebug")
     }

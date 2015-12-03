@@ -39,12 +39,12 @@ class AppWithProvidedLibTest {
 
     @BeforeClass
     static void setUp() {
-        project.getSubproject('app').getBuildFile() << """
-
-dependencies {
-    provided project(':library')
-}
-"""
+        project.getSubproject('app').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    provided project(':library')\n" +
+                "}\n"
         models = project.getAllModelsIgnoringSyncIssues()
     }
 

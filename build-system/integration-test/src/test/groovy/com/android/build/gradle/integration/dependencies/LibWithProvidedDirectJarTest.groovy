@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
@@ -28,7 +27,6 @@ import org.junit.ClassRule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static org.junit.Assert.assertEquals
 /**
  * test for provided jar in library
@@ -44,12 +42,12 @@ class LibWithProvidedDirectJarTest {
 
     @BeforeClass
     static void setUp() {
-        project.getSubproject('library').getBuildFile() << """
-
-dependencies {
-    provided project(':jar')
-}
-"""
+        project.getSubproject('library').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    provided project(':jar')\n" +
+                "}\n"
 
         models = project.executeAndReturnMultiModel("clean", ":library:assembleDebug")
     }

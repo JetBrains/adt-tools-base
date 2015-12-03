@@ -39,30 +39,34 @@ class TestWithSameDepAsAppWithProguard {
 
     @BeforeClass
     public static void setUp() {
-        project.getBuildFile() << """
-apply plugin: 'com.android.application'
-
-android {
-  compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-  buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-
-  defaultConfig {
-    minSdkVersion 21
-  }
-
-  buildTypes {
-    debug {
-      minifyEnabled true
-      proguardFiles getDefaultProguardFile('proguard-android.txt')
-      }
-  }
-}
-
-dependencies {
-  compile 'com.android.tools:annotations:+'
-  androidTestCompile 'com.android.tools:annotations:+'
-}
-"""
+        project.getBuildFile() <<
+                '\n' +
+                'apply plugin: \'com.android.application\'\n' +
+                '\n' +
+                'android {\n' +
+                '  compileSdkVersion ' +
+                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
+                '\n' +
+                '  buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
+                '\n' +
+                '\n' +
+                '  defaultConfig {\n' +
+                '    minSdkVersion 21\n' +
+                '  }\n' +
+                '\n' +
+                '  buildTypes {\n' +
+                '    debug {\n' +
+                '      minifyEnabled true\n' +
+                '      proguardFiles getDefaultProguardFile(\'proguard-android.txt\')\n' +
+                '      }\n' +
+                '  }\n' +
+                '}\n' +
+                '\n' +
+                'dependencies {\n' +
+                '  compile \'com.android.tools:annotations:+\'\n' +
+                '  androidTestCompile \'com.android.tools:annotations:+\'\n' +
+                '}\n' +
+                ''
 
     }
 

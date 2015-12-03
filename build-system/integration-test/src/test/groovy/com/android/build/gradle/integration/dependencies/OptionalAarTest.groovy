@@ -45,18 +45,18 @@ class OptionalAarTest {
 
     @BeforeClass
     static void setUp() {
-        project.getSubproject('app').getBuildFile() << """
-
-dependencies {
-    compile project(':library')
-}
-"""
-        project.getSubproject('library').getBuildFile() << """
-
-dependencies {
-    provided project(':library2')
-}
-"""
+        project.getSubproject('app').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    compile project(':library')\n" +
+                "}\n"
+        project.getSubproject('library').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    provided project(':library2')\n" +
+                "}\n"
         models = project.executeAndReturnMultiModel("clean", ":app:assembleDebug")
     }
 

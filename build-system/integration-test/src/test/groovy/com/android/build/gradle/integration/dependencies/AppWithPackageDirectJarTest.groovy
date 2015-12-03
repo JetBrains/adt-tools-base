@@ -42,12 +42,12 @@ class AppWithPackageDirectJarTest {
 
     @BeforeClass
     static void setUp() {
-        project.getSubproject('app').getBuildFile() << """
-
-dependencies {
-    apk project(':jar')
-}
-"""
+        project.getSubproject('app').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    apk project(':jar')\n" +
+                "}\n"
         models = project.executeAndReturnMultiModel("clean", ":app:assembleDebug")
     }
 

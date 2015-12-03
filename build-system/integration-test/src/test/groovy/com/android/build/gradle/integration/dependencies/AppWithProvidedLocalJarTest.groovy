@@ -46,18 +46,22 @@ class AppWithProvidedLocalJarTest {
 
     @BeforeClass
     static void setUp() {
-        project.getBuildFile() << """
-apply plugin: 'com.android.application'
-
-android {
-    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-}
-
-dependencies {
-    provided files('libs/util-1.0.jar')
-}
-"""
+        project.getBuildFile() <<
+                '\n' +
+                'apply plugin: \'com.android.application\'\n' +
+                '\n' +
+                'android {\n' +
+                '    compileSdkVersion ' +
+                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
+                '\n' +
+                '    buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
+                '\n' +
+                '}\n' +
+                '\n' +
+                'dependencies {\n' +
+                '    provided files(\'libs/util-1.0.jar\')\n' +
+                '}\n' +
+                ''
 
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }

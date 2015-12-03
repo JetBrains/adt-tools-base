@@ -15,16 +15,13 @@
  */
 
 package com.android.build.gradle.integration.dependencies
-
 import com.android.annotations.NonNull
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
-import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.JavaLibrary
-import com.android.builder.model.SyncIssue
 import com.android.builder.model.Variant
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
@@ -32,8 +29,6 @@ import org.junit.Assert
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 /**
  * test for flavored dependency on a different package.
  */
@@ -48,31 +43,31 @@ class AppWithResolutionStrategyForJarTest {
 
     @BeforeClass
     static void setUp() {
-        project.getBuildFile() << """
-subprojects {
-    apply from: "\$rootDir/../commonLocalRepo.gradle"
-}
-"""
-        project.getSubproject('app').getBuildFile() << """
-
-dependencies {
-    debugCompile project(':library')
-    releaseCompile project(':library')
-}
-
-configurations { _debugCompile }
-
-configurations._debugCompile {
-  resolutionStrategy {
-    eachDependency { DependencyResolveDetails details ->
-      if (details.requested.name == 'guava') {
-        details.useVersion '15.0'
-      }
-    }
-  }
-}
-
-"""
+        project.getBuildFile() <<
+                "\n" +
+                "subprojects {\n" +
+                "    apply from: \"\$rootDir/../commonLocalRepo.gradle\"\n" +
+                "}\n"
+        project.getSubproject('app').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    debugCompile project(':library')\n" +
+                "    releaseCompile project(':library')\n" +
+                "}\n" +
+                "\n" +
+                "configurations { _debugCompile }\n" +
+                "\n" +
+                "configurations._debugCompile {\n" +
+                "  resolutionStrategy {\n" +
+                "    eachDependency { DependencyResolveDetails details ->\n" +
+                "      if (details.requested.name == 'guava') {\n" +
+                "        details.useVersion '15.0'\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}\n" +
+                "\n"
 
         project.getSubproject('library').getBuildFile() << """
 

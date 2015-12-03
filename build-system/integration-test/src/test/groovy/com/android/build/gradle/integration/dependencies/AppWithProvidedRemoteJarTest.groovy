@@ -46,22 +46,26 @@ class AppWithProvidedRemoteJarTest {
 
     @BeforeClass
     static void setUp() {
-        project.getBuildFile() << """
-apply plugin: 'com.android.application'
-
-android {
-    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-}
-
-repositories {
-  maven { url System.env.CUSTOM_REPO }
-}
-
-dependencies {
-    provided 'com.google.guava:guava:17.0'
-}
-"""
+        project.getBuildFile() <<
+                '\n' +
+                'apply plugin: \'com.android.application\'\n' +
+                '\n' +
+                'android {\n' +
+                '    compileSdkVersion ' +
+                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
+                '\n' +
+                '    buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
+                '\n' +
+                '}\n' +
+                '\n' +
+                'repositories {\n' +
+                '  maven { url System.env.CUSTOM_REPO }\n' +
+                '}\n' +
+                '\n' +
+                'dependencies {\n' +
+                '    provided \'com.google.guava:guava:17.0\'\n' +
+                '}\n' +
+                ''
 
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }

@@ -48,19 +48,19 @@ class TestWithFlavorsWithCompileDirectJarTest {
 
     @BeforeClass
     static void setUp() {
-        project.getSubproject('app').getBuildFile() << """
-
-android {
-    productFlavors {
-      pro { }
-      free { }
-    }
-}
-
-dependencies {
-    androidTestCompile project(':jar')
-}
-"""
+        project.getSubproject('app').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "android {\n" +
+                "    productFlavors {\n" +
+                "      pro { }\n" +
+                "      free { }\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    androidTestCompile project(':jar')\n" +
+                "}\n"
         models = project.executeAndReturnMultiModel("clean", ":app:assembleFreeDebugAndroidTest")
     }
 

@@ -41,19 +41,19 @@ class AppWithJarDependOnLibTest {
 
     @BeforeClass
     static void setUp() {
-        project.getSubproject('app').getBuildFile() << """
+        project.getSubproject('app').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    compile project(':jar')\n" +
+                "}\n"
 
-dependencies {
-    compile project(':jar')
-}
-"""
-
-        project.getSubproject('jar').getBuildFile() << """
-
-dependencies {
-    compile project(':library')
-}
-"""
+        project.getSubproject('jar').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    compile project(':library')\n" +
+                "}\n"
         models = project.getAllModelsIgnoringSyncIssues()
     }
 

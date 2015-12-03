@@ -60,42 +60,45 @@ class VariantDependencyTest {
 
     @BeforeClass
     public static void setUp() {
-        project.getBuildFile() << """
-            apply plugin: 'com.android.application'
-
-            configurations {
-                freeLollipopDebugCompile
-                paidIcsCompile
-            }
-
-            android {
-                compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                buildToolsVersion "$DEFAULT_BUILD_TOOL_VERSION"
-
-                flavorDimensions 'model', 'api'
-                productFlavors {
-                    Lollipop {
-                        flavorDimension 'api'
-                        minSdkVersion 21
-                    }
-                    ics {
-                        flavorDimension 'api'
-                        minSdkVersion 15
-                    }
-                    free {
-                        flavorDimension 'model'
-                    }
-                    paid {
-                        flavorDimension 'model'
-                    }
-                }
-            }
-
-            dependencies {
-                freeLollipopDebugCompile 'com.android.support:leanback-v17:21.0.0'
-                paidIcsCompile 'com.android.support:appcompat-v7:21.0.0'
-            }
-            """.stripIndent()
+        project.getBuildFile() <<
+                '\n' +
+                'apply plugin: \'com.android.application\'\n' +
+                '\n' +
+                'configurations {\n' +
+                '    freeLollipopDebugCompile\n' +
+                '    paidIcsCompile\n' +
+                '}\n' +
+                '\n' +
+                'android {\n' +
+                '    compileSdkVersion ' +
+                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
+                '\n' +
+                '    buildToolsVersion "' + DEFAULT_BUILD_TOOL_VERSION +
+                '\n' +
+                '\n' +
+                '    flavorDimensions \'model\', \'api\'\n' +
+                '    productFlavors {\n' +
+                '        Lollipop {\n' +
+                '            flavorDimension \'api\'\n' +
+                '            minSdkVersion 21\n' +
+                '        }\n' +
+                '        ics {\n' +
+                '            flavorDimension \'api\'\n' +
+                '            minSdkVersion 15\n' +
+                '        }\n' +
+                '        free {\n' +
+                '            flavorDimension \'model\'\n' +
+                '        }\n' +
+                '        paid {\n' +
+                '            flavorDimension \'model\'\n' +
+                '        }\n' +
+                '    }\n' +
+                '}\n' +
+                '\n' +
+                'dependencies {\n' +
+                '    freeLollipopDebugCompile \'com.android.support:leanback-v17:21.0.0\'\n' +
+                '    paidIcsCompile \'com.android.support:appcompat-v7:21.0.0\'\n' +
+                '}\n'
 
         project.execute('clean', 'assemble')
         model = project.getSingleModel()

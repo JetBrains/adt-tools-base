@@ -41,31 +41,31 @@ class AppWithNonExistentResolutionStrategyForAarTest {
 
     @BeforeClass
     static void setUp() {
-        project.getBuildFile() << """
-subprojects {
-    apply from: "\$rootDir/../commonLocalRepo.gradle"
-}
-"""
-        project.getSubproject('app').getBuildFile() << """
-
-dependencies {
-    debugCompile project(':library')
-    releaseCompile project(':library')
-}
-
-configurations { _debugCompile }
-
-configurations._debugCompile {
-  resolutionStrategy {
-    eachDependency { DependencyResolveDetails details ->
-      if (details.requested.name == 'jdeferred-android-aar') {
-        details.useVersion '-1.-1.-1'
-      }
-    }
-  }
-}
-
-"""
+        project.getBuildFile() <<
+                "\n" +
+                "subprojects {\n" +
+                "    apply from: \"\$rootDir/../commonLocalRepo.gradle\"\n" +
+                "}\n"
+        project.getSubproject('app').getBuildFile() <<
+                "\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    debugCompile project(':library')\n" +
+                "    releaseCompile project(':library')\n" +
+                "}\n" +
+                "\n" +
+                "configurations { _debugCompile }\n" +
+                "\n" +
+                "configurations._debugCompile {\n" +
+                "  resolutionStrategy {\n" +
+                "    eachDependency { DependencyResolveDetails details ->\n" +
+                "      if (details.requested.name == 'jdeferred-android-aar') {\n" +
+                "        details.useVersion '-1.-1.-1'\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}\n" +
+                "\n"
 
         project.getSubproject('library').getBuildFile() << """
 
