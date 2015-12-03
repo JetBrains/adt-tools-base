@@ -290,7 +290,7 @@ public class SystemImage implements ISystemImage {
     }
 
     /**
-     * Sort by tag & ABI name only. This is what matters from a user point of view.
+     * Sort by tag & ABI name, then arbitrarily (but consistently).
      */
     @Override
     public int compareTo(ISystemImage other) {
@@ -298,7 +298,11 @@ public class SystemImage implements ISystemImage {
         if (t != 0) {
             return t;
         }
-        return this.getAbiType().compareToIgnoreCase(other.getAbiType());
+        t = this.getAbiType().compareToIgnoreCase(other.getAbiType());
+        if (t != 0) {
+            return t;
+        }
+        return hashCode() - other.hashCode();
     }
 
     /**

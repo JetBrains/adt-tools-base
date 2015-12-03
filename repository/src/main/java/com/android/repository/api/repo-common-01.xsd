@@ -28,7 +28,7 @@
          -p com.android.repository.impl.generated.v1 \
          repository/src/main/java/com/android/repository/api/repo-common-01.xsd \
          -extension -Xandroid-inheritance -d repository/src/main/java/ \
-         -b repository/src/main/java/com/android/repository/api/global.xjb
+         -b repository/src/main/java/com/android/repository/api/global.xjb -no-header
     from tools/base with jaxb-inheritance-plugin.jar, repository classes, guava, and the
     transitive dependencies of org.glassfish.jaxb:jaxb-xjc:17.0 on the classpath.
 

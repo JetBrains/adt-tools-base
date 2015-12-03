@@ -111,6 +111,13 @@ public class LegacyRepoUtils {
                 vendor.setDisplay(vendorIdDisplay.getDisplay());
                 details.setVendor(vendor);
             }
+            com.android.sdklib.repository.descriptors.IdDisplay nameIdDisplay = desc.getName();
+            if (nameIdDisplay != null) {
+                IdDisplay tag = sdkFactory.createIdDisplayType();
+                tag.setId(nameIdDisplay.getId());
+                tag.setDisplay(nameIdDisplay.getDisplay());
+                details.setTag(tag);
+            }
             assert androidVersion != null;
             details.setApiLevel(androidVersion.getApiLevel());
             return (TypeDetails) details;

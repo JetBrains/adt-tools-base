@@ -26,16 +26,21 @@ import javax.xml.bind.annotation.XmlTransient;
  */
 @SuppressWarnings("NullableProblems")
 @XmlTransient
-public abstract class IdDisplay {
+public abstract class IdDisplay implements Comparable<IdDisplay> {
 
     /**
      * Sets the machine-friendly version of the string.
      */
-    public abstract void setId(@NonNull String id);
+    public void setId(@NonNull String id) {
+        // Stub
+    }
+
     /**
      * Sets the user-friendly version of the string.
      */
-    public abstract void setDisplay(@NonNull String display);
+    public void setDisplay(@NonNull String display) {
+        // Stub
+    }
 
     /**
      * Gets the machine-friendly version of the string.
@@ -48,4 +53,30 @@ public abstract class IdDisplay {
      */
     @NonNull
     public abstract String getDisplay();
+
+    @Override
+    public int compareTo(IdDisplay o) {
+        return getId().compareTo(o.getId());
+    }
+
+    public boolean equals(Object o) {
+        if (!(o instanceof IdDisplay)) {
+            return false;
+        }
+        return compareTo((IdDisplay)o) == 0;
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
+
+    /**
+     * Returns a string representation for *debug* purposes only, not for UI display.
+     */
+    @Override
+    public String toString() {
+        return String.format("%1$s [%2$s]", getId(), getDisplay());
+    }
+
 }

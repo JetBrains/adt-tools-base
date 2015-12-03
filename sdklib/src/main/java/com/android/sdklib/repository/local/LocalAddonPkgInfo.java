@@ -273,12 +273,6 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                 }
             }
 
-            // get the USB ID (if available)
-            int usbVendorId = convertId(propertyMap.get(AddonManifestIniProps.ADDON_USB_VENDOR));
-            if (usbVendorId != IAndroidTarget.NO_USB_ID) {
-                target.setUsbVendorId(usbVendorId);
-            }
-
             target.setSkins(skins.toArray(new File[skins.size()]), defaultSkin);
 
             return target;
@@ -395,28 +389,6 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
     private static String addonManifestWarning(@NonNull String valueName) {
         return String.format("'%1$s' is missing from %2$s.",
                 valueName, SdkConstants.FN_MANIFEST_INI);
-    }
-
-    /**
-     * Converts a string representation of an hexadecimal ID into an int.
-     *
-     * @param value the string to convert.
-     * @return the int value, or {@link IAndroidTarget#NO_USB_ID} if the conversion failed.
-     */
-    private int convertId(@Nullable String value) {
-        if (value != null && !value.isEmpty()) {
-            if (PATTERN_USB_IDS.matcher(value).matches()) {
-                String v = value.substring(2);
-                try {
-                    return Integer.parseInt(v, 16);
-                } catch (NumberFormatException e) {
-                    // this shouldn't happen since we check the pattern above, but this is safer.
-                    // the method will return 0 below.
-                }
-            }
-        }
-
-        return IAndroidTarget.NO_USB_ID;
     }
 
     /**

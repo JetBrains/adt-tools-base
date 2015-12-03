@@ -16,12 +16,17 @@
 
 package com.android.sdklib.repositoryv2.meta;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.repository.Revision;
+import com.android.annotations.VisibleForTesting;
 import com.android.repository.impl.meta.TypeDetails;
+import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repositoryv2.IdDisplay;
-import com.android.repository.impl.meta.RevisionType;
+
+import java.io.File;
+import java.util.List;
 
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -102,8 +107,14 @@ public final class DetailsTypes {
         @XmlTransient
         abstract class LayoutlibType {
 
+            /**
+             * Sets the layout lib api level.
+             */
             public abstract void setApi(int api);
 
+            /**
+             * Gets the layout lib api level.
+             */
             public abstract int getApi();
         }
     }
@@ -125,8 +136,16 @@ public final class DetailsTypes {
      */
     @XmlTransient
     public interface ExtraDetailsType {
+
+        /**
+         * Sets the vendor for this package.
+         */
         void setVendor(@NonNull IdDisplay vendor);
 
+        /**
+         * Gets the vendor for this package.
+         * @return
+         */
         @NonNull
         IdDisplay getVendor();
     }
@@ -140,6 +159,41 @@ public final class DetailsTypes {
 
         @NonNull
         IdDisplay getVendor();
+
+        /**
+         * Gets the {@link IAndroidTarget.OptionalLibrary}s provided by this
+         * package.
+         */
+        @Nullable
+        Libraries getLibraries();
+
+        /**
+         * Sets the tag for this package. Used to match addon packages with corresponding
+         * system images.
+         */
+        void setTag(@NonNull IdDisplay tag);
+
+        /**
+         * Gets the tag for this package. Used to match addon packages with corresponding
+         * system images.
+         */
+        @NonNull
+        IdDisplay getTag();
+
+        /**
+         * Gets the default skin included in this package.
+         */
+        @Nullable
+        String getDefaultSkin();
+
+        /**
+         * List of all {@link Library}s included in this package.
+         */
+        abstract class Libraries {
+            @NonNull
+            public abstract List<Library> getLibrary();
+        }
+
     }
 
     /**
@@ -148,11 +202,46 @@ public final class DetailsTypes {
      */
     @XmlTransient
     public interface SysImgDetailsType extends ApiDetailsType {
+
+        /**
+         * Sets the abi type (x86, armeabi-v7a, etc.) for this package.
+         */
         void setAbi(@NonNull String abi);
 
+        /**
+         * Gets the abi type (x86, armeabi-v7a, etc.) for this package.
+         */
+        @NonNull
+        String getAbi();
+
+        /**
+         * Checks whether {@code value} is a valid abi type.
+         */
+        boolean isValidAbi(@Nullable String value);
+
+        /**
+         * Sets the tag for this package. Used to match addon packages with corresponding
+         * system images.
+         */
         void setTag(@NonNull IdDisplay tag);
 
+        /**
+         * Sets the tag for this package. Used to match addon packages with corresponding
+         * system images.
+         */
+        @NonNull
+        IdDisplay getTag();
+
+        /**
+         * Sets the vendor of this package.
+         */
         void setVendor(@Nullable IdDisplay vendor);
+
+        /**
+         * Gets the vendor of this package.
+         */
+        @Nullable
+        IdDisplay getVendor();
     }
 
     /**
@@ -161,4 +250,70 @@ public final class DetailsTypes {
      */
     @XmlTransient
     public interface MavenType {}
+
+    /**
+     * Convenience method to create an {@link AndroidVersion} with the information from the
+     * given {@link ApiDetailsType}.
+     */
+    @NonNull
+    public static AndroidVersion getAndroidVersion(@NonNull ApiDetailsType details) {
+        return new AndroidVersion(details.getApiLevel(), details.getCodename());
+    }
+
+    /**
+     * Information about a {@link IAndroidTarget.OptionalLibrary} provided by a package.
+     */
+    public abstract static class Library implements IAndroidTarget.OptionalLibrary {
+
+        /**
+         * Reference to the path of the containing package.
+         */
+        private File mPackagePath;
+
+        /**
+         * Sets the path of the containing package. Must be called before calling {@link #getJar()}.
+         */
+        public void setPackagePath(@NonNull File packagePath) {
+            mPackagePath = packagePath;
+        }
+
+        /**
+         * Absolute path to the library jar file.
+         */
+        @Override
+        @NonNull
+        public File getJar() {
+            assert mPackagePath != null;
+            String localPath = getLocalJarPath();
+            localPath = localPath.replaceAll("/", File.separator);
+            return new File(mPackagePath, SdkConstants.OS_ADDON_LIBS_FOLDER + localPath);
+        }
+
+        /**
+         * Path to the library jar file relative to the {@code libs} directory in the package.
+         */
+        @NonNull
+        public abstract String getLocalJarPath();
+
+        /**
+         * The name of the library.
+         */
+        @Override
+        @NonNull
+        public abstract String getName();
+
+        /**
+         * User-friendly description of the library.
+         */
+        @Override
+        @NonNull
+        public abstract String getDescription();
+
+        /**
+         * Whether a manifest entry is required for this library.
+         */
+        @Override
+        public abstract boolean isManifestEntryRequired();
+
+    }
 }

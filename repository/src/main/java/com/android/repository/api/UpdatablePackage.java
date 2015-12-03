@@ -99,7 +99,7 @@ public class UpdatablePackage implements Comparable<UpdatablePackage> {
 
     @Override
     public int compareTo(@NonNull UpdatablePackage o) {
-        return getRepresentative(true).compareTo(o.getRepresentative(true));
+        return getRepresentative().compareTo(o.getRepresentative());
     }
 
     /**
@@ -107,17 +107,18 @@ public class UpdatablePackage implements Comparable<UpdatablePackage> {
      * This will be the first of:
      * <ol>
      *     <li>The {@link LocalPackage} if the package is installed</li>
-     *     <li>The preview {@link RemotePackage} if there is a remote preview and includePreview
-     *     is true </li>
-     *     <li>The remote package otherwise, or null if there is no non-preview remote.</li>
+     *     <li>The preview {@link RemotePackage} if there is a remote preview</li>
+     *     <li>The remote package otherwise.</li>
      * </ol>
      */
     @NonNull
-    public RepoPackage getRepresentative(boolean includePreview) {
+    public RepoPackage getRepresentative() {
         if (hasLocal()) {
             return mLocalInfo;
         }
-        return getRemote(includePreview);
+        // getRemote(true) must be non-null if there's no local
+        //noinspection ConstantConditions
+        return getRemote(true);
     }
 
     public boolean isUpdate(boolean includePreview) {

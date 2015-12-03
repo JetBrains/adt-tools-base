@@ -37,9 +37,9 @@ import com.android.sdklib.devices.DeviceManager;
 import com.android.sdklib.devices.DeviceManager.DeviceStatus;
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus;
 import com.android.sdklib.internal.project.ProjectProperties;
-import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.local.LocalSdk;
 import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
+import com.android.sdklib.repositoryv2.IdDisplay;
 import com.android.utils.GrabProcessOutput;
 import com.android.utils.GrabProcessOutput.IProcessOutput;
 import com.android.utils.GrabProcessOutput.Wait;
@@ -1684,7 +1684,7 @@ public class AvdManager {
             if (tagDisp == null || tagDisp.isEmpty()) {
                 tagDisp = LocalSysImgPkgInfo.tagIdToDisplay(tagId);
             }
-            tag = new IdDisplay(tagId, tagDisp);
+            tag = new com.android.sdklib.repository.descriptors.IdDisplay(tagId, tagDisp);
         }
 
         // get abi type
