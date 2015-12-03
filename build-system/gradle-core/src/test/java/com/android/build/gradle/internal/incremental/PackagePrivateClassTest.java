@@ -64,8 +64,6 @@ public class PackagePrivateClassTest {
     @Test
     public void changeBaseClassTest() throws Exception {
 
-        GenericInstantRuntime.setLogger(Logger.getLogger(ClassEnhancement.class.getName()));
-
         harness.reset();
         PackagePrivateInvoker packagePrivateInvoker = new PackagePrivateInvoker();
 

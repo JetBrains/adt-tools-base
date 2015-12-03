@@ -24,8 +24,6 @@ import com.example.basic.AllAccessStaticFields;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import java.util.logging.Logger;
-
 /**
  * Tests for static fields and final static fields accesses from byte code enhanced code.
  */
@@ -37,8 +35,6 @@ public class AllAccessStaticFieldsTest {
     @SuppressWarnings("AccessStaticViaInstance")
     @Test
     public void changeClassWithStaticFields() throws Exception {
-
-        GenericInstantRuntime.setLogger(Logger.getLogger(ClassEnhancement.class.getName()));
 
         harness.reset();
         AllAccessStaticFields allAccessStaticFields = new AllAccessStaticFields();

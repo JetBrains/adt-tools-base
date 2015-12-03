@@ -38,8 +38,6 @@ public class PublicMethodTest {
     @Test
     public void changeBaseClassTest() throws Exception {
 
-        GenericInstantRuntime.setLogger(Logger.getLogger(ClassEnhancement.class.getName()));
-
         harness.reset();
         AllAccessMethods allAccessMethods = new AllAccessMethods() {
             @Override

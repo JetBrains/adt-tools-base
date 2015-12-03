@@ -36,9 +36,6 @@ public class MultipleMethodInvocationsTest {
     @Test
     public void changeMultipleMethodInvocations() throws Exception {
 
-        GenericInstantRuntime.setLogger(Logger.getLogger(
-                MultipleMethodInvocationsTest.class.getName()));
-
         harness.reset();
         MultipleMethodInvocations testTarget = new MultipleMethodInvocations();
         assertEquals("foo-4-barbar", testTarget.doAll());

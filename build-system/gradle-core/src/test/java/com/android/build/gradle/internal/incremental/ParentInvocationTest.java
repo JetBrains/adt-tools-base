@@ -34,8 +34,6 @@ public class ParentInvocationTest {
     @Test
     public void changeBaseClassTest() throws Exception {
 
-        GenericInstantRuntime.setLogger(Logger.getLogger(ClassEnhancement.class.getName()));
-
         harness.reset();
         ParentInvocation parentInvocation = new ParentInvocation();
 

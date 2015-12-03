@@ -38,7 +38,8 @@ dependencies {
     compile 'org.ow2.asm:asm-commons:5.0.3'
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
     compile "org.jacoco:org.jacoco.core:0.7.4.201502262128"
-    testCompile project(':base:instant-run')
+    testCompile project(':base:instant-run:instant-run-annotations')
+    testCompile project(':base:instant-run:instant-run-runtime')
 
 
     // Add gradleApi to classpath for compilation, but use provided configuration so that groovy is
@@ -46,7 +47,7 @@ dependencies {
     provided gradleApi()
     testCompile gradleApi()
 
-    includeInJar project(':base:instant-run')
+    includeInJar project(':base:instant-run:instant-run-server')
 
     testCompile 'junit:junit:4.12'
     testCompile 'com.google.truth:truth:0.26'

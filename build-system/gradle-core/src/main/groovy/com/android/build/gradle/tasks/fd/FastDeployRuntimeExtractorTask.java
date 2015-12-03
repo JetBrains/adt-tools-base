@@ -62,7 +62,7 @@ public class FastDeployRuntimeExtractorTask extends DefaultAndroidTask {
     @TaskAction
     public void extract() throws IOException {
         URL fdrJar = FastDeployRuntimeExtractorTask.class
-                .getResource("/instant-run/instant-run.jar");
+                .getResource("/instant-run/instant-run-server.jar");
         if (fdrJar == null) {
             throw new RuntimeException("Couldn't find Instant-Run runtime library");
         }
