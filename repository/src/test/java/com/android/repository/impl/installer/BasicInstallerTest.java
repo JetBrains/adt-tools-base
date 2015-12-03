@@ -125,10 +125,10 @@ public class BasicInstallerTest extends TestCase {
         RepositoryPackages pkgs = mgr.getPackages();
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
         assertEquals(1, pkgs.getLocalPackages().size());
-        assertEquals(2, pkgs.getRemotePkgInfos().size());
+        assertEquals(2, pkgs.getRemotePackages().size());
 
         // Install one of the packages.
-        new BasicInstaller().install(pkgs.getRemotePkgInfos().get("dummy;bar").iterator().next(),
+        new BasicInstaller().install(pkgs.getRemotePackages().get("dummy;bar").iterator().next(),
                 downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
                 fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
@@ -203,7 +203,7 @@ public class BasicInstallerTest extends TestCase {
         assertEquals(new Revision(3), oldPkg.getVersion());
 
         // Ensure the new package is found with the right version
-        RemotePackage update = pkgs.getRemotePkgInfos().get("dummy;bar").iterator().next();
+        RemotePackage update = pkgs.getRemotePackages().get("dummy;bar").iterator().next();
         assertEquals(new Revision(4, 5, 6), update.getVersion());
 
         // Install the update

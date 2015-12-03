@@ -87,8 +87,14 @@ public class InstallerUtil {
                     }
                 }
                 else {
-                    if (!fop.exists(entryFile) && !fop.createNewFile(entryFile)) {
-                        throw new IOException("Failed to create file " + entryFile);
+                    if (!fop.exists(entryFile)) {
+                        File parent = entryFile.getParentFile();
+                        if (parent != null && !fop.exists(parent)) {
+                            fop.mkdirs(parent);
+                        }
+                        if (!fop.createNewFile(entryFile)) {
+                            throw new IOException("Failed to create file " + entryFile);
+                        }
                     }
 
                     int size;

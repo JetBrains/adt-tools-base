@@ -19,6 +19,7 @@ package com.android.repository.impl.manager;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.annotations.concurrency.Immutable;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.FallbackRemoteRepoLoader;
@@ -253,13 +254,23 @@ public class RepoManagerImpl extends RepoManager {
     // TODO: and contains current valid or invalid packages as they are cached here.
     @Override
     public boolean load(long cacheExpirationMs,
-            @NonNull List<RepoLoadedCallback> onLocalComplete,
-            @NonNull List<RepoLoadedCallback> onSuccess,
-            @NonNull List<Runnable> onError,
+            @Nullable List<RepoLoadedCallback> onLocalComplete,
+            @Nullable List<RepoLoadedCallback> onSuccess,
+            @Nullable List<Runnable> onError,
             @NonNull ProgressRunner runner,
             @Nullable Downloader downloader,
             @Nullable SettingsController settings,
             boolean sync) {
+        if (onLocalComplete == null) {
+            onLocalComplete = ImmutableList.of();
+        }
+        if (onSuccess == null) {
+            onSuccess = ImmutableList.of();
+        }
+        if (onError == null) {
+            onError = ImmutableList.of();
+        }
+
         // If we're not going to refresh, just run the callbacks.
         if (checkExpiration(mLocalPath != null, downloader != null, cacheExpirationMs)) {
             for (RepoLoadedCallback localComplete : onLocalComplete) {
@@ -449,7 +460,7 @@ public class RepoManagerImpl extends RepoManager {
                     indicator.setText("Computing updates...");
                     indicator.setFraction(0.75);
                     packages.setRemotePkgInfos(remotes);
-                    if (mPackages == null || !remotes.equals(mPackages.getRemotePkgInfos())) {
+                    if (mPackages == null || !remotes.equals(mPackages.getRemotePackages())) {
                         for (RepoLoadedCallback callback : mRemoteListeners) {
                             callback.doRun(packages);
                         }
@@ -457,7 +468,7 @@ public class RepoManagerImpl extends RepoManager {
                 }
                 else if (mPackages != null) {
                     // If we didn't reload the remotes, use the previous remotes.
-                    packages.setRemotePkgInfos(mPackages.getRemotePkgInfos());
+                    packages.setRemotePkgInfos(mPackages.getRemotePackages());
                 }
 
                 mPackages = packages;

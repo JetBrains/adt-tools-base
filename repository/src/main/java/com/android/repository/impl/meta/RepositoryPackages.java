@@ -142,7 +142,7 @@ public final class RepositoryPackages {
      * available, for example if there is a stable and a preview version available.
      */
     @NonNull
-    public Multimap<String, RemotePackage> getRemotePkgInfos() {
+    public Multimap<String, RemotePackage> getRemotePackages() {
         return mRemotePackages;
     }
 
