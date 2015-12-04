@@ -31,18 +31,19 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.shrinker.AbstractShrinker.CounterSet;
-import com.android.build.gradle.shrinker.FullRunShrinker;
-import com.android.build.gradle.shrinker.IncrementalShrinker;
-import com.android.build.gradle.shrinker.JavaSerializationShrinkerGraph;
 import com.android.build.gradle.shrinker.KeepRules;
-import com.android.build.gradle.shrinker.ProguardConfig;
 import com.android.build.gradle.shrinker.ProguardFlagsKeepRules;
 import com.android.build.gradle.shrinker.ShrinkerLogger;
 import com.android.build.gradle.shrinker.parser.FilterSpecification;
 import com.android.builder.core.VariantType;
+import com.android.build.gradle.shrinker.AbstractShrinker.CounterSet;
+import com.android.build.gradle.shrinker.FullRunShrinker;
+import com.android.build.gradle.shrinker.IncrementalShrinker;
+import com.android.build.gradle.shrinker.JavaSerializationShrinkerGraph;
+import com.android.build.gradle.shrinker.ProguardConfig;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.base.Stopwatch;
@@ -74,6 +75,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
     private final VariantType variantType;
     private final Set<File> platformJars;
     private final File incrementalDir;
+    private final boolean incrementalEnabled;
 
     public NewShrinkerTransform(VariantScope scope) {
         IAndroidTarget target = scope.getGlobalScope().getAndroidBuilder().getTarget();
@@ -81,6 +83,8 @@ public class NewShrinkerTransform extends ProguardConfigurable {
         this.platformJars = ImmutableSet.of(new File(target.getPath(IAndroidTarget.ANDROID_JAR)));
         this.variantType = scope.getVariantData().getType();
         this.incrementalDir = scope.getIncrementalDir(scope.getTaskName(NAME));
+        this.incrementalEnabled =
+                AndroidGradleOptions.newShrinkerIncremental(scope.getGlobalScope().getProject());
     }
 
     @NonNull
@@ -138,7 +142,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
 
     @Override
     public boolean isIncremental() {
-        return true;
+        return this.incrementalEnabled;
     }
 
     @Override
@@ -222,10 +226,11 @@ public class NewShrinkerTransform extends ProguardConfigurable {
         }
     }
 
-    private static boolean isIncrementalRun(
+
+    private boolean isIncrementalRun(
             boolean isIncremental,
             Collection<TransformInput> referencedInputs) {
-        if (!isIncremental) {
+        if (!this.incrementalEnabled || !isIncremental) {
             return false;
         }
 

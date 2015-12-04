@@ -22,6 +22,7 @@ import com.android.builder.model.AndroidProject;
 import com.google.common.collect.Maps;
 
 import org.gradle.api.Project;
+import org.gradle.api.internal.tasks.options.Option;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -39,6 +40,10 @@ public class AndroidGradleOptions {
 
     private static final String PROPERTY_THREAD_POOL_SIZE = "android.threadPoolSize";
     private static final String PROPERTY_THREAD_POOL_SIZE_OLD = "com.android.build.threadPoolSize";
+
+    private static final String PROPERTY_NEW_SHRINKER = "android.newShrinker";
+
+    private static final String PROPERTY_NEW_SHRINKER_INCREMENTAL = "android.newShrinker.incremental";
 
     public static final String USE_DEPRECATED_NDK = "android.useDeprecatedNdk";
 
@@ -160,8 +165,16 @@ public class AndroidGradleOptions {
         return EnumSet.noneOf(OptionalCompilationStep.class);
     }
 
+    public static boolean useNewShrinker(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_NEW_SHRINKER);
+    }
+
     public static boolean isResourceValidationEnabled(@NonNull Project project) {
         return !getBoolean(project, PROPERTY_DISABLE_RESOURCE_VALIDATION);
+    }
+
+    public static boolean newShrinkerIncremental(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_NEW_SHRINKER_INCREMENTAL);
     }
 
     @Nullable

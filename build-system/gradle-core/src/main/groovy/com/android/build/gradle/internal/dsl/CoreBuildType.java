@@ -31,6 +31,4 @@ public interface CoreBuildType extends BuildType {
     Boolean getUseJack();
 
     boolean isShrinkResources();
-
-    boolean isUseProguard();
 }

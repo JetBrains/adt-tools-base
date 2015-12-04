@@ -18,11 +18,21 @@ package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
+import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.managed.BuildType;
+import com.android.builder.internal.ClassFieldImpl;
+import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * An adaptor to convert a BuildType to a CoreBuildType.
@@ -106,10 +116,5 @@ public class BuildTypeAdaptor extends BaseConfigAdaptor implements CoreBuildType
     @Override
     public boolean isShrinkResources() {
         return buildType.getShrinkResources();
-    }
-
-    @Override
-    public boolean isUseProguard() {
-        return buildType.getUseProguard();
     }
 }
