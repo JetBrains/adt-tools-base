@@ -1921,7 +1921,7 @@ public abstract class TaskManager {
         AndroidTask<TransformTask> multiDexClassListTask = null;
         // non Library test are running as native multi-dex
         if (isMultiDexEnabled && isLegacyMultiDexMode) {
-            if (AndroidGradleOptions.useNewShrinker(project)) {
+            if (!variantData.getVariantConfiguration().getBuildType().isUseProguard()) {
                 throw new IllegalStateException("New shrinker + multidex not supported yet.");
             }
 
@@ -2440,14 +2440,14 @@ public abstract class TaskManager {
             @NonNull final VariantScope variantScope,
             @Nullable Configuration mappingConfiguration,
             boolean createJarFile) {
-        if (AndroidGradleOptions.useNewShrinker(project)) {
+        if (variantScope.getVariantData().getVariantConfiguration().getBuildType().isUseProguard()) {
+            createProguardTransform(taskFactory, variantScope, mappingConfiguration, createJarFile);
+        } else {
             // Since the built-in class shrinker does not obfuscate, there's no point running
             // it on the test APK (it also doesn't have a -dontshrink mode).
             if (variantScope.getTestedVariantData() == null) {
                 createNewShrinkerTransform(variantScope, taskFactory);
             }
-        } else {
-            createProguardTransform(taskFactory, variantScope, mappingConfiguration, createJarFile);
         }
     }
 

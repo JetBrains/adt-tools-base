@@ -16,15 +16,7 @@
 
 package com.android.build.gradle.managed;
 
-import com.android.builder.model.AndroidArtifact;
-
-import org.gradle.api.Named;
 import org.gradle.model.Managed;
-import org.gradle.model.ModelSet;
-
-import java.io.File;
-import java.util.List;
-import java.util.Set;
 
 /**
  * A Managed build type.
@@ -116,4 +108,7 @@ public interface BuildType extends BaseConfig {
     void setShrinkResources(Boolean shrinkResources);
 
     NdkBuildType getNdk();
+
+    Boolean getUseProguard();
+    void setUseProguard(Boolean useProguard);
 }
