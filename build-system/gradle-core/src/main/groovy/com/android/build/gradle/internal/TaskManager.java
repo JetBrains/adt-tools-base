@@ -51,6 +51,7 @@ import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.build.gradle.internal.incremental.BuildInfoGeneratorTask;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
+import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -87,6 +88,8 @@ import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.transforms.InstantRunBuildType;
 import com.android.build.gradle.internal.transforms.InstantRunDex;
+import com.android.build.gradle.internal.transforms.InstantRunSlicer;
+import com.android.build.gradle.internal.transforms.InstantRunSplitApkBuilder;
 import com.android.build.gradle.internal.transforms.JacocoTransform;
 import com.android.build.gradle.internal.transforms.JarMergingTransform;
 import com.android.build.gradle.internal.transforms.MergeJavaResourcesTransform;
@@ -139,6 +142,7 @@ import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
+import com.android.sdklib.AndroidVersion;
 import com.android.utils.StringHelper;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -1860,7 +1864,7 @@ public abstract class TaskManager {
      * proguard and jacoco
      *
      */
-    public void createPostCompilationTasks(TaskFactory tasks,
+    public AndroidTask<InstantRunAnchorTask> createPostCompilationTasks(TaskFactory tasks,
             @NonNull final VariantScope variantScope) {
 
         checkNotNull(variantScope.getJavacTask());
@@ -1913,9 +1917,17 @@ public abstract class TaskManager {
 
         // ----- 10x support
 
-        AndroidTask<InstantRunAnchorTask> incrementalPostCompilationTasks
-                = createIncrementalPostCompilationTasks(tasks, variantScope);
-
+        AndroidTask<InstantRunAnchorTask> instantRunTask = null;
+        if (getIncrementalMode(variantScope.getVariantConfiguration()) != IncrementalMode.NONE) {
+            instantRunTask = createIncrementalPostCompilationTasks(tasks, variantScope);
+            variantScope.setInstantRunAnchorTask(instantRunTask);
+            // when dealing with platforms that can handle multi dexes natively, automatically
+            // turn on multi dexing so shards are packaged as individual dex files.
+            if (InstantRunPatchingPolicy.PRE_LOLLIPOP !=
+                    variantScope.getInstantRunBuildContext().getPatchingPolicty()) {
+                isMultiDexEnabled = true;
+            }
+        }
         // ----- Multi-Dex support
 
         AndroidTask<TransformTask> multiDexClassListTask = null;
@@ -1964,12 +1976,22 @@ public abstract class TaskManager {
                 isMultiDexEnabled && isLegacyMultiDexMode ? variantScope.getMainDexListFile() : null,
                 variantScope.getPreDexOutputDir(),
                 variantScope.getGlobalScope().getAndroidBuilder(),
-                getLogger());
+                getLogger(),
+                variantScope.getInstantRunBuildContext());
         AndroidTask<TransformTask> dexTask = transformManager.addTransform(
                 tasks, variantScope, dexTransform);
         // need to manually make dex task depend on MultiDexTransform since there's no stream
         // consumption making this automatic
-        dexTask.optionalDependsOn(tasks, multiDexClassListTask, incrementalPostCompilationTasks);
+        dexTask.optionalDependsOn(tasks, multiDexClassListTask);
+
+        // if we are in instant-run mode and the patching policy is relying on mult-dex shards,
+        // we should run the dexing as part of the incremental build.
+        if (instantRunTask != null &&
+                InstantRunPatchingPolicy.PRE_LOLLIPOP !=
+                    variantScope.getInstantRunBuildContext().getPatchingPolicty()) {
+            instantRunTask.dependsOn(tasks, dexTask);
+        }
+        return instantRunTask;
     }
 
     /**
@@ -1979,9 +2001,16 @@ public abstract class TaskManager {
     public AndroidTask<InstantRunAnchorTask> createIncrementalPostCompilationTasks(
             TaskFactory tasks, @NonNull final VariantScope scope) {
 
-        if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.NONE) {
+        AndroidTask<InstantRunAnchorTask> instantRunAnchor = androidTasks.create(tasks,
+                new InstantRunAnchorTask.InstantRunAnchorTaskConfigAction(scope, getLogger()));
 
-            DexOptions dexOptions = scope.getGlobalScope().getExtension().getDexOptions();
+        InstantRunPatchingPolicy patchingPolicy =
+                InstantRunPatchingPolicy.getPatchingPolicy(getLogger(), project);
+        scope.getInstantRunBuildContext().setPatchingPolicy(patchingPolicy);
+
+        DexOptions dexOptions = scope.getGlobalScope().getExtension().getDexOptions();
+        if (patchingPolicy == InstantRunPatchingPolicy.PRE_LOLLIPOP) {
+            // for Dalvik, we generate a restart.dex.
             InstantRunDex classesTwoTransform = new InstantRunDex(
                     scope,
                     InstantRunBuildType.RESTART,
@@ -1990,27 +2019,33 @@ public abstract class TaskManager {
                     getLogger(),
                     ImmutableSet.<ContentType>of(
                             DefaultContentType.CLASSES));
-            AndroidTask<TransformTask> transformTwoTask =
-                    scope.getTransformManager().addTransform(tasks, scope, classesTwoTransform);
+            instantRunAnchor.dependsOn(tasks,
+                    scope.getTransformManager().addTransform(tasks, scope, classesTwoTransform));
+        } else {
+            // if we are at API 21 or above, we generate multi-dexes.
+            InstantRunSlicer slicer = new InstantRunSlicer(
+                    getLogger(), scope.getInstantRunSupportDir());
+            instantRunAnchor.dependsOn(tasks,
+                    scope.getTransformManager().addTransform(tasks, scope, slicer));
 
-            InstantRunDex classesThreeTransform = new InstantRunDex(
-                    scope,
-                    InstantRunBuildType.RELOAD,
-                    androidBuilder,
-                    dexOptions,
-                    getLogger(),
-                    ImmutableSet.<ContentType>of(
-                            ExtendedContentType.CLASSES_ENHANCED));
-
-            AndroidTask<TransformTask> transformThreeTask = scope.getTransformManager()
-                    .addTransform(tasks, scope, classesThreeTransform);
-
-            AndroidTask<InstantRunAnchorTask> instantRunAnchor = androidTasks.create(tasks,
-                    new InstantRunAnchorTask.InstantRunAnchorTaskConfigAction(scope, getLogger()));
-            instantRunAnchor.dependsOn(tasks, transformTwoTask, transformThreeTask);
-            return instantRunAnchor;
         }
-        return null;
+
+        // we always produce the reload.dex irrespective of the targeted version.
+        InstantRunDex classesThreeTransform = new InstantRunDex(
+                scope,
+                InstantRunBuildType.RELOAD,
+                androidBuilder,
+                dexOptions,
+                getLogger(),
+                ImmutableSet.<ContentType>of(
+                        ExtendedContentType.CLASSES_ENHANCED));
+
+        AndroidTask<TransformTask> transformThreeTask = scope.getTransformManager()
+                .addTransform(tasks, scope, classesThreeTransform);
+
+
+        instantRunAnchor.dependsOn(tasks, transformThreeTask);
+        return instantRunAnchor;
     }
 
     protected void handleJacocoDependencies(@NonNull VariantScope variantScope) {
@@ -2153,10 +2188,21 @@ public abstract class TaskManager {
                     variantOutputData.packageSplitAbiTask);
 
             TransformManager transformManager = variantScope.getTransformManager();
-            for (TransformStream stream : transformManager.getStreams(PackageApplication.sDexFilter)) {
-                // TODO Optimize to avoid creating too many actions
-                packageApp.dependsOn(tasks, stream.getDependencies());
+            InstantRunPatchingPolicy instantRunPatchingPolicy =
+                    InstantRunPatchingPolicy.getPatchingPolicy(getLogger(), project);
+
+            if (instantRunPatchingPolicy == InstantRunPatchingPolicy.PRE_LOLLIPOP ||
+                    instantRunPatchingPolicy == InstantRunPatchingPolicy.LOLLIPOP ||
+                    getIncrementalMode(variantScope.getVariantConfiguration()) == IncrementalMode.NONE) {
+                // when building for instant run with targeting API 23 or above, do not put the
+                // dex files in the main APK, they will be packaged as pure splits.
+                for (TransformStream stream : transformManager
+                        .getStreams(PackageApplication.sDexFilter)) {
+                    // TODO Optimize to avoid creating too many actions
+                    packageApp.dependsOn(tasks, stream.getDependencies());
+                }
             }
+
             for (TransformStream stream : transformManager.getStreams(PackageApplication.sResFilter)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());

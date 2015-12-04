@@ -25,6 +25,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoReportTask;
+import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -299,6 +300,12 @@ public class VariantScopeImpl implements VariantScope {
     @NonNull
     public File getRestartDexOutputFolder() {
         return new File(globalScope.getIntermediatesDir(), "/restart-dex/" + getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    @Override
+    public File getInstantRunSplitApkOutputFolder() {
+        return new File(globalScope.getIntermediatesDir(), "/split-apk/" + getVariantConfiguration().getDirName());
     }
 
     // Precomputed file paths.
@@ -969,5 +976,17 @@ public class VariantScopeImpl implements VariantScope {
     @NonNull
     public InstantRunBuildContext getInstantRunBuildContext() {
         return instantRunBuildContext;
+    }
+
+    private AndroidTask<InstantRunAnchorTask> instantRunAnchorTask;
+
+    @Override
+    public AndroidTask<InstantRunAnchorTask> getInstantRunAnchorTask() {
+        return instantRunAnchorTask;
+    }
+
+    @Override
+    public void setInstantRunAnchorTask(AndroidTask<InstantRunAnchorTask> instantRunAnchorTask) {
+        this.instantRunAnchorTask = instantRunAnchorTask;
     }
 }

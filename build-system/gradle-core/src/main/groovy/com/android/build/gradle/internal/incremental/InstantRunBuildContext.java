@@ -16,12 +16,17 @@
 
 package com.android.build.gradle.internal.incremental;
 
+import com.android.annotations.Nullable;
 import com.android.utils.XmlUtils;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Optional;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -38,10 +43,45 @@ public class InstantRunBuildContext {
         VERIFIER
     }
 
+    /**
+     * Enumeration of the possible file types produced by an instant run enabled build.
+     */
+    public enum FileType {
+        /**
+         * Reload dex file that can be used to patch application live.
+         */
+        RELOAD_DEX,
+        /**
+         * Restart.dex file that can be used for Dalvik to restart applications with minimum set of
+         * changes delivered.
+         */
+        RESTART_DEX,
+        /**
+         * Shard dex file that can be used to replace originally installed multi-dex shard.
+         */
+        DEX,
+        /**
+         * Code based pure split that can be installed individually on M+ devices.
+         */
+        SPLIT
+    }
+
+    public static class Artifact {
+        private final FileType fileType;
+        private final File file;
+
+        public Artifact(FileType fileType, File file) {
+            this.fileType = fileType;
+            this.file = file;
+        }
+    }
+
     private final long[] taskStartTime = new long[TaskType.values().length];
     private final long[] taskDurationInMs = new long[TaskType.values().length];
     private final long buildId;
     private Optional<InstantRunVerifierStatus> verifierResult = Optional.absent();
+    private InstantRunPatchingPolicy patchingPolicy;
+    private final List<Artifact> changedFiles = new ArrayList<Artifact>();
 
     public InstantRunBuildContext() {
         buildId = System.currentTimeMillis();
@@ -79,6 +119,39 @@ public class InstantRunBuildContext {
                 || verifierResult.get() == InstantRunVerifierStatus.COMPATIBLE;
     }
 
+    public void setPatchingPolicy(InstantRunPatchingPolicy patchingPolicy) {
+        this.patchingPolicy = patchingPolicy;
+    }
+
+    @Nullable
+    public InstantRunPatchingPolicy getPatchingPolicty() {
+        return patchingPolicy;
+    }
+
+    public void addChangedFile(FileType fileType, File file) {
+        if (patchingPolicy == null) {
+            return;
+        }
+        // validate the patching policy and the received file type to record the file or not.
+        switch (patchingPolicy) {
+            case PRE_LOLLIPOP:
+                if (fileType != FileType.RELOAD_DEX && fileType != FileType.RESTART_DEX) {
+                    return;
+                }
+                break;
+            case LOLLIPOP:
+                if (fileType != FileType.DEX) {
+                    return;
+                }
+                break;
+            case MARSHMALLOW_AND_ABOVE:
+                if (fileType != FileType.SPLIT) {
+                    return;
+                }
+        }
+        this.changedFiles.add(new Artifact(fileType, file));
+    }
+
     /**
      * Serialize this context into an xml file.
      * @return the xml persisted information as a {@link String}
@@ -99,6 +172,20 @@ public class InstantRunBuildContext {
             instantRun.setAttribute("verifier", verifierResult.get().name());
         }
         instantRun.setAttribute("build-id", String.valueOf(buildId));
+        if (patchingPolicy != null) {
+            instantRun.setAttribute("patching-policy", patchingPolicy.toString());
+        }
+        if (!changedFiles.isEmpty()) {
+            Element builtArtifacts = document.createElement("built-artifacts");
+            for (Artifact changedFile : changedFiles) {
+                Element artifact = document.createElement("artifact");
+                artifact.setAttribute("type", changedFile.fileType.toString());
+                artifact.setAttribute("location", XmlUtils.toXmlAttributeValue(
+                        changedFile.file.getAbsolutePath()));
+                builtArtifacts.appendChild(artifact);
+            }
+            instantRun.appendChild(builtArtifacts);
+        }
         return XmlUtils.toXml(instantRun);
     }
 

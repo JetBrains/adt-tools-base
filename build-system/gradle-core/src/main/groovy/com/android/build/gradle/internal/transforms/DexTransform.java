@@ -23,6 +23,8 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext.FileType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
@@ -102,6 +104,8 @@ public class DexTransform extends Transform {
     @NonNull
     private final ILogger logger;
 
+    private final InstantRunBuildContext instantRunBuildContext;
+
     public DexTransform(
             @NonNull DexOptions dexOptions,
             boolean debugMode,
@@ -109,7 +113,8 @@ public class DexTransform extends Transform {
             @Nullable File mainDexListFile,
             @NonNull File intermediateFolder,
             @NonNull AndroidBuilder androidBuilder,
-            @NonNull Logger logger) {
+            @NonNull Logger logger,
+            @NonNull InstantRunBuildContext instantRunBuildContext) {
         this.dexOptions = dexOptions;
         this.debugMode = debugMode;
         this.multiDex = multiDex;
@@ -117,6 +122,7 @@ public class DexTransform extends Transform {
         this.intermediateFolder = intermediateFolder;
         this.androidBuilder = androidBuilder;
         this.logger = new LoggerWrapper(logger);
+        this.instantRunBuildContext = instantRunBuildContext;
     }
 
     @NonNull
@@ -253,6 +259,12 @@ public class DexTransform extends Transform {
                         true,
                         outputHandler,
                         false /* instantRunMode */);
+
+                for (File file : Files.fileTreeTraverser().breadthFirstTraversal(outputDir)) {
+                    if (file.isFile()) {
+                        instantRunBuildContext.addChangedFile(FileType.DEX, file);
+                    }
+                }
             } else {
                 // Figure out if we need to do a dx merge.
                 // The ony case we don't need it is in native multi-dex mode when doing debug
@@ -341,6 +353,8 @@ public class DexTransform extends Transform {
                             entry.getValue(),
                             hashs,
                             outputHandler);
+                    instantRunBuildContext.addChangedFile(FileType.DEX,
+                            new File(entry.getValue(), "classes.dex"));
                     executor.execute(action);
                 }
 

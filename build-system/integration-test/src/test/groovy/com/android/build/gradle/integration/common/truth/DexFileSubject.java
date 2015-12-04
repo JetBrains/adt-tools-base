@@ -56,6 +56,13 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
         super(fs, that);
     }
 
+    /**
+     * stopgap measure before the null supporting subjects are implemented
+     * @deprecated 
+     */
+    public boolean containsClass(String className) throws IOException, ProcessException {
+        return getClassDexDump(className) != null;
+    }
 
     public IndirectSubject<DexClassSubject> hasClass(String className)
             throws ProcessException, IOException {
