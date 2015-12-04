@@ -30,6 +30,11 @@ public class AndroidJavaCompile extends JavaCompile {
 
     @Override
     protected void compile(IncrementalTaskInputs inputs) {
+        getLogger().info(
+                "Compiling with source level {} and target level {}.",
+                getSourceCompatibility(),
+                getTargetCompatibility());
+
         mBuildContext.startRecording(InstantRunBuildContext.TaskType.JAVAC);
         super.compile(inputs);
         mBuildContext.stopRecording(InstantRunBuildContext.TaskType.JAVAC);
