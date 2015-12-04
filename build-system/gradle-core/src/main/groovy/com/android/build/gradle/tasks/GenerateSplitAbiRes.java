@@ -99,7 +99,7 @@ public class GenerateSplitAbiRes extends BaseTask {
                         + "      package=\"" + getApplicationId() + "\"\n"
                         + "      android:versionCode=\"" + getVersionCode() + "\"\n"
                         + "      android:versionName=\"" + versionNameToUse + "\"\n"
-                        + "      split=\"lib_" + getOutputBaseName() + "\">\n"
+                        + "      split=\"lib_" + split + "_" + getOutputBaseName() + "\">\n"
                         + "       <uses-sdk android:minSdkVersion=\"21\"/>\n" + "</manifest> ");
                 fileWriter.flush();
             } finally {
