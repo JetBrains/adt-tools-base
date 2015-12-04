@@ -572,4 +572,13 @@ public final class AndroidSdkHandler {
         }
         return mLatestBuildTool;
     }
+
+    /**
+     * Gets our {@link FileOp}. Useful so both the sdk handler and file op don't both have to be
+     * injected everywhere.
+     */
+    @NonNull
+    public FileOp getFileOp() {
+        return mFop;
+    }
 }

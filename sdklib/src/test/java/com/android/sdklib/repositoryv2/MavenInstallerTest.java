@@ -90,7 +90,7 @@ public class MavenInstallerTest extends TestCase {
 
         // Install
         new MavenInstaller().install(
-                pkgs.getRemotePkgInfos().get("com;android;group1;artifact1;1.2.3").iterator()
+                pkgs.getRemotePackages().get("com;android;group1;artifact1;1.2.3").iterator()
                         .next(),
                 downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
                 fop);
@@ -191,7 +191,7 @@ public class MavenInstallerTest extends TestCase {
 
         // Install
         new MavenInstaller().install(
-                pkgs.getRemotePkgInfos().get("com;android;group1;artifact1;1.2.3").iterator()
+                pkgs.getRemotePackages().get("com;android;group1;artifact1;1.2.3").iterator()
                         .next(),
                 downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
                 fop);

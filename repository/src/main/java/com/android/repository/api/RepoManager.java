@@ -218,13 +218,16 @@ public abstract class RepoManager {
      * @param sync              If true, load synchronously. If false, load asynchronously (this
      *                          method should return quickly, and the {@code onSuccess} callbacks
      *                          can be used to process the completed results).
+     *
+     * TODO: throw exception if cancelled
+     *
      * @return {@code true} if a load was performed. {@code false} if cached results were fresh
      * enough.
      */
     public abstract boolean load(long cacheExpirationMs,
-            @NonNull List<RepoLoadedCallback> onLocalComplete,
-            @NonNull List<RepoLoadedCallback> onSuccess,
-            @NonNull List<Runnable> onError,
+            @Nullable List<RepoLoadedCallback> onLocalComplete,
+            @Nullable List<RepoLoadedCallback> onSuccess,
+            @Nullable List<Runnable> onError,
             @NonNull ProgressRunner runner,
             @Nullable Downloader downloader,
             @Nullable SettingsController settings,
@@ -247,8 +250,7 @@ public abstract class RepoManager {
     public final boolean loadSynchronously(long cacheExpirationMs, @NonNull final ProgressIndicator progress,
             @Nullable Downloader downloader, @Nullable SettingsController settings) {
         final AtomicBoolean result = new AtomicBoolean(true);
-        load(cacheExpirationMs, ImmutableList.<RepoLoadedCallback>of(),
-          ImmutableList.<RepoLoadedCallback>of(), ImmutableList.<Runnable>of(new Runnable() {
+        load(cacheExpirationMs, null, null, ImmutableList.<Runnable>of(new Runnable() {
               @Override
               public void run() {
                 result.set(false);
