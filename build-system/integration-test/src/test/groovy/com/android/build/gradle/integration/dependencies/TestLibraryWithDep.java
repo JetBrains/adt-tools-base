@@ -14,33 +14,35 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
+package com.android.build.gradle.integration.dependencies;
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import groovy.transform.CompileStatic
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.ide.common.process.ProcessException;
 
-@CompileStatic
-class TestLibraryWithDep {
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+
+public class TestLibraryWithDep {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("libTestDep")
-            .create()
+            .create();
 
     @BeforeClass
-    static void setUp() {
-        project.executeAndReturnMultiModel("clean", "assembleDebugAndroidTest")
+    public static void setUp() {
+        project.executeAndReturnMultiModel("clean", "assembleDebugAndroidTest");
     }
 
     @Test
-    void "check lib dependency jar is packaged"() {
+    public void checkLibDependencyJarIsPackaged() throws IOException, ProcessException {
         assertThatApk(project.getApk("debug", "androidTest", "unaligned"))
-                .containsClass("Lcom/google/common/base/Splitter;")
+                .containsClass("Lcom/google/common/base/Splitter;");
     }
 }
 

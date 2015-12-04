@@ -14,69 +14,68 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
+
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
+import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * Tests the handling of test dependency.
  */
-@CompileStatic
-class TestWithSameDepAsAppWithProguard {
+public class TestWithSameDepAsAppWithProguard {
 
-    private static AndroidTestApp testApp = HelloWorldApp.noBuildFile()
+    private static AndroidTestApp testApp = HelloWorldApp.noBuildFile();
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(testApp)
-            .create()
+            .create();
 
     @BeforeClass
-    public static void setUp() {
-        project.getBuildFile() <<
-                '\n' +
-                'apply plugin: \'com.android.application\'\n' +
-                '\n' +
-                'android {\n' +
-                '  compileSdkVersion ' +
-                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
-                '\n' +
-                '  buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
-                '\n' +
-                '\n' +
-                '  defaultConfig {\n' +
-                '    minSdkVersion 21\n' +
-                '  }\n' +
-                '\n' +
-                '  buildTypes {\n' +
-                '    debug {\n' +
-                '      minifyEnabled true\n' +
-                '      proguardFiles getDefaultProguardFile(\'proguard-android.txt\')\n' +
-                '      }\n' +
-                '  }\n' +
-                '}\n' +
-                '\n' +
-                'dependencies {\n' +
-                '  compile \'com.android.tools:annotations:+\'\n' +
-                '  androidTestCompile \'com.android.tools:annotations:+\'\n' +
-                '}\n' +
-                ''
-
+    public static void setUp() throws IOException {
+        appendToFile(project.getBuildFile(),
+                "\n" +
+                "apply plugin: \"com.android.application\"\n" +
+                "\n" +
+                "android {\n" +
+                "  compileSdkVersion " + String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) + "\n" +
+                "  buildToolsVersion \"" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "\"\n" +
+                "\n" +
+                "  defaultConfig {\n" +
+                "    minSdkVersion 21\n" +
+                "  }\n" +
+                "\n" +
+                "  buildTypes {\n" +
+                "    debug {\n" +
+                "      minifyEnabled true\n" +
+                "      proguardFiles getDefaultProguardFile(\"proguard-android.txt\")\n" +
+                "      }\n" +
+                "  }\n" +
+                "}\n" +
+                "\n" +
+                "dependencies {\n" +
+                "  compile \"com.android.tools:annotations:+\"\n" +
+                "  androidTestCompile \"com.android.tools:annotations:+\"\n" +
+                "}\n");
     }
 
     @AfterClass
     public static void cleanUp() {
-        project = null
+        project = null;
     }
 
     @Test
-    public void "Test proguard on test variant succeeds"() {
-        project.execute("clean", "assembleDebugAndroidTest")
+    public void testProguardOnTestVariantSucceeds() {
+        project.execute("clean", "assembleDebugAndroidTest");
     }
 }

@@ -14,55 +14,54 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
+package com.android.build.gradle.integration.dependencies;
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import groovy.transform.CompileStatic
-import org.gradle.tooling.BuildException
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+
+import org.gradle.tooling.BuildException;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * test for package (apk) local aar in app
  */
-@CompileStatic
-class AppWithCompileLocalAarFromOlderIdeTest {
+public class AppWithCompileLocalAarFromOlderIdeTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithLocalDeps")
-            .create()
+            .create();
 
     @BeforeClass
-    static void setUp() {
-        project.getBuildFile() <<
-                '\n' +
-                'apply plugin: \'com.android.application\'\n' +
-                '\n' +
-                'android {\n' +
-                '    compileSdkVersion ' +
-                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
-                '\n' +
-                '    buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
-                '\n' +
-                '}\n' +
-                '\n' +
-                'dependencies {\n' +
-                '    compile files(\'libs/baseLib-1.0.aar\')\n' +
-                '}\n' +
-                ''
+    public static void setUp() throws IOException {
+        appendToFile(project.getBuildFile(),
+                "\n" +
+                "apply plugin: \"com.android.application\"\n" +
+                "\n" +
+                "android {\n" +
+                "    compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n" +
+                "    buildToolsVersion \"" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "\"\n" +
+                "}\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    compile files(\"libs/baseLib-1.0.aar\")\n" +
+                "}\n");
 
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
+    public static void cleanUp() {
+        project = null;
     }
 
     @Test(expected=BuildException.class)
-    void "check model failed to load"() {
-        project.getSingleModelAsStudio1()
+    public void checkModelFailedToLoad() {
+        project.getSingleModelAsStudio1();
     }
 }

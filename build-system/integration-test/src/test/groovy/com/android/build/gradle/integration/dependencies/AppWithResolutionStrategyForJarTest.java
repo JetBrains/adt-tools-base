@@ -14,46 +14,55 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.annotations.NonNull
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidArtifact
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.JavaLibrary
-import com.android.builder.model.Variant
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.Assert
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
+
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+
+import com.android.annotations.NonNull;
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
+import com.android.builder.model.Variant;
+import com.google.common.collect.Iterables;
+import com.google.common.truth.Truth;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+
 /**
  * test for flavored dependency on a different package.
  */
-@CompileStatic
-class AppWithResolutionStrategyForJarTest {
+public class AppWithResolutionStrategyForJarTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
-            .create()
-    static Map<String, AndroidProject> models
+            .create();
+    static Map<String, AndroidProject> models;
 
     @BeforeClass
-    static void setUp() {
-        project.getBuildFile() <<
+    public static void setUp() throws IOException {
+        appendToFile(project.getBuildFile(),
                 "\n" +
                 "subprojects {\n" +
-                "    apply from: \"\$rootDir/../commonLocalRepo.gradle\"\n" +
-                "}\n"
-        project.getSubproject('app').getBuildFile() <<
+                "    apply from: \"$rootDir/../commonLocalRepo.gradle\"\n" +
+                "}\n");
+        appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "\n" +
                 "dependencies {\n" +
-                "    debugCompile project(':library')\n" +
-                "    releaseCompile project(':library')\n" +
+                "    debugCompile project(\":library\")\n" +
+                "    releaseCompile project(\":library\")\n" +
                 "}\n" +
                 "\n" +
                 "configurations { _debugCompile }\n" +
@@ -61,51 +70,56 @@ class AppWithResolutionStrategyForJarTest {
                 "configurations._debugCompile {\n" +
                 "  resolutionStrategy {\n" +
                 "    eachDependency { DependencyResolveDetails details ->\n" +
-                "      if (details.requested.name == 'guava') {\n" +
-                "        details.useVersion '15.0'\n" +
+                "      if (details.requested.name == \"guava\") {\n" +
+                "        details.useVersion \"15.0\"\n" +
                 "      }\n" +
                 "    }\n" +
                 "  }\n" +
                 "}\n" +
-                "\n"
+                "\n");
 
-        project.getSubproject('library').getBuildFile() << """
+        GradleTestProject.appendToFile(project.getSubproject("library").getBuildFile(),
+                "\n" +
+                "dependencies {\n" +
+                "    compile \"com.google.guava:guava:17.0\"\n" +
+                "}\n");
 
-dependencies {
-    compile 'com.google.guava:guava:17.0'
-}
-"""
-
-        models = project.getAllModels()
+        models = project.getAllModels();
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
+    public static void cleanUp() {
+        project = null;
+        models = null;
     }
 
     @Test
-    void "check model contain correct dependencies"() {
-        AndroidProject appProject = models.get(':app')
-        Collection<Variant> appVariants = appProject.getVariants()
+    public void checkModelContainsCorrectDependencies() {
+        AndroidProject appProject = models.get(":app");
+        Collection<Variant> appVariants = appProject.getVariants();
 
-        checkJarDependency(appVariants, 'debug', 'com.google.guava:guava:jar:15.0')
-        checkJarDependency(appVariants, 'release', 'com.google.guava:guava:jar:17.0')
+        checkJarDependency(appVariants, "debug", "com.google.guava:guava:jar:15.0");
+        checkJarDependency(appVariants, "release", "com.google.guava:guava:jar:17.0");
     }
 
     private static void checkJarDependency(
             @NonNull Collection<Variant> appVariants,
             @NonNull String variantName,
             @NonNull String jarCoodinate) {
-        Variant appVariant = ModelHelper.getVariant(appVariants, variantName)
+        Variant appVariant = ModelHelper.getVariant(appVariants, variantName);
+        Truth.assertThat(appVariant).isNotNull();
 
-        AndroidArtifact appArtifact = appVariant.getMainArtifact()
-        Dependencies artifactDependencies = appArtifact.getDependencies()
+        AndroidArtifact appArtifact = appVariant.getMainArtifact();
+        Dependencies artifactDependencies = appArtifact.getDependencies();
 
-        Collection<JavaLibrary> javaLibraries = artifactDependencies.getJavaLibraries()
-        Assert.assertEquals(1, javaLibraries.size())
-        JavaLibrary javaLibrary = javaLibraries.iterator().next()
-        Assert.assertEquals(jarCoodinate, javaLibrary.getResolvedCoordinates().toString())
+        Collection<JavaLibrary> javaLibraries = artifactDependencies.getJavaLibraries();
+        assertThat(javaLibraries)
+                .named("java libs of " + variantName)
+                .hasSize(1);
+
+        JavaLibrary javaLibrary = Iterables.getOnlyElement(javaLibraries);
+        assertThat(javaLibrary.getResolvedCoordinates().toString())
+                .named("single java lib deps of " + variantName)
+                .isEqualTo(jarCoodinate);
     }
 }

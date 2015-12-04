@@ -14,38 +14,33 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.Variant
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import static org.junit.Assert.assertEquals
+import org.junit.AfterClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import groovy.transform.CompileStatic;
+
 /**
  * test for Ivy dependencies.
  */
 @CompileStatic
-class AppWithIvyDependencyTest {
+public class AppWithIvyDependencyTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithIvyDependency")
-            .create()
+            .create();
 
     @AfterClass
-    static void cleanUp() {
-        project = null
+    public static void cleanUp() {
+        project = null;
     }
 
     @Test
-    void "check compilation depending on Ivy Jar file"() {
-        project.execute("assembleDebug")
+    public void checkCompilationDependingOnIvyJarFile() {
+        project.execute("assembleDebug");
     }
 }

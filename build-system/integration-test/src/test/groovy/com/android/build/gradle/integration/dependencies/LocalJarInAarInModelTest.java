@@ -14,102 +14,106 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.truth.TruthHelper
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidLibrary
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.Variant
-import org.junit.After
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static org.junit.Assert.assertTrue
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.Variant;
+import com.google.common.truth.Truth;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+
 /**
  * test for the path of the local jars in aars before and after exploding them.
  */
-class LocalJarInAarInModelTest {
+public class LocalJarInAarInModelTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.noBuildFile())
-            .create()
+            .create();
 
     @Before
-    void setUp() {
-        project.getBuildFile() <<
-                '\n' +
-                'apply plugin: \'com.android.application\'\n' +
-                '\n' +
-                'android {\n' +
-                '  compileSdkVersion ' +
-                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
-                '\n' +
-                '  buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
-                '\n' +
-                '\n' +
-                '  defaultConfig {\n' +
-                '    minSdkVersion 4\n' +
-                '  }\n' +
-                '}\n' +
-                '\n' +
-                'dependencies {\n' +
-                '  compile \'com.android.support:support-v4:22.1.1\'\n' +
-                '}\n' +
-                ''
+    public void setUp() throws IOException {
+        appendToFile(project.getBuildFile(),
+                "\n" +
+                "apply plugin: \"com.android.application\"\n" +
+                "\n" +
+                "android {\n" +
+                "  compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n" +
+                "  buildToolsVersion \"" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "\"\n" +
+                "\n" +
+                "  defaultConfig {\n" +
+                "    minSdkVersion 4\n" +
+                "  }\n" +
+                "}\n" +
+                "\n" +
+                "dependencies {\n" +
+                "  compile \"com.android.support:support-v4:22.1.1\"\n" +
+                "}\n");
     }
 
     @After
-    void cleanUp() {
-        project = null
+    public void cleanUp() {
+        project = null;
     }
 
     @Test
-    void checkModelBeforeBuild() {
-        //clean the project and get the model. The aar won't be exploded for this sync event.
-        AndroidProject model = project.executeAndReturnModel("clean")
+    public void checkModelBeforeBuild() {
+        //clean the project and get the model. The aar won"t be exploded for this sync event.
+        AndroidProject model = project.executeAndReturnModel("clean");
 
-        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug")
-        Dependencies dependencies = variant.getMainArtifact().getDependencies()
+        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
+        Truth.assertThat(variant).isNotNull();
+
+        Dependencies dependencies = variant.getMainArtifact().getDependencies();
         Collection<AndroidLibrary> libraries = dependencies.getLibraries();
 
-        TruthHelper.assertThat(libraries).hasSize(1);
+        assertThat(libraries).hasSize(1);
 
         // now build the project.
-        project.execute("prepareDebugDependencies")
+        project.execute("prepareDebugDependencies");
 
         // now check the model validity
-        AndroidLibrary lib = libraries.iterator().next()
-
-        File jarFile = lib.getJarFile()
-        assertTrue("File doesn't exist: " + jarFile, jarFile.exists());
+        AndroidLibrary lib = libraries.iterator().next();
+        assertThat(lib.getJarFile()).isFile();
         for (File localJar : lib.getLocalJars()) {
-            assertTrue("File doesn't exist: " + localJar, localJar.exists());
+            assertThat(localJar).isFile();
         }
     }
 
     @Test
-    void checkModelAfterBuild() {
+    public void checkModelAfterBuild() {
         //build the project and get the model. The aar is exploded for this sync event.
-        AndroidProject model = project.executeAndReturnModel("clean", "prepareDebugDependencies")
+        AndroidProject model = project.executeAndReturnModel("clean", "prepareDebugDependencies");
 
-        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug")
-        Dependencies dependencies = variant.getMainArtifact().getDependencies()
+        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
+        Truth.assertThat(variant).isNotNull();
+
+        Dependencies dependencies = variant.getMainArtifact().getDependencies();
         Collection<AndroidLibrary> libraries = dependencies.getLibraries();
 
-        TruthHelper.assertThat(libraries).hasSize(1);
+        assertThat(libraries).hasSize(1);
 
         // now check the model validity
-        AndroidLibrary lib = libraries.iterator().next()
-
-        File jarFile = lib.getJarFile()
-        assertTrue("File doesn't exist: " + jarFile, jarFile.exists());
+        AndroidLibrary lib = libraries.iterator().next();
+        assertThat(lib.getJarFile()).isFile();
         for (File localJar : lib.getLocalJars()) {
-            assertTrue("File doesn't exist: " + localJar, localJar.exists());
+            assertThat(localJar).isFile();
         }
     }
 }

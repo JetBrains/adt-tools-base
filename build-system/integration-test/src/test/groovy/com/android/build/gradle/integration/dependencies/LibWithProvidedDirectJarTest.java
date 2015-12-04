@@ -14,83 +14,102 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.Variant
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
-import static org.junit.Assert.assertEquals
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.truth.TruthHelper;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.Variant;
+import com.android.ide.common.process.ProcessException;
+import com.google.common.collect.Iterables;
+import com.google.common.truth.Truth;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+
 /**
  * test for provided jar in library
  */
-@CompileStatic
-class LibWithProvidedDirectJarTest {
+public class LibWithProvidedDirectJarTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
-            .create()
-    static Map<String, AndroidProject> models
+            .create();
+    static Map<String, AndroidProject> models;
 
     @BeforeClass
-    static void setUp() {
-        project.getSubproject('library').getBuildFile() <<
+    public static void setUp() throws IOException {
+        appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
+                        "dependencies {\n" +
+                        "    compile project(\":library\")\n" +
+                        "}\n");
+
+        appendToFile(project.getSubproject("library").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
-                "    provided project(':jar')\n" +
-                "}\n"
+                "    provided project(\":jar\")\n" +
+                "}\n");
 
-        models = project.executeAndReturnMultiModel("clean", ":library:assembleDebug")
+        models = project.executeAndReturnMultiModel("clean", ":library:assembleDebug");
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
+    public static void cleanUp() {
+        project = null;
+        models = null;
     }
 
     @Test
-    void "check provided jar is not packaged"() {
-        assertThatAar(project.getSubproject('library').getAar("debug"))
-                .doesNotContainClass("Lcom/example/android/multiproject/person/People;")
+    public void checkProvidedJarIsNotPackaged() throws IOException, ProcessException {
+        assertThatAar(project.getSubproject("library").getAar("debug"))
+                .doesNotContainClass("Lcom/example/android/multiproject/person/People;");
     }
 
     @Test
-    void "check provided jar is in the main artifact dependency"() {
-        Variant variant = ModelHelper.getVariant(models.get(':library').getVariants(), "debug")
+    public void checkProvidedJarIsIntheMainArtifactDeps() {
+        Variant variant = ModelHelper.getVariant(models.get(":library").getVariants(), "debug");
+        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.getMainArtifact().getDependencies()
-        Collection<String> projectDeps = deps.getProjects()
-
-        assertEquals("Check there is 1 dependency", 1, projectDeps.size())
+        Dependencies deps = variant.getMainArtifact().getDependencies();
+        TruthHelper.assertThat(deps.getProjects()).containsExactly(":jar");
     }
 
     @Test
-    void "check provided jar is not in the published dependencies"() {
-        Variant variant = ModelHelper.getVariant(models.get(':library').getVariants(), "debug")
+    public void checkProvidedJarIsNotInThePublishedDeps() {
+        Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
+        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.getMainArtifact().getDependencies()
-        Collection<String> projectDeps = deps.getProjects()
+        Dependencies deps = variant.getMainArtifact().getDependencies();
+        Collection<AndroidLibrary> libraries = deps.getLibraries();
+        assertThat(libraries).hasSize(1);
 
-        assertEquals("Check there is 1 dependency", 1, projectDeps.size())
+        AndroidLibrary androidLibrary = Iterables.getOnlyElement(libraries);
+
+        // TODO: check that this library does not have a jar dependency since it's provided.
     }
 
     @Test
-    void "check provided jar is in the android test dependency"() {
+    public void checkProvidedJarIsInTheAndroidTestDependency() {
         // TODO
     }
 
     @Test
-    void "check provided jar is in the unit test dependency"() {
+    public void checkProvidedJarIsInTheUnitTestDependency() {
         // TODO
     }
 }

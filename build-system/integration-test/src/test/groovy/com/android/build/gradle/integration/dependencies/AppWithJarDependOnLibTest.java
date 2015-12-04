@@ -14,60 +14,60 @@
  * limitations under the License.
  */
 
+package com.android.build.gradle.integration.dependencies;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.SyncIssue
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.SyncIssue;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Map;
+
 /**
  * test for dependency on a jar with a dependency on a library
  */
-@CompileStatic
-class AppWithJarDependOnLibTest {
+public class AppWithJarDependOnLibTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
-            .create()
-    static Map<String, AndroidProject> models
+            .create();
+    static Map<String, AndroidProject> models;
 
     @BeforeClass
-    static void setUp() {
-        project.getSubproject('app').getBuildFile() <<
-                "\n" +
+    public static void setUp() throws IOException {
+        GradleTestProject.appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
-                "    compile project(':jar')\n" +
-                "}\n"
+                "    compile project(\":jar\")\n" +
+                "}\n");
 
-        project.getSubproject('jar').getBuildFile() <<
-                "\n" +
+        GradleTestProject.appendToFile(project.getSubproject("jar").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
-                "    compile project(':library')\n" +
-                "}\n"
-        models = project.getAllModelsIgnoringSyncIssues()
+                "    compile project(\":library\")\n" +
+                "}\n");
+        models = project.getAllModelsIgnoringSyncIssues();
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
+    public static void cleanUp() {
+        project = null;
+        models = null;
     }
 
     @Test
-    void "check model failed to load"() {
-        assertThat(models.get(':app')).hasSingleIssue(
+    public void checkModelFailedToLoad() {
+        assertThat(models.get(":app")).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
-                'projectWithModules:jar:jar:unspecified')
+                "projectWithModules:jar:jar:unspecified");
     }
 }

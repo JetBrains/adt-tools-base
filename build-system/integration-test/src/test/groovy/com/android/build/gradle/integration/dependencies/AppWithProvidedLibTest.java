@@ -14,51 +14,55 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.SyncIssue
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.*;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.SyncIssue;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Map;
+
 /**
  * test for provided library in app
  */
-@CompileStatic
-class AppWithProvidedLibTest {
+public class AppWithProvidedLibTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = builder()
             .fromTestProject("projectWithModules")
-            .create()
-    static Map<String, AndroidProject> models
+            .create();
+    static Map<String, AndroidProject> models;
 
     @BeforeClass
-    static void setUp() {
-        project.getSubproject('app').getBuildFile() <<
-                "\n" +
+    public static void setUp() throws IOException {
+        appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
-                "    provided project(':library')\n" +
-                "}\n"
-        models = project.getAllModelsIgnoringSyncIssues()
+                "    provided project(\":library\")\n" +
+                "}\n");
+        models = project.getAllModelsIgnoringSyncIssues();
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
+    public static void cleanUp() {
+        project = null;
+        models = null;
     }
 
     @Test
-    void "check model failed to load"() {
-        assertThat(models.get(':app')).hasSingleIssue(
+    public void checkModelFailedToLoad() {
+        assertThat(models.get(":app")).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_NON_JAR_PROVIDED_DEP,
-                'projectWithModules:library:aar:unspecified')
+                "projectWithModules:library:aar:unspecified");
     }
 }

@@ -14,82 +14,90 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.Variant
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import static org.junit.Assert.assertEquals
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.truth.TruthHelper;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.Variant;
+import com.android.ide.common.process.ProcessException;
+import com.google.common.truth.Truth;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+
 /**
  * test for compile jar in app through an aar dependency
  */
-@CompileStatic
-class AppWithCompileIndirectJarTest {
+public class AppWithCompileIndirectJarTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
-            .create()
-    static Map<String, AndroidProject> models
+            .create();
+    static Map<String, AndroidProject> models;
 
     @BeforeClass
-    static void setUp() {
-        project.getSubproject('app').getBuildFile() <<
-                "\n" +
-                "\n" +
-                "dependencies {\n" +
-                "    compile project(':library')\n" +
-                "}\n"
-
-        project.getSubproject('library').getBuildFile() <<
-                "\n" +
+    public static void setUp() throws IOException {
+        appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
-                "    compile project(':jar')\n" +
-                "}\n"
+                "    compile project(\":library\")\n" +
+                "}\n");
 
-        models = project.executeAndReturnMultiModel("clean", ":app:assembleDebug")
+        appendToFile(project.getSubproject("library").getBuildFile(),
+                "\n" +
+                "dependencies {\n" +
+                "    compile project(\":jar\")\n" +
+                "}\n");
+
+        models = project.executeAndReturnMultiModel("clean", ":app:assembleDebug");
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
+    public static void cleanUp() {
+        project = null;
+        models = null;
     }
 
     @Test
-    void "check compiled jar is packaged"() {
-        File apk = project.getSubproject('app').getApk("debug")
+    public void checkCompiledJarIsPackaged() throws IOException, ProcessException {
+        File apk = project.getSubproject("app").getApk("debug");
 
-        assertThatApk(apk).containsClass("Lcom/example/android/multiproject/person/People;")
-        assertThatApk(apk).containsClass("Lcom/example/android/multiproject/library/PersonView;")
+        assertThatApk(apk).containsClass("Lcom/example/android/multiproject/person/People;");
+        assertThatApk(apk).containsClass("Lcom/example/android/multiproject/library/PersonView;");
     }
 
     @Test
-    void "check compiled jar is in the model"() {
-        Variant variant = ModelHelper.getVariant(models.get(':app').getVariants(), "debug")
+    public void checkCompiledJarIsInTheModel() {
+        Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
+        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.getMainArtifact().getDependencies()
-        Collection<String> projectDeps = deps.getProjects()
+        Dependencies deps = variant.getMainArtifact().getDependencies();
+        Collection<String> projectDeps = deps.getProjects();
 
-        assertEquals("Check there is 1 dependency", 1, projectDeps.size())
+        TruthHelper.assertThat(projectDeps).named("project deps").hasSize(1);
     }
 
     @Test
-    void "check package jar is in the android test dependency"() {
+    public void checkPackageJarIsInTheAndroidTestDeps() {
         // TODO
     }
 
     @Test
-    void "check package jar is in the unit test dependency"() {
+    public void checkPackageJarIsInTheUnitTestDeps() {
         // TODO
     }
 }

@@ -14,86 +14,81 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.JavaLibrary
-import com.android.builder.model.Variant
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import java.util.zip.ZipFile
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip;
 
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertNull
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.Variant;
+import com.google.common.truth.Truth;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
 /**
  * test for provided local jar in libs
  */
-@CompileStatic
-class LibWithProvidedLocalJarTest {
+public class LibWithProvidedLocalJarTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithLocalDeps")
-            .create()
-    static AndroidProject model
+            .create();
+    static AndroidProject model;
 
     @BeforeClass
-    static void setUp() {
-        project.getBuildFile() <<
-                '\n' +
-                'apply plugin: \'com.android.library\'\n' +
-                '\n' +
-                'android {\n' +
-                '    compileSdkVersion ' +
-                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
-                '\n' +
-                '    buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
-                '\n' +
-                '}\n' +
-                '\n' +
-                'dependencies {\n' +
-                '    provided files(\'libs/util-1.0.jar\')\n' +
-                '}\n' +
-                ''
+    public static void setUp() throws IOException {
+        appendToFile(project.getBuildFile(),
+                "\n" +
+                "apply plugin: \"com.android.library\"\n" +
+                "\n" +
+                "android {\n" +
+                "    compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n" +
+                "    buildToolsVersion \"" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "\"\n" +
+                "}\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    provided files(\"libs/util-1.0.jar\")\n" +
+                "}\n");
 
-        model = project.executeAndReturnModel("clean", "assembleDebug")
+        model = project.executeAndReturnModel("clean", "assembleDebug");
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        model = null
+    public static void cleanUp() {
+        project = null;
+        model = null;
     }
 
     @Test
-    void "check provided local jar is not packaged"() {
-        ZipFile aar = new ZipFile(project.getAar("debug"))
-        assertNull(aar.getEntry("libs/util-1.0.jar"))
+    public void checkProvidedLocalJarIsNotPackaged() throws IOException {
+        assertThatZip(project.getAar("debug")).doesNotContain("libs/util-1.0.jar");
     }
 
     @Test
-    void "check provided local jar is in the main artifact dependency"() {
-        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug")
+    public void checkProvidedLocalJarIsInTheMainArtifactDependency() {
+        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
+        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.getMainArtifact().getDependencies()
-        Collection<JavaLibrary> javaLibs = deps.getJavaLibraries()
-
-        assertEquals("Check there is 1 dependency", 1, javaLibs.size())
+        Dependencies deps = variant.getMainArtifact().getDependencies();
+        assertThat(deps.getJavaLibraries()).hasSize(1);
     }
 
     @Test
-    void "check provided local jar is in the android test dependency"() {
+    public void checkProvidedLocalJarIsInTheAndroidTestDeps() {
         // TODO
     }
 
     @Test
-    void "check provided local jar is in the unit test dependency"() {
+    public void checkProvidedLocalJarIsInTheUnitTestDeps() {
         // TODO
     }
 }

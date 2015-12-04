@@ -14,62 +14,63 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.SyncIssue
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.SyncIssue;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+
 /**
  * test for package (apk) local aar in app
  */
-@CompileStatic
-class AppWithCompileLocalAarTest {
+public class AppWithCompileLocalAarTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithLocalDeps")
-            .create()
-    static AndroidProject model
+            .create();
+    static AndroidProject model;
 
     @BeforeClass
-    static void setUp() {
-        project.getBuildFile() <<
-                '\n' +
-                'apply plugin: \'com.android.application\'\n' +
-                '\n' +
-                'android {\n' +
-                '    compileSdkVersion ' +
-                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
-                '\n' +
-                '    buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
-                '\n' +
-                '}\n' +
-                '\n' +
-                'dependencies {\n' +
-                '    compile files(\'libs/baseLib-1.0.aar\')\n' +
-                '}\n' +
-                ''
+    public static void setUp() throws IOException {
+        appendToFile(project.getBuildFile(),
+                "\n" +
+                "apply plugin: \"com.android.application\"\n" +
+                "\n" +
+                "android {\n" +
+                "    compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n" +
+                "    buildToolsVersion \"" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "\"\n" +
+                "}\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    compile files(\"libs/baseLib-1.0.aar\")\n" +
+                "}\n");
 
-        model = project.getSingleModelIgnoringSyncIssues()
+        model = project.getSingleModelIgnoringSyncIssues();
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        model = null
+    public static void cleanUp() {
+        project = null;
+        model = null;
     }
 
     @Test
-    void "check model failed to load"() {
+    public void checkModelFailedToLoad() {
         SyncIssue issue = assertThat(model).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
-                SyncIssue.TYPE_NON_JAR_LOCAL_DEP)
-        assertThat(new File(issue.getData()).getName()).is('baseLib-1.0.aar')
+                SyncIssue.TYPE_NON_JAR_LOCAL_DEP);
+        assertThat(new File(issue.getData()).getName()).isEqualTo("baseLib-1.0.aar");
     }
 }

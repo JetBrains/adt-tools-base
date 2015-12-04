@@ -14,93 +14,98 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.JavaLibrary
-import com.android.builder.model.Variant
-import com.google.common.collect.Iterables
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertTrue
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
+import com.android.builder.model.Variant;
+import com.android.ide.common.process.ProcessException;
+import com.google.common.collect.Iterables;
+import com.google.common.truth.Truth;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Collection;
 
 /**
  * test for provided local jar in app
  */
-@CompileStatic
-class AppWithProvidedRemoteJarTest {
+public class AppWithProvidedRemoteJarTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithLocalDeps")
-            .create()
-    static AndroidProject model
+            .create();
+    static AndroidProject model;
 
     @BeforeClass
-    static void setUp() {
-        project.getBuildFile() <<
-                '\n' +
-                'apply plugin: \'com.android.application\'\n' +
-                '\n' +
-                'android {\n' +
-                '    compileSdkVersion ' +
-                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
-                '\n' +
-                '    buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
-                '\n' +
-                '}\n' +
-                '\n' +
-                'repositories {\n' +
-                '  maven { url System.env.CUSTOM_REPO }\n' +
-                '}\n' +
-                '\n' +
-                'dependencies {\n' +
-                '    provided \'com.google.guava:guava:17.0\'\n' +
-                '}\n' +
-                ''
+    public static void setUp() throws IOException {
+        appendToFile(project.getBuildFile(),
+                "\n" +
+                "apply plugin: \"com.android.application\"\n" +
+                "\n" +
+                "android {\n" +
+                "    compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n" +
+                "    buildToolsVersion \"" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "\"\n" +
+                "}\n" +
+                "\n" +
+                "repositories {\n" +
+                "  maven { url System.env.CUSTOM_REPO }\n" +
+                "}\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    provided \"com.google.guava:guava:17.0\"\n" +
+                "}\n");
 
-        model = project.executeAndReturnModel("clean", "assembleDebug")
+        model = project.executeAndReturnModel("clean", "assembleDebug");
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        model = null
+    public static void cleanUp() {
+        project = null;
+        model = null;
     }
 
     @Test
-    void "check provided local jar is not packaged"() {
+    public void checkProvidedRemoteJarIsNotPackaged() throws IOException, ProcessException {
         assertThatApk(project.getApk("debug"))
-                .doesNotContainClass("Lcom/example/android/multiproject/person/People;")
+                .doesNotContainClass("Lcom/example/android/multiproject/person/People;");
     }
 
     @Test
-    void "check provided local jar is in the main artifact dependency"() {
-        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug")
+    public void checkProvidedRemoteJarIsInTheMainArtifactDependency() {
+        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
+        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.getMainArtifact().getDependencies()
-        Collection<JavaLibrary> javaLibs = deps.getJavaLibraries()
+        Dependencies deps = variant.getMainArtifact().getDependencies();
+        Collection<JavaLibrary> javaLibs = deps.getJavaLibraries();
 
-        assertEquals("Check there is 1 dependency", 1, javaLibs.size())
-        assertTrue("Check the dependency is provided",
-                Iterables.getOnlyElement(javaLibs).isProvided())
+        assertThat(javaLibs).named("java libs").hasSize(1);
+        JavaLibrary onlyElement = Iterables.getOnlyElement(javaLibs);
+        assertThat(onlyElement.isProvided()).named("lib provided prop").isTrue();
+        assertThat(onlyElement.getResolvedCoordinates().toString())
+                .isEqualTo("com.google.guava:guava:jar:17.0");
     }
 
     @Test
-    void "check provided local jar is in the android test dependency"() {
+    public void checkProvidedRemoteJarIsInTheAndroidTestDeps() {
         // TODO
     }
 
     @Test
-    void "check provided local jar is in the unit test dependency"() {
+    public void checkProvidedRemoteJarIsIntheUnitTestDeps() {
         // TODO
     }
+
 }

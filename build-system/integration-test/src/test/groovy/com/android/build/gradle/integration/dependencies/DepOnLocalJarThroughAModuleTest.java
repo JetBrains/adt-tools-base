@@ -14,62 +14,68 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.Variant
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import static org.junit.Assert.assertFalse
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.truth.TruthHelper;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.Variant;
+import com.android.ide.common.process.ProcessException;
+import com.google.common.truth.Truth;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Map;
+
 /**
  * test for a dependency on a local jar through a module wrapper
  */
-@CompileStatic
-class DepOnLocalJarThroughAModuleTest {
+public class DepOnLocalJarThroughAModuleTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
-            .create()
-    static Map<String, AndroidProject> models
+            .create();
+    static Map<String, AndroidProject> models;
 
     @BeforeClass
-    static void setUp() {
-        project.getSubproject('app').getBuildFile() <<
+    public static void setUp() throws IOException {
+        appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "\n" +
                 "dependencies {\n" +
-                "    compile project(':localJarAsModule')\n" +
-                "}\n"
-        models = project.executeAndReturnMultiModel("clean", ":app:assembleDebug")
+                "    compile project(\":localJarAsModule\")\n" +
+                "}\n");
+        models = project.executeAndReturnMultiModel("clean", ":app:assembleDebug");
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
+    public static void cleanUp() {
+        project = null;
+        models = null;
     }
 
     @Test
-    void "check jar is packaged"() {
-        assertThatApk(project.getSubproject('app').getApk("debug", "unaligned"))
-                .containsClass("Lcom/example/android/multiproject/person/People;")
+    public void checkJarIsPackaged() throws IOException, ProcessException {
+        assertThatApk(project.getSubproject("app").getApk("debug", "unaligned"))
+                .containsClass("Lcom/example/android/multiproject/person/People;");
     }
 
     @Test
-    void "check jar module is in the test artifact model"() {
-        Variant variant = ModelHelper.getVariant(models.get(':app').getVariants(), "debug")
+    public void checkJarModuleIsInTheTestArtifactModel() {
+        Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
+        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.mainArtifact.dependencies
-        Collection<String> projects = deps.projects
-
-        assertFalse(projects.isEmpty())
+        Dependencies deps = variant.getMainArtifact().getDependencies();
+        TruthHelper.assertThat(deps.getProjects()).containsExactly(":localJarAsModule");
     }
 }

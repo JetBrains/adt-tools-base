@@ -14,87 +14,94 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.Variant
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
-import static org.junit.Assert.assertEquals
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.truth.TruthHelper;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.Variant;
+import com.android.ide.common.process.ProcessException;
+import com.google.common.truth.Truth;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+
 /**
  * test for provided jar in library where the jar comes from a library project.
  */
-@CompileStatic
-class LibWithProvidedAarAsJarTest {
+public class LibWithProvidedAarAsJarTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
-            .create()
-    static Map<String, AndroidProject> models
+            .create();
+    static Map<String, AndroidProject> models;
 
     @BeforeClass
-    static void setUp() {
-        project.getSubproject('library').getBuildFile() <<
-                "\n" +
+    public static void setUp() throws IOException {
+        appendToFile(project.getSubproject("library").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
-                "    provided project(path: ':library2', configuration: 'fakeJar')\n" +
-                "}\n"
+                "    provided project(path: \":library2\", configuration: \"fakeJar\")\n" +
+                "}\n");
 
-        project.getSubproject('library2').getBuildFile() <<
+        appendToFile(project.getSubproject("library2").getBuildFile(),
                 "\n" +
                 "configurations {\n" +
                 "    fakeJar\n" +
                 "}\n" +
                 "\n" +
                 "task makeFakeJar(type: Jar) {\n" +
-                "    from 'src/main/java'\n" +
+                "    from \"src/main/java\"\n" +
                 "}\n" +
                 "\n" +
                 "artifacts {\n" +
                 "    fakeJar makeFakeJar\n" +
-                "}\n"
+                "}\n");
 
-        models = project.executeAndReturnMultiModel("clean", ":library:assembleDebug")
+        models = project.executeAndReturnMultiModel("clean", ":library:assembleDebug");
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
+    public static void cleanUp() {
+        project = null;
+        models = null;
     }
 
     @Test
-    void "check provided jar is not packaged"() {
-        assertThatAar(project.getSubproject('library').getAar("debug"))
-                .doesNotContainClass("Lcom/example/android/multiproject/library2/PersionView2;")
+    public void checkProjectJarIsNotPackaged() throws IOException, ProcessException {
+        assertThatAar(project.getSubproject("library").getAar("debug"))
+                .doesNotContainClass("Lcom/example/android/multiproject/library2/PersionView2;");
     }
 
     @Test
-    void "check provided jar is in the main artifact dependency"() {
-        Variant variant = ModelHelper.getVariant(models.get(':library').getVariants(), "debug")
+    public void checkProvidedJarIsInTheMainArtifactDependency() {
+        Variant variant = ModelHelper.getVariant(models.get(":library").getVariants(), "debug");
+        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.getMainArtifact().getDependencies()
-        Collection<String> projectDeps = deps.getProjects()
-
-        assertEquals("Check there is 1 dependency", 1, projectDeps.size())
+        Dependencies deps = variant.getMainArtifact().getDependencies();
+        Collection<String> projectDeps = deps.getProjects();
+        TruthHelper.assertThat(projectDeps).containsExactly(":library2");
     }
 
     @Test
-    void "check provided jar is in the android test dependency"() {
+    public void checkProvidedJarIsInTheAndroidTestDeps() {
         // TODO
     }
 
     @Test
-    void "check provided jar is in the unit test dependency"() {
+    public void checkProvidedJarIsInTheUnitTestDeps() {
         // TODO
     }
 }

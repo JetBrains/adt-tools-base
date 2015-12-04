@@ -14,48 +14,56 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
+package com.android.build.gradle.integration.dependencies;
 
-import com.android.annotations.NonNull
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidArtifact
-import com.android.builder.model.AndroidLibrary
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.Variant
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.Assert
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+
+import com.android.annotations.NonNull;
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.Variant;
+import com.google.common.collect.Iterables;
+import com.google.common.truth.Truth;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * test for flavored dependency on a different package.
  */
-@CompileStatic
-class AppWithResolutionStrategyForAarTest {
+public class AppWithResolutionStrategyForAarTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
-            .create()
-    static Map<String, AndroidProject> models
+            .create();
+    static Map<String, AndroidProject> models;
 
     @BeforeClass
-    static void setUp() {
-        project.getBuildFile() <<
+    public static void setUp() throws IOException {
+        appendToFile(project.getBuildFile(),
                 "\n" +
                 "subprojects {\n" +
-                "    apply from: \"\$rootDir/../commonLocalRepo.gradle\"\n" +
-                "}\n"
-        project.getSubproject('app').getBuildFile() <<
+                "    apply from: \"$rootDir/../commonLocalRepo.gradle\"\n" +
+                "}\n");
+        appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "\n" +
                 "dependencies {\n" +
-                "    debugCompile project(':library')\n" +
-                "    releaseCompile project(':library')\n" +
+                "    debugCompile project(\":library\")\n" +
+                "    releaseCompile project(\":library\")\n" +
                 "}\n" +
                 "\n" +
                 "configurations { _debugCompile }\n" +
@@ -63,56 +71,65 @@ class AppWithResolutionStrategyForAarTest {
                 "configurations._debugCompile {\n" +
                 "  resolutionStrategy {\n" +
                 "    eachDependency { DependencyResolveDetails details ->\n" +
-                "      if (details.requested.name == 'jdeferred-android-aar') {\n" +
-                "        details.useVersion '1.2.2'\n" +
+                "      if (details.requested.name == \"jdeferred-android-aar\") {\n" +
+                "        details.useVersion \"1.2.2\"\n" +
                 "      }\n" +
                 "    }\n" +
                 "  }\n" +
                 "}\n" +
-                "\n"
+                "\n");
 
-        project.getSubproject('library').getBuildFile() << """
+        GradleTestProject.appendToFile(project.getSubproject("library").getBuildFile(),
+                "\n" +
+                "dependencies {\n" +
+                "    compile \"org.jdeferred:jdeferred-android-aar:1.2.3\"\n" +
+                "}\n");
 
-dependencies {
-    compile 'org.jdeferred:jdeferred-android-aar:1.2.3'
-}
-"""
-
-        models = project.getAllModels()
+        models = project.getAllModels();
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
+    public static void cleanUp() {
+        project = null;
+        models = null;
     }
 
     @Test
-    void "check model contain correct dependencies"() {
-        AndroidProject appProject = models.get(':app')
-        Collection<Variant> appVariants = appProject.getVariants()
+    public void checkModelContainsCorrectDependencies() {
+        AndroidProject appProject = models.get(":app");
+        Collection<Variant> appVariants = appProject.getVariants();
 
-        checkJarDependency(appVariants, 'debug', 'org.jdeferred:jdeferred-android-aar:aar:1.2.2')
-        checkJarDependency(appVariants, 'release', 'org.jdeferred:jdeferred-android-aar:aar:1.2.3')
+        checkJarDependency(appVariants, "debug", "org.jdeferred:jdeferred-android-aar:aar:1.2.2");
+        checkJarDependency(appVariants, "release", "org.jdeferred:jdeferred-android-aar:aar:1.2.3");
     }
 
     private static void checkJarDependency(
             @NonNull Collection<Variant> appVariants,
             @NonNull String variantName,
             @NonNull String aarCoodinate) {
-        Variant appVariant = ModelHelper.getVariant(appVariants, variantName)
+        Variant appVariant = ModelHelper.getVariant(appVariants, variantName);
+        Truth.assertThat(appVariant).isNotNull();
 
-        AndroidArtifact appArtifact = appVariant.getMainArtifact()
-        Dependencies artifactDependencies = appArtifact.getDependencies()
+        AndroidArtifact appArtifact = appVariant.getMainArtifact();
+        Dependencies artifactDependencies = appArtifact.getDependencies();
 
-        Collection<AndroidLibrary> directLibraries = artifactDependencies.getLibraries()
-        Assert.assertEquals(variantName, 1, directLibraries.size())
-        AndroidLibrary directLibrary = directLibraries.iterator().next()
-        Assert.assertEquals(variantName, ':library', directLibrary.getProject())
+        Collection<AndroidLibrary> directLibraries = artifactDependencies.getLibraries();
+        assertThat(directLibraries)
+                .named("direct libs of " + variantName)
+                .hasSize(1);
+        AndroidLibrary directLibrary = Iterables.getOnlyElement(directLibraries);
+        assertThat(directLibrary.getProject())
+                .named("Single lib name of " + variantName)
+                .isEqualTo(":library");
 
-        List<? extends AndroidLibrary> transitiveLibraries = directLibrary.getLibraryDependencies()
-        Assert.assertEquals(variantName, 1, transitiveLibraries.size())
-        AndroidLibrary transitiveLibrary = transitiveLibraries.get(0)
-        Assert.assertEquals(variantName, aarCoodinate, transitiveLibrary.getResolvedCoordinates().toString())
+        List<? extends AndroidLibrary> transitiveLibraries = directLibrary.getLibraryDependencies();
+        assertThat(transitiveLibraries)
+                .named("transitive libs of single direct lib of " + variantName)
+                .hasSize(1);
+
+        AndroidLibrary transitiveLibrary = Iterables.getOnlyElement(transitiveLibraries);
+        assertThat(transitiveLibrary.getResolvedCoordinates().toString())
+                .named("coord of single transitive deps of " + variantName)
+                .isEqualTo(aarCoodinate);
     }
 }

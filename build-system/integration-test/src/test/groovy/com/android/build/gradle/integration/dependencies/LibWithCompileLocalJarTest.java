@@ -14,71 +14,73 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
-import com.android.builder.model.AndroidProject
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
+import com.android.builder.model.AndroidProject;
+import com.android.ide.common.process.ProcessException;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+
 /**
  * test for compile local jar in libs
  */
-@CompileStatic
-class LibWithCompileLocalJarTest {
+public class LibWithCompileLocalJarTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithLocalDeps")
-            .create()
-    static AndroidProject model
+            .create();
+    static AndroidProject model;
 
     @BeforeClass
-    static void setUp() {
-        project.getBuildFile() <<
-                '\n' +
-                'apply plugin: \'com.android.library\'\n' +
-                '\n' +
-                'android {\n' +
-                '    compileSdkVersion ' +
+    public static void setUp() throws IOException {
+        appendToFile(project.getBuildFile(),
+                "\n" +
+                "apply plugin: \"com.android.library\"\n" +
+                "\n" +
+                "android {\n" +
+                "    compileSdkVersion " +
                 String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
-                '\n' +
-                '    buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
-                '\n' +
-                '}\n' +
-                '\n' +
-                'dependencies {\n' +
-                '    compile files(\'libs/util-1.0.jar\')\n' +
-                '}\n' +
-                ''
+                "\n" +
+                "    buildToolsVersion \"" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "\"\n" +
+                "}\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    compile files(\"libs/util-1.0.jar\")\n" +
+                "}\n");
 
-        model = project.executeAndReturnModel("clean", "assembleDebug")
+        model = project.executeAndReturnModel("clean", "assembleDebug");
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        model = null
+    public static void cleanUp() {
+        project = null;
+        model = null;
     }
 
     @Test
-    void "check compile local jar is packaged"() {
+    public void checkCompileLocalJarIsPackaged() throws IOException, ProcessException {
         // search in secondary jars only.
         assertThatAar(project.getAar("debug")).containsClass(
                 "Lcom/example/android/multiproject/person/People;",
-                AbstractAndroidSubject.ClassFileScope.SECONDARY)
+                AbstractAndroidSubject.ClassFileScope.SECONDARY);
     }
 
     @Test
-    void "test library test contains local jar classes"() {
-        project.execute("assembleDebugAndroidTest")
+    public void testLibraryTestContainsLocalJarClasses() throws IOException, ProcessException {
+        project.execute("assembleDebugAndroidTest");
 
         assertThatApk(project.getTestApk("debug")).containsClass(
-                "Lcom/example/android/multiproject/person/People;")
+                "Lcom/example/android/multiproject/person/People;");
     }
 }

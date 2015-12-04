@@ -14,44 +14,47 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.SyncIssue
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import static org.junit.Assert.assertTrue
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.SyncIssue;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Map;
+
 /**
  * test for flavored dependency on a different package.
  */
-@CompileStatic
-class AppWithNonExistentResolutionStrategyForAarTest {
+public class AppWithNonExistentResolutionStrategyForAarTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
-            .create()
+            .create();
 
-    static Map<String, AndroidProject> models
+    static Map<String, AndroidProject> models;
 
     @BeforeClass
-    static void setUp() {
-        project.getBuildFile() <<
+    public static void setUp() throws IOException {
+        GradleTestProject.appendToFile(project.getBuildFile(),
                 "\n" +
                 "subprojects {\n" +
-                "    apply from: \"\$rootDir/../commonLocalRepo.gradle\"\n" +
-                "}\n"
-        project.getSubproject('app').getBuildFile() <<
+                "    apply from: \"$rootDir/../commonLocalRepo.gradle\"\n" +
+                "}\n");
+        GradleTestProject.appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "\n" +
                 "dependencies {\n" +
-                "    debugCompile project(':library')\n" +
-                "    releaseCompile project(':library')\n" +
+                "    debugCompile project(\":library\")\n" +
+                "    releaseCompile project(\":library\")\n" +
                 "}\n" +
                 "\n" +
                 "configurations { _debugCompile }\n" +
@@ -59,35 +62,34 @@ class AppWithNonExistentResolutionStrategyForAarTest {
                 "configurations._debugCompile {\n" +
                 "  resolutionStrategy {\n" +
                 "    eachDependency { DependencyResolveDetails details ->\n" +
-                "      if (details.requested.name == 'jdeferred-android-aar') {\n" +
-                "        details.useVersion '-1.-1.-1'\n" +
+                "      if (details.requested.name == \"jdeferred-android-aar\") {\n" +
+                "        details.useVersion \"-1.-1.-1\"\n" +
                 "      }\n" +
                 "    }\n" +
                 "  }\n" +
                 "}\n" +
-                "\n"
+                "\n");
 
-        project.getSubproject('library').getBuildFile() << """
+        GradleTestProject.appendToFile(project.getSubproject("library").getBuildFile(),
+                "\n" +
+                "dependencies {\n" +
+                "    compile \"org.jdeferred:jdeferred-android-aar:1.2.3\"\n" +
+                "}\n");
 
-dependencies {
-    compile 'org.jdeferred:jdeferred-android-aar:1.2.3'
-}
-"""
-
-        models = project.getAllModelsIgnoringSyncIssues()
+        models = project.getAllModelsIgnoringSyncIssues();
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
+    public static void cleanUp() {
+        project = null;
+        models = null;
     }
 
     @Test
-    void "check we received a sync issue"() {
+    public void checkWeReceivedASyncIssue() {
         SyncIssue issue = assertThat(models.get(":app")).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
-                SyncIssue.TYPE_UNRESOLVED_DEPENDENCY)
-        assertTrue(issue.message.contains("org.jdeferred:jdeferred-android-aar:-1.-1.-1"));
+                SyncIssue.TYPE_UNRESOLVED_DEPENDENCY);
+        assertThat(issue.getMessage()).contains("org.jdeferred:jdeferred-android-aar:-1.-1.-1");
     }
 }

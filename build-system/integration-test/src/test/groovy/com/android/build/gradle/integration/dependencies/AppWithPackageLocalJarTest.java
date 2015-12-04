@@ -14,84 +14,86 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.JavaLibrary
-import com.android.builder.model.Variant
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import static org.junit.Assert.assertTrue
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.truth.TruthHelper;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
+import com.android.builder.model.Variant;
+import com.android.ide.common.process.ProcessException;
+import com.google.common.truth.Truth;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Collection;
+
 /**
  * test for package (apk) local jar in app
  */
-@CompileStatic
-class AppWithPackageLocalJarTest {
+public class AppWithPackageLocalJarTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithLocalDeps")
-            .create()
-    static AndroidProject model
+            .create();
+    static AndroidProject model;
 
     @BeforeClass
-    static void setUp() {
-        project.getBuildFile() <<
-                '\n' +
-                'apply plugin: \'com.android.application\'\n' +
-                '\n' +
-                'android {\n' +
-                '    compileSdkVersion ' +
-                String.valueOf(GradleTestProject.DEFAULT_COMPILE_SDK_VERSION) +
-                '\n' +
-                '    buildToolsVersion "' + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION +
-                '\n' +
-                '}\n' +
-                '\n' +
-                'dependencies {\n' +
-                '    apk files(\'libs/util-1.0.jar\')\n' +
-                '}\n' +
-                ''
+    public static void setUp() throws IOException {
+        GradleTestProject.appendToFile(project.getBuildFile(),
+                "\n" +
+                "apply plugin: \"com.android.application\"\n" +
+                "\n" +
+                "android {\n" +
+                "    compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n" +
+                "    buildToolsVersion \"" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "\"\n" +
+                "}\n" +
+                "\n" +
+                "dependencies {\n" +
+                "    apk files(\"libs/util-1.0.jar\")\n" +
+                "}\n");
 
-        model = project.executeAndReturnModel("clean", "assembleDebug")
+        model = project.executeAndReturnModel("clean", "assembleDebug");
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        model = null
+    public static void cleanUp() {
+        project = null;
+        model = null;
     }
 
     @Test
-    void "check packaged local jar is packaged"() {
+    public void checkPackageLocalJarIsPackaged() throws IOException, ProcessException {
         assertThatApk(project.getApk("debug"))
-                .containsClass("Lcom/example/android/multiproject/person/People;")
+                .containsClass("Lcom/example/android/multiproject/person/People;");
     }
 
     @Test
-    void "check packaged local jar is not in the model"() {
-        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug")
+    public void checkPackagedLocalJarIsNotIntheModel() {
+        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
+        Truth.assertThat(variant).isNotNull();
 
-        Dependencies deps = variant.getMainArtifact().getDependencies()
-        Collection<JavaLibrary> javaLibs = deps.getJavaLibraries()
-
-        assertTrue("Check there is no dependency", javaLibs.isEmpty())
+        Dependencies deps = variant.getMainArtifact().getDependencies();
+        Collection<JavaLibrary> javaLibs = deps.getJavaLibraries();
+        TruthHelper.assertThat(javaLibs).named("java libs").isEmpty();
     }
 
     @Test
-    void "check packaged local jar is not in the android test dependency"() {
+    public void checkPackagedLocalJarIsInTheAndroidTestDeps() {
         // TODO
     }
 
     @Test
-    void "check packaged local jar is not in the unit test dependency"() {
+    public void checkPackagedLocalJarIsIntheUnitTestDeps() {
         // TODO
     }
 }

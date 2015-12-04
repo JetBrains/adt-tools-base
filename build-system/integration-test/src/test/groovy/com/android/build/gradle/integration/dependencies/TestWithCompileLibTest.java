@@ -14,71 +14,76 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidArtifact
-import com.android.builder.model.AndroidLibrary
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.Variant
-import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import static com.android.build.gradle.integration.common.utils.ModelHelper.getAndroidArtifact
-import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertNotNull
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+import static com.android.build.gradle.integration.common.utils.ModelHelper.getAndroidArtifact;
+import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
+import static org.junit.Assert.assertNotNull;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.truth.TruthHelper;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.Variant;
+import com.android.ide.common.process.ProcessException;
+import com.google.common.truth.Truth;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+
 /**
  * test for compile library in a test app
  */
-@CompileStatic
-class TestWithCompileLibTest {
+public class TestWithCompileLibTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
-            .create()
-    static Map<String, AndroidProject> models
+            .create();
+    static Map<String, AndroidProject> models;
 
     @BeforeClass
-    static void setUp() {
-        project.getSubproject('app').getBuildFile() <<
-                "\n" +
+    public static void setUp() throws IOException {
+        appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
-                "    androidTestCompile project(':library')\n" +
-                "}\n"
-        models = project.executeAndReturnMultiModel("clean", ":app:assembleDebugAndroidTest")
+                "    androidTestCompile project(\":library\")\n" +
+                "}\n");
+        models = project.executeAndReturnMultiModel("clean", ":app:assembleDebugAndroidTest");
     }
 
     @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
+    public static void cleanUp() {
+        project = null;
+        models = null;
     }
 
     @Test
-    void "check compiled library is packaged"() {
-        assertThatApk(project.getSubproject('app').getApk("debug", "androidTest", "unaligned"))
-                .containsClass("Lcom/example/android/multiproject/library/PersonView;")
+    public void checkCompiledLibraryIsPackaged() throws IOException, ProcessException {
+        assertThatApk(project.getSubproject("app").getApk("debug", "androidTest", "unaligned"))
+                .containsClass("Lcom/example/android/multiproject/library/PersonView;");
     }
 
     @Test
-    void "check compiled library is in the test artifact model"() {
-        Variant variant = ModelHelper.getVariant(models.get(':app').getVariants(), "debug")
+    public void checkCompiledLibraryIsInTheTestArtifactModel() {
+        Variant variant = ModelHelper.getVariant(models.get(":app").getVariants(), "debug");
+        Truth.assertThat(variant).isNotNull();
 
-        Collection<AndroidArtifact> androidArtifacts = variant.getExtraAndroidArtifacts()
-        AndroidArtifact testArtifact = getAndroidArtifact(androidArtifacts, ARTIFACT_ANDROID_TEST)
-        assertNotNull(testArtifact)
+        Collection<AndroidArtifact> androidArtifacts = variant.getExtraAndroidArtifacts();
+        AndroidArtifact testArtifact = getAndroidArtifact(androidArtifacts, ARTIFACT_ANDROID_TEST);
+        assertNotNull(testArtifact);
 
-        Dependencies deps = testArtifact.getDependencies()
-        Collection<AndroidLibrary> libraryDeps = deps.getLibraries()
-
-        assertEquals("Check there is 1 dependency", 1, libraryDeps.size())
+        Dependencies deps = testArtifact.getDependencies();
+        TruthHelper.assertThat(deps.getLibraries()).hasSize(1);
     }
 }

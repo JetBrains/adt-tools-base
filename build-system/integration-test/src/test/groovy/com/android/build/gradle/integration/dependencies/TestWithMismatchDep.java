@@ -14,104 +14,97 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.SyncIssue
-import groovy.transform.CompileStatic
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertTrue
-import static org.junit.Assert.fail
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static org.junit.Assert.fail;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.SyncIssue;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import java.io.IOException;
 /**
  * Tests the handling of test dependencies.
  */
-@CompileStatic
-class TestWithMismatchDep {
+public class TestWithMismatchDep {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("testDependency")
             .captureStdOut(true)
             .captureStdErr(true)
-            .create()
+            .create();
 
     @Before
-    public void setUp() {
-        project.getBuildFile() <<
+    public void setUp() throws IOException {
+        appendToFile(project.getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
                 "    androidTestCompile 'com.google.guava:guava:15.0'\n" +
-                "}\n"
+                "}\n");
     }
 
-    private final static String ERROR_MSG = 'Conflict with dependency \'com.google.guava:guava\'.' +
-            ' Resolved versions for app (17.0) and test app (15.0) differ.' +
-            ' See http://g.co/androidstudio/app-test-app-conflict for details.'
+    private static final String ERROR_MSG = "Conflict with dependency \'com.google.guava:guava\'." +
+            " Resolved versions for app (17.0) and test app (15.0) differ." +
+            " See http://g.co/androidstudio/app-test-app-conflict for details.";
 
     @Test
-    public void "Test mismatch dependency error is in model"() {
+    public void testMismatchDependencyErrorIsInTheModel() {
         // Query the model to get the mismatch dep sync error.
-        AndroidProject model = project.getSingleModelIgnoringSyncIssues()
+        AndroidProject model = project.getSingleModelIgnoringSyncIssues();
 
         assertThat(model).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_MISMATCH_DEP,
-                'com.google.guava:guava',
-                ERROR_MSG)
+                "com.google.guava:guava",
+                ERROR_MSG);
     }
 
     @Test
-    public void "Test mismatch dependency breaks test build"() {
+    public void testMismatchDependencyBreaksTestBuild() {
         // want to check the log, so can't use Junit's expected exception mechanism.
 
         try {
-            project.execute("assembleAndroidTest")
+            project.execute("assembleAndroidTest");
             fail("build succeeded");
         } catch (Exception e) {
-            Throwable t = e
+            Throwable t = e;
             while (t.getCause() != null) {
-                t = t.getCause()
+                t = t.getCause();
             }
 
             // looks like we can't actually test the instance t against GradleException
             // due to it coming through the tooling API from a different class loader.
-            assertEquals("org.gradle.api.GradleException", t.getClass().canonicalName)
-            assertEquals("Dependency Error. See console for details.", t.getMessage())
+            assertThat(t.getClass().getCanonicalName()).isEqualTo("org.gradle.api.GradleException");
+            assertThat(t.getMessage()).isEqualTo("Dependency Error. See console for details.");
         }
 
         // check there is a version of the error, after the task name:
-        ByteArrayOutputStream stderr = project.stderr
-        String log = stderr.toString()
-
-        assertTrue("stderr contains error", log.contains(ERROR_MSG))
-    }
-
-    public void "Test mismatch dependency doesn't break debug build"() {
-        project.execute("assembleDebug")
-
-        // check there is a log output
-        ByteArrayOutputStream out = project.stdout
-        String log = out.toString()
-
-        assertTrue(log.contains(ERROR_MSG))
+        assertThat(project.getStderr().toString()).named("stderr").contains(ERROR_MSG);
 
     }
 
     @Test
-    public void "Test mismatch depenency can run non-build task"() {
-        // it's important to be able to run the dependencies task to
-        // investigate dependency issues.
-        project.execute("dependencies")
+    public void testMismatchDependencyDoesNotBreakDebugBuild() {
+        project.execute("assembleDebug");
 
         // check there is a log output
-        ByteArrayOutputStream out = project.stdout
-        String log = out.toString()
+        assertThat(project.getStdout().toString()).named("stdout").contains(ERROR_MSG);
+    }
 
-        assertTrue("stdout contains warning", log.contains(ERROR_MSG))
+    @Test
+    public void testMismatchDependencyCanRunNonBuildTasks() {
+        // it's important to be able to run the dependencies task to
+        // investigate dependency issues.
+        project.execute("dependencies");
+
+        // check there is a log output
+        assertThat(project.getStdout().toString()).named("stdout").contains(ERROR_MSG);
     }
 }

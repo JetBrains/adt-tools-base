@@ -14,80 +14,83 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.dependencies
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidArtifact
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.JavaLibrary
-import com.android.builder.model.Variant
-import groovy.transform.CompileStatic
-import org.junit.After
-import org.junit.AfterClass
-import org.junit.Before
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Rule
-import org.junit.Test
+package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertNotNull
+import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.JavaLibrary;
+import com.android.builder.model.Variant;
+import com.google.common.truth.Truth;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.Collection;
 
 /**
  * test for same dependency with and without classifier.
  */
-@CompileStatic
-class AppWithClassifierDepTest {
+public class AppWithClassifierDepTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithClassifierDep")
-            .create()
-    AndroidProject model
+            .create();
+    AndroidProject model;
 
     @Before
-    void setUp() {
-        model = project.getSingleModel()
+    public void setUp() {
+        model = project.getSingleModel();
     }
 
     @After
-    void cleanUp() {
-        project = null
-        model = null
+    public void cleanUp() {
+        project = null;
+        model = null;
     }
 
     @Test
-    void "check debug dependencies in model"() {
-        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug")
-        Dependencies dependencies = variant.getMainArtifact().getDependencies()
+    public void checkDebugDepInModel() {
+        Variant variant = ModelHelper.getVariant(model.getVariants(), "debug");
+        Truth.assertThat(variant).isNotNull();
+        Dependencies dependencies = variant.getMainArtifact().getDependencies();
 
-        Collection<JavaLibrary> javaLibs = dependencies.getJavaLibraries()
-        assertNotNull(javaLibs)
-        assertEquals(1, javaLibs.size())
+        Collection<JavaLibrary> javaLibs = dependencies.getJavaLibraries();
+        assertNotNull(javaLibs);
+        assertEquals(1, javaLibs.size());
 
-        JavaLibrary javaLib = javaLibs.iterator().next()
+        JavaLibrary javaLib = javaLibs.iterator().next();
         assertEquals(
                 new File(project.getTestDir(), "repo/com/foo/sample/1.0/sample-1.0.jar"),
                 javaLib.getJarFile());
     }
 
     @Test
-    void "check androidTest dependencies in model"() {
-        Variant debugVariant = ModelHelper.getVariant(model.getVariants(), "debug")
+    public void checkAndroidTestDepInModel() {
+        Variant debugVariant = ModelHelper.getVariant(model.getVariants(), "debug");
+        Truth.assertThat(debugVariant).isNotNull();
 
         AndroidArtifact androidTestArtifact = ModelHelper.getAndroidArtifact(
-                debugVariant.getExtraAndroidArtifacts(), ARTIFACT_ANDROID_TEST)
+                debugVariant.getExtraAndroidArtifacts(), ARTIFACT_ANDROID_TEST);
+        Truth.assertThat(androidTestArtifact).isNotNull();
 
-        Dependencies dependencies = androidTestArtifact.getDependencies()
+        Dependencies dependencies = androidTestArtifact.getDependencies();
 
-        Collection<JavaLibrary> javaLibs = dependencies.getJavaLibraries()
-        assertNotNull(javaLibs)
-        assertEquals(1, javaLibs.size())
+        Collection<JavaLibrary> javaLibs = dependencies.getJavaLibraries();
+        assertNotNull(javaLibs);
+        assertEquals(1, javaLibs.size());
 
-        JavaLibrary javaLib = javaLibs.iterator().next()
+        JavaLibrary javaLib = javaLibs.iterator().next();
         assertEquals(
                 new File(project.getTestDir(), "repo/com/foo/sample/1.0/sample-1.0-testlib.jar"),
                 javaLib.getJarFile());
