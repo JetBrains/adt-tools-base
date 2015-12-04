@@ -25,7 +25,7 @@ import java.util.concurrent.Semaphore;
  * An object that provides an {@link java.io.InputStream} interface to read data that has been written to a
  * {@link java.io.OutputStream}.
  * <p/>
- * Buffers passed to {@link java.io.OutputStream#write} on the {@link #source} stream are <b>not</b> internally copied,
+ * Buffers passed to {@link java.io.OutputStream#write} on the {@link #mSource} stream are <b>not</b> internally copied,
  * and are assumed immutable. Mutation of any buffers passed to the {@link java.io.OutputStream#write} after the method
  * has returned will result in undefined behaviour when calling the {@link #read} methods.
  * <p/>

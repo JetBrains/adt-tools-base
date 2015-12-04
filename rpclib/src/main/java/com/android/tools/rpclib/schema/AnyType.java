@@ -28,7 +28,8 @@ public final class AnyType extends Type {
     public AnyType() {
     }
 
-    public AnyType(@NotNull Decoder d) throws IOException {
+    /** @param d decoder **/
+    public AnyType(Decoder d) {
     }
 
     @Override

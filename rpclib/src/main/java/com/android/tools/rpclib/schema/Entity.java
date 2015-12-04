@@ -15,12 +15,13 @@
  */
 package com.android.tools.rpclib.schema;
 
-import com.android.tools.rpclib.binary.*;
-
+import com.android.tools.rpclib.binary.BinaryObject;
+import com.android.tools.rpclib.binary.Decoder;
+import com.android.tools.rpclib.binary.Encoder;
+import com.android.tools.rpclib.binary.EncodingControl;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 public final class Entity {
     private String mPackage;
@@ -65,7 +66,7 @@ public final class Entity {
     }
 
     public String getName() {
-        return mDisplay == "" ? mIdentity : mDisplay;
+        return mDisplay.isEmpty() ? mIdentity : mDisplay;
     }
 
     public Field[] getFields() {
@@ -130,5 +131,10 @@ public final class Entity {
     @Override
     public int hashCode() {
         return signature().hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return signature();
     }
 }
