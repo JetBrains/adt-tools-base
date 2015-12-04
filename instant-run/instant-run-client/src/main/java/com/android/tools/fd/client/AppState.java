@@ -14,10 +14,19 @@
  * limitations under the License.
  */
 
-apply plugin: 'java'
-apply plugin: 'jacoco'
+package com.android.tools.fd.client;
 
-dependencies {
-    compile project(':base:instant-run:instant-run-common')
-    compile project(':base:ddmlib')
+/**
+ * The application state on device/emulator: the app is not running (or we cannot find it due to
+ * connection problems etc), or it's in the foreground or background.
+ */
+public enum AppState {
+    /** The app is not running (or we cannot find it due to connection problems etc) */
+    NOT_RUNNING,
+    /** The app is running an obsolete/older version of the runtime library */
+    OBSOLETE,
+    /** The app is actively running in the foreground */
+    FOREGROUND,
+    /** The app is running, but is not in the foreground */
+    BACKGROUND
 }

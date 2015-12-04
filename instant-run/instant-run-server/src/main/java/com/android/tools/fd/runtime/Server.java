@@ -15,13 +15,30 @@
  */
 package com.android.tools.fd.runtime;
 
+import static com.android.tools.fd.common.ProtocolConstants.MESSAGE_EOF;
+import static com.android.tools.fd.common.ProtocolConstants.MESSAGE_PATCHES;
+import static com.android.tools.fd.common.ProtocolConstants.MESSAGE_PATH_CHECKSUM;
+import static com.android.tools.fd.common.ProtocolConstants.MESSAGE_PATH_EXISTS;
+import static com.android.tools.fd.common.ProtocolConstants.MESSAGE_PING;
+import static com.android.tools.fd.common.ProtocolConstants.MESSAGE_RESTART_ACTIVITY;
+import static com.android.tools.fd.common.ProtocolConstants.MESSAGE_SHOW_TOAST;
+import static com.android.tools.fd.common.ProtocolConstants.PROTOCOL_IDENTIFIER;
+import static com.android.tools.fd.common.ProtocolConstants.PROTOCOL_VERSION;
+import static com.android.tools.fd.common.ProtocolConstants.UPDATE_MODE_COLD_SWAP;
+import static com.android.tools.fd.common.ProtocolConstants.UPDATE_MODE_HOT_SWAP;
+import static com.android.tools.fd.common.ProtocolConstants.UPDATE_MODE_NONE;
+import static com.android.tools.fd.common.ProtocolConstants.UPDATE_MODE_WARM_SWAP;
+import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
+import static com.android.tools.fd.runtime.FileManager.CLASSES_DEX_3_SUFFIX;
+import static com.android.tools.fd.runtime.FileManager.CLASSES_DEX_SUFFIX;
+
+import com.android.annotations.NonNull;
+
 import android.app.Activity;
 import android.app.Application;
 import android.net.LocalServerSocket;
 import android.net.LocalSocket;
 import android.util.Log;
-
-import com.android.annotations.NonNull;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -33,94 +50,17 @@ import java.util.List;
 
 import dalvik.system.DexClassLoader;
 
-import static com.android.tools.fd.runtime.BootstrapApplication.LOG_TAG;
-import static com.android.tools.fd.runtime.FileManager.CLASSES_DEX_3_SUFFIX;
-import static com.android.tools.fd.runtime.FileManager.CLASSES_DEX_SUFFIX;
-
 /**
- * Server running in the app listening for messages from the IDE and updating the
- * code and resources when provided
+ * Server running in the app listening for messages from the IDE and updating the code and resources
+ * when provided
  */
 public class Server {
-    // ----------------------------------------------------------------------
-    // NOTE: Keep all these communication constants (and message send/receive
-    // logic) in sync with the corresponding values in the IDE plugin
-    // ----------------------------------------------------------------------
-
-    /**
-     * Magic (random) number used to identify the protocol
-     */
-    public static final long PROTOCOL_IDENTIFIER = 0x35107124L;
-
-    /**
-     * Version of the protocol
-     */
-    public static final int PROTOCOL_VERSION = 4;
-
-    /**
-     * Message: sending patches
-     */
-    public static final int MESSAGE_PATCHES = 1;
-
-    /**
-     * Message: ping, send ack back
-     */
-    public static final int MESSAGE_PING = 2;
-
-    /**
-     * Message: look up a very quick checksum of the given path; this
-     * may not pick up on edits in the middle of the file but should be a
-     * quick way to determine if a path exists and some basic information
-     * about it.
-     */
-    public static final int MESSAGE_PATH_EXISTS = 3;
-
-    /**
-     * Message: query whether the app has a given file and if so return
-     * its checksum. (This is used to determine whether the app can receive
-     * a small delta on top of a (typically resource ) file instead of resending the whole
-     * file over again.)
-     */
-    public static final int MESSAGE_PATH_CHECKSUM = 4;
-
-    /**
-     * Message: restart activities
-     */
-    public static final int MESSAGE_RESTART_ACTIVITY = 5;
-
-    /**
-     * Message: show toast
-     */
-    public static final int MESSAGE_SHOW_TOAST = 6;
-
-    /**
-     * Done transmitting
-     */
-    public static final int MESSAGE_EOF = 7;
-
-    /**
-     * No updates
-     */
-    public static final int UPDATE_MODE_NONE = 0;
-
-    /**
-     * Patch changes directly, keep app running without any restarting
-     */
-    public static final int UPDATE_MODE_HOT_SWAP = 1;
-
-    /**
-     * Patch changes, restart activity to reflect changes
-     */
-    public static final int UPDATE_MODE_WARM_SWAP = 2;
-
-    /**
-     * Store change in app directory, restart app
-     */
-    public static final int UPDATE_MODE_COLD_SWAP = 3;
 
     private LocalServerSocket mServerSocket;
+
     private final Application mApplication;
-    private static int mWrongTokenCount;
+
+    private static int sWrongTokenCount;
 
     public static void create(@NonNull String packageName, @NonNull Application application) {
         //noinspection ResultOfObjectAllocationIgnored
@@ -158,6 +98,7 @@ public class Server {
     }
 
     private class SocketServerThread extends Thread {
+
         @Override
         public void run() {
             try {
@@ -178,7 +119,7 @@ public class Server {
                             socket);
                     socketServerReplyThread.run();
 
-                    if (mWrongTokenCount > 50) {
+                    if (sWrongTokenCount > 50) {
                         if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                             Log.i(LOG_TAG, "Stopping server: too many wrong token connections");
                         }
@@ -195,6 +136,7 @@ public class Server {
     }
 
     private class SocketServerReplyThread extends Thread {
+
         private final LocalSocket mSocket;
 
         SocketServerReplyThread(LocalSocket socket) {
@@ -368,7 +310,7 @@ public class Server {
             if (token != AppInfo.token) {
                 Log.w(LOG_TAG, "Mismatched identity token from client; received " + token
                         + " and expected " + AppInfo.token);
-                mWrongTokenCount++;
+                sWrongTokenCount++;
                 return false;
             }
             return true;
@@ -390,7 +332,7 @@ public class Server {
     }
 
     private int handlePatches(@NonNull List<ApplicationPatch> changes, boolean hasResources,
-                              int updateMode) {
+            int updateMode) {
         if (hasResources) {
             FileManager.startUpdate();
         }
@@ -414,7 +356,7 @@ public class Server {
     }
 
     private int handleResourcePatch(int updateMode, @NonNull ApplicationPatch patch,
-                                    @NonNull String path) {
+            @NonNull String path) {
         if (Log.isLoggable(LOG_TAG, Log.INFO)) {
             Log.i(LOG_TAG, "Received resource changes (" + path + ")");
         }
@@ -453,7 +395,8 @@ public class Server {
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                     Log.i(LOG_TAG, "Got the patcher instance " + loader);
                 }
-                String[] getPatchedClasses = (String[]) aClass.getDeclaredMethod("getPatchedClasses").invoke(loader);
+                String[] getPatchedClasses = (String[]) aClass
+                        .getDeclaredMethod("getPatchedClasses").invoke(loader);
                 if (Log.isLoggable(LOG_TAG, Log.INFO)) {
                     Log.i(LOG_TAG, "Got the list of classes ");
                     for (String getPatchedClass : getPatchedClasses) {

@@ -24,6 +24,10 @@ import com.android.annotations.NonNull;
 public final class Paths {
 
     public static final String DEX_DIRECTORY_NAME = "dex";
+    /** Temp directory on the device */
+    public static final String DEVICE_TEMP_DIR = "/data/local/tmp";
+    /** The name of the build timestamp file on the device in the data folder */
+    public static final String BUILD_ID_TXT = "build-id.txt";
 
     @NonNull
     public static String getDataDirectory(@NonNull String applicationId) {
@@ -35,5 +39,9 @@ public final class Paths {
         return getDataDirectory(applicationId) + "/" + DEX_DIRECTORY_NAME;
     }
 
+    @NonNull
+    public static String getDeviceIdFolder(@NonNull String pkg) {
+        return DEVICE_TEMP_DIR + "/" + pkg + "-" + BUILD_ID_TXT;
+    }
 
 }
