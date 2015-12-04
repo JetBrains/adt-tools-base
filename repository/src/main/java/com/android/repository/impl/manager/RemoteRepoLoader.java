@@ -139,8 +139,10 @@ public class RemoteRepoLoader {
                     }
                     if (parsedPackages != null && !parsedPackages.isEmpty()) {
                         for (RemotePackage pkg : parsedPackages) {
-                            pkg.setSource(source);
-                            result.put(pkg.getPath(), pkg);
+                            if (pkg.getArchive() != null) {
+                                pkg.setSource(source);
+                                result.put(pkg.getPath(), pkg);
+                            }
                         }
                         source.setFetchError(null);
                     } else {
