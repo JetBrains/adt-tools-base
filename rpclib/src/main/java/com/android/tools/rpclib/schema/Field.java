@@ -43,4 +43,20 @@ public final class Field {
         }
         return mDeclared;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        } else if (!(obj instanceof Field)) {
+            return false;
+        }
+        Field f = (Field)obj;
+        return mDeclared.equals(f.getDeclared()) && mType.equals(f.getType());
+    }
+
+    @Override
+    public int hashCode() {
+        return mDeclared.hashCode() + 31 * mType.hashCode();
+    }
 }
