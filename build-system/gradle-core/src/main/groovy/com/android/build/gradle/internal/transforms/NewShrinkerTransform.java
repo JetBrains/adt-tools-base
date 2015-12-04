@@ -34,12 +34,16 @@ import com.android.build.api.transform.TransformOutputProvider;
 import com.android.build.gradle.AndroidGradleOptions;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.shrinker.KeepRules;
+import com.android.build.gradle.shrinker.ProguardFlagsKeepRules;
+import com.android.build.gradle.shrinker.ShrinkerLogger;
+import com.android.build.gradle.shrinker.parser.FilterSpecification;
 import com.android.builder.core.VariantType;
 import com.android.build.gradle.shrinker.AbstractShrinker.CounterSet;
 import com.android.build.gradle.shrinker.FullRunShrinker;
 import com.android.build.gradle.shrinker.IncrementalShrinker;
 import com.android.build.gradle.shrinker.JavaSerializationShrinkerGraph;
-import com.android.build.gradle.shrinker.ProguardConfigKeepRulesBuilder;
+import com.android.build.gradle.shrinker.ProguardConfig;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.base.Stopwatch;
@@ -48,12 +52,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
+import org.gradle.tooling.BuildException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -160,27 +166,40 @@ public class NewShrinkerTransform extends ProguardConfigurable {
             Collection<TransformInput> inputs,
             Collection<TransformInput> referencedInputs,
             TransformOutputProvider output) throws IOException {
-        ProguardConfigKeepRulesBuilder parser = new ProguardConfigKeepRulesBuilder();
+        ProguardConfig config = new ProguardConfig();
 
         for (File configFile : getAllConfigurationFiles()) {
-            parser.parse(configFile);
+            config.parse(configFile);
         }
+
+        ShrinkerLogger shrinkerLogger =
+                new ShrinkerLogger(config.getFlags().getDontWarnSpecs(), logger);
 
         FullRunShrinker<String> shrinker =
                 new FullRunShrinker<String>(
                         new WaitableExecutor<Void>(),
                         JavaSerializationShrinkerGraph.empty(incrementalDir),
-                        platformJars);
+                        platformJars,
+                        shrinkerLogger);
 
         // Only save state if incremental mode is enabled.
         boolean saveState = this.isIncremental();
 
+        // TODO: check for -dontobfuscate and other required flags.
         shrinker.run(
                 inputs,
                 referencedInputs,
                 output,
-                ImmutableMap.of(CounterSet.SHRINK, parser.getKeepRules()),
+                ImmutableMap.<CounterSet, KeepRules>of(
+                        CounterSet.SHRINK,
+                        new ProguardFlagsKeepRules(config.getFlags(), shrinkerLogger)),
                 saveState);
+
+        if (shrinkerLogger.getWarningsCount() > 0 && !config.getFlags().isIgnoreWarnings()) {
+            throw new BuildException(
+                    "Warnings found during shrinking, please use -dontwarn or -ignorewarnings to suppress them.",
+                    null);
+        }
     }
 
     private void incrementalRun(
@@ -192,8 +211,12 @@ public class NewShrinkerTransform extends ProguardConfigurable {
                 JavaSerializationShrinkerGraph.readFromDir(incrementalDir);
         logTime("loading state", stopwatch);
 
+        // TODO: Store dontwarn settings.
+        ShrinkerLogger shrinkerLogger =
+                new ShrinkerLogger(Collections.<FilterSpecification>emptyList(), logger);
+
         IncrementalShrinker<String> shrinker =
-                new IncrementalShrinker<String>(new WaitableExecutor<Void>(), graph);
+                new IncrementalShrinker<String>(new WaitableExecutor<Void>(), graph, shrinkerLogger);
 
         try {
             shrinker.incrementalRun(inputs, output);

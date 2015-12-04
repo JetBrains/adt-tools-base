@@ -32,6 +32,7 @@ import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.shrinker.parser.FilterSpecification;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
@@ -48,10 +49,12 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -74,6 +77,11 @@ public abstract class AbstractShrinkerTest {
     protected TransformOutputProvider mOutput;
 
     protected DirectoryInput mDirectoryInput;
+
+    protected ShrinkerLogger mShrinkerLogger =
+            new ShrinkerLogger(
+                    Collections.<FilterSpecification>emptyList(),
+                    LoggerFactory.getLogger(getClass()));
 
     @Before
     public void setUp() throws Exception {

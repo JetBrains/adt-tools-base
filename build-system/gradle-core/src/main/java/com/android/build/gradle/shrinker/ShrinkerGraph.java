@@ -102,7 +102,7 @@ public interface ShrinkerGraph<T> {
     @NonNull
     T[] getInterfaces(T klass);
 
-    void checkDependencies();
+    void checkDependencies(ShrinkerLogger shrinkerLogger);
 
     @NonNull
     Iterable<T> getAllProgramClasses();
@@ -136,4 +136,8 @@ public interface ShrinkerGraph<T> {
     Map<T,DependencyType> getRoots(@NonNull CounterSet counterSet);
 
     void clearCounters(@NonNull WaitableExecutor<Void> executor);
+
+    String getMemberName(@NonNull T member);
+
+    boolean isClassKnown(@NonNull T klass);
 }

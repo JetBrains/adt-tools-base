@@ -36,12 +36,14 @@ import java.util.Map;
 /**
  * TODO: Document.
  */
-class ProguardFlagsKeepRules implements KeepRules {
+public class ProguardFlagsKeepRules implements KeepRules {
 
     private final Flags mFlags;
+    private final ShrinkerLogger mShrinkerLogger;
 
-    public ProguardFlagsKeepRules(Flags flags) {
+    public ProguardFlagsKeepRules(Flags flags, ShrinkerLogger shrinkerLogger) {
         mFlags = flags;
+        mShrinkerLogger = shrinkerLogger;
     }
 
     @Override
@@ -162,7 +164,7 @@ class ProguardFlagsKeepRules implements KeepRules {
                 && matchesAnnotations(method, spec.getAnnotations(), graph);
     }
 
-    private static <T> boolean matchesClass(
+    private <T> boolean matchesClass(
             T klass,
             ClassSpecification spec,
             ShrinkerGraph<T> graph) {
@@ -195,7 +197,7 @@ class ProguardFlagsKeepRules implements KeepRules {
         return false;
     }
 
-    private static <T> boolean matchesInheritance(
+    private <T> boolean matchesInheritance(
             @NonNull  T klass,
             @Nullable InheritanceSpecification spec,
             @NonNull ShrinkerGraph<T> graph) {
@@ -204,9 +206,10 @@ class ProguardFlagsKeepRules implements KeepRules {
         }
         // TODO: annotations.
 
-        FluentIterable<T> superTypes = new TypeHierarchyTraverser<T>(graph)
-                .preOrderTraversal(klass)
-                .skip(1); // Skip the class itself.
+        FluentIterable<T> superTypes =
+                TypeHierarchyTraverser.superclassesAndInterfaces(graph, mShrinkerLogger)
+                        .preOrderTraversal(klass)
+                        .skip(1); // Skip the class itself.
 
         for (T superType : superTypes) {
             String name = graph.getClassName(superType);

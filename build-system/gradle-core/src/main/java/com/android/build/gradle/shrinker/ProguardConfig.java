@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.shrinker;
 
-import static com.google.common.base.Preconditions.checkState;
-
 import com.android.build.gradle.shrinker.parser.Flags;
 import com.android.build.gradle.shrinker.parser.GrammarActions;
 
@@ -29,13 +27,11 @@ import java.io.IOException;
 /**
  * Stub of a real parser. Only checks the most simple rules produced by AAPT.
  */
-public class ProguardConfigKeepRulesBuilder {
+public class ProguardConfig {
 
     private final Flags mFlags = new Flags();
-    private boolean done = false;
 
     public void parse(File configFile) throws IOException {
-        checkState(!done, "getKeepRules() already called.");
         try {
             GrammarActions.parse(configFile.getPath(), ".", mFlags);
         } catch (RecognitionException e) {
@@ -43,9 +39,7 @@ public class ProguardConfigKeepRulesBuilder {
         }
     }
 
-    public KeepRules getKeepRules() {
-        done = true;
-        // TODO: check for -dontobfuscate and other required flags.
-        return new ProguardFlagsKeepRules(mFlags);
+    public Flags getFlags() {
+        return mFlags;
     }
 }

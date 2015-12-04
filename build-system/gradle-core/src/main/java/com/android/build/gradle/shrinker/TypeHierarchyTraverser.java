@@ -30,29 +30,45 @@ public class TypeHierarchyTraverser<T> extends TreeTraverser<T> {
 
     private final ShrinkerGraph<T> mGraph;
 
-    public TypeHierarchyTraverser(ShrinkerGraph<T> graph) {
+    private final ShrinkerLogger mShrinkerLogger;
+
+    private final boolean mIncludeInterfaces;
+
+    private TypeHierarchyTraverser(
+            ShrinkerGraph<T> graph,
+            ShrinkerLogger shrinkerLogger,
+            boolean includeInterfaces) {
         mGraph = graph;
+        mShrinkerLogger = shrinkerLogger;
+        mIncludeInterfaces = includeInterfaces;
+    }
+
+    public static <T> TypeHierarchyTraverser<T> superclassesAndInterfaces(ShrinkerGraph<T> graph,
+            ShrinkerLogger shrinkerLogger) {
+        return new TypeHierarchyTraverser<T>(graph, shrinkerLogger, true);
+    }
+
+    public static <T> TypeHierarchyTraverser<T> superclasses(ShrinkerGraph<T> graph,
+            ShrinkerLogger shrinkerLogger) {
+        return new TypeHierarchyTraverser<T>(graph, shrinkerLogger, false);
     }
 
     @Override
     public Iterable<T> children(@NonNull T klass) {
+        List<T> result = Lists.newArrayList();
         try {
-            List<T> result = Lists.newArrayList();
             T superclass = mGraph.getSuperclass(klass);
             if (superclass != null) {
                 result.add(superclass);
             }
-
-            Collections.addAll(result, mGraph.getInterfaces(klass));
-
-            return result;
         } catch (ClassLookupException e) {
-            if (!e.getClassName().startsWith("sun/misc/Unsafe")) {
-                // TODO: Proper logging.
-                System.out.println("Invalid class reference: " + e.getClassName());
-            }
-            // TODO: Is this correct?
-            return Collections.emptyList();
+            mShrinkerLogger.invalidClassReference(mGraph.getClassName(klass), e.getClassName());
         }
+
+        if (mIncludeInterfaces) {
+            Collections.addAll(result, mGraph.getInterfaces(klass));
+        }
+
+        return result;
     }
 }

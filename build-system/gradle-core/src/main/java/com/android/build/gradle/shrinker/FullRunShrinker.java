@@ -58,8 +58,9 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
     public FullRunShrinker(
             WaitableExecutor<Void> executor,
             ShrinkerGraph<T> graph,
-            Set<File> platformJars) {
-        super(graph, executor);
+            Set<File> platformJars,
+            ShrinkerLogger shrinkerLogger) {
+        super(graph, executor, shrinkerLogger);
         mPlatformJars = platformJars;
     }
 
@@ -171,7 +172,7 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
         waitForAllTasks();
         logTime("Finish graph", stopwatch);
 
-        mGraph.checkDependencies();
+        mGraph.checkDependencies(mShrinkerLogger);
     }
 
     @NonNull
@@ -286,8 +287,8 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                     }
 
                     FluentIterable<T> superTypes =
-                            new TypeHierarchyTraverser<T>(mGraph).preOrderTraversal(
-                                    mGraph.getClassForMember(method));
+                            TypeHierarchyTraverser.superclassesAndInterfaces(mGraph, mShrinkerLogger)
+                                    .preOrderTraversal(mGraph.getClassForMember(method));
 
                     for (T klass : superTypes) {
                         if (mGraph.getClassName(klass).equals("java/lang/Object")) {

@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.shrinker.AbstractShrinker.CounterSet;
 import com.android.ide.common.internal.WaitableExecutor;
+import com.android.utils.AsmUtils;
 import com.android.utils.FileUtils;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -245,12 +246,19 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
+    @Nullable
     public String getSuperclass(@NonNull String klass) throws ClassLookupException {
         ClassInfo classInfo = mClasses.get(klass);
         if (classInfo == null) {
             throw new ClassLookupException(klass);
         }
-        return classInfo.superclass;
+        String superclass = classInfo.superclass;
+
+        if (superclass != null && !mClasses.containsKey(superclass)) {
+            throw new ClassLookupException(superclass);
+        }
+
+        return superclass;
     }
 
     @Nullable
@@ -286,29 +294,22 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     @Override
-    public void checkDependencies() {
+    public void checkDependencies(ShrinkerLogger shrinkerLogger) {
         Map<String, Dependency<String>> invalidDeps = Maps.newHashMap();
 
         for (Map.Entry<String, Dependency<String>> entry : mDependencies.entries()) {
+            String source = entry.getKey();
             Dependency<String> dep = entry.getValue();
             String target = dep.target;
             if (!target.contains(".")) {
                 if (!mClasses.containsKey(target)) {
-                    // TODO: Warning system.
-                    if (target.startsWith("sun/misc/Unsafe") || target.startsWith("android/support")) {
-                        continue;
-                    }
-                    System.out.println("Invalid dependency target: " + target);
-                    invalidDeps.put(entry.getKey(), entry.getValue());
+                    shrinkerLogger.invalidClassReference(source, target);
+                    invalidDeps.put(source, entry.getValue());
                 }
             } else {
                 if (!mMembers.containsEntry(getClassForMember(target), target)) {
-                    // TODO: Warning system.
-                    if (target.startsWith("sun/misc/Unsafe") || target.startsWith("android/support")) {
-                        continue;
-                    }
-                    System.out.println("Invalid dependency target: " + target);
-                    invalidDeps.put(entry.getKey(), entry.getValue());
+                    shrinkerLogger.invalidMemberReference(source, target);
+                    invalidDeps.put(source, entry.getValue());
                 }
             }
         }
@@ -357,7 +358,7 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     @NonNull
     @Override
     public String getClassForMember(@NonNull String member) {
-        return member.substring(0, member.indexOf('.'));
+        return AsmUtils.getClassName(member);
     }
 
     @NonNull
@@ -456,6 +457,16 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     public void clearCounters(@NonNull WaitableExecutor<Void> executor) {
         getCounters(CounterSet.SHRINK).mReferenceCounters.invalidateAll();
         getCounters(CounterSet.LEGACY_MULTIDEX).mReferenceCounters.invalidateAll();
+    }
+
+    @Override
+    public String getMemberName(@NonNull String member) {
+        return member;
+    }
+
+    @Override
+    public boolean isClassKnown(@NonNull String klass) {
+        return mClasses.containsKey(klass);
     }
 
     private Counters getCounters(CounterSet counterSet) {

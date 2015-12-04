@@ -25,13 +25,11 @@ prog [Flags flags, String baseDirectory]
     | ('-keepclassmembers' keepModifier=keepOptionModifier? classSpec=classSpecification {GrammarActions.addKeepClassMembers($flags, $classSpec.classSpec, $keepModifier.modifier);})
     | ('-keepclasseswithmembers' keepModifier=keepOptionModifier? classSpec=classSpecification {GrammarActions.addKeepClassesWithMembers($flags, $classSpec.classSpec, $keepModifier.modifier);})
     | ('-keep' keepModifier=keepOptionModifier? classSpec=classSpecification {GrammarActions.addKeepClassSpecification($flags, $classSpec.classSpec, $keepModifier.modifier);})
-    | ('-dontshrink' {$flags.setShrink(false);})
-    | ('-dontoptimize'  {$flags.setOptimize(false);})
-    | ('-dontpreverify'  {$flags.setPreverify(false);})
-    | ('-dontobfuscate' {$flags.setObfuscate(false);})
     | (igFlag=ignoredFlag {GrammarActions.ignoredFlag($igFlag.text, true);})
     | (nopFlag=noOpFlag {GrammarActions.ignoredFlag($nopFlag.text, false);})
     | (unFlag=unsupportedFlag {GrammarActions.unsupportedFlag($unFlag.text);})
+    | ('-dontwarn' {FilterSpecification class_filter = new FilterSpecification();} filter[class_filter] {GrammarActions.dontWarn($flags, class_filter);})
+    | ('-ignorewarnings' {GrammarActions.ignoreWarnings($flags);})
   )*
   EOF
   ;
@@ -44,8 +42,6 @@ private noOpFlag
   (   '-verbose'
     // TODO: implement
     | ('-dontnote' {FilterSpecification class_filter = new FilterSpecification();} filter[class_filter])
-    | ('-dontwarn' {FilterSpecification class_filter = new FilterSpecification();} filter[class_filter])
-    | '-ignorewarnings'
     // These flags are used in the default SDK proguard rules, so there's no point warning about them:
     | '-dontusemixedcaseclassnames'
     | '-dontskipnonpubliclibraryclasses'
@@ -58,6 +54,10 @@ private noOpFlag
     | ('-keepclasseswithmembernames' classSpec=classSpecification  )
     | ('-keepattributes' {FilterSpecification attribute_filter = new FilterSpecification();} filter[attribute_filter] )
     | ('-keeppackagenames' {FilterSpecification package_filter = new FilterSpecification();} filter[package_filter] )
+    | ('-dontshrink' )
+    | ('-dontoptimize'  )
+    | ('-dontpreverify'  )
+    | ('-dontobfuscate' )
   )
   ;
 

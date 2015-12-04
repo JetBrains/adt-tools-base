@@ -43,7 +43,8 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
         mShrinker = new FullRunShrinker<String>(
                 new WaitableExecutor<Void>(),
                 buildGraph(),
-                getPlatformJars());
+                getPlatformJars(),
+                mShrinkerLogger);
     }
 
     @NonNull

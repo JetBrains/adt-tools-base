@@ -61,8 +61,9 @@ public class IncrementalShrinker<T> extends AbstractShrinker<T> {
 
     public IncrementalShrinker(
             WaitableExecutor<Void> executor,
-            ShrinkerGraph<T> graph) {
-        super(graph, executor);
+            ShrinkerGraph<T> graph,
+            ShrinkerLogger shrinkerLogger) {
+        super(graph, executor, shrinkerLogger);
     }
 
     /**

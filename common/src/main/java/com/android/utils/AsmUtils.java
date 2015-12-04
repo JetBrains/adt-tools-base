@@ -16,6 +16,8 @@
 
 package com.android.utils;
 
+import com.android.annotations.NonNull;
+
 /**
  * Utilities for working with ASM.
  */
@@ -29,11 +31,16 @@ public class AsmUtils {
      * Converts a class name from the Java language naming convention (foo.bar.baz) to the JVM
      * internal naming convention (foo/bar/baz).
      */
-    public static String toInternalName(String className) {
+    @NonNull
+    public static String toInternalName(@NonNull String className) {
         return className.replace('.', '/');
     }
 
-    public static String getFullMemberName(String className, String memberName, String desc) {
-        return String.format("%s.%s:%s", className, memberName, desc);
+    /**
+     * Gets the class name from a class member internal name, like {@code com/foo/Bar.baz:(I)V}.
+     */
+    @NonNull
+    public static String getClassName(@NonNull String memberName) {
+        return memberName.substring(0, memberName.indexOf('.'));
     }
 }

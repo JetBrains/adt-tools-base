@@ -51,6 +51,14 @@ public class GrammarActions {
         }
     }
 
+    static void dontWarn(@NonNull Flags flags, @NonNull FilterSpecification classSpec) {
+        flags.dontWarn(classSpec);
+    }
+
+    static void ignoreWarnings(@NonNull Flags flags) {
+        flags.setIgnoreWarnings(true);
+    }
+
     static void addKeepClassMembers(
             @NonNull Flags flags,
             @NonNull ClassSpecification classSpecification,

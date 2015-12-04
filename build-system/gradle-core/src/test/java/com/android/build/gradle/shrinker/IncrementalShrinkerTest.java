@@ -51,7 +51,8 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
         mFullRunShrinker = new FullRunShrinker<String>(
                 new WaitableExecutor<Void>(),
                 JavaSerializationShrinkerGraph.empty(mIncrementalDir),
-                getPlatformJars());
+                getPlatformJars(),
+                mShrinkerLogger);
     }
 
     @Test
@@ -140,7 +141,8 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
     private void incrementalRun(String... changedClasses) throws Exception {
         IncrementalShrinker<String> incrementalShrinker = new IncrementalShrinker<String>(
                 new WaitableExecutor<Void>(),
-                JavaSerializationShrinkerGraph.readFromDir(mIncrementalDir));
+                JavaSerializationShrinkerGraph.readFromDir(mIncrementalDir),
+                mShrinkerLogger);
 
         Map<File, Status> files = Maps.newHashMap();
         for (String name : changedClasses) {

@@ -62,10 +62,13 @@ public abstract class AbstractShrinker<T> {
 
     protected final ShrinkerGraph<T> mGraph;
 
+    protected final ShrinkerLogger mShrinkerLogger;
+
     protected AbstractShrinker(
-            ShrinkerGraph<T> graph, WaitableExecutor<Void> executor) {
+            ShrinkerGraph<T> graph, WaitableExecutor<Void> executor, ShrinkerLogger shrinkerLogger) {
         mGraph = graph;
         mExecutor = executor;
+        mShrinkerLogger = shrinkerLogger;
     }
 
     /**
@@ -175,7 +178,7 @@ public abstract class AbstractShrinker<T> {
         for (final UnresolvedReference<T> unresolvedReference : unresolvedReferences) {
             mExecutor.execute(new Callable<Void>() {
                 @Override
-                public Void call() throws Exception {
+                public Void call() {
                     T target = unresolvedReference.target;
                     T source = unresolvedReference.method;
                     T startClass = mGraph.getClassForMember(target);
@@ -183,13 +186,28 @@ public abstract class AbstractShrinker<T> {
                     if (unresolvedReference.opcode == Opcodes.INVOKESPECIAL) {
                         // With invokespecial we disregard the class in target and start walking up
                         // the type hierarchy, starting from the superclass of the caller.
-                        startClass =
-                                mGraph.getSuperclass(
-                                        mGraph.getClassForMember(source));
-                        checkState(startClass != null);
+                        T sourceClass = mGraph.getClassForMember(source);
+                        try {
+                            startClass = mGraph.getSuperclass(sourceClass);
+                            checkState(startClass != null);
+                        } catch (ClassLookupException e) {
+                            mShrinkerLogger.invalidClassReference(
+                                    mGraph.getClassName(sourceClass),
+                                    e.getClassName());
+                        }
                     }
 
-                    TypeHierarchyTraverser<T> traverser = new TypeHierarchyTraverser<T>(mGraph);
+                    if (!mGraph.isClassKnown(startClass)) {
+                        mShrinkerLogger.invalidClassReference(
+                                mGraph.getMemberName(source),
+                                mGraph.getClassName(startClass));
+
+                        return null;
+                    }
+
+                    TypeHierarchyTraverser<T> traverser =
+                            TypeHierarchyTraverser.superclassesAndInterfaces(mGraph, mShrinkerLogger);
+
                     for (T currentClass : traverser.preOrderTraversal(startClass)) {
                         T matchingMethod = mGraph.findMatchingMethod(
                                 currentClass,
@@ -209,17 +227,10 @@ public abstract class AbstractShrinker<T> {
                         }
                     }
 
-                    // TODO: Check -dontwarn.
-                    String className = mGraph.getClassName(
-                            mGraph.getClassForMember(
-                                    target));
-                    if (!className.startsWith("sun/misc/Unsafe")) {
-                        System.out.println(
-                                String.format(
-                                        "Unresolved reference: %s.%s",
-                                        className,
-                                        mGraph.getMethodNameAndDesc(target)));
-                    }
+                    mShrinkerLogger.invalidMemberReference(
+                            mGraph.getMemberName(source),
+                            mGraph.getMemberName(target));
+
                     return null;
                 }
             });
