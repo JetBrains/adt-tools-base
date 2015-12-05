@@ -241,12 +241,12 @@ class Debugger {
         if (mConnState == ST_AWAIT_SHAKE) {
             int result;
 
-            result = JdwpPacket.findHandshake(mReadBuffer);
+            result = JdwpHandshake.findHandshake(mReadBuffer);
             //Log.v("ddms", "findHand: " + result);
             switch (result) {
-                case JdwpPacket.HANDSHAKE_GOOD:
+                case JdwpHandshake.HANDSHAKE_GOOD:
                     Log.d("ddms", "Good handshake from debugger");
-                    JdwpPacket.consumeHandshake(mReadBuffer);
+                    JdwpHandshake.consumeHandshake(mReadBuffer);
                     sendHandshake();
                     mConnState = ST_READY;
 
@@ -256,11 +256,11 @@ class Debugger {
 
                     // see if we have another packet in the buffer
                     return getJdwpPacket();
-                case JdwpPacket.HANDSHAKE_BAD:
+                case JdwpHandshake.HANDSHAKE_BAD:
                     // not a debugger, throw an exception so we drop the line
                     Log.d("ddms", "Bad handshake from debugger");
                     throw new IOException("bad handshake");
-                case JdwpPacket.HANDSHAKE_NOTYET:
+                case JdwpHandshake.HANDSHAKE_NOTYET:
                     break;
                 default:
                     Log.e("ddms", "Unknown packet while waiting for client handshake");
@@ -296,8 +296,8 @@ class Debugger {
      * if anything at all).
      */
     private synchronized void sendHandshake() throws IOException {
-        ByteBuffer tempBuffer = ByteBuffer.allocate(JdwpPacket.HANDSHAKE_LEN);
-        JdwpPacket.putHandshake(tempBuffer);
+        ByteBuffer tempBuffer = ByteBuffer.allocate(JdwpHandshake.HANDSHAKE_LEN);
+        JdwpHandshake.putHandshake(tempBuffer);
         int expectedLength = tempBuffer.position();
         tempBuffer.flip();
         if (mChannel.write(tempBuffer) != expectedLength) {
