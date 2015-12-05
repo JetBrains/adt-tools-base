@@ -17,7 +17,6 @@ package com.android.tools.rpclib.schema;
 
 
 import com.android.tools.rpclib.binary.*;
-
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -75,6 +74,21 @@ public class Dynamic implements BinaryObject {
     @Override
     public int hashCode() {
         return mKlass.hashCode() + 31 * Arrays.hashCode(mFields);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder result = new StringBuilder();
+        result.append(mKlass.entity().getName()).append('{');
+        Field[] fields = mKlass.entity().getFields();
+        for (int i = 0; i < mFields.length; i++) {
+            if (i > 0) {
+                result.append(", ");
+            }
+            result.append(fields[i].getName()).append(": ").append(mFields[i]);
+        }
+        result.append('}');
+        return result.toString();
     }
 
     public static class Klass implements BinaryClass {

@@ -16,7 +16,6 @@
 package com.android.tools.rpclib.any;
 
 import com.android.tools.rpclib.binary.BinaryObject;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public abstract class Box implements BinaryObject {
   public abstract Object unwrap();
@@ -51,6 +50,6 @@ public abstract class Box implements BinaryObject {
       return new StringBox().setValue((String)value);
     }
     // TODO: slice types
-    throw new NotImplementedException();
+    throw new UnsupportedOperationException();
   }
 }

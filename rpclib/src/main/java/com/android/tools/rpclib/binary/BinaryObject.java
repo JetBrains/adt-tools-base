@@ -18,7 +18,7 @@ package com.android.tools.rpclib.binary;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * An object that can be encoded and decoded using its {@link class}.
+ * An object that can be encoded and decoded using its {@link #klass}.
  */
 public interface BinaryObject {
   /**

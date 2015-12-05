@@ -47,9 +47,9 @@ public final class Map extends Type {
     @Override
     public void encodeValue(@NotNull Encoder e, Object value) throws IOException {
         assert (value instanceof java.util.Map);
-        java.util.Map<?, ?> map = (java.util.Map) value;
+        java.util.Map<?, ?> map = (java.util.Map<?, ?>) value;
         e.uint32(map.size());
-        for (java.util.Map.Entry entry : map.entrySet()) {
+        for (java.util.Map.Entry<?, ?> entry : map.entrySet()) {
             mKeyType.encodeValue(e, entry.getKey());
             mValueType.encodeValue(e, entry.getValue());
         }
@@ -57,7 +57,7 @@ public final class Map extends Type {
 
     @Override
     public Object decodeValue(@NotNull Decoder d) throws IOException {
-        int size = (int) d.uint32();
+        int size = d.uint32();
         LinkedHashMap<Object, Object> map = new LinkedHashMap<Object, Object>();
         for (int i = 0; i < size; i++) {
             map.put(mKeyType.decodeValue(d), mValueType.decodeValue(d));

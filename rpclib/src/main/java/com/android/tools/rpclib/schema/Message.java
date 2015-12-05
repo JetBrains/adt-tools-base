@@ -17,7 +17,6 @@
 package com.android.tools.rpclib.schema;
 
 import com.android.tools.rpclib.binary.*;
-import com.intellij.util.containers.HashMap;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;

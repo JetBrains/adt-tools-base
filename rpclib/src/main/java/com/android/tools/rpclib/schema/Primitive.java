@@ -15,7 +15,6 @@
  */
 package com.android.tools.rpclib.schema;
 
-import com.android.tools.rpclib.binary.BinaryID;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
 

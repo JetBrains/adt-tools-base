@@ -19,7 +19,6 @@ import com.android.tools.rpclib.schema.Entity;
 import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
