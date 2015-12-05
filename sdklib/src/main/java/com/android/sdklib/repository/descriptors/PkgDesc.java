@@ -588,6 +588,9 @@ public class PkgDesc implements IPkgDesc {
         String name = "";
         if (hasName()) {
             name = getName().getDisplay();
+            if (name == null) {
+                name = "";
+            }
         }
         result = result.replace("$NAME", name);
 
