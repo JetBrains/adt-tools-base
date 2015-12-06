@@ -120,8 +120,13 @@ public final class LogCatMessageParser {
             if (processLogHeader(line, device) == null) {
                 // If not a header line, this is a message line
                 if (mPrevHeader == null) {
-                    throw new IllegalStateException(
-                            "No logcat header processed yet, failed to parse line: " + line);
+                    // If we are fed a log line without a header, there's nothing we can do with
+                    // it - the header metadata is very important! So, we have no choice but to drop
+                    // this line.
+                    //
+                    // This should rarely happen, if ever - for example, perhaps we're running over
+                    // old logs where some earlier lines have been truncated.
+                    continue;
                 }
                 messages.add(new LogCatMessage(mPrevHeader, line));
             }
