@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
-apply plugin: 'java'
-apply plugin: 'jacoco'
+package com.android.tools.fd.client;
 
-dependencies {
-    compile project(':base:instant-run:instant-run-common')
-    compile project(':base:ddmlib')
+/**
+ * Implemented by Android Studio to post balloon messages back to the user.
+ */
+public interface UserFeedback {
+
+    void error(String message);
+
+    void warning(String message);
+
+    void info(String message);
+
+    void noChanges();
+
+    void notifyEnd(UpdateMode updateMode);
 }

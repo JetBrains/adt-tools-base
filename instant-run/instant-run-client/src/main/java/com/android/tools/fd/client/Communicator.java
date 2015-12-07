@@ -14,10 +14,20 @@
  * limitations under the License.
  */
 
-apply plugin: 'java'
-apply plugin: 'jacoco'
+package com.android.tools.fd.client;
 
-dependencies {
-    compile project(':base:instant-run:instant-run-common')
-    compile project(':base:ddmlib')
+import com.android.annotations.NonNull;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
+abstract class Communicator<T> {
+
+    abstract T communicate(@NonNull DataInputStream input, @NonNull DataOutputStream output) throws
+            IOException;
+
+    int getTimeout() {
+        return 2000;
+    }
 }
