@@ -19,11 +19,10 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log.LogLevel;
 
 import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.util.List;
-
-import static com.android.ddmlib.IDevice.*;
 
 /**
  * Unit tests for {@link LogCatMessageParser}.
@@ -116,5 +115,22 @@ public final class LogCatMessageParserTest extends TestCase {
     public void testPackageName() {
         assertEquals(mParsedMessages.get(0).getAppName(), "com.example.name");
         assertEquals(mParsedMessages.get(6).getAppName(), "?");
+    }
+
+    public void testLinesWithoutHeadersAreIgnored() throws Exception {
+        String[] TRUNCATED_LOGS = new String[] {
+                "Log[0] logline2",                               //$NON-NLS-1$
+                "Log[0] logline3",                               //$NON-NLS-1$
+                "",                                              //$NON-NLS-1$
+                "[ 08-11 19:11:07.132   495:0x1ef D/dtag     ]", //$NON-NLS-1$
+                "Log[1] logline1",                               //$NON-NLS-1$
+                "Log[1] logline2",                               //$NON-NLS-1$
+                "Log[1] logline3",                               //$NON-NLS-1$
+        };
+
+        LogCatMessageParser parser = new LogCatMessageParser();
+        mParsedMessages = parser.processLogLines(TRUNCATED_LOGS, null);
+        assertEquals(mParsedMessages.size(), 3);
+        assertEquals(mParsedMessages.get(0).getMessage(), "Log[1] logline1");
     }
 }
