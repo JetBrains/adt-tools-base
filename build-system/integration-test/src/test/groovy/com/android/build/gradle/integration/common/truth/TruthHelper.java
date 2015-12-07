@@ -70,47 +70,47 @@ import java.util.Map;
  */
 public class TruthHelper {
     @NonNull
-    public static FileSubject assertThat(@NonNull File file) {
+    public static FileSubject assertThat(@Nullable File file) {
         return assert_().about(FileSubjectFactory.factory()).that(file);
     }
 
     @NonNull
-    public static ApkSubject assertThatApk(@NonNull File apk) {
+    public static ApkSubject assertThatApk(@Nullable File apk) {
         return assert_().about(ApkSubject.FACTORY).that(apk);
     }
 
     @NonNull
-    public static AarSubject assertThatAar(@NonNull File aar) {
+    public static AarSubject assertThatAar(@Nullable File aar) {
         return assert_().about(AarSubject.Factory.get()).that(aar);
     }
 
     @NonNull
-    public static ZipFileSubject assertThatZip(@NonNull File file) {
+    public static ZipFileSubject assertThatZip(@Nullable File file) {
         return assert_().about(ZipFileSubject.Factory.get()).that(file);
     }
 
     @NonNull
-    public static ModelSubject assertThat(@NonNull AndroidProject androidProject) {
+    public static ModelSubject assertThat(@Nullable AndroidProject androidProject) {
         return assert_().about(ModelSubject.Factory.get()).that(androidProject);
     }
 
     @NonNull
-    public static IssueSubject assertThat(@NonNull SyncIssue issue) {
+    public static IssueSubject assertThat(@Nullable SyncIssue issue) {
         return assert_().about(IssueSubject.Factory.get()).that(issue);
     }
 
     @NonNull
-    public static VariantSubject assertThat(@NonNull Variant variant) {
+    public static VariantSubject assertThat(@Nullable Variant variant) {
         return assert_().about(VariantSubject.Factory.get()).that(variant);
     }
 
     @NonNull
-    public static ArtifactSubject assertThat(@NonNull AndroidArtifact artifact) {
+    public static ArtifactSubject assertThat(@Nullable AndroidArtifact artifact) {
         return assert_().about(ArtifactSubject.Factory.get()).that(artifact);
     }
 
     @NonNull
-    public static DependenciesSubject assertThat(@NonNull Dependencies dependencies) {
+    public static DependenciesSubject assertThat(@Nullable Dependencies dependencies) {
         return assert_().about(DependenciesSubject.Factory.get()).that(
                 dependencies);
     }

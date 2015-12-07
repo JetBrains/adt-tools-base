@@ -506,8 +506,8 @@ public class GradleTestProject implements TestRule {
         if (testDir.exists()) {
             deleteRecursive(testDir);
         }
-        assertTrue(testDir.mkdirs());
-        assertTrue(sourceDir.mkdirs());
+        FileUtils.mkdirs(testDir);
+        FileUtils.mkdirs(sourceDir);
 
         Files.copy(
                 new File(TEST_PROJECT_DIR, COMMON_HEADER),
@@ -1313,4 +1313,9 @@ public class GradleTestProject implements TestRule {
         String newContent = content.replaceAll(search, replace);
         Files.write(newContent, file, Charset.defaultCharset());
     }
+
+    public static void appendToFile(@NonNull File file, @NonNull String content) throws IOException {
+        Files.append(content, file, Charset.defaultCharset());
+    }
+
 }
