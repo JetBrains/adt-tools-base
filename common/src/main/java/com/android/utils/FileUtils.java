@@ -22,7 +22,9 @@ import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
 import com.google.common.hash.HashCode;
@@ -32,6 +34,8 @@ import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.regex.Pattern;
 
 public final class FileUtils {
 
@@ -45,6 +49,13 @@ public final class FileUtils {
         @Override
         public String apply(File file) {
             return file.getName();
+        }
+    };
+
+    public static final Function<File, String> GET_PATH = new Function<File, String>() {
+        @Override
+        public String apply(File file) {
+            return file.getPath();
         }
     };
 
@@ -245,5 +256,34 @@ public final class FileUtils {
         }
         name = name + "_" + hashCode.toString();
         return name;
+    }
+
+    public static void createFile(@NonNull File file, @NonNull String content) throws IOException {
+        checkArgument(!file.exists(), "%s exists already.", file);
+
+        Files.createParentDirs(file);
+        Files.write(content, file, Charsets.UTF_8);
+    }
+
+    /**
+     * Find a list of files in a directory, using a specified path pattern.
+     */
+    public static List<File> find(@NonNull File base, @NonNull final Pattern pattern) {
+        checkArgument(base.isDirectory(), "'base' must be a directory.");
+        return Files.fileTreeTraverser()
+                .preOrderTraversal(base)
+                .filter(Predicates.compose(Predicates.contains(pattern), GET_PATH))
+                .toList();
+    }
+
+    /**
+     * Find a file with the specified name in a given directory .
+     */
+    public static Optional<File> find(@NonNull File base, @NonNull final String name) {
+        checkArgument(base.isDirectory(), "'base' must be a directory.");
+        return Files.fileTreeTraverser()
+                .preOrderTraversal(base)
+                .filter(Predicates.compose(Predicates.equalTo(name), GET_NAME))
+                .last();
     }
 }

@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.utils;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static com.google.common.base.Preconditions.checkArgument;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -25,7 +24,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -35,12 +33,11 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * Helper to help verify content of a file.
  */
-public class FileHelper {
+public class TestFileUtils {
 
     /**
      * Return a list of relative path of the files in a directory.
@@ -63,34 +60,6 @@ public class FileHelper {
 
         }
         return fileList;
-    }
-
-    /**
-     * Find a list of files in a directory with the specified name.
-     */
-    public static List<File> find(@NonNull File base, @NonNull final String name) {
-        Preconditions.checkArgument(base.isDirectory(), "'base' must be a directory.");
-        return Lists.newArrayList(Files.fileTreeTraverser().preOrderTraversal(base).filter(
-                new Predicate<File>() {
-                    @Override
-                    public boolean apply(File file) {
-                        return file.getName().equals(name);
-                    }
-                }));
-    }
-
-    /**
-     * Find a list of files in a directory with the specified pattern
-     */
-    public static List<File> find(@NonNull File base, @NonNull final Pattern pattern) {
-        Preconditions.checkArgument(base.isDirectory(), "'base' must be a directory.");
-        return Lists.newArrayList(Files.fileTreeTraverser().preOrderTraversal(base).filter(
-                new Predicate<File>() {
-                    @Override
-                    public boolean apply(File file) {
-                        return pattern.matcher(file.getPath()).find();
-                    }
-                }));
     }
 
     public static void checkContent(File file, String expectedContent) throws IOException {
@@ -137,13 +106,6 @@ public class FileHelper {
                 Joiner.on(System.getProperty("line.separator")).join(lines),
                 file,
                 Charsets.UTF_8);
-    }
-
-    public static void createFile(@NonNull File file, @NonNull String content) throws IOException {
-        checkArgument(!file.exists(), "%s exists already.", file);
-
-        Files.createParentDirs(file);
-        Files.write(content, file, Charset.defaultCharset());
     }
 
     public static void addMethod(

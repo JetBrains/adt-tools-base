@@ -26,7 +26,7 @@ import org.junit.Test
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertWithMessage
-import static com.android.build.gradle.integration.common.utils.FileHelper.searchAndReplace
+import static com.android.build.gradle.integration.common.utils.TestFileUtils.searchAndReplace
 import static com.google.common.base.Charsets.UTF_8
 /**
  * Tests for the PNG generation feature.

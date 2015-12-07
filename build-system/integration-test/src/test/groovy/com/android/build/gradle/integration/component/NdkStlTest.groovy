@@ -18,10 +18,9 @@ package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
-import com.android.build.gradle.integration.common.utils.FileHelper
+import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
 import org.gradle.tooling.BuildException
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -121,7 +120,7 @@ model {
         assume().that(stl).isNotEqualTo("gabi++_shared")
         assume().that(stl).isNotEqualTo("gabi++_static")
 
-        File src = FileHelper.find(project.testDir, "hello-jni.cpp").first()
+        File src = FileUtils.find(project.testDir, "hello-jni.cpp").get()
         src.delete()
         src << """
 #include <jni.h>

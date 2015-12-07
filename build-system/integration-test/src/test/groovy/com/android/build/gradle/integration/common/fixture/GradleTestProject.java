@@ -26,7 +26,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
-import com.android.build.gradle.integration.common.utils.FileHelper;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.integration.common.utils.JacocoAgent;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
 import com.android.builder.core.BuilderConstants;
@@ -450,7 +450,7 @@ public class GradleTestProject implements TestRule {
     private static void addAllFiles(AndroidTestApp app, File projectDir, String buildFileSuffix) {
         String buildFileNameToKeep = (buildFileSuffix != null) ?
                 "build." + buildFileSuffix + ".gradle" : "build.gradle";
-        for (String filePath : FileHelper.listFiles(projectDir)) {
+        for (String filePath : TestFileUtils.listFiles(projectDir)) {
             File file = new File(filePath);
             try {
                 String fileName = file.getName();
@@ -1301,7 +1301,7 @@ public class GradleTestProject implements TestRule {
             String relativePath,
             int lineNumber,
             String line) throws IOException {
-        FileHelper.replaceLine(file(relativePath), lineNumber, line);
+        TestFileUtils.replaceLine(file(relativePath), lineNumber, line);
     }
 
     public void replaceInFile(
