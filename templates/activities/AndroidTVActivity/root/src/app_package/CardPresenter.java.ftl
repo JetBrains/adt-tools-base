@@ -23,14 +23,14 @@ import android.view.ViewGroup;
 import com.bumptech.glide.Glide;
 
 /*
- * A CardPresenter is used to generate Views and bind Objects to them on demand. 
+ * A CardPresenter is used to generate Views and bind Objects to them on demand.
  * It contains an Image CardView
  */
 public class CardPresenter extends Presenter {
     private static final String TAG = "CardPresenter";
 
-    private static int CARD_WIDTH = 313;
-    private static int CARD_HEIGHT = 176;
+    private static final int CARD_WIDTH = 313;
+    private static final int CARD_HEIGHT = 176;
     private static int sSelectedBackgroundColor;
     private static int sDefaultBackgroundColor;
     private Drawable mDefaultCardImage;
