@@ -2610,6 +2610,94 @@ public class TestClasses implements Opcodes {
 
             return cw.toByteArray();
         }
+
+        public static byte[] main_javaInstrumentation() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", new String[]{"java/lang/instrument/ClassFileTransformer"});
+
+            cw.visitSource("Main.java", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(26, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null, l0,
+                        l1, 0);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(0, "main", "()V", null,
+                        new String[]{"java/lang/instrument/IllegalClassFormatException"});
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(29, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitInsn(ACONST_NULL);
+                mv.visitInsn(ACONST_NULL);
+                mv.visitInsn(ACONST_NULL);
+                mv.visitInsn(ACONST_NULL);
+                mv.visitInsn(ACONST_NULL);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/Main",
+                        "transform",
+                        "(Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/Class;Ljava/security/ProtectionDomain;[B)[B",
+                        false);
+                mv.visitInsn(POP);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLineNumber(30, l1);
+                mv.visitInsn(RETURN);
+                Label l2 = new Label();
+                mv.visitLabel(l2);
+                mv.visitLocalVariable("this", "Ltest/Main;", null, l0,
+                        l2, 0);
+                mv.visitMaxs(6, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "transform",
+                        "(Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/Class;Ljava/security/ProtectionDomain;[B)[B",
+                        "(Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/Class<*>;Ljava/security/ProtectionDomain;[B)[B",
+                        new String[]{"java/lang/instrument/IllegalClassFormatException"});
+                mv.visitCode();
+                Label l0 = new Label();
+                mv.visitLabel(l0);
+                mv.visitLineNumber(36, l0);
+                mv.visitInsn(ICONST_0);
+                mv.visitIntInsn(NEWARRAY, T_BYTE);
+                mv.visitInsn(ARETURN);
+                Label l1 = new Label();
+                mv.visitLabel(l1);
+                mv.visitLocalVariable("this", "Ltest/Main;", null, l0,
+                        l1, 0);
+                mv.visitLocalVariable("loader", "Ljava/lang/ClassLoader;", null, l0, l1, 1);
+                mv.visitLocalVariable("className", "Ljava/lang/String;", null, l0, l1, 2);
+                mv.visitLocalVariable("classBeingRedefined", "Ljava/lang/Class;",
+                        "Ljava/lang/Class<*>;", l0, l1, 3);
+                mv.visitLocalVariable("protectionDomain", "Ljava/security/ProtectionDomain;", null, l0,
+                        l1, 4);
+                mv.visitLocalVariable("classfileBuffer", "[B", null, l0, l1, 5);
+                mv.visitMaxs(1, 6);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
     }
 
     public static byte[] emptyClass(String name) throws Exception {

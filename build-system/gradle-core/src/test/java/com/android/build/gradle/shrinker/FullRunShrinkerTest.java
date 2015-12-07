@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.shrinker;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.TransformInput;
 import com.android.ide.common.internal.WaitableExecutor;
@@ -937,6 +939,21 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
 
         // Then:
         assertMembersLeft("Main", "main:()V");
+        assertThat(mShrinkerLogger.getWarningsCount()).isGreaterThan(0);
+    }
+
+    @Test
+    public void invalidReferences_Instrumentation() throws Exception {
+        // Given:
+        Files.write(TestClasses.InvalidReferences.main_javaInstrumentation(), new File(mTestPackageDir, "Main.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Make sure we kept the method, even though we encountered unrecognized classes.
+        assertMembersLeft("Main", "main:()V", "transform:(Ljava/lang/ClassLoader;Ljava/lang/String;Ljava/lang/Class;Ljava/security/ProtectionDomain;[B)[B");
+        assertImplements("Main", "java/lang/instrument/ClassFileTransformer");
+        assertThat(mShrinkerLogger.getWarningsCount()).isGreaterThan(0);
     }
 
     private void run(String className, String... methods) throws IOException {

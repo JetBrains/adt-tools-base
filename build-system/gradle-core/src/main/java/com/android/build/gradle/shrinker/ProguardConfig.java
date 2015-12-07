@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.shrinker;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.shrinker.parser.Flags;
 import com.android.build.gradle.shrinker.parser.GrammarActions;
 
@@ -31,14 +32,23 @@ public class ProguardConfig {
 
     private final Flags mFlags = new Flags();
 
-    public void parse(File configFile) throws IOException {
+    public void parse(@NonNull File configFile) throws IOException {
         try {
-            GrammarActions.parse(configFile.getPath(), ".", mFlags);
+            GrammarActions.parse(configFile, mFlags);
         } catch (RecognitionException e) {
             throw new RuntimeException(e);
         }
     }
 
+    public void parse(@NonNull String input) throws IOException {
+        try {
+            GrammarActions.parse(input, mFlags);
+        } catch (RecognitionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @NonNull
     public Flags getFlags() {
         return mFlags;
     }

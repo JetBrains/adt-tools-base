@@ -59,14 +59,27 @@ public class TypeHierarchyTraverser<T> extends TreeTraverser<T> {
         try {
             T superclass = mGraph.getSuperclass(klass);
             if (superclass != null) {
+                if (!mGraph.isClassKnown(superclass)) {
+                    throw new ClassLookupException(mGraph.getClassName(superclass));
+                }
                 result.add(superclass);
             }
         } catch (ClassLookupException e) {
             mShrinkerLogger.invalidClassReference(mGraph.getClassName(klass), e.getClassName());
+            return Collections.emptyList();
         }
 
         if (mIncludeInterfaces) {
-            Collections.addAll(result, mGraph.getInterfaces(klass));
+            T[] interfaces = mGraph.getInterfaces(klass);
+            for (T iface : interfaces) {
+                if (!mGraph.isClassKnown(iface)) {
+                    mShrinkerLogger.invalidClassReference(
+                            mGraph.getClassName(klass),
+                            mGraph.getClassName(iface));
+                } else {
+                    result.add(iface);
+                }
+            }
         }
 
         return result;

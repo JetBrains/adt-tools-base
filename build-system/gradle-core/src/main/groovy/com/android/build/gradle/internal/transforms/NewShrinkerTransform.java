@@ -49,6 +49,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import org.gradle.tooling.BuildException;
@@ -59,6 +60,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -75,12 +77,17 @@ public class NewShrinkerTransform extends ProguardConfigurable {
     private final Set<File> platformJars;
     private final File incrementalDir;
 
+    private List<String> dontwarnLines;
+    private List<String> keepLines;
+
     public NewShrinkerTransform(VariantScope scope) {
         IAndroidTarget target = scope.getGlobalScope().getAndroidBuilder().getTarget();
         checkState(target != null, "SDK target not ready.");
         this.platformJars = ImmutableSet.of(new File(target.getPath(IAndroidTarget.ANDROID_JAR)));
         this.variantType = scope.getVariantData().getType();
         this.incrementalDir = scope.getIncrementalDir(scope.getTaskName(NAME));
+        this.dontwarnLines = Lists.newArrayList();
+        this.keepLines = Lists.newArrayList();
     }
 
     @NonNull
@@ -168,6 +175,8 @@ public class NewShrinkerTransform extends ProguardConfigurable {
             config.parse(configFile);
         }
 
+        config.parse(getAdditionalConfigString());
+
         ShrinkerLogger shrinkerLogger =
                 new ShrinkerLogger(config.getFlags().getDontWarnSpecs(), logger);
 
@@ -181,7 +190,6 @@ public class NewShrinkerTransform extends ProguardConfigurable {
         // Only save state if incremental mode is enabled.
         boolean saveState = this.isIncremental();
 
-        // TODO: check for -dontobfuscate and other required flags.
         shrinker.run(
                 inputs,
                 referencedInputs,
@@ -196,6 +204,24 @@ public class NewShrinkerTransform extends ProguardConfigurable {
                     "Warnings found during shrinking, please use -dontwarn or -ignorewarnings to suppress them.",
                     null);
         }
+    }
+
+    private String getAdditionalConfigString() {
+        StringBuilder sb = new StringBuilder();
+
+        for (String keepLine : keepLines) {
+            sb.append("-keep ");
+            sb.append(keepLine);
+            sb.append("\n");
+        }
+
+        for (String dontWarn : dontwarnLines) {
+            sb.append("-dontwarn ");
+            sb.append(dontWarn);
+            sb.append("\n");
+        }
+
+        return sb.toString();
     }
 
     private void incrementalRun(
@@ -244,5 +270,15 @@ public class NewShrinkerTransform extends ProguardConfigurable {
         }
 
         return true;
+    }
+
+    @Override
+    public void keep(@NonNull String keep) {
+        this.keepLines.add(keep);
+    }
+
+    @Override
+    public void dontwarn(@NonNull String dontwarn) {
+        this.dontwarnLines.add(dontwarn);
     }
 }

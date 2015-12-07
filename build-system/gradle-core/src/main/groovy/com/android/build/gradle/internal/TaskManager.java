@@ -181,7 +181,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import groovy.lang.Closure;
-import proguard.ParseException;
 
 /**
  * Manages tasks creation.
@@ -2454,6 +2453,11 @@ public abstract class TaskManager {
     private void createNewShrinkerTransform(VariantScope scope, TaskFactory taskFactory) {
         NewShrinkerTransform transform = new NewShrinkerTransform(scope);
         addProguardConfigFiles(transform, scope.getVariantData());
+
+        if (scope.getVariantConfiguration().isTestCoverageEnabled()) {
+            addJacocoShrinkerFlags(transform);
+        }
+
         scope.getTransformManager().addTransform(taskFactory, scope, transform);
     }
 
@@ -2462,98 +2466,98 @@ public abstract class TaskManager {
             @NonNull VariantScope variantScope,
             @Nullable Configuration mappingConfiguration,
             boolean createJarFile) {
-        try {
-            final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope
-                    .getVariantData();
-            final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
-            final BaseVariantData testedVariantData = variantScope.getTestedVariantData();
+        final BaseVariantData<? extends BaseVariantOutputData> variantData = variantScope
+                .getVariantData();
+        final GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
+        final BaseVariantData testedVariantData = variantScope.getTestedVariantData();
 
-            ProGuardTransform transform = new ProGuardTransform(variantScope, createJarFile);
+        ProGuardTransform transform = new ProGuardTransform(variantScope, createJarFile);
 
-            if (testedVariantData != null) {
-                // Don't remove any code in tested app.
-                transform.dontshrink();
-                transform.dontoptimize();
+        if (testedVariantData != null) {
+            // Don't remove any code in tested app.
+            transform.dontshrink();
+            transform.dontoptimize();
 
-                // We can't call dontobfuscate, since that would make ProGuard ignore the mapping file.
-                transform.keep("class * {*;}")
-                        .keep("interface * {*;}")
-                        .keep("enum * {*;}")
-                        .keepattributes();
+            // We can't call dontobfuscate, since that would make ProGuard ignore the mapping file.
+            transform.keep("class * {*;}");
+            transform.keep("interface * {*;}");
+            transform.keep("enum * {*;}");
+            transform.keepattributes();
 
-                // All -dontwarn rules for test dependencies should go in here:
-                transform.setConfigurationFiles(
-                        Suppliers.ofInstance(
-                                (Collection<File>)testedVariantData.getVariantConfiguration().getTestProguardFiles()));
+            // All -dontwarn rules for test dependencies should go in here:
+            transform.setConfigurationFiles(
+                    Suppliers.ofInstance(
+                            (Collection<File>)testedVariantData.getVariantConfiguration().getTestProguardFiles()));
 
-                // register the mapping file which may or may not exists (only exist if obfuscation)
-                // is enabled.
-                transform.applyTestedMapping(testedVariantData.getMappingFile());
+            // register the mapping file which may or may not exists (only exist if obfuscation)
+            // is enabled.
+            transform.applyTestedMapping(testedVariantData.getMappingFile());
 
-            } else {
-                if (variantConfig.isTestCoverageEnabled()) {
-                    // when collecting coverage, don't remove the JaCoCo runtime
-                    transform.keep("class com.vladium.** {*;}")
-                            .keep("class org.jacoco.** {*;}")
-                            .keep("interface org.jacoco.** {*;}")
-                            .dontwarn("org.jacoco.**");
-                }
-
-                addProguardConfigFiles(transform, variantData);
-
-                if (mappingConfiguration != null) {
-                    transform.applyTestedMapping(mappingConfiguration);
-                }
+        } else {
+            if (variantConfig.isTestCoverageEnabled()) {
+                addJacocoShrinkerFlags(transform);
             }
 
-            AndroidTask<?> task = variantScope.getTransformManager().addTransform(taskFactory,
-                    variantScope, transform, new TransformTask.ConfigActionCallback<ProGuardTransform>() {
-                        @Override
-                        public void callback(
-                                @NonNull final ProGuardTransform transform,
-                                @NonNull final TransformTask task) {
-                            variantData.mappingFileProviderTask = new FileSupplier() {
-                                @NonNull
-                                @Override
-                                public Task getTask() {
-                                    return task;
-                                }
-
-                                @Override
-                                public File get() {
-                                    return transform.getMappingFile();
-                                }
-                            };
-                        }
-                    });
+            addProguardConfigFiles(transform, variantData);
 
             if (mappingConfiguration != null) {
-                task.dependsOn(taskFactory, mappingConfiguration);
+                transform.applyTestedMapping(mappingConfiguration);
             }
-
-            if (variantConfig.getBuildType().isShrinkResources()) {
-                // if resources are shrink, insert a no-op transform per variant output
-                // to transform the res package into a stripped res package
-                for (final BaseVariantOutputData variantOutputData : variantData.getOutputs()) {
-                    VariantOutputScope variantOutputScope = variantOutputData.getScope();
-
-                    ShrinkResourcesTransform shrinkResTransform = new ShrinkResourcesTransform(
-                            variantOutputData,
-                            variantOutputData.processResourcesTask.getPackageOutputFile(),
-                            variantOutputScope.getCompressedResourceFile(),
-                            androidBuilder,
-                            logger);
-                    AndroidTask<TransformTask> shrinkTask = variantScope.getTransformManager()
-                            .addTransform(taskFactory, variantOutputScope, shrinkResTransform);
-                    // need to record this task since the package task will not depend
-                    // on it through the transform manager.
-                    variantOutputScope.setShrinkResourcesTask(shrinkTask);
-                }
-            }
-
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
         }
+
+        AndroidTask<?> task = variantScope.getTransformManager().addTransform(taskFactory,
+                variantScope, transform, new TransformTask.ConfigActionCallback<ProGuardTransform>() {
+                    @Override
+                    public void callback(
+                            @NonNull final ProGuardTransform transform,
+                            @NonNull final TransformTask task) {
+                        variantData.mappingFileProviderTask = new FileSupplier() {
+                            @NonNull
+                            @Override
+                            public Task getTask() {
+                                return task;
+                            }
+
+                            @Override
+                            public File get() {
+                                return transform.getMappingFile();
+                            }
+                        };
+                    }
+                });
+
+        if (mappingConfiguration != null) {
+            task.dependsOn(taskFactory, mappingConfiguration);
+        }
+
+        if (variantConfig.getBuildType().isShrinkResources()) {
+            // if resources are shrink, insert a no-op transform per variant output
+            // to transform the res package into a stripped res package
+            for (final BaseVariantOutputData variantOutputData : variantData.getOutputs()) {
+                VariantOutputScope variantOutputScope = variantOutputData.getScope();
+
+                ShrinkResourcesTransform shrinkResTransform = new ShrinkResourcesTransform(
+                        variantOutputData,
+                        variantOutputData.processResourcesTask.getPackageOutputFile(),
+                        variantOutputScope.getCompressedResourceFile(),
+                        androidBuilder,
+                        logger);
+                AndroidTask<TransformTask> shrinkTask = variantScope.getTransformManager()
+                        .addTransform(taskFactory, variantOutputScope, shrinkResTransform);
+                // need to record this task since the package task will not depend
+                // on it through the transform manager.
+                variantOutputScope.setShrinkResourcesTask(shrinkTask);
+            }
+        }
+
+    }
+
+    private void addJacocoShrinkerFlags(ProguardConfigurable transform) {
+        // when collecting coverage, don't remove the JaCoCo runtime
+        transform.keep("class com.vladium.** {*;}");
+        transform.keep("class org.jacoco.** {*;}");
+        transform.keep("interface org.jacoco.** {*;}");
+        transform.dontwarn("org.jacoco.**");
     }
 
     private void addProguardConfigFiles(

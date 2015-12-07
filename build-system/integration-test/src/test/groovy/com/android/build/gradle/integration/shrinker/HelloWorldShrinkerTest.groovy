@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.application
+package com.android.build.gradle.integration.shrinker
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
@@ -24,13 +24,13 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import static com.android.build.gradle.integration.shrinker.ShrinkerTestUtils.checkShrinkerWasUsed
 /**
  * Tests for integration of the new class shrinker with Gradle.
  */
 @CompileStatic
-class ClassShrinkerTest {
+class HelloWorldShrinkerTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
@@ -52,7 +52,7 @@ class ClassShrinkerTest {
     @Test
     public void "APK is correct"() throws Exception {
         project.execute("assembleDebug")
-        checkShrinkerWasUsed()
+        checkShrinkerWasUsed(project)
         assertThatApk(project.getApk("debug")).containsClass("Lcom/example/helloworld/HelloWorld;")
     }
 
@@ -60,11 +60,6 @@ class ClassShrinkerTest {
     @Category(DeviceTests)
     public void connectedCheck() throws Exception {
         project.executeConnectedCheck()
-        checkShrinkerWasUsed()
-    }
-
-    private void checkShrinkerWasUsed() {
-        // Sanity check, to make sure we're testing the right thing.
-        assertThat(project.file("build/intermediates/transforms/newClassShrinker")).exists()
+        checkShrinkerWasUsed(project)
     }
 }

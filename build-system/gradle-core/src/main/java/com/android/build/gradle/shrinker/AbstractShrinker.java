@@ -294,11 +294,6 @@ public abstract class AbstractShrinker<T> {
         waitForAllTasks();
     }
 
-    @NonNull
-    protected static UnsupportedOperationException todo(String message) {
-        return new UnsupportedOperationException("TODO: " + message);
-    }
-
     /**
      * Writes updates class files to the outputs.
      */

@@ -22,6 +22,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import org.antlr.runtime.ANTLRFileStream;
+import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CharStream;
 import org.antlr.runtime.CommonTokenStream;
 import org.antlr.runtime.RecognitionException;
@@ -41,14 +42,24 @@ public class GrammarActions {
     private static Logger logger = LoggerFactory.getLogger(GrammarActions.class);
 
     public static void parse(
-            @NonNull String proguardFileName,
-            @NonNull String baseDir,
+            @NonNull File proguardFile,
             @NonNull Flags flags) throws RecognitionException {
-        File proguardFile = getFileFromBaseDir(baseDir, proguardFileName);
-        com.android.build.gradle.shrinker.parser.ProguardParser parser = createParserFromFile(proguardFile);
-        if (parser != null) {
-            parser.prog(flags, proguardFile.getParentFile().getPath());
-        }
+        ProguardParser parser = createParserFromFile(proguardFile);
+        parser.prog(flags, proguardFile.getParentFile().getPath());
+    }
+
+    public static void parse(
+            @NonNull String input,
+            @NonNull Flags flags) throws RecognitionException {
+        ProguardParser parser = createParserFromString(input);
+        parser.prog(flags, null);
+    }
+
+    static void include(
+            @NonNull String fileName,
+            @NonNull String baseDirectory,
+            @NonNull Flags flags) throws RecognitionException {
+        parse(getFileFromBaseDir(baseDirectory, fileName), flags);
     }
 
     static void dontWarn(@NonNull Flags flags, @NonNull FilterSpecification classSpec) {
@@ -309,19 +320,24 @@ public class GrammarActions {
     }
 
     @NonNull
-    private static com.android.build.gradle.shrinker.parser.ProguardParser createParserCommon(@NonNull CharStream stream) {
-        com.android.build.gradle.shrinker.parser.ProguardLexer lexer = new com.android.build.gradle.shrinker.parser.ProguardLexer(stream);
+    private static ProguardParser createParserCommon(@NonNull CharStream stream) {
+        ProguardLexer lexer = new ProguardLexer(stream);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
-        return new com.android.build.gradle.shrinker.parser.ProguardParser(tokens);
+        return new ProguardParser(tokens);
     }
 
-    @Nullable
-    private static com.android.build.gradle.shrinker.parser.ProguardParser createParserFromFile(@NonNull File file) {
+    @NonNull
+    private static ProguardParser createParserFromFile(@NonNull File file) {
         try {
             return createParserCommon(new ANTLRFileStream(file.getPath()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @NonNull
+    private static ProguardParser createParserFromString(@NonNull String input) {
+        return createParserCommon(new ANTLRStringStream(input));
     }
 
     @NonNull
