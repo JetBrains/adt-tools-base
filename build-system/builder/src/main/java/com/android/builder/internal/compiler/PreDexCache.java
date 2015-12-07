@@ -129,7 +129,7 @@ public class PreDexCache extends PreProcessCache<DexKey> {
                 incrementMisses();
             } catch (ProcessException exception) {
                 // in case of error, delete (now obsolete) output file
-                FileUtils.delete(outFile);
+                FileUtils.deleteIfExists(outFile);
                 // and rethrow the error
                 throw exception;
             } finally {
