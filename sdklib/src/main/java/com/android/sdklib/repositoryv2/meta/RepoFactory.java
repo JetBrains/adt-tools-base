@@ -58,12 +58,6 @@ public abstract class RepoFactory extends ElementFactory<Repository> {
     public abstract DetailsTypes.DocDetailsType createDocDetailsType();
 
     /**
-     * Create an instance of {@link DetailsTypes.NdkDetailsType }
-     */
-    @NonNull
-    public abstract DetailsTypes.NdkDetailsType createNdkDetailsType();
-
-    /**
      * Create an instance of {@link DetailsTypes.PlatformDetailsType.LayoutlibType }
      */
     @NonNull

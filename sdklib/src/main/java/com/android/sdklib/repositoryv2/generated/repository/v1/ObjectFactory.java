@@ -100,14 +100,6 @@ public class ObjectFactory
     }
 
     /**
-     * Create an instance of {@link NdkDetailsType }
-     * 
-     */
-    public NdkDetailsType createNdkDetailsType() {
-        return new NdkDetailsType();
-    }
-
-    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link RepositoryType }{@code >}}
      * 
      */

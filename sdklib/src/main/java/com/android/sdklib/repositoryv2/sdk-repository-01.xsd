@@ -24,7 +24,6 @@
     platform-tool
     build-tool
     doc
-    ndk
     and associated classes.
 
     JAXB-usable classes can be generated from this schema as follows:
@@ -170,22 +169,6 @@
             </xsd:documentation>
             <xsd:appinfo>
                 <plugin:super name="com.android.sdklib.repositoryv2.meta.DetailsTypes$DocDetailsType"/>
-            </xsd:appinfo>
-        </xsd:annotation>
-        <xsd:complexContent>
-            <xsd:extension base="common:typeDetails">
-                <xsd:all/>
-            </xsd:extension>
-        </xsd:complexContent>
-    </xsd:complexType>
-
-    <xsd:complexType name="ndkDetailsType">
-        <xsd:annotation>
-            <xsd:documentation>
-                trivial type-details subclass for ndk components.
-            </xsd:documentation>
-            <xsd:appinfo>
-                <plugin:super name="com.android.sdklib.repositoryv2.meta.DetailsTypes$NdkDetailsType"/>
             </xsd:appinfo>
         </xsd:annotation>
         <xsd:complexContent>
