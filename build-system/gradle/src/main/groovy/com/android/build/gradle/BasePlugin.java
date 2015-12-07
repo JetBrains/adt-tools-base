@@ -318,7 +318,7 @@ public abstract class BasePlugin {
                     }
                 }, new Recorder.Property("project", project.getName()));
 
-        ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_PROJECT_BASE_EXTENSTION_CREATION,
+        ThreadRecorder.get().record(ExecutionType.BASE_PLUGIN_PROJECT_BASE_EXTENSION_CREATION,
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
