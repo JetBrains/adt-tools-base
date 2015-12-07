@@ -45,18 +45,24 @@ public final class Field {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        } else if (!(obj instanceof Field)) {
-            return false;
-        }
-        Field f = (Field)obj;
-        return mDeclared.equals(f.getDeclared()) && mType.equals(f.getType());
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Field field = (Field)o;
+
+        if (!mDeclared.equals(field.mDeclared)) return false;
+        // This is the best we can do at the moment. Type.equals() is
+        // buggy because it doesn't know the package or relative types.
+        if (!mType.getClass().equals(field.mType.getClass())) return false;
+
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return mDeclared.hashCode() + 31 * mType.hashCode();
+        int result = mDeclared.hashCode();
+        result = 31 * result + mType.getClass().hashCode();
+        return result;
     }
 }
