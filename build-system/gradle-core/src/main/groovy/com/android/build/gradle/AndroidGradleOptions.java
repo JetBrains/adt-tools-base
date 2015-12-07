@@ -49,6 +49,8 @@ public class AndroidGradleOptions {
     private static final String PROPERTY_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String PROPERTY_BENCHMARK_MODE = "com.android.benchmark.mode";
 
+    private static final String PROPERTY_ENABLE_INCREMENTAL_JAVA_COMPILE = "android.incrementalJavaCompile";
+
     @NonNull
     public static Map<String, String> getExtraInstrumentationTestRunnerArgs(@NonNull Project project) {
         Map<String, String> argsMap = Maps.newHashMap();
@@ -200,6 +202,10 @@ public class AndroidGradleOptions {
     public static boolean useDexerPool() {
         // TODO: Implement.
         return false;
+    }
+
+    public static boolean isIncrementalJavaCompileEnabled(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_ENABLE_INCREMENTAL_JAVA_COMPILE);
     }
 
     public static class SigningOptions {

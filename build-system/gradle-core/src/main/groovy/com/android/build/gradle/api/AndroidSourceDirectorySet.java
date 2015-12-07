@@ -18,10 +18,12 @@ package com.android.build.gradle.api;
 
 import com.android.annotations.NonNull;
 
+import org.gradle.api.file.ConfigurableFileTree;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.tasks.util.PatternFilterable;
 
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -81,6 +83,15 @@ public interface AndroidSourceDirectorySet extends PatternFilterable {
     @NonNull
     PatternFilterable getFilter();
 
+    /**
+     * Returns the source folders as a list of {@link org.gradle.api.file.ConfigurableFileTree}
+     *
+     * <p>This is used as the input to the java compile to enable incremental compilation.
+     *
+     * @return a non null list of {@link ConfigurableFileTree}s, one per source dir in this set.
+     */
+    @NonNull
+    List<ConfigurableFileTree> getSourceDirectoryTrees();
 
     /**
      * Returns the resolved directories.
