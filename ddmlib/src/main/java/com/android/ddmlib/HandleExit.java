@@ -70,7 +70,7 @@ final class HandleExit extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_EXIT, buf.position());
         Log.d("ddm-exit", "Sending " + name(CHUNK_EXIT) + ": " + status);
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 }
 

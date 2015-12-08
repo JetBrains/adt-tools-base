@@ -628,16 +628,6 @@ public class Client {
         return true;
     }
 
-
-    /**
-     * Send a non-DDM packet to the client.
-     *
-     * Equivalent to sendAndConsume(packet, null).
-     */
-    void sendAndConsume(JdwpPacket packet) throws IOException {
-        sendAndConsume(packet, null);
-    }
-
     /**
      * Send a DDM packet to the client.
      *
@@ -648,7 +638,7 @@ public class Client {
      * Another goal is to avoid unnecessary buffer copies, so we write
      * directly out of the JdwpPacket's ByteBuffer.
      */
-    void sendAndConsume(JdwpPacket packet, ChunkHandler replyHandler)
+    void send(JdwpPacket packet, ChunkHandler replyHandler)
         throws IOException {
 
         // Fix to avoid a race condition on mChan. This should be better synchronized
@@ -675,7 +665,7 @@ public class Client {
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (chan) {
             try {
-                packet.writeAndConsume(chan);
+                packet.write(chan);
             }
             catch (IOException ioe) {
                 removeRequestId(packet.getId());
@@ -696,9 +686,8 @@ public class Client {
 
         if (dbg == null) {
             Log.d("ddms", "Discarding packet");
-            packet.consume();
         } else {
-            dbg.sendAndConsume(packet);
+            dbg.send(packet);
         }
     }
 

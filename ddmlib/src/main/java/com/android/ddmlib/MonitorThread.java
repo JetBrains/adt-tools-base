@@ -322,7 +322,6 @@ final class MonitorThread extends Thread {
                     // unsolicited DDM request - hand it off
                     assert !packet.isReply();
                     callHandler(client, packet, null);
-                    packet.consume();
                 } else if (packet.isReply()
                         && client.isResponseToUs(packet.getId()) != null) {
                     // reply to earlier DDM request
@@ -336,7 +335,6 @@ final class MonitorThread extends Thread {
                                 + " from " + client);
                     else
                         callHandler(client, packet, handler);
-                    packet.consume();
                     client.removeRequestId(packet.getId());
                 } else {
                     Log.v("ddms", "Forwarding client "
@@ -345,7 +343,7 @@ final class MonitorThread extends Thread {
                             + client.getDebugger());
                     client.forwardPacketToDebugger(packet);
                 }
-
+                packet.consume();
                 // find next
                 packet = client.getJdwpPacket();
             }
@@ -540,7 +538,7 @@ final class MonitorThread extends Thread {
                         + dbg.getClient());
 
                 dbg.forwardPacketToClient(packet);
-
+                packet.consume();
                 packet = dbg.getJdwpPacket();
             }
         } catch (IOException ioe) {

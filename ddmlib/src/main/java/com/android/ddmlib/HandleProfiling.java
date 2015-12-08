@@ -111,7 +111,7 @@ final class HandleProfiling extends ChunkHandler {
         finishChunkPacket(packet, CHUNK_MPRS, buf.position());
         Log.d("ddm-prof", "Sending " + name(CHUNK_MPRS) + " '" + fileName
             + "', size=" + bufferSize + ", flags=" + flags);
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
 
         // record the filename we asked for.
         client.getClientData().setPendingMethodProfiling(fileName);
@@ -133,7 +133,7 @@ final class HandleProfiling extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_MPRE, buf.position());
         Log.d("ddm-prof", "Sending " + name(CHUNK_MPRE));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /**
@@ -189,7 +189,7 @@ final class HandleProfiling extends ChunkHandler {
         finishChunkPacket(packet, CHUNK_MPSS, buf.position());
         Log.d("ddm-prof", "Sending " + name(CHUNK_MPSS)
             + "', size=" + bufferSize + ", flags=" + flags);
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
 
         // send a status query. this ensure that the status is properly updated if for some
         // reason starting the tracing failed.
@@ -218,7 +218,7 @@ final class HandleProfiling extends ChunkHandler {
         finishChunkPacket(packet, CHUNK_SPSS, buf.position());
         Log.d("ddm-prof", "Sending " + name(CHUNK_SPSS)
                 + "', size=" + bufferSize + ", flags=0, samplingInterval=" + interval);
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
 
         // send a status query. this ensure that the status is properly updated if for some
         // reason starting the tracing failed.
@@ -237,7 +237,7 @@ final class HandleProfiling extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_MPSE, buf.position());
         Log.d("ddm-prof", "Sending " + name(CHUNK_MPSE));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /**
@@ -252,7 +252,7 @@ final class HandleProfiling extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_SPSE, buf.position());
         Log.d("ddm-prof", "Sending " + name(CHUNK_SPSE));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /**
@@ -286,7 +286,7 @@ final class HandleProfiling extends ChunkHandler {
 
         finishChunkPacket(packet, CHUNK_MPRQ, buf.position());
         Log.d("ddm-prof", "Sending " + name(CHUNK_MPRQ));
-        client.sendAndConsume(packet, mInst);
+        client.send(packet, mInst);
     }
 
     /**

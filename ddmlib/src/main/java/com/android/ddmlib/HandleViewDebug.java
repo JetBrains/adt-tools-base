@@ -134,7 +134,7 @@ public final class HandleViewDebug extends ChunkHandler {
         ByteBuffer chunkBuf = getChunkDataBuf(buf);
         chunkBuf.putInt(1);
         finishChunkPacket(packet, CHUNK_VULW, chunkBuf.position());
-        client.sendAndConsume(packet, replyHandler);
+        client.send(packet, replyHandler);
     }
 
     public static void dumpViewHierarchy(@NonNull Client client, @NonNull String viewRoot,
@@ -155,7 +155,7 @@ public final class HandleViewDebug extends ChunkHandler {
         chunkBuf.putInt(includeProperties ? 1 : 0);
 
         finishChunkPacket(packet, CHUNK_VURT, chunkBuf.position());
-        client.sendAndConsume(packet, handler);
+        client.send(packet, handler);
     }
 
     public static void captureLayers(@NonNull Client client, @NonNull String viewRoot,
@@ -171,7 +171,7 @@ public final class HandleViewDebug extends ChunkHandler {
         ByteBufferUtil.putString(chunkBuf, viewRoot);
 
         finishChunkPacket(packet, CHUNK_VURT, chunkBuf.position());
-        client.sendAndConsume(packet, handler);
+        client.send(packet, handler);
     }
 
     private static void sendViewOpPacket(@NonNull Client client, int op, @NonNull String viewRoot,
@@ -201,11 +201,7 @@ public final class HandleViewDebug extends ChunkHandler {
         }
 
         finishChunkPacket(packet, CHUNK_VUOP, chunkBuf.position());
-        if (handler != null) {
-            client.sendAndConsume(packet, handler);
-        } else {
-            client.sendAndConsume(packet);
-        }
+        client.send(packet, handler);
     }
 
     public static void profileView(@NonNull Client client, @NonNull String viewRoot,
@@ -248,7 +244,7 @@ public final class HandleViewDebug extends ChunkHandler {
         ByteBufferUtil.putString(chunkBuf, viewRoot);
 
         finishChunkPacket(packet, CHUNK_VURT, chunkBuf.position());
-        client.sendAndConsume(packet, handler);
+        client.send(packet, handler);
     }
 
     /** A {@link ViewDumpHandler} to use when no response is expected. */
@@ -346,7 +342,7 @@ public final class HandleViewDebug extends ChunkHandler {
         chunkBuf.putInt(1);
         finishChunkPacket(packet, CHUNK_VUGL, chunkBuf.position());
 
-        client.sendAndConsume(packet);
+        client.send(packet, null);
     }
 
     public static void sendStopGlTracing(Client client) throws IOException {
@@ -357,7 +353,7 @@ public final class HandleViewDebug extends ChunkHandler {
         chunkBuf.putInt(0);
         finishChunkPacket(packet, CHUNK_VUGL, chunkBuf.position());
 
-        client.sendAndConsume(packet);
+        client.send(packet, null);
     }
 }
 

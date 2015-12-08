@@ -35,21 +35,22 @@ import java.nio.channels.SocketChannel;
  * wrap a JdwpPacket around existing data.
  */
 final class JdwpPacket {
-    // header len
     public static final int JDWP_HEADER_LEN = 11;
 
-    // our cmdSet/cmd
     private static final int DDMS_CMD_SET = 0xc7;       // 'G' + 128
     private static final int DDMS_CMD = 0x01;
 
-    // "flags" field
     private static final int REPLY_PACKET = 0x80;
 
     private ByteBuffer mBuffer;
-    private int mLength, mId, mFlags, mCmdSet, mCmd, mErrCode;
+    private int mLength;
+    private int mId;
+    private int mFlags;
+    private int mCmdSet;
+    private int mCmd;
+    private int mErrCode;
 
     private static int sSerialId = 0x40000000;
-
 
     /**
      * Create a new, empty packet, in "buf".
@@ -176,55 +177,46 @@ final class JdwpPacket {
     }
 
     /**
-     * Write our packet to "chan".  Consumes the packet as part of the
-     * write.
+     * Write our packet to "chan".
      *
      * The JDWP packet starts at offset 0 and ends at mBuffer.position().
      */
-    void writeAndConsume(SocketChannel chan) throws IOException {
-        int oldLimit;
-
-        //Log.i("ddms", "writeAndConsume: pos=" + mBuffer.position()
-        //    + ", limit=" + mBuffer.limit());
-
+    void write(SocketChannel chan) throws IOException {
         assert mLength > 0;
 
-        mBuffer.flip();         // limit<-posn, posn<-0
-        oldLimit = mBuffer.limit();
+        int oldPosn = mBuffer.position();
+        mBuffer.position(0);
         mBuffer.limit(mLength);
+
         while (mBuffer.position() != mBuffer.limit()) {
             chan.write(mBuffer);
         }
         // position should now be at end of packet
         assert mBuffer.position() == mLength;
 
-        mBuffer.limit(oldLimit);
-        mBuffer.compact();      // shift posn...limit, posn<-pending data
-
-        //Log.i("ddms", "               : pos=" + mBuffer.position()
-        //    + ", limit=" + mBuffer.limit());
+        mBuffer.limit(mBuffer.capacity());
+        mBuffer.position(oldPosn);
     }
 
     /**
      * "Move" the packet data out of the buffer we're sitting on and into
      * buf at the current position.
      */
-    void movePacket(ByteBuffer buf) {
-        Log.v("ddms", "moving " + mLength + " bytes");
+    void move(ByteBuffer buf) {
         int oldPosn = mBuffer.position();
 
         mBuffer.position(0);
         mBuffer.limit(mLength);
         buf.put(mBuffer);
-        mBuffer.position(mLength);
-        mBuffer.limit(oldPosn);
-        mBuffer.compact();      // shift posn...limit, posn<-pending data
+
+        mBuffer.limit(mBuffer.capacity());
+        mBuffer.position(oldPosn);
     }
 
     /**
      * Consume the JDWP packet.
      *
-     * On entry and exit, "position" is the #of bytes in the buffer.
+     * On entry and exit, "position" is at the end of data in buffer.
      */
     void consume()
     {

@@ -287,7 +287,7 @@ class Debugger {
      * Consumes the packet.
      */
     void forwardPacketToClient(JdwpPacket packet) throws IOException {
-        mClient.sendAndConsume(packet);
+        mClient.send(packet, null);
     }
 
     /**
@@ -330,7 +330,7 @@ class Debugger {
      * coordinate the buffered data with mChannel creation, so this whole
      * method is synchronized.
      */
-    synchronized void sendAndConsume(JdwpPacket packet)
+    synchronized void send(JdwpPacket packet)
         throws IOException {
 
         if (mChannel == null) {
@@ -344,9 +344,9 @@ class Debugger {
              */
             Log.d("ddms", "Saving packet 0x"
                     + Integer.toHexString(packet.getId()));
-            packet.movePacket(mPreDataBuffer);
+            packet.move(mPreDataBuffer);
         } else {
-            packet.writeAndConsume(mChannel);
+            packet.write(mChannel);
         }
     }
 }
