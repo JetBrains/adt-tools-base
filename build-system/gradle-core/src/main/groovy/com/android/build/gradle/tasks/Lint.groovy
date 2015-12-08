@@ -70,7 +70,7 @@ public class Lint extends BaseTask {
     @TaskAction
     public void lint() {
         def modelProject = createAndroidProject(project)
-        if (getVariantName() != null) {
+        if (getVariantName() != null && !getVariantName().isEmpty()) {
             for (Variant variant : modelProject.getVariants()) {
                 if (variant.getName().equals(getVariantName())) {
                     lintSingleVariant(modelProject, variant);
