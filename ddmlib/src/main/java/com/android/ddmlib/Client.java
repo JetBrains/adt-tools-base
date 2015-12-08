@@ -615,7 +615,7 @@ public class Client {
 
         try {
             // assume write buffer can hold 14 bytes
-            JdwpPacket.putHandshake(mWriteBuffer);
+            JdwpHandshake.putHandshake(mWriteBuffer);
             int expectedLen = mWriteBuffer.position();
             mWriteBuffer.flip();
             if (mChan.write(mWriteBuffer) != expectedLen)
@@ -772,18 +772,18 @@ public class Client {
              */
             int result;
 
-            result = JdwpPacket.findHandshake(mReadBuffer);
+            result = JdwpHandshake.findHandshake(mReadBuffer);
             //Log.v("ddms", "findHand: " + result);
             switch (result) {
-                case JdwpPacket.HANDSHAKE_GOOD:
+                case JdwpHandshake.HANDSHAKE_GOOD:
                     Log.d("ddms",
                         "Good handshake from client, sending HELO to " + mClientData.getPid());
-                    JdwpPacket.consumeHandshake(mReadBuffer);
+                    JdwpHandshake.consumeHandshake(mReadBuffer);
                     mConnState = ST_NEED_DDM_PKT;
                     HandleHello.sendHelloCommands(this, SERVER_PROTOCOL_VERSION);
                     // see if we have another packet in the buffer
                     return getJdwpPacket();
-                case JdwpPacket.HANDSHAKE_BAD:
+                case JdwpHandshake.HANDSHAKE_BAD:
                     Log.d("ddms", "Bad handshake from client");
                     if (MonitorThread.getInstance().getRetryOnBadHandshake()) {
                         // we should drop the client, but also attempt to reopen it.
@@ -796,7 +796,7 @@ public class Client {
                         close(true /* notify */);
                     }
                     break;
-                case JdwpPacket.HANDSHAKE_NOTYET:
+                case JdwpHandshake.HANDSHAKE_NOTYET:
                     Log.d("ddms", "No handshake from client yet.");
                     break;
                 default:
