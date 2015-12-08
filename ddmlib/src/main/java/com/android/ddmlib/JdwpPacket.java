@@ -47,7 +47,6 @@ final class JdwpPacket {
 
     private ByteBuffer mBuffer;
     private int mLength, mId, mFlags, mCmdSet, mCmd, mErrCode;
-    private boolean mIsNew;
 
     private static int sSerialId = 0x40000000;
 
@@ -57,7 +56,6 @@ final class JdwpPacket {
      */
     JdwpPacket(ByteBuffer buf) {
         mBuffer = buf;
-        mIsNew = true;
     }
 
     /**
@@ -74,7 +72,6 @@ final class JdwpPacket {
      * On exit, "position" points to the end of the data.
      */
     void finishPacket(int payloadLength) {
-        assert mIsNew;
 
         ByteOrder oldOrder = mBuffer.order();
         mBuffer.order(ChunkHandler.CHUNK_ORDER);
@@ -125,8 +122,6 @@ final class JdwpPacket {
 
         if (mLength > 0)
             buf.limit(mLength - JDWP_HEADER_LEN);
-        else
-            assert mIsNew;
         buf.order(ChunkHandler.CHUNK_ORDER);
         return buf;
     }
