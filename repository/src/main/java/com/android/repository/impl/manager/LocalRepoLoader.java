@@ -18,6 +18,7 @@ package com.android.repository.impl.manager;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.api.ElementFactory;
 import com.android.repository.api.FallbackLocalRepoLoader;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
@@ -26,6 +27,7 @@ import com.android.repository.api.Repository;
 import com.android.repository.api.SchemaModule;
 import com.android.repository.impl.meta.LocalPackageImpl;
 import com.android.repository.impl.meta.SchemaModuleUtil;
+import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.google.common.collect.Maps;
@@ -167,9 +169,12 @@ public final class LocalRepoLoader {
             repo.setLocalPackage(impl);
             repo.addLicense(impl.getLicense());
 
-            SchemaModuleUtil.marshal(p.getTypeDetails().createFactory().generateElement(repo),
-                    mRepoManager.getSchemaModules(), fos,
-                    mRepoManager.getResourceResolver(progress), progress);
+            TypeDetails typeDetails = p.getTypeDetails();
+            ElementFactory<Repository> factory = typeDetails != null ? typeDetails.createFactory()
+                    : impl.createFactory();
+            SchemaModuleUtil.marshal(factory.generateElement(repo),
+                                     mRepoManager.getSchemaModules(), fos,
+                                     mRepoManager.getResourceResolver(progress), progress);
         } catch (FileNotFoundException e) {
             progress.logWarning("File not found while marshalling " + packageXml, e);
         } finally {

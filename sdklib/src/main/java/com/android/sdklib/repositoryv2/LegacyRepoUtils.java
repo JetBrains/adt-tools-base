@@ -139,8 +139,6 @@ public class LegacyRepoUtils {
                 details.setVendor(vendor);
             }
             return (TypeDetails) details;
-        } else if (desc.getType() == PkgType.PKG_NDK) {
-            return (TypeDetails) repoFactory.createNdkDetailsType();
         } else {
             return null;
         }

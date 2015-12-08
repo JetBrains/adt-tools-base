@@ -85,12 +85,6 @@ public final class DetailsTypes {
     public interface DocDetailsType {}
 
     /**
-     * Trivial details type for ndk packages.
-     */
-    @XmlTransient
-    public interface NdkDetailsType {}
-
-    /**
      * Details type for platform packages. Contains info on the layout lib version provided.
      */
     @XmlTransient

@@ -508,7 +508,8 @@ public final class AndroidSdkHandler {
             result.registerSchemaModule(mRepositoryModule);
             result.registerSchemaModule(mSysImgModule);
             result.registerSchemaModule(mCommonModule);
-            result.registerSourceProvider(mRepositorySourceProvider);
+            // TODO: add once it exists
+            // result.registerSourceProvider(mRepositorySourceProvider);
             result.registerSourceProvider(mLegacyRepositorySourceProvider);
             result.registerSourceProvider(mAddonsListSourceProvider);
             result.registerSourceProvider(mUserSourceProvider);
