@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.transforms;
 
 import static com.android.build.gradle.shrinker.AbstractShrinker.logTime;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -44,7 +43,6 @@ import com.android.build.gradle.shrinker.ShrinkerLogger;
 import com.android.build.gradle.shrinker.parser.FilterSpecification;
 import com.android.builder.core.VariantType;
 import com.android.ide.common.internal.WaitableExecutor;
-import com.android.sdklib.IAndroidTarget;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -70,20 +68,17 @@ import java.util.Set;
 public class NewShrinkerTransform extends ProguardConfigurable {
 
     private static final Logger logger = LoggerFactory.getLogger(NewShrinkerTransform.class);
-
     private static final String NAME = "newClassShrinker";
 
     private final VariantType variantType;
     private final Set<File> platformJars;
     private final File incrementalDir;
+    private final List<String> dontwarnLines;
+    private final List<String> keepLines;
 
-    private List<String> dontwarnLines;
-    private List<String> keepLines;
-
-    public NewShrinkerTransform(VariantScope scope) {
-        IAndroidTarget target = scope.getGlobalScope().getAndroidBuilder().getTarget();
-        checkState(target != null, "SDK target not ready.");
-        this.platformJars = ImmutableSet.of(new File(target.getPath(IAndroidTarget.ANDROID_JAR)));
+    public NewShrinkerTransform(@NonNull VariantScope scope) {
+        this.platformJars = ImmutableSet.copyOf(
+                scope.getGlobalScope().getAndroidBuilder().getBootClasspath(true));
         this.variantType = scope.getVariantData().getType();
         this.incrementalDir = scope.getIncrementalDir(scope.getTaskName(NAME));
         this.dontwarnLines = Lists.newArrayList();
@@ -166,9 +161,9 @@ public class NewShrinkerTransform extends ProguardConfigurable {
     }
 
     private void fullRun(
-            Collection<TransformInput> inputs,
-            Collection<TransformInput> referencedInputs,
-            TransformOutputProvider output) throws IOException {
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull Collection<TransformInput> referencedInputs,
+            @NonNull TransformOutputProvider output) throws IOException {
         ProguardConfig config = new ProguardConfig();
 
         for (File configFile : getAllConfigurationFiles()) {
@@ -206,6 +201,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
         }
     }
 
+    @NonNull
     private String getAdditionalConfigString() {
         StringBuilder sb = new StringBuilder();
 
@@ -225,9 +221,9 @@ public class NewShrinkerTransform extends ProguardConfigurable {
     }
 
     private void incrementalRun(
-            Collection<TransformInput> inputs,
-            Collection<TransformInput> referencedInputs,
-            TransformOutputProvider output) throws IOException {
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull Collection<TransformInput> referencedInputs,
+            @NonNull TransformOutputProvider output) throws IOException {
         Stopwatch stopwatch = Stopwatch.createStarted();
         JavaSerializationShrinkerGraph graph =
                 JavaSerializationShrinkerGraph.readFromDir(incrementalDir);
@@ -250,7 +246,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
 
     private static boolean isIncrementalRun(
             boolean isIncremental,
-            Collection<TransformInput> referencedInputs) {
+            @NonNull Collection<TransformInput> referencedInputs) {
         if (!isIncremental) {
             return false;
         }

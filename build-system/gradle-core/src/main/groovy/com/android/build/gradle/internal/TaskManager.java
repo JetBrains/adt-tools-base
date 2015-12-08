@@ -26,6 +26,7 @@ import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Verify.verifyNotNull;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -1921,7 +1922,8 @@ public abstract class TaskManager {
         // non Library test are running as native multi-dex
         if (isMultiDexEnabled && isLegacyMultiDexMode) {
             if (!variantData.getVariantConfiguration().getBuildType().isUseProguard()) {
-                throw new IllegalStateException("New shrinker + multidex not supported yet.");
+                throw new IllegalStateException(
+                        "Build-in class shrinker and multidex are not supported yet.");
             }
 
             // ----------
@@ -2441,11 +2443,13 @@ public abstract class TaskManager {
             boolean createJarFile) {
         if (variantScope.getVariantData().getVariantConfiguration().getBuildType().isUseProguard()) {
             createProguardTransform(taskFactory, variantScope, mappingConfiguration, createJarFile);
+            createShrinkResourcesTransform(taskFactory, variantScope);
         } else {
             // Since the built-in class shrinker does not obfuscate, there's no point running
             // it on the test APK (it also doesn't have a -dontshrink mode).
             if (variantScope.getTestedVariantData() == null) {
                 createNewShrinkerTransform(variantScope, taskFactory);
+                createShrinkResourcesTransform(taskFactory, variantScope);
             }
         }
     }
@@ -2527,32 +2531,43 @@ public abstract class TaskManager {
                 });
 
         if (mappingConfiguration != null) {
+            verifyNotNull(task);
             task.dependsOn(taskFactory, mappingConfiguration);
         }
-
-        if (variantConfig.getBuildType().isShrinkResources()) {
-            // if resources are shrink, insert a no-op transform per variant output
-            // to transform the res package into a stripped res package
-            for (final BaseVariantOutputData variantOutputData : variantData.getOutputs()) {
-                VariantOutputScope variantOutputScope = variantOutputData.getScope();
-
-                ShrinkResourcesTransform shrinkResTransform = new ShrinkResourcesTransform(
-                        variantOutputData,
-                        variantOutputData.processResourcesTask.getPackageOutputFile(),
-                        variantOutputScope.getCompressedResourceFile(),
-                        androidBuilder,
-                        logger);
-                AndroidTask<TransformTask> shrinkTask = variantScope.getTransformManager()
-                        .addTransform(taskFactory, variantOutputScope, shrinkResTransform);
-                // need to record this task since the package task will not depend
-                // on it through the transform manager.
-                variantOutputScope.setShrinkResourcesTask(shrinkTask);
-            }
-        }
-
     }
 
-    private void addJacocoShrinkerFlags(ProguardConfigurable transform) {
+    private void createShrinkResourcesTransform(
+            @NonNull TaskFactory taskFactory,
+            @NonNull VariantScope scope) {
+        if (!scope.getVariantConfiguration().getBuildType().isShrinkResources()) {
+            return;
+        }
+
+        if (!scope.getVariantConfiguration().getBuildType().isUseProguard()) {
+            throw new IllegalArgumentException(
+                    "Build-in class shrinker and resource shrinking are not supported yet.");
+        }
+
+        // if resources are shrink, insert a no-op transform per variant output
+        // to transform the res package into a stripped res package
+        for (final BaseVariantOutputData variantOutputData : scope.getVariantData().getOutputs()) {
+            VariantOutputScope variantOutputScope = variantOutputData.getScope();
+
+            ShrinkResourcesTransform shrinkResTransform = new ShrinkResourcesTransform(
+                    variantOutputData,
+                    variantOutputData.processResourcesTask.getPackageOutputFile(),
+                    variantOutputScope.getCompressedResourceFile(),
+                    androidBuilder,
+                    logger);
+            AndroidTask<TransformTask> shrinkTask = scope.getTransformManager()
+                    .addTransform(taskFactory, variantOutputScope, shrinkResTransform);
+            // need to record this task since the package task will not depend
+            // on it through the transform manager.
+            variantOutputScope.setShrinkResourcesTask(shrinkTask);
+        }
+    }
+
+    private static void addJacocoShrinkerFlags(ProguardConfigurable transform) {
         // when collecting coverage, don't remove the JaCoCo runtime
         transform.keep("class com.vladium.** {*;}");
         transform.keep("class org.jacoco.** {*;}");
