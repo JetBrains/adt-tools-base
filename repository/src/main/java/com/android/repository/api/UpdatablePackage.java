@@ -68,7 +68,7 @@ public class UpdatablePackage implements Comparable<UpdatablePackage> {
     }
 
     @Nullable
-    public LocalPackage getLocalInfo() {
+    public LocalPackage getLocal() {
         return mLocalInfo;
     }
 

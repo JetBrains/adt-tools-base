@@ -18,20 +18,28 @@ package com.android.repository.util;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.Revision;
+import com.android.repository.api.Dependency;
 import com.android.repository.api.License;
+import com.android.repository.api.LocalPackage;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoManager;
 import com.android.repository.api.Repository;
 import com.android.repository.api.RepositorySource;
+import com.android.repository.api.UpdatablePackage;
 import com.android.repository.impl.installer.PackageInstaller;
 import com.android.repository.impl.manager.LocalRepoLoader;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.LocalPackageImpl;
+import com.android.repository.impl.meta.RepositoryPackages;
+import com.android.repository.impl.meta.RevisionType;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -41,6 +49,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -200,5 +213,73 @@ public class InstallerUtil {
         }
         return url;
 
+    }
+
+    /**
+     * Compute the complete list of packages that need to be installed to meet the dependencies of
+     * the given list (including the requested packages themselves). Returns {@code null} if we were
+     * unable to compute a complete list of dependencies due to not being able to find required
+     * packages of the specified version.
+     *
+     * Note that we assume installed packages already have their dependencies met.
+     */
+    public static List<RemotePackage> computeRequiredPackages(
+      @NonNull Collection<RemotePackage> requests, @NonNull RepositoryPackages packages,
+      @NonNull ProgressIndicator logger) {
+        List<RemotePackage> result = Lists.newArrayList();
+        Map<String, UpdatablePackage> consolidatedPackages = packages.getConsolidatedPkgs();
+
+        Set<String> seen = Sets.newHashSet();
+        Queue<RemotePackage> current = Lists.newLinkedList();
+        current.addAll(requests);
+        result.addAll(requests);
+        for (RemotePackage p : requests) {
+            seen.add(p.getPath());
+        }
+
+        while (!current.isEmpty()) {
+            RemotePackage currentPackage = current.remove();
+
+            Collection<Dependency> currentDependencies = currentPackage.getAllDependencies();
+            for (Dependency d : currentDependencies) {
+                String dependencyPath = d.getPath();
+                if (seen.contains(dependencyPath)) {
+                    continue;
+                }
+                seen.add(dependencyPath);
+                UpdatablePackage updatableDependency = consolidatedPackages.get(dependencyPath);
+                if (updatableDependency == null) {
+                    logger.logWarning(
+                            String.format("Dependant package with key %s not found!",
+                                    dependencyPath));
+                    return null;
+                }
+                LocalPackage localDependency = updatableDependency.getLocal();
+                Revision requiredMinRevision = null;
+                RevisionType r = d.getMinRevision();
+                if (r != null) {
+                    requiredMinRevision = r.toRevision();
+                }
+                if ((requiredMinRevision == null && localDependency != null) ||
+                        (requiredMinRevision != null && localDependency != null &&
+                                requiredMinRevision.compareTo(localDependency.getVersion()) <= 0)) {
+                    continue;
+                }
+                // TODO: channels
+                RemotePackage remoteDependency = updatableDependency.getRemote(true);
+                if (remoteDependency == null || (requiredMinRevision != null
+                        && requiredMinRevision.compareTo(remoteDependency.getVersion()) > 0)) {
+                    logger.logWarning(String
+                            .format("Package \"%1$s\" with revision at least %2$s not available.",
+                                    updatableDependency.getRepresentative().getDisplayName(),
+                                    requiredMinRevision));
+                    return null;
+                }
+
+                result.add(remoteDependency);
+                current.add(remoteDependency);
+            }
+        }
+        return result;
     }
 }
