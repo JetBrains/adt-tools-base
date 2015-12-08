@@ -555,6 +555,21 @@ public class EcjParser extends JavaParser {
 
     @NonNull
     @Override
+    public Location getRangeLocation(
+            @NonNull JavaContext context,
+            @NonNull Node from,
+            int fromDelta,
+            @NonNull Node to,
+            int toDelta) {
+        String contents = context.getContents();
+        int start = Math.max(0, from.getPosition().getStart() + fromDelta);
+        int end = Math.min(contents == null ? Integer.MAX_VALUE : contents.length(),
+                to.getPosition().getEnd() + toDelta);
+        return Location.create(context.file, contents, start, end);
+    }
+
+    @NonNull
+    @Override
     public
     Location.Handle createLocationHandle(@NonNull JavaContext context, @NonNull Node node) {
         return new LocationHandle(context.file, node);

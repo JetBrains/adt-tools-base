@@ -57,7 +57,7 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
             "static field called `CREATOR`, which is an object implementing the " +
             "`Parcelable.Creator` interface.\"",
 
-            Category.USABILITY,
+            Category.CORRECTNESS,
             3,
             Severity.ERROR,
             new Implementation(
