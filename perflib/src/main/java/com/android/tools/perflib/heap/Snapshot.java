@@ -74,7 +74,7 @@ public class Snapshot extends Capture {
 
     private int[] mTypeSizes;
 
-    private long mIdSizeMask = 0x00000000ffffffffl;
+    private long mIdSizeMask = 0x00000000ffffffffL;
 
     @NonNull
     public static Snapshot createSnapshot(@NonNull DataBuffer buffer) {
@@ -207,7 +207,7 @@ public class Snapshot extends Capture {
             mTypeSizes[Type.values()[i].getTypeId()] = Type.values()[i].getSize();
         }
         mTypeSizes[Type.OBJECT.getTypeId()] = size;
-        mIdSizeMask = 0xffffffffffffffffl >>> ((8 - size) * 8);
+        mIdSizeMask = 0xffffffffffffffffL >>> ((8 - size) * 8);
     }
 
     public final int getTypeSize(Type type) {
