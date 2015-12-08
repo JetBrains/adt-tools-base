@@ -14,106 +14,134 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.tasks.multidex
+package com.android.build.gradle.internal.tasks.multidex;
 
-import com.android.annotations.NonNull
-import com.android.build.gradle.internal.scope.ConventionMappingHelper
-import com.android.build.gradle.internal.scope.TaskConfigAction
-import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.tasks.DefaultAndroidTask
-import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.google.common.base.Charsets
-import com.google.common.io.Files
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.TaskAction
-import org.xml.sax.Attributes
-import org.xml.sax.helpers.DefaultHandler
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Files;
 
-import javax.xml.parsers.SAXParser
-import javax.xml.parsers.SAXParserFactory
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.ParallelizableTask;
+import org.gradle.api.tasks.TaskAction;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
-class CreateManifestKeepList extends DefaultAndroidTask {
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.Map;
+import java.util.concurrent.Callable;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+@ParallelizableTask
+public class CreateManifestKeepList extends DefaultAndroidTask {
+
+    private File manifest;
+
+    private File outputFile;
+
+    private File proguardFile;
 
     @InputFile
-    File manifest
+    public File getManifest() {
+        return manifest;
+    }
+
+    public void setManifest(File manifest) {
+        this.manifest = manifest;
+    }
 
     @OutputFile
-    File outputFile
+    public File getOutputFile() {
+        return outputFile;
+    }
+
+    public void setOutputFile(File outputFile) {
+        this.outputFile = outputFile;
+    }
 
     @InputFile @Optional
-    File proguardFile
+    public File getProguardFile() {
+        return proguardFile;
+    }
 
-    Closure filter
+    public void setProguardFile(File proguardFile) {
+        this.proguardFile = proguardFile;
+    }
 
     @TaskAction
-    void generateKeepListFromManifest() {
-        SAXParser parser = SAXParserFactory.newInstance().newSAXParser()
+    public void generateKeepListFromManifest()
+            throws ParserConfigurationException, SAXException, IOException {
+        SAXParser parser = SAXParserFactory.newInstance().newSAXParser();
 
-        Writer out = new BufferedWriter(new FileWriter(getOutputFile()))
+        Writer out = new BufferedWriter(new FileWriter(getOutputFile()));
         try {
-            parser.parse(getManifest(), new ManifestHandler(out))
+            parser.parse(getManifest(), new ManifestHandler(out));
 
             // add a couple of rules that cannot be easily parsed from the manifest.
-            out.write(
-"""-keep public class * extends android.app.backup.BackupAgent {
-    <init>();
-}
--keep public class * extends java.lang.annotation.Annotation {
-    *;
-}
-""")
+            out.write("-keep public class * extends android.app.backup.BackupAgent {\n"
+                    + "    <init>();\n"
+                    + "}\n"
+                    + "-keep public class * extends java.lang.annotation.Annotation {\n"
+                    + "    *;\n"
+                    + "}\n");
 
             if (proguardFile != null) {
-                out.write(Files.toString(proguardFile, Charsets.UTF_8))
+                out.write(Files.toString(proguardFile, Charsets.UTF_8));
             }
         } finally {
-            out.close()
+            out.close();
         }
     }
 
-    private static String DEFAULT_KEEP_SPEC = "{ <init>(); }"
-    private static Map<String, String> KEEP_SPECS = [
-        'application'       : """{
-    <init>();
-    void attachBaseContext(android.content.Context);
-}""",
-        'activity'          : DEFAULT_KEEP_SPEC,
-        'service'           : DEFAULT_KEEP_SPEC,
-        'receiver'          : DEFAULT_KEEP_SPEC,
-        'provider'          : DEFAULT_KEEP_SPEC,
-        'instrumentation'   : DEFAULT_KEEP_SPEC,
-    ]
+    private static final String DEFAULT_KEEP_SPEC = "{ <init>(); }";
 
-    private class ManifestHandler extends DefaultHandler {
-        private Writer out
+    private static final Map<String, String> KEEP_SPECS = ImmutableMap.<String, String>builder()
+            .put("application", "{\n"
+                    + "    <init>();\n"
+                    + "    void attachBaseContext(android.content.Context);\n"
+                    + "}")
+            .put("activity", DEFAULT_KEEP_SPEC)
+            .put("service", DEFAULT_KEEP_SPEC)
+            .put("receiver", DEFAULT_KEEP_SPEC)
+            .put("provider", DEFAULT_KEEP_SPEC)
+            .put("instrumentation", DEFAULT_KEEP_SPEC).build();
+
+    private static class ManifestHandler extends DefaultHandler {
+        private Writer out;
 
         ManifestHandler(Writer out) {
-            this.out = out
+            this.out = out;
         }
 
         @Override
-        void startElement(String uri, String localName, String qName, Attributes attr) {
+        public void startElement(String uri, String localName, String qName, Attributes attr) {
             // IJ thinks the qualified reference to KEEP_SPECS is not needed but Groovy needs
             // it at runtime?!?
             //noinspection UnnecessaryQualifiedReference
-            String keepSpec = CreateManifestKeepList.KEEP_SPECS[qName]
-            if (keepSpec) {
-                boolean keepIt = true
-                if (CreateManifestKeepList.this.filter) {
-                    // for ease of use, turn 'attr' into a simple map
-                    Map<String, String> attrMap = [:]
-                    for (int i = 0; i < attr.getLength(); i++) {
-                        attrMap[attr.getQName(i)] = attr.getValue(i)
-                    }
-                    keepIt = CreateManifestKeepList.this.filter(qName, attrMap)
-                }
-
-                if (keepIt) {
-                    String nameValue = attr.getValue('android:name')
-                    if (nameValue != null) {
-                        out.write((String) "-keep class ${nameValue} $keepSpec\n")
+            String keepSpec = CreateManifestKeepList.KEEP_SPECS.get(qName);
+            if (!Strings.isNullOrEmpty(keepSpec)) {
+                String nameValue = attr.getValue("android:name");
+                if (nameValue != null) {
+                    try {
+                        out.write("-keep class " + nameValue + " " + keepSpec + "\n");
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             }
@@ -122,34 +150,39 @@ class CreateManifestKeepList extends DefaultAndroidTask {
 
     public static class ConfigAction implements TaskConfigAction<CreateManifestKeepList> {
 
-        VariantScope scope;
+        private VariantScope scope;
 
-        ConfigAction(@NonNull VariantScope scope) {
-            this.scope = scope
+        public ConfigAction(@NonNull VariantScope scope) {
+            this.scope = scope;
         }
 
+        @NonNull
         @Override
-        String getName() {
+        public String getName() {
             return scope.getTaskName("collect", "MultiDexComponents");
         }
 
+        @NonNull
         @Override
-        Class<CreateManifestKeepList> getType() {
-            return CreateManifestKeepList
+        public Class<CreateManifestKeepList> getType() {
+            return CreateManifestKeepList.class;
         }
 
         @Override
-        void execute(CreateManifestKeepList manifestKeepListTask) {
-            manifestKeepListTask.setVariantName(scope.getVariantConfiguration().getFullName())
+        public void execute(@NonNull CreateManifestKeepList manifestKeepListTask) {
+            manifestKeepListTask.setVariantName(scope.getVariantConfiguration().getFullName());
 
             // since all the output have the same manifest, besides the versionCode,
             // we can take any of the output and use that.
-            final BaseVariantOutputData output = scope.variantData.outputs.get(0)
-            ConventionMappingHelper.map(manifestKeepListTask, "manifest") {
-                output.getScope().getManifestOutputFile()
-            }
+            final BaseVariantOutputData output = scope.getVariantData().getOutputs().get(0);
+            ConventionMappingHelper.map(manifestKeepListTask, "manifest", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return output.getScope().getManifestOutputFile();
+                }
+            });
 
-            manifestKeepListTask.proguardFile = scope.variantConfiguration.getMultiDexKeepProguard()
+            manifestKeepListTask.proguardFile = scope.getVariantConfiguration().getMultiDexKeepProguard();
             manifestKeepListTask.outputFile = scope.getManifestKeepListFile();
         }
     }
