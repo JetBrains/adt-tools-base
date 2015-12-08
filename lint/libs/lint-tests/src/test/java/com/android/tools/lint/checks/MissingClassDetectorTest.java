@@ -221,6 +221,43 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
                 checkLint(Arrays.asList(master, library2, library)));
     }
 
+    public void testLibraryWithMissingClass() throws Exception {
+        mScopes = null;
+        mEnabled = Sets.newHashSet(MISSING);
+        assertEquals("AndroidManifest.xml:11: Error: Class referenced in the manifest, test.pkg.TestService, was not found in the project or the libraries [MissingRegistered]\n"
+                        + "        <service android:name=\".TestService\" />\n"
+                        + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "1 errors, 0 warnings\n",
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"test.pkg\"\n"
+                                + "    android:versionCode=\"1\"\n"
+                                + "    android:versionName=\"1.0\" >\n"
+                                + "\n"
+                                + "    <uses-sdk android:minSdkVersion=\"14\" />\n"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:icon=\"@drawable/ic_launcher\"\n"
+                                + "        android:label=\"@string/app_name\" >\n"
+                                + "        <service android:name=\".TestService\" />\n"
+                                + "\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>"),
+                        // This is not the actual class that is present in AndroidManifest.xml
+                        copy("bytecode/TestProvider2.class.data",
+                                "bin/classes/test/pkg/TestProvider2.class"),
+                        copy("bytecode/.classpath", ".classpath"),
+                        // Note that the manifestmerger.enabled property is necessary for
+                        // the manifest scoped lint detectors to run.
+                        source("project.properties", ""
+                                + "target=android-14\n"
+                                + "android.library=true\n"
+                                + "manifestmerger.enabled=true\n"))
+        );
+    }
+
     public void testInnerClassStatic() throws Exception {
         mScopes = null;
         mEnabled = Sets.newHashSet(MISSING, INSTANTIATABLE, INNERCLASS);
