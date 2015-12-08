@@ -20,13 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
-import com.android.repository.api.Dependency;
-import com.android.repository.api.FallbackLocalRepoLoader;
-import com.android.repository.api.License;
-import com.android.repository.api.LocalPackage;
-import com.android.repository.api.ProgressIndicator;
-import com.android.repository.api.RepoManager;
-import com.android.repository.api.RepoPackage;
+import com.android.repository.api.*;
 import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
@@ -39,6 +33,7 @@ import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repository.local.LocalPkgInfo;
 import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
 import com.android.sdklib.repository.local.LocalSdk;
+import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -214,11 +209,17 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
 
         @Override
         public int compareTo(@NonNull RepoPackage o) {
-            int result = getPath().compareTo(o.getPath());
+            int result = ComparisonChain.start()
+              .compare(getPath(), o.getPath())
+              .compare(getVersion(), o.getVersion())
+              .result();
             if (result != 0) {
                 return result;
             }
-            return getVersion().compareTo(o.getVersion());
+            if (!(o instanceof LocalPackage)) {
+                return getClass().getName().compareTo(o.getClass().getName());
+            }
+            return 0;
         }
 
         @Override

@@ -24,6 +24,7 @@ import com.android.repository.api.License;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.RemotePackage;
 import com.android.repository.api.RepoPackage;
+import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 
 import java.util.Collection;
@@ -137,15 +138,18 @@ public abstract class RepoPackageImpl implements RepoPackage {
     // TODO: reevaluate if we want to include other info in comparison
     @Override
     public int compareTo(@NonNull RepoPackage o) {
+        int result = ComparisonChain.start()
+                .compare(getPath(), o.getPath())
+                .compare(getVersion(), o.getVersion())
+                .result();
+        if (result != 0) {
+            return result;
+        }
         if ((this instanceof LocalPackage ^ o instanceof LocalPackage) ||
             (this instanceof RemotePackage ^ o instanceof RemotePackage)) {
             return getClass().getName().compareTo(o.getClass().getName());
         }
-        int result = getPath().compareTo(o.getPath());
-        if (result != 0) {
-            return result;
-        }
-        return getVersion().compareTo(o.getVersion());
+        return 0;
     }
 
     @Override

@@ -148,7 +148,13 @@ public class LegacyRepoUtils {
      * Gets the {@link RepoPackage#getDisplayName()} return value from an {@link IPkgDesc}.
      */
     public static String getDisplayName(IPkgDesc legacy) {
-        String result = legacy.getListDisplay();
+        // The legacy code inconsistently adds "Obsolete" to display names, and we want
+        // to handle it separately in the new code. Remove it if it's there.
+        return getDisplayNameInternal(legacy).replace(" (Obsolete)", "");
+    }
+
+    private static String getDisplayNameInternal(IPkgDesc legacy) {
+        String result = legacy.getListDescription();
         if (result != null) {
             return result;
         }
