@@ -93,10 +93,17 @@ public class BasicInstaller implements PackageInstaller {
 
             // Archives must contain a single top-level directory.
             File[] topDirContents = fop.listFiles(out);
+            File packageRoot;
             if (topDirContents.length != 1) {
-                throw new IOException("Archive didn't have single top level directory");
+                // TODO: we should be consistent and only support packages with a single top-level
+                // directory, but right now haxm doesn't have one. Put this check back when it's
+                // fixed.
+                // throw new IOException("Archive didn't have single top level directory");
+                packageRoot = out;
             }
-            File packageRoot = topDirContents[0];
+            else {
+                packageRoot = topDirContents[0];
+            }
 
             InstallerUtil.writePackageXml(p, packageRoot, manager, fop, progress);
 
@@ -105,7 +112,9 @@ public class BasicInstaller implements PackageInstaller {
             manager.markInvalid();
             return true;
         } catch (IOException e) {
-            progress.logWarning("An error occurred during installation.", e);
+            String message = e.getMessage();
+            progress.logWarning("An error occurred during installation" +
+                    (message.isEmpty() ? "." : ": " + message + "."), e);
         }
 
         return false;
