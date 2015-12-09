@@ -37,6 +37,8 @@ import static com.android.tools.lint.checks.PermissionFinder.Operation.READ;
 import static com.android.tools.lint.checks.PermissionFinder.Operation.WRITE;
 import static com.android.tools.lint.checks.PermissionRequirement.ATTR_PROTECTION_LEVEL;
 import static com.android.tools.lint.checks.PermissionRequirement.VALUE_DANGEROUS;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
 import static com.android.tools.lint.detector.api.JavaContext.findSurroundingMethod;
 import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 
@@ -995,6 +997,20 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             @NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation,
             @NonNull Node argument) {
+        if (argument instanceof ArrayCreation) {
+            ArrayCreation creation = (ArrayCreation)argument;
+            ArrayInitializer initializer = creation.astInitializer();
+            if (initializer != null) {
+                for (Expression expression : initializer.astExpressions()) {
+                    String error = getIntRangeError(context, annotation, expression);
+                    if (error != null) {
+                        return error;
+                    }
+                }
+            }
+
+            return null;
+        }
         Object object = ConstantEvaluator.evaluate(context, argument);
         if (!(object instanceof Number)) {
             return null;
@@ -1312,9 +1328,27 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                             "Flag not allowed here");
                 }
             }
+        } else if (argument instanceof ArrayCreation) {
+            ArrayCreation creation = (ArrayCreation) argument;
+            TypeReference typeReference = creation.astComponentTypeReference();
+            ArrayInitializer initializer = creation.astInitializer();
+            if (initializer != null && (TYPE_INT.equals(typeReference.getTypeName())
+                    || TYPE_LONG.equals(typeReference.getTypeName()))) {
+                for (Expression expression : initializer.astExpressions()) {
+                    checkTypeDefConstant(context, annotation, expression, errorNode, flag,
+                            allAnnotations);
+                }
+            }
         } else {
             ResolvedNode resolved = context.resolve(argument);
             if (resolved instanceof ResolvedField) {
+                if (((ResolvedField) resolved).getType().isArray()) {
+                    // It's pointing to an array reference; we can't check these individual
+                    // elements (because we can't jump from ResolvedNodes to AST elements; this
+                    // is part of the motivation for the PSI change in lint 2.0), but we also
+                    // don't want to flag it as invalid.
+                    return;
+                }
                 checkTypeDefConstant(context, annotation, argument, errorNode, flag, resolved,
                         allAnnotations);
             } else if (argument instanceof VariableReference) {
@@ -1519,7 +1553,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             // Don't need to compute this if performing @IntDef or @StringDef lookup
             ResolvedClass type = annotation.getClassType();
             if (type != null) {
-                Iterator<ResolvedAnnotation> iterator2 = type.getAnnotations().iterator();
+                Iterable<ResolvedAnnotation> innerAnnotations = type.getAnnotations();
+                Iterator<ResolvedAnnotation> iterator2 = innerAnnotations.iterator();
                 while (iterator2.hasNext()) {
                     ResolvedAnnotation inner = iterator2.next();
                     if (inner.matches(INT_DEF_ANNOTATION)
@@ -1527,7 +1562,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                             || inner.matches(INT_RANGE_ANNOTATION)
                             || inner.matches(STRING_DEF_ANNOTATION)) {
                         if (!iterator.hasNext() && !iterator2.hasNext() && index == 1) {
-                            return annotations;
+                            return innerAnnotations;
                         }
                         if (result == null) {
                             result = new ArrayList<ResolvedAnnotation>(2);
@@ -1623,6 +1658,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
                 annotations = method.getParameterAnnotations(i);
                 annotations = filterRelevantAnnotations(annotations);
+                checkParameterAnnotations(mContext, argument, call, method, annotations);
+            }
+            while (arguments.hasNext()) { // last parameter is varargs (same parameter annotations)
+                Expression argument = arguments.next();
                 checkParameterAnnotations(mContext, argument, call, method, annotations);
             }
         }
