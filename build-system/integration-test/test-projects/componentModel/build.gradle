@@ -22,26 +22,27 @@ apply plugin: "com.android.model.application"
 
 model {
     android {
-        compileSdkVersion rootProject.latestCompileSdk
-        buildToolsVersion rootProject.buildToolsVersion
+        compileSdkVersion = rootProject.latestCompileSdk
+        buildToolsVersion = rootProject.buildToolsVersion
     }
     android.productFlavors {
-        create { name = "f1" }
-        create { name = "f2" }
+        create("f1")
+        create("f2")
     }
-}
 
-sources {
-    main {
-        java {
-            source {
-                srcDir "src/main/java"
+    android.sources {
+        main {
+            java {
+                source {
+                    srcDir "src/main/java"
+                }
+            }
+        }
+        f1 {
+            res {
+
             }
         }
     }
-    f1 {
-        res {
-
-        }
-    }
 }
+

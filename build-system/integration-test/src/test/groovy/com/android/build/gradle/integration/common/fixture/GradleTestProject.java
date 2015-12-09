@@ -65,6 +65,7 @@ import org.junit.runners.model.Statement;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -544,6 +545,9 @@ public class GradleTestProject implements TestRule {
      * Create a GradleTestProject representing a subproject.
      */
     public GradleTestProject getSubproject(String name) {
+        if (name.startsWith(":")) {
+            name = name.substring(1);
+        }
         return new GradleTestProject(name, this);
     }
 
@@ -1193,11 +1197,21 @@ public class GradleTestProject implements TestRule {
         return stdout;
     }
 
+    /** @see #getStdout() */
+    public String getStdoutString() throws UnsupportedEncodingException {
+        return stdout.toString(Charsets.UTF_8.name());
+    }
+
     /**
      * Return the stderr from all execute command.
      */
     public ByteArrayOutputStream getStderr() {
         return stderr;
+    }
+
+    /** @see #getStderr() */
+    public String getStderrString() throws UnsupportedEncodingException {
+        return stderr.toString(Charsets.UTF_8.name());
     }
 
     /**

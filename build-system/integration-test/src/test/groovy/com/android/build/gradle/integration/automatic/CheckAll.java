@@ -37,7 +37,7 @@ import java.util.List;
  * Test case that executes "standard" gradle tasks in all our tests projects.
  *
  * <p>You can run only one test like this:
- * <p>{@code gw b:i:automaticTest --tests *.CheckAll.lint[abiPureSplits]}
+ * <p>{@code gw :b:i-t:automaticTest --tests=*.CheckAll.lint[abiPureSplits]}
  */
 @RunWith(ParallelParameterized.class)
 public class CheckAll {
@@ -78,12 +78,15 @@ public class CheckAll {
 
     public CheckAll(String projectName) {
         this.projectName = projectName;
-        this.project = GradleTestProject.builder().fromTestProject(projectName).create();
+        this.project = GradleTestProject.builder()
+                .fromTestProject(projectName)
+                .forExperimentalPlugin(COMPONENT_MODEL_PROJECTS.contains(projectName))
+                .create();
     }
 
     @Test
     public void lint() throws Exception {
-        Assume.assumeFalse(BROKEN_LINT.contains(projectName));
+        Assume.assumeFalse(BROKEN_ASSEMBLE.contains(projectName));
         project.execute("lint");
     }
 
@@ -95,20 +98,17 @@ public class CheckAll {
 
     // TODO: Investigate and clear these lists.
     private static final ImmutableSet<String> BROKEN_ASSEMBLE = ImmutableSet.of(
-            "componentModel", // ???
+            "ndkRsHelloCompute", // TODO: Fails in C++ code, not sure what the issue is.
+
+            // These are all right:
+            "projectWithLocalDeps", // Doesn't have a build.gradle, not much to check anyway.
             "duplicateNameImport", // Fails on purpose.
-            "instant-unit-tests",
-            "invalidDependencyOnAppProject", // Fails on purpose.
-            "ndkRsHelloCompute", // ???
-            "ndkSanAngeles2", // ???
-            "ndkVariants", // ???
-            "packagingOptions", // so libraries?
-            "projectWithLocalDeps", // TODO: move to HelloWorldApp
+            "instant-unit-tests", // Specific to testing instant run, not a "real" project.
             "simpleManifestMergingTask" // Not an Android project.
     );
 
-    private static final ImmutableSet<String> BROKEN_LINT = ImmutableSet.<String>builder()
-            .addAll(BROKEN_ASSEMBLE)
-            .add("privateResources")// Fails on purpose.
-            .build();
+    private static final ImmutableSet<String> COMPONENT_MODEL_PROJECTS = ImmutableSet.of(
+            "componentModel",
+            "ndkSanAngeles2",
+            "ndkVariants");
 }
