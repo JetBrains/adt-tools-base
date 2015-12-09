@@ -27,6 +27,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.core.ApkInfoParser;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidLibrary;
@@ -61,7 +62,7 @@ public class VariantDependencyTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        GradleTestProject.appendToFile(project.getBuildFile(),
+        TestFileUtils.appendToFile(project.getBuildFile(),
                 "\n" +
                 "apply plugin: \"com.android.application\"\n" +
                 "\n" +

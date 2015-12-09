@@ -16,12 +16,13 @@
 
 package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
@@ -78,7 +79,7 @@ public class AppWithResolutionStrategyForJarTest {
                 "}\n" +
                 "\n");
 
-        GradleTestProject.appendToFile(project.getSubproject("library").getBuildFile(),
+        TestFileUtils.appendToFile(project.getSubproject("library").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
                 "    compile \"com.google.guava:guava:17.0\"\n" +

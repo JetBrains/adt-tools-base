@@ -21,6 +21,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject;
 import com.android.build.gradle.integration.common.utils.ModelHelper;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.Variant;
@@ -47,7 +48,7 @@ public class LibWithPackageLocalJarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        GradleTestProject.appendToFile(project.getBuildFile(),
+        TestFileUtils.appendToFile(project.getBuildFile(),
                 "\n" +
                 "apply plugin: \"com.android.library\"\n" +
                 "\n" +

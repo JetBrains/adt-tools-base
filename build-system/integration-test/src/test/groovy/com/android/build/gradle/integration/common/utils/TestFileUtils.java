@@ -114,4 +114,8 @@ public class TestFileUtils {
         // Put the method code before the last closing brace.
         searchAndReplace(javaFile, "\n}\\s+$", methodCode + "\n\n}");
     }
+
+    public static void appendToFile(@NonNull File file, @NonNull String content) throws IOException {
+        Files.append(content, file, Charset.defaultCharset());
+    }
 }
