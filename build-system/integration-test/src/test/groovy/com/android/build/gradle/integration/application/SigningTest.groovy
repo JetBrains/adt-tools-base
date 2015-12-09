@@ -20,7 +20,7 @@ import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
-import com.android.build.gradle.integration.common.utils.FileHelper
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.SigningConfigHelper
 import com.android.builder.model.AndroidArtifact
@@ -234,7 +234,7 @@ class SigningTest {
             assertThatApk(apk).containsFileWithMatch("META-INF/MANIFEST.MF", "SHA1-Digest");
             assertThatApk(apk).containsFileWithoutContent("META-INF/MANIFEST.MF", "SHA-256-Digest");
 
-            FileHelper.searchAndReplace(project.buildFile, "minSdkVersion \\d+", "minSdkVersion 18")
+            TestFileUtils.searchAndReplace(project.buildFile, "minSdkVersion \\d+", "minSdkVersion 18")
         }
 
         project.execute("assembleDebug")
@@ -251,7 +251,7 @@ class SigningTest {
         project.executeConnectedCheck()
 
         if (minSdkVersion < 18) {
-            FileHelper.searchAndReplace(project.buildFile, "minSdkVersion \\d+", "minSdkVersion 18")
+            TestFileUtils.searchAndReplace(project.buildFile, "minSdkVersion \\d+", "minSdkVersion 18")
             project.executeConnectedCheck()
         }
     }

@@ -18,8 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.AbstractAndroidSubject
-import com.android.build.gradle.integration.common.truth.TruthHelper
-import com.android.build.gradle.integration.common.utils.FileHelper
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -27,7 +26,6 @@ import org.junit.ClassRule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatAar
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 
 /**
  * Assemble tests for libMinify.
@@ -52,7 +50,7 @@ class LibMinifyTest {
     @Test
     void "check library has its fields obfuscated"() {
         // test whether a library project has its fields obfuscated
-        FileHelper.checkContent(
+        TestFileUtils.checkContent(
                 project.getOutputFile("mapping/release/mapping.txt"),
                 "int obfuscatedInt -> a")
     }

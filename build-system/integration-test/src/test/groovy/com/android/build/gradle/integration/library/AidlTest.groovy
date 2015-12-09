@@ -19,7 +19,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.AarSubject
-import com.android.build.gradle.integration.common.utils.FileHelper
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
@@ -153,7 +153,7 @@ public class MyRect implements Parcelable {
 }
 """
 
-        FileHelper.addMethod(
+        TestFileUtils.addMethod(
                 activity,
                 """
                 void useAidlClasses(ITest instance) throws Exception {
@@ -179,12 +179,12 @@ public class MyRect implements Parcelable {
         project.execute("assembleDebug")
         checkAar("ITest")
 
-        FileHelper.searchAndReplace(iTestAidl, "int getInt\\(\\);", "")
+        TestFileUtils.searchAndReplace(iTestAidl, "int getInt\\(\\);", "")
         project.execute("assembleDebug")
         checkAar("ITest")
 
-        FileHelper.searchAndReplace(iTestAidl, "ITest", "IRenamed")
-        FileHelper.searchAndReplace(activity, "ITest", "IRenamed")
+        TestFileUtils.searchAndReplace(iTestAidl, "ITest", "IRenamed")
+        TestFileUtils.searchAndReplace(activity, "ITest", "IRenamed")
         Files.move(iTestAidl, new File(aidlDir, "IRenamed.aidl"))
 
         project.execute("assembleDebug")

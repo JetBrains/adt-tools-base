@@ -18,11 +18,11 @@ package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestApp
-import com.android.build.gradle.integration.common.utils.FileHelper
 import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.android.builder.model.NativeFolder
 import com.android.builder.model.NativeSettings
+import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Sets
 import groovy.transform.CompileStatic
@@ -46,7 +46,7 @@ class StandaloneNdkModelTest {
 
     @Before
     public void setUp() {
-        FileHelper.createFile(project.file("src/main/jni/empty.c"), "")
+        FileUtils.createFile(project.file("src/main/jni/empty.c"), "")
     }
 
     private final Set<String> ABIS = ImmutableSet.of(

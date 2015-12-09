@@ -24,7 +24,7 @@ import com.android.build.gradle.integration.common.category.DeviceTests;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
-import com.android.build.gradle.integration.common.utils.FileHelper;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.collect.Lists;
 
@@ -131,7 +131,7 @@ public class TestWithSameDepAsApp {
                 "\n" +
                 "android.defaultConfig.minSdkVersion 16\n");
 
-        FileHelper.addMethod(
+        TestFileUtils.addMethod(
                 project.file("src/main/java/com/example/helloworld/HelloWorld.java"),
                         "\n" +
                         "public void useDependency() {\n" +
@@ -140,7 +140,7 @@ public class TestWithSameDepAsApp {
                         ""
         );
 
-        FileHelper.addMethod(
+        TestFileUtils.addMethod(
                 project.file("src/androidTest/java/com/example/helloworld/HelloWorldTest.java"),
                         "\n" +
                         "public void testDependency() {\n" +

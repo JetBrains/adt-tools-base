@@ -18,8 +18,8 @@ package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
-import com.android.build.gradle.integration.common.utils.FileHelper
 import com.android.build.gradle.integration.common.utils.IncrementalTaskOutputVerifier
+import com.android.utils.FileUtils
 import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
@@ -64,13 +64,13 @@ model {
 
     @Test
     public void "check adding file"() {
-        File helloJniO = FileHelper.find(
+        File helloJniO = FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
                 Pattern.compile("x86Debug.*/hello-jni\\.o")).first()
         long helloJniTimestamp = helloJniO.lastModified()
 
         // check new-file.o does not exist.
-        assertThat(FileHelper.find(
+        assertThat(FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
                 Pattern.compile("x86Debug.*/new-file\\.o"))).hasSize(0)
 
@@ -86,19 +86,19 @@ model {
 
         assertThat(helloJniO).wasModifiedAt(helloJniTimestamp)
 
-        assertThat(FileHelper.find(
+        assertThat(FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
                 Pattern.compile("x86Debug.*/new-file\\.o"))).hasSize(1)
     }
 
     @Test
     public void "check removing file"() {
-        File helloJniO = FileHelper.find(
+        File helloJniO = FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
                 Pattern.compile("x86Debug.*/hello-jni\\.o")).first()
         long helloJniTimestamp = helloJniO.lastModified()
 
-        assertThat(FileHelper.find(
+        assertThat(FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
                 Pattern.compile("x86Debug.*/empty\\.o"))).hasSize(1)
 
@@ -114,19 +114,19 @@ model {
 
         assertThat(helloJniO).wasModifiedAt(helloJniTimestamp)
 
-        assertThat(FileHelper.find(
+        assertThat(FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
                 Pattern.compile("x86Debug.*/empty\\.o"))).hasSize(0)
     }
 
     @Test
     public void "check changing file"() {
-        File helloJniO = FileHelper.find(
+        File helloJniO = FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
                 Pattern.compile("x86Debug.*/hello-jni\\.o")).first()
         long helloJniTimestamp = helloJniO.lastModified()
 
-        File emptyO = FileHelper.find(
+        File emptyO = FileUtils.find(
                 project.file("build/intermediates/objectFiles"),
                 Pattern.compile("x86Debug.*/empty\\.o")).first()
         long emptyTimestamp = emptyO.lastModified()

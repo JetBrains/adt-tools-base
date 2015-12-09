@@ -29,8 +29,8 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
-import static com.android.build.gradle.integration.common.utils.FileHelper.createFile
-import static com.android.build.gradle.integration.common.utils.FileHelper.searchAndReplace
+import static com.android.utils.FileUtils.createFile
+import static com.android.build.gradle.integration.common.utils.TestFileUtils.searchAndReplace
 import static com.android.utils.FileUtils.delete
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertTrue
