@@ -44,7 +44,11 @@ class FlavorTest {
     static {
         File source = new File(resDataFolder, "example.json")
         helloWorldApp.addFile(new TestSourceFile(
-                "",
+                "src/free/",
+                TestHelper.JSON_FILE_NAME,
+                Files.toString(source, Charsets.UTF_8)))
+        helloWorldApp.addFile(new TestSourceFile(
+                "src/paid/",
                 TestHelper.JSON_FILE_NAME,
                 Files.toString(source, Charsets.UTF_8)))
     }

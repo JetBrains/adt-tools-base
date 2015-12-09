@@ -23,15 +23,22 @@ import com.google.common.io.Files
 import com.google.common.truth.Truth
 import groovy.json.internal.Charsets
 import groovy.transform.CompileStatic
+import org.gradle.api.GradleException;
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
+
 /**
  * Test with a mismatch json file vs the app package name.
  */
 @CompileStatic
 class NoClientTest {
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     public static final AndroidTestApp helloWorldApp = new EmptyAndroidTestApp("com.example.app.typo")
 
@@ -52,6 +59,16 @@ class NoClientTest {
     @BeforeClass
     public static void setUp() {
 
+    }
+
+    @AfterClass
+    public static void cleanUp() {
+        project = null
+    }
+
+    @Test
+    public void "test exception is thrown"() {
+
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 apply plugin: 'com.google.gms.google-services'
@@ -66,19 +83,7 @@ android {
     }
 }
 """
+        thrown.expect(org.gradle.tooling.BuildException.class)
         project.execute("clean", "assembleDebug")
-    }
-
-    @AfterClass
-    public static void cleanUp() {
-        project = null
-    }
-
-    @Test
-    public void "test warning is output"() {
-        ByteArrayOutputStream stream = project.getStdout()
-
-        Truth.assert_().that(stream.toString("UTF-8")).contains(
-                "No matching client found for package name 'com.example.app.typo'")
     }
 }
