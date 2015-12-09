@@ -327,7 +327,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
 
     @Override
     public void afterCheckProject(@NonNull Context context) {
-        if (context.getProject() == context.getMainProject() && mHaveClasses
+        if (!context.getProject().isLibrary() && mHaveClasses
                 && mReferencedClasses != null && !mReferencedClasses.isEmpty()
                 && context.getDriver().getScope().contains(Scope.CLASS_FILE)) {
             List<String> classes = new ArrayList<String>(mReferencedClasses.keySet());
