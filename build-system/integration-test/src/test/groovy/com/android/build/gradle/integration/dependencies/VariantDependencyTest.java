@@ -77,18 +77,18 @@ public class VariantDependencyTest {
                 "    flavorDimensions \"model\", \"api\"\n" +
                 "    productFlavors {\n" +
                 "        Lollipop {\n" +
-                "            flavorDimension \"api\"\n" +
+                "            dimension \"api\"\n" +
                 "            minSdkVersion 21\n" +
                 "        }\n" +
                 "        ics {\n" +
-                "            flavorDimension \"api\"\n" +
+                "            dimension \"api\"\n" +
                 "            minSdkVersion 15\n" +
                 "        }\n" +
                 "        free {\n" +
-                "            flavorDimension \"model\"\n" +
+                "            dimension \"model\"\n" +
                 "        }\n" +
                 "        paid {\n" +
-                "            flavorDimension \"model\"\n" +
+                "            dimension \"model\"\n" +
                 "        }\n" +
                 "    }\n" +
                 "}\n" +

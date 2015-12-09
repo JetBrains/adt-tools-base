@@ -19,19 +19,19 @@ android {
 
     productFlavors {
         x86 {
-            flavorDimension "abi"
+            dimension "abi"
         }
         mips {
-            flavorDimension "abi"
+            dimension "abi"
         }
         arm {
-            flavorDimension "abi"
+            dimension "abi"
         }
         cupcake {
-            flavorDimension "api"
+            dimension "api"
         }
         gingerbread {
-            flavorDimension "api"
+            dimension "api"
         }
     }
 }
