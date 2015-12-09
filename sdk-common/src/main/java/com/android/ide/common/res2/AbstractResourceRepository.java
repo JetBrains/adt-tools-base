@@ -427,7 +427,7 @@ public abstract class AbstractResourceRepository {
     private void addItem(@NonNull ResourceItem item) {
         synchronized (ITEM_MAP_LOCK) {
             ListMultimap<String, ResourceItem> map = getMap(item.getType());
-            if (!map.containsValue(item)) {
+            if (!map.containsEntry(item.getName(), item)) {
                 map.put(item.getName(), item);
             }
         }
