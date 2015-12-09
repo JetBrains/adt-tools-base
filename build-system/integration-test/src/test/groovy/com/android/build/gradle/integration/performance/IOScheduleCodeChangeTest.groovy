@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.performance
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import groovy.transform.CompileStatic
 import org.junit.After
 import org.junit.Before
@@ -72,8 +73,8 @@ class IOScheduleCodeChangeTest {
 
     @Test
     void "Incremental Build on Java Change"() {
-        project.replaceLine(
-                "android/src/main/java/com/google/samples/apps/iosched/model/ScheduleItem.java",
+        TestFileUtils.replaceLine(
+                project.file("android/src/main/java/com/google/samples/apps/iosched/model/ScheduleItem.java"),
                 30,
                 "    public long startTime = 1;")
         project.executeWithBenchmark("iosched2014", BUILD_INC_JAVA, "assembleDebug")

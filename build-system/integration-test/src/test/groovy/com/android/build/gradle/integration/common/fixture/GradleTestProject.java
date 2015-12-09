@@ -1287,35 +1287,4 @@ public class GradleTestProject implements TestRule {
         Assume.assumeTrue("Test is only applicable to build tools > " + major,
                 new Revision(major, minor, micro).compareTo(currentVersion) < 0);
     }
-
-    /**
-     * Replace a line from a file with another line.
-     * @param relativePath the relative path of the file from the root of the project
-     * @param lineNumber the line number, starting at 1
-     * @param line the line to replace with.
-     * @throws IOException
-     *
-     * TODO: Inline.
-     */
-    public void replaceLine(
-            String relativePath,
-            int lineNumber,
-            String line) throws IOException {
-        TestFileUtils.replaceLine(file(relativePath), lineNumber, line);
-    }
-
-    public void replaceInFile(
-            String relativePath,
-            String search,
-            String replace) throws IOException {
-        File file = new File(testDir, relativePath.replace("/", File.separator));
-        String content = Files.toString(file, Charset.defaultCharset());
-        String newContent = content.replaceAll(search, replace);
-        Files.write(newContent, file, Charset.defaultCharset());
-    }
-
-    public static void appendToFile(@NonNull File file, @NonNull String content) throws IOException {
-        Files.append(content, file, Charset.defaultCharset());
-    }
-
 }

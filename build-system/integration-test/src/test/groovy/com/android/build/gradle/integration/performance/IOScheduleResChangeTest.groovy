@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.performance
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import groovy.transform.CompileStatic
 import org.junit.After
 import org.junit.Before
@@ -49,8 +50,8 @@ class IOScheduleResChangeTest {
 
     @Test
     void "Incremental Build on Resource Edit Change"() {
-        project.replaceLine(
-                "android/src/main/res/values/strings.xml",
+        TestFileUtils.replaceLine(
+                project.file("android/src/main/res/values/strings.xml"),
                 97,
                 "    <string name=\"app_name\">Google I/O 2015</string>")
 
@@ -59,8 +60,8 @@ class IOScheduleResChangeTest {
 
     @Test
     void "Incremental Build on Resource Add Change"() {
-        project.replaceLine(
-                "android/src/main/res/values/strings.xml",
+        TestFileUtils.replaceLine(
+                project.file("android/src/main/res/values/strings.xml"),
                 97,
                 "    <string name=\"app_name\">Google I/O 2015</string><string name=\"aaaa\">aaa</string>")
 

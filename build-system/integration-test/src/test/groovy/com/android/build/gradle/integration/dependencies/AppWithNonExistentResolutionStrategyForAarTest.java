@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.dependencies;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
 
@@ -44,12 +45,12 @@ public class AppWithNonExistentResolutionStrategyForAarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        GradleTestProject.appendToFile(project.getBuildFile(),
+        TestFileUtils.appendToFile(project.getBuildFile(),
                 "\n" +
                 "subprojects {\n" +
                 "    apply from: \"$rootDir/../commonLocalRepo.gradle\"\n" +
                 "}\n");
-        GradleTestProject.appendToFile(project.getSubproject("app").getBuildFile(),
+        TestFileUtils.appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "\n" +
                 "dependencies {\n" +
@@ -70,7 +71,7 @@ public class AppWithNonExistentResolutionStrategyForAarTest {
                 "}\n" +
                 "\n");
 
-        GradleTestProject.appendToFile(project.getSubproject("library").getBuildFile(),
+        TestFileUtils.appendToFile(project.getSubproject("library").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
                 "    compile \"org.jdeferred:jdeferred-android-aar:1.2.3\"\n" +

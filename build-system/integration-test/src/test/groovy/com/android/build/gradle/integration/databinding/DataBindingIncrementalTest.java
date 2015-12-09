@@ -17,8 +17,8 @@
 package com.android.build.gradle.integration.databinding;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.build.gradle.integration.common.truth.DexClassSubject;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.ide.common.process.ProcessException;
 import com.google.common.io.Files;
 
@@ -71,9 +71,9 @@ public class DataBindingIncrementalTest {
     public void changeVariableName()
             throws IOException, ProcessException, ParserConfigurationException, SAXException {
         project.execute("assembleDebug");
-        project.replaceLine(ACTIVITY_MAIN_XML, 20,
+        TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_XML), 20,
                 "<variable name=\"foo2\" type=\"String\"/>");
-        project.replaceLine(ACTIVITY_MAIN_XML, 29,
+        TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_XML), 29,
                 "<TextView android:text='@{foo2 + \" \" + foo2}'");
         project.getStdout().reset();
         project.execute("assembleDebug");
@@ -89,7 +89,7 @@ public class DataBindingIncrementalTest {
     public void addVariable()
             throws IOException, ProcessException, SAXException, ParserConfigurationException {
         project.execute("assembleDebug");
-        project.replaceLine(ACTIVITY_MAIN_XML, 20,
+        TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_XML), 20,
                 "<variable name=\"foo\" type=\"String\"/><variable name=\"foo2\" type=\"String\"/>");
         project.getStdout().reset();
         project.execute("assembleDebug");
@@ -103,7 +103,7 @@ public class DataBindingIncrementalTest {
     public void addIdToView()
             throws IOException, ProcessException, SAXException, ParserConfigurationException {
         project.execute("assembleDebug");
-        project.replaceLine(ACTIVITY_MAIN_XML, 30,
+        TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_XML), 30,
                 "android:id=\"@+id/myTextView\"");
         project.getStdout().reset();
         project.execute("assembleDebug");
@@ -111,7 +111,7 @@ public class DataBindingIncrementalTest {
         assertThatApk(project.getApk("debug")).hasMainDexFile()
                 .that().hasClass(MAIN_ACTIVITY_BINDING_CLASS)
                 .that().hasField("myTextView");
-        project.replaceLine(ACTIVITY_MAIN_XML, 30, "");
+        TestFileUtils.replaceLine(project.file(ACTIVITY_MAIN_XML), 30, "");
         project.getStdout().reset();
         project.execute("assembleDebug");
         assertThatApk(project.getApk("debug")).hasMainDexFile()
@@ -161,7 +161,7 @@ public class DataBindingIncrementalTest {
         project.execute("assembleDebug");
         assertThatApk(project.getApk("debug")).containsClass(
                 activity2ClassName);
-        project.replaceLine("src/main/res/layout/activity2.xml", 19,
+        TestFileUtils.replaceLine(project.file("src/main/res/layout/activity2.xml"), 19,
                 "<data class=\"MyCustomName\">");
         project.getStdout().reset();
         project.execute("assembleDebug");

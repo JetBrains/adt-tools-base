@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.integration.dependencies;
 
-import static com.android.build.gradle.integration.common.fixture.GradleTestProject.appendToFile;
+import static com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 import static com.android.build.gradle.integration.common.utils.ModelHelper.getAndroidArtifact;
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;

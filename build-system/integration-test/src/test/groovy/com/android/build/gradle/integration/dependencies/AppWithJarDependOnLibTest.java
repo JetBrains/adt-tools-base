@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.dependencies;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
 
@@ -43,13 +44,13 @@ public class AppWithJarDependOnLibTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        GradleTestProject.appendToFile(project.getSubproject("app").getBuildFile(),
+        TestFileUtils.appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
                 "    compile project(\":jar\")\n" +
                 "}\n");
 
-        GradleTestProject.appendToFile(project.getSubproject("jar").getBuildFile(),
+        TestFileUtils.appendToFile(project.getSubproject("jar").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
                 "    compile project(\":library\")\n" +

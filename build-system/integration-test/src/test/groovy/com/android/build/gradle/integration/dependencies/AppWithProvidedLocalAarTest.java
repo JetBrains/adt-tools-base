@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.dependencies;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
 
@@ -43,7 +44,7 @@ public class AppWithProvidedLocalAarTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        GradleTestProject.appendToFile(project.getBuildFile(),
+        TestFileUtils.appendToFile(project.getBuildFile(),
                 "\n" +
                 "apply plugin: \"com.android.application\"\n" +
                 "\n" +

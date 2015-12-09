@@ -20,6 +20,7 @@ import static com.android.build.gradle.integration.common.fixture.GradleTestProj
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
 
@@ -44,7 +45,7 @@ public class AppWithProvidedLibTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        appendToFile(project.getSubproject("app").getBuildFile(),
+        TestFileUtils.appendToFile(project.getSubproject("app").getBuildFile(),
                 "\n" +
                 "dependencies {\n" +
                 "    provided project(\":library\")\n" +
