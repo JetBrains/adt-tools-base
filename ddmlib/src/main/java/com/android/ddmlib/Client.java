@@ -105,9 +105,6 @@ public class Client {
     private static final int MAX_BUF_SIZE = 800*1024*1024;
     private ByteBuffer mReadBuffer;
 
-    private static final int WRITE_BUF_SIZE = 256;
-    private ByteBuffer mWriteBuffer;
-
     private Device mDevice;
 
     private int mConnState;
@@ -134,7 +131,6 @@ public class Client {
         mChan = chan;
 
         mReadBuffer = ByteBuffer.allocate(INITIAL_BUF_SIZE);
-        mWriteBuffer = ByteBuffer.allocate(WRITE_BUF_SIZE);
 
         mOutstandingReqs = new HashMap<Integer,ChunkHandler>();
 
@@ -611,14 +607,13 @@ public class Client {
      * On failure, closes the socket and returns false.
      */
     boolean sendHandshake() {
-        assert mWriteBuffer.position() == 0;
-
+        ByteBuffer tempBuffer = ByteBuffer.allocate(JdwpHandshake.HANDSHAKE_LEN);
         try {
             // assume write buffer can hold 14 bytes
-            JdwpHandshake.putHandshake(mWriteBuffer);
-            int expectedLen = mWriteBuffer.position();
-            mWriteBuffer.flip();
-            if (mChan.write(mWriteBuffer) != expectedLen)
+            JdwpHandshake.putHandshake(tempBuffer);
+            int expectedLen = tempBuffer.position();
+            tempBuffer.flip();
+            if (mChan.write(tempBuffer) != expectedLen)
                 throw new IOException("partial handshake write");
         }
         catch (IOException ioe) {
@@ -626,9 +621,6 @@ public class Client {
             mConnState = ST_ERROR;
             close(true /* notify */);
             return false;
-        }
-        finally {
-            mWriteBuffer.clear();
         }
 
         mConnState = ST_AWAIT_SHAKE;
