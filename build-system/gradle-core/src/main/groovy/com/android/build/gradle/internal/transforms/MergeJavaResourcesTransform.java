@@ -23,7 +23,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.api.transform.Context;
 import com.android.build.api.transform.DirectoryInput;
 import com.android.build.api.transform.Format;
@@ -35,7 +34,8 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
-import com.android.builder.model.PackagingOptions;
+import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.signing.SignedJarBuilder;
 import com.android.ide.common.packaging.PackagingUtils;
@@ -242,10 +242,6 @@ public class MergeJavaResourcesTransform extends Transform {
         // jar to copy the files that came from jars.
         File outJar = null;
 
-        Set<String> excludes = ImmutableSet.copyOf(packagingOptions.getExcludes());
-        Set<String> pickFirsts = ImmutableSet.copyOf(packagingOptions.getPickFirsts());
-        Set<String> merges = ImmutableSet.copyOf(packagingOptions.getMerges());
-
         if (!isIncremental) {
             outputProvider.deleteAll();
 
@@ -271,8 +267,10 @@ public class MergeJavaResourcesTransform extends Transform {
             ListMultimap<File, String> jarSources = ArrayListMultimap.create();
 
             for (String key : sourceFileList.keySet()) {
+                PackagingOptions.Action packagingAction = packagingOptions.getAction(key);
+
                 // first thing we do is check if it's excluded.
-                if (excludes.contains(key)) {
+                if (packagingAction == PackagingOptions.Action.EXCLUDE) {
                     // skip, no need to do anything else.
                     continue;
                 }
@@ -285,10 +283,10 @@ public class MergeJavaResourcesTransform extends Transform {
 
                 // otherwise search for a selection
                 if (selectedContent == null) {
-                    if (pickFirsts.contains(key)) {
+                    if (packagingAction == PackagingOptions.Action.PICK_FIRST) {
                         // if pickFirst then just pick the first one.
                         selectedContent = contentSourceList.get(0);
-                    } else if (merges.contains(key)) {
+                    } else if (packagingAction == PackagingOptions.Action.MERGE) {
                         // if it's selected for merging, we need to record this for later where
                         // we'll merge all the files we've found.
                         for (QualifiedContent content : contentSourceList) {

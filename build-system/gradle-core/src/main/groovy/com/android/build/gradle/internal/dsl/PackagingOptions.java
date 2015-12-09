@@ -28,7 +28,15 @@ import java.util.Set;
  */
 public class PackagingOptions implements com.android.builder.model.PackagingOptions {
 
-    private Set<String> excludes = Sets.newHashSet("LICENSE.txt", "LICENSE");
+    private Set<String> excludes = Sets.newHashSet(
+            "META-INF/LICENSE",
+            "META-INF/LICENSE.txt",
+            "META-INF/NOTICE",
+            "META-INF/NOTICE.txt",
+            "NOTICE",
+            "NOTICE.txt",
+            "LICENSE.txt",
+            "LICENSE");
     private Set<String> pickFirsts = Sets.newHashSet();
     private Set<String> merges = Sets.newHashSet();
 
@@ -47,6 +55,8 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
 
     public void setExcludes(Set<String> excludes) {
         this.excludes = Sets.newHashSet(excludes);
+        pickFirsts.removeAll(excludes);
+        merges.removeAll(excludes);
     }
 
     /**
@@ -55,6 +65,8 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
      */
     public void exclude(String path) {
         excludes.add(path);
+        merges.remove(path);
+        pickFirsts.remove(path);
     }
 
     /**
@@ -74,10 +86,14 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
      */
     public void pickFirst(String path) {
         pickFirsts.add(path);
+        merges.remove(path);
+        excludes.remove(path);
     }
 
     public void setPickFirsts(Set<String> pickFirsts) {
         this.pickFirsts = Sets.newHashSet(pickFirsts);
+        excludes.removeAll(pickFirsts);
+        merges.removeAll(pickFirsts);
     }
 
     /**
@@ -92,6 +108,8 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
 
     public void setMerges(Set<String> merges) {
         this.merges = Sets.newHashSet(merges);
+        excludes.removeAll(merges);
+        pickFirsts.removeAll(merges);
     }
 
     /**
@@ -100,5 +118,45 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
      */
     public void merge(String path) {
         merges.add(path);
+        excludes.remove(path);
+        pickFirsts.remove(path);
+    }
+
+    @NonNull
+    public Action getAction(String archivePath) {
+        if (pickFirsts.contains(archivePath)) {
+            return PackagingOptions.Action.PICK_FIRST;
+        }
+        if (merges.contains(archivePath)) {
+            return PackagingOptions.Action.MERGE;
+        }
+        if (excludes.contains(archivePath)) {
+            return PackagingOptions.Action.EXCLUDE;
+        }
+
+        return Action.NONE;
+    }
+
+    /**
+     * User's setting for a particular archive entry. This is expressed in the build.gradle
+     * DSL and used by this filter to determine file merging behaviors.
+     */
+    public enum Action {
+        /**
+         * no action was described for archive entry.
+         */
+        NONE,
+        /**
+         * merge all archive entries with the same archive path.
+         */
+        MERGE,
+        /**
+         * pick to first archive entry with that archive path (not stable).
+         */
+        PICK_FIRST,
+        /**
+         * exclude all archive entries with that archive path.
+         */
+        EXCLUDE
     }
 }
