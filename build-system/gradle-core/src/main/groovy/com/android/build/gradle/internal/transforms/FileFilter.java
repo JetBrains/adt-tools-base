@@ -22,7 +22,7 @@ import static com.android.utils.FileUtils.mkdirs;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.builder.model.PackagingOptions;
+import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.builder.signing.SignedJarBuilder;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -33,9 +33,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Defines a file filter contract which will use {@link PackagingOptions} to take appropriate
@@ -43,29 +41,6 @@ import java.util.Set;
  */
 @VisibleForTesting
 public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
-
-    /**
-     * User's setting for a particular archive entry. This is expressed in the build.gradle
-     * DSL and used by this filter to determine file merging behaviors.
-     */
-    private enum PackagingOption {
-        /**
-         * no action was described for archive entry.
-         */
-        NONE,
-        /**
-         * merge all archive entries with the same archive path.
-         */
-        MERGE,
-        /**
-         * pick to first archive entry with that archive path (not stable).
-         */
-        PICK_FIRST,
-        /**
-         * exclude all archive entries with that archive path.
-         */
-        EXCLUDE
-    }
 
     public static class SubStream {
         private final File folder;
@@ -88,10 +63,6 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
     @Nullable
     private final PackagingOptions packagingOptions;
     @NonNull
-    private final Set<String> excludes;
-    @NonNull
-    private final Set<String> pickFirsts;
-    @NonNull
     private final List<SubStream> expandedFolders;
 
     public FileFilter(
@@ -99,10 +70,6 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
             @Nullable PackagingOptions packagingOptions) {
         this.expandedFolders = ImmutableList.copyOf(expandedFolders);
         this.packagingOptions = packagingOptions;
-        excludes = this.packagingOptions != null ? this.packagingOptions.getExcludes() :
-                Collections.<String>emptySet();
-        pickFirsts = this.packagingOptions != null ? this.packagingOptions.getPickFirsts() :
-                Collections.<String>emptySet();
     }
 
     /**
@@ -115,8 +82,8 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
     @Override
     public boolean checkEntry(@NonNull String archivePath)
             throws ZipAbortException {
-        PackagingOption packagingOption = getPackagingAction(archivePath);
-        switch(packagingOption) {
+        PackagingOptions.Action action = getPackagingAction(archivePath);
+        switch(action) {
             case EXCLUDE:
                 return false;
             case PICK_FIRST:
@@ -126,7 +93,7 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
             case NONE:
                 return true;
             default:
-                throw new RuntimeException("Unhandled PackagingOption " + packagingOption);
+                throw new RuntimeException("Unhandled action " + action);
         }
     }
 
@@ -134,8 +101,8 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
      * Notification of an incremental file changed since last successful run of the task.
      *
      * Usually, we just copy the changed file into the merged folder. However, if the user
-     * specified {@link PackagingOption#PICK_FIRST}, the file will only be copied if it the
-     * first pick. Also, if the user specified {@link PackagingOption#MERGE}, all the files
+     * specified {@link PackagingOptions.Action#PICK_FIRST}, the file will only be copied if it the
+     * first pick. Also, if the user specified {@link PackagingOptions.Action#MERGE}, all the files
      * with the same entry archive path will be re-merged.
      *
      * @param outputDir merged resources folder.
@@ -145,8 +112,8 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
     void handleChanged(@NonNull File outputDir, @NonNull File changedFile)
             throws IOException {
         String archivePath = getArchivePath(changedFile);
-        PackagingOption packagingOption = getPackagingAction(archivePath);
-        switch (packagingOption) {
+        PackagingOptions.Action action = getPackagingAction(archivePath);
+        switch (action) {
             case EXCLUDE:
                 return;
             case MERGE:
@@ -183,9 +150,9 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
                 throw new IOException("Cannot delete " + outFile.getAbsolutePath());
             }
         }
-        FileFilter.PackagingOption itemPackagingOption = getPackagingAction(removedFilePath);
+        PackagingOptions.Action itemAction = getPackagingAction(removedFilePath);
 
-        switch(itemPackagingOption) {
+        switch(itemAction) {
             case NONE:
             case PICK_FIRST:
                 // this was a picked up item, make sure we copy the first still available
@@ -203,7 +170,7 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
                 return;
             default:
                 throw new RuntimeException("Unhandled package option"
-                        + itemPackagingOption);
+                        + itemAction);
 
         }
     }
@@ -359,22 +326,13 @@ public class FileFilter implements SignedJarBuilder.IZipEntryFilter {
     /**
      * Determine the user's intention for a particular archive entry.
      * @param archivePath the archive entry
-     * @return a {@link FileFilter.PackagingOption} as provided by the user in the build.gradle
+     * @return a {@link PackagingOptions.Action} as provided by the user in the build.gradle
      */
     @NonNull
-    private PackagingOption getPackagingAction(@NonNull String archivePath) {
+    private PackagingOptions.Action getPackagingAction(@NonNull String archivePath) {
         if (packagingOptions != null) {
-            if (pickFirsts.contains(archivePath)) {
-                return PackagingOption.PICK_FIRST;
-            }
-            if (packagingOptions.getMerges().contains(archivePath)) {
-                return PackagingOption.MERGE;
-            }
-            if (excludes.contains(archivePath)) {
-                return PackagingOption.EXCLUDE;
-            }
+            return packagingOptions.getAction(archivePath);
         }
-        return PackagingOption.NONE;
+        return PackagingOptions.Action.NONE;
     }
-
 }

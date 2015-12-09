@@ -18,23 +18,21 @@ package com.android.build.gradle.internal.transforms;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.model.PackagingOptions;
+import com.android.build.gradle.internal.dsl.PackagingOptions;
 import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 
-import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,138 +44,128 @@ import java.util.List;
  */
 public class FileFilterTest {
 
-    @Mock
-    PackagingOptions packagingOptions;
+    @Rule
+    public TemporaryFolder tmpFolder = new TemporaryFolder();
 
-    FileFilter fileFilter;
-
-    private static File sMergedFolder;
-    private static File sExpandedJar1, sExpandedJar2, sExpandedJar3;
-    private static List<FileFilter.SubStream> sPackagedJarExpansionSubStreams;
+    private PackagingOptions mPackagingOptions;
+    private FileFilter mFileFilter;
+    private File mMergedFolder;
+    private File mExpandedJar1, mExpandedJar2, mExpandedJar3;
+    private List<FileFilter.SubStream> mPackagedJarExpansionSubStreams;
 
     /**
      * Create temporary folders to simulate expanded folders with java resources embedded
      */
-    @BeforeClass
-    public static void prepareFolders() throws IOException {
-        File rootTmpFolder = createTmpFolder(null /* parent */);
+    @Before
+    public void prepareFolders() throws IOException {
+        mExpandedJar1 = tmpFolder.newFolder("jar1");
+        mExpandedJar2 = tmpFolder.newFolder("jar2");
+        mExpandedJar3 = tmpFolder.newFolder("jar3");
 
-        sExpandedJar1 = createTmpFolder(rootTmpFolder);
-        sExpandedJar2 = createTmpFolder(rootTmpFolder);
-        sExpandedJar3 = createTmpFolder(rootTmpFolder);
-
-        sPackagedJarExpansionSubStreams = ImmutableList.of(
-                new FileFilter.SubStream(sExpandedJar1, "sExpandedJar1"),
-                new FileFilter.SubStream(sExpandedJar2, "sExpandedJar2"),
-                new FileFilter.SubStream(sExpandedJar3, "sExpandedJar3")
+        mPackagedJarExpansionSubStreams = ImmutableList.of(
+                new FileFilter.SubStream(mExpandedJar1, "sExpandedJar1"),
+                new FileFilter.SubStream(mExpandedJar2, "sExpandedJar2"),
+                new FileFilter.SubStream(mExpandedJar3, "sExpandedJar3")
         );
 
-        sMergedFolder = createTmpFolder(null /* parent */);
-    }
+        mMergedFolder = tmpFolder.newFolder("merged");
 
-    /**
-     * After each test, all folders are cleaned.
-     */
-    @After
-    public void cleanUp() {
-        cleanContents(sExpandedJar1);
-        cleanContents(sExpandedJar2);
-        cleanContents(sExpandedJar3);
-        cleanContents(sMergedFolder);
+        assertMergedFilesCount(0);
     }
 
     @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        assertTrue(listFiles(sMergedFolder).length == 0);
+    public void createPackagingOptions() {
+        mPackagingOptions = new PackagingOptions();
+    }
+
+    private void assertMergedFilesCount(int i) {
+        File[] files = mMergedFolder.listFiles();
+        assertNotNull(files);
+        assertTrue(files.length == i);
     }
 
     @Test
     public void testSimpleCopy() throws IOException {
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
 
-        assertFalse(new File(sMergedFolder, "foo/text.properties").exists());
-        File changedFile = createFile(sExpandedJar1, "foo/text.properties");
-        fileFilter.handleChanged(sMergedFolder, changedFile);
-        assertTrue(new File(sMergedFolder, "foo/text.properties").exists());
+        assertFalse(new File(mMergedFolder, "foo/text.properties").exists());
+        File changedFile = createFile(mExpandedJar1, "foo/text.properties");
+        mFileFilter.handleChanged(mMergedFolder, changedFile);
+        assertTrue(new File(mMergedFolder, "foo/text.properties").exists());
     }
 
     @Test
     public void testSimpleExclusion() throws IOException {
-        when(packagingOptions.getExcludes()).thenReturn(
-                ImmutableSet.of(FileUtils.join("foo", "text.properties")));
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        setExcludes(ImmutableSet.of(FileUtils.join("foo", "text.properties")));
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
-        fileFilter.handleChanged(sMergedFolder, createFile(sExpandedJar1, "foo/text.properties"));
-        assertTrue(listFiles(sMergedFolder).length == 0);
+        mFileFilter.handleChanged(mMergedFolder, createFile(mExpandedJar1, "foo/text.properties"));
+        assertMergedFilesCount(0);
     }
 
     @Test
     public void testExclusionFromMultipleFiles() throws IOException {
-        when(packagingOptions.getExcludes()).thenReturn(
-                ImmutableSet.of(FileUtils.join("foo", "text.properties")));
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        setExcludes(ImmutableSet.of(FileUtils.join("foo", "text.properties")));
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
-        fileFilter.handleChanged(sMergedFolder, createFile(sExpandedJar1, "foo/text.properties"));
-        fileFilter.handleChanged(sMergedFolder, createFile(sExpandedJar2, "foo/text.properties"));
-        assertTrue(listFiles(sMergedFolder).length == 0);
+        mFileFilter.handleChanged(mMergedFolder, createFile(mExpandedJar1, "foo/text.properties"));
+        mFileFilter.handleChanged(mMergedFolder, createFile(mExpandedJar2, "foo/text.properties"));
+        assertMergedFilesCount(0);
     }
 
     @Test
     public void testMultipleExclusions() throws IOException {
-        when(packagingOptions.getExcludes()).thenReturn(
-                ImmutableSet.of(
-                        FileUtils.join("foo", "text.properties"),
-                        FileUtils.join("bar", "other.properties")));
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        setExcludes(ImmutableSet.of(
+                FileUtils.join("foo", "text.properties"),
+                FileUtils.join("bar", "other.properties")));
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
-        fileFilter.handleChanged(sMergedFolder, createFile(sExpandedJar1, "foo/text.properties"));
-        fileFilter.handleChanged(sMergedFolder, createFile(sExpandedJar2, "bar/other.properties"));
-        assertTrue(listFiles(sMergedFolder).length == 0);
+        mFileFilter.handleChanged(mMergedFolder, createFile(mExpandedJar1, "foo/text.properties"));
+        mFileFilter.handleChanged(mMergedFolder, createFile(mExpandedJar2, "bar/other.properties"));
+        assertMergedFilesCount(0);
     }
 
     @Test
     public void textNonExclusion() throws IOException {
-        when(packagingOptions.getExcludes()).thenReturn(
-                ImmutableSet.of(
-                        FileUtils.join("foo", "text.properties"),
-                        FileUtils.join("bar", "other.properties")));
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        setExcludes(ImmutableSet.of(
+                FileUtils.join("foo", "text.properties"),
+                FileUtils.join("bar", "other.properties")));
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
-        fileFilter.handleChanged(sMergedFolder, createFile(sExpandedJar1, "foo/text.properties"));
-        fileFilter.handleChanged(sMergedFolder, createFile(sExpandedJar2, "bar/other.properties"));
+        mFileFilter.handleChanged(mMergedFolder, createFile(mExpandedJar1, "foo/text.properties"));
+        mFileFilter.handleChanged(mMergedFolder, createFile(mExpandedJar2, "bar/other.properties"));
         // this one should be copied over.
-        fileFilter.handleChanged(sMergedFolder, createFile(sExpandedJar2, "bar/foo.properties"));
-        assertTrue(listFiles(sMergedFolder).length == 1);
-        assertTrue(new File(sMergedFolder, "bar/foo.properties").exists());
+        mFileFilter.handleChanged(mMergedFolder, createFile(mExpandedJar2, "bar/foo.properties"));
+        assertMergedFilesCount(1);
+        assertTrue(new File(mMergedFolder, "bar/foo.properties").exists());
     }
 
     @Test
     public void testSingleMerge() throws IOException {
-        when(packagingOptions.getMerges()).thenReturn(ImmutableSet.of(
+        setMerges(ImmutableSet.of(
                 FileUtils.join("foo", "text.properties")));
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
-        createFile(sExpandedJar1, "foo/text.properties", "one");
-        File secondFile = createFile(sExpandedJar2, "foo/text.properties", "two");
+        createFile(mExpandedJar1, "foo/text.properties", "one");
+        File secondFile = createFile(mExpandedJar2, "foo/text.properties", "two");
 
         // one has changed...
-        fileFilter.handleChanged(sMergedFolder, secondFile);
+        mFileFilter.handleChanged(mMergedFolder, secondFile);
 
-        File mergedFile = new File(sMergedFolder, "foo/text.properties");
+        File mergedFile = new File(mMergedFolder, "foo/text.properties");
         assertTrue(mergedFile.exists());
         assertContentInAnyOrder(
                 Files.asCharSource(mergedFile, Charset.defaultCharset()).read()
@@ -186,20 +174,20 @@ public class FileFilterTest {
 
     @Test
     public void testMultipleMerges() throws IOException {
-        when(packagingOptions.getMerges()).thenReturn(ImmutableSet.of(
+        setMerges(ImmutableSet.of(
                 FileUtils.join("foo" , "text.properties")));
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
-        createFile(sExpandedJar1, "foo/text.properties", "one");
-        File secondFile = createFile(sExpandedJar2, "foo/text.properties", "two");
-        createFile(sExpandedJar3, "foo/text.properties", "three");
+        createFile(mExpandedJar1, "foo/text.properties", "one");
+        File secondFile = createFile(mExpandedJar2, "foo/text.properties", "two");
+        createFile(mExpandedJar3, "foo/text.properties", "three");
 
         // one has changed...
-        fileFilter.handleChanged(sMergedFolder, secondFile);
+        mFileFilter.handleChanged(mMergedFolder, secondFile);
 
-        File mergedFile = new File(sMergedFolder, "foo/text.properties");
+        File mergedFile = new File(mMergedFolder, "foo/text.properties");
         assertTrue(mergedFile.exists());
         assertContentInAnyOrder(
                 Files.asCharSource(mergedFile, Charset.defaultCharset()).read()
@@ -208,27 +196,27 @@ public class FileFilterTest {
 
     @Test
     public void testMergeAddon() throws IOException {
-        when(packagingOptions.getMerges()).thenReturn(ImmutableSet.of(
+        setMerges(ImmutableSet.of(
                 FileUtils.join("foo", "text.properties")));
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
-        createFile(sExpandedJar1, "foo/text.properties", "one");
-        File secondFile = createFile(sExpandedJar2, "foo/text.properties", "two");
+        createFile(mExpandedJar1, "foo/text.properties", "one");
+        File secondFile = createFile(mExpandedJar2, "foo/text.properties", "two");
 
         // simulate one has changed to create initial version
-        fileFilter.handleChanged(sMergedFolder, secondFile);
+        mFileFilter.handleChanged(mMergedFolder, secondFile);
 
-        File mergedFile = new File(sMergedFolder, "foo/text.properties");
+        File mergedFile = new File(mMergedFolder, "foo/text.properties");
         assertTrue(mergedFile.exists());
         assertContentInAnyOrder(
                 Files.asCharSource(mergedFile, Charset.defaultCharset()).read()
                 , ImmutableList.of("one", "two"));
 
         // add a new one.
-        File thirdFile = createFile(sExpandedJar3, "foo/text.properties", "three");
-        fileFilter.handleChanged(sMergedFolder, thirdFile);
+        File thirdFile = createFile(mExpandedJar3, "foo/text.properties", "three");
+        mFileFilter.handleChanged(mMergedFolder, thirdFile);
 
         assertTrue(mergedFile.exists());
         assertContentInAnyOrder(
@@ -238,20 +226,20 @@ public class FileFilterTest {
 
     @Test
     public void testMergeUpdate() throws IOException {
-        when(packagingOptions.getMerges()).thenReturn(ImmutableSet.of(
+        setMerges(ImmutableSet.of(
                 FileUtils.join("foo", "text.properties")));
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
-        createFile(sExpandedJar1, "foo/text.properties", "one");
-        File secondFile = createFile(sExpandedJar2, "foo/text.properties", "two");
-        createFile(sExpandedJar3, "foo/text.properties", "three");
+        createFile(mExpandedJar1, "foo/text.properties", "one");
+        File secondFile = createFile(mExpandedJar2, "foo/text.properties", "two");
+        createFile(mExpandedJar3, "foo/text.properties", "three");
 
         // simulate one has changed to create initial version
-        fileFilter.handleChanged(sMergedFolder, secondFile);
+        mFileFilter.handleChanged(mMergedFolder, secondFile);
 
-        File mergedFile = new File(sMergedFolder, "foo/text.properties");
+        File mergedFile = new File(mMergedFolder, "foo/text.properties");
         assertTrue(mergedFile.exists());
         assertContentInAnyOrder(
                 Files.asCharSource(mergedFile, Charset.defaultCharset()).read()
@@ -259,9 +247,9 @@ public class FileFilterTest {
 
         // change one...
         assertTrue(secondFile.delete());
-        secondFile = createFile(sExpandedJar2, "foo/text.properties", "deux");
+        secondFile = createFile(mExpandedJar2, "foo/text.properties", "deux");
 
-        fileFilter.handleChanged(sMergedFolder, secondFile);
+        mFileFilter.handleChanged(mMergedFolder, secondFile);
 
         assertTrue(mergedFile.exists());
         assertContentInAnyOrder(
@@ -271,20 +259,20 @@ public class FileFilterTest {
 
     @Test
     public void testMergeRemoval() throws IOException {
-        when(packagingOptions.getMerges()).thenReturn(ImmutableSet.of(
+        setMerges(ImmutableSet.of(
                 FileUtils.join("foo", "text.properties")));
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
-        createFile(sExpandedJar1, "foo/text.properties", "one");
-        File secondFile = createFile(sExpandedJar2, "foo/text.properties", "two");
-        createFile(sExpandedJar3, "foo/text.properties", "three");
+        createFile(mExpandedJar1, "foo/text.properties", "one");
+        File secondFile = createFile(mExpandedJar2, "foo/text.properties", "two");
+        createFile(mExpandedJar3, "foo/text.properties", "three");
 
         // simulate one has changed to create initial version
-        fileFilter.handleChanged(sMergedFolder, secondFile);
+        mFileFilter.handleChanged(mMergedFolder, secondFile);
 
-        File mergedFile = new File(sMergedFolder, "foo/text.properties");
+        File mergedFile = new File(mMergedFolder, "foo/text.properties");
         assertTrue(mergedFile.exists());
         assertContentInAnyOrder(
                 Files.asCharSource(mergedFile, Charset.defaultCharset()).read()
@@ -293,7 +281,7 @@ public class FileFilterTest {
         // remove one...
         assertTrue(secondFile.delete());
 
-        fileFilter.handleRemoved(sMergedFolder, FileUtils.join("foo", "text.properties"));
+        mFileFilter.handleRemoved(mMergedFolder, FileUtils.join("foo", "text.properties"));
 
         assertTrue(mergedFile.exists());
         assertContentInAnyOrder(
@@ -303,20 +291,20 @@ public class FileFilterTest {
 
     @Test
     public void testPickFirst() throws IOException {
-        when(packagingOptions.getPickFirsts()).thenReturn(ImmutableSet.of("foo/text.properties"));
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        setPickFirsts(ImmutableSet.of("foo/text.properties"));
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
         // simulate the three elements were added.
-        fileFilter.handleChanged(sMergedFolder,
-                createFile(sExpandedJar1, "foo/text.properties", "one"));
-        fileFilter.handleChanged(sMergedFolder,
-                createFile(sExpandedJar2, "foo/text.properties", "two"));
-        fileFilter.handleChanged(sMergedFolder,
-                createFile(sExpandedJar3, "foo/text.properties", "three"));
+        mFileFilter.handleChanged(mMergedFolder,
+                createFile(mExpandedJar1, "foo/text.properties", "one"));
+        mFileFilter.handleChanged(mMergedFolder,
+                createFile(mExpandedJar2, "foo/text.properties", "two"));
+        mFileFilter.handleChanged(mMergedFolder,
+                createFile(mExpandedJar3, "foo/text.properties", "three"));
 
-        File mergedFile = new File(sMergedFolder, "foo/text.properties");
+        File mergedFile = new File(mMergedFolder, "foo/text.properties");
         assertTrue(mergedFile.exists());
         String mergedContent = Files.asCharSource(mergedFile, Charset.defaultCharset()).read();
         assertTrue(mergedContent.equals("one")
@@ -326,78 +314,78 @@ public class FileFilterTest {
 
     @Test
     public void testPickFirstUpdate() throws IOException {
-        when(packagingOptions.getPickFirsts()).thenReturn(ImmutableSet.of("foo/text.properties"));
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        setPickFirsts(ImmutableSet.of("foo/text.properties"));
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
-        File firstFile = createFile(sExpandedJar1, "foo/text.properties", "one");
-        File secondFile = createFile(sExpandedJar2, "foo/text.properties", "two");
-        File thirdFile = createFile(sExpandedJar3, "foo/text.properties", "three");
+        File firstFile = createFile(mExpandedJar1, "foo/text.properties", "one");
+        File secondFile = createFile(mExpandedJar2, "foo/text.properties", "two");
+        File thirdFile = createFile(mExpandedJar3, "foo/text.properties", "three");
 
         // simulate the three elements were added.
-        fileFilter.handleChanged(sMergedFolder, firstFile);
-        fileFilter.handleChanged(sMergedFolder, secondFile);
-        fileFilter.handleChanged(sMergedFolder, thirdFile);
+        mFileFilter.handleChanged(mMergedFolder, firstFile);
+        mFileFilter.handleChanged(mMergedFolder, secondFile);
+        mFileFilter.handleChanged(mMergedFolder, thirdFile);
 
-        File mergedFile = new File(sMergedFolder, "foo/text.properties");
+        File mergedFile = new File(mMergedFolder, "foo/text.properties");
         assertTrue(mergedFile.exists());
         String mergedContent = Files.asCharSource(mergedFile, Charset.defaultCharset()).read();
         if (mergedContent.equals("one")) {
             assertTrue(firstFile.delete());
-            createFile(sExpandedJar1, "foo/text.properties", "un");
-            fileFilter.handleChanged(sMergedFolder, firstFile);
+            createFile(mExpandedJar1, "foo/text.properties", "un");
+            mFileFilter.handleChanged(mMergedFolder, firstFile);
             assertEquals("un", Files.asCharSource(mergedFile, Charset.defaultCharset()).read());
         }
         if (mergedContent.equals("two")) {
             assertTrue(thirdFile.delete());
-            createFile(sExpandedJar2, "foo/text.properties", "deux");
-            fileFilter.handleChanged(sMergedFolder, secondFile);
+            createFile(mExpandedJar2, "foo/text.properties", "deux");
+            mFileFilter.handleChanged(mMergedFolder, secondFile);
             assertEquals("deux", Files.asCharSource(mergedFile, Charset.defaultCharset()).read());
         }
         if (mergedContent.equals("three")) {
             assertTrue(thirdFile.delete());
-            createFile(sExpandedJar3, "foo/text.properties", "trois");
-            fileFilter.handleChanged(sMergedFolder, thirdFile);
+            createFile(mExpandedJar3, "foo/text.properties", "trois");
+            mFileFilter.handleChanged(mMergedFolder, thirdFile);
             assertEquals("trois", Files.asCharSource(mergedFile, Charset.defaultCharset()).read());
         }
     }
 
     @Test
     public void testPickFirstRemoval() throws IOException {
-        when(packagingOptions.getPickFirsts()).thenReturn(ImmutableSet.of(
+        setPickFirsts(ImmutableSet.of(
                 FileUtils.join("foo", "text.properties")));
-        fileFilter = new FileFilter(
-                sPackagedJarExpansionSubStreams,
-                packagingOptions);
+        mFileFilter = new FileFilter(
+                mPackagedJarExpansionSubStreams,
+                mPackagingOptions);
 
-        File firstFile = createFile(sExpandedJar1, "foo/text.properties", "one");
-        File secondFile = createFile(sExpandedJar2, "foo/text.properties", "two");
-        File thirdFile = createFile(sExpandedJar3, "foo/text.properties", "three");
+        File firstFile = createFile(mExpandedJar1, "foo/text.properties", "one");
+        File secondFile = createFile(mExpandedJar2, "foo/text.properties", "two");
+        File thirdFile = createFile(mExpandedJar3, "foo/text.properties", "three");
 
         // simulate the three elements were added.
-        fileFilter.handleChanged(sMergedFolder, firstFile);
-        fileFilter.handleChanged(sMergedFolder, secondFile);
-        fileFilter.handleChanged(sMergedFolder, thirdFile);
+        mFileFilter.handleChanged(mMergedFolder, firstFile);
+        mFileFilter.handleChanged(mMergedFolder, secondFile);
+        mFileFilter.handleChanged(mMergedFolder, thirdFile);
 
-        File mergedFile = new File(sMergedFolder, "foo/text.properties");
+        File mergedFile = new File(mMergedFolder, "foo/text.properties");
         assertTrue(mergedFile.exists());
         String mergedContent = Files.asCharSource(mergedFile, Charset.defaultCharset()).read();
         if (mergedContent.equals("one")) {
             assertTrue(firstFile.delete());
-            fileFilter.handleRemoved(sMergedFolder, "foo/text.properties");
+            mFileFilter.handleRemoved(mMergedFolder, "foo/text.properties");
             mergedContent = Files.asCharSource(mergedFile, Charset.defaultCharset()).read();
             assertTrue(mergedContent.equals("two") || mergedContent.equals("three"));
         }
         if (mergedContent.equals("two")) {
             assertTrue(thirdFile.delete());
-            fileFilter.handleRemoved(sMergedFolder, "foo/text.properties");
+            mFileFilter.handleRemoved(mMergedFolder, "foo/text.properties");
             mergedContent = Files.asCharSource(mergedFile, Charset.defaultCharset()).read();
             assertTrue(mergedContent.equals("one") || mergedContent.equals("three"));
         }
         if (mergedContent.equals("three")) {
             assertTrue(thirdFile.delete());
-            fileFilter.handleRemoved(sMergedFolder, "foo/text.properties");
+            mFileFilter.handleRemoved(mMergedFolder, "foo/text.properties");
             mergedContent = Files.asCharSource(mergedFile, Charset.defaultCharset()).read();
             assertTrue(mergedContent.equals("one") || mergedContent.equals("two"));
         }
@@ -410,33 +398,6 @@ public class FileFilterTest {
             assertTrue(content.contains(subString));
         }
         assertEquals(length, content.length());
-    }
-
-    private static File createTmpFolder(@Nullable File parent) throws IOException {
-        File folder = File.createTempFile("tmp", "dir");
-        assertTrue(folder.delete());
-        if (parent != null) {
-            folder = new File(parent, folder.getName());
-        }
-        assertTrue(folder.mkdirs());
-        return folder;
-    }
-
-    @NonNull private static File[] listFiles(@NonNull File folder) {
-        File[] files = folder.listFiles();
-        if (files == null) {
-            return new File[0];
-        }
-        return files;
-    }
-
-    private static void cleanContents(File folder) {
-        for (File f : listFiles(folder)) {
-            if (f.isDirectory()) {
-                cleanContents(f);
-            }
-            assertTrue(f.delete());
-        }
     }
 
     @NonNull private static File createFile(
@@ -457,5 +418,17 @@ public class FileFilterTest {
         String fileContent = content == null ? "test!" : content;
         Files.append(fileContent, newFile, Charset.defaultCharset());
         return newFile;
+    }
+
+    private void setPickFirsts(ImmutableSet<String> paths) {
+        mPackagingOptions.setPickFirsts(paths);
+    }
+
+    private void setMerges(ImmutableSet<String> paths) {
+        mPackagingOptions.setMerges(paths);
+    }
+
+    private void setExcludes(ImmutableSet<String> paths) {
+        mPackagingOptions.setExcludes(paths);
     }
 }
