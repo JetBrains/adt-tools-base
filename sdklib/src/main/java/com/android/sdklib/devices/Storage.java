@@ -49,6 +49,16 @@ public class Storage {
         return mNoBytes / unit.getNumberOfBytes();
     }
 
+  /**
+   * Returns the amount of storage represented by the instance in the given unit
+   * as a double to get a more precise result
+   * @param unit The unit of the result.
+   * @return The size of the storage in the given unit.
+   */
+    public double getPreciseSizeAsUnit(@NonNull Unit unit) {
+        return ((double)mNoBytes) / unit.getNumberOfBytes();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == this) {
