@@ -433,24 +433,14 @@ public final class AndroidSdkHandler {
                 progress.logError("Error setting up schema modules", e);
             }
 
-            String url = System.getenv(SDK_TEST_BASE_URL_ENV_VAR);
-            if (url == null || url.length() <= 0 || !url.endsWith("/")) {
-                url = String.format("%srepository2-%d.xml", URL_GOOGLE_SDK_SITE,
-                        mRepositoryModule.getNamespaceVersionMap().size());
-            }
-
+            String url = String.format("%srepository2-%d.xml", getBaseUrl(progress),
+              mRepositoryModule.getNamespaceVersionMap().size());
             mRepositorySourceProvider = new ConstantSourceProvider(url, "Android Repository",
                     ImmutableSet.of(mRepositoryModule));
 
-            url = System.getenv("SDK_TEST_BASE_URL");
-            if (url == null || url.length() <= 0 || !url.endsWith("/")) {
-                url = String.format("%srepository-%d.xml", URL_GOOGLE_SDK_SITE,
-                        LATEST_LEGACY_VERSION);
-            }
-
+            url = String.format("%srepository-%d.xml", getBaseUrl(progress), LATEST_LEGACY_VERSION);
             mLegacyRepositorySourceProvider = new ConstantSourceProvider(url,
-                    "Legacy Android Repository", ImmutableSet.of(
-                    mRepositoryModule));
+                    "Legacy Android Repository", ImmutableSet.of(mRepositoryModule));
             try {
                 mUserSourceProvider = new LocalSourceProvider(new File(
                         AndroidLocation.getFolder(), LOCAL_ADDONS_FILENAME), ImmutableList
@@ -462,19 +452,25 @@ public final class AndroidSdkHandler {
 
         @NonNull
         private String getAddonListUrl(@NonNull ProgressIndicator progress) {
-            String url = URL_GOOGLE_SDK_SITE + DEFAULT_SITE_LIST_FILENAME_PATTERN;
-            String baseUrl = System.getenv("SDK_TEST_BASE_URL");
+            return getBaseUrl(progress) + DEFAULT_SITE_LIST_FILENAME_PATTERN;
+        }
+
+        /**
+         * Gets the default url (without the actual filename or specific final part of the path
+         * (e.g. sys-img). This will be either the value of {@link #SDK_TEST_BASE_URL_ENV_VAR} or
+         * {@link #URL_GOOGLE_SDK_SITE}
+         */
+        @NonNull
+        private String getBaseUrl(@NonNull ProgressIndicator progress) {
+            String baseUrl = System.getenv(SDK_TEST_BASE_URL_ENV_VAR);
             if (baseUrl != null) {
                 if (!baseUrl.isEmpty() && baseUrl.endsWith("/")) {
-                    if (url.startsWith(URL_GOOGLE_SDK_SITE)) {
-                        url = baseUrl + url.substring(URL_GOOGLE_SDK_SITE.length());
-                    }
+                    return baseUrl;
                 } else {
                     progress.logWarning("Ignoring invalid SDK_TEST_BASE_URL: " + baseUrl);
                 }
             }
-
-            return url;
+            return URL_GOOGLE_SDK_SITE;
         }
 
         @NonNull
