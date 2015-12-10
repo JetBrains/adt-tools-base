@@ -20,10 +20,10 @@ import com.android.repository.testframework.MockFileOp;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
-import com.android.sdklib.repository.local.LocalSdk;
 import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 
 import junit.framework.TestCase;
 
@@ -31,6 +31,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Tests for {@link AndroidTargetManager}.
@@ -45,11 +46,11 @@ public class AndroidTargetManagerTest extends TestCase {
         recordLegacyBuildTool23(fop);
         recordLegacySysImg13(fop);
         recordLegacyGoogleApisSysImg23(fop);
-        LocalSdk sdk = new LocalSdk(fop);
-        sdk.setLocation(new File("/sdk"));
 
-        AndroidTargetManager mgr = new AndroidTargetManager(sdk);
         FakeProgressIndicator progress = new FakeProgressIndicator();
+        AndroidSdkHandler handler = new AndroidSdkHandler(fop, false);
+        handler.setLocation(new File("/sdk"));
+        AndroidTargetManager mgr = handler.getAndroidTargetManager(progress);
         Collection<IAndroidTarget> targets = mgr.getTargets(progress);
         progress.assertNoErrorsOrWarnings();
         assertEquals(4, targets.size());
@@ -76,7 +77,7 @@ public class AndroidTargetManagerTest extends TestCase {
         handler.setLocation(new File("/sdk"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
 
-        AndroidTargetManager mgr = new AndroidTargetManager(handler, fop);
+        AndroidTargetManager mgr = handler.getAndroidTargetManager(progress);
         Collection<IAndroidTarget> targets = mgr.getTargets(progress);
         progress.assertNoErrorsOrWarnings();
         assertEquals(4, targets.size());
@@ -89,6 +90,58 @@ public class AndroidTargetManagerTest extends TestCase {
         verifyAddon13(resultIter.next(), platform13);
     }
 
+    public void testMissing() throws Exception {
+        MockFileOp fop = new MockFileOp();
+        recordNewPlatform23(fop);
+        recordNewGoogleTvAddon13(fop);
+        recordNewBuildTool23(fop);
+        recordNewSysImg13(fop);
+        recordNewGoogleApisSysImg23(fop);
+
+        AndroidSdkHandler handler = new AndroidSdkHandler(fop, true);
+        handler.setLocation(new File("/sdk"));
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+
+        AndroidTargetManager mgr = handler.getAndroidTargetManager(progress);
+        Collection<IAndroidTarget> targets = mgr.getTargets(true, progress);
+        progress.assertNoErrorsOrWarnings();
+        // Now we get missing targets from all target-creating packages that don't have the
+        // necessary dependencies to actually create a target.
+        assertEquals(4, targets.size());
+
+        Set<IAndroidTarget> sorted = Sets.newTreeSet(targets);
+        Iterator<IAndroidTarget> iter = sorted.iterator();
+        verifyMissing13(iter.next());
+        verifyPlatform23(iter.next());
+        verifyMissingAddon13(iter.next());
+        verifyMissingAddon23(iter.next());
+    }
+
+    public void testLegacyMissing() throws Exception {
+        MockFileOp fop = new MockFileOp();
+        recordLegacyPlatform23(fop);
+        recordLegacyGoogleTvAddon13(fop);
+        recordLegacyBuildTool23(fop);
+        recordLegacySysImg13(fop);
+        recordLegacyGoogleApisSysImg23(fop);
+
+        AndroidSdkHandler handler = new AndroidSdkHandler(fop, false);
+        handler.setLocation(new File("/sdk"));
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+
+        AndroidTargetManager mgr = handler.getAndroidTargetManager(progress);
+        Collection<IAndroidTarget> targets = mgr.getTargets(true, progress);
+        progress.assertNoErrorsOrWarnings();
+        // Previously we only got missing targets for those derived from targetless system images
+        assertEquals(3, targets.size());
+
+        Set<IAndroidTarget> sorted = Sets.newTreeSet(targets);
+        Iterator<IAndroidTarget> iter = sorted.iterator();
+        verifyMissing13(iter.next());
+        verifyPlatform23(iter.next());
+        verifyMissingAddon23(iter.next());
+    }
+
     private static void verifyPlatform13(IAndroidTarget target) {
         assertEquals(new AndroidVersion(13, null), target.getVersion());
         assertEquals("Android Open Source Project", target.getVendor());
@@ -97,7 +150,8 @@ public class AndroidTargetManagerTest extends TestCase {
         ISystemImage[] images = target.getSystemImages();
         assertEquals(2, images.length);
         assertEquals(new File("/sdk/platforms/android-13/images"), images[0].getLocation());
-        assertEquals(new File("/sdk/system-images/android-13/default/x86"), images[1].getLocation());
+        assertEquals(new File("/sdk/system-images/android-13/default/x86"),
+                images[1].getLocation());
         assertEquals(ImmutableSet.of(new File("/sdk/platforms/android-13/skins/HVGA"),
                 new File("/sdk/platforms/android-13/skins/WVGA800"),
                 new File("/sdk/system-images/android-13/default/x86/skins/res1"),
@@ -107,6 +161,21 @@ public class AndroidTargetManagerTest extends TestCase {
                 target.getBootClasspath());
         assertEquals(new File("/sdk/build-tools/23.0.2"), target.getBuildToolInfo().getLocation());
         assertEquals(new File("/sdk/platforms/android-13/skins/WXGA"), target.getDefaultSkin());
+    }
+
+    private static void verifyMissing13(IAndroidTarget target) {
+        assertEquals(new AndroidVersion(13, null), target.getVersion());
+        assertNull(target.getVendor());
+        assertNull(target.getLocation());
+        assertNull(target.getParent());
+        ISystemImage[] images = target.getSystemImages();
+        assertEquals(1, images.length);
+        assertEquals(new File("/sdk/system-images/android-13/default/x86"),
+                images[0].getLocation());
+        assertEquals(0, target.getSkins().length);
+        assertTrue(target.getBootClasspath().isEmpty());
+        assertNull(target.getBuildToolInfo());
+        assertNull(target.getDefaultSkin());
     }
 
     private static void verifyPlatform23(IAndroidTarget target) {
@@ -129,28 +198,47 @@ public class AndroidTargetManagerTest extends TestCase {
         assertEquals(new AndroidVersion(13, null), target.getVersion());
         assertEquals("Google Inc.", target.getVendor());
         assertEquals("/sdk/add-ons/addon-google_tv_addon-google-13/", target.getLocation());
-        assertEquals(platform13,target.getParent());
+        assertEquals(platform13, target.getParent());
         assertEquals(ImmutableSet.of(
                 new File("/sdk/platforms/android-13/skins/HVGA"),
                 new File("/sdk/add-ons/addon-google_tv_addon-google-13/skins/1080p"),
                 new File("/sdk/system-images/android-13/default/x86/skins/res2"),
                 new File("/sdk/system-images/android-13/default/x86/skins/res1"),
                 new File("/sdk/add-ons/addon-google_tv_addon-google-13/skins/720p-overscan"),
-                new File("/sdk/platforms/android-13/skins/WVGA800")), ImmutableSet.copyOf(target.getSkins()));
+                new File("/sdk/platforms/android-13/skins/WVGA800")),
+                ImmutableSet.copyOf(target.getSkins()));
         assertEquals(ImmutableList.of("/sdk/platforms/android-13/android.jar"),
                 target.getBootClasspath());
         assertEquals(new File("/sdk/build-tools/23.0.2"), target.getBuildToolInfo().getLocation());
-        assertEquals(new File("/sdk/add-ons/addon-google_tv_addon-google-13/skins/720p"), target.getDefaultSkin());
+        assertEquals(new File("/sdk/add-ons/addon-google_tv_addon-google-13/skins/720p"),
+                target.getDefaultSkin());
         ISystemImage[] images = target.getSystemImages();
         assertEquals(1, images.length);
-        assertEquals(new File("/sdk/add-ons/addon-google_tv_addon-google-13/images/x86"), images[0].getLocation());
+        assertEquals(new File("/sdk/add-ons/addon-google_tv_addon-google-13/images/x86"),
+                images[0].getLocation());
+    }
+
+    private static void verifyMissingAddon13(IAndroidTarget target) {
+        assertEquals(new AndroidVersion(13, null), target.getVersion());
+        assertEquals("Google Inc.", target.getVendor());
+        assertNull(target.getLocation());
+        assertNull(target.getParent());
+        assertEquals(0, target.getSkins().length);
+        assertTrue(target.getBootClasspath().isEmpty());
+        assertNull(target.getBuildToolInfo());
+        assertNull(target.getDefaultSkin());
+        // The new implementation picks up the system image within the addon itself.
+        ISystemImage[] images = target.getSystemImages();
+        assertEquals(1, images.length);
+        assertEquals(new File("/sdk/add-ons/addon-google_tv_addon-google-13/images/x86"),
+                images[0].getLocation());
     }
 
     private static void verifyAddon23(IAndroidTarget target, IAndroidTarget platform23) {
         assertEquals(new AndroidVersion(23, null), target.getVersion());
         assertEquals("Google Inc.", target.getVendor());
         assertEquals("/sdk/add-ons/addon-google_apis-google-23/", target.getLocation());
-        assertEquals(platform23,target.getParent());
+        assertEquals(platform23, target.getParent());
         assertEquals(ImmutableSet.of(new File("/sdk/platforms/android-23/skins/HVGA"),
                 new File("/sdk/platforms/android-23/skins/WVGA800")),
                 ImmutableSet.copyOf(target.getSkins()));
@@ -160,7 +248,24 @@ public class AndroidTargetManagerTest extends TestCase {
         assertEquals(new File("/sdk/platforms/android-23/skins/WVGA800"), target.getDefaultSkin());
         ISystemImage[] images = target.getSystemImages();
         assertEquals(1, images.length);
-        assertEquals(new File("/sdk/system-images/android-23/google_apis/x86_64"), images[0].getLocation());
+        assertEquals(new File("/sdk/system-images/android-23/google_apis/x86_64"),
+                images[0].getLocation());
+    }
+
+    private static void verifyMissingAddon23(IAndroidTarget target) {
+        assertEquals(new AndroidVersion(23, null), target.getVersion());
+        assertEquals("Google Inc.", target.getVendor());
+        assertNull(target.getLocation());
+        assertNull(target.getParent());
+        assertEquals(0, target.getSkins().length);
+        assertTrue(target.getBootClasspath().isEmpty());
+        assertNull(target.getBuildToolInfo());
+        assertNull(target.getDefaultSkin());
+
+        ISystemImage[] images = target.getSystemImages();
+        assertEquals(1, images.length);
+        assertEquals(new File("/sdk/system-images/android-23/google_apis/x86_64"),
+                images[0].getLocation());
     }
 
     private static void recordLegacyBuildTool23(MockFileOp fop) {
@@ -180,8 +285,9 @@ public class AndroidTargetManagerTest extends TestCase {
                         + "xmlns:ns4=\"http://schemas.android.com/repository/android/common/01\" "
                         + "xmlns:ns5=\"http://schemas.android.com/sdk/android/repo/addon2/01\">"
                         + "<license id=\"license-19E6313A\" type=\"text\">License text\n"
-                        + "    </license><localPackage path=\"build-tools;23.0.2\" obsolete=\"false\">"
-                        + "<type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:type=\"ns2:buildToolDetailsType\"/>"
+                        + "</license><localPackage path=\"build-tools;23.0.2\" obsolete=\"false\">"
+                        + "<type-details xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+                        + "xsi:type=\"ns2:buildToolDetailsType\"/>"
                         + "<revision><major>23</major><minor>0</minor><micro>2</micro></revision>"
                         + "<display-name>Android SDK Build-Tools 23.0.2</display-name>"
                         + "<uses-license ref=\"license-19E6313A\"/></localPackage>"
