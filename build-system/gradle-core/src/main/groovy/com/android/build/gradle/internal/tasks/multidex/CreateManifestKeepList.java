@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.tasks.multidex;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -99,7 +100,12 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
                     + "}\n"
                     + "-keep public class * extends java.lang.annotation.Annotation {\n"
                     + "    *;\n"
-                    + "}\n");
+                    + "}\n"
+                    + "-keep class com.android.tools.fd.** {\n"
+                    + "    *;\n"
+                    + "}\n"
+                    + "-dontnote com.android.tools.fd.**,"
+                    + "android.support.multidex.MultiDexExtractor\n");
 
             if (proguardFile != null) {
                 out.write(Files.toString(proguardFile, Charsets.UTF_8));
@@ -136,14 +142,26 @@ public class CreateManifestKeepList extends DefaultAndroidTask {
             //noinspection UnnecessaryQualifiedReference
             String keepSpec = CreateManifestKeepList.KEEP_SPECS.get(qName);
             if (!Strings.isNullOrEmpty(keepSpec)) {
-                String nameValue = attr.getValue("android:name");
-                if (nameValue != null) {
-                    try {
-                        out.write("-keep class " + nameValue + " " + keepSpec + "\n");
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
+                keepClass(attr.getValue("android:name"), keepSpec, out);
+                // Also keep the original application class when using instant-run.
+                keepClass(attr.getValue("name"), keepSpec, out);
+            }
+        }
+    }
+
+    private static void keepClass(
+            @Nullable String className,
+            @NonNull String keepSpec,
+            @NonNull Writer out) {
+        if (className != null) {
+            try {
+                out.write("-keep class ");
+                out.write(className);
+                out.write(" ");
+                out.write(keepSpec);
+                out.write("\n");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
     }
