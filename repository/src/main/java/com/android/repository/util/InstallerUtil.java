@@ -38,7 +38,9 @@ import com.android.repository.impl.meta.RevisionType;
 import com.android.repository.impl.meta.SchemaModuleUtil;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import java.io.BufferedInputStream;
@@ -67,11 +69,11 @@ public class InstallerUtil {
     /**
      * Unzips the given zipped input stream into the given directory.
      *
-     * @param in The (zipped) input stream.
-     * @param out The directory into which to expand the files. Must exist.
-     * @param fop The {@link FileOp} to use for file operations.
+     * @param in           The (zipped) input stream.
+     * @param out          The directory into which to expand the files. Must exist.
+     * @param fop          The {@link FileOp} to use for file operations.
      * @param expectedSize Compressed size of the stream.
-     * @param progress Currently only used for logging.
+     * @param progress     Currently only used for logging.
      * @throws IOException If we're unable to read or write.
      */
     public static void unzip(@NonNull InputStream in, @NonNull File out, @NonNull FileOp fop,
@@ -92,14 +94,12 @@ public class InstallerUtil {
                 if (entry.isDirectory()) {
                     if (fop.exists(entryFile)) {
                         progress.logWarning(entryFile + " already exists");
-                    }
-                    else {
+                    } else {
                         if (!fop.mkdirs(entryFile)) {
                             progress.logWarning("failed to mkdirs " + entryFile);
                         }
                     }
-                }
-                else {
+                } else {
                     if (!fop.exists(entryFile)) {
                         File parent = entryFile.getParentFile();
                         if (parent != null && !fop.exists(parent)) {
@@ -121,28 +121,26 @@ public class InstallerUtil {
                                     ((double) size / entry.getSize());
                             progress.setFraction(fraction);
                         }
-                    }
-                    finally {
+                    } finally {
                         bos.close();
                     }
                 }
                 input.closeEntry();
             }
-        }
-        finally {
+        } finally {
             input.close();
         }
     }
 
     /**
-     * Writes out the XML for a {@link LocalPackageImpl} corresponding to the given
-     * {@link RemotePackage} to a {@code package.xml} file in {@code packageRoot}.
+     * Writes out the XML for a {@link LocalPackageImpl} corresponding to the given {@link
+     * RemotePackage} to a {@code package.xml} file in {@code packageRoot}.
      *
-     * @param p The package to convert to a local package and write out.
+     * @param p           The package to convert to a local package and write out.
      * @param packageRoot The location to write to. Must exist and be a directory.
-     * @param manager A {@link RepoManager} instance.
-     * @param fop The {@link FileOp} to use for file operations.
-     * @param progress Currently only used for logging.
+     * @param manager     A {@link RepoManager} instance.
+     * @param fop         The {@link FileOp} to use for file operations.
+     * @param progress    Currently only used for logging.
      * @throws IOException If we fail to write the output file.
      */
     public static void writePackageXml(@NonNull RemotePackage p, @NonNull File packageRoot,
@@ -181,9 +179,9 @@ public class InstallerUtil {
     }
 
     /**
-     * Returns a URL corresponding to {@link Archive#getComplete()} of the given
-     * {@link RemotePackage}. If the url in the package is a relative url, resolves it by using the
-     * prefix of the url in the {@link RepositorySource} of the package.
+     * Returns a URL corresponding to {@link Archive#getComplete()} of the given {@link
+     * RemotePackage}. If the url in the package is a relative url, resolves it by using the prefix
+     * of the url in the {@link RepositorySource} of the package.
      *
      * @return The resolved {@link URL}, or {@code null} if the given archive location is not
      * parsable in its original or resolved form.
@@ -221,21 +219,25 @@ public class InstallerUtil {
      * unable to compute a complete list of dependencies due to not being able to find required
      * packages of the specified version.
      *
+     * Packages are returned in install order (that is, if we request A which depends on B, the
+     * result will be [B, A]). If a dependency cycle is encountered the order of the returned
+     * results at or below the cycle is undefined. For example if we have A -> [B, C], B -> D, and
+     * D -> B then the returned list will be either [B, D, C, A] or [D, B, C, A].
+     * 
      * Note that we assume installed packages already have their dependencies met.
      */
+    @Nullable
     public static List<RemotePackage> computeRequiredPackages(
-      @NonNull Collection<RemotePackage> requests, @NonNull RepositoryPackages packages,
-      @NonNull ProgressIndicator logger) {
-        List<RemotePackage> result = Lists.newArrayList();
+            @NonNull Collection<RemotePackage> requests, @NonNull RepositoryPackages packages,
+            @NonNull ProgressIndicator logger) {
+        Set<RemotePackage> requiredPackages = Sets.newHashSet();
         Map<String, UpdatablePackage> consolidatedPackages = packages.getConsolidatedPkgs();
 
         Set<String> seen = Sets.newHashSet();
-        Queue<RemotePackage> current = Lists.newLinkedList();
-        current.addAll(requests);
-        result.addAll(requests);
-        for (RemotePackage p : requests) {
-            seen.add(p.getPath());
-        }
+        Queue<RemotePackage> current = Lists.newLinkedList(requests);
+        requiredPackages.addAll(requests);
+        Multimap<String, Dependency> allDependencies = HashMultimap.create();
+        Set<RemotePackage> roots = Sets.newHashSet(requests);
 
         while (!current.isEmpty()) {
             RemotePackage currentPackage = current.remove();
@@ -244,6 +246,7 @@ public class InstallerUtil {
             for (Dependency d : currentDependencies) {
                 String dependencyPath = d.getPath();
                 if (seen.contains(dependencyPath)) {
+                    allDependencies.put(dependencyPath, d);
                     continue;
                 }
                 seen.add(dependencyPath);
@@ -276,10 +279,37 @@ public class InstallerUtil {
                     return null;
                 }
 
-                result.add(remoteDependency);
+                requiredPackages.add(remoteDependency);
+                allDependencies.put(dependencyPath, d);
                 current.add(remoteDependency);
+                // We had a dependency on it, so it can't be a root.
+                roots.remove(remoteDependency);
             }
         }
-        return result;
+
+        List<RemotePackage> result = Lists.newArrayList();
+
+        while (!roots.isEmpty()) {
+            RemotePackage root = roots.iterator().next();
+            roots.remove(root);
+            result.add(root);
+            for (Dependency d : root.getAllDependencies()) {
+                Collection<Dependency> nodeDeps = allDependencies.get(d.getPath());
+                if (nodeDeps.size() == 1) {
+                    roots.add(consolidatedPackages.get(d.getPath()).getRemote(true));
+                }
+                nodeDeps.remove(d);
+            }
+        }
+
+        if (result.size() != requiredPackages.size()) {
+            logger.logInfo("Failed to sort dependencies, returning partially-sorted list.");
+            for (RemotePackage p : result) {
+                requiredPackages.remove(p);
+            }
+            result.addAll(requiredPackages);
+        }
+
+        return Lists.reverse(result);
     }
 }
