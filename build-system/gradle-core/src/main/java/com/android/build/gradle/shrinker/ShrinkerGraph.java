@@ -100,7 +100,7 @@ public interface ShrinkerGraph<T> {
     boolean isLibraryClass(@NonNull T klass);
 
     @NonNull
-    T[] getInterfaces(T klass);
+    T[] getInterfaces(T klass) throws ClassLookupException;
 
     void checkDependencies(ShrinkerLogger shrinkerLogger);
 

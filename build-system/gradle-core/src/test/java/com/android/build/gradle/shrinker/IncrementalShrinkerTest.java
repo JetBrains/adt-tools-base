@@ -24,15 +24,19 @@ import static org.mockito.Mockito.when;
 import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.gradle.shrinker.AbstractShrinker.CounterSet;
+import com.android.build.gradle.shrinker.IncrementalShrinker.IncrementalRunImpossibleException;
 import com.android.build.gradle.shrinker.TestClassesForIncremental.Cycle;
 import com.android.build.gradle.shrinker.TestClassesForIncremental.Simple;
 import com.android.ide.common.internal.WaitableExecutor;
+import com.android.utils.FileUtils;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +49,9 @@ import java.util.Map;
 public class IncrementalShrinkerTest extends AbstractShrinkerTest {
 
     private FullRunShrinker<String> mFullRunShrinker;
+
+    @Rule
+    public ExpectedException mException = ExpectedException.none();
 
     @Before
     public void createShrinker() throws Exception {
@@ -78,7 +85,7 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
         Thread.sleep(1000);
 
         Files.write(Simple.main2(), new File(mTestPackageDir, "Main.class"));
-        incrementalRun("Main");
+        incrementalRun(ImmutableMap.of("Main", Status.CHANGED));
 
         // Then:
         assertMembersLeft("Main", "main:()V");
@@ -90,6 +97,197 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
         assertEquals(timestampBbb, getOutputClassFile("Bbb").lastModified());
     }
 
+    @Test
+    public void simple_testIncrementalUpdate_methodAdded() throws Exception {
+        // Given:
+        Files.write(Simple.aaa(), new File(mTestPackageDir, "Aaa.class"));
+        Files.write(Simple.bbb(), new File(mTestPackageDir, "Bbb.class"));
+        Files.write(Simple.main1(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.emptyClass("NotUsed"), new File(mTestPackageDir, "NotUsed.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Simple.main_extraMethod(), new File(mTestPackageDir, "Main.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("test/Main.extraMain:()V added");
+        incrementalRun(ImmutableMap.of("Main", Status.CHANGED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_methodRemoved() throws Exception {
+        // Given:
+        Files.write(Simple.aaa(), new File(mTestPackageDir, "Aaa.class"));
+        Files.write(Simple.bbb(), new File(mTestPackageDir, "Bbb.class"));
+        Files.write(Simple.main_extraMethod(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.emptyClass("NotUsed"), new File(mTestPackageDir, "NotUsed.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Simple.main1(), new File(mTestPackageDir, "Main.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("test/Main.extraMain:()V removed");
+        incrementalRun(ImmutableMap.of("Main", Status.CHANGED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_fieldAdded() throws Exception {
+        // Given:
+        Files.write(Simple.aaa(), new File(mTestPackageDir, "Aaa.class"));
+        Files.write(Simple.bbb(), new File(mTestPackageDir, "Bbb.class"));
+        Files.write(Simple.main1(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.emptyClass("NotUsed"), new File(mTestPackageDir, "NotUsed.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Simple.main_extraField(), new File(mTestPackageDir, "Main.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("test/Main.sString:Ljava/lang/String; added");
+        incrementalRun(ImmutableMap.of("Main", Status.CHANGED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_fieldRemoved() throws Exception {
+        // Given:
+        Files.write(Simple.aaa(), new File(mTestPackageDir, "Aaa.class"));
+        Files.write(Simple.bbb(), new File(mTestPackageDir, "Bbb.class"));
+        Files.write(Simple.main_extraField(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.emptyClass("NotUsed"), new File(mTestPackageDir, "NotUsed.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Simple.main1(), new File(mTestPackageDir, "Main.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("test/Main.sString:Ljava/lang/String; removed");
+        incrementalRun(ImmutableMap.of("Main", Status.CHANGED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_classAdded() throws Exception {
+        // Given:
+        Files.write(Simple.aaa(), new File(mTestPackageDir, "Aaa.class"));
+        Files.write(Simple.bbb(), new File(mTestPackageDir, "Bbb.class"));
+        Files.write(Simple.main1(), new File(mTestPackageDir, "Main.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(TestClasses.emptyClass("NotUsed"), new File(mTestPackageDir, "NotUsed.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("test/NotUsed.class added");
+        incrementalRun(ImmutableMap.of(
+                "Main", Status.CHANGED,
+                "NotUsed", Status.ADDED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_classRemoved() throws Exception {
+        // Given:
+        File notUsedClass = new File(mTestPackageDir, "NotUsed.class");
+
+        Files.write(Simple.aaa(), new File(mTestPackageDir, "Aaa.class"));
+        Files.write(Simple.bbb(), new File(mTestPackageDir, "Bbb.class"));
+        Files.write(Simple.main1(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.emptyClass("NotUsed"), notUsedClass);
+
+        fullRun("Main", "main:()V");
+
+        FileUtils.delete(notUsedClass);
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("test/NotUsed.class removed");
+        incrementalRun(ImmutableMap.of(
+                "Main", Status.CHANGED,
+                "NotUsed", Status.REMOVED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_superclassChanged() throws Exception {
+        // Given:
+        Files.write(Simple.aaa(), new File(mTestPackageDir, "Aaa.class"));
+        Files.write(Simple.bbb(), new File(mTestPackageDir, "Bbb.class"));
+        Files.write(Simple.main1(), new File(mTestPackageDir, "Main.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Simple.bbb_extendsAaa(), new File(mTestPackageDir, "Bbb.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("test/Bbb superclass changed");
+        incrementalRun(ImmutableMap.of(
+                "Bbb", Status.CHANGED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_interfacesChanged() throws Exception {
+        // Given:
+        Files.write(Simple.aaa(), new File(mTestPackageDir, "Aaa.class"));
+        Files.write(Simple.bbb(), new File(mTestPackageDir, "Bbb.class"));
+        Files.write(Simple.main1(), new File(mTestPackageDir, "Main.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Simple.bbb_serializable(), new File(mTestPackageDir, "Bbb.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("test/Bbb interfaces changed");
+        incrementalRun(ImmutableMap.of(
+                "Bbb", Status.CHANGED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_methodModifiersChanged() throws Exception {
+        // Given:
+        Files.write(Simple.aaa(), new File(mTestPackageDir, "Aaa.class"));
+        Files.write(Simple.bbb(), new File(mTestPackageDir, "Bbb.class"));
+        Files.write(Simple.main1(), new File(mTestPackageDir, "Main.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Simple.bbb_packagePrivateConstructor(), new File(mTestPackageDir, "Bbb.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("test/Bbb.<init>:()V modifiers changed");
+        incrementalRun(ImmutableMap.of(
+                "Bbb", Status.CHANGED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_fieldModifiersChanged() throws Exception {
+        // Given:
+        Files.write(Simple.aaa(), new File(mTestPackageDir, "Aaa.class"));
+        Files.write(Simple.bbb(), new File(mTestPackageDir, "Bbb.class"));
+        Files.write(Simple.main_extraField(), new File(mTestPackageDir, "Main.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Simple.main_extraField_private(), new File(mTestPackageDir, "Main.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("test/Main.sString:Ljava/lang/String; modifiers changed");
+        incrementalRun(ImmutableMap.of(
+                "Main", Status.CHANGED));
+    }
+
+    @Test
+    public void simple_testIncrementalUpdate_classModifiersChanged() throws Exception {
+        // Given:
+        Files.write(Simple.aaa(), new File(mTestPackageDir, "Aaa.class"));
+        Files.write(Simple.bbb(), new File(mTestPackageDir, "Bbb.class"));
+        Files.write(Simple.main1(), new File(mTestPackageDir, "Main.class"));
+
+        fullRun("Main", "main:()V");
+
+        Files.write(Simple.bbb_packagePrivate(), new File(mTestPackageDir, "Bbb.class"));
+
+        mException.expect(IncrementalRunImpossibleException.class);
+        mException.expectMessage("test/Bbb modifiers changed");
+        incrementalRun(ImmutableMap.of(
+                "Bbb", Status.CHANGED));
+    }
 
     @Test
     public void cycle() throws Exception {
@@ -110,7 +308,7 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
         byte[] mainBytes = Files.toByteArray(getOutputClassFile("Main"));
 
         Files.write(Cycle.main2(), new File(mTestPackageDir, "Main.class"));
-        incrementalRun("Main");
+        incrementalRun(ImmutableMap.of("Main", Status.CHANGED));
 
         // Then:
         assertMembersLeft("Main", "main:()V");
@@ -121,7 +319,7 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
         assertNotEquals(mainBytes, Files.toByteArray(getOutputClassFile("Main")));
 
         Files.write(Cycle.main1(), new File(mTestPackageDir, "Main.class"));
-        incrementalRun("Main");
+        incrementalRun(ImmutableMap.of("Main", Status.CHANGED));
         assertMembersLeft("Main", "main:()V");
         assertMembersLeft("CycleOne", "<init>:()V");
         assertMembersLeft("CycleTwo", "<init>:()V");
@@ -138,17 +336,17 @@ public class IncrementalShrinkerTest extends AbstractShrinkerTest {
                 true);
     }
 
-    private void incrementalRun(String... changedClasses) throws Exception {
+    private void incrementalRun(Map<String, Status> changes) throws Exception {
         IncrementalShrinker<String> incrementalShrinker = new IncrementalShrinker<String>(
                 new WaitableExecutor<Void>(),
                 JavaSerializationShrinkerGraph.readFromDir(mIncrementalDir),
                 mShrinkerLogger);
 
         Map<File, Status> files = Maps.newHashMap();
-        for (String name : changedClasses) {
+        for (Map.Entry<String, Status> entry : changes.entrySet()) {
             files.put(
-                    new File(mTestPackageDir, name + ".class"),
-                    Status.CHANGED);
+                    new File(mTestPackageDir, entry.getKey() + ".class"),
+                    entry.getValue());
         }
 
         when(mDirectoryInput.getChangedFiles()).thenReturn(files);

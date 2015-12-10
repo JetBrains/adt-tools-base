@@ -289,8 +289,17 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
 
     @NonNull
     @Override
-    public String[] getInterfaces(String klass) {
-        return mClasses.get(klass).interfaces;
+    public String[] getInterfaces(String klass) throws ClassLookupException {
+        ClassInfo classInfo = mClasses.get(klass);
+        if (classInfo == null) {
+            throw new ClassLookupException(klass);
+        }
+
+        if (classInfo.interfaces == null) {
+            return new String[0];
+        } else {
+            return classInfo.interfaces;
+        }
     }
 
     @Override
@@ -372,8 +381,8 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     @Override
     public String addClass(
             @NonNull String name,
-            String superName,
-            String[] interfaces,
+            @Nullable String superName,
+            @Nullable String[] interfaces,
             int modifiers,
             @Nullable File classFile) {
         //noinspection unchecked - ASM API
@@ -497,11 +506,19 @@ public class JavaSerializationShrinkerGraph implements ShrinkerGraph<String> {
     }
 
     private static final class ClassInfo implements Serializable {
+        @Nullable
         final File classFile;
+
+        @Nullable
         final String superclass;
+
+        @Nullable
         final String[] interfaces;
 
-        private ClassInfo(File classFile, String superclass, String[] interfaces) {
+        private ClassInfo(
+                @Nullable File classFile,
+                @Nullable String superclass,
+                @Nullable String[] interfaces) {
             this.classFile = classFile;
             this.superclass = superclass;
             this.interfaces = interfaces;

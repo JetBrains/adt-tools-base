@@ -113,6 +113,157 @@ public class TestClassesForIncremental implements Opcodes {
             return cw.toByteArray();
         }
 
+        public static byte[] main_extraMethod() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "main", "()V", null, null);
+                mv.visitCode();
+                mv.visitTypeInsn(NEW, "test/Bbb");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/Bbb", "<init>",
+                        "()V", false);
+                mv.visitInsn(POP);
+                mv.visitTypeInsn(NEW, "test/Aaa");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/Aaa", "<init>",
+                        "()V", false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/Aaa", "m1", "()V",
+                        false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 1);
+                mv.visitEnd();
+            }
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "extraMain", "()V", null, null);
+                mv.visitCode();
+                mv.visitTypeInsn(NEW, "test/Aaa");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/Aaa", "<init>",
+                        "()V", false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/Aaa", "m1", "()V",
+                        false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 1);
+                mv.visitEnd();
+            }
+
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] main_extraField() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "main", "()V", null, null);
+                mv.visitCode();
+                mv.visitTypeInsn(NEW, "test/Bbb");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/Bbb", "<init>",
+                        "()V", false);
+                mv.visitInsn(POP);
+                mv.visitTypeInsn(NEW, "test/Aaa");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/Aaa", "<init>",
+                        "()V", false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/Aaa", "m1", "()V",
+                        false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 1);
+                mv.visitEnd();
+            }
+            {
+                fv = cw.visitField(ACC_PUBLIC + ACC_STATIC, "sString", "Ljava/lang/String;", null,
+                        null);
+                fv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] main_extraField_private() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Main", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "main", "()V", null, null);
+                mv.visitCode();
+                mv.visitTypeInsn(NEW, "test/Bbb");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/Bbb", "<init>",
+                        "()V", false);
+                mv.visitInsn(POP);
+                mv.visitTypeInsn(NEW, "test/Aaa");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "test/Aaa", "<init>",
+                        "()V", false);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "test/Aaa", "m1", "()V",
+                        false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(2, 1);
+                mv.visitEnd();
+            }
+            {
+                fv = cw.visitField(ACC_PRIVATE + ACC_STATIC, "sString", "Ljava/lang/String;", null,
+                        null);
+                fv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
         public static byte[] aaa() throws Exception {
 
             ClassWriter cw = new ClassWriter(0);
@@ -160,6 +311,102 @@ public class TestClassesForIncremental implements Opcodes {
 
             cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Bbb", null,
                     "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] bbb_packagePrivateConstructor() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Bbb", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(0, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] bbb_packagePrivate() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_SUPER, "test/Bbb", null,
+                    "java/lang/Object", null);
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] bbb_serializable() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Bbb", null,
+                    "java/lang/Object", new String[] {"java/io/Serializable"});
+
+            {
+                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+                mv.visitInsn(RETURN);
+                mv.visitMaxs(1, 1);
+                mv.visitEnd();
+            }
+            cw.visitEnd();
+
+            return cw.toByteArray();
+        }
+
+        public static byte[] bbb_extendsAaa() throws Exception {
+
+            ClassWriter cw = new ClassWriter(0);
+            FieldVisitor fv;
+            MethodVisitor mv;
+            AnnotationVisitor av0;
+
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "test/Bbb", null,
+                    "test/Aaa", null);
 
             {
                 mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
