@@ -249,8 +249,7 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
     public void run(Collection<ITestRunListener> listeners)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException {
-        final String runCaseCommandStr = String.format("am instrument -w -r %1$s %2$s %3$s",
-                getRunOptions(), getArgsCommand(), getRunnerPath());
+        final String runCaseCommandStr = getAmInstrumentCommand();
         Log.i(LOG_TAG, String.format("Running %1$s on %2$s", runCaseCommandStr,
                 mRemoteDevice.getName()));
         String runName = mRunName == null ? mPackageName : mRunName;
@@ -287,6 +286,12 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
             mParser.handleTestRunFailed(e.toString());
             throw e;
         }
+    }
+
+    @NonNull
+    public String getAmInstrumentCommand() {
+        return String.format("am instrument -w -r %1$s %2$s %3$s", getRunOptions(),
+                             getArgsCommand(), getRunnerPath());
     }
 
     /**
