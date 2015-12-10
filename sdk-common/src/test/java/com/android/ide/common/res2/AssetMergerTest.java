@@ -240,9 +240,9 @@ public class AssetMergerTest extends BaseTestCase {
         String expected = merger1.toString();
         String actual = loadedMerger.toString();
         if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS) {
-            expected = expected.replaceAll(Pattern.quote(File.separator), "/").
+            expected = expected.replace(File.separatorChar, '/').
                                 replaceAll("[A-Z]:/", "/");
-            actual = actual.replaceAll(Pattern.quote(File.separator), "/").
+            actual = actual.replace(File.separatorChar, '/').
                             replaceAll("[A-Z]:/", "/");
             assertEquals("Actual: " + actual + "\nExpected: " + expected, expected, actual);
         } else {

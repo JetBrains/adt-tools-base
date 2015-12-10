@@ -104,7 +104,7 @@ public class MavenInstaller implements PackageInstaller {
         }
         try {
             String path = p.getPath();
-            path = path.replaceAll(RepoPackage.PATH_SEPARATOR, File.separator);
+            path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
             File dest = new File(new File(manager.getLocalPath(), MAVEN_DIR_NAME), path);
 
             InputStream in = downloader.download(url, settings, progress);
@@ -148,7 +148,7 @@ public class MavenInstaller implements PackageInstaller {
         result.version = path.getName();
         result.artifactId = path.getParentFile().getName();
         result.groupId = p.getPath().substring(0, p.getPath().lastIndexOf(result.artifactId) - 1)
-                .replaceAll(RepoPackage.PATH_SEPARATOR, ".");
+                .replace(RepoPackage.PATH_SEPARATOR, '.');
         return result;
     }
 

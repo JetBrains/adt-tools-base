@@ -279,7 +279,7 @@ public final class DetailsTypes {
         public File getJar() {
             assert mPackagePath != null;
             String localPath = getLocalJarPath();
-            localPath = localPath.replaceAll("/", File.separator);
+            localPath = localPath.replace('/', File.separatorChar);
             return new File(mPackagePath, SdkConstants.OS_ADDON_LIBS_FOLDER + localPath);
         }
 

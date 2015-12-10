@@ -55,7 +55,7 @@ public class BasicInstaller implements PackageInstaller {
     public boolean uninstall(@NonNull LocalPackage p, @NonNull ProgressIndicator progress,
             @NonNull RepoManager manager, @NonNull FileOp fop) {
         String path = p.getPath();
-        path = path.replaceAll(RepoPackage.PATH_SEPARATOR, File.separator);
+        path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
         File location = new File(manager.getLocalPath(), path);
 
         fop.deleteFileOrFolder(location);
@@ -79,7 +79,7 @@ public class BasicInstaller implements PackageInstaller {
         }
         try {
             String path = p.getPath();
-            path = path.replaceAll(RepoPackage.PATH_SEPARATOR, File.separator);
+            path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
             File dest = new File(manager.getLocalPath(), path);
 
             InputStream in = downloader.download(url, settings, progress);

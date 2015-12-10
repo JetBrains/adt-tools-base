@@ -193,7 +193,7 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
             assert location != null;
             return mWrapped.getLocalDir().getAbsolutePath()
                     .substring(location.getAbsolutePath().length() + 1)
-                    .replaceAll(File.separator, ";");
+                    .replace(File.separatorChar, RepoPackage.PATH_SEPARATOR);
         }
 
         @Override

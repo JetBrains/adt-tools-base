@@ -33,7 +33,7 @@ import javax.xml.bind.annotation.XmlTransient;
 @XmlTransient
 public interface RepoPackage extends Comparable<RepoPackage> {
 
-    String PATH_SEPARATOR = ";";
+    char PATH_SEPARATOR = ';';
 
     /**
      * Gets the {@link TypeDetails} for this package.
