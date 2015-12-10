@@ -206,8 +206,10 @@ public class AndroidTargetManager {
                     AndroidVersion addonVersion = DetailsTypes
                             .getAndroidVersion((DetailsTypes.AddonDetailsType) details);
                     PlatformTarget baseTarget = platformTargets.get(addonVersion);
-                    result.add(new AddonTarget(p, baseTarget,
-                            mSdkHandler.getSystemImageManager(progress), mFop, progress));
+                    if (baseTarget != null) {
+                        result.add(new AddonTarget(p, baseTarget,
+                                mSdkHandler.getSystemImageManager(progress), mFop, progress));
+                    }
                 }
             }
             return result;

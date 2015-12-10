@@ -329,7 +329,11 @@ public final class AndroidSdkHandler {
 
     private LocalSdk getLocalSdk() {
         if (mLocalSdk == null) {
-            mLocalSdk = new LocalSdk(mLocation);
+            LocalSdk sdk = new LocalSdk(mFop);
+            if (mLocation != null) {
+                sdk.setLocation(mLocation);
+            }
+            mLocalSdk = sdk;
         }
         return mLocalSdk;
     }
