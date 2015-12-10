@@ -28,74 +28,74 @@ import org.w3c.dom.Node;
 @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
 public class DexClassSubject extends Subject<DexClassSubject, Node> {
 
-    static class Factory extends SubjectFactory<DexClassSubject, Node> {
-        @NonNull
-        public static Factory get() {
-            return new Factory();
-        }
-
-        private Factory() {}
-
+    public static final SubjectFactory<DexClassSubject, Node> FACTORY
+            = new SubjectFactory<DexClassSubject, Node>() {
         @Override
         public DexClassSubject getSubject(
                 @NonNull FailureStrategy failureStrategy,
-                @NonNull Node subject) {
+                @Nullable Node subject) {
             return new DexClassSubject(failureStrategy, subject);
         }
-    }
+    };
 
-    public DexClassSubject(
+    private DexClassSubject(
             @NonNull FailureStrategy failureStrategy,
             @Nullable Node subject) {
         super(failureStrategy, subject);
     }
 
     public void hasMethod(@NonNull String name) {
-        failIfSubjectIsNull();
-        if (getSubject() != null && !checkHasMethod(name)) {
+        if (assertSubjectIsNonNull() && !checkHasMethod(name)) {
             fail("does not contain method", name);
         }
     }
 
-    public void hasMethods(@NonNull String ... names) {
-        for (String name: names) {
-            hasMethod(name);
+    public void hasMethods(@NonNull String... names) {
+        if (assertSubjectIsNonNull()) {
+            for (String name : names) {
+                hasMethod(name);
+            }
         }
     }
 
     public void hasField(@NonNull String name) {
-        failIfSubjectIsNull();
-        if (getSubject() != null && !checkHasField(name)) {
+        if (assertSubjectIsNonNull() && !checkHasField(name)) {
             fail("does not contain field", name);
         }
     }
 
     public void doesNotHaveField(@NonNull String name) {
-        failIfSubjectIsNull();
-        if (getSubject() != null &&  checkHasField(name)) {
+        if (assertSubjectIsNonNull() && checkHasField(name)) {
             fail("should not contain field", name);
         }
     }
 
     public void doesNotHaveMethod(@NonNull String name) {
-        failIfSubjectIsNull();
-        if (getSubject() != null &&  checkHasMethod(name)) {
+        if (assertSubjectIsNonNull() && checkHasMethod(name)) {
             fail("should not contain method", name);
         }
     }
 
+    /**
+     * Should not be called when the subject is null.
+     */
     private boolean checkHasMethod(@NonNull String name) {
         return XmlHelper.findChildWithTagAndAttrs(getSubject(), "method", "name", name) != null;
     }
 
+    /**
+     * Should not be called when the subject is null.
+     */
     private boolean checkHasField(@NonNull String name) {
         return XmlHelper.findChildWithTagAndAttrs(getSubject(), "field", "name", name) != null;
     }
 
-    private void failIfSubjectIsNull() {
+    private boolean assertSubjectIsNonNull() {
         if (getSubject() == null) {
             fail("Cannot assert about the contents of a dex class that does not exist.");
+            return false;
         }
+        return true;
     }
 
     @Override
