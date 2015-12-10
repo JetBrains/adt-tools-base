@@ -16,6 +16,10 @@
 
 package com.android.build.gradle.integration.application;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
+import static com.android.build.gradle.integration.common.utils.GradleExceptionsHelper.getTaskFailureMessage;
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
@@ -24,11 +28,9 @@ import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
+import org.gradle.tooling.GradleConnectionException;
 import org.junit.Rule;
 import org.junit.Test;
-
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk;
 
 import java.io.File;
 
@@ -49,7 +51,10 @@ public class ResourceValidationTest {
     @Test
     public void checkResourceValidationCanBeDisabled() throws Exception {
         project.getStderr().reset();
-        project.executeExpectingFailure("assembleDebug");
+        GradleConnectionException e = project.executeExpectingFailure("assembleDebug");
+
+        //noinspection ThrowableResultOfMethodCallIgnored
+        assertThat(getTaskFailureMessage(e)).contains("file name must end with");
 
         assertThat(project.getStderr().toString()).contains(FileUtils.join("src", "main", "res",
                 "drawable", "not_a_drawable.ext"));

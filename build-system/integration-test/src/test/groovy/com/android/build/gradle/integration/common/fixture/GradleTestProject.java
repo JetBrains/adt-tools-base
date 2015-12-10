@@ -26,13 +26,14 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
-import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.integration.common.utils.JacocoAgent;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.model.Version;
+import com.android.ide.common.util.ReferenceHolder;
 import com.android.io.StreamException;
 import com.android.repository.Revision;
 import com.android.sdklib.internal.project.ProjectProperties;
@@ -66,10 +67,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.Charset;
-import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -145,6 +143,18 @@ public class GradleTestProject implements TestRule {
     private static final String COMMON_BUILD_SCRIPT_EXP = "commonBuildScriptExperimental.gradle";
     private static final String COMMON_GRADLE_PLUGIN_VERSION = "commonGradlePluginVersion.gradle";
     private static final String DEFAULT_TEST_PROJECT_NAME = "project";
+
+    private static final ResultHandler<Void> EXPECT_SUCCESS = new ResultHandler<Void>() {
+        @Override
+        public void onComplete(Void aVoid) {
+            // OK, that's what we want.
+        }
+
+        @Override
+        public void onFailure(GradleConnectionException e) {
+            throw e;
+        }
+    };
 
     public static class Builder {
 
@@ -230,14 +240,6 @@ public class GradleTestProject implements TestRule {
             if (mode) {
                 targetGradleVersion = GRADLE_EXP_TEST_VERSION;
             }
-            return this;
-        }
-
-        /**
-         * Use the gradle version specified, e.g. "2.4".
-         */
-        public Builder useGradleVersion(String targetGradleVersion) {
-            this.targetGradleVersion = targetGradleVersion;
             return this;
         }
 
@@ -580,13 +582,6 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
-     * Return the directory containing the source files of the test project.
-     */
-    public File getSourceDir() {
-        return sourceDir;
-    }
-
-    /**
      * Return the output directory from Android plugins.
      */
     public File getOutputDir() {
@@ -657,26 +652,6 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
-     * Return the directory of the repository containing the necessary plugins for testing.
-     */
-    private File getRepoDir() {
-        CodeSource source = getClass().getProtectionDomain().getCodeSource();
-        assert (source != null);
-        URL location = source.getLocation();
-        try {
-            File dir = new File(location.toURI());
-            assertTrue(dir.getPath(), dir.exists());
-
-            File f = dir.getParentFile().getParentFile().getParentFile().getParentFile()
-                    .getParentFile().getParentFile().getParentFile();
-            return new File(f, "out" + File.separator + "repo");
-        } catch (URISyntaxException e) {
-            fail(e.getLocalizedMessage());
-        }
-        return null;
-    }
-
-    /**
      * Returns a string that contains the gradle buildscript content
      */
     public String getGradleBuildscript() {
@@ -715,7 +690,7 @@ public class GradleTestProject implements TestRule {
                 Collections.<String>emptyList(),
                 false,
                 false,
-                ExpectedBuildResult.SUCCESS,
+                EXPECT_SUCCESS,
                 tasks);
     }
 
@@ -724,7 +699,7 @@ public class GradleTestProject implements TestRule {
                 arguments,
                 false,
                 false,
-                ExpectedBuildResult.SUCCESS,
+                EXPECT_SUCCESS,
                 tasks);
     }
 
@@ -740,21 +715,44 @@ public class GradleTestProject implements TestRule {
                 arguments,
                 false,
                 false,
-                ExpectedBuildResult.SUCCESS,
+                EXPECT_SUCCESS,
                 tasks);
     }
 
-    public void executeExpectingFailure(String... tasks) {
-        executeExpectingFailure(Collections.<String>emptyList(), tasks);
+    public GradleConnectionException executeExpectingFailure(@NonNull String... tasks) {
+        return executeExpectingFailure(Collections.<String>emptyList(), tasks);
     }
 
-    public void executeExpectingFailure(@NonNull List<String> arguments, String... tasks) {
+    public GradleConnectionException executeExpectingFailure(
+            @NonNull final List<String> arguments,
+            final String... tasks) {
+        final ReferenceHolder<GradleConnectionException> result = ReferenceHolder.empty();
+
         execute(AndroidProject.class,
                 arguments,
                 false /*returnModel*/,
                 false /*emulateStudio_1_0*/,
-                ExpectedBuildResult.FAILURE,
+                new ResultHandler<Void>() {
+                    @Override
+                    public void onComplete(Void aVoid) {
+                        throw new AssertionError(
+                                String.format(
+                                        "Expecting build to fail:\n" +
+                                                "    Tasks:     %s\n" +
+                                                "    Arguments: %s",
+                                        Joiner.on(' ').join(tasks),
+                                        Joiner.on(' ').join(arguments)));
+                    }
+
+                    @Override
+                    public void onFailure(GradleConnectionException e) {
+                        //noinspection ThrowableResultOfMethodCallIgnored
+                        result.setValue(e);
+                    }
+                },
                 tasks);
+
+        return result.getValue();
     }
 
     public void executeConnectedCheck() {
@@ -762,6 +760,7 @@ public class GradleTestProject implements TestRule {
     }
 
     public void executeConnectedCheck(List<String> arguments) {
+        //noinspection VariableNotUsedInsideIf
         execute(arguments, REMOTE_TEST_PROVIDER == null ? "connectedCheck" : "deviceCheck");
     }
 
@@ -788,7 +787,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public <T> T executeAndReturnModel(Class<T> modelClass, String ... tasks) {
-        return this.<T>executeAndReturnModel(modelClass, false, tasks);
+        return this.executeAndReturnModel(modelClass, false, tasks);
     }
 
     /**
@@ -803,7 +802,7 @@ public class GradleTestProject implements TestRule {
     public AndroidProject executeAndReturnModel(boolean emulateStudio_1_0, String ... tasks) {
         //noinspection ConstantConditions
         return execute(AndroidProject.class, Collections.<String>emptyList(), true, emulateStudio_1_0,
-                ExpectedBuildResult.SUCCESS, tasks);
+                EXPECT_SUCCESS, tasks);
     }
 
     /**
@@ -822,7 +821,7 @@ public class GradleTestProject implements TestRule {
             String ... tasks) {
         //noinspection ConstantConditions
         return execute(modelClass, Collections.<String>emptyList(), true, emulateStudio_1_0,
-                ExpectedBuildResult.SUCCESS, tasks);
+                EXPECT_SUCCESS, tasks);
     }
 
     /**
@@ -852,7 +851,7 @@ public class GradleTestProject implements TestRule {
         ProjectConnection connection = getProjectConnection();
         try {
             executeBuild(Collections.<String>emptyList(), connection, tasks,
-                    ExpectedBuildResult.SUCCESS);
+                    EXPECT_SUCCESS);
 
             return buildModel(
                     connection,
@@ -896,16 +895,6 @@ public class GradleTestProject implements TestRule {
     @NonNull
     public AndroidProject getSingleModelIgnoringSyncIssues() {
         return getSingleModel(false /* emulateStudio_1_0 */, false /*assertNodSyncIssues */);
-    }
-
-    /**
-     * Returns the project model without building, querying it the way Studio 1.0 does.
-     *
-     * This will fail if the project is a multi-project setup.
-     */
-    @NonNull
-    public AndroidProject getSingleModelIgnoringSyncIssuesAsStudio1() {
-        return getSingleModel(true /* emulateStudio_1_0 */, false /*assertNodSyncIssues */);
     }
 
     /**
@@ -1002,16 +991,6 @@ public class GradleTestProject implements TestRule {
      * Returns a project model for each sub-project without building.
      *
      * @param action the build action to gather the model
-     */
-    @NonNull
-    public <K, V> Map<K, V> getAllModels(@NonNull BuildAction<Map<K, V>> action) {
-        return getAllModels(action, false, null, null);
-    }
-
-    /**
-     * Returns a project model for each sub-project without building.
-     *
-     * @param action the build action to gather the model
      * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
      * @param benchmarkName optional benchmark name to pass to Gradle
      * @param benchmarkMode optional benchmark mode to pass to gradle.
@@ -1037,8 +1016,8 @@ public class GradleTestProject implements TestRule {
      * @param arguments List of arguments for the gradle command.
      * @param returnModel whether the model should be queried and returned.
      * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
-     * @param expectedBuildResult the expected result. If the build status does not match the
-     *                            expected failure, then an exception will be thrown.
+     * @param resultHandler Result handler that should verify the result (either success or failure
+     *                      is what the caller expects.
      * @param tasks Variadic list of tasks to execute.
      *
      * @return the model, if <var>returnModel</var> was true, null otherwise
@@ -1049,16 +1028,16 @@ public class GradleTestProject implements TestRule {
             @NonNull List<String> arguments,
             boolean returnModel,
             boolean emulateStudio_1_0,
-            ExpectedBuildResult expectedBuildResult,
+            ResultHandler<Void> resultHandler,
             @NonNull String ... tasks) {
         ProjectConnection connection = getProjectConnection();
         try {
-            executeBuild(arguments, connection, tasks, expectedBuildResult);
+            executeBuild(arguments, connection, tasks, resultHandler);
 
             if (returnModel) {
-                Map<String, T> modelMap = buildModel(
+                Map<String, T> modelMap = this.buildModel(
                         connection,
-                        new GetAndroidModelAction(type),
+                        new GetAndroidModelAction<T>(type),
                         emulateStudio_1_0,
                         null,
                         null);
@@ -1076,13 +1055,11 @@ public class GradleTestProject implements TestRule {
         return null;
     }
 
-    private enum ExpectedBuildResult {
-        SUCCESS,
-        FAILURE
-    }
-
-    private void executeBuild(final List<String> arguments, ProjectConnection connection,
-            final String[] tasks, ExpectedBuildResult expectedBuildResult) {
+    private void executeBuild(
+            final List<String> arguments,
+            ProjectConnection connection,
+            final String[] tasks,
+            ResultHandler<Void> resultHandler) {
         List<String> args = Lists.newArrayListWithCapacity(5 + arguments.size());
         args.add("-i");
         args.add("-u");
@@ -1105,27 +1082,8 @@ public class GradleTestProject implements TestRule {
         if (stderr != null) {
             launcher.setStandardError(stderr);
         }
-        if (expectedBuildResult == ExpectedBuildResult.SUCCESS) {
-            launcher.run();
-        } else {
-            launcher.run(new ResultHandler<Void>() {
-                @Override
-                public void onComplete(Void aVoid) {
-                    throw new AssertionError(
-                            String.format(
-                                    "Expecting build to fail:\n" +
-                                            "    Tasks:     %s\n" +
-                                            "    Arguments: %s",
-                                    Joiner.on(' ').join(tasks),
-                                    Joiner.on(' ').join(arguments)));
-                }
 
-                @Override
-                public void onFailure(GradleConnectionException e) {
-                    // Ignore, the test expects this build to fail.
-                }
-            });
-        }
+        launcher.run(resultHandler);
     }
 
     private void setJvmArguments(LongRunningOperation launcher) {
