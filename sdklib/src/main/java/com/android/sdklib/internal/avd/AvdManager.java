@@ -1653,7 +1653,7 @@ public class AvdManager {
         Map<String, String> properties = null;
 
         if (targetHash != null) {
-            target = myLocalSdk.getTargetFromHashString(targetHash);
+            target = myLocalSdk.getTargetFromHashString(targetHash, true);
         }
 
         // load the AVD properties.
