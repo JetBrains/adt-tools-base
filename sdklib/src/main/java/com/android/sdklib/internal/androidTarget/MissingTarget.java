@@ -26,8 +26,10 @@ import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repositoryv2.IdDisplay;
 import com.google.common.base.Objects;
+import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 
 import java.io.File;
 import java.util.List;
@@ -210,15 +212,11 @@ public class MissingTarget implements IAndroidTarget {
 
     @Override
     public int compareTo(IAndroidTarget o) {
-        int res = mVendor.compareTo(o.getVendor());
-        if (res != 0) {
-            return res;
-        }
-        res = mVersion.compareTo(o.getVersion());
-        if (res != 0) {
-            return res;
-        }
-        return mName.compareTo(o.getName());
+        Ordering order = Ordering.natural().nullsFirst();
+        return ComparisonChain.start()
+          .compare(mVendor, o.getVendor(), order)
+          .compare(mVersion, o.getVersion(), order)
+          .compare(mName, o.getName(), order).result();
     }
 
     @Override
