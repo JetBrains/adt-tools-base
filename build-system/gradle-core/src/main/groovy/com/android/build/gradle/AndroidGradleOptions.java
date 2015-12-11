@@ -49,7 +49,12 @@ public class AndroidGradleOptions {
     private static final String PROPERTY_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String PROPERTY_BENCHMARK_MODE = "com.android.benchmark.mode";
 
-    private static final String PROPERTY_ENABLE_INCREMENTAL_JAVA_COMPILE = "android.incrementalJavaCompile";
+    // Enable incremental java compile in all cases, not just for Instant Run.
+    private static final String PROPERTY_INCREMENTAL_JAVA_COMPILE =
+            "android.incrementalJavaCompile";
+    // Disable incremental java compile even for Instant Run.
+    private static final String PROPERTY_INSTANT_RUN_INCREMENTAL_JAVA_COMPILE =
+            "android.instantRunIncrementalJavaCompile";
 
     @NonNull
     public static Map<String, String> getExtraInstrumentationTestRunnerArgs(@NonNull Project project) {
@@ -187,6 +192,13 @@ public class AndroidGradleOptions {
     private static boolean getBoolean(
             @NonNull Project project,
             @NonNull String propertyName) {
+        return getBoolean(project, propertyName, false /*defaultValue*/);
+    }
+
+    private static boolean getBoolean(
+            @NonNull Project project,
+            @NonNull String propertyName,
+            boolean defaultValue) {
         if (project.hasProperty(propertyName)) {
             Object value = project.getProperties().get(propertyName);
             if (value instanceof String) {
@@ -196,7 +208,7 @@ public class AndroidGradleOptions {
             }
         }
 
-        return false;
+        return defaultValue;
     }
 
     public static boolean useDexerPool() {
@@ -204,8 +216,14 @@ public class AndroidGradleOptions {
         return false;
     }
 
-    public static boolean isIncrementalJavaCompileEnabled(@NonNull Project project) {
-        return getBoolean(project, PROPERTY_ENABLE_INCREMENTAL_JAVA_COMPILE);
+    //TODO: Decide before stable release whether should be enabled by default.
+    public static boolean isJavaCompileIncremental(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_INCREMENTAL_JAVA_COMPILE, true /*defaultValue*/);
+    }
+
+    public static boolean isInstantRunJavaCompileIncremental(@NonNull Project project) {
+        return getBoolean(project, PROPERTY_INSTANT_RUN_INCREMENTAL_JAVA_COMPILE,
+                true /*defaultValue*/);
     }
 
     public static class SigningOptions {
