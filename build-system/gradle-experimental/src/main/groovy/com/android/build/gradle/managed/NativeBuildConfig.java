@@ -42,11 +42,6 @@ public interface NativeBuildConfig {
     Set<File> getBuildFiles();
 
     /**
-     * Arguments to the executable for building the project.
-     */
-    List<String> getArgs();
-
-    /**
      * Configurations for each native artifact.
      */
     @NonNull
@@ -57,4 +52,10 @@ public interface NativeBuildConfig {
      */
     @NonNull
     ModelMap<NativeToolchain> getToolchains();
+
+    @NonNull
+    List<String> getCFileExtensions();
+
+    @NonNull
+    List<String> getCppFileExtensions();
 }

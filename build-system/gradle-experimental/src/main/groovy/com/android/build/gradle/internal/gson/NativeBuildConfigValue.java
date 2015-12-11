@@ -39,6 +39,10 @@ public class NativeBuildConfigValue {
     Map<String, NativeLibraryValue> libraries;
     @Nullable
     Map<String, NativeToolchainValue> toolchains;
+    @Nullable
+    Collection<String> cFileExtensions;
+    @Nullable
+    Collection<String> cppFileExtensions;
 
     /**
      * Copies this NativeBuildConfigValue to another.
@@ -68,6 +72,12 @@ public class NativeBuildConfigValue {
                     }
                 });
             }
+        }
+        if (cFileExtensions != null) {
+            config.getCFileExtensions().addAll(cFileExtensions);
+        }
+        if (cppFileExtensions != null) {
+            config.getCppFileExtensions().addAll(cppFileExtensions);
         }
     }
 }

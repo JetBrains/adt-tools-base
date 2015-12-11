@@ -35,6 +35,7 @@ import com.android.builder.model.NativeArtifact;
 import com.android.builder.model.NativeFolder;
 import com.android.builder.model.NativeSettings;
 import com.android.builder.model.NativeToolchain;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -46,6 +47,7 @@ import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.model.internal.type.ModelType;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +90,7 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
         List<NativeArtifact> artifacts = createNativeArtifacts();
         List<NativeToolchain> toolchains = createNativeToolchains();
         Collection<NativeSettings> settings = ImmutableList.copyOf(settingsMap.values());
-        Map<String, String> extensions = Maps.newHashMap();
+        Map<String, String> extensions = createFileExtensionMap();
         return new NativeAndroidProjectImpl(
                 Version.ANDROID_GRADLE_PLUGIN_VERSION,
                 project.getName(),
@@ -119,8 +121,10 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
             NativeArtifact artifact = new NativeArtifactImpl(
                     lib.getName(),
                     lib.getToolchain(),
+                    Objects.firstNonNull(lib.getGroupName(), ""),
                     folders,
                     files,
+                    ImmutableList.copyOf(lib.getExportedHeaders()),
                     lib.getOutput());
             artifacts.add(artifact);
         }
@@ -148,5 +152,16 @@ public class NativeComponentModelBuilder implements ToolingModelBuilder {
                     toolchain.getCppCompilerExecutable()));
         }
         return toolchains;
+    }
+
+    private Map<String, String> createFileExtensionMap() {
+        Map<String, String> extensions = Maps.newHashMap();
+        for (String ext : config.getCFileExtensions()) {
+            extensions.put(ext, "c");
+        }
+        for (String ext : config.getCppFileExtensions()) {
+            extensions.put(ext, "c++");
+        }
+        return extensions;
     }
 }

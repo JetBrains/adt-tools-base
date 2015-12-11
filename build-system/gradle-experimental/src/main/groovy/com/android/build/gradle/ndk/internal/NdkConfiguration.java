@@ -34,6 +34,7 @@ import com.android.build.gradle.tasks.GdbSetupTask;
 import com.android.build.gradle.tasks.StripDebugSymbolTask;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -43,6 +44,7 @@ import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.util.PatternFilterable;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
@@ -70,6 +72,9 @@ import java.util.Map;
  * Configure settings used by the native binaries.
  */
 public class NdkConfiguration {
+    public static final Collection<String> C_FILE_EXTENSIONS = ImmutableList.of("c");
+    public static final Collection<String> CPP_FILE_EXTENSIONS = ImmutableList.of(
+            "C", "CPP", "c++", "cc", "cp", "cpp", "cxx");
 
     public static void configureProperties(
             NativeLibrarySpec library,
@@ -304,7 +309,7 @@ public class NdkConfiguration {
                             @Override
                             public void execute(CSourceSet source) {
                                 source.getSource().setSrcDirs(jni.getSource().getSrcDirs());
-                                source.getSource().include("**/*.c");
+                                addInclude(source.getSource(), C_FILE_EXTENSIONS);
                                 source.getSource().exclude(jni.getSource().getExcludes());
                                 source.exportedHeaders(new Action<SourceDirectorySet>() {
                                     @Override
@@ -322,13 +327,7 @@ public class NdkConfiguration {
                             @Override
                             public void execute(CppSourceSet source) {
                                 source.getSource().setSrcDirs(jni.getSource().getSrcDirs());
-                                source.getSource().include("**/*.C");
-                                source.getSource().include("**/*.CPP");
-                                source.getSource().include("**/*.c++");
-                                source.getSource().include("**/*.cc");
-                                source.getSource().include("**/*.cp");
-                                source.getSource().include("**/*.cpp");
-                                source.getSource().include("**/*.cxx");
+                                addInclude(source.getSource(), CPP_FILE_EXTENSIONS);
                                 source.getSource().exclude(jni.getSource().getExcludes());
                                 source.exportedHeaders(new Action<SourceDirectorySet>() {
                                     @Override
@@ -341,6 +340,14 @@ public class NdkConfiguration {
                         });
             }
         });
+    }
+
+    private static void addInclude(
+            @NonNull SourceDirectorySet sourceDirSet,
+            @NonNull Iterable<String> fileExtensions) {
+        for (String ext : fileExtensions) {
+            sourceDirSet.include("**/*." + ext);
+        }
     }
 
     private static void configurePrebuiltDependency(
