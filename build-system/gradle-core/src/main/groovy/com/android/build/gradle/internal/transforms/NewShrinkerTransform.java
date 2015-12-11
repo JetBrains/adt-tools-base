@@ -40,7 +40,6 @@ import com.android.build.gradle.shrinker.KeepRules;
 import com.android.build.gradle.shrinker.ProguardConfig;
 import com.android.build.gradle.shrinker.ProguardFlagsKeepRules;
 import com.android.build.gradle.shrinker.ShrinkerLogger;
-import com.android.build.gradle.shrinker.parser.FilterSpecification;
 import com.android.builder.core.VariantType;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.google.common.base.Stopwatch;
@@ -57,7 +56,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -164,13 +162,7 @@ public class NewShrinkerTransform extends ProguardConfigurable {
             @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
             @NonNull TransformOutputProvider output) throws IOException {
-        ProguardConfig config = new ProguardConfig();
-
-        for (File configFile : getAllConfigurationFiles()) {
-            config.parse(configFile);
-        }
-
-        config.parse(getAdditionalConfigString());
+        ProguardConfig config = getConfig();
 
         ShrinkerLogger shrinkerLogger =
                 new ShrinkerLogger(config.getFlags().getDontWarnSpecs(), logger);
@@ -194,11 +186,29 @@ public class NewShrinkerTransform extends ProguardConfigurable {
                         new ProguardFlagsKeepRules(config.getFlags(), shrinkerLogger)),
                 saveState);
 
+        checkForWarnings(config, shrinkerLogger);
+    }
+
+    private static void checkForWarnings(
+            @NonNull ProguardConfig config,
+            @NonNull ShrinkerLogger shrinkerLogger) {
         if (shrinkerLogger.getWarningsCount() > 0 && !config.getFlags().isIgnoreWarnings()) {
             throw new BuildException(
                     "Warnings found during shrinking, please use -dontwarn or -ignorewarnings to suppress them.",
                     null);
         }
+    }
+
+    @NonNull
+    private ProguardConfig getConfig() throws IOException {
+        ProguardConfig config = new ProguardConfig();
+
+        for (File configFile : getAllConfigurationFiles()) {
+            config.parse(configFile);
+        }
+
+        config.parse(getAdditionalConfigString());
+        return config;
     }
 
     @NonNull
@@ -229,15 +239,17 @@ public class NewShrinkerTransform extends ProguardConfigurable {
                 JavaSerializationShrinkerGraph.readFromDir(incrementalDir);
         logTime("loading state", stopwatch);
 
-        // TODO: Store dontwarn settings.
+        ProguardConfig config = getConfig();
+
         ShrinkerLogger shrinkerLogger =
-                new ShrinkerLogger(Collections.<FilterSpecification>emptyList(), logger);
+                new ShrinkerLogger(config.getFlags().getDontWarnSpecs(), logger);
 
         IncrementalShrinker<String> shrinker =
                 new IncrementalShrinker<String>(new WaitableExecutor<Void>(), graph, shrinkerLogger);
 
         try {
             shrinker.incrementalRun(inputs, output);
+            checkForWarnings(config, shrinkerLogger);
         } catch (IncrementalShrinker.IncrementalRunImpossibleException e) {
             logger.warn("Incremental shrinker run impossible: " + e.getMessage());
             fullRun(inputs, referencedInputs, output);
