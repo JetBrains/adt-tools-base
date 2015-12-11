@@ -82,6 +82,6 @@ public interface NativeLibraryArtifact extends Named {
     void setLinkage(NativeDependencyLinkage linkage);
 
     @Unmanaged
-    Object getBuiltBy();
-    void setBuiltBy(Object binary);
+    List<Object> getBuiltBy();
+    void setBuiltBy(List<Object> binary);
 }

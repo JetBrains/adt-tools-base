@@ -65,7 +65,6 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.internal.project.ProjectIdentifier;
-import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
@@ -116,7 +115,6 @@ import javax.inject.Inject;
  * Plugin for Android NDK applications.
  */
 public class NdkComponentModelPlugin implements Plugin<Project> {
-    private Project project;
     @NonNull
     private final ToolingModelBuilderRegistry toolingRegistry;
     @NonNull
@@ -132,8 +130,6 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
-        this.project = project;
-
         project.getPluginManager().apply(AndroidComponentModelPlugin.class);
         project.getPluginManager().apply(CPlugin.class);
         project.getPluginManager().apply(CppPlugin.class);
@@ -551,7 +547,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 final ModelMap<Task> tasks,
                 @Path(NATIVE_DEPENDENCIES) final Multimap<String, NativeDependencyResolveResult> dependencies,
-                NdkHandler ndkHandler) {
+                NdkHandler ndkHandler,
+                ProjectIdentifier project) {
             for(final DefaultAndroidBinary binary : binaries.values()) {
                 for (final NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
                     final String linkage = nativeBinary instanceof SharedLibraryBinarySpec
@@ -568,7 +565,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                     binary,
                                     nativeBinary,
                                     dependencies.get(nativeBinary.getName()),
-                                    ndkHandler));
+                                    ndkHandler,
+                                    project));
                 }
             }
         }
@@ -579,19 +577,23 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             private final NativeLibraryBinarySpec nativeBinary;
             private final Collection<NativeDependencyResolveResult> dependencies;
             private final NdkHandler ndkHandler;
+            private final ProjectIdentifier projectId;
 
             public CreateNativeLibraryArtifactAction(DefaultAndroidBinary binary,
                     NativeLibraryBinarySpec nativeBinary,
                     Collection<NativeDependencyResolveResult> dependencies,
-                    NdkHandler ndkHandler) {
+                    NdkHandler ndkHandler,
+                    ProjectIdentifier projectId) {
                 this.binary = binary;
                 this.nativeBinary = nativeBinary;
                 this.dependencies = dependencies;
                 this.ndkHandler = ndkHandler;
+                this.projectId = projectId;
             }
 
             @Override
             public void execute(NativeLibraryArtifact artifact) {
+
                 final NativeDependencyLinkage linkage =
                         nativeBinary instanceof SharedLibraryBinarySpec
                                 ? NativeDependencyLinkage.SHARED
@@ -608,7 +610,11 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 artifact.setVariantName(binary.getName());
                 artifact.setAbi(nativeBinary.getTargetPlatform().getName());
                 artifact.setLinkage(linkage);
-                artifact.setBuiltBy(nativeBinary);
+
+                List<Object> builtBy = Lists.newArrayList();
+                builtBy.add(nativeBinary);
+                builtBy.add(projectId.getPath() + ":" + NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
+                artifact.setBuiltBy(builtBy);
                 for (LanguageSourceSet sourceSet : nativeBinary.getSources()) {
                     if (sourceSet instanceof HeaderExportingSourceSet) {
                         HeaderExportingSourceSet source = (HeaderExportingSourceSet) sourceSet;

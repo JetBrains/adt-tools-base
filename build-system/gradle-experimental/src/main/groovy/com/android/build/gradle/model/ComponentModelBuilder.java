@@ -121,6 +121,9 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
                 new ModelPath(ModelConstants.ABI_OPTIONS),
                 ModelTypes.modelMap(NdkAbiOptions.class));
         Multimap<String, NativeDependencyResolveResult> nativeDependencies = registry.realize(
+                new ModelPath(ModelConstants.NATIVE_DEPENDENCIES),
+                multimapModelType(String.class, NativeDependencyResolveResult.class));
+        Multimap<String, NativeDependencyResolveResult> jniLibsDependencies = registry.realize(
                 new ModelPath(ModelConstants.JNILIBS_DEPENDENCIES),
                 multimapModelType(String.class, NativeDependencyResolveResult.class));
 
@@ -132,7 +135,7 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
                 extraModelInfo,
                 ndkHandler,
                 new ComponentNativeLibraryFactory(
-                        binaries, ndkHandler, abiOptions, nativeDependencies),
+                        binaries, ndkHandler, abiOptions, nativeDependencies, jniLibsDependencies),
                 !isApplication);
     }
 }
