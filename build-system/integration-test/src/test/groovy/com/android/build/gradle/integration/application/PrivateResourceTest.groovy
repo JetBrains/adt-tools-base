@@ -50,8 +50,8 @@ class PrivateResourceTest {
         String expected = """\
 string mylib_app_name
 string mylib_public_string
-string shared_name
-id shared_name
+string mylib_shared_name
+id mylib_shared_name
 """
         assertThatZip(project.getSubproject('mylibrary').getAar("release")).containsFileWithContent('public.txt', expected);
         assertThatZip(project.getSubproject('mylibrary').getAar("debug")).containsFileWithContent('public.txt', expected);
