@@ -314,7 +314,11 @@ public final class AndroidSdkHandler {
         return getRepoConfig(progress).getRemoteListSourceProvider();
     }
 
-    @NonNull
+    /**
+     * Gets the customizable {@link RepositorySourceProvider}. Can be null if there's a problem
+     * with the user's environment.
+     */
+    @Nullable
     public RepositorySourceProvider getUserSourceProvider(@NonNull ProgressIndicator progress) {
         return getRepoConfig(progress).getUserSourceProvider();
     }
@@ -498,7 +502,11 @@ public final class AndroidSdkHandler {
             return mAddonsListSourceProvider;
         }
 
-        @NonNull
+        /**
+         * Gets the customizable {@link RepositorySourceProvider}. Can be null if there's a problem
+         * with the user's environment.
+         */
+        @Nullable
         public LocalSourceProvider getUserSourceProvider() {
             return mUserSourceProvider;
         }
@@ -516,11 +524,13 @@ public final class AndroidSdkHandler {
             // result.registerSourceProvider(mRepositorySourceProvider);
             result.registerSourceProvider(mLegacyRepositorySourceProvider);
             result.registerSourceProvider(mAddonsListSourceProvider);
-            result.registerSourceProvider(mUserSourceProvider);
+            if (mUserSourceProvider != null) {
+                result.registerSourceProvider(mUserSourceProvider);
+                // The customizable source provider needs a handle on the repo manager, so it can
+                // mark the cached packages invalid if the sources change.
+                mUserSourceProvider.setRepoManager(result);
+            }
 
-            // The customizable source provider needs a handle on the repo manager, so it can
-            // mark the cached packages invalid if the sources change.
-            mUserSourceProvider.setRepoManager(result);
 
             result.setLocalPath(mLocation);
 
@@ -532,7 +542,6 @@ public final class AndroidSdkHandler {
             }
 
             result.setFallbackRemoteRepoLoader(mRemoteFallback);
-            mUserSourceProvider.setRepoManager(result);
             return result;
         }
     }
