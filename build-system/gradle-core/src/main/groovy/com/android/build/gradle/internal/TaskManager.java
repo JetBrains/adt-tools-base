@@ -2023,8 +2023,7 @@ public abstract class TaskManager {
                     scope.getTransformManager().addTransform(tasks, scope, classesTwoTransform));
         } else {
             // if we are at API 21 or above, we generate multi-dexes.
-            InstantRunSlicer slicer = new InstantRunSlicer(
-                    getLogger(), scope.getInstantRunSupportDir());
+            InstantRunSlicer slicer = new InstantRunSlicer(getLogger(), scope);
             instantRunAnchor.dependsOn(tasks,
                     scope.getTransformManager().addTransform(tasks, scope, slicer));
 
@@ -2101,7 +2100,6 @@ public abstract class TaskManager {
         AndroidTask<JackTask> jackTask = androidTasks.create(tasks,
                 new JackTask.ConfigAction(scope, isVerbose(), isDebugLog()));
 
-
         // Jack is compiling and also providing the binary and mapping files.
         setJavaCompilerTask(jackTask, tasks, scope);
         jackTask.optionalDependsOn(tasks, scope.getMergeJavaResourcesTask());
@@ -2172,9 +2170,19 @@ public abstract class TaskManager {
             VariantOutputScope variantOutputScope = variantOutputData.getScope();
 
             final String outputName = variantOutputData.getFullName();
+            InstantRunPatchingPolicy instantRunPatchingPolicy =
+                    InstantRunPatchingPolicy.getPatchingPolicy(getLogger(), project);
+
+            // when building for instant run with targeting API 23 or above, do not put the
+            // dex files in the main APK, they will be packaged as pure splits
+            boolean addDexFilesToApk =
+                    instantRunPatchingPolicy == InstantRunPatchingPolicy.PRE_LOLLIPOP ||
+                    instantRunPatchingPolicy == InstantRunPatchingPolicy.LOLLIPOP ||
+                    getIncrementalMode(variantScope.getVariantConfiguration())
+                            == IncrementalMode.NONE;
 
             AndroidTask<PackageApplication> packageApp = androidTasks.create(
-                    tasks, new PackageApplication.ConfigAction(variantOutputScope));
+                    tasks, new PackageApplication.ConfigAction(variantOutputScope, addDexFilesToApk));
 
             packageApp.dependsOn(tasks, variantOutputScope.getProcessResourcesTask());
 
@@ -2183,19 +2191,19 @@ public abstract class TaskManager {
                     variantOutputScope.getShrinkResourcesTask(),
                     // TODO: When Jack is converted, add activeDexTask to VariantScope.
                     variantOutputScope.getVariantScope().getJavaCompilerTask(),
-                    variantData.javaCompilerTask, // TODO: Remove when Jack is converted to AndroidTask.
+                    // TODO: Remove when Jack is converted to AndroidTask.
+                    variantData.javaCompilerTask,
                     variantOutputData.packageSplitResourcesTask,
                     variantOutputData.packageSplitAbiTask);
 
-            TransformManager transformManager = variantScope.getTransformManager();
-            InstantRunPatchingPolicy instantRunPatchingPolicy =
-                    InstantRunPatchingPolicy.getPatchingPolicy(getLogger(), project);
+            if (getIncrementalMode(variantScope.getVariantConfiguration())
+                    != IncrementalMode.NONE) {
+                packageApp.dependsOn(tasks, variantScope.getInstantRunAnchorTask());
+            }
 
-            if (instantRunPatchingPolicy == InstantRunPatchingPolicy.PRE_LOLLIPOP ||
-                    instantRunPatchingPolicy == InstantRunPatchingPolicy.LOLLIPOP ||
-                    getIncrementalMode(variantScope.getVariantConfiguration()) == IncrementalMode.NONE) {
-                // when building for instant run with targeting API 23 or above, do not put the
-                // dex files in the main APK, they will be packaged as pure splits.
+            TransformManager transformManager = variantScope.getTransformManager();
+
+            if (addDexFilesToApk) {
                 for (TransformStream stream : transformManager
                         .getStreams(PackageApplication.sDexFilter)) {
                     // TODO Optimize to avoid creating too many actions
@@ -2203,11 +2211,13 @@ public abstract class TaskManager {
                 }
             }
 
-            for (TransformStream stream : transformManager.getStreams(PackageApplication.sResFilter)) {
+            for (TransformStream stream : transformManager.getStreams(
+                    PackageApplication.sResFilter)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
-            for (TransformStream stream : transformManager.getStreams(PackageApplication.sNativeLibsFilter)) {
+            for (TransformStream stream : transformManager.getStreams(
+                    PackageApplication.sNativeLibsFilter)) {
                 // TODO Optimize to avoid creating too many actions
                 packageApp.dependsOn(tasks, stream.getDependencies());
             }
@@ -2718,12 +2728,6 @@ public abstract class TaskManager {
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         variantData.preBuildTask = project.getTasks().create(scope.getTaskName("pre", "Build"));
         variantData.preBuildTask.dependsOn(MAIN_PREBUILD);
-
-        // if we are in incremental mode, always write the build-info.xml file.
-        if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.NONE) {
-            androidTasks.create(tasks, new BuildInfoGeneratorTask.ConfigAction(scope, logger));
-            variantData.preBuildTask.dependsOn(BuildInfoGeneratorTask.ConfigAction.getName(scope));
-        }
 
         PrepareDependenciesTask prepareDependenciesTask = project.getTasks().create(
         scope.getTaskName("prepare", "Dependencies"), PrepareDependenciesTask.class);

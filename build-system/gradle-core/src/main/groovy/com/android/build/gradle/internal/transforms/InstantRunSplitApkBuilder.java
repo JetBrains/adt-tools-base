@@ -16,8 +16,11 @@
 
 package com.android.build.gradle.internal.transforms;
 
+import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
+
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext.FileType;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -25,20 +28,29 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.build.gradle.tasks.PackageApplication;
+import com.android.builder.core.AaptPackageProcessBuilder;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
+import com.android.builder.sdk.TargetInfo;
+import com.android.ide.common.process.LoggedProcessOutputHandler;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.signing.KeytoolException;
+import com.android.utils.FileUtils;
 import com.google.common.io.Files;
 
 import org.gradle.api.Action;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 import org.gradle.api.tasks.incremental.InputFileDetails;
+import org.gradle.process.ExecSpec;
+import org.gradle.process.internal.ProcessBuilderFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -61,6 +73,10 @@ public class InstantRunSplitApkBuilder extends BaseTask {
     private int versionCode;
     private String versionName;
     private InstantRunBuildContext instantRunBuildContext;
+    private File zipAlignExe;
+    private AaptOptions aaptOptions;
+    private File supportDir;
+
 
     @Input
     public String getApplicationId() {
@@ -100,9 +116,15 @@ public class InstantRunSplitApkBuilder extends BaseTask {
         return outputDirectory;
     }
 
+    @Input
+    public File getZipAlignExe() {
+        return zipAlignExe;
+    }
+
     @TaskAction
     public void run(IncrementalTaskInputs inputs)
-            throws IOException, DuplicateFileException, KeytoolException, PackagerException {
+            throws IOException, DuplicateFileException, KeytoolException, PackagerException,
+            ProcessException, InterruptedException {
         if (inputs.isIncremental()) {
 
             inputs.outOfDate(new Action<InputFileDetails>() {
@@ -121,9 +143,13 @@ public class InstantRunSplitApkBuilder extends BaseTask {
             inputs.removed(new Action<InputFileDetails>() {
                 @Override
                 public void execute(InputFileDetails inputFileDetails) {
-                    String outputFileName = new DexFile(
+                    DexFile dexFile = new DexFile(
                             inputFileDetails.getFile(),
-                            inputFileDetails.getFile().getParentFile().getName()).encodeName();
+                            inputFileDetails.getFile().getParentFile().getName());
+
+                    String outputFileName = dexFile.encodeName() + "_unaligned.apk";
+                    new File(getOutputDirectory(), outputFileName).delete();
+                    outputFileName = dexFile.encodeName() + ".apk";
                     new File(getOutputDirectory(), outputFileName).delete();
                 }
             });
@@ -147,26 +173,44 @@ public class InstantRunSplitApkBuilder extends BaseTask {
     }
 
     private void generateSplitApk(DexFile file)
-            throws IOException, DuplicateFileException, KeytoolException, PackagerException {
+            throws IOException, DuplicateFileException, KeytoolException, PackagerException,
+            InterruptedException, ProcessException {
 
-        File outputLocation = new File(getOutputDirectory(), file.encodeName());
+        final File outputLocation = new File(getOutputDirectory(), file.encodeName()
+                + "_unaligned.apk");
         Files.createParentDirs(outputLocation);
-        File manifestFile = generateSplitApkManifest(file.encodeName());
-        getBuilder().packageCodeSplitApk(
-                file.dexFile, signingConf, manifestFile, outputLocation.getAbsolutePath());
-        instantRunBuildContext.addChangedFile(FileType.SPLIT, outputLocation);
-        manifestFile.delete();
+        File resPackageFile = generateSplitApkManifest(file.encodeName());
+        getBuilder().packageCodeSplitApk(resPackageFile.getAbsolutePath(),
+                file.dexFile, signingConf, outputLocation.getAbsolutePath());
+        // zip align it.
+        final File alignedOutput = new File(getOutputDirectory(), file.encodeName() + ".apk");
+        ProcessInfoBuilder processInfoBuilder = new ProcessInfoBuilder();
+        processInfoBuilder.setExecutable(getZipAlignExe());
+        processInfoBuilder.addArgs("-f", "4");
+        processInfoBuilder.addArgs(outputLocation.getAbsolutePath());
+        processInfoBuilder.addArgs(alignedOutput.getAbsolutePath());
+
+        getBuilder().executeProcess(processInfoBuilder.createProcess(),
+                new LoggedProcessOutputHandler(getILogger()));
+
+        instantRunBuildContext.addChangedFile(FileType.SPLIT, alignedOutput);
+        resPackageFile.delete();
     }
 
-    private File generateSplitApkManifest(String uniqueName) throws IOException {
+    // todo, move this to a sub task, as it is reusable between invocations.
+    private File generateSplitApkManifest(String uniqueName)
+            throws IOException, ProcessException, InterruptedException {
 
         String versionNameToUse = getVersionName();
         if (versionNameToUse == null) {
             versionNameToUse = String.valueOf(getVersionCode());
         }
 
-        File tmpFile = File.createTempFile("AndroidManifest_" + uniqueName, ".xml");
-        OutputStreamWriter fileWriter = new OutputStreamWriter(new FileOutputStream(tmpFile), "UTF-8");
+        File sliceSupportDir = new File(supportDir, uniqueName);
+        sliceSupportDir.mkdirs();
+        File androidManifest = new File(sliceSupportDir, "AndroidManifest.xml");
+        OutputStreamWriter fileWriter = new OutputStreamWriter(
+                new FileOutputStream(androidManifest), "UTF-8");
         try {
             fileWriter.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                     + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
@@ -174,12 +218,29 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                     + "      android:versionCode=\"" + getVersionCode() + "\"\n"
                     + "      android:versionName=\"" + versionNameToUse + "\"\n"
                     + "      split=\"lib_" + uniqueName + "\">\n"
-                    + "       <uses-sdk android:minSdkVersion=\"23\"/>\n" + "</manifest> ");
+                    + "       <uses-sdk android:minSdkVersion=\"21\"/>\n" + "</manifest>\n");
             fileWriter.flush();
         } finally {
             fileWriter.close();
         }
-        return tmpFile;
+
+        File resFilePackageFile = new File(supportDir, "resources_ap");
+
+        AaptPackageProcessBuilder aaptPackageCommandBuilder =
+                new AaptPackageProcessBuilder(androidManifest, getAaptOptions())
+                        .setDebuggable(true)
+                        .setResPackageOutput(resFilePackageFile.getAbsolutePath());
+
+        getBuilder().processResources(
+                aaptPackageCommandBuilder,
+                false /* enforceUniquePackageName */,
+                new LoggedProcessOutputHandler(getILogger()));
+
+        return resFilePackageFile;
+    }
+
+    public AaptOptions getAaptOptions() {
+        return aaptOptions;
     }
 
     private static class DexFile {
@@ -192,7 +253,7 @@ public class InstantRunSplitApkBuilder extends BaseTask {
         }
 
         private String encodeName() {
-            return dexFolderName + ".apk";
+            return dexFolderName.replace('-', '_');
         }
     }
 
@@ -230,6 +291,23 @@ public class InstantRunSplitApkBuilder extends BaseTask {
                     variantScope.getVariantConfiguration().getFullName());
             task.setAndroidBuilder(variantScope.getGlobalScope().getAndroidBuilder());
             task.instantRunBuildContext = variantScope.getInstantRunBuildContext();
+            task.supportDir = variantScope.getInstantRunSliceSupportDir();
+
+            ConventionMappingHelper.map(task, "zipAlignExe", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    final TargetInfo info =
+                            variantScope.getGlobalScope().getAndroidBuilder().getTargetInfo();
+                    if (info == null) {
+                        return null;
+                    }
+                    String path = info.getBuildTools().getPath(ZIP_ALIGN);
+                    if (path == null) {
+                        return null;
+                    }
+                    return new File(path);
+                }
+            });
 
             ConventionMappingHelper
                     .map(task, "dexFolders", new Callable<Set<File>>() {
@@ -242,6 +320,13 @@ public class InstantRunSplitApkBuilder extends BaseTask {
 
                             return variantScope.getTransformManager()
                                     .getPipelineOutput(PackageApplication.sDexFilter).keySet();
+                        }
+                    });
+            ConventionMappingHelper.map(task, "aaptOptions",
+                    new Callable<AaptOptions>() {
+                        @Override
+                        public AaptOptions call() throws Exception {
+                            return variantScope.getGlobalScope().getExtension().getAaptOptions();
                         }
                     });
 

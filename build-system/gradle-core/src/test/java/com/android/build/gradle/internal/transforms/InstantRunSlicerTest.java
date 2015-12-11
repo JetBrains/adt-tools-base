@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -32,10 +33,16 @@ import com.android.build.api.transform.Status;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.OptionalCompilationStep;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
+import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.utils.FileUtils;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.io.Files;
 
 import org.gradle.api.logging.Logger;
 import org.junit.After;
@@ -67,12 +74,27 @@ public class InstantRunSlicerTest {
     @Mock
     Logger logger;
 
+    @Mock
+    GlobalScope globalScope;
+
+    @Mock
+    VariantScope variantScope;
+
+    @Mock
+    InstantRunBuildContext instantRunBuildContext;
+
     File instantRunSupportDir;
 
     @Before
     public void beforeTest() throws IOException {
         MockitoAnnotations.initMocks(this);
         instantRunSupportDir = createTmpDirectory("instantRunSupport");
+        when(variantScope.getInstantRunSupportDir()).thenReturn(instantRunSupportDir);
+        when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
+        when(variantScope.getGlobalScope()).thenReturn(globalScope);
+        when(instantRunBuildContext.hasPassedVerification()).thenReturn(Boolean.FALSE);
+        when(globalScope.isActive(OptionalCompilationStep.RESTART_DEX_ONLY))
+                .thenReturn(Boolean.FALSE);
     }
 
     @After
@@ -85,7 +107,7 @@ public class InstantRunSlicerTest {
     public void testNonIncrementalModeOnlyDirs()
             throws IOException, TransformException, InterruptedException {
 
-        InstantRunSlicer slicer = new InstantRunSlicer(logger, instantRunSupportDir);
+        InstantRunSlicer slicer = new InstantRunSlicer(logger, variantScope);
 
         final File inputDir = createTmpDirectory("inputDir");
         final Map<File, Status> changedFiles;
@@ -128,7 +150,7 @@ public class InstantRunSlicerTest {
     public void testIncrementalModeOnlyDirs()
             throws IOException, TransformException, InterruptedException {
 
-        InstantRunSlicer slicer = new InstantRunSlicer(logger, instantRunSupportDir);
+        InstantRunSlicer slicer = new InstantRunSlicer(logger, variantScope);
 
         final File inputDir = createTmpDirectory("inputDir");
         Map<File, Status> changedFiles;
@@ -150,9 +172,13 @@ public class InstantRunSlicerTest {
 
         // incrementally change a few slices.
         File file7 = createFile(inputDir, "file7.class", "updated file7.class");
-        changedFiles = ImmutableMap.of(
-                file7, Status.CHANGED,
-                new File(inputDir, "file14.class"), Status.REMOVED);
+        changedFiles = ImmutableMap.of();
+
+        File incrementalChanges = InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope);
+        Files.write(
+                "CHANGED," + file7.getAbsolutePath() + "\n" +
+                "REMOVED," + new File(inputDir, "file14.class").getAbsolutePath(),
+                incrementalChanges, Charsets.UTF_8);
 
         slicer.transform(context,
                 ImmutableList.of(getInput(inputDir, changedFiles)),
@@ -166,16 +192,16 @@ public class InstantRunSlicerTest {
         assertThat(slices.length).isEqualTo(7);
 
         // file7 should be in the last slice slice.
-        File slice6 = getFileByName(slices, "slice-6");
+        File slice6 = getFileByName(slices, "slice_6");
         assertNotNull(slice6);
         File[] slice6Files = slice6.listFiles();
         File updatedFile7 = getFileByName(slice6Files, "file7.class");
         assertNotNull(updatedFile7);
-        assertThat("updated file7.class").isEqualTo(
-                FileUtils.loadFileWithUnixLineSeparators(updatedFile7));
+        assertThat(FileUtils.loadFileWithUnixLineSeparators(updatedFile7))
+                .isEqualTo("updated file7.class");
 
         // file14 was in the slice 3, it should be gone.
-        File slice3 = getFileByName(slices, "slice-2");
+        File slice3 = getFileByName(slices, "slice_2");
         assertNotNull(slice3);
         File[] slice3Files = slice3.listFiles();
         assertNotNull(slice3Files);

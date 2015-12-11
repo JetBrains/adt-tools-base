@@ -105,6 +105,9 @@ public interface VariantScope extends BaseScope {
     File getInstantRunSupportDir();
 
     @NonNull
+    File getInstantRunSliceSupportDir();
+
+    @NonNull
     File getIncrementalRuntimeSupportJar();
 
     @NonNull

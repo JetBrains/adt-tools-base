@@ -1901,12 +1901,16 @@ public class AndroidBuilder {
         }
     }
 
+    /**
+     * Creates a new split APK containing only code, this will only be functional on
+     * MarshMallow and above devices.
+     */
     public void packageCodeSplitApk(
-            File dexFile,
-            SigningConfig signingConfig,
-            File manifestFile,
-            String outApkLocation) throws FileNotFoundException, KeytoolException, PackagerException,
-            DuplicateFileException {
+            @NonNull String androidResPkgLocation,
+            @NonNull File dexFile,
+            @Nullable SigningConfig signingConfig,
+            @NonNull String outApkLocation) throws
+                FileNotFoundException, KeytoolException, PackagerException, DuplicateFileException {
 
         CertificateInfo certificateInfo = null;
         if (signingConfig != null && signingConfig.isSigningReady()) {
@@ -1918,11 +1922,10 @@ public class AndroidBuilder {
 
         try {
             Packager packager = new Packager(
-                    outApkLocation, null /* resPkgLocation */,
+                    outApkLocation, androidResPkgLocation,
                     certificateInfo, mCreatedBy, mLogger,
-                    23);
+                    23 /* minSdkVersion, MarshMallow */);
 
-            packager.addFile(manifestFile, "AndroidManifest.xml");
             packager.addFile(dexFile, "classes.dex");
             packager.sealApk();
         } catch (SealedPackageException e) {
