@@ -802,19 +802,79 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
     }
 
     @Test
-    public void innerClasses() throws Exception {
+    public void innerClasses_useOuter() throws Exception {
         // Given:
-        Files.write(TestClasses.InnerClasses.main(), new File(mTestPackageDir, "Main.class"));
-        Files.write(TestClasses.InnerClasses.hasInnerClass(), new File(mTestPackageDir, "HasInnerClass.class"));
-        Files.write(TestClasses.InnerClasses.staticInnerClass(), new File(mTestPackageDir, "HasInnerClass$StaticInnerClass.class"));
+        Files.write(TestClasses.InnerClasses.main_useOuterClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
+        Files.write(TestClasses.InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
+        Files.write(TestClasses.InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
 
         // When:
         run("Main", "main:()V");
 
         // Then:
         assertMembersLeft("Main", "main:()V");
-        assertMembersLeft("HasInnerClass$StaticInnerClass", "method:()V", "<init>:()V");
-        assertMembersLeft("HasInnerClass");
+        assertMembersLeft("Outer", "outerMethod:()V", "<init>:()V");
+        assertClassSkipped("Outer$Inner");
+        assertClassSkipped("Outer$StaticInner");
+    }
+
+    @Test
+    public void innerClasses_useInner() throws Exception {
+        // Given:
+        Files.write(TestClasses.InnerClasses.main_useInnerClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
+        Files.write(TestClasses.InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
+        Files.write(TestClasses.InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Then:
+        assertMembersLeft("Main", "main:()V");
+        assertMembersLeft("Outer", "<init>:()V");
+        assertMembersLeft(
+                "Outer$Inner",
+                "innerMethod:()V",
+                "<init>:(Ltest/Outer;)V",
+                "this$0:Ltest/Outer;");
+        assertClassSkipped("Outer$StaticInner");
+    }
+
+    @Test
+    public void innerClasses_useStaticInner() throws Exception {
+        // Given:
+        Files.write(TestClasses.InnerClasses.main_useStaticInnerClass(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
+        Files.write(TestClasses.InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
+        Files.write(TestClasses.InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Then:
+        assertMembersLeft("Main", "main:()V");
+        assertMembersLeft("Outer");
+        assertClassSkipped("Outer$Inner");
+        assertMembersLeft("Outer$StaticInner", "<init>:()V", "staticInnerMethod:()V");
+    }
+
+    @Test
+    public void innerClasses_notUsed() throws Exception {
+        // Given:
+        Files.write(TestClasses.InnerClasses.main_empty(), new File(mTestPackageDir, "Main.class"));
+        Files.write(TestClasses.InnerClasses.outer(), new File(mTestPackageDir, "Outer.class"));
+        Files.write(TestClasses.InnerClasses.inner(), new File(mTestPackageDir, "Outer$Inner.class"));
+        Files.write(TestClasses.InnerClasses.staticInner(), new File(mTestPackageDir, "Outer$StaticInner.class"));
+
+        // When:
+        run("Main", "main:()V");
+
+        // Then:
+        assertMembersLeft("Main", "main:()V");
+        assertClassSkipped("Outer");
+        assertClassSkipped("Outer$Inner");
+        assertClassSkipped("Outer$StaticInner");
     }
 
     @Test
@@ -965,7 +1025,7 @@ public class FullRunShrinkerTest extends AbstractShrinkerTest {
                 mInputs,
                 Collections.<TransformInput>emptyList(),
                 mOutput,
-                ImmutableMap.<AbstractShrinker.CounterSet, KeepRules>of(
+                ImmutableMap.of(
                         AbstractShrinker.CounterSet.SHRINK, keepRules),
                 false);
     }

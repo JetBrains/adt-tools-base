@@ -255,7 +255,9 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                             current = mGraph.getSuperclass(current);
                         }
                     } catch (ClassLookupException e) {
-                        System.out.println("Can't resolve " + method);
+                        mShrinkerLogger.invalidClassReference(
+                                mGraph.getClassName(klass),
+                                e.getClassName());
                     }
                 }
             });
@@ -352,8 +354,6 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
             @NonNull final Set<T> virtualMethods,
             @NonNull final Set<T> multipleInheritance,
             @NonNull final Set<UnresolvedReference<T>> unresolvedReferences) throws IOException {
-        // TODO: Can we run keep rules in a visitor?
-        // TODO: See if computing all these things on the class nodes is faster (on big projects).
         ClassNode classNode = new ClassNode(Opcodes.ASM5);
         ClassVisitor depsFinder =
                 new DependencyFinderVisitor<T>(mGraph, classNode) {
@@ -410,7 +410,6 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                 final InputStream inputStream = jarFile.getInputStream(entry);
                 try {
                     final byte[] bytes = ByteStreams.toByteArray(inputStream);
-                    // TODO: See if doing this in parallel actually improves performance.
                     mExecutor.execute(new Callable<Void>() {
                         @Override
                         public Void call() throws Exception {
@@ -431,7 +430,6 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
      * Sets the roots (i.e. entry points) of the graph and marks all nodes reachable from them.
      */
     private void setCounters(@NonNull ImmutableMap<CounterSet, KeepRules> allKeepRules) {
-        // TODO: Support multidex.
         final CounterSet counterSet = CounterSet.SHRINK;
         final KeepRules keepRules = allKeepRules.get(counterSet);
 
@@ -457,6 +455,5 @@ public class FullRunShrinker<T> extends AbstractShrinker<T> {
                 Collections.<File>emptyList(),
                 inputs,
                 output);
-        // TODO: Produce main dex list.
     }
 }

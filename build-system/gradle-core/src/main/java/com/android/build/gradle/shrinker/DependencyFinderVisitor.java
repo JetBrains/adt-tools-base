@@ -59,7 +59,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
         }
 
         mKlass = mGraph.getClassReference(name);
-        if (!superName.equals("java/lang/Object")) {
+        if (superName != null && !isSdkPackage(superName)) {
             // Don't create graph edges for obvious things.
             handleDependency(
                     mKlass,
@@ -107,7 +107,7 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
         }
 
         if (mIsAnnotation) {
-            // TODO: Strip annotation members.
+            // TODO: Strip unused annotation classes members.
             handleDependency(mKlass, method, DependencyType.REQUIRED_CLASS_STRUCTURE);
         }
 
@@ -154,7 +154,6 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
     public void visitInnerClass(String name, String outerName, String innerName, int access) {
         if (mClassName.equals(name) && outerName != null) {
             // I'm the inner class, keep the outer class, as ProGuard does.
-            // TODO: What if I'm the enclosing class? What if the inner class is not used?
             handleDependency(
                     mKlass,
                     mGraph.getClassReference(outerName),
@@ -399,20 +398,13 @@ public abstract class DependencyFinderVisitor<T> extends ClassVisitor {
 
         @Override
         public void visitClassType(String name) {
-            if (!name.equals("java/lang/Object")) {
+            if (!isSdkPackage(name)) {
                 handleDependency(
                         mSource,
                         mGraph.getClassReference(name),
                         DependencyType.REQUIRED_CLASS_STRUCTURE);
             }
             super.visitClassType(name);
-        }
-
-        @SuppressWarnings("EmptyMethod")
-        @Override
-        public void visitInnerClassType(String name) {
-            // TODO: support inner classes.
-            super.visitInnerClassType(name);
         }
     }
 }
