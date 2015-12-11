@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.ndk.internal;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.google.common.collect.Lists;
@@ -33,12 +35,18 @@ public class StlNativeToolSpecification extends AbstractNativeToolSpecification 
     private NdkHandler ndkHandler;
     private String stl;
     private String stlName;
+    private String stlVersion;
     private Boolean isStatic;
     private NativePlatform platform;
 
-    public StlNativeToolSpecification(NdkHandler ndkHandler, String stl, NativePlatform platform) {
+    public StlNativeToolSpecification(
+            @NonNull NdkHandler ndkHandler,
+            @NonNull String stl,
+            @Nullable String stlVersion,
+            @NonNull NativePlatform platform) {
         this.ndkHandler = ndkHandler;
         this.stl = stl;
+        this.stlVersion = stlVersion;
         this.stlName = stl.equals("system") ? stl : stl.substring(0, stl.indexOf('_'));
         this.isStatic = stl.endsWith("_static");
         this.platform = platform;
@@ -59,8 +67,10 @@ public class StlNativeToolSpecification extends AbstractNativeToolSpecification 
             cppFlags.add("-std=c++11");
         }
 
-        List<File> includeDirs = ndkHandler.getStlIncludes(stlName, Abi.getByName(
-                platform.getName()));
+        List<File> includeDirs = ndkHandler.getStlIncludes(
+                stlName,
+                stlVersion,
+                Abi.getByName(platform.getName()));
         for (File dir : includeDirs) {
             cppFlags.add("-I" + dir.toString());
         }
@@ -86,7 +96,10 @@ public class StlNativeToolSpecification extends AbstractNativeToolSpecification 
         if (stlName.equals("stlport")) {
             stlLib = "stlport";
         } else if (stlName.equals("gnustl")) {
-            stlLib = "gnu-libstdc++/" + ndkHandler.getGccToolchainVersion(Abi.getByName(abi));
+            String version = stlVersion != null
+                    ? stlVersion
+                    : ndkHandler.getGccToolchainVersion(Abi.getByName(abi));
+            stlLib = "gnu-libstdc++/" + version;
         } else if (stlName.equals("gabi++")) {
             stlLib = "gabi++";
         } else if (stlName.equals("c++")) {

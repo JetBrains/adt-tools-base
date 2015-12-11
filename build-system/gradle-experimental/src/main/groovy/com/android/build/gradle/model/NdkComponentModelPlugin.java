@@ -592,6 +592,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                     final StlNativeToolSpecification stlConfig = new StlNativeToolSpecification(
                             ndkHandler,
                             stl,
+                            binary.getMergedNdkConfig().getStlVersion(),
                             abi);
                     artifact.getLibraries().add(stlConfig.getStlLib(abi.getName()));
                 }

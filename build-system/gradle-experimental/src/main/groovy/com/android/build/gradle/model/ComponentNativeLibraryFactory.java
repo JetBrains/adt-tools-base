@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.managed.NdkAbiOptions;
+import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.ndk.internal.BinaryToolHelper;
 import com.android.builder.model.NativeLibrary;
@@ -135,7 +136,7 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
 
         List<File> debuggableLibDir = findDebuggableLibraryDirectories(variantData, androidBinary, abi);
 
-        CoreNdkOptions ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
+        NdkConfig ndkConfig = androidBinary.getMergedNdkConfig();
         // The DSL currently do not support all options available in the model such as the
         // include dirs and the defines.  Therefore, just pass an empty collection for now.
         return Optional.<NativeLibrary>of(new NativeLibraryImpl(
@@ -145,7 +146,7 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
                 Collections.<File>emptyList(),  /*cIncludeDirs*/
                 Collections.<File>emptyList(),  /*cppIncludeDirs*/
                 Collections.<File>emptyList(),  /*cSystemIncludeDirs*/
-                ndkHandler.getStlIncludes(ndkConfig.getStl(), abi),
+                ndkHandler.getStlIncludes(ndkConfig.getStl(), ndkConfig.getStlVersion(), abi),
                 Collections.<String>emptyList(),  /*cDefines*/
                 Collections.<String>emptyList(),  /*cppDefines*/
                 cFlags,

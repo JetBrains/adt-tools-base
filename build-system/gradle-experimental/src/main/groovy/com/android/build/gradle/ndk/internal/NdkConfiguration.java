@@ -194,6 +194,7 @@ public class NdkConfiguration {
         StlNativeToolSpecification stlConfig = new StlNativeToolSpecification(
                 ndkHandler,
                 ndkConfig.getStl(),
+                ndkConfig.getStlVersion(),
                 binary.getTargetPlatform());
         stlConfig.apply(binary);
 
@@ -369,8 +370,14 @@ public class NdkConfiguration {
         tasks.create(compileNdkTaskName);
 
         if (binary instanceof SharedLibraryBinarySpec) {
-            StlConfiguration.createStlCopyTask(tasks, binary, buildDir, ndkHandler,
-                    ndkConfig.getStl(), compileNdkTaskName);
+            StlConfiguration.createStlCopyTask(
+                    tasks,
+                    binary,
+                    buildDir,
+                    ndkHandler,
+                    ndkConfig.getStl(),
+                    ndkConfig.getStlVersion(),
+                    compileNdkTaskName);
 
             if (Boolean.TRUE.equals(ndkConfig.getDebuggable())) {
                 // TODO: Use AndroidTaskRegistry and scopes to create tasks in experimental plugin.

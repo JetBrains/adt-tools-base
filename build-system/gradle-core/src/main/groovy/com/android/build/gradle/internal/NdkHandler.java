@@ -439,7 +439,10 @@ public class NdkHandler {
     /**
      * Return a list of include directories for an STl.
      */
-    public List<File> getStlIncludes(@Nullable String stlName, @NonNull Abi abi) {
+    public List<File> getStlIncludes(
+            @Nullable String stlName,
+            @Nullable String stlVersion,
+            @NonNull Abi abi) {
         File stlBaseDir = new File(ndkDirectory, "sources/cxx-stl/");
         if (stlName == null || stlName.isEmpty()) {
             stlName = "system";
@@ -454,12 +457,11 @@ public class NdkHandler {
             includeDirs.add(new File(stlBaseDir, "stlport/stlport"));
             includeDirs.add(new File(stlBaseDir, "gabi++/include"));
         } else if (stlName.equals("gnustl")) {
-            String gccToolchainVersion = getGccToolchainVersion(abi);
-            includeDirs.add(new File(stlBaseDir, "gnu-libstdc++/" + gccToolchainVersion + "/include"));
-            includeDirs.add(new File(stlBaseDir, "gnu-libstdc++/" + gccToolchainVersion +
-                    "/libs/" + abi.getName() + "/include"));
-            includeDirs.add(new File(stlBaseDir, "gnu-libstdc++/" + gccToolchainVersion +
-                    "/include/backward"));
+            String version = stlVersion != null ? stlVersion : getGccToolchainVersion(abi) ;
+            includeDirs.add(new File(stlBaseDir, "gnu-libstdc++/" + version + "/include"));
+            includeDirs.add(new File(stlBaseDir, "gnu-libstdc++/" + version + "/libs/"
+                    + abi.getName() + "/include"));
+            includeDirs.add(new File(stlBaseDir, "gnu-libstdc++/" + version + "/include/backward"));
         } else if (stlName.equals("gabi++")) {
             includeDirs.add(new File(stlBaseDir, "gabi++/include"));
         } else if (stlName.equals("c++")) {
