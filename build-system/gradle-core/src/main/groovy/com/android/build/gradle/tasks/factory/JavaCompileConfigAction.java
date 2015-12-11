@@ -4,8 +4,11 @@ import static com.android.builder.core.VariantType.LIBRARY;
 import static com.android.builder.core.VariantType.UNIT_TEST;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidGradleOptions;
+import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -13,6 +16,7 @@ import com.android.builder.dependency.LibraryDependency;
 import com.google.common.base.Joiner;
 
 import org.gradle.api.Project;
+import org.gradle.api.file.ConfigurableFileTree;
 import org.gradle.api.file.FileCollection;
 
 import java.io.File;
@@ -47,7 +51,12 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
         scope.getVariantData().javacTask = javacTask;
         javacTask.mBuildContext = scope.getInstantRunBuildContext();
 
-        javacTask.setSource(scope.getVariantData().getJavaSources());
+        // We can't just pass the collection directly, as the instanceof check in the incremental
+        // compile doesn't work recursively currently, so every ConfigurableFileTree needs to be
+        // directly in the source array.
+        for (ConfigurableFileTree fileTree: scope.getVariantData().getJavaSources()) {
+            javacTask.source(fileTree);
+        }
 
         ConventionMappingHelper.map(javacTask, "classpath", new Callable<FileCollection>() {
             @Override
@@ -102,5 +111,11 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
         javacTask.getOptions().setBootClasspath(
                 Joiner.on(File.pathSeparator).join(
                         scope.getGlobalScope().getAndroidBuilder().getBootClasspathAsStrings(false)));
+
+        GlobalScope globalScope = scope.getGlobalScope();
+        if (AndroidGradleOptions.isIncrementalJavaCompileEnabled(globalScope.getProject()) ||
+                globalScope.isActive(OptionalCompilationStep.INSTANT_DEV)) {
+            javacTask.getOptions().setIncremental(true);
+        }
     }
 }
