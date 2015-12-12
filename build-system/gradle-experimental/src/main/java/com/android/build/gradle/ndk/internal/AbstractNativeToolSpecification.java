@@ -16,9 +16,6 @@
 
 package com.android.build.gradle.ndk.internal;
 
-import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCCompiler;
-import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCppCompiler;
-
 import org.gradle.nativeplatform.NativeBinarySpec;
 
 /**
@@ -34,11 +31,11 @@ public abstract class AbstractNativeToolSpecification implements NativeToolSpeci
     @Override
     public void apply(NativeBinarySpec binary) {
         for (String arg : getCFlags()) {
-            getCCompiler(binary).args(arg);
+            binary.getcCompiler().args(arg);
         }
 
         for (String arg : getCppFlags()) {
-            getCppCompiler(binary).args(arg);
+            binary.getCppCompiler().args(arg);
         }
 
         for (String arg : getLdFlags()) {

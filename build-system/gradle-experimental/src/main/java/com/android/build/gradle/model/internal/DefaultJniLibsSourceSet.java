@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model;
+package com.android.build.gradle.model.internal;
 
-import org.gradle.language.base.LanguageSourceSet;
+import com.android.build.gradle.internal.AbstractNativeDependentSourceSet;
+import com.android.build.gradle.model.JniLibsSourceSet;
 
 /**
- * LanguageSourceSet for Android's sources.
+ * Implementation of {@link JniLibsSourceSet}
  */
-public interface AndroidLanguageSourceSet extends LanguageSourceSet {
+public class DefaultJniLibsSourceSet extends AbstractNativeDependentSourceSet
+        implements JniLibsSourceSet {
 }

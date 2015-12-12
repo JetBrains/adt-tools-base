@@ -209,6 +209,7 @@ model {
             assertThatZip(apk).contains("lib/$abi/libgetstring2.so")
 
             NativeLibrary libModel = findNativeLibraryByAbi(model, "debug", abi)
+            assertThat(libModel).isNotNull();
             assertThat(libModel.getDebuggableLibraryFolders()).containsAllOf(
                     app.file("build/intermediates/binaries/debug/obj/$abi"),
                     lib1.file("build/intermediates/binaries/debug/obj/$abi"),

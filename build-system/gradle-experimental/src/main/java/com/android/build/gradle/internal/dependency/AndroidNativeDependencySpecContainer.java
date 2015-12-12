@@ -16,88 +16,29 @@
 
 package com.android.build.gradle.internal.dependency;
 
-import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-
-import org.gradle.api.Action;
+import org.gradle.model.internal.core.UnmanagedStruct;
 import org.gradle.platform.base.DependencySpecContainer;
 
-import java.io.File;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Container for {@link AndroidNativeDependencySpec}.
+ *
  * Code is based on {@link DependencySpecContainer}.  It should be removed when Gradle support more
  * flexibility in defining dependency specs.
  */
-public class AndroidNativeDependencySpecContainer {
+@UnmanagedStruct
+public interface AndroidNativeDependencySpecContainer {
 
-    private final List<AndroidNativeDependencySpec.Builder> builders =
-            new LinkedList<AndroidNativeDependencySpec.Builder>();
+    AndroidNativeDependencySpec.Builder project(final String value);
 
-    public AndroidNativeDependencySpec.Builder project(final String value) {
-        return doCreate(new Action<AndroidNativeDependencySpec.Builder>() {
-            @Override
-            public void execute(AndroidNativeDependencySpec.Builder builder) {
-                builder.project(value);
-            }
-        });
-    }
+    AndroidNativeDependencySpec.Builder library(final String value);
 
-    public AndroidNativeDependencySpec.Builder library(final String value) {
-        return doCreate(new Action<AndroidNativeDependencySpec.Builder>() {
-            @Override
-            public void execute(AndroidNativeDependencySpec.Builder builder) {
-                builder.library(value);
-            }
-        });
-    }
+    AndroidNativeDependencySpec.Builder buildType(final String value);
 
-    public AndroidNativeDependencySpec.Builder buildType(final String value) {
-        return doCreate(new Action<AndroidNativeDependencySpec.Builder>() {
-            @Override
-            public void execute(AndroidNativeDependencySpec.Builder builder) {
-                builder.buildType(value);
-            }
-        });
-    }
+    AndroidNativeDependencySpec.Builder productFlavor(final String value);
 
-    public AndroidNativeDependencySpec.Builder productFlavor(final String value) {
-        return doCreate(new Action<AndroidNativeDependencySpec.Builder>() {
-            @Override
-            public void execute(AndroidNativeDependencySpec.Builder builder) {
-                builder.productFlavor(value);
-            }
-        });
-    }
+    Collection<AndroidNativeDependencySpec> getDependencies();
 
-    public Collection<AndroidNativeDependencySpec> getDependencies() {
-        if (builders.isEmpty()) {
-            return Collections.emptySet();
-        }
-        return ImmutableSet.copyOf(Lists.transform(builders,
-                new Function<AndroidNativeDependencySpec.Builder, AndroidNativeDependencySpec>() {
-                    @Override
-                    public AndroidNativeDependencySpec apply(AndroidNativeDependencySpec.Builder builder) {
-                        return builder.build();
-                    }
-                }));
-    }
-
-    private AndroidNativeDependencySpec.Builder doCreate(
-            Action<? super AndroidNativeDependencySpec.Builder> action) {
-        AndroidNativeDependencySpec.Builder builder = new AndroidNativeDependencySpec.Builder();
-        action.execute(builder);
-        builders.add(builder);
-        return builder;
-    }
-
-    public boolean isEmpty() {
-        return builders.isEmpty();
-    }
+    boolean isEmpty();
 }

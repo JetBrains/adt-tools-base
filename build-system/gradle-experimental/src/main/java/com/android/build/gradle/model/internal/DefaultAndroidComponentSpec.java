@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model;
+package com.android.build.gradle.model.internal;
 
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.managed.AndroidConfig;
@@ -26,7 +26,8 @@ import org.gradle.platform.base.component.BaseComponentSpec;
 /**
  * Implementation for Android component spec.
  */
-public class DefaultAndroidComponentSpec extends BaseComponentSpec implements AndroidComponentSpec{
+public class DefaultAndroidComponentSpec extends BaseComponentSpec
+        implements AndroidComponentSpecInternal{
     AndroidConfig extension;
 
     VariantManager variantManager;
@@ -40,31 +41,38 @@ public class DefaultAndroidComponentSpec extends BaseComponentSpec implements An
         return extension;
     }
 
+    @Override
     public void setExtension(AndroidConfig extension) {
         this.extension = extension;
     }
 
+    @Override
     public VariantManager getVariantManager() {
 
         return variantManager;
     }
 
+    @Override
     public void setVariantManager(VariantManager variantManager) {
         this.variantManager = variantManager;
     }
 
+    @Override
     public SigningConfig getSigningOverride() {
         return signingOverride;
     }
 
+    @Override
     public void setSigningOverride(SigningConfig signingOverride) {
         this.signingOverride = signingOverride;
     }
 
+    @Override
     public NativeLibrarySpec getNativeLibrary() {
         return nativeLibrary;
     }
 
+    @Override
     public void setNativeLibrary(NativeLibrarySpec nativeLibrary) {
         this.nativeLibrary = nativeLibrary;
     }

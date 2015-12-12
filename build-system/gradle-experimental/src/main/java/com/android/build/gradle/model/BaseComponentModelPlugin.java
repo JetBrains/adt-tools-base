@@ -63,6 +63,8 @@ import com.android.build.gradle.managed.adaptor.AndroidConfigAdaptor;
 import com.android.build.gradle.managed.adaptor.BuildTypeAdaptor;
 import com.android.build.gradle.managed.adaptor.DataBindingOptionsAdapter;
 import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor;
+import com.android.build.gradle.model.internal.AndroidBinaryInternal;
+import com.android.build.gradle.model.internal.AndroidComponentSpecInternal;
 import com.android.build.gradle.tasks.JillTask;
 import com.android.builder.Version;
 import com.android.builder.core.AndroidBuilder;
@@ -107,8 +109,8 @@ import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
-import org.gradle.model.internal.core.ModelCreators;
 import org.gradle.model.internal.core.ModelReference;
+import org.gradle.model.internal.core.ModelRegistrations;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.platform.base.BinaryContainer;
 import org.gradle.platform.base.ComponentSpecContainer;
@@ -192,7 +194,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         project.getPlugins().apply(NdkComponentModelPlugin.class);
 
         // Remove this when our models no longer depends on Project.
-        modelRegistry.create(ModelCreators
+        modelRegistry.register(ModelRegistrations
                 .bridgedInstance(ModelReference.of("projectModel", Project.class), project)
                 .descriptor("Model of project.").build());
 
@@ -200,13 +202,13 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         // Inserting the ToolingModelBuilderRegistry into the model so that it can be use to create
         // TaskManager in child classes.
-        modelRegistry.create(ModelCreators.bridgedInstance(
+        modelRegistry.register(ModelRegistrations.bridgedInstance(
                 ModelReference.of("toolingRegistry", ToolingModelBuilderRegistry.class),
                 toolingRegistry).descriptor("Tooling model builder model registry.").build());
 
         // Create SDK handler.  This has to be done in the 'apply' method to ensure it is executed.
         SdkHandler sdkHandler = createSdkHandler(project);
-        modelRegistry.create(ModelCreators.bridgedInstance(
+        modelRegistry.register(ModelRegistrations.bridgedInstance(
                 ModelReference.of("createSdkHandler", SdkHandler.class),
                 sdkHandler).descriptor("SDK handler.").build());
     }
@@ -334,7 +336,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Defaults
-        public void configureDefaultDataBindingOptions(
+        public static void configureDefaultDataBindingOptions(
                 @Path("android.dataBinding") DataBindingOptions dataBindingOptions) {
             dataBindingOptions.setEnabled(false);
             dataBindingOptions.setAddDefaultAdapters(true);
@@ -349,7 +351,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Model
-        public DataBindingBuilder createDataBindingBuilder() {
+        public static DataBindingBuilder createDataBindingBuilder() {
             return new DataBindingBuilder();
         }
 
@@ -412,22 +414,10 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         @Defaults
         public static void addDefaultAndroidSourceSet(
-                @Path("android.sources") ModelMap<FunctionalSourceSet> sources,
-                final LanguageRegistry languageRegistry) {
-            final LanguageRegistration androidLanguageRegistration =
-                    LanguageRegistryUtils.find(languageRegistry, AndroidLanguageSourceSet.class);
-            final LanguageRegistration jniLibsLanguageRegistration =
-                    LanguageRegistryUtils.find(languageRegistry, JniLibsSourceSet.class);
-
-            sources.beforeEach(new Action<FunctionalSourceSet>() {
+                @Path("android.sources") ModelMap<FunctionalSourceSet> sources) {
+            sources.all(new Action<FunctionalSourceSet>() {
                 @Override
                 public void execute(FunctionalSourceSet sourceSet) {
-                    sourceSet.registerFactory(
-                            androidLanguageRegistration.getSourceSetType(),
-                            androidLanguageRegistration.getSourceSetFactory(sourceSet.getName()));
-                    sourceSet.registerFactory(
-                            jniLibsLanguageRegistration.getSourceSetType(),
-                            jniLibsLanguageRegistration.getSourceSetFactory(sourceSet.getName()));
                     sourceSet.create("resources", AndroidLanguageSourceSet.class);
                     sourceSet.create("java", AndroidLanguageSourceSet.class);
                     sourceSet.create("manifest", AndroidLanguageSourceSet.class);
@@ -437,8 +427,13 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                     sourceSet.create("renderscript", AndroidLanguageSourceSet.class);
                     sourceSet.create("jniLibs", JniLibsSourceSet.class);
 
-                    LanguageSourceSet manifest = sourceSet.getByName("manifest");
-                    manifest.getSource().setIncludes(ImmutableList.of("AndroidManifest.xml"));
+                    sourceSet.named("manifest", new Action<LanguageSourceSet>() {
+                        @Override
+                        public void execute(LanguageSourceSet manifest) {
+                            manifest.getSource().setIncludes(
+                                    ImmutableList.of("AndroidManifest.xml"));
+                        }
+                    });
                 }
             });
         }
@@ -476,7 +471,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                             binary.getName(),
                             new NativeDependencyResolver(
                                     serviceRegistry,
-                                    sourceSet.getDependencyContainer(),
+                                    sourceSet.getDependencies(),
                                     new AndroidNativeDependencySpec(
                                             null,
                                             null,
@@ -527,23 +522,22 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 variantManager.addProductFlavor(new ProductFlavorAdaptor(productFlavor));
             }
 
-            DefaultAndroidComponentSpec spec =
-                    (DefaultAndroidComponentSpec) androidSpecs.get(COMPONENT_NAME);
+            AndroidComponentSpecInternal spec =
+                    (AndroidComponentSpecInternal) androidSpecs.get(COMPONENT_NAME);
             spec.setExtension(androidExtension);
             spec.setVariantManager(variantManager);
         }
 
         @Mutate
         public static void createVariantData(
-                ModelMap<AndroidBinary> binaries,
+                ModelMap<AndroidBinaryInternal> binaries,
                 ModelMap<AndroidComponentSpec> specs,
                 TaskManager taskManager) {
             final VariantManager variantManager =
-                    ((DefaultAndroidComponentSpec) specs.get(COMPONENT_NAME)).getVariantManager();
-            binaries.afterEach(new Action<AndroidBinary>() {
+                    ((AndroidComponentSpecInternal) specs.get(COMPONENT_NAME)).getVariantManager();
+            binaries.afterEach(new Action<AndroidBinaryInternal>() {
                 @Override
-                public void execute(AndroidBinary androidBinary) {
-                    DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;
+                public void execute(AndroidBinaryInternal binary) {
                     List<ProductFlavorAdaptor> adaptedFlavors = Lists.newArrayList();
                     for (ProductFlavor flavor : binary.getProductFlavors()) {
                         adaptedFlavors.add(new ProductFlavorAdaptor(flavor));
@@ -594,20 +588,16 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public static void createBinaryTasks(
                 final ModelMap<Task> tasks,
-                BinaryContainer binaries,
+                ModelMap<AndroidBinaryInternal> binaries,
                 ModelMap<AndroidComponentSpec> specs,
                 TaskManager taskManager) {
             final VariantManager variantManager =
-                    ((DefaultAndroidComponentSpec) specs.get(COMPONENT_NAME)).getVariantManager();
-            binaries.withType(AndroidBinary.class, new Action<AndroidBinary>() {
-                @Override
-                public void execute(AndroidBinary androidBinary) {
-                    DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;
-                    variantManager.createTasksForVariantData(
-                            new TaskModelMapAdaptor(tasks),
-                            binary.getVariantData());
-                }
-            });
+                    ((AndroidComponentSpecInternal) specs.get(COMPONENT_NAME)).getVariantManager();
+            for (AndroidBinaryInternal binary : binaries) {
+                variantManager.createTasksForVariantData(
+                        new TaskModelMapAdaptor(tasks),
+                        binary.getVariantData());
+            }
         }
 
         /**
@@ -619,7 +609,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 TaskManager taskManager,
                 ModelMap<AndroidComponentSpec> spec) {
             VariantManager variantManager =
-                    ((DefaultAndroidComponentSpec)spec.get(COMPONENT_NAME)).getVariantManager();
+                    ((AndroidComponentSpecInternal)spec.get(COMPONENT_NAME)).getVariantManager();
 
             // create the test tasks.
             taskManager.createTopLevelTestTasks(new TaskModelMapAdaptor(tasks),
@@ -629,9 +619,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public static void createReportTasks(
                 ModelMap<Task> tasks,
-                ModelMap<AndroidComponentSpec> specs) {
-            final VariantManager variantManager =
-                    ((DefaultAndroidComponentSpec)specs.get(COMPONENT_NAME)).getVariantManager();
+                ModelMap<AndroidComponentSpecInternal> specs) {
+            final VariantManager variantManager = specs.get(COMPONENT_NAME).getVariantManager();
 
             tasks.create("androidDependencies", DependencyReportTask.class,
                     new Action<DependencyReportTask>() {

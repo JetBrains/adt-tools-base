@@ -48,7 +48,7 @@ public class NdkStlVersionTest {
     @Test
     public void checkDefaultStlVersion() {
         project.execute("clean", "assembleDebug");
-        File cppOptions = project.file("build/tmp/compileX86DebugHello-jniSharedLibraryHello-jniMainCpp/options.txt");
+        File cppOptions = project.file("build/tmp/compileHello-jniX86DebugSharedLibraryHello-jniMainCpp/options.txt");
         assertThat(cppOptions).containsAllOf("gnu-libstdc++/4.9/");
     }
 
@@ -62,7 +62,7 @@ public class NdkStlVersionTest {
                         + "    }\n"
                         + "}\n");
         project.execute("clean", "assembleDebug");
-        File cppOptions = project.file("build/tmp/compileX86DebugHello-jniSharedLibraryHello-jniMainCpp/options.txt");
+        File cppOptions = project.file("build/tmp/compileHello-jniX86DebugSharedLibraryHello-jniMainCpp/options.txt");
         assertThat(cppOptions).containsAllOf("gnu-libstdc++/4.8/");
     }
 }

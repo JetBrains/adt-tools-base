@@ -17,34 +17,27 @@
 package com.android.build.gradle.internal;
 
 import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpecContainer;
+import com.android.build.gradle.model.NativeDependentSourceSet;
 
 import org.gradle.api.Action;
-import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.sources.BaseLanguageSourceSet;
 
 /**
  * LanguageSourceSet supporting native dependency on project with NDK component.
  */
 public abstract class AbstractNativeDependentSourceSet extends BaseLanguageSourceSet
-        implements LanguageSourceSet {
+        implements NativeDependentSourceSet {
 
     private final AndroidNativeDependencySpecContainer dependencyContainer =
-            new AndroidNativeDependencySpecContainer();
+            new DefaultAndroidNativeDependencySpecContainer();
 
     @Override
     public boolean getMayHaveSources() {
         return super.getMayHaveSources() || !dependencyContainer.isEmpty();
     }
 
-    public AndroidNativeDependencySpecContainer getDependencyContainer() {
+    @Override
+    public AndroidNativeDependencySpecContainer getDependencies() {
         return dependencyContainer;
     }
-
-    @SuppressWarnings("unused")  // External API
-    public AndroidNativeDependencySpecContainer dependencies(
-            Action<AndroidNativeDependencySpecContainer> configureAction) {
-        configureAction.execute(getDependencyContainer());
-        return getDependencyContainer();
-    }
-
 }

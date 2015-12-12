@@ -23,6 +23,12 @@ import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.ProductFlavor;
+import com.android.build.gradle.model.internal.AndroidBinaryInternal;
+import com.android.build.gradle.model.internal.DefaultAndroidBinary;
+import com.android.build.gradle.model.internal.AndroidComponentSpecInternal;
+import com.android.build.gradle.model.internal.DefaultAndroidComponentSpec;
+import com.android.build.gradle.model.internal.DefaultAndroidLanguageSourceSet;
+import com.android.build.gradle.model.internal.DefaultJniLibsSourceSet;
 import com.android.builder.core.BuilderConstants;
 import com.android.repository.Revision;
 import com.android.utils.StringHelper;
@@ -70,7 +76,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
      */
     public static final String COMPONENT_NAME = "android";
 
-    public static final String GRADLE_ACCEPTABLE_VERSION = "2.9";
+    public static final String GRADLE_ACCEPTABLE_VERSION = "2.10";
 
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck";
@@ -109,19 +115,13 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         public static void registerAndroidLanguageSourceSet(
                 LanguageTypeBuilder<AndroidLanguageSourceSet> builder) {
             builder.setLanguageName("android");
-            builder.defaultImplementation(AndroidLanguageSourceSet.class);
+            builder.defaultImplementation(DefaultAndroidLanguageSourceSet.class);
         }
 
         @LanguageType
         public static void registerJniLibsSourceSet(LanguageTypeBuilder<JniLibsSourceSet> builder) {
             builder.setLanguageName("jniLibs");
-            builder.defaultImplementation(JniLibsSourceSet.class);
-        }
-
-        @LanguageType
-        public static void registerNativeSourceSet(LanguageTypeBuilder<NativeSourceSet> builder) {
-            builder.setLanguageName("jni");
-            builder.defaultImplementation(NativeSourceSet.class);
+            builder.defaultImplementation(DefaultJniLibsSourceSet.class);
         }
 
         /**
@@ -184,6 +184,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         @ComponentType
         public static void defineComponentType(ComponentTypeBuilder<AndroidComponentSpec> builder) {
             builder.defaultImplementation(DefaultAndroidComponentSpec.class);
+            builder.internalView(AndroidComponentSpecInternal.class);
         }
 
         @Mutate
@@ -231,28 +232,29 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                     sources.create(flavor.getName());
                 }
             }
-
             sources.afterEach(new Action<FunctionalSourceSet>() {
                 @Override
                 public void execute(final FunctionalSourceSet functionalSourceSet) {
-                    functionalSourceSet.all(
+                    functionalSourceSet.afterEach(
                             new Action<LanguageSourceSet>() {
                                 @Override
                                 public void execute(LanguageSourceSet languageSourceSet) {
                                     SourceDirectorySet source = languageSourceSet.getSource();
                                     if (source.getSrcDirs().isEmpty()) {
-                                        source.srcDir("src/" + functionalSourceSet.getName() + "/"
-                                                + languageSourceSet.getName());
+                                        source.srcDir("src/" + languageSourceSet.getParentName()
+                                                + "/" + languageSourceSet.getName());
                                     }
                                 }
                             });
                 }
             });
+
         }
 
         @BinaryType
         public static void defineBinaryType(BinaryTypeBuilder<AndroidBinary> builder) {
             builder.defaultImplementation(DefaultAndroidBinary.class);
+            builder.internalView(AndroidBinaryInternal.class);
         }
 
         @ComponentBinaries
@@ -273,7 +275,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                             new Action<AndroidBinary>() {
                                 @Override
                                 public void execute(AndroidBinary androidBinary) {
-                                    DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;
+                                    AndroidBinaryInternal binary = (AndroidBinaryInternal) androidBinary;
                                     binary.setBuildType(buildType);
                                     binary.setProductFlavors(flavorCombo.getFlavorList());
 
@@ -300,7 +302,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 final String sourceSetName) {
             FunctionalSourceSet sourceSet = projectSourceSet.get(sourceSetName);
             if (sourceSet != null) {
-                binary.getInputs().addAll(sourceSet);
+                binary.getInputs().addAll(sourceSet.values());
             }
         }
 
