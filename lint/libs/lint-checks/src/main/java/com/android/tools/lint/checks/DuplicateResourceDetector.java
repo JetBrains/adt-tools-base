@@ -157,6 +157,17 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
         ResourceType type = ResourceType.getEnum(typeString);
         if (type == null) {
             return;
+        } else if (type == ResourceType.PUBLIC) {
+            // We can't easily check public declarations since it's not as simple as
+            // just looking up the type attribute and switching the ResourceType to it;
+            // that would treat <dimen name="foo"> and <public name="foo" type="dimen">
+            // as an actual duplicate name. A simple way to do it would be to change the
+            // name, e.g. by prefixing "public-" to it, but that would require restructuring
+            // the code a bit, and we'd need to remove it when displaying the conflicts --
+            // and most importantly, there really isn't a good reason to do it; a public
+            // declaration has no value, so there's no chance of creating conflicting
+            // definitions.
+            return;
         }
 
         if (type == ResourceType.ATTR
