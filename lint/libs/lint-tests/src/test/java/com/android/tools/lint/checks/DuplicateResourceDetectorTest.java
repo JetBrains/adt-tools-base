@@ -129,6 +129,23 @@ public class DuplicateResourceDetectorTest extends AbstractCheckTest {
             lintProject("res/values/refs.xml"));
     }
 
+    public void testPublic() throws Exception {
+        assertEquals(""
+                + "No warnings.",
+
+                lintProject(
+                        xml("res/values/refs.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<resources>\n"
+                                + "    <item type='dimen' name='largePadding'>20dp</item>\n"
+                                + "    <item type='dimen' name='smallPadding'>15dp</item>\n"
+                                + "    <public type='dimen' name='largePadding' />"
+                                + "    <public type='string' name='largePadding' />"
+                                + "    <public type='dimen' name='smallPadding' />"
+                                + "    <public type='dimen' name='smallPadding' />"
+                                + "</resources>\n")));
+    }
+
     public void testGetExpectedType() {
         assertEquals("string", DuplicateResourceDetector.getExpectedType(
                 "Unexpected resource reference type; expected value of type `@string/`", RAW));
