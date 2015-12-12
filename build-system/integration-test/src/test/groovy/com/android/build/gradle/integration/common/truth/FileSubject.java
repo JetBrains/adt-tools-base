@@ -101,18 +101,12 @@ public class FileSubject extends Subject<FileSubject, File> {
         }
     }
 
-    public void isOlderThan(long timestamp) {
-        long lastModified = getSubject().lastModified();
-        if (getSubject().lastModified() >= timestamp) {
-            failWithBadResults("is older than", timestamp, "was modified at", lastModified);
-        }
+    public void isNewerThan(File other) {
+        isNewerThan(other.lastModified());
     }
 
-    public FileSubject subFile(String path) {
-        if (!getSubject().isDirectory()) {
-            fail("is a directory");
-        }
-        return new FileSubject(failureStrategy, new File(getSubject(), path));
+    public void isSameAgeAs(File other) {
+        wasModifiedAt(other.lastModified());
     }
 
     public void contentWithUnixLineSeparatorsIsExactly(String expected) {

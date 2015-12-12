@@ -23,8 +23,6 @@ import java.util.List;
 
 /**
  * Represents a ProGuard filter specification.
- *
- * TODO: Is this needed for anything if we don't obfuscate?
  */
 public class FilterSpecification implements Matcher<String> {
 

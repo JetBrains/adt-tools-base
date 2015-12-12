@@ -58,6 +58,13 @@ import java.util.jar.JarFile;
  */
 public abstract class AbstractShrinker<T> {
 
+    /**
+     * Specifies whether the shrinker should assume certain package names are specific to the SDK,
+     * to trim the graph as early as possible.
+     */
+    private static final boolean IGNORE_PACKAGE_NAME =
+            Boolean.getBoolean("android.newShrinker.ignorePackageName");
+
     protected final WaitableExecutor<Void> mExecutor;
 
     protected final ShrinkerGraph<T> mGraph;
@@ -77,14 +84,14 @@ public abstract class AbstractShrinker<T> {
      * <p>This way we can make the check cheaper in the common case and also filter out a lot of
      * unnecessary edges from the graph early on, where we don't yet know which class is which.
      */
-    static boolean isSdkPackage(String className) {
-        // TODO: Add a flag to disable these checks?
-        return className.startsWith("java/")
+    static boolean isSdkPackage(@NonNull String className) {
+        return !IGNORE_PACKAGE_NAME
+                && (className.startsWith("java/")
                 || className.startsWith("android/os/")
                 || className.startsWith("android/view/")
                 || className.startsWith("android/content/")
                 || className.startsWith("android/graphics/")
-                || className.startsWith("android/widget/");
+                || className.startsWith("android/widget/"));
     }
 
     /**

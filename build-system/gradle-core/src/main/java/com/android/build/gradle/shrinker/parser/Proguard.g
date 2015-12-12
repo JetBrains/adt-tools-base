@@ -40,7 +40,6 @@ prog [Flags flags, String baseDirectory]
 private noOpFlag
   :
   (   '-verbose'
-    // TODO: implement
     | ('-dontnote' {FilterSpecification class_filter = new FilterSpecification();} filter[class_filter])
     // These flags are used in the default SDK proguard rules, so there's no point warning about them:
     | '-dontusemixedcaseclassnames'
