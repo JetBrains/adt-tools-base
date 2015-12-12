@@ -19,10 +19,38 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ATTR_VALUE;
 import static com.android.SdkConstants.FQCN_SUPPRESS_LINT;
 import static com.android.SdkConstants.INT_DEF_ANNOTATION;
+import static com.android.SdkConstants.STRING_DEF_ANNOTATION;
+import static com.android.SdkConstants.SUPPORT_ANNOTATIONS_PREFIX;
 import static com.android.SdkConstants.SUPPRESS_LINT;
 import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
+import static com.android.tools.lint.checks.PermissionRequirement.getAnnotationStrings;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_ALL_OF;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_ANY_OF;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_FROM;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_FROM_INCLUSIVE;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_MAX;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_MIN;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_MULTIPLE;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_TO;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.ATTR_TO_INCLUSIVE;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.CHECK_RESULT_ANNOTATION;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.COLOR_INT_ANNOTATION;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.FLOAT_RANGE_ANNOTATION;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.INT_RANGE_ANNOTATION;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION_READ;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION_WRITE;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.RES_SUFFIX;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.SIZE_ANNOTATION;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.filterRelevantAnnotations;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.getBoolean;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.getDoubleAttribute;
+import static com.android.tools.lint.checks.SupportAnnotationDetector.getLongAttribute;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_DOUBLE;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_FLOAT;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_INT;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_LONG;
+import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 import static com.android.tools.lint.detector.api.JavaContext.findSurroundingClass;
 import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
@@ -30,6 +58,7 @@ import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.JavaParser.ResolvedField;
@@ -51,7 +80,6 @@ import com.google.common.base.Objects;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.util.Arrays;
@@ -59,7 +87,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Set;
 
 import lombok.ast.Annotation;
 import lombok.ast.AnnotationDeclaration;
@@ -119,6 +146,21 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
 
             Category.CORRECTNESS,
             3,
+            Severity.ERROR,
+            IMPLEMENTATION);
+
+    /** Incorrectly using a support annotation */
+    public static final Issue ANNOTATION_USAGE = Issue.create(
+            "SupportAnnotationUsage", //$NON-NLS-1$
+            "Incorrect support annotation usage",
+
+            "This lint check makes sure that the support annotations (such as " +
+            "`@IntDef` and `@ColorInt`) are used correctly. For example, it's an " +
+            "error to specify an `@IntRange` where the `from` value is higher than " +
+            "the `to` value.",
+
+            Category.CORRECTNESS,
+            2,
             Severity.ERROR,
             IMPLEMENTATION);
 
@@ -207,7 +249,19 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
 
         @Override
         public boolean visitAnnotation(Annotation node) {
-            String type = node.astAnnotationTypeReference().getTypeName();
+            String typeName = node.astAnnotationTypeReference().getTypeName();
+            if (typeName.equals("Override")) {
+                return super.visitAnnotation(node);
+            }
+            TypeDescriptor typeDescriptor = mContext.getType(node);
+            if (typeDescriptor == null) {
+                return super.visitAnnotation(node);
+            }
+            String type = typeDescriptor.getName();
+            if (type.startsWith("java.lang.")){
+                return super.visitAnnotation(node);
+            }
+
             if (SUPPRESS_LINT.equals(type) || FQCN_SUPPRESS_LINT.equals(type)) {
                 Node parent = node.getParent();
                 if (parent instanceof Modifiers) {
@@ -221,7 +275,7 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                             if (valueNode instanceof StringLiteral) {
                                 StringLiteral literal = (StringLiteral) valueNode;
                                 String id = literal.astValue();
-                                if (!checkId(node, id)) {
+                                if (!checkSuppressLint(node, id)) {
                                     return super.visitAnnotation(node);
                                 }
                             } else if (valueNode instanceof ArrayInitializer) {
@@ -234,7 +288,7 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                                 for (Expression arrayElement : expressions) {
                                     if (arrayElement instanceof StringLiteral) {
                                         String id = ((StringLiteral) arrayElement).astValue();
-                                        if (!checkId(node, id)) {
+                                        if (!checkSuppressLint(node, id)) {
                                             return super.visitAnnotation(node);
                                         }
                                     }
@@ -243,15 +297,163 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                         }
                     }
                 }
-            } else if (INT_DEF_ANNOTATION.equals(type) || "IntDef".equals(type)) {
-                // Make sure that all the constants are unique
+            } else if (type.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
+                if (CHECK_RESULT_ANNOTATION.equals(type)) {
+                    // Check that the return type of this method is not void!
+                } else if (INT_RANGE_ANNOTATION.equals(type)
+                        || FLOAT_RANGE_ANNOTATION.equals(type)) {
+                    // Check that the annotated element's type is int or long.
+                    // Also make sure that from <= to.
+                    ResolvedNode resolved = mContext.resolve(node);
+                    if (resolved instanceof ResolvedAnnotation) {
+                        ResolvedAnnotation annotation = (ResolvedAnnotation) resolved;
+                        boolean invalid;
+                        if (INT_RANGE_ANNOTATION.equals(type)) {
+                            checkTargetType(node, TYPE_INT, TYPE_LONG);
+
+                            long from = getLongAttribute(annotation, ATTR_FROM, Long.MIN_VALUE);
+                            long to = getLongAttribute(annotation, ATTR_TO, Long.MAX_VALUE);
+                            invalid = from > to;
+                        } else {
+                            checkTargetType(node, TYPE_FLOAT, TYPE_DOUBLE);
+
+                            double from = getDoubleAttribute(annotation, ATTR_FROM,
+                                    Double.NEGATIVE_INFINITY);
+                            double to = getDoubleAttribute(annotation, ATTR_TO,
+                                    Double.POSITIVE_INFINITY);
+                            invalid = from > to;
+                        }
+                        if (invalid) {
+                            mContext.report(ANNOTATION_USAGE, node, mContext.getLocation(node),
+                                    "Invalid range: the `from` attribute must be less than "
+                                            + "the `to` attribute");
+                        }
+                    }
+                } else if (SIZE_ANNOTATION.equals(type)) {
+                    // Check that the annotated element's type is an array, or a collection
+                    // (or at least not an int or long; if so, suggest IntRange)
+                    // Make sure the size and the modulo is not negative.
+
+                    ResolvedNode resolved = mContext.resolve(node);
+                    if (resolved instanceof ResolvedAnnotation) {
+                        ResolvedAnnotation annotation = (ResolvedAnnotation) resolved;
+                        int unset = -42;
+                        long exact = getLongAttribute(annotation, ATTR_VALUE, unset);
+                        long min = getLongAttribute(annotation, ATTR_MIN, Long.MIN_VALUE);
+                        long max = getLongAttribute(annotation, ATTR_MAX, Long.MAX_VALUE);
+                        long multiple = getLongAttribute(annotation, ATTR_MULTIPLE, 1);
+                        if (min > max) {
+                            mContext.report(ANNOTATION_USAGE, node, mContext.getLocation(node),
+                                    "Invalid size range: the `min` attribute must be less than "
+                                            + "the `max` attribute");
+                        } else if (multiple < 1) {
+                            mContext.report(ANNOTATION_USAGE, node, mContext.getLocation(node),
+                                    "The size multiple must be at least 1");
+
+                        } else if (exact < 0 && exact != unset) {
+                            mContext.report(ANNOTATION_USAGE, node, mContext.getLocation(node),
+                                    "The size can't be negative");
+                        }
+                    }
+                } else if (COLOR_INT_ANNOTATION.equals(type)) {
+                    // Check that ColorInt applies to the right type
+                    checkTargetType(node, TYPE_INT, TYPE_LONG);
+                } else if (INT_DEF_ANNOTATION.equals(type)) {
+                    // Make sure IntDef constants are unique
+                    ResolvedNode resolved = mContext.resolve(node);
+                    if (resolved != null) {
+                        ensureUniqueValues(((ResolvedAnnotation) resolved), node);
+                    }
+                } else if (PERMISSION_ANNOTATION.equals(type) ||
+                        PERMISSION_ANNOTATION_READ.equals(type) ||
+                        PERMISSION_ANNOTATION_WRITE.equals(type)) {
+                    // Check that if there are no arguments, this is specified on a parameter,
+                    // and conversely, on methods and fields there is a valid argument.
+                    if (node.getParent() instanceof Modifiers &&
+                            node.getParent().getParent() instanceof MethodDeclaration) {
+                        ResolvedNode resolved = mContext.resolve(node);
+                        if (resolved != null) {
+                            ResolvedAnnotation annotation = (ResolvedAnnotation) resolved;
+                            String value = (String)annotation.getValue(ATTR_VALUE);
+                            String[] anyOf = getAnnotationStrings(annotation.getValue(ATTR_ANY_OF));
+                            String[] allOf = getAnnotationStrings(annotation.getValue(ATTR_ALL_OF));
+
+                            int set = 0;
+                            //noinspection VariableNotUsedInsideIf
+                            if (value != null) {
+                                set++;
+                            }
+                            //noinspection VariableNotUsedInsideIf
+                            if (allOf != null) {
+                                set++;
+                            }
+                            //noinspection VariableNotUsedInsideIf
+                            if (anyOf != null) {
+                                set++;
+                            }
+
+                            if (set == 0) {
+                                mContext.report(ANNOTATION_USAGE, node,
+                                        mContext.getLocation(node),
+                                        "For methods, permission annotation should specify one "
+                                                + "of `value`, `anyOf` or `allOf`");
+                            } else if (set > 1) {
+                                mContext.report(ANNOTATION_USAGE, node,
+                                        mContext.getLocation(node),
+                                        "Only specify on of `value`, `anyOf` or `allOf`");
+                            }
+                        }
+                    }
+
+                    // Also make sure you set only one of value, anyOf, allOf
+
+                } else if (type.endsWith(RES_SUFFIX)) {
+                    // Check that resource type annotations are on ints
+                    checkTargetType(node, TYPE_INT, TYPE_LONG);
+                }
+            } else {
+                // Look for typedefs (and make sure they're specified on the right type)
                 ResolvedNode resolved = mContext.resolve(node);
-                if (resolved instanceof ResolvedAnnotation) {
-                    ensureUniqueValues(((ResolvedAnnotation)resolved), node);
+                if (resolved != null) {
+                    for (ResolvedAnnotation annotation : resolved.getAnnotations()) {
+                        String name = annotation.getName();
+                        if (INT_DEF_ANNOTATION.equals(name)) {
+                            checkTargetType(node, TYPE_INT, TYPE_LONG);
+                        } else if (STRING_DEF_ANNOTATION.equals(type)) {
+                            checkTargetType(node, TYPE_STRING, null);
+                        }
+                    }
                 }
             }
 
             return super.visitAnnotation(node);
+        }
+
+        private void checkTargetType(@NonNull Annotation node, @NonNull String type1,
+                @Nullable String type2) {
+            Node parent = node.getParent();
+            if (parent != null) {
+                if (parent instanceof Modifiers) {
+                    Node parentParent = parent.getParent();
+                    if (parentParent != null) {
+                        TypeDescriptor typeDescriptor = mContext.getType(parentParent);
+                        if (typeDescriptor != null
+                                && !typeDescriptor.matchesName(type1)
+                                && (type2 == null || !typeDescriptor.matchesName(type2))) {
+                            String expectedTypes = type2 == null ? type1 : type1 + " or " + type2;
+                            String typeName = typeDescriptor.getName();
+                            if (typeName.equals(TYPE_STRING)) {
+                                typeName = "String";
+                            }
+                            String message = String.format(
+                                    "This annotation does not apply for type %1$s; expected %2$s",
+                                    typeName, expectedTypes);
+                            Location location = mContext.getLocation(node);
+                            mContext.report(ANNOTATION_USAGE, node, location, message);
+                        }
+                    }
+                }
+            }
         }
 
         @Override
@@ -586,7 +788,7 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
             }
         }
 
-        private boolean checkId(Annotation node, String id) {
+        private boolean checkSuppressLint(@NonNull Annotation node, @NonNull String id) {
             IssueRegistry registry = mContext.getDriver().getRegistry();
             Issue issue = registry.getIssue(id);
             // Special-case the ApiDetector issue, since it does both source file analysis

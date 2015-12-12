@@ -31,7 +31,7 @@ import java.util.List;
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
 
-    static final int INITIAL_CAPACITY = 253;
+    static final int INITIAL_CAPACITY = 254;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -45,6 +45,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(AndroidAutoDetector.MISSING_INTENT_FILTER_FOR_MEDIA_SEARCH);
         issues.add(AndroidAutoDetector.MISSING_MEDIA_BROWSER_SERVICE_ACTION_ISSUE);
         issues.add(AndroidAutoDetector.MISSING_ON_PLAY_FROM_SEARCH);
+        issues.add(AnnotationDetector.ANNOTATION_USAGE);
         issues.add(AnnotationDetector.FLAG_STYLE);
         issues.add(AnnotationDetector.INSIDE_METHOD);
         issues.add(AnnotationDetector.SWITCH_TYPE_DEF);

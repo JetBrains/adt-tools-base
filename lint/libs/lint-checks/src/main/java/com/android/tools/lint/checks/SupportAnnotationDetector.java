@@ -1551,7 +1551,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         return sb.toString();
     }
 
-    private static double getDoubleAttribute(@NonNull ResolvedAnnotation annotation,
+    static double getDoubleAttribute(@NonNull ResolvedAnnotation annotation,
             @NonNull String name, double defaultValue) {
         Object value = annotation.getValue(name);
         if (value instanceof Number) {
@@ -1561,7 +1561,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         return defaultValue;
     }
 
-    private static long getLongAttribute(@NonNull ResolvedAnnotation annotation,
+    static long getLongAttribute(@NonNull ResolvedAnnotation annotation,
             @NonNull String name, long defaultValue) {
         Object value = annotation.getValue(name);
         if (value instanceof Number) {
@@ -1571,7 +1571,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         return defaultValue;
     }
 
-    private static boolean getBoolean(@NonNull ResolvedAnnotation annotation,
+    static boolean getBoolean(@NonNull ResolvedAnnotation annotation,
             @NonNull String name, boolean defaultValue) {
         Object value = annotation.getValue(name);
         if (value instanceof Boolean) {

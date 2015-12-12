@@ -154,7 +154,7 @@ public abstract class PermissionRequirement {
     }
 
     @Nullable
-    private static String[] getAnnotationStrings(@Nullable Object v) {
+    static String[] getAnnotationStrings(@Nullable Object v) {
         if (v != null) {
             if (v instanceof String[]) {
                 return (String[])v;

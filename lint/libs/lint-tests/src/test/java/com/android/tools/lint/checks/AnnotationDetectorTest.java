@@ -407,6 +407,122 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
                         + "}\n")));
     }
 
+    @SuppressWarnings("ClassNameDiffersFromFileName")
+    public void testWrongUsages() throws Exception {
+        assertEquals(""
+                        + "src/test/pkg/WrongUsages.java:33: Error: This annotation does not apply for type String; expected int or long [SupportAnnotationUsage]\n"
+                        + "    @DialogStyle\n"
+                        + "    ~~~~~~~~~~~~\n"
+                        + "src/test/pkg/WrongUsages.java:38: Error: Invalid range: the from attribute must be less than the to attribute [SupportAnnotationUsage]\n"
+                        + "    @IntRange(from = 1, to = 0)\n"
+                        + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "src/test/pkg/WrongUsages.java:38: Error: This annotation does not apply for type String; expected int or long [SupportAnnotationUsage]\n"
+                        + "    @IntRange(from = 1, to = 0)\n"
+                        + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "src/test/pkg/WrongUsages.java:39: Error: Invalid size range: the min attribute must be less than the max attribute [SupportAnnotationUsage]\n"
+                        + "    @Size(min=10, max = 8)\n"
+                        + "    ~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "src/test/pkg/WrongUsages.java:44: Error: Invalid range: the from attribute must be less than the to attribute [SupportAnnotationUsage]\n"
+                        + "    @FloatRange(from = 1.0, to = 0.0)\n"
+                        + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "src/test/pkg/WrongUsages.java:44: Error: This annotation does not apply for type String; expected float or double [SupportAnnotationUsage]\n"
+                        + "    @FloatRange(from = 1.0, to = 0.0)\n"
+                        + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "src/test/pkg/WrongUsages.java:45: Error: This annotation does not apply for type String; expected int or long [SupportAnnotationUsage]\n"
+                        + "    @ColorInt\n"
+                        + "    ~~~~~~~~~\n"
+                        + "src/test/pkg/WrongUsages.java:46: Error: The size multiple must be at least 1 [SupportAnnotationUsage]\n"
+                        + "    @Size(multiple=0)\n"
+                        + "    ~~~~~~~~~~~~~~~~~\n"
+                        + "src/test/pkg/WrongUsages.java:47: Error: This annotation does not apply for type String; expected int or long [SupportAnnotationUsage]\n"
+                        + "    @DrawableRes\n"
+                        + "    ~~~~~~~~~~~~\n"
+                        + "src/test/pkg/WrongUsages.java:52: Error: The size can't be negative [SupportAnnotationUsage]\n"
+                        + "    @Size(-5)\n"
+                        + "    ~~~~~~~~~\n"
+                        + "10 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/WrongUsages.java", ""
+                                + "package test.pkg;\n"
+                                + "import android.support.annotation.IntDef;\n"
+                                + "import android.support.annotation.IntRange;\n"
+                                + "import android.support.annotation.FloatRange;\n"
+                                + "import android.support.annotation.ColorInt;\n"
+                                + "import android.support.annotation.DrawableRes;\n"
+                                + "import android.support.annotation.Size;\n"
+                                + "import android.annotation.SuppressLint;\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "@SuppressLint(\"UnusedDeclaration\")\n"
+                                + "public class WrongUsages {\n"
+                                + "    @IntDef({STYLE_NORMAL, STYLE_NO_TITLE, STYLE_NO_FRAME, STYLE_NO_INPUT})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    private @interface DialogStyle {}\n"
+                                + "\n"
+                                + "    public static final int STYLE_NORMAL = 0;\n"
+                                + "    public static final int STYLE_NO_TITLE = 1;\n"
+                                + "    public static final int STYLE_NO_FRAME = 2;\n"
+                                + "    public static final int STYLE_NO_INPUT = 3;\n"
+                                + "\n"
+                                + "    @DialogStyle\n"
+                                + "    public int okay1() {\n"
+                                + "        return 0;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @DialogStyle\n"
+                                + "    public long okay2() {\n"
+                                + "        return 0;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @DialogStyle\n"
+                                + "    public String wrong() {\n"
+                                + "        return null;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @IntRange(from = 1, to = 0)\n" // wrong range, and wrong type
+                                + "    @Size(min=10, max = 8)\n" // non-positive multiplier
+                                + "    public String wrongIntRange() {\n"
+                                + "        return null;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @FloatRange(from = 1.0, to = 0.0)\n" // wrong range, and wrong type
+                                + "    @ColorInt\n" // wrong type
+                                + "    @Size(multiple=0)\n" // non-positive multiplier
+                                + "    @DrawableRes\n" // wrong type
+                                + "    public String wrongFloatRange() {\n"
+                                + "        return null;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @Size(-5)\n" // negative size
+                                + "    public int[] wrongSize() {\n"
+                                + "        return null;\n"
+                                + "    }\n"
+                                + "\n"
+                                // TODO: Warn when using on collections that aren't supported
+                                // TODO: Resource types (@IntRes, @FloatRes, etc)
+                                // TODO: Warn about inapplicable nullness stuff (outside of IDE)
+                                + "}"),
+                        copy("src/android/support/annotation/CheckResult.java.txt",
+                                "src/android/support/annotation/CheckResult.java"),
+                        copy("src/android/support/annotation/IntDef.java.txt",
+                                "src/android/support/annotation/IntDef.java"),
+                        copy("src/android/support/annotation/StringDef.java.txt",
+                                "src/android/support/annotation/StringDef.java"),
+                        copy("src/android/support/annotation/ColorInt.java.txt",
+                                "src/android/support/annotation/ColorInt.java"),
+                        copy("src/android/support/annotation/DrawableRes.java.txt",
+                                "src/android/support/annotation/DrawableRes.java"),
+                        copy("src/android/support/annotation/Size.java.txt",
+                                "src/android/support/annotation/Size.java"),
+                        copy("src/android/support/annotation/IntRange.java.txt",
+                                "src/android/support/annotation/IntRange.java"),
+                        copy("src/android/support/annotation/FloatRange.java.txt",
+                                "src/android/support/annotation/FloatRange.java")
+                ));
+    }
+
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
             @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
