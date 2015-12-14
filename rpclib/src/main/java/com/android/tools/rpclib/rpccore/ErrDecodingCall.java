@@ -17,31 +17,27 @@
  */
 package com.android.tools.rpclib.rpccore;
 
-import com.android.tools.rpclib.schema.*;
 import org.jetbrains.annotations.NotNull;
 
-import com.android.tools.rpclib.binary.BinaryClass;
-import com.android.tools.rpclib.binary.BinaryObject;
-import com.android.tools.rpclib.binary.Decoder;
-import com.android.tools.rpclib.binary.Encoder;
-import com.android.tools.rpclib.binary.Namespace;
+import com.android.tools.rpclib.binary.*;
+import com.android.tools.rpclib.schema.*;
 
 import java.io.IOException;
 
-public final class RpcError extends RpcException implements BinaryObject {
+public final class ErrDecodingCall extends RpcException implements BinaryObject {
     //<<<Start:Java.ClassBody:1>>>
-    private String mMsg;
+    private String mReason;
 
-    // Constructs a default-initialized {@link RpcError}.
-    public RpcError() {}
+    // Constructs a default-initialized {@link ErrDecodingCall}.
+    public ErrDecodingCall() {}
 
 
-    public String getMsg() {
-        return mMsg;
+    public String getReason() {
+        return mReason;
     }
 
-    public RpcError setMsg(String v) {
-        mMsg = v;
+    public ErrDecodingCall setReason(String v) {
+        mReason = v;
         return this;
     }
 
@@ -49,11 +45,11 @@ public final class RpcError extends RpcException implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("rpc","Error","","");
+    private static final Entity ENTITY = new Entity("rpc","ErrDecodingCall","","");
 
     static {
         ENTITY.setFields(new Field[]{
-            new Field("Msg", new Primitive("string", Method.String)),
+            new Field("Reason", new Primitive("string", Method.String)),
         });
         Namespace.register(Klass.INSTANCE);
     }
@@ -62,7 +58,7 @@ public final class RpcError extends RpcException implements BinaryObject {
 
     @Override
     public String getMessage() {
-        return "RPC error: " + mMsg;
+        return "Error decoding RPC call: " + mReason;
     }
 
     public enum Klass implements BinaryClass {
@@ -73,18 +69,18 @@ public final class RpcError extends RpcException implements BinaryObject {
         public Entity entity() { return ENTITY; }
 
         @Override @NotNull
-        public BinaryObject create() { return new RpcError(); }
+        public BinaryObject create() { return new ErrDecodingCall(); }
 
         @Override
         public void encode(@NotNull Encoder e, BinaryObject obj) throws IOException {
-            RpcError o = (RpcError)obj;
-            e.string(o.mMsg);
+            ErrDecodingCall o = (ErrDecodingCall)obj;
+            e.string(o.mReason);
         }
 
         @Override
         public void decode(@NotNull Decoder d, BinaryObject obj) throws IOException {
-            RpcError o = (RpcError)obj;
-            o.mMsg = d.string();
+            ErrDecodingCall o = (ErrDecodingCall)obj;
+            o.mReason = d.string();
         }
         //<<<End:Java.KlassBody:2>>>
     }

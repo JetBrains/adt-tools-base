@@ -15,15 +15,8 @@
  */
 package com.android.tools.rpclib.rpccore;
 
-public class RpcException extends Exception {
-  public final RpcError mError;
-
-  public RpcException(RpcError error) {
-    mError = error;
-  }
-
-  @Override
-  public String getMessage() {
-    return mError.getMessage();
-  }
-}
+/**
+ * The exception derived by all errors sent over the wire in response to an RPC that cannot
+ * return the requested data.
+ */
+public class RpcException extends Exception {}

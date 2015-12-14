@@ -17,30 +17,26 @@
  */
 package com.android.tools.rpclib.rpccore;
 
-import com.android.tools.rpclib.schema.*;
 import org.jetbrains.annotations.NotNull;
 
-import com.android.tools.rpclib.binary.BinaryClass;
-import com.android.tools.rpclib.binary.BinaryObject;
-import com.android.tools.rpclib.binary.Decoder;
-import com.android.tools.rpclib.binary.Encoder;
-import com.android.tools.rpclib.binary.Namespace;
+import com.android.tools.rpclib.binary.*;
+import com.android.tools.rpclib.schema.*;
 
 import java.io.IOException;
 
-public final class RpcError extends RpcException implements BinaryObject {
+public final class ErrPanic extends RpcException implements BinaryObject {
     //<<<Start:Java.ClassBody:1>>>
     private String mMsg;
 
-    // Constructs a default-initialized {@link RpcError}.
-    public RpcError() {}
+    // Constructs a default-initialized {@link ErrPanic}.
+    public ErrPanic() {}
 
 
     public String getMsg() {
         return mMsg;
     }
 
-    public RpcError setMsg(String v) {
+    public ErrPanic setMsg(String v) {
         mMsg = v;
         return this;
     }
@@ -49,7 +45,7 @@ public final class RpcError extends RpcException implements BinaryObject {
     public BinaryClass klass() { return Klass.INSTANCE; }
 
 
-    private static final Entity ENTITY = new Entity("rpc","Error","","");
+    private static final Entity ENTITY = new Entity("rpc","ErrPanic","","");
 
     static {
         ENTITY.setFields(new Field[]{
@@ -62,7 +58,7 @@ public final class RpcError extends RpcException implements BinaryObject {
 
     @Override
     public String getMessage() {
-        return "RPC error: " + mMsg;
+        return "Panic raised when calling RPC: " + mMsg;
     }
 
     public enum Klass implements BinaryClass {
@@ -73,17 +69,17 @@ public final class RpcError extends RpcException implements BinaryObject {
         public Entity entity() { return ENTITY; }
 
         @Override @NotNull
-        public BinaryObject create() { return new RpcError(); }
+        public BinaryObject create() { return new ErrPanic(); }
 
         @Override
         public void encode(@NotNull Encoder e, BinaryObject obj) throws IOException {
-            RpcError o = (RpcError)obj;
+            ErrPanic o = (ErrPanic)obj;
             e.string(o.mMsg);
         }
 
         @Override
         public void decode(@NotNull Decoder d, BinaryObject obj) throws IOException {
-            RpcError o = (RpcError)obj;
+            ErrPanic o = (ErrPanic)obj;
             o.mMsg = d.string();
         }
         //<<<End:Java.KlassBody:2>>>
