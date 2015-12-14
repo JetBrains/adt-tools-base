@@ -154,17 +154,8 @@ public class Heap {
         return mClassesByName.values();
     }
 
-    @NonNull
-    public Collection<Instance> getInstances() {
-        final ArrayList<Instance> result = new ArrayList<Instance>(mInstances.size());
-        mInstances.forEachValue(new TObjectProcedure<Instance>() {
-            @Override
-            public boolean execute(Instance instance) {
-                result.add(instance);
-                return true;
-            }
-        });
-        return result;
+    public void forEachInstance(@NonNull TObjectProcedure<Instance> procedure) {
+        mInstances.forEachValue(procedure);
     }
 
     public int getInstancesCount() {

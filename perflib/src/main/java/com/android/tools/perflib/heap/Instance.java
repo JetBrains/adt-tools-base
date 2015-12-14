@@ -331,7 +331,6 @@ public abstract class Instance {
 
 
     public static class CompositeSizeVisitor extends NonRecursiveVisitor {
-
         int mSize = 0;
 
         @Override
