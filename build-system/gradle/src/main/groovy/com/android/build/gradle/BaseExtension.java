@@ -486,7 +486,7 @@ public abstract class BaseExtension implements AndroidConfig {
     }
 
     /**
-     * Configures data binding options
+     * Configures data binding options.
      */
     public void dataBinding(Action<DataBindingOptions> action) {
         checkWritability();

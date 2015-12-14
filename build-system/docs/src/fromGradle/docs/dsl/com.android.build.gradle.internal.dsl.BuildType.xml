@@ -37,6 +37,8 @@
             <tr><td>setProguardFiles</td></tr>
             <tr><td>shrinkResources</td></tr>
             <tr><td>useJack</td></tr>
+            <tr><td>consumerProguardFile</td></tr>
+            <tr><td>consumerProguardFiles</td></tr>
         </table>
     </section>
 </section>
