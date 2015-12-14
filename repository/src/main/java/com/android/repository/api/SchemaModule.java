@@ -117,6 +117,19 @@ public class SchemaModule {
         return mVersions;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SchemaModule)) {
+            return false;
+        }
+        return mVersions.equals(((SchemaModule)obj).getNamespaceVersionMap());
+    }
+
+    @Override
+    public int hashCode() {
+        return mVersions.hashCode();
+    }
+
     /**
      * Represents a single version of a schema, including a single XSD and a single
      * {@code ObjectFactory}.
@@ -166,6 +179,20 @@ public class SchemaModule {
         @NonNull
         public String getNamespace() {
             return mNamespace;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof SchemaModuleVersion)) {
+                return false;
+            }
+            return mXsdLocation.equals(((SchemaModuleVersion)obj).mXsdLocation) &&
+                   mNamespace.equals(((SchemaModuleVersion)obj).mNamespace);
+        }
+
+        @Override
+        public int hashCode() {
+            return mXsdLocation.hashCode() * 37 + mNamespace.hashCode();
         }
     }
 }

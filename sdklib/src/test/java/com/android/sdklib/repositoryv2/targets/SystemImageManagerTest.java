@@ -68,7 +68,7 @@ public class SystemImageManagerTest extends TestCase {
         recordNewSysImg23(fop);
         recordNewGoogleApis13(fop);
 
-        AndroidSdkHandler handler = new AndroidSdkHandler(fop, true);
+        AndroidSdkHandler handler = new AndroidSdkHandler(fop);
         handler.setLocation(new File("/sdk"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
 

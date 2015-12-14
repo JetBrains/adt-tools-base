@@ -72,10 +72,7 @@ public class SystemImageManager {
      */
     @NonNull
     public Collection<ISystemImage> getImages(@NonNull ProgressIndicator progress) {
-        if (mImageToPackage == null) {
-            init(progress);
-        }
-        return mImageToPackage.keySet();
+        return getImageMap(progress).keySet();
     }
 
     /**
@@ -83,7 +80,10 @@ public class SystemImageManager {
      */
     @NonNull
     public Map<ISystemImage, LocalPackage> getImageMap(@NonNull ProgressIndicator progress) {
-        return mImpl.getImageMap(progress);
+        if (mImageToPackage == null) {
+            init(progress);
+        }
+        return mImageToPackage;
     }
 
     /**

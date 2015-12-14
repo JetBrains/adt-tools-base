@@ -31,7 +31,13 @@ import java.util.EnumSet;
 
 /**
  * This class is obsolete. Do not use it in new code.
+ * The SDK manager parses the SDK folder and gives access to the content.
+ * @see PlatformTarget
+ * @see AddOnTarget
+ *
+ * @deprecated In favor of AndroidSdkHandler/RepoManager.
  */
+@Deprecated
 public class SdkManager {
 
     @SuppressWarnings("unused")

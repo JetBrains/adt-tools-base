@@ -20,6 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
+import com.android.repository.io.FileOp;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.SystemImage;
@@ -260,13 +261,13 @@ public final class AvdInfo implements Comparable<AvdInfo> {
      */
     @NonNull
     public static File getDefaultAvdFolder(@NonNull AvdManager manager, @NonNull String avdName,
-            boolean unique)
+            @NonNull FileOp fileOp, boolean unique)
             throws AndroidLocationException {
         String base = manager.getBaseAvdFolder();
         File result = new File(base, avdName + AvdManager.AVD_FOLDER_EXTENSION);
         if (unique) {
             int suffix = 0;
-            while (result.exists()) {
+            while (fileOp.exists(result)) {
                 result = new File(base, String.format("%s_%d%s", avdName, (++suffix),
                         AvdManager.AVD_FOLDER_EXTENSION));
             }
@@ -277,9 +278,10 @@ public final class AvdInfo implements Comparable<AvdInfo> {
     /** Compatibility forwarding until the usages in tools/swt are updated */
     @Deprecated
     @NonNull
-    public static File getDefaultAvdFolder(@NonNull AvdManager manager, @NonNull String avdName)
-            throws AndroidLocationException{
-        return getDefaultAvdFolder(manager, avdName, false);
+    public static File getDefaultAvdFolder(@NonNull AvdManager manager, @NonNull String avdName,
+            @NonNull FileOp fileOp)
+            throws AndroidLocationException {
+        return getDefaultAvdFolder(manager, avdName, fileOp, false);
     }
 
     /**

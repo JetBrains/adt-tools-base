@@ -17,19 +17,23 @@
 package com.android.repository.io.impl;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.google.common.io.Closer;
+import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Properties;
 
@@ -349,5 +353,33 @@ public class FileOpImpl implements FileOp {
     @Override
     public File ensureRealFile(@NonNull File in) {
         return in;
+    }
+
+    @NonNull
+    @Override
+    public String toString(@NonNull File f, @NonNull Charset c) throws IOException {
+        return Files.toString(f, c);
+    }
+
+    @Override
+    @Nullable
+    public String[] list(@NonNull File folder, @Nullable FilenameFilter filenameFilter) {
+        return folder.list(filenameFilter);
+    }
+
+    @Override
+    @Nullable
+    public File[] listFiles(@NonNull File folder, @Nullable FilenameFilter filenameFilter) {
+        return folder.listFiles(filenameFilter);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof FileOpImpl;
     }
 }

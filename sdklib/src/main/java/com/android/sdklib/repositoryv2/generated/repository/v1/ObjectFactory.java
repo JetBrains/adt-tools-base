@@ -68,38 +68,6 @@ public class ObjectFactory
     }
 
     /**
-     * Create an instance of {@link ToolDetailsType }
-     * 
-     */
-    public ToolDetailsType createToolDetailsType() {
-        return new ToolDetailsType();
-    }
-
-    /**
-     * Create an instance of {@link PlatformToolDetailsType }
-     * 
-     */
-    public PlatformToolDetailsType createPlatformToolDetailsType() {
-        return new PlatformToolDetailsType();
-    }
-
-    /**
-     * Create an instance of {@link BuildToolDetailsType }
-     * 
-     */
-    public BuildToolDetailsType createBuildToolDetailsType() {
-        return new BuildToolDetailsType();
-    }
-
-    /**
-     * Create an instance of {@link DocDetailsType }
-     * 
-     */
-    public DocDetailsType createDocDetailsType() {
-        return new DocDetailsType();
-    }
-
-    /**
      * Create an instance of {@link JAXBElement }{@code <}{@link RepositoryType }{@code >}}
      * 
      */

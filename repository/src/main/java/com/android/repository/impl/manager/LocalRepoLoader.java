@@ -132,8 +132,15 @@ public final class LocalRepoLoader {
         File packageXml = new File(root, PACKAGE_XML_FN);
         LocalPackage p = null;
         if (mFop.exists(packageXml)) {
-            p = parsePackage(packageXml, progress);
-        } else if (mFallback != null) {
+            try {
+                p = parsePackage(packageXml, progress);
+            }
+            catch (Exception e) {
+                // There was a problem parsing the package. Try the fallback loader.
+                progress.logWarning("Found corrupted package.xml at " + packageXml);
+            }
+        }
+        if (p == null && mFallback != null) {
             p = mFallback.parseLegacyLocalPackage(root, progress);
             if (p != null) {
                 writePackage(p, packageXml, progress);

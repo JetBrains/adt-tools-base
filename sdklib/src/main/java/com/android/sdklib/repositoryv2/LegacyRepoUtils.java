@@ -34,6 +34,7 @@ import com.android.sdklib.repositoryv2.meta.DetailsTypes;
 import com.android.sdklib.repositoryv2.meta.RepoFactory;
 import com.android.sdklib.repositoryv2.meta.SdkCommonFactory;
 import com.android.sdklib.repositoryv2.meta.SysImgFactory;
+import com.android.sdklib.repositoryv2.targets.SystemImage;
 
 /**
  * Utilities used by the {@link FallbackLocalRepoLoader} and {@link FallbackRemoteRepoLoader}s to
@@ -44,6 +45,7 @@ public class LegacyRepoUtils {
     /**
      * Convert a {@link IPkgDesc} and other old-style information into a {@link TypeDetails}.
      */
+    @Nullable
     public static TypeDetails createTypeDetails(@NonNull IPkgDesc desc,
             @Nullable LayoutlibVersion layoutLibVersion, ProgressIndicator progress) {
 
@@ -59,15 +61,7 @@ public class LegacyRepoUtils {
 
         AndroidVersion androidVersion = desc.getAndroidVersion();
 
-        if (desc.getType() == PkgType.PKG_TOOLS) {
-            return (TypeDetails) repoFactory.createToolDetailsType();
-        } else if (desc.getType() == PkgType.PKG_PLATFORM_TOOLS) {
-            return (TypeDetails) repoFactory.createPlatformToolDetailsType();
-        } else if (desc.getType() == PkgType.PKG_BUILD_TOOLS) {
-            return (TypeDetails) repoFactory.createBuildToolDetailsType();
-        } else if (desc.getType() == PkgType.PKG_DOC) {
-            return (TypeDetails) repoFactory.createDocDetailsType();
-        } else if (desc.getType() == PkgType.PKG_PLATFORM) {
+        if (desc.getType() == PkgType.PKG_PLATFORM) {
             DetailsTypes.PlatformDetailsType details = repoFactory.createPlatformDetailsType();
 
             assert androidVersion != null;
@@ -93,6 +87,8 @@ public class LegacyRepoUtils {
                 tag.setId(tagIdDisplay.getId());
                 tag.setDisplay(tagIdDisplay.getDisplay());
                 details.setTag(tag);
+            } else {
+                details.setTag(SystemImage.DEFAULT_TAG);
             }
             com.android.sdklib.repository.descriptors.IdDisplay vendorIdDisplay = desc.getVendor();
             if (vendorIdDisplay != null) {

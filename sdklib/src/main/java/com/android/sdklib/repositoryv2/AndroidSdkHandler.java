@@ -15,6 +15,7 @@
  */
 package com.android.sdklib.repositoryv2;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
@@ -37,8 +38,6 @@ import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.repository.descriptors.PkgType;
-import com.android.sdklib.repository.local.LocalSdk;
 import com.android.sdklib.repositoryv2.meta.DetailsTypes;
 import com.android.sdklib.repositoryv2.meta.SysImgFactory;
 import com.android.sdklib.repositoryv2.sources.RemoteSiteType;
@@ -106,13 +105,6 @@ public final class AndroidSdkHandler {
     private RepoManager mRepoManager;
 
     /**
-     * {@link LocalSdk} instance, to use when {@link #useSdkV2()} is {@code false}.
-     * TODO: remove when migration to new system is complete.
-     * @deprecated
-     */
-    private LocalSdk mLocalSdk;
-
-    /**
      * Finds all {@link SystemImage}s in packages known to {@link #mRepoManager};
      */
     private SystemImageManager mSystemImageManager;
@@ -156,18 +148,12 @@ public final class AndroidSdkHandler {
     private RepoConfig mRepoConfig;
 
     /**
-     * Whether we should use the new SDK implementation or the legacy one.
-     */
-    private final boolean mUseSdkV2;
-
-    /**
      * Get a {@code AndroidSdkHandler} instance.
      */
     @NonNull
     public static AndroidSdkHandler getInstance() {
         if (sInstance == null) {
-            boolean v2 = Boolean.parseBoolean(System.getProperty("use.new.sdk", "false"));
-            sInstance = new AndroidSdkHandler(FileOpUtils.create(), v2);
+            sInstance = new AndroidSdkHandler(FileOpUtils.create());
         }
         return sInstance;
     }
@@ -175,11 +161,21 @@ public final class AndroidSdkHandler {
     /**
      * Don't use this, use {@link #getInstance()}, unless you're in a unit test and need to specify
      * a custom {@link FileOp}. For new code, useSdkV2 should probably be {@code true}.
+     *
+     * This should be called very rarely. Unless you're in a test, or in the middle of changing
+     * the local SDK path or something similar, you probably want {@link #getInstance()}.
      */
     @VisibleForTesting
-    public AndroidSdkHandler(@NonNull FileOp fop, boolean useSdkV2) {
+    public AndroidSdkHandler(@NonNull FileOp fop) {
         mFop = fop;
-        mUseSdkV2 = useSdkV2;
+    }
+
+    @Override
+    public AndroidSdkHandler clone() {
+        AndroidSdkHandler result = new AndroidSdkHandler(mFop);
+        result.mLocation = mLocation;
+        result.mRemoteFallback = mRemoteFallback;
+        return result;
     }
 
     /**
@@ -192,6 +188,10 @@ public final class AndroidSdkHandler {
         RepoManager result = mRepoManager;
         synchronized (MANAGER_LOCK) {
             if (result == null) {
+                mSystemImageManager = null;
+                mAndroidTargetManager = null;
+                mLatestBuildTool = null;
+
                 mRepoManager = getRepoConfig(progress).createRepoManager();
                 // Invalidate system images, targets, the latest build tool, and the legacy local
                 // package manager when local packages change
@@ -201,9 +201,6 @@ public final class AndroidSdkHandler {
                         mSystemImageManager = null;
                         mAndroidTargetManager = null;
                         mLatestBuildTool = null;
-                        if (mLocalSdk != null) {
-                            mLocalSdk.clearLocalPkg(PkgType.PKG_ALL);
-                        }
                     }
                 });
                 result = mRepoManager;
@@ -218,14 +215,9 @@ public final class AndroidSdkHandler {
     @NonNull
     public SystemImageManager getSystemImageManager(@NonNull ProgressIndicator progress) {
         if (mSystemImageManager == null) {
-            if (useSdkV2()) {
-                getSdkManager(progress);
-                mSystemImageManager = new SystemImageManager(mRepoManager,
-                        (SysImgFactory) getSysImgModule(progress).createLatestFactory(), mFop);
-            }
-            else {
-                mSystemImageManager = new SystemImageManager(getLocalSdk());
-            }
+            getSdkManager(progress);
+            mSystemImageManager = new SystemImageManager(mRepoManager,
+              (SysImgFactory) getSysImgModule(progress).createLatestFactory(), mFop);
         }
         return mSystemImageManager;
     }
@@ -237,27 +229,29 @@ public final class AndroidSdkHandler {
     @NonNull
     public AndroidTargetManager getAndroidTargetManager(@NonNull ProgressIndicator progress) {
         if (mAndroidTargetManager == null) {
-            if (useSdkV2()) {
-                getSdkManager(progress);
-                mAndroidTargetManager = new AndroidTargetManager(this, mFop);
-            }
-            else {
-                mAndroidTargetManager = new AndroidTargetManager(getLocalSdk());
-            }
+            getSdkManager(progress);
+            mAndroidTargetManager = new AndroidTargetManager(this, mFop);
         }
         return mAndroidTargetManager;
     }
 
     /**
-     * Sets the path the the local SDK.<p> Invalidates the repo manager; it will be recreated when
+     * Sets the path of the SDK.<p> Invalidates the repo manager; it will be recreated when
      * next retrieved.
      */
     public void setLocation(@Nullable File location) {
         synchronized (MANAGER_LOCK) {
             mLocation = location;
             mRepoManager = null;
-            mLocalSdk = null;
         }
+    }
+
+    /**
+     * Gets the path of the local SDK, if set.
+     */
+    @Nullable
+    public File getLocation() {
+        return mLocation;
     }
 
     /**
@@ -329,17 +323,6 @@ public final class AndroidSdkHandler {
             mRepoConfig = new RepoConfig(progress);
         }
         return mRepoConfig;
-    }
-
-    private LocalSdk getLocalSdk() {
-        if (mLocalSdk == null) {
-            LocalSdk sdk = new LocalSdk(mFop);
-            if (mLocation != null) {
-                sdk.setLocation(mLocation);
-            }
-            mLocalSdk = sdk;
-        }
-        return mLocalSdk;
     }
 
     /**
@@ -553,16 +536,6 @@ public final class AndroidSdkHandler {
     }
 
     /**
-     * Temporary method indicating whether we should use {@link RepoManager} or the older
-     * {@link com.android.sdklib.repository.local.LocalSdk} etc.
-     *
-     * @return {@code true} if we should use {@link RepoManager}.
-     */
-    public boolean useSdkV2() {
-        return mUseSdkV2;
-    }
-
-    /**
      * Gets a {@link BuildToolInfo} corresponding to the newest installed build tool
      * {@link RepoPackage}, or {@code null} if none are installed.
      */
@@ -573,8 +546,8 @@ public final class AndroidSdkHandler {
             manager.loadSynchronously(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null);
             BuildToolInfo info = null;
             for (LocalPackage p : manager.getPackages().getLocalPackages().values()) {
-                if (p.getTypeDetails() instanceof DetailsTypes.BuildToolDetailsType &&
-                        (info == null || info.getRevision().compareTo(p.getVersion()) < 0)) {
+                if (p.getPath().startsWith(SdkConstants.FD_BUILD_TOOLS) &&
+                    (info == null || info.getRevision().compareTo(p.getVersion()) < 0)) {
                      info = new BuildToolInfo(p.getVersion(), p.getLocation());
                 }
             }

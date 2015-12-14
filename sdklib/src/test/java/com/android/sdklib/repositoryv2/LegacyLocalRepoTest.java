@@ -68,7 +68,7 @@ public class LegacyLocalRepoTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
         assertEquals(1, packages.size());
         LocalPackage local = packages.get("tools");
-        assertTrue(local.getTypeDetails() instanceof DetailsTypes.ToolDetailsType);
+        assertTrue(local.getPath().startsWith(SdkConstants.FD_TOOLS));
         assertEquals("Terms and Conditions", local.getLicense().getValue());
         assertEquals(new Revision(22, 3, 4), local.getVersion());
     }
@@ -89,7 +89,7 @@ public class LegacyLocalRepoTest extends TestCase {
 
         FakeProgressIndicator progress = new FakeProgressIndicator();
         File root = new File("/sdk");
-        RepoManager mgr = new AndroidSdkHandler(mockFop, true).getSdkManager(progress);
+        RepoManager mgr = new AndroidSdkHandler(mockFop).getSdkManager(progress);
 
         mgr.registerSchemaModule(AndroidSdkHandler.getInstance().getAddonModule(progress));
         mgr.registerSchemaModule(AndroidSdkHandler.getInstance().getRepositoryModule(progress));
@@ -103,7 +103,7 @@ public class LegacyLocalRepoTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
 
         Collection<SchemaModule> extensions = ImmutableList
-                .of(AndroidSdkHandler.getInstance().getRepositoryModule(progress));
+                .of(RepoManager.getCommonModule());
 
         // Now read the new package
         Repository repo = (Repository) SchemaModuleUtil.unmarshal(
@@ -113,14 +113,14 @@ public class LegacyLocalRepoTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
         LocalPackage local = repo.getLocalPackage();
         local.setInstalledPath(mgr.getLocalPath());
-        assertTrue(local.getTypeDetails() instanceof DetailsTypes.ToolDetailsType);
+        assertTrue(local.getPath().startsWith(SdkConstants.FD_TOOLS));
         assertEquals("Terms and Conditions", local.getLicense().getValue());
         int[] revision = local.getVersion().toIntArray(false);
         assertEquals(3, revision.length);
         assertEquals(22, revision[0]);
         assertEquals(3, revision[1]);
         assertEquals(0, revision[2]);
-        assertTrue(local.getTypeDetails() instanceof DetailsTypes.ToolDetailsType);
+        assertTrue(local.getPath().startsWith(SdkConstants.FD_TOOLS));
     }
 
 }
