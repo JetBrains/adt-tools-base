@@ -77,18 +77,22 @@ public class ArrayInstance extends Instance {
     }
 
     @Override
-    public final void accept(@NonNull Visitor visitor) {
-        visitor.visitArrayInstance(this);
+    public final void resolveReferences() {
         if (mType == Type.OBJECT) {
             for (Object value : getValues()) {
                 if (value instanceof Instance) {
-                    if (!mReferencesAdded) {
-                        ((Instance) value).addReference(null, this);
-                    }
-                    visitor.visitLater(this, (Instance) value);
+                    ((Instance)value).addReverseReference(null, this);
+                    mHardForwardReferences.add((Instance)value);
                 }
             }
-            mReferencesAdded = true;
+        }
+    }
+
+    @Override
+    public final void accept(@NonNull Visitor visitor) {
+        visitor.visitArrayInstance(this);
+        for (Instance instance : mHardForwardReferences) {
+            visitor.visitLater(this, instance);
         }
     }
 

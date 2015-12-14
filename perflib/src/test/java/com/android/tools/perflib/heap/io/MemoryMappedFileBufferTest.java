@@ -35,6 +35,7 @@ public class MemoryMappedFileBufferTest extends TestCase {
     public void testSimpleMapping() throws Exception {
         Snapshot snapshot = Snapshot.createSnapshot(new MemoryMappedFileBuffer(file));
         assertSnapshotCorrect(snapshot);
+        snapshot.dispose();
     }
 
     public void testMultiMapping() throws Exception {
@@ -42,6 +43,7 @@ public class MemoryMappedFileBufferTest extends TestCase {
         MemoryMappedFileBuffer shardedBuffer = new MemoryMappedFileBuffer(file, 4096, 128);
         Snapshot snapshot = Snapshot.createSnapshot(shardedBuffer);
         assertSnapshotCorrect(snapshot);
+        snapshot.dispose();
     }
 
     public void testMultiMappingWrappedRead() throws Exception {
@@ -49,6 +51,7 @@ public class MemoryMappedFileBufferTest extends TestCase {
         MemoryMappedFileBuffer shardedBuffer = new MemoryMappedFileBuffer(file, 9973, 8);
         Snapshot snapshot = Snapshot.createSnapshot(shardedBuffer);
         assertSnapshotCorrect(snapshot);
+        snapshot.dispose();
     }
 
     public void testMemoryMappingRemoval() throws Exception {

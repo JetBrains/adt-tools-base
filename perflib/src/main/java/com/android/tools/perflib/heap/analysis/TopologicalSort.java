@@ -29,12 +29,11 @@ import java.util.List;
 import gnu.trove.TLongHashSet;
 
 public class TopologicalSort {
-
     @NonNull
-    public static ImmutableList<Instance> compute(@NonNull Iterable<RootObj> roots) {
+    public static List<Instance> compute(@NonNull Iterable<RootObj> roots) {
         TopologicalSortVisitor visitor = new TopologicalSortVisitor();
         visitor.doVisit(roots);
-        ImmutableList<Instance> instances = visitor.getOrderedInstances();
+        List<Instance> instances = visitor.getPreorderedInstances();
 
         // We add the special sentinel node as the single root of the object graph, to ensure the
         // dominator algorithm terminates when having to choose between two GC roots.
@@ -49,7 +48,6 @@ public class TopologicalSort {
 
         return instances;
     }
-
 
     /**
      * Topological sort visitor computing a post-order traversal of the graph.
@@ -95,8 +93,8 @@ public class TopologicalSort {
             }
         }
 
-        ImmutableList<Instance> getOrderedInstances() {
-            return ImmutableList.copyOf(Lists.reverse(mPostorder));
+        List<Instance> getPreorderedInstances() {
+            return Lists.reverse(mPostorder);
         }
     }
 }

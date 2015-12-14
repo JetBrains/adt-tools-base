@@ -189,18 +189,22 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     }
 
     @Override
-    public final void accept(@NonNull Visitor visitor) {
-        visitor.visitClassObj(this);
+    public final void resolveReferences() {
         for (Map.Entry<Field, Object> entry : getStaticFieldValues().entrySet()) {
             Object value = entry.getValue();
             if (value instanceof Instance) {
-                if (!mReferencesAdded) {
-                    ((Instance)value).addReference(entry.getKey(), this);
-                }
-                visitor.visitLater(this, (Instance)value);
+                ((Instance)value).addReverseReference(entry.getKey(), this);
+                mHardForwardReferences.add((Instance)value);
             }
         }
-        mReferencesAdded = true;
+    }
+
+    @Override
+    public final void accept(@NonNull Visitor visitor) {
+        visitor.visitClassObj(this);
+        for (Instance instance : mHardForwardReferences) {
+            visitor.visitLater(this, instance);
+        }
     }
 
     @Override
@@ -212,8 +216,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         int nameCompareResult = mClassName.compareTo(o.mClassName);
         if (nameCompareResult != 0) {
             return nameCompareResult;
-        }
-        else {
+        } else {
             return getId() - o.getId() > 0 ? 1 : -1;
         }
     }

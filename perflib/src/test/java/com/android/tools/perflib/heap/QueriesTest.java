@@ -48,5 +48,8 @@ public class QueriesTest extends TestCase {
         ClassObj clazz3 = dialerSnapshot.findClass("com.android.dialer.DialerApplication");
         assertNull(basicSnapshot.findClass(clazz3.getClassName()));
         assertFalse(classes.contains(clazz2));
+
+        basicSnapshot.dispose();
+        dialerSnapshot.dispose();
     }
 }
