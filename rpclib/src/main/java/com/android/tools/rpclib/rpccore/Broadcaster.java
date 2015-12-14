@@ -66,8 +66,8 @@ public class Broadcaster {
       BinaryObject res = d.object();
 
       // Check to see if the response was an error
-      if (res instanceof RpcError) {
-        throw new RpcException((RpcError)res);
+      if (res instanceof RpcException) {
+        throw (RpcException)res;
       }
 
       return res;
