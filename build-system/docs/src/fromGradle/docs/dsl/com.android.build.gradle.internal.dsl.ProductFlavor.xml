@@ -27,6 +27,10 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
+            <tr><td>buildConfigField</td></tr>
+            <tr><td>consumerProguardFile</td></tr>
+            <tr><td>consumerProguardFiles</td></tr>
+            <tr><td>maxSdkVersion</td></tr>
             <tr><td>maxSdkVersion</td></tr>
             <tr><td>minSdkVersion</td></tr>
             <tr><td>proguardFile</td></tr>
@@ -34,10 +38,14 @@
             <tr><td>resConfig</td></tr>
             <tr><td>resConfigs</td></tr>
             <tr><td>resValue</td></tr>
+            <tr><td>setConsumerProguardFiles</td></tr>
             <tr><td>setProguardFiles</td></tr>
+            <tr><td>setTestProguardFiles</td></tr>
             <tr><td>targetSdkVersion</td></tr>
             <tr><td>testInstrumentationRunnerArgument</td></tr>
             <tr><td>testInstrumentationRunnerArguments</td></tr>
+            <tr><td>testProguardFile</td></tr>
+            <tr><td>testProguardFiles</td></tr>
             <tr><td>useJack</td></tr>
         </table>
     </section>

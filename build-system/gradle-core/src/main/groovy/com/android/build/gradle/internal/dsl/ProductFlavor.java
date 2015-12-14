@@ -202,11 +202,9 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     /**
      * Adds a new field to the generated BuildConfig class.
      *
-     * The field is generated as:
+     * <p>The field is generated as: {@code <type> <name> = <value>;}
      *
-     * <type> <name> = <value>;
-     *
-     * This means each of these must have valid Java content. If the type is a String, then the
+     * <p>This means each of these must have valid Java content. If the type is a String, then the
      * value should include quotes.
      *
      * @param type the type of the field
@@ -293,8 +291,8 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
      * full path to the files. They are identical except for enabling optimizations.
      */
-    public void proguardFiles(@NonNull Object... proguardFileArray) {
-        getProguardFiles().addAll(project.files(proguardFileArray).getFiles());
+    public void proguardFiles(@NonNull Object... proguardFiles) {
+        getProguardFiles().addAll(project.files(proguardFiles).getFiles());
     }
 
     /**
@@ -316,7 +314,37 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     }
 
     /**
-     * Specifies a proguard rule file to be included in the published AAR.
+     * Adds a proguard rule file to be used when processing test code.
+     *
+     * <p>Test code needs to be processed to apply the same obfuscation as was done to main code.
+     */
+    public void testProguardFile(@NonNull Object proguardFile) {
+        getTestProguardFiles().add(project.file(proguardFile));
+    }
+
+    /**
+     * Adds proguard rule files to be used when processing test code.
+     *
+     * <p>Test code needs to be processed to apply the same obfuscation as was done to main code.
+     */
+    public void testProguardFiles(@NonNull Object... proguardFiles) {
+        getTestProguardFiles().addAll(project.files(proguardFiles).getFiles());
+    }
+
+    /**
+     * Specifies proguard rule files to be used when processing test code.
+     *
+     * <p>Test code needs to be processed to apply the same obfuscation as was done to main code.
+     */
+    public void setTestProguardFiles(@NonNull Iterable<?> files) {
+        getTestProguardFiles().clear();
+        for (Object proguardFile : files) {
+            getTestProguardFiles().add(project.file(proguardFile));
+        }
+    }
+
+    /**
+     * Adds a proguard rule file to be included in the published AAR.
      *
      * <p>This proguard rule file will then be used by any application project that consume the AAR
      * (if proguard is enabled).
@@ -325,19 +353,22 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      *
      * <p>This is only valid for Library project. This is ignored in Application project.
      */
-    public void testProguardFile(@NonNull Object proguardFile) {
-        getTestProguardFiles().add(project.file(proguardFile));
+    public void consumerProguardFile(@NonNull Object proguardFile) {
+        getConsumerProguardFiles().add(project.file(proguardFile));
     }
 
     /**
-     * Adds new ProGuard configuration files.
+     * Adds proguard rule files to be included in the published AAR.
+     *
+     * <p>This proguard rule file will then be used by any application project that consume the AAR
+     * (if proguard is enabled).
+     *
+     * <p>This allows AAR to specify shrinking or obfuscation exclude rules.
+     *
+     * <p>This is only valid for Library project. This is ignored in Application project.
      */
-    public void testProguardFiles(Object... proguardFileArray) {
-        getTestProguardFiles().addAll(project.files(proguardFileArray).getFiles());
-    }
-
-    public void consumerProguardFiles(Object... proguardFileArray) {
-        getConsumerProguardFiles().addAll(project.files(proguardFileArray).getFiles());
+    public void consumerProguardFiles(@NonNull Object... proguardFiles) {
+        getConsumerProguardFiles().addAll(project.files(proguardFiles).getFiles());
     }
 
     /**
