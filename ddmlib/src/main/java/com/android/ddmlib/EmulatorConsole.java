@@ -277,7 +277,11 @@ public final class EmulatorConsole {
     private static void removeConsole(int port) {
         synchronized (sEmulators) {
             Log.v(LOG_TAG, "Removing emulator console for " + Integer.toString(port));
-            sEmulators.remove(port);
+            EmulatorConsole console = sEmulators.get(port);
+            if (console != null) {
+                console.closeConnection();
+                sEmulators.remove(port);
+            }
         }
     }
 
@@ -325,6 +329,21 @@ public final class EmulatorConsole {
     }
 
     /**
+     * Close the socket channel and reset internal console state.
+     */
+    private synchronized void closeConnection() {
+        try {
+            if (mSocketChannel != null) {
+                mSocketChannel.close();
+            }
+            mSocketChannel = null;
+            mPort = -1;
+        } catch (IOException e) {
+            Log.w(LOG_TAG, "Failed to close EmulatorConsole channel");
+        }
+    }
+
+    /**
      * Sends a KILL command to the emulator.
      */
     public synchronized void kill() {
@@ -342,23 +361,16 @@ public final class EmulatorConsole {
         }
 
         removeConsole(mPort);
-        try {
-            if (mSocketChannel != null) {
-                mSocketChannel.close();
-            }
-            mSocketChannel = null;
-            mPort = -1;
-        } catch (IOException e) {
-            Log.w(LOG_TAG, "Failed to close EmulatorConsole channel");
-        }
     }
 
     public synchronized String getAvdName() {
         if (sendCommand(COMMAND_AVD_NAME)) {
             String[] result = readLines();
-            if (result != null && result.length == 2) { // this should be the name on first line,
-                                                        // and ok on 2nd line
-                return result[0];
+            // qemu2's readline implementation sends some formatting characters in the first line
+            // let's make sure that only the last two lines are fine
+            if (result != null && result.length >= 2) { // this should be the name on the (length - 1)th line,
+                                                        // and ok on last one
+                return result[result.length - 2];
             } else {
                 // try to see if there's a message after KO
                 Matcher m = RE_KO.matcher(result[result.length-1]);
