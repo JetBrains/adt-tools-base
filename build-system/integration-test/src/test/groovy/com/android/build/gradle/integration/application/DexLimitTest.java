@@ -24,16 +24,28 @@ import com.android.build.gradle.integration.common.fixture.TemporaryProjectModif
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
+import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 
+@RunWith(Parameterized.class)
 public class DexLimitTest {
+
+    @Parameterized.Parameters(name="dexInProcess={0}")
+    public static Collection<Object[]> getParameters() {
+        return Arrays.asList(new Object[][] {{false}, {true}});
+    }
 
     private static final String CLASS_NAME = "com/example/B";
     private static final String CLASS_FULL_TYPE = "L" + CLASS_NAME + ";";
@@ -48,7 +60,6 @@ public class DexLimitTest {
 
     static {
         StringBuilder classFileBuilder = new StringBuilder();
-        //= new StringBuilder(");
         for (int i=0; i<65536/2; i++) {
             classFileBuilder.append("    public void m").append(i).append("() {}\n");
         }
@@ -62,10 +73,21 @@ public class DexLimitTest {
         TEST_APP.addFile(new TestSourceFile("src/main/java/com/example", "B.java", classFileB));
     }
 
-    @Rule
-    public final GradleTestProject mProject =
-            GradleTestProject.builder().fromTestApp(TEST_APP).captureStdErr(true).create();
+    private final boolean mDexInProcess;
 
+    @Rule
+    public final GradleTestProject mProject = GradleTestProject.builder()
+            .fromTestApp(TEST_APP).captureStdErr(true).withHeap("2G").create();
+
+    public DexLimitTest(boolean dexInProcess) {
+        mDexInProcess = dexInProcess;
+    }
+
+    @Before
+    public void setDexInProcess() throws IOException {
+        TestFileUtils.appendToFile(mProject.getBuildFile(),
+                "\nandroid.dexOptions.dexInProcess = " + Boolean.toString(mDexInProcess));
+    }
 
     @Test
     public void checkDexErrorMessage() throws Exception {

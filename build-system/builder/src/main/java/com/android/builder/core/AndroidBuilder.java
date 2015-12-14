@@ -1374,7 +1374,9 @@ public class AndroidBuilder {
                         mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.DX_JAR));
                 DexWrapper dexWrapper = DexWrapper.obtain(dxJar);
                 try {
-                    dexWrapper.run(builder, dexOptions, processOutputHandler, mLogger);
+                    ProcessResult result =
+                            dexWrapper.run(builder, dexOptions, processOutputHandler, mLogger);
+                    result.assertNormalExitValue();
                 } finally {
                     dexWrapper.release();
                 }

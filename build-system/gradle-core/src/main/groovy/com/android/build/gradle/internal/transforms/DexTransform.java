@@ -39,9 +39,7 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
 import com.android.builder.sdk.TargetInfo;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
-import com.android.ide.common.blame.parser.DexStderrParser;
-import com.android.ide.common.blame.parser.DexStdoutParser;
-import com.android.ide.common.blame.parser.PatternAwareOutputParser;
+import com.android.ide.common.blame.parser.DexParser;
 import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
@@ -215,8 +213,8 @@ public class DexTransform extends Transform {
         }
 
         ProcessOutputHandler outputHandler = new ParsingProcessOutputHandler(
-                new ToolOutputParser(new DexStderrParser(), logger),
-                new ToolOutputParser(new DexStdoutParser(), logger),
+                new ToolOutputParser(new DexParser(), logger),
+                new ToolOutputParser(new DexParser(), logger),
                 androidBuilder.getErrorReporter());
 
         try {

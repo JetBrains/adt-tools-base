@@ -132,6 +132,7 @@ public class PreDexCacheTest extends TestCase {
 
             final ProcessException rethrow = processException;
             return new ProcessResult() {
+                @NonNull
                 @Override
                 public ProcessResult assertNormalExitValue() throws ProcessException {
                     return this;
@@ -142,6 +143,7 @@ public class PreDexCacheTest extends TestCase {
                     return 0;
                 }
 
+                @NonNull
                 @Override
                 public ProcessResult rethrowFailure() throws ProcessException {
                     if (rethrow != null) {
@@ -167,6 +169,7 @@ public class PreDexCacheTest extends TestCase {
                 throw new IOException("foo");
             } catch (final Exception e) {
                 return new ProcessResult() {
+                    @NonNull
                     @Override
                     public ProcessResult assertNormalExitValue() throws ProcessException {
                         return this;
@@ -177,6 +180,7 @@ public class PreDexCacheTest extends TestCase {
                         return 0;
                     }
 
+                    @NonNull
                     @Override
                     public ProcessResult rethrowFailure() throws ProcessException {
                         throw new ProcessException(null, e);

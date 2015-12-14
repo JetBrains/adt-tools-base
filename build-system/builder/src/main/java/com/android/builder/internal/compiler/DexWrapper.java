@@ -22,10 +22,10 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.builder.core.DexOptions;
 import com.android.builder.core.DexProcessBuilder;
-import com.android.ide.common.blame.parser.DexStderrParser;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.ide.common.process.ProcessResult;
 import com.android.utils.ILogger;
 import com.google.common.base.Objects;
 import com.google.common.base.Stopwatch;
@@ -121,7 +121,8 @@ public class DexWrapper {
                 .expireAfterWrite(3, TimeUnit.HOURS)
                 .build(new CacheLoader<File, LinkedBlockingDeque<DexWrapper>>() {
                     @Override
-                    public LinkedBlockingDeque<DexWrapper> load(@NonNull File jarFile) throws Exception {
+                    public LinkedBlockingDeque<DexWrapper> load(@NonNull File jarFile)
+                            throws Exception {
                         int poolSize = Integer.getInteger("android.dexerPoolSize", 4);
 
                         LinkedBlockingDeque<DexWrapper> deque =
@@ -240,12 +241,12 @@ public class DexWrapper {
     }
 
     /**
-     * Runs the dex command. The wrapper must have been initialized via {@link #loadDex(File, ILogger)}
-     * first.
+     * Runs the dex command. The wrapper must have been initialized via {@link #loadDex(File,
+     * ILogger)} first.
      *
      * @return the integer return code of com.android.dx.command.dexer.Main.run()
      */
-    public synchronized int run(
+    public synchronized ProcessResult run(
             @NonNull DexProcessBuilder processBuilder,
             @NonNull DexOptions dexOptions,
             @NonNull ProcessOutputHandler outputHandler,
@@ -292,23 +293,51 @@ public class DexWrapper {
                     stopwatch);
 
             if (res instanceof Integer) {
-                return (Integer) res;
+                return new DexProcessResult((Integer) res);
             }
-            return -1;
-        } catch(InvocationTargetException e) {
+            throw new ProcessException("Dex returned value of unknown type: " + res);
+        } catch (InvocationTargetException e) {
             String exceptionMessage = e.getTargetException().getMessage();
-            logger.error(null /* throwable */, "Exception while dexing files : "
-                    + e.getTargetException().getMessage());
-            if (exceptionMessage.startsWith("trouble writing output: Too many method references:")
-                    || exceptionMessage.contains("method ID not in [0, 0xffff]")) {
-                logger.error(null /*throwable */, DexStderrParser.DEX_LIMIT_EXCEEDED_ERROR);
-            }
+            logger.error(null /* throwable */, "Exception while dexing files: " + exceptionMessage);
             throw Throwables.propagate(e.getTargetException());
         } catch (Exception e) {
             throw Throwables.propagate(e);
         } finally {
             closer.close();
             outputHandler.handleOutput(processOutput);
+        }
+    }
+
+    private static class DexProcessResult implements ProcessResult {
+
+        private int mExitValue;
+
+        public DexProcessResult(int exitValue) {
+            mExitValue = exitValue;
+        }
+
+        @NonNull
+        @Override
+        public ProcessResult assertNormalExitValue()
+                throws ProcessException {
+            if (mExitValue != 0) {
+                throw new ProcessException(
+                        String.format("Return code %d for dex process", mExitValue));
+            }
+
+            return this;
+        }
+
+        @Override
+        public int getExitValue() {
+            return mExitValue;
+        }
+
+        @NonNull
+        @Override
+        public ProcessResult rethrowFailure()
+                throws ProcessException {
+            return assertNormalExitValue();
         }
     }
 
