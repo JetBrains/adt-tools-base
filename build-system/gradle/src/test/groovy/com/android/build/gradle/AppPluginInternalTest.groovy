@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle
-
 import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.test.BaseTest
@@ -24,16 +23,11 @@ import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.SigningConfig
 import com.android.ide.common.signing.KeystoreHelper
-import com.android.utils.ILogger
-import com.android.utils.StdLogger
 import org.gradle.api.Project
-import org.gradle.api.artifacts.ModuleVersionIdentifier
-import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier
 import org.gradle.testfixtures.ProjectBuilder
 
 import static com.android.build.gradle.DslTestUtil.DEFAULT_VARIANTS
 import static com.android.build.gradle.DslTestUtil.countVariants
-
 /**
  * Tests for the internal workings of the app plugin ("android")
  */
@@ -206,20 +200,20 @@ public class AppPluginInternalTest extends BaseTest {
 
             productFlavors {
                 f1 {
-                    flavorDimension "dimension1"
+                    dimension "dimension1"
                 }
                 f2 {
-                    flavorDimension "dimension1"
+                    dimension "dimension1"
                 }
 
                 fa {
-                    flavorDimension "dimension2"
+                    dimension "dimension2"
                 }
                 fb {
-                    flavorDimension "dimension2"
+                    dimension "dimension2"
                 }
                 fc {
-                    flavorDimension "dimension2"
+                    dimension "dimension2"
                 }
             }
         }

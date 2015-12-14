@@ -20,13 +20,14 @@ import static com.android.build.gradle.AndroidGradleOptions.USE_DEPRECATED_NDK;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.LoggingUtil;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.DefaultApiVersion;
 import com.android.builder.core.DefaultProductFlavor;
+import com.android.builder.core.ErrorReporter;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ClassField;
+import com.android.builder.model.SyncIssue;
 import com.google.common.base.Strings;
 
 import org.gradle.api.Action;
@@ -51,16 +52,22 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
     @NonNull
     private final NdkOptions ndkConfig;
 
+    @NonNull
+    private final ErrorReporter errorReporter;
+
     @Nullable
     private Boolean useJack;
 
-    public ProductFlavor(@NonNull String name,
+    public ProductFlavor(
+            @NonNull String name,
             @NonNull Project project,
             @NonNull Instantiator instantiator,
-            @NonNull Logger logger) {
+            @NonNull Logger logger,
+            @NonNull ErrorReporter errorReporter) {
         super(name);
         this.project = project;
         this.logger = logger;
+        this.errorReporter = errorReporter;
         ndkConfig = instantiator.newInstance(NdkOptions.class);
     }
 
@@ -467,7 +474,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
 
     @Deprecated
     public void setFlavorDimension(String dimension) {
-        LoggingUtil.displayDeprecationWarning(logger, project,
+        errorReporter.handleSyncWarning(null, SyncIssue.TYPE_GENERIC,
                 "'flavorDimension' will be removed in a future version of Android Gradle Plugin, " +
                         "it has been replaced by 'dimension'.");
         setDimension(dimension);
@@ -479,7 +486,7 @@ public class ProductFlavor extends DefaultProductFlavor implements CoreProductFl
      */
     @Deprecated
     public String getFlavorDimension() {
-        LoggingUtil.displayDeprecationWarning(logger, project,
+        errorReporter.handleSyncWarning(null, SyncIssue.TYPE_GENERIC,
                 "'flavorDimension' will be removed in a future version of Android Gradle Plugin, " +
                         "it has been replaced by 'dimension'.");
         return getDimension();

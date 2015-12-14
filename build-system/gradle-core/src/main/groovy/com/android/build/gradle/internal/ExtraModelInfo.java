@@ -106,29 +106,34 @@ public class ExtraModelInfo extends ErrorReporter {
 
     @Override
     @NonNull
-    public SyncIssue handleSyncError(@Nullable String data, int type, @NonNull String msg) {
+    protected SyncIssue handleSyncIssue(
+            @Nullable String data,
+            int type,
+            int severity,
+            @NonNull String msg) {
         SyncIssue issue;
         switch (getMode()) {
             case STANDARD:
-                if (!isDependencyIssue(type)) {
+                if (severity != SyncIssue.SEVERITY_WARNING && !isDependencyIssue(type)) {
                     throw new GradleException(msg);
                 }
                 // if it's a dependency issue we don't throw right away. we'll
                 // throw during build instead.
                 // but we do log.
                 project.getLogger().warn("WARNING: " + msg);
-                issue = new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
+                issue = new SyncIssueImpl(type, severity, data, msg);
                 break;
             case IDE_LEGACY:
                 // compat mode for the only issue supported before the addition of SyncIssue
                 // in the model.
-                if (type != SyncIssue.TYPE_UNRESOLVED_DEPENDENCY) {
+                if (severity != SyncIssue.SEVERITY_WARNING
+                        && type != SyncIssue.TYPE_UNRESOLVED_DEPENDENCY) {
                     throw new GradleException(msg);
                 }
                 // intended fall-through
             case IDE:
                 // new IDE, able to support SyncIssue.
-                issue = new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
+                issue = new SyncIssueImpl(type, severity, data, msg);
                 syncIssues.put(SyncIssueKey.from(issue), issue);
                 break;
             default:

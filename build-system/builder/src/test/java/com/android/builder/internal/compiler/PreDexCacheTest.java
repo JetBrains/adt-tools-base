@@ -255,7 +255,8 @@ public class PreDexCacheTest extends TestCase {
 
         @NonNull
         @Override
-        public SyncIssue handleSyncError(@NonNull String data, int type, @NonNull String msg) {
+        public SyncIssue handleSyncIssue(
+                @Nullable String data, int type, int severity, @NonNull String msg) {
             throw new RuntimeException("fake");
         }
 
