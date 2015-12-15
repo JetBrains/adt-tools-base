@@ -62,6 +62,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1080,6 +1081,17 @@ public abstract class LintClient {
         }
 
         return registry;
+    }
+
+    /**
+     * Creates a {@link ClassLoader} which can load in a set of Jar files.
+     *
+     * @param urls the URLs
+     * @param parent the parent class loader
+     * @return a new class loader
+     */
+    public ClassLoader createUrlClassLoader(@NonNull URL[] urls, @NonNull ClassLoader parent) {
+        return new URLClassLoader(urls, parent);
     }
 
     /**

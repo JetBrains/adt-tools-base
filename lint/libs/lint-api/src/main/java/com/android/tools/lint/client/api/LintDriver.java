@@ -2090,6 +2090,17 @@ public class LintDriver {
             return mDelegate.addCustomLintRules(registry);
         }
 
+        @NonNull
+        @Override
+        public List<File> getAssetFolders(@NonNull Project project) {
+            return mDelegate.getAssetFolders(project);
+        }
+
+        @Override
+        public ClassLoader createUrlClassLoader(@NonNull URL[] urls, @NonNull ClassLoader parent) {
+            return mDelegate.createUrlClassLoader(urls, parent);
+        }
+
         @Override
         public boolean checkForSuppressComments() {
             return mDelegate.checkForSuppressComments();
