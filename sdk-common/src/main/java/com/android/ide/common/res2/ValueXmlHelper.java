@@ -22,6 +22,7 @@ import static com.android.SdkConstants.GT_ENTITY;
 import static com.android.SdkConstants.LT_ENTITY;
 import static com.android.SdkConstants.QUOT_ENTITY;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 
@@ -31,13 +32,13 @@ import com.android.annotations.VisibleForTesting;
 public class ValueXmlHelper {
 
     /**
-     * Replaces escapes in an XML resource string with the actual characters,
-     * performing unicode substitutions (replacing any {@code \\uNNNN} references in the
-     * given string with the corresponding unicode characters), etc.
+     * Replaces escapes in an XML resource string with the actual characters, performing unicode
+     * substitutions (replacing any {@code \\uNNNN} references in the given string with the
+     * corresponding unicode characters), etc.
      *
-     * @param s the string to unescape
+     * @param s              the string to unescape
      * @param escapeEntities XML entities
-     * @param trim whether surrounding space and quotes should be trimmed
+     * @param trim           whether surrounding space and quotes should be trimmed
      * @return the string with the escape characters removed and expanded
      */
     @SuppressWarnings("UnnecessaryContinue")
@@ -169,17 +170,17 @@ public class ValueXmlHelper {
                         i += AMP_ENTITY.length() - 1;
                         continue;
                     } else if (s.regionMatches(true, i, QUOT_ENTITY, 0, QUOT_ENTITY.length())) {
-                      sb.append('"');
-                      i += QUOT_ENTITY.length() - 1;
-                      continue;
+                        sb.append('"');
+                        i += QUOT_ENTITY.length() - 1;
+                        continue;
                     } else if (s.regionMatches(true, i, APOS_ENTITY, 0, APOS_ENTITY.length())) {
-                      sb.append('\'');
-                      i += APOS_ENTITY.length() - 1;
-                      continue;
+                        sb.append('\'');
+                        i += APOS_ENTITY.length() - 1;
+                        continue;
                     } else if (s.regionMatches(true, i, GT_ENTITY, 0, GT_ENTITY.length())) {
-                      sb.append('>');
-                      i += GT_ENTITY.length() - 1;
-                      continue;
+                        sb.append('>');
+                        i += GT_ENTITY.length() - 1;
+                        continue;
                     } else if (i < n - 2 && s.charAt(i + 1) == '#') {
                         int end = s.indexOf(';', i + 1);
                         if (end != -1) {
@@ -223,10 +224,10 @@ public class ValueXmlHelper {
     }
 
     /**
-     * Returns true if the character at the given offset in the string is escaped
-     * (the previous character is a \, and that character isn't itself an escaped \)
+     * Returns true if the character at the given offset in the string is escaped (the previous
+     * character is a \, and that character isn't itself an escaped \)
      *
-     * @param s the string
+     * @param s     the string
      * @param index the index of the character in the string to check
      * @return true if the character is escaped
      */
@@ -255,111 +256,89 @@ public class ValueXmlHelper {
     }
 
     /**
-     * Escape a string value to be placed in a string resource file such that it complies with
-     * the escaping rules described here:
-     *   http://developer.android.com/guide/topics/resources/string-resource.html
-     * More examples of the escaping rules can be found here:
-     *   http://androidcookbook.com/Recipe.seam?recipeId=2219&recipeFrom=ViewTOC
-     * This method assumes that the String is not escaped already.
+     * <p>Escapes a string resource value in compliance with the
+     * <a href="http://developer.android.com/guide/topics/resources/string-resource.html">rules</a>
+     * and
+     * <a href="https://androidcookbook.com/Recipe.seam?recipeId=2219">this Android Cookbook recipe</a>.
      *
-     * Rules:
-     * <ul>
-     * <li>Double quotes are needed if string starts or ends with at least one space.
-     * <li>{@code @, ?} at beginning of string have to be escaped with a backslash.
-     * <li>{@code ', ", \} have to be escaped with a backslash.
-     * <li>{@code <, >, &} have to be replaced by their predefined xml entity.
-     * <li>{@code \n, \t} have to be replaced by a backslash and the appropriate character.
-     * </ul>
-     * @param s the string to be escaped
-     * @return the escaped string as it would appear in the XML text in a values file
+     * <p>The entire string is escaped as follows:
+     *
+     * <ol>
+     * <li>{@code '"'} and {@code '\\'} are escaped with backslashes
+     * <li>{@code '\n'} and {@code '\t'} are escaped with {@code "\\n"} and {@code "\\t"}
+     * <li>If the string starts or ends with a space, the string is quoted with {@code '"'}
+     * <li>If the string does not start or end with a space, {@code '\''} is escaped with a
+     * backslash
+     * <li>If the string starts with a {@code '?'} or {@code '@'}, that character is escaped with a
+     * backslash
+     * <il>{@code '&'} and {@code '<'} are escaped with {@code "&amp;"} and {@code "&lt;"}
+     * </ol>
+     *
+     * <p>If the string contains markup it will lose its semantics and become plain character data.
+     * If that is not desired, use {@link #escapeResourceStringAsXml(String)} which is XML aware.
      */
-    public static String escapeResourceString(String s) {
-      return escapeResourceString(s, true);
+    @NonNull
+    public static String escapeResourceString(@NonNull String string) {
+        return escapeResourceString(string, true);
     }
 
-  /**
-   * Escape a string value to be placed in a string resource file such that it complies with
-   * the escaping rules described here:
-   *   http://developer.android.com/guide/topics/resources/string-resource.html
-   * More examples of the escaping rules can be found here:
-   *   http://androidcookbook.com/Recipe.seam?recipeId=2219&recipeFrom=ViewTOC
-   * This method assumes that the String is not escaped already.
-   *
-   * Rules:
-   * <ul>
-   * <li>Double quotes are needed if string starts or ends with at least one space.
-   * <li>{@code @, ?} at beginning of string have to be escaped with a backslash.
-   * <li>{@code ', ", \} have to be escaped with a backslash.
-   * <li>{@code <, >, &} have to be replaced by their predefined xml entity.
-   * <li>{@code \n, \t} have to be replaced by a backslash and the appropriate character.
-   * </ul>
-   * @param s the string to be escaped
-   * @param escapeXml whether XML characters like {@code <} and {@code &} should be
-   *                  escaped; this should normally be true, but is optional since
-   *                  some callers need to pass the string over to code which already escapes
-   *                  XML content, and you wouldn't want the ampersand in the escaped character
-   *                  entity to itself be escaped.
-   * @return the escaped string as it would appear in the XML text in a values file
-   */
-    public static String escapeResourceString(String s, boolean escapeXml) {
-        int n = s.length();
-        if (n == 0) {
-            return "";
-        }
+    /**
+     * <p>Escapes a string resource value in compliance with the
+     * <a href="http://developer.android.com/guide/topics/resources/string-resource.html">rules</a>
+     * and
+     * <a href="https://androidcookbook.com/Recipe.seam?recipeId=2219">this Android Cookbook recipe</a>.
+     *
+     * <p>The entire string is escaped as follows:
+     *
+     * <ol>
+     * <li>{@code '"'} and {@code '\\'} are escaped with backslashes
+     * <li>{@code '\n'} and {@code '\t'} are escaped with {@code "\\n"} and {@code "\\t"}
+     * <li>If the string starts or ends with a space, the string is quoted with {@code '"'}
+     * <li>If the string does not start or end with a space, {@code '\''} is escaped with a
+     * backslash
+     * <li>If the string starts with a {@code '?'} or {@code '@'}, that character is escaped with a
+     * backslash
+     * <il>If escapeMarkupDelimiters is true, {@code '&'} and {@code '<'} are escaped with
+     * {@code "&amp;"} and {@code "&lt;"}
+     * </ol>
+     *
+     * <p>If the string contains markup with attributes, the quotes will be escaped which will
+     * result in invalid XML. If escapeMarkupDelimiters is true, the markup will lose its semantics
+     * and become plain character data. If that is not desired, use
+     * {@link #escapeResourceStringAsXml(String)} which is XML aware.
+     *
+     * @param escapeMarkupDelimiters if true escape {@code '&'} and {@code '<'} with their entity
+     *                               references
+     */
+    @NonNull
+    public static String escapeResourceString(@NonNull String string,
+            boolean escapeMarkupDelimiters) {
+        return StringResourceEscaper.escape(string, escapeMarkupDelimiters);
+    }
 
-        StringBuilder sb = new StringBuilder(s.length() * 2);
-        boolean hasSpace = s.charAt(0) == ' ' || s.charAt(n - 1) == ' ';
-
-        if (hasSpace) {
-            sb.append('"');
-        } else if (s.charAt(0) == '@' || s.charAt(0) == '?') {
-            sb.append('\\');
-        }
-
-        for (int i = 0; i < n; ++i) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '\'':
-                    if (!hasSpace) {
-                        sb.append('\\');
-                    }
-                    sb.append(c);
-                    break;
-                case '"':
-                case '\\':
-                    sb.append('\\');
-                    sb.append(c);
-                    break;
-                case '<':
-                    if (escapeXml) {
-                        sb.append(LT_ENTITY);
-                    } else {
-                        sb.append(c);
-                    }
-                    break;
-                case '&':
-                    if (escapeXml) {
-                        sb.append(AMP_ENTITY);
-                    } else {
-                        sb.append(c);
-                    }
-                    break;
-                case '\n':
-                    sb.append("\\n"); //$NON-NLS-1$
-                    break;
-                case '\t':
-                    sb.append("\\t"); //$NON-NLS-1$
-                    break;
-                default:
-                    sb.append(c);
-                    break;
-            }
-        }
-
-        if (hasSpace) {
-            sb.append('"');
-        }
-
-        return sb.toString();
+    /**
+     * <p>Escapes a string resource value in compliance with the
+     * <a href="http://developer.android.com/guide/topics/resources/string-resource.html">rules</a>
+     * and
+     * <a href="https://androidcookbook.com/Recipe.seam?recipeId=2219">this Android Cookbook recipe</a>.
+     *
+     * <p>The argument is expected to be valid XML. Character data outside of CDATA sections is
+     * escaped as follows:
+     *
+     * <ol>
+     * <li>{@code '"'} and {@code '\\'} are escaped with backslashes
+     * <li>{@code '\n'} and {@code '\t'} are escaped with {@code "\\n"} and {@code "\\t"}
+     * <li>If the string starts or ends with a space, the string is quoted with {@code '"'}
+     * <li>If the string does not start or end with a space, {@code '\''} is escaped with a
+     * backslash
+     * <li>If the string starts with a {@code '?'} or {@code '@'}, that character is escaped with a
+     * backslash
+     * </ol>
+     *
+     * @throws IllegalArgumentException If the XML is not valid
+     */
+    @NonNull
+    public static String escapeResourceStringAsXml(@NonNull String xml) {
+        return StringResourceEscaper.escapeCharacterData(xml);
     }
 }
