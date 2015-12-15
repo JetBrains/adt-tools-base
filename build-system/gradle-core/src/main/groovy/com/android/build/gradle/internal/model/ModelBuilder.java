@@ -456,7 +456,10 @@ public class ModelBuilder implements ToolingModelBuilder {
     private static Collection<Abi> createAbiList(Collection<String> abiNames) {
         ImmutableList.Builder<Abi> builder = ImmutableList.builder();
         for (String abiName : abiNames) {
-            builder.add(Abi.getByName(abiName));
+            Abi abi = Abi.getByName(abiName);
+            if (abi != null) {
+                builder.add(abi);
+            }
         }
         return builder.build();
     }
