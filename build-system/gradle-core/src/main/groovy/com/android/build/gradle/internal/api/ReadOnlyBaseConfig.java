@@ -15,12 +15,20 @@
  */
 
 package com.android.build.gradle.internal.api
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.builder.model.BaseConfig
-import com.android.builder.model.ClassField
-import com.google.common.collect.ImmutableList
-import com.google.common.collect.ImmutableMap
+
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.builder.model.BaseConfig;
+import com.android.builder.model.ClassField;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.Map;
+
+import groovy.lang.MissingPropertyException;
+
 /**
  * Read-only version of the BaseConfig wrapping another BaseConfig.
  *
