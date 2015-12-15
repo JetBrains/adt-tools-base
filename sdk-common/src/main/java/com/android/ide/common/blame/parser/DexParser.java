@@ -22,13 +22,13 @@ import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
 import com.android.utils.ILogger;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
-public class DexStderrParser implements PatternAwareOutputParser {
+public class DexParser implements PatternAwareOutputParser {
 
-    final DexStdoutParser delegateStdoutParser = new DexStdoutParser();
     static final String DEX_TOOL_NAME = "Dex";
 
     public static final String DEX_LIMIT_EXCEEDED_ERROR =
@@ -43,7 +43,19 @@ public class DexStderrParser implements PatternAwareOutputParser {
             @NonNull List<Message> messages, @NonNull ILogger logger)
             throws ParsingFailedException {
 
-        if (delegateStdoutParser.parse(line, reader, messages, logger)) {
+        if (line.startsWith("trouble writing output: Too many method references:")) {
+            StringBuilder original1 = new StringBuilder(line).append('\n');
+            String nextLine = reader.readLine();
+            while (!Strings.isNullOrEmpty(nextLine)) {
+                original1.append(nextLine).append('\n');
+                nextLine = reader.readLine();
+            }
+            messages.add(new Message(
+                    Message.Kind.ERROR,
+                    DEX_LIMIT_EXCEEDED_ERROR,
+                    original1.toString(),
+                    Optional.of(DEX_TOOL_NAME),
+                    ImmutableList.of(SourceFilePosition.UNKNOWN)));
             return true;
         }
         if (!line.equals("UNEXPECTED TOP-LEVEL EXCEPTION:")) {

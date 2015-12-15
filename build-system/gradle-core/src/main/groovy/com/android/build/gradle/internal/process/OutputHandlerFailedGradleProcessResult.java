@@ -28,6 +28,7 @@ public class OutputHandlerFailedGradleProcessResult implements ProcessResult {
         this.failure = failure;
     }
 
+    @NonNull
     @Override
     public ProcessResult assertNormalExitValue() throws ProcessException {
         throw failure;
@@ -38,6 +39,7 @@ public class OutputHandlerFailedGradleProcessResult implements ProcessResult {
         return -1;
     }
 
+    @NonNull
     @Override
     public ProcessResult rethrowFailure() throws ProcessException {
         throw failure;

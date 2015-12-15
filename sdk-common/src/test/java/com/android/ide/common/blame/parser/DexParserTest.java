@@ -33,12 +33,8 @@ import org.junit.Test;
  */
 public class DexParserTest {
 
-    private static final ToolOutputParser STDOUT_PARSER = new ToolOutputParser(
-            new DexStdoutParser(),
-            new StdLogger(StdLogger.Level.VERBOSE));
-
-    private static final ToolOutputParser STDERR_PARSER = new ToolOutputParser(
-            new DexStderrParser(),
+    private static final ToolOutputParser PARSER = new ToolOutputParser(
+            new DexParser(),
             new StdLogger(StdLogger.Level.VERBOSE));
 
     @Test
@@ -57,14 +53,14 @@ public class DexParserTest {
                 + "\tat com.android.dx.command.dexer.Main.main(Main.java:245)\n"
                 + "\tat com.android.dx.command.Main.main(Main.java:106)\n\n\n";
 
-        Message message = Iterables.getOnlyElement(STDERR_PARSER.parseToolOutput(stderr));
+        Message message = Iterables.getOnlyElement(PARSER.parseToolOutput(stderr));
 
         assertEquals(Message.Kind.ERROR, message.getKind());
-        assertEquals(DexStderrParser.DEX_LIMIT_EXCEEDED_ERROR, message.getText());
+        assertEquals(DexParser.DEX_LIMIT_EXCEEDED_ERROR, message.getText());
         assertEquals(stderr.trim(), message.getRawMessage().trim());
         assertEquals(ImmutableList.of(SourceFilePosition.UNKNOWN),
                 message.getSourceFilePositions());
-        assertEquals(Optional.of(DexStderrParser.DEX_TOOL_NAME), message.getToolName());
+        assertEquals(Optional.of(DexParser.DEX_TOOL_NAME), message.getToolName());
     }
 
     @Test
@@ -78,14 +74,14 @@ public class DexParserTest {
                 + "    10 com.example.helloworld\n"
                 + "     2 java.lang\n\n";
 
-        Message message = Iterables.getOnlyElement(STDOUT_PARSER.parseToolOutput(stderr));
+        Message message = Iterables.getOnlyElement(PARSER.parseToolOutput(stderr));
 
         assertEquals(Message.Kind.ERROR, message.getKind());
-        assertTrue(message.getText().startsWith(DexStderrParser.DEX_LIMIT_EXCEEDED_ERROR));
+        assertTrue(message.getText().startsWith(DexParser.DEX_LIMIT_EXCEEDED_ERROR));
         assertEquals(stderr.trim(), message.getRawMessage().trim());
         assertEquals(ImmutableList.of(SourceFilePosition.UNKNOWN),
                 message.getSourceFilePositions());
-        assertEquals(Optional.of(DexStderrParser.DEX_TOOL_NAME), message.getToolName());
+        assertEquals(Optional.of(DexParser.DEX_TOOL_NAME), message.getToolName());
     }
 
 
