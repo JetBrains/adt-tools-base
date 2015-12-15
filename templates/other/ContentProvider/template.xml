@@ -18,7 +18,7 @@
         type="string"
         constraints="nonempty|uri_authority"
         default=""
-        help="A list of one or more URI authorities that identify data under the purview of the content provider. " />
+        help="A semicolon separated list of one or more URI authorities that identify data under the purview of the content provider. " />
 
     <parameter
         id="isExported"
