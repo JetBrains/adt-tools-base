@@ -17,6 +17,7 @@
 package com.android.builder.core;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.SyncIssue;
 import com.android.ide.common.blame.MessageReceiver;
 
@@ -71,5 +72,5 @@ public abstract class ErrorReporter implements MessageReceiver {
      * @see SyncIssue
      */
     @NonNull
-    public abstract SyncIssue handleSyncError(@NonNull String data, int type, @NonNull String msg);
+    public abstract SyncIssue handleSyncError(@Nullable String data, int type, @NonNull String msg);
 }

@@ -17,6 +17,7 @@
 package com.android.builder.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 /**
  * Class representing a sync issue.
@@ -86,7 +87,7 @@ public interface SyncIssue {
      *
      * This is a machine-readable string used by the IDE for known issue types.
      */
-    @NonNull
+    @Nullable
     String getData();
 
     /**
