@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.api
+package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -23,134 +23,145 @@ import com.android.builder.model.ClassField;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.Map;
 
+import groovy.lang.GroovyObject;
+import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MissingPropertyException;
 
 /**
  * Read-only version of the BaseConfig wrapping another BaseConfig.
  *
- * In the variant API, it is important that the objects returned by the variants
- * are read-only.
+ * <p>In the variant API, it is important that the objects returned by the variants are read-only.
  *
- * However, even though the API is defined to use the base interfaces as return
- * type (which all contain only getters), the dynamics of Groovy makes it easy to
- * actually use the setters of the implementation classes.
+ * <p>However, even though the API is defined to use the base interfaces as return type (which all
+ * contain only getters), the dynamics of Groovy makes it easy to actually use the setters of the
+ * implementation classes.
  *
- * This wrapper ensures that the returned instance is actually just a strict implementation
- * of the base interface and is read-only.
+ * <p>This wrapper ensures that the returned instance is actually just a strict implementation of the
+ * base interface and is read-only.
  */
-abstract class ReadOnlyBaseConfig implements BaseConfig {
+public abstract class ReadOnlyBaseConfig extends GroovyObjectSupport implements BaseConfig {
 
     @NonNull
-    private BaseConfig baseConfig
+    private BaseConfig baseConfig;
 
     protected ReadOnlyBaseConfig(@NonNull BaseConfig baseConfig) {
-        this.baseConfig = baseConfig
+        this.baseConfig = baseConfig;
     }
 
     @NonNull
     @Override
     public String getName() {
-        return baseConfig.getName()
+        return baseConfig.getName();
     }
 
     @Nullable
     @Override
     public String getApplicationIdSuffix() {
-        return baseConfig.getApplicationIdSuffix()
+        return baseConfig.getApplicationIdSuffix();
     }
 
     @NonNull
     @Override
     public Map<String, ClassField> getBuildConfigFields() {
         // TODO: cache immutable map?
-        return ImmutableMap.copyOf(baseConfig.getBuildConfigFields())
+        return ImmutableMap.copyOf(baseConfig.getBuildConfigFields());
     }
 
     @NonNull
     @Override
     public Map<String, ClassField> getResValues() {
-        return ImmutableMap.copyOf(baseConfig.getResValues())
+        return ImmutableMap.copyOf(baseConfig.getResValues());
     }
 
     @NonNull
     @Override
     public Collection<File> getProguardFiles() {
-        return ImmutableList.copyOf(baseConfig.getProguardFiles())
+        return ImmutableList.copyOf(baseConfig.getProguardFiles());
     }
 
     @NonNull
     @Override
     public Collection<File> getConsumerProguardFiles() {
-        return ImmutableList.copyOf(baseConfig.getConsumerProguardFiles())
+        return ImmutableList.copyOf(baseConfig.getConsumerProguardFiles());
     }
 
     @NonNull
     @Override
-    Collection<File> getTestProguardFiles() {
-        return ImmutableList.copyOf(baseConfig.getTestProguardFiles())
+    public Collection<File> getTestProguardFiles() {
+        return ImmutableList.copyOf(baseConfig.getTestProguardFiles());
     }
 
     @NonNull
     @Override
     public Map<String, Object> getManifestPlaceholders() {
-        return ImmutableMap.copyOf(baseConfig.getManifestPlaceholders())
+        return ImmutableMap.copyOf(baseConfig.getManifestPlaceholders());
     }
 
     @Nullable
     @Override
     public Boolean getMultiDexEnabled() {
-        return baseConfig.getMultiDexEnabled()
+        return baseConfig.getMultiDexEnabled();
     }
 
     @Nullable
     @Override
     public File getMultiDexKeepFile() {
-        return baseConfig.getMultiDexKeepFile()
+        return baseConfig.getMultiDexKeepFile();
     }
 
     @Nullable
     @Override
     public File getMultiDexKeepProguard() {
-        return baseConfig.getMultiDexKeepProguard()
+        return baseConfig.getMultiDexKeepProguard();
     }
 
     /**
-     * Some build scripts add dynamic properties to flavors declaration (and others) and expect
-     * to retrieve such properties values through this model. Delegate any property we don't
-     * know about to the {@see BaseConfig} groovy object which hopefully will know about the
-     * dynamic property.
+     * Some build scripts add dynamic properties to flavors declaration (and others) and expect to
+     * retrieve such properties values through this model. Delegate any property we don't know about
+     * to the {@see BaseConfig} groovy object which hopefully will know about the dynamic property.
+     *
      * @param name the property name
      * @return the property value if exists or an exception will be thrown.
      */
-    def propertyMissing(String name) {
+    @SuppressWarnings("unused") // This is part of the Groovy method dispatch convention.
+    public Object propertyMissing(final String name) {
         try {
-            baseConfig."$name"
-        } catch(MissingPropertyException e) {
+            return ((GroovyObject) baseConfig).getProperty(name);
+        } catch (MissingPropertyException e) {
             // do not leak implementation types, replace the delegate with ourselves in the message
-            throw new MissingPropertyException("Could not find ${name} on ${this}")
+            throw new MissingPropertyException("Could not find " + name + " on " + this);
         }
+
     }
 
     /**
      * Do not authorize setting dynamic properties values and provide a meaningful error message.
      */
-    def propertyMissing(String name, value)  {
-        throw new RuntimeException("Cannot set property @{name} on read-only ${baseConfig.class}")
+    @SuppressWarnings("unused") // This is part of the Groovy method dispatch convention.
+    public void propertyMissing(String name, Object value) {
+        throw new RuntimeException(
+                String.format(
+                        "Cannot set property %s on read-only %s.",
+                        name,
+                        baseConfig.getClass().getName()));
     }
 
-    /**
-     * Provide dynamic properties refective access.
-     * @param name a property name
-     * @return true if this object of {@link #baseConfig} supports the passed property name
-     */
-    def hasProperty(String name) {
-        if (super.hasProperty(name)) {
-            return true
+    // This is part of the Groovy/Gradle method dispatch convention.
+    @SuppressWarnings({"unused"})
+    public boolean hasProperty(String name) {
+        if (DefaultGroovyMethods.hasProperty(this, name) != null) {
+            return true;
+        } else {
+            GroovyObject groovyObject = (GroovyObject) this.baseConfig;
+            // Object _Decorated by Gradle implement hasProperty, so the "usual" Groovy conventions
+            // don't apply.
+            return (Boolean) groovyObject.invokeMethod("hasProperty", name);
         }
-        return baseConfig.hasProperty(name)
     }
 }
