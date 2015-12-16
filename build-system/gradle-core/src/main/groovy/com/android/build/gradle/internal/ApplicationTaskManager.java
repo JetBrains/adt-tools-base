@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.build.api.transform.QualifiedContent;
 import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.internal.incremental.BuildInfoGeneratorTask;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -244,35 +245,7 @@ public class ApplicationTaskManager extends TaskManager {
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
-
-                        if (getIncrementalMode(variantScope.getVariantConfiguration())
-                                != IncrementalMode.NONE) {
-
-                            InstantRunPatchingPolicy patchingPolicy = InstantRunPatchingPolicy
-                                    .getPatchingPolicy(getLogger(), project);
-
-                            if (patchingPolicy == InstantRunPatchingPolicy.MARSHMALLOW_AND_ABOVE) {
-
-                                AndroidTask<InstantRunSplitApkBuilder> splitApk =
-                                        getAndroidTasks().create(tasks,
-                                                new InstantRunSplitApkBuilder.ConfigAction(
-                                                        variantScope));
-
-                                TransformManager transformManager =
-                                        variantScope.getTransformManager();
-                                for (TransformStream stream : transformManager.getStreams(
-                                        PackageApplication.sDexFilter)) {
-                                    // TODO Optimize to avoid creating too many actions
-                                    splitApk.dependsOn(tasks, stream.getDependencies());
-                                }
-                                variantScope.getVariantData().assembleVariantTask.dependsOn(
-                                        splitApk.get(tasks));
-
-                                variantScope.getInstantRunAnchorTask().dependsOn(tasks, splitApk);
-                            }
-                        }
-
-
+                        createInstantRunPackagingTasks(tasks, variantScope);
                         createPackagingTask(tasks, variantScope, true /*publishApk*/);
                         return null;
                     }
@@ -352,6 +325,46 @@ public class ApplicationTaskManager extends TaskManager {
                     .setJar(generateInstantRunAppInfoTask.getOutputFile())
                     .setDependency(generateInstantRunAppInfoTask)
                     .build());
+        }
+    }
+
+    /**
+     * Create tasks related to creating pure split APKs containing sharded dex files.
+     */
+    protected void createInstantRunPackagingTasks(TaskFactory tasks, VariantScope variantScope) {
+        if (getIncrementalMode(variantScope.getVariantConfiguration())
+                != IncrementalMode.NONE) {
+
+            AndroidTask<BuildInfoGeneratorTask> buildInfoGeneratorTask
+                    = getAndroidTasks().create(tasks,
+                    new BuildInfoGeneratorTask.ConfigAction(
+                            variantScope, getLogger()));
+            variantScope.getInstantRunAnchorTask().dependsOn(
+                    tasks, buildInfoGeneratorTask);
+
+            InstantRunPatchingPolicy patchingPolicy = InstantRunPatchingPolicy
+                    .getPatchingPolicy(getLogger(), project);
+
+            if (patchingPolicy == InstantRunPatchingPolicy.MARSHMALLOW_AND_ABOVE) {
+
+                AndroidTask<InstantRunSplitApkBuilder> splitApk =
+                        getAndroidTasks().create(tasks,
+                                new InstantRunSplitApkBuilder.ConfigAction(
+                                        variantScope));
+
+                TransformManager transformManager =
+                        variantScope.getTransformManager();
+                for (TransformStream stream : transformManager.getStreams(
+                        PackageApplication.sDexFilter)) {
+                    // TODO Optimize to avoid creating too many actions
+                    splitApk.dependsOn(tasks, stream.getDependencies());
+                }
+                variantScope.getVariantData().assembleVariantTask.dependsOn(
+                        splitApk.get(tasks));
+                buildInfoGeneratorTask.dependsOn(tasks, splitApk);
+
+                variantScope.getInstantRunAnchorTask().dependsOn(tasks, splitApk);
+            }
         }
     }
 

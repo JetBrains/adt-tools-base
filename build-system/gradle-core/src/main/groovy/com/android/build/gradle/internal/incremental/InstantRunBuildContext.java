@@ -145,7 +145,7 @@ public class InstantRunBuildContext {
                 }
                 break;
             case MARSHMALLOW_AND_ABOVE:
-                if (fileType != FileType.SPLIT) {
+                if (fileType != FileType.SPLIT && fileType != FileType.RELOAD_DEX) {
                     return;
                 }
         }

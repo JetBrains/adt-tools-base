@@ -247,9 +247,11 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
     public static class ConfigAction implements TaskConfigAction<PackageApplication> {
 
         private final VariantOutputScope scope;
+        private final boolean addDexFilesToApk;
 
-        public ConfigAction(VariantOutputScope scope) {
+        public ConfigAction(VariantOutputScope scope, boolean addDexFilesToApk) {
             this.scope = scope;
+            this.addDexFilesToApk = addDexFilesToApk;
         }
 
         @NonNull
@@ -265,7 +267,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         }
 
         @Override
-        public void execute(@NonNull PackageApplication packageApp) {
+        public void execute(@NonNull final PackageApplication packageApp) {
             final VariantScope variantScope = scope.getVariantScope();
             final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
             final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) scope
@@ -303,8 +305,10 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                         return ImmutableSet.of(variantScope.getJackDestinationDir());
                     }
 
-                    return variantScope.getTransformManager()
-                            .getPipelineOutput(sDexFilter).keySet();
+                    return addDexFilesToApk
+                        ? variantScope.getTransformManager()
+                            .getPipelineOutput(sDexFilter).keySet()
+                        : ImmutableSet.<File>of();
                 }
             });
 

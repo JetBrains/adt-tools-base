@@ -29,8 +29,10 @@ import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformException;
 import com.android.build.api.transform.TransformInput;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.XmlUtils;
@@ -90,9 +92,13 @@ public class InstantRunSlicer extends Transform {
 
     private final File instantRunSupportDir;
 
-    public InstantRunSlicer(Logger logger, File instantRunSupportDir) {
+    @NonNull
+    private final VariantScope variantScope;
+
+    public InstantRunSlicer(@NonNull Logger logger, @NonNull VariantScope variantScope) {
         this.logger = new LoggerWrapper(logger);
-        this.instantRunSupportDir = instantRunSupportDir;
+        this.variantScope = variantScope;
+        this.instantRunSupportDir = variantScope.getInstantRunSupportDir();
     }
 
     @NonNull
@@ -258,7 +264,7 @@ public class InstantRunSlicer extends Transform {
                     continue;
                 }
                 if (entries.contains(jarEntry.getName())) {
-                    logger.warning(
+                    logger.verbose(
                             String.format("Entry %1$s is duplicated, ignore the one from %2$s",
                                     jarEntry.getName(), jarInput.getName()));
                 } else {
@@ -277,46 +283,16 @@ public class InstantRunSlicer extends Transform {
             @NonNull TransformOutputProvider outputProvider)
             throws IOException, TransformException, InterruptedException {
 
-        // first read our slicing information so we can find out in which slice changed files belong
-        // to.
-        SlicingInfo slicingInfo = new SlicingInfo();
-        try {
-            slicingInfo.readFrom(new File(instantRunSupportDir, "slices.xml"));
-        } catch (Exception e) {
-            logger.error(e, "Incremental slicing failed, cannot read slices.xml");
-            slice(inputs, outputProvider);
-            return;
+        boolean changesAreCompatible =
+                variantScope.getInstantRunBuildContext().hasPassedVerification();
+        boolean restartDexRequested =
+                variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_DEX_ONLY);
+
+        if (!changesAreCompatible || restartDexRequested) {
+            processChangesSinceLastRestart(inputs, outputProvider);
         }
 
-        for (TransformInput input : inputs) {
-            for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
-                for (Map.Entry<File, Status> fileStatusEntry : directoryInput.getChangedFiles()
-                        .entrySet()) {
-
-                    // get the output stream for this file.
-                    File sliceOutputLocation = getOutputStreamForFile(
-                            outputProvider, directoryInput, fileStatusEntry.getKey(), slicingInfo);
-
-                    String relativePath = FileUtils.relativePossiblyNonExistingPath(
-                            fileStatusEntry.getKey(), directoryInput.getFile());
-
-                    File outputFile = new File(sliceOutputLocation, relativePath);
-                    switch(fileStatusEntry.getValue()) {
-                        case ADDED:
-                        case CHANGED:
-                            Files.createParentDirs(outputFile);
-                            Files.copy(fileStatusEntry.getKey(), outputFile);
-                            break;
-                        case REMOVED:
-                            if (!outputFile.delete()) {
-                                throw new TransformException(
-                                        String.format("Cannot delete file %1$s",
-                                                outputFile.getAbsolutePath()));
-                            }
-                    }
-                }
-            }
-        }
+        // in any case, we always process jar input changes incrementally.
         for (TransformInput input : inputs) {
             for (JarInput jarInput : input.getJarInputs()) {
                 if (jarInput.getStatus() != Status.NOTCHANGED) {
@@ -327,6 +303,79 @@ public class InstantRunSlicer extends Transform {
             }
         }
         logger.info("No jar merging necessary, all input jars unchanged");
+    }
+
+    @Nullable
+    private DirectoryInput getInputFor(@NonNull Collection<TransformInput> inputs, File file) {
+        for (TransformInput input : inputs) {
+            for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
+                if (file.getAbsolutePath().startsWith(directoryInput.getFile().getAbsolutePath())) {
+                    return directoryInput;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void processChangesSinceLastRestart(
+            @NonNull final Collection<TransformInput> inputs,
+            @NonNull final TransformOutputProvider outputProvider)
+            throws TransformException, InterruptedException, IOException {
+
+        // first read our slicing information so we can find out in which slice changed files belong
+        // to.
+        final SlicingInfo slicingInfo = new SlicingInfo();
+        try {
+            slicingInfo.readFrom(new File(instantRunSupportDir, "slices.xml"));
+        } catch (Exception e) {
+            logger.error(e, "Incremental slicing failed, cannot read slices.xml");
+            slice(inputs, outputProvider);
+            return;
+        }
+
+        File incrementalChangesFile = InstantRunBuildType.RESTART
+                .getIncrementalChangesFile(variantScope);
+
+        // process all files
+        ChangeRecords.process(incrementalChangesFile,
+                new ChangeRecords.RecordHandler() {
+                    @Override
+                    public void handle(String filePath, Status status)
+                            throws IOException, TransformException {
+                        // get the output stream for this file.
+                        File fileToProcess = new File(filePath);
+                        DirectoryInput directoryInput = getInputFor(inputs, fileToProcess);
+                        if (directoryInput == null) {
+                            logger.info("Cannot find input directory for " + filePath);
+                            return;
+                        }
+                        File sliceOutputLocation = getOutputStreamForFile(
+                                outputProvider, directoryInput, fileToProcess, slicingInfo);
+
+                        String relativePath = FileUtils.relativePossiblyNonExistingPath(
+                                fileToProcess, directoryInput.getFile());
+
+                        File outputFile = new File(sliceOutputLocation, relativePath);
+                        switch(status) {
+                            case ADDED:
+                            case CHANGED:
+                                Files.createParentDirs(outputFile);
+                                Files.copy(fileToProcess, outputFile);
+                                break;
+                            case REMOVED:
+                                if (!outputFile.delete()) {
+                                    throw new TransformException(
+                                            String.format("Cannot delete file %1$s",
+                                                    outputFile.getAbsolutePath()));
+                                }
+                                break;
+                            default:
+                                throw new TransformException("Unhandled status " + status);
+
+                        }
+                    }
+                });
+
     }
 
     private static File getOutputStreamForFile(
@@ -435,7 +484,7 @@ public class InstantRunSlicer extends Transform {
 
         @NonNull
         private Slice allocateSlice() {
-            Slice newSlice = new Slice("slice-" + slices.size(), sliceSize);
+            Slice newSlice = new Slice("slice_" + slices.size(), sliceSize);
             slices.add(newSlice);
             return newSlice;
         }

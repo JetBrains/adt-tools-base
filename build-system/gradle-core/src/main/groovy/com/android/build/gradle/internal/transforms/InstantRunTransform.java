@@ -43,7 +43,6 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.api.transform.QualifiedContent.ContentType;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
-import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -56,7 +55,6 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -75,11 +73,10 @@ public class InstantRunTransform extends Transform {
 
     protected static final ILogger LOGGER =
             new LoggerWrapper(Logging.getLogger(InstantRunTransform.class));
-    private final ImmutableSet.Builder<String> generatedClasses2Files = ImmutableSet.builder();
+    private final ChangeRecords generatedClasses2Files = new ChangeRecords();
+    private final ChangeRecords generatedClasses3Files = new ChangeRecords();
     private final ImmutableList.Builder<String> generatedClasses3Names = ImmutableList.builder();
-    private final ImmutableList.Builder<String> generatedClasses3Files = ImmutableList.builder();
     private final VariantScope variantScope;
-
 
     public InstantRunTransform(VariantScope variantScope) {
         this.variantScope = variantScope;
@@ -255,22 +252,21 @@ public class InstantRunTransform extends Transform {
 
         // generate the patch file and add to the list of files to process next.
         File patchFile = writePatchFileContents(generatedClasses3Names.build(), classes3Folder);
-        generatedClasses3Files.add(patchFile.getAbsolutePath());
+        generatedClasses3Files.add(Status.CHANGED, patchFile.getAbsolutePath());
 
         // read the previous iterations output and append it to this iteration changes.
         File incremental = InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope);
         if (incremental.exists()) {
-            List<String> previousIterationIncrementalChanges =
-                    Files.readLines(incremental, Charsets.UTF_8);
-            generatedClasses2Files.addAll(previousIterationIncrementalChanges);
+            ChangeRecords previousIterationChanges = ChangeRecords.load(incremental);
+            generatedClasses2Files.addAll(previousIterationChanges);
         }
 
-        writeIncrementalChanges(
-                InstantRunBuildType.RESTART, generatedClasses2Files.build(), variantScope);
-        writeIncrementalChanges(
-                InstantRunBuildType.RELOAD, generatedClasses3Files.build(), variantScope);
-    }
+        generatedClasses2Files.write(
+                InstantRunBuildType.RESTART.getIncrementalChangesFile(variantScope));
 
+        generatedClasses3Files.write(
+                InstantRunBuildType.RELOAD.getIncrementalChangesFile(variantScope));
+    }
 
     /**
      * Calculate a list of {@link URL} that represent all the directories containing classes
@@ -336,7 +332,7 @@ public class InstantRunTransform extends Transform {
                     inputDir, inputFile, outputDir, IncrementalSupportVisitor.VISITOR_BUILDER);
 
             if (outputFile != null && recordingPolicy == RecordingPolicy.RECORD) {
-                generatedClasses2Files.add(outputFile.getAbsolutePath());
+                generatedClasses2Files.add(Status.CHANGED, outputFile.getAbsolutePath());
             }
         }
     }
@@ -383,7 +379,7 @@ public class InstantRunTransform extends Transform {
                     inputDir.getAbsolutePath().length() + 1,
                     inputFile.getAbsolutePath().length() - ".class".length())
                         .replace(File.separatorChar, '.'));
-        generatedClasses3Files.add(outputFile.getAbsolutePath());
+        generatedClasses3Files.add(Status.CHANGED, outputFile.getAbsolutePath());
     }
 
     /**
@@ -448,24 +444,6 @@ public class InstantRunTransform extends Transform {
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
-        }
-    }
-
-    private static void writeIncrementalChanges(
-            InstantRunBuildType buildType,
-            Collection<String> changes,
-            VariantScope variantScope) throws IOException {
-
-        File incrementalChangesFile = buildType.getIncrementalChangesFile(variantScope);
-        Files.createParentDirs(incrementalChangesFile);
-        FileWriter fileWriter = new FileWriter(incrementalChangesFile);
-        try {
-            for (String change : changes) {
-                fileWriter.write(change);
-                fileWriter.write("\n");
-            }
-        } finally {
-            fileWriter.close();
         }
     }
 }
