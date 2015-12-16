@@ -628,7 +628,7 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                     if (clz != null) {
                         ResolvedNode resolved = mContext.resolve(clz);
                         ResolvedClass containingClass = field.getContainingClass();
-                        if (!containingClass.equals(resolved)
+                        if (containingClass != null && !containingClass.equals(resolved)
                                 && resolved instanceof ResolvedClass) {
                             if (Objects.equal(containingClass.getPackage(),
                                     ((ResolvedClass) resolved).getPackage())) {

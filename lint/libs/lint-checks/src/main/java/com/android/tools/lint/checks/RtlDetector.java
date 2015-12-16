@@ -611,7 +611,8 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                     return false;
                 } else {
                     JavaParser.ResolvedField field = (JavaParser.ResolvedField) resolved;
-                    if (!field.getContainingClass().matches(FQCN_GRAVITY)) {
+                    JavaParser.ResolvedClass containingClass = field.getContainingClass();
+                    if (containingClass == null || !containingClass.matches(FQCN_GRAVITY)) {
                         return false;
                     }
                 }

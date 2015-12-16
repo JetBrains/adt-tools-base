@@ -294,7 +294,8 @@ public class AppIndexingApiDetector extends Detector
                             .resolve(node.astArguments().first());
                     if (arg0 instanceof JavaParser.ResolvedField) {
                         JavaParser.ResolvedField resolvedArg0 = (JavaParser.ResolvedField) arg0;
-                        if (resolvedArg0.getContainingClass().getName().equals(API_CLASS)) {
+                        JavaParser.ResolvedClass cls = resolvedArg0.getContainingClass();
+                        if (cls != null && cls.getName().equals(API_CLASS)) {
                             mHasAddAppIndexApi = true;
                         }
                     }

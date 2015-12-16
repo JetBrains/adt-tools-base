@@ -616,19 +616,26 @@ public abstract class JavaParser {
         @NonNull
         public abstract TypeDescriptor getType();
 
-        @NonNull
+        @Nullable
         public abstract ResolvedClass getContainingClass();
 
         @Nullable
         public abstract Object getValue();
 
+        @Nullable
         public String getContainingClassName() {
-            return getContainingClass().getName();
+            ResolvedClass containingClass = getContainingClass();
+            return containingClass != null ? containingClass.getName() : null;
         }
 
         @Override
         public boolean isInPackage(@NonNull String pkg, boolean includeSubPackages) {
-            String packageName = getContainingClass().getPackageName();
+            ResolvedClass containingClass = getContainingClass();
+            if (containingClass == null) {
+                return false;
+            }
+
+            String packageName = containingClass.getPackageName();
 
             //noinspection SimplifiableIfStatement
             if (pkg.equals(packageName)) {
