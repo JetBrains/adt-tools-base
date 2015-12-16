@@ -20,34 +20,61 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
-import com.android.utils.GrabProcessOutput;
-import com.android.utils.GrabProcessOutput.IProcessOutput;
-import com.android.utils.GrabProcessOutput.Wait;
 import com.android.utils.ILogger;
+import com.android.utils.Pair;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Verify;
+import com.google.common.io.Closeables;
+
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v1CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.KeyStore.PrivateKeyEntry;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
+import java.util.Date;
+
+import javax.security.auth.x500.X500Principal;
 
 /**
  * A Helper to create and read keystore/keys.
  */
 public final class KeystoreHelper {
 
-    // Certificate CN value. This is a hard-coded value for the debug key.
-    // Android Market checks against this value in order to refuse applications signed with
-    // debug keys.
+    /**
+     * Certificate CN value. This is a hard-coded value for the debug key.
+     * Android Market checks against this value in order to refuse applications signed with
+     * debug keys.
+     */
     private static final String CERTIFICATE_DESC = "CN=Android Debug,O=Android,C=US";
+
+    /**
+     * Generated certificate validity.
+     */
+    private static final int DEFAULT_VALIDITY_YEARS = 30;
 
 
     /**
      * Returns the location of the default debug keystore.
-     *
-     * @return The location of the default debug keystore.
+     * @return The location of the default debug keystore
      * @throws AndroidLocationException if the location cannot be computed
      */
     @NonNull
@@ -61,28 +88,33 @@ public final class KeystoreHelper {
     /**
      * Creates a new debug store with the location, keyalias, and passwords specified in the
      * config.
-     *
-     * @param signingConfig The signing config
-     * @param logger a logger object to receive the log of the creation.
+     * @param storeType an optional type of keystore; if {@code null} the default
+     * @param storeFile the file where the store should be created
+     * @param storePassword a password for the key store
+     * @param keyPassword a password for the key
+     * @param keyAlias the alias under which the key is stored in the store
+     * @param logger (not used, kept for backwards compatibility)
      * @throws KeytoolException
      */
     public static boolean createDebugStore(@Nullable String storeType, @NonNull File storeFile,
-                                           @NonNull String storePassword, @NonNull String keyPassword,
-                                           @NonNull String keyAlias,
-                                           @NonNull ILogger logger) throws KeytoolException {
+            @NonNull String storePassword, @NonNull String keyPassword, @NonNull String keyAlias,
+            @NonNull ILogger logger) throws KeytoolException {
 
         return createNewStore(storeType, storeFile, storePassword, keyPassword, keyAlias,
-                              CERTIFICATE_DESC, 30 /* validity*/, logger);
+                CERTIFICATE_DESC, DEFAULT_VALIDITY_YEARS);
     }
 
     /**
-     * Creates a new store
-     *
-     * @param signingConfig the Signing Configuration
-     * @param description description
-     * @param validityYears
-     * @param logger
-     * @throws KeytoolException
+     * Creates a new store with a self-signed certificate. The certificate will be valid starting
+     * from the current date up to the number of years provided.
+     * @param storeType an optional type of keystore; if {@code null} the default
+     * @param storeFile the file where the store should be created
+     * @param storePassword a password for the key store
+     * @param keyPassword a password for the key
+     * @param keyAlias the alias under which the key is stored in the store
+     * @param dn the distinguished name of the owner and issuer of the certificate
+     * @param validityYears number of years the certificate should be valid
+     * @throws KeytoolException failed to generate the self-signed certificate or the store
      */
     private static boolean createNewStore(
             @Nullable String storeType,
@@ -90,117 +122,52 @@ public final class KeystoreHelper {
             @NonNull String storePassword,
             @NonNull String keyPassword,
             @NonNull String keyAlias,
-            @NonNull String description,
-            int validityYears,
-            @NonNull final ILogger logger)
+            @NonNull String dn,
+            int validityYears)
             throws KeytoolException {
+        Preconditions.checkArgument(validityYears > 0, "validityYears (%s) <= 0", validityYears);
 
-        // get the executable name of keytool depending on the platform.
-        String os = System.getProperty("os.name");
-
-        String keytoolCommand;
-        if (os.startsWith("Windows")) {
-            keytoolCommand = "keytool.exe";
-        } else {
-            keytoolCommand = "keytool";
+        String useStoreType = storeType;
+        if (useStoreType == null) {
+            useStoreType = KeyStore.getDefaultType();
+            Verify.verifyNotNull(useStoreType);
         }
 
-        String javaHome = System.getProperty("java.home");
-
-        if (javaHome != null && !javaHome.isEmpty()) {
-            keytoolCommand = javaHome + File.separator + "bin" + File.separator + keytoolCommand;
-        }
-
-        // create the command line to call key tool to build the key with no user input.
-        ArrayList<String> commandList = new ArrayList<String>();
-        commandList.add(keytoolCommand);
-        commandList.add("-genkey");
-        commandList.add("-alias");
-        commandList.add(keyAlias);
-        commandList.add("-keyalg");
-        commandList.add("RSA");
-        commandList.add("-dname");
-        commandList.add(description);
-        commandList.add("-validity");
-        commandList.add(Integer.toString(validityYears * 365));
-        commandList.add("-keypass");
-        commandList.add(keyPassword);
-        commandList.add("-keystore");
-        commandList.add(storeFile.getAbsolutePath());
-        commandList.add("-storepass");
-        commandList.add(storePassword);
-        if (storeType != null) {
-            commandList.add("-storetype");
-            commandList.add(storeType);
-        }
-
-        String[] commandArray = commandList.toArray(new String[commandList.size()]);
-
-        // launch the command line process
-        int result = 0;
         try {
-            Process process = Runtime.getRuntime().exec(commandArray);
-            result = GrabProcessOutput.grabProcessOutput(
-                    process,
-                    Wait.WAIT_FOR_READERS,
-                    new IProcessOutput() {
-                        @Override
-                        public void out(@Nullable String line) {
-                            if (line != null) {
-                                logger.info(line);
-                            }
-                        }
+            KeyStore ks = KeyStore.getInstance(useStoreType);
+            ks.load(null, null);
 
-                        @Override
-                        public void err(@Nullable String line) {
-                            if (line != null) {
-                                logger.error(null /*throwable*/, line);
-                            }
-                        }
-                    });
-        } catch (Exception e) {
-            // create the command line as one string for debugging purposes
-            StringBuilder builder = new StringBuilder();
-            boolean firstArg = true;
-            for (String arg : commandArray) {
-                boolean hasSpace = arg.indexOf(' ') != -1;
-
-                if (firstArg) {
-                    firstArg = false;
-                } else {
-                    builder.append(' ');
-                }
-
-                if (hasSpace) {
-                    builder.append('"');
-                }
-
-                builder.append(arg);
-
-                if (hasSpace) {
-                    builder.append('"');
-                }
+            Pair<PrivateKey, X509Certificate> generated = generateKeyAndCertificate("RSA",
+                    "SHA1withRSA", validityYears, dn);
+            ks.setKeyEntry(keyAlias, generated.getFirst(), keyPassword.toCharArray(),
+                    new Certificate[]{generated.getSecond()});
+            FileOutputStream fos = new FileOutputStream(storeFile);
+            boolean threw = true;
+            try {
+                ks.store(fos, storePassword.toCharArray());
+                threw = false;
+            } finally {
+                Closeables.close(fos, threw);
             }
-
-            throw new KeytoolException("Failed to create key: " + e.getMessage(),
-                    javaHome, builder.toString());
+        } catch (KeytoolException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new KeytoolException("Failed to create keystore.", e);
         }
 
-        return result == 0;
+        return true;
     }
 
     /**
      * Returns the CertificateInfo for the given signing configuration.
-     *
-     * @return the certificate info if it could be loaded.
-     * @throws KeytoolException If the password is wrong.
-     * @throws FileNotFoundException If the store file cannot be found.
+     * @return the certificate info if it could be loaded
+     * @throws KeytoolException If the password is wrong
+     * @throws FileNotFoundException If the store file cannot be found
      */
     @NonNull
-    public static CertificateInfo getCertificateInfo(@Nullable String storeType, @NonNull File storeFile,
-                                                     @NonNull String storePassword, @NonNull String keyPassword,
-                                                     @NonNull String keyAlias)
-            throws KeytoolException, FileNotFoundException {
+    public static CertificateInfo getCertificateInfo(@Nullable String storeType,
+            @NonNull File storeFile, @NonNull String storePassword, @NonNull String keyPassword,
+            @NonNull String keyAlias) throws KeytoolException, FileNotFoundException {
 
         try {
             KeyStore keyStore = KeyStore.getInstance(storeType != null ?
@@ -233,5 +200,63 @@ public final class KeystoreHelper {
                             keyAlias, storeFile, e.getMessage()),
                     e);
         }
+    }
+
+    /**
+     * Generates a key and self-signed certificate pair.
+     * @param asymmetric the asymmetric encryption algorithm (<em>e.g.,</em> {@code RSA})
+     * @param sign the signature algorithm (<em>e.g.,</em> {@code SHA1withRSA})
+     * @param validityYears number of years the certificate should be valid, must be greater than
+     * zero
+     * @param dn the distinguished name of the issuer and owner of the certificate
+     * @return a pair with the private key and the corresponding certificate
+     * @throws KeytoolException failed to generate the pair
+     */
+    private static Pair<PrivateKey, X509Certificate> generateKeyAndCertificate(
+            @NonNull String asymmetric, @NonNull String sign, int validityYears,
+            @NonNull String dn) throws KeytoolException {
+        Preconditions.checkArgument(validityYears > 0, "validityYears <= 0");
+
+        KeyPair keyPair;
+        try {
+            keyPair = KeyPairGenerator.getInstance(asymmetric).generateKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            throw new KeytoolException("Failed to generate key and certificate pair for "
+                    + "algorithm '" + asymmetric + "'.", e);
+        }
+
+        Date notBefore = new Date(System.currentTimeMillis());
+        Date notAfter = new Date(System.currentTimeMillis() + validityYears * 365L * 24 * 60 * 60
+                * 1000);
+
+        X500Name issuer = new X500Name(new X500Principal(dn).getName());
+
+        SubjectPublicKeyInfo publicKeyInfo = SubjectPublicKeyInfo.getInstance(
+                keyPair.getPublic().getEncoded());
+        X509v1CertificateBuilder builder = new X509v1CertificateBuilder(issuer, BigInteger.ONE,
+                notBefore, notAfter, issuer, publicKeyInfo);
+
+        ContentSigner signer;
+        try {
+            signer = new JcaContentSignerBuilder(sign).setProvider(
+                    new BouncyCastleProvider()).build(keyPair.getPrivate());
+        } catch (OperatorCreationException e) {
+            throw new KeytoolException("Failed to build content signer with signature algorithm '"
+                    + sign + "'.", e);
+        }
+
+        X509CertificateHolder holder = builder.build(signer);
+
+        JcaX509CertificateConverter converter = new JcaX509CertificateConverter()
+                .setProvider(new BouncyCastleProvider());
+
+        X509Certificate certificate;
+        try {
+            certificate = converter.getCertificate(holder);
+        } catch (CertificateException e) {
+            throw new KeytoolException("Failed to obtain the self-signed certificate.", e);
+        }
+
+        return Pair.of(keyPair.getPrivate(), certificate);
     }
 }
