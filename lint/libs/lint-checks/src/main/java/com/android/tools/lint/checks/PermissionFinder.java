@@ -23,7 +23,9 @@ import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -243,7 +245,10 @@ public class PermissionFinder {
             @NonNull ResolvedField field,
             @NonNull ResolvedAnnotation annotation) {
         PermissionRequirement requirement = PermissionRequirement.create(mContext, annotation);
-        String name = field.getContainingClass().getSimpleName() + "." + field.getName();
+        ResolvedClass containingClass = field.getContainingClass();
+        String name = containingClass != null
+                ? containingClass.getSimpleName() + "." + field.getName()
+                : field.getName();
         return new Result(mOperation, requirement, name);
     }
 }

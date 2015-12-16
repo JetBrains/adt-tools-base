@@ -303,7 +303,7 @@ public class JavaVisitor {
             int count = 0;
             for (StackTraceElement frame : stackTrace) {
                 if (count > 0) {
-                    sb.append("->");
+                    sb.append("<-");
                 }
 
                 String className = frame.getClassName();

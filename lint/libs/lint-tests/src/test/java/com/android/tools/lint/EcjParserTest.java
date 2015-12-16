@@ -1017,7 +1017,10 @@ public class EcjParserTest extends AbstractCheckTest {
                 } else if (resolved instanceof ResolvedField) {
                     c = "field";
                     ResolvedField field = (ResolvedField) resolved;
-                    extra = field.getContainingClass().getName();
+                    ResolvedClass containingClass = field.getContainingClass();
+                    if (containingClass != null) {
+                        extra = containingClass.getName();
+                    }
                 } else if (resolved instanceof ResolvedVariable) {
                     c = "variable";
                     ResolvedVariable variable = (ResolvedVariable) resolved;

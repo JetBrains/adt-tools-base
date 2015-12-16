@@ -342,6 +342,32 @@ public class AnnotationDetectorTest extends AbstractCheckTest {
         ));
     }
 
+
+    public void testMissingSwitchFailingIntDef() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/X.java:8: Warning: Switch statement on an int with known associated constant missing case AT_MOST, EXACTLY, UNSPECIFIED [SwitchIntDef]\n"
+                + "        switch (val) {\n"
+                + "        ~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+                lintProject(
+                        java("src/test/pkg/X.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.view.View;"
+                                + "\n"
+                                + "public class X {\n"
+                                + "\n"
+                                + "    public void measure(int mode) {\n"
+                                + "        int val = View.MeasureSpec.getMode(mode);\n"
+                                + "        switch (val) {\n"
+                                + "            case View.MeasureSpec.AT_MOST:\n"
+                                + "                break;\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "}\n"),
+                        copy("bytecode/.classpath", ".classpath")));
+    }
+
     public void testGetEnumCases() {
         assertEquals(
                 Arrays.asList("LENGTH_INDEFINITE", "LENGTH_SHORT", "LENGTH_LONG"),
