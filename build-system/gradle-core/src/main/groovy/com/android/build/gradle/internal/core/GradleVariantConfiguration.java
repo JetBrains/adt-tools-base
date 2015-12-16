@@ -157,7 +157,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildTy
 
     public boolean isInstantRunSupported() {
         return getBuildType().isDebuggable()
-                && !getBuildType().isMinifyEnabled()
+                && (!getBuildType().isMinifyEnabled() || !getBuildType().isUseProguard())
                 && !getType().isForTesting()
                 && !getUseJack();
     }

@@ -47,6 +47,7 @@ import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
+import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
@@ -2666,6 +2667,10 @@ public abstract class TaskManager {
 
         if (scope.getVariantConfiguration().isTestCoverageEnabled()) {
             addJacocoShrinkerFlags(transform);
+        }
+
+        if (getIncrementalMode(scope.getVariantConfiguration()) != IncrementalMode.NONE) {
+            transform.keep("class com.android.tools.fd.** {*;}");
         }
 
         scope.getTransformManager().addTransform(taskFactory, scope, transform);
