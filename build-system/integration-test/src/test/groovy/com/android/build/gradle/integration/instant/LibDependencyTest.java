@@ -79,7 +79,7 @@ public class LibDependencyTest {
         // Check that original class is included.
         sProject.execute(getInstantRunArgs(), "clean", "assembleRelease", "assembleDebug");
         expect.about(ApkSubject.FACTORY)
-                .that(sProject.getSubproject("app").getApk("debug")).hasMainDexFile()
+                .that(sProject.getSubproject("app").getApk("debug")).getDexFile("classes.dex")
                 .that().hasClass("Lcom/android/tests/libstest/lib/MainActivity;")
                 .that().hasMethod("onCreate");
 

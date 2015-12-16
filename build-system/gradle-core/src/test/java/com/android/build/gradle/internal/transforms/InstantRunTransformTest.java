@@ -142,7 +142,7 @@ public class InstantRunTransformTest {
             }
         });
 
-        TransformOutputProvider tranformOutput = new TransformOutputProvider() {
+        TransformOutputProvider transformOutput = new TransformOutputProvider() {
             @Override
             public void deleteAll() throws IOException {
 
@@ -161,7 +161,7 @@ public class InstantRunTransformTest {
                 }
             }
         };
-        transform.transform(context, input.build(), ImmutableList.<TransformInput>of(), tranformOutput, true);
+        transform.transform(context, input.build(), ImmutableList.<TransformInput>of(), transformOutput, true);
 
         ImmutableList<File> processedFiles = filesElectedForClasses2Transformation.build();
         assertEquals("Wrong number of files elected for classes 2 processing", 2, processedFiles.size());

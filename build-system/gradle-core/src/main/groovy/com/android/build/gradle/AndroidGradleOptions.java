@@ -103,6 +103,11 @@ public class AndroidGradleOptions {
         return getString(project, AndroidProject.PROPERTY_BUILD_DENSITY);
     }
 
+    @Nullable
+    public static String getBuildTargetApi(@NonNull Project project) {
+        return getString(project, AndroidProject.PROPERTY_BUILD_API);
+    }
+
     public static boolean isIntegrationTest() {
         return Boolean.parseBoolean(System.getenv("INTEGRATION_TEST"));
     }

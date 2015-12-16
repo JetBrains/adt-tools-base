@@ -1903,6 +1903,37 @@ public class AndroidBuilder {
         }
     }
 
+    public void packageCodeSplitApk(
+            File dexFile,
+            SigningConfig signingConfig,
+            File manifestFile,
+            String outApkLocation) throws FileNotFoundException, KeytoolException, PackagerException,
+            DuplicateFileException {
+
+        CertificateInfo certificateInfo = null;
+        if (signingConfig != null && signingConfig.isSigningReady()) {
+            //noinspection ConstantConditions - isSigningReady() called above.
+            certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
+                    signingConfig.getStoreFile(), signingConfig.getStorePassword(),
+                    signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
+        }
+
+        try {
+            Packager packager = new Packager(
+                    outApkLocation, null /* resPkgLocation */,
+                    certificateInfo, mCreatedBy, mLogger,
+                    23);
+
+            packager.addFile(manifestFile, "AndroidManifest.xml");
+            packager.addFile(dexFile, "classes.dex");
+            packager.sealApk();
+        } catch (SealedPackageException e) {
+            // shouldn't happen since we control the package from start to end.
+            throw new RuntimeException(e);
+        }
+
+    }
+
     /**
      * Signs a single jar file using the passed {@link SigningConfig}.
      * @param in the jar file to sign.

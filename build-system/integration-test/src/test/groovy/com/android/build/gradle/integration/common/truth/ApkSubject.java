@@ -29,6 +29,7 @@ import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.common.truth.FailureStrategy;
@@ -37,9 +38,12 @@ import com.google.common.truth.SubjectFactory;
 
 import org.junit.Assert;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -76,13 +80,64 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     }
 
     @NonNull
+    public List<String> entries() throws IOException {
+        ImmutableList.Builder<String> entryList = ImmutableList.builder();
+        ZipFile zipFile = new ZipFile(getSubject());
+        try {
+            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+            while (entries.hasMoreElements()) {
+                entryList.add(entries.nextElement().getName());
+            }
+        } finally {
+            zipFile.close();
+        }
+        return entryList.build();
+    }
+
+    @NonNull
     public IndirectSubject<DexFileSubject> hasMainDexFile() throws IOException {
-        contains("classes.dex");
+        return hasDexFile("classes.dex");
+    }
+
+    @NonNull
+    public IndirectSubject<DexFileSubject> hasDexFile(String dexFileName) throws IOException {
+        contains(dexFileName);
         return new IndirectSubject<DexFileSubject>() {
             @Override
             @NonNull
             public DexFileSubject that() {
                 return new DexFileSubject(failureStrategy, getSubject());
+            }
+        };
+    }
+
+    @NonNull
+    public IndirectSubject<DexFileSubject> getDexFile(String dexFileName) throws IOException {
+        InputStream dexFileInputStream = getLenientInputStream(new ZipFile(getSubject()),
+                dexFileName);
+        if (dexFileInputStream == null) {
+            Assert.fail(String.format("Cannot find dex file %1$s in %2$s",
+                    dexFileName, getSubject().getAbsolutePath()));
+        }
+        final File tempFile = File.createTempFile("classes", ".dex");
+        tempFile.deleteOnExit();
+        try {
+            BufferedOutputStream outputStream = new BufferedOutputStream(
+                    new FileOutputStream(tempFile));
+            try {
+                ByteStreams.copy(dexFileInputStream, outputStream);
+            } finally {
+                outputStream.close();
+            }
+        } finally {
+            dexFileInputStream.close();
+        }
+
+        return new IndirectSubject<DexFileSubject>() {
+            @Override
+            @NonNull
+            public DexFileSubject that() {
+                return new DexFileSubject(failureStrategy, tempFile);
             }
         };
     }

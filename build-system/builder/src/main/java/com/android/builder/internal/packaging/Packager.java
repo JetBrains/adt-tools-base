@@ -188,8 +188,8 @@ public final class Packager implements IArchiveBuilder {
      */
     public Packager(
             @NonNull String apkLocation,
-            @NonNull String resLocation,
-            @NonNull CertificateInfo certificateInfo,
+            @Nullable String resLocation,
+            @Nullable CertificateInfo certificateInfo,
             @Nullable String createdBy,
             @NonNull ILogger logger,
             int minSdkVersion) throws PackagerException {
@@ -198,8 +198,11 @@ public final class Packager implements IArchiveBuilder {
             File apkFile = new File(apkLocation);
             checkOutputFile(apkFile);
 
-            File resFile = new File(resLocation);
-            checkInputFile(resFile);
+            File resFile = null;
+            if (resLocation != null) {
+                resFile = new File(resLocation);
+                checkInputFile(resFile);
+            }
 
             mLogger = logger;
 
@@ -214,7 +217,9 @@ public final class Packager implements IArchiveBuilder {
             mLogger.verbose("Packaging %s", apkFile.getName());
 
             // add the resources
-            addZipFile(resFile);
+            if (resFile != null) {
+                addZipFile(resFile);
+            }
 
         } catch (PackagerException e) {
             if (mBuilder != null) {

@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.scope;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
@@ -90,6 +91,9 @@ public interface VariantScope extends BaseScope {
 
     @NonNull
     File getRestartDexOutputFolder();
+
+    @NonNull
+    File getInstantRunSplitApkOutputFolder();
 
     @NonNull
     FileCollection getJavaClasspath();
@@ -355,4 +359,7 @@ public interface VariantScope extends BaseScope {
 
     @NonNull
     InstantRunBuildContext getInstantRunBuildContext();
+
+    AndroidTask<InstantRunAnchorTask> getInstantRunAnchorTask();
+    void setInstantRunAnchorTask(AndroidTask<InstantRunAnchorTask> instantRunTask);
 }
