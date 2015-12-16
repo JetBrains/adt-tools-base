@@ -113,8 +113,10 @@ public class JavaCompileConfigAction implements TaskConfigAction<AndroidJavaComp
                         scope.getGlobalScope().getAndroidBuilder().getBootClasspathAsStrings(false)));
 
         GlobalScope globalScope = scope.getGlobalScope();
-        if (AndroidGradleOptions.isIncrementalJavaCompileEnabled(globalScope.getProject()) ||
-                globalScope.isActive(OptionalCompilationStep.INSTANT_DEV)) {
+        Project project = globalScope.getProject();
+        if (AndroidGradleOptions.isJavaCompileIncremental(project) ||
+                (globalScope.isActive(OptionalCompilationStep.INSTANT_DEV) &&
+                        AndroidGradleOptions.isInstantRunJavaCompileIncremental(project))) {
             javacTask.getOptions().setIncremental(true);
         }
     }
