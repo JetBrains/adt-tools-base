@@ -1,0 +1,597 @@
+/*
+ * Copyright (C) 2015 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.builder.internal.packaging.zip;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
+import com.android.builder.internal.packaging.zip.utils.CachedFileContents;
+import com.android.testutils.TestUtils;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Sets;
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Random;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
+
+public class ZFileTest {
+    @Rule
+    public TemporaryFolder mTemporaryFolder = new TemporaryFolder();
+
+    private File cloneRsrc(String rsrcName, String fname) throws Exception {
+        File packagingRoot = TestUtils.getRoot("packaging");
+        String rsrcPath = packagingRoot.getAbsolutePath() + "/" + rsrcName;
+        File rsrcFile = new File(rsrcPath);
+        File result = mTemporaryFolder.newFile(fname);
+        Files.copy(rsrcFile, result);
+        return result;
+    }
+
+    @Test
+    public void readNonExistingFile() throws Exception {
+        File temporaryDir = Files.createTempDir();
+        File zf = new File(temporaryDir, "a");
+        ZFile azf = new ZFile(zf);
+        azf.touch();
+        azf.close();
+        assertTrue(zf.exists());
+    }
+
+    @Test(expected = IOException.class)
+    public void readExistingEmptyFile() throws Exception {
+        File temporaryDir = Files.createTempDir();
+        File zf = new File(temporaryDir, "a");
+        Files.write(new byte[0], zf);
+        @SuppressWarnings("unused")
+        ZFile azf = new ZFile(zf);
+    }
+
+    @Test
+    public void readEmptyZip() throws Exception {
+        File zf = cloneRsrc("empty-zip.zip", "a");
+
+        ZFile azf = new ZFile(zf);
+        assertEquals(1, azf.entries().size());
+
+        StoredEntry z = azf.get("z/");
+        assertNotNull(z);
+        assertSame(StoredEntryType.DIRECTORY, z.getType());
+    }
+
+
+
+    @Test
+    public void readZipWithTwoFilesOneDirectory() throws Exception {
+        File zf = cloneRsrc("simple-zip.zip", "a");
+        ZFile azf = new ZFile(zf);
+        assertEquals(3, azf.entries().size());
+
+        StoredEntry e0 = azf.get("dir/");
+        assertNotNull(e0);
+        assertSame(StoredEntryType.DIRECTORY, e0.getType());
+
+        StoredEntry e1 = azf.get("dir/inside");
+        assertNotNull(e1);
+        assertSame(StoredEntryType.FILE, e1.getType());
+        ByteArrayOutputStream e1BytesOut = new ByteArrayOutputStream();
+        ByteStreams.copy(e1.open(), e1BytesOut);
+        byte e1Bytes[] = e1BytesOut.toByteArray();
+        String e1Txt = new String(e1Bytes, Charsets.US_ASCII);
+        assertEquals("inside", e1Txt);
+
+        StoredEntry e2 = azf.get("file.txt");
+        assertNotNull(e2);
+        assertSame(StoredEntryType.FILE, e2.getType());
+        ByteArrayOutputStream e2BytesOut = new ByteArrayOutputStream();
+        ByteStreams.copy(e2.open(), e2BytesOut);
+        byte e2Bytes[] = e2BytesOut.toByteArray();
+        String e2Txt = new String(e2Bytes, Charsets.US_ASCII);
+        assertEquals("file with more text to allow deflating to be useful", e2Txt);
+    }
+
+    @Test
+    public void readOnlyZipSupport() throws Exception {
+        File testZip = cloneRsrc("empty-zip.zip", "tz");
+
+        assertTrue(testZip.setWritable(false));
+
+        ZFile zf = new ZFile(testZip);
+        assertEquals(1, zf.entries().size());
+    }
+
+    @Test
+    public void removeFileFromZip() throws Exception {
+        File zipFile = mTemporaryFolder.newFile("test.zip");
+
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
+        try {
+            ZipEntry entry = new ZipEntry("foo/");
+            entry.setMethod(ZipEntry.STORED);
+            entry.setSize(0);
+            entry.setCompressedSize(0);
+            entry.setCrc(0);
+            zos.putNextEntry(entry);
+            zos.putNextEntry(new ZipEntry("foo/bar"));
+            zos.write(new byte[]{1, 2, 3, 4});
+            zos.closeEntry();
+        } finally {
+            zos.close();
+        }
+
+        ZFile zf = new ZFile(zipFile);
+        assertEquals(2, zf.entries().size());
+        for (StoredEntry e : zf.entries()) {
+            if (e.getType() == StoredEntryType.FILE) {
+                e.delete();
+            }
+        }
+
+        zf.update();
+
+        ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile));
+        try {
+            ZipEntry e1 = zis.getNextEntry();
+            assertNotNull(e1);
+
+            assertEquals("foo/", e1.getName());
+
+            ZipEntry e2 = zis.getNextEntry();
+            assertNull(e2);
+        } finally {
+            zis.close();
+        }
+    }
+
+    @Test
+    public void addFileToZip() throws Exception {
+        File zipFile = mTemporaryFolder.newFile("test.zip");
+
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
+        try {
+            ZipEntry fooDir = new ZipEntry("foo/");
+            fooDir.setCrc(0);
+            fooDir.setCompressedSize(0);
+            fooDir.setSize(0);
+            fooDir.setMethod(ZipEntry.STORED);
+            zos.putNextEntry(fooDir);
+            zos.closeEntry();
+        } finally {
+            zos.close();
+        }
+
+        ZFile zf = new ZFile(zipFile);
+        assertEquals(1, zf.entries().size());
+
+
+        zf.update();
+
+        ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile));
+        try {
+            ZipEntry e1 = zis.getNextEntry();
+            assertNotNull(e1);
+
+            assertEquals("foo/", e1.getName());
+
+            ZipEntry e2 = zis.getNextEntry();
+            assertNull(e2);
+        } finally {
+            zis.close();
+        }
+    }
+
+    @Test
+    public void createNewZip() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        ZFile zf = new ZFile(zipFile);
+        zf.add("foo", new ByteArrayEntrySource(new byte[] { 0, 1 }), CompressionMethod.DEFLATE);
+        zf.close();
+
+        ZipFile jzf = new ZipFile(zipFile);
+        try {
+            assertEquals(1, jzf.size());
+
+            ZipEntry fooEntry = jzf.getEntry("foo");
+            assertNotNull(fooEntry);
+            assertEquals("foo", fooEntry.getName());
+            assertEquals(2, fooEntry.getSize());
+
+            InputStream is = jzf.getInputStream(fooEntry);
+            assertEquals(0, is.read());
+            assertEquals(1, is.read());
+            assertEquals(-1, is.read());
+
+            is.close();
+        } finally {
+            jzf.close();
+        }
+    }
+
+    @Test
+    public void mergeZip() throws Exception {
+        File aZip = cloneRsrc("simple-zip.zip", "a.zip");
+
+        File merged = new File(mTemporaryFolder.getRoot(), "r.zip");
+        ZFile mergedZf = new ZFile(merged);
+        mergedZf.mergeFrom(new ZFile(aZip), Sets.<Pattern>newHashSet());
+        mergedZf.close();
+
+        assertEquals(3, mergedZf.entries().size());
+
+        StoredEntry e0 = mergedZf.get("dir/");
+        assertNotNull(e0);
+        assertSame(StoredEntryType.DIRECTORY, e0.getType());
+
+        StoredEntry e1 = mergedZf.get("dir/inside");
+        assertNotNull(e1);
+        assertSame(StoredEntryType.FILE, e1.getType());
+        ByteArrayOutputStream e1BytesOut = new ByteArrayOutputStream();
+        ByteStreams.copy(e1.open(), e1BytesOut);
+        byte e1Bytes[] = e1BytesOut.toByteArray();
+        String e1Txt = new String(e1Bytes, Charsets.US_ASCII);
+        assertEquals("inside", e1Txt);
+
+        StoredEntry e2 = mergedZf.get("file.txt");
+        assertNotNull(e2);
+        assertSame(StoredEntryType.FILE, e2.getType());
+        ByteArrayOutputStream e2BytesOut = new ByteArrayOutputStream();
+        ByteStreams.copy(e2.open(), e2BytesOut);
+        byte e2Bytes[] = e2BytesOut.toByteArray();
+        String e2Txt = new String(e2Bytes, Charsets.US_ASCII);
+        assertEquals("file with more text to allow deflating to be useful", e2Txt);
+
+        CachedFileContents<Object> changeDetector = new CachedFileContents<Object>(merged);
+        changeDetector.closed(null);
+
+        File bZip = cloneRsrc("simple-zip.zip", "b.zip");
+
+        mergedZf.mergeFrom(new ZFile(bZip), Sets.<Pattern>newHashSet());
+        mergedZf.close();
+
+        assertTrue(changeDetector.isValid());
+    }
+
+    @Test
+    public void replaceFileWithSmallerInMiddle() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
+        try {
+            zos.putNextEntry(new ZipEntry("file1"));
+            zos.write(new byte[]{1, 2, 3, 4, 5});
+            zos.putNextEntry(new ZipEntry("file2"));
+            zos.write(new byte[]{6, 7, 8});
+            zos.putNextEntry(new ZipEntry("file3"));
+            zos.write(new byte[]{9, 0, 1, 2, 3, 4});
+        } finally {
+            zos.close();
+        }
+
+        int totalSize = (int) zipFile.length();
+
+        ZFile zf = new ZFile(zipFile);
+        assertEquals(3, zf.entries().size());
+
+        StoredEntry file2 = zf.get("file2");
+        assertNotNull(file2);
+        assertEquals(3, file2.getCentralDirectoryHeader().getUncompressedSize());
+
+        assertArrayEquals(new byte[] { 6, 7, 8 }, file2.read());
+
+        zf.add("file2", new ByteArrayEntrySource(new byte[] { 11, 12 }), CompressionMethod.DEFLATE);
+        zf.close();
+
+        int newTotalSize = (int) zipFile.length();
+        assertTrue(newTotalSize + " == " + totalSize, newTotalSize == totalSize);
+
+        file2 = zf.get("file2");
+        assertNotNull(file2);
+        assertArrayEquals(new byte[] { 11, 12, }, file2.read());
+
+        ZFile zf2 = new ZFile(zipFile);
+        file2 = zf2.get("file2");
+        assertNotNull(file2);
+        assertArrayEquals(new byte[] { 11, 12, }, file2.read());
+    }
+
+    @Test
+    public void replaceFileWithSmallerAtEnd() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
+        try {
+            zos.putNextEntry(new ZipEntry("file1"));
+            zos.write(new byte[]{1, 2, 3, 4, 5});
+            zos.putNextEntry(new ZipEntry("file2"));
+            zos.write(new byte[]{6, 7, 8});
+            zos.putNextEntry(new ZipEntry("file3"));
+            zos.write(new byte[]{9, 0, 1, 2, 3, 4});
+        } finally {
+            zos.close();
+        }
+
+        int totalSize = (int) zipFile.length();
+
+        ZFile zf = new ZFile(zipFile);
+        assertEquals(3, zf.entries().size());
+
+        StoredEntry file3 = zf.get("file3");
+        assertNotNull(file3);
+        assertEquals(6, file3.getCentralDirectoryHeader().getUncompressedSize());
+
+        assertArrayEquals(new byte[] { 9, 0, 1, 2, 3, 4 }, file3.read());
+
+        zf.add("file3", new ByteArrayEntrySource(new byte[] { 11, 12 }), CompressionMethod.DEFLATE);
+        zf.close();
+
+        int newTotalSize = (int) zipFile.length();
+        assertTrue(newTotalSize + " < " + totalSize, newTotalSize < totalSize);
+
+        file3 = zf.get("file3");
+        assertNotNull(file3);
+        assertArrayEquals(new byte[] { 11, 12, }, file3.read());
+
+        ZFile zf2 = new ZFile(zipFile);
+        file3 = zf2.get("file3");
+        assertNotNull(file3);
+        assertArrayEquals(new byte[] { 11, 12, }, file3.read());
+    }
+
+    @Test
+    public void replaceFileWithBiggerAtBegin() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
+        try {
+            zos.putNextEntry(new ZipEntry("file1"));
+            zos.write(new byte[]{1, 2, 3, 4, 5});
+            zos.putNextEntry(new ZipEntry("file2"));
+            zos.write(new byte[]{6, 7, 8});
+            zos.putNextEntry(new ZipEntry("file3"));
+            zos.write(new byte[]{9, 0, 1, 2, 3, 4});
+        } finally {
+            zos.close();
+        }
+
+        int totalSize = (int) zipFile.length();
+
+        ZFile zf = new ZFile(zipFile);
+        assertEquals(3, zf.entries().size());
+
+        StoredEntry file1 = zf.get("file1");
+        assertNotNull(file1);
+        assertEquals(5, file1.getCentralDirectoryHeader().getUncompressedSize());
+
+        assertArrayEquals(new byte[] { 1, 2, 3, 4, 5 }, file1.read());
+
+        /*
+         * Need some data because java zip API uses data descriptors which we don't and makes the
+         * entries bigger (meaning just adding a couple of bytes would still fit in the same
+         * place).
+         */
+        byte[] newData = new byte[100];
+        Random r = new Random();
+        r.nextBytes(newData);
+
+        zf.add("file1", new ByteArrayEntrySource(newData), CompressionMethod.DEFLATE);
+        zf.close();
+
+        int newTotalSize = (int) zipFile.length();
+        assertTrue(newTotalSize + " > " + totalSize, newTotalSize > totalSize);
+
+        file1 = zf.get("file1");
+        assertNotNull(file1);
+        assertArrayEquals(newData, file1.read());
+
+        ZFile zf2 = new ZFile(zipFile);
+        file1 = zf2.get("file1");
+        assertNotNull(file1);
+        assertArrayEquals(newData, file1.read());
+    }
+
+    @Test
+    public void replaceFileWithBiggerAtEnd() throws Exception {
+        File zipFile = new File(mTemporaryFolder.getRoot(), "test.zip");
+
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));
+        try {
+            zos.putNextEntry(new ZipEntry("file1"));
+            zos.write(new byte[]{1, 2, 3, 4, 5});
+            zos.putNextEntry(new ZipEntry("file2"));
+            zos.write(new byte[]{6, 7, 8});
+            zos.putNextEntry(new ZipEntry("file3"));
+            zos.write(new byte[]{9, 0, 1, 2, 3, 4});
+        } finally {
+            zos.close();
+        }
+
+        int totalSize = (int) zipFile.length();
+
+        ZFile zf = new ZFile(zipFile);
+        assertEquals(3, zf.entries().size());
+
+        StoredEntry file3 = zf.get("file3");
+        assertNotNull(file3);
+        assertEquals(6, file3.getCentralDirectoryHeader().getUncompressedSize());
+
+        assertArrayEquals(new byte[] { 9, 0, 1, 2, 3, 4 }, file3.read());
+
+        /*
+         * Need some data because java zip API uses data descriptors which we don't and makes the
+         * entries bigger (meaning just adding a couple of bytes would still fit in the same
+         * place).
+         */
+        byte[] newData = new byte[100];
+        Random r = new Random();
+        r.nextBytes(newData);
+
+        zf.add("file3", new ByteArrayEntrySource(newData), CompressionMethod.DEFLATE);
+        zf.close();
+
+        int newTotalSize = (int) zipFile.length();
+        assertTrue(newTotalSize + " > " + totalSize, newTotalSize > totalSize);
+
+        file3 = zf.get("file3");
+        assertNotNull(file3);
+        assertArrayEquals(newData, file3.read());
+
+        ZFile zf2 = new ZFile(zipFile);
+        file3 = zf2.get("file3");
+        assertNotNull(file3);
+        assertArrayEquals(newData, file3.read());
+    }
+
+    @Test
+    public void ignoredFilesDuringMerge() throws Exception {
+        File zip1 = mTemporaryFolder.newFile("t1.zip");
+        ZipOutputStream zos1 = new ZipOutputStream(new FileOutputStream(zip1));
+        try {
+            zos1.putNextEntry(new ZipEntry("only_in_1"));
+            zos1.write(new byte[] { 1, 2 });
+            zos1.putNextEntry(new ZipEntry("overridden_by_2"));
+            zos1.write(new byte[] { 2, 3 });
+            zos1.putNextEntry(new ZipEntry("not_overridden_by_2"));
+            zos1.write(new byte[] { 3, 4 });
+        } finally {
+            zos1.close();
+        }
+
+        File zip2 = mTemporaryFolder.newFile("t2.zip");
+        ZipOutputStream zos2 = new ZipOutputStream(new FileOutputStream(zip2));
+        try {
+            zos2.putNextEntry(new ZipEntry("only_in_2"));
+            zos2.write(new byte[] { 4, 5 });
+            zos2.putNextEntry(new ZipEntry("overridden_by_2"));
+            zos2.write(new byte[] { 5, 6 });
+            zos2.putNextEntry(new ZipEntry("not_overridden_by_2"));
+            zos2.write(new byte[] { 6, 7 });
+            zos2.putNextEntry(new ZipEntry("ignored_in_2"));
+            zos2.write(new byte[] { 7, 8 });
+        } finally {
+            zos2.close();
+        }
+
+        Set<Pattern> ignoreFiles = Sets.newHashSet();
+        ignoreFiles.add(Pattern.compile("not.*"));
+        ignoreFiles.add(Pattern.compile(".*gnored.*"));
+
+        ZFile zf1 = new ZFile(zip1);
+        ZFile zf2 = new ZFile(zip2);
+        zf1.mergeFrom(zf2, ignoreFiles);
+
+        StoredEntry only_in_1 = zf1.get("only_in_1");
+        assertNotNull(only_in_1);
+        assertArrayEquals(new byte[] { 1, 2 }, only_in_1.read());
+
+        StoredEntry overridden_by_2 = zf1.get("overridden_by_2");
+        assertNotNull(overridden_by_2);
+        assertArrayEquals(new byte[] { 5, 6 }, overridden_by_2.read());
+
+        StoredEntry not_overridden_by_2 = zf1.get("not_overridden_by_2");
+        assertNotNull(not_overridden_by_2);
+        assertArrayEquals(new byte[] { 3, 4 }, not_overridden_by_2.read());
+
+        StoredEntry only_in_2 = zf1.get("only_in_2");
+        assertNotNull(only_in_2);
+        assertArrayEquals(new byte[] { 4, 5 }, only_in_2.read());
+
+        StoredEntry ignored_in_2 = zf1.get("ignored_in_2");
+        assertNull(ignored_in_2);
+    }
+
+    @Test
+    public void addingFileDoesNotAddDirectoriesAutomatically() throws Exception {
+        File zip = new File(mTemporaryFolder.getRoot(), "z.zip");
+        ZFile zf = new ZFile(zip);
+        zf.add("a/b/c", new ByteArrayEntrySource(new byte[] { 1, 2, 3 }),
+                CompressionMethod.DEFLATE);
+        zf.update();
+        assertEquals(1, zf.entries().size());
+
+        StoredEntry c = zf.get("a/b/c");
+        assertNotNull(c);
+        assertEquals(3, c.read().length);
+
+        zf.close();
+    }
+
+    @Test
+    public void zipFileWithEocdSignatureInComment() throws Exception {
+        File zip = mTemporaryFolder.newFile("f.zip");
+        ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zip));
+        try {
+            zos.putNextEntry(new ZipEntry("a"));
+            zos.write(new byte[] { 1, 2, 3 });
+            zos.setComment("Random comment with XXXX weird characters. There must be enough "
+                    + "characters to survive skipping back the EOCD size.");
+        } finally {
+            zos.close();
+        }
+
+        byte zipBytes[] = Files.toByteArray(zip);
+        boolean didX4 = false;
+        for (int i = 0; i < zipBytes.length - 3; i++) {
+            boolean x4 = true;
+            for (int j = 0; j < 4; j++) {
+                if (zipBytes[i + j] != 'X') {
+                    x4 = false;
+                    break;
+                }
+            }
+
+            if (x4) {
+                zipBytes[i] = (byte) 0x50;
+                zipBytes[i + 1] = (byte) 0x4b;
+                zipBytes[i + 2] = (byte) 0x05;
+                zipBytes[i + 3] = (byte) 0x06;
+                didX4 = true;
+                break;
+            }
+        }
+
+        assertTrue(didX4);
+
+        Files.write(zipBytes, zip);
+
+        ZFile zf = new ZFile(zip);
+        assertEquals(1, zf.entries().size());
+        StoredEntry a = zf.get("a");
+        assertNotNull(a);
+        assertArrayEquals(new byte[] { 1, 2, 3 }, a.read());
+
+    }
+}
