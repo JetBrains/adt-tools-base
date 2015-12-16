@@ -140,6 +140,19 @@ public class DexWrapper {
     private Class<?> mMainClass;
 
     /**
+     * Returns true if the dx.jar main class can be loaded from this class' classloader, false
+     * otherwise.
+     */
+    public static boolean noMainDexOnClasspath() {
+        try {
+            DexWrapper.class.getClassLoader().loadClass(DEX_MAIN);
+        } catch (ClassNotFoundException e) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Get an instance of {@link DexWrapper} for the given dx.jar file.
      *
      * <p>Can block if the whole dexer pool is in use.
