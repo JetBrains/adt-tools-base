@@ -33,6 +33,8 @@ import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.model.ModelBuilder;
 import com.android.build.gradle.managed.NdkAbiOptions;
+import com.android.build.gradle.model.internal.AndroidBinaryInternal;
+import com.android.build.gradle.model.internal.AndroidComponentSpecInternal;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.AndroidProject;
 import com.google.common.collect.Multimap;
@@ -43,8 +45,6 @@ import org.gradle.model.internal.core.ModelPath;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.model.internal.type.ModelType;
 import org.gradle.model.internal.type.ModelTypes;
-import org.gradle.platform.base.BinaryContainer;
-import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
 /**
@@ -94,9 +94,9 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
         AndroidBuilder androidBuilder = registry.realize(
                 new ModelPath(ANDROID_BUILDER),
                 ModelType.of(AndroidBuilder.class));
-        DefaultAndroidComponentSpec componentSpec = (DefaultAndroidComponentSpec) registry.realize(
+        AndroidComponentSpecInternal componentSpec = registry.realize(
                 new ModelPath(COMPONENTS),
-                ModelType.of(ComponentSpecContainer.class))
+                ModelTypes.modelMap(AndroidComponentSpecInternal.class))
                         .get(AndroidComponentModelPlugin.COMPONENT_NAME);
         VariantManager variantManager = componentSpec.getVariantManager();
         TaskManager taskManager = registry.realize(
@@ -114,9 +114,9 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
         NdkHandler ndkHandler = registry.realize(
                 new ModelPath(NDK_HANDLER),
                 ModelType.of(NdkHandler.class));
-        BinaryContainer binaries = registry.realize(
+        ModelMap<AndroidBinaryInternal> binaries = registry.realize(
                 new ModelPath(BINARIES),
-                ModelType.of(BinaryContainer.class));
+                ModelTypes.modelMap(AndroidBinaryInternal.class));
         ModelMap<NdkAbiOptions> abiOptions = registry.realize(
                 new ModelPath(ModelConstants.ABI_OPTIONS),
                 ModelTypes.modelMap(NdkAbiOptions.class));

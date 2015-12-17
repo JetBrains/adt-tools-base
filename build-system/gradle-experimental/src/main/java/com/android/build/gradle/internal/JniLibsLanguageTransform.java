@@ -22,8 +22,8 @@ import com.android.build.gradle.internal.dependency.NativeDependencyResolveResul
 import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.model.AndroidBinary;
-import com.android.build.gradle.model.DefaultAndroidBinary;
 import com.android.build.gradle.model.JniLibsSourceSet;
+import com.android.build.gradle.model.internal.AndroidBinaryInternal;
 import com.android.build.gradle.tasks.StripDependenciesTask;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
@@ -101,7 +101,7 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
                 BinarySpec binarySpec,
                 LanguageSourceSet languageSourceSet,
                 ServiceRegistry serviceRegistry) {
-            DefaultAndroidBinary binary = (DefaultAndroidBinary) binarySpec;
+            AndroidBinaryInternal binary = (AndroidBinaryInternal) binarySpec;
 
             String binaryBuildType = binary.getBuildType().getName();
             String binaryProductFlavor =
@@ -110,7 +110,7 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
             JniLibsSourceSet sourceSet = (JniLibsSourceSet) languageSourceSet;
 
             for (final AndroidNativeDependencySpec dependencySpec :
-                    sourceSet.getDependencyContainer().getDependencies()) {
+                    sourceSet.getDependencies().getDependencies()) {
                 dependencySpec.validate();
                 if (dependencySpec.getLinkage() != null) {
                     throw new InvalidUserDataException(
@@ -120,7 +120,7 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
             NativeDependencyResolveResult dependencies =
                     new NativeDependencyResolver(
                             serviceRegistry,
-                            sourceSet.getDependencyContainer(),
+                            sourceSet.getDependencies(),
                             new AndroidNativeDependencySpec(
                                     null,
                                     null,

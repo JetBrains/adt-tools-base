@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model;
+package com.android.build.gradle.model.internal;
 
 import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -22,6 +22,7 @@ import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.managed.ProductFlavor;
+import com.android.build.gradle.model.NdkConfigImpl;
 import com.google.common.collect.Lists;
 
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
@@ -32,7 +33,7 @@ import java.util.List;
 /**
  * Binary for Android.
  */
-public class DefaultAndroidBinary extends BaseBinarySpec implements AndroidBinary {
+public class DefaultAndroidBinary extends BaseBinarySpec implements AndroidBinaryInternal {
 
     private BuildType buildType;
 
@@ -51,6 +52,7 @@ public class DefaultAndroidBinary extends BaseBinarySpec implements AndroidBinar
         return buildType;
     }
 
+    @Override
     public void setBuildType(BuildType buildType) {
         this.buildType = buildType;
     }
@@ -60,30 +62,37 @@ public class DefaultAndroidBinary extends BaseBinarySpec implements AndroidBinar
         return productFlavors;
     }
 
+    @Override
     public void setProductFlavors(List<ProductFlavor> productFlavors) {
         this.productFlavors = productFlavors;
     }
 
+    @Override
     public NdkConfig getMergedNdkConfig() {
         return mergedNdkConfig;
     }
 
+    @Override
     public BaseVariantData getVariantData() {
         return variantData;
     }
 
+    @Override
     public void setVariantData(BaseVariantData variantData) {
         this.variantData = variantData;
     }
 
+    @Override
     public List<NativeLibraryBinarySpec> getNativeBinaries() {
         return nativeBinaries;
     }
 
+    @Override
     public List<String> getTargetAbi() {
         return targetAbi;
     }
 
+    @Override
     public void computeMergedNdk(
             NdkConfig ndkConfig,
             List<com.android.build.gradle.managed.ProductFlavor> flavors,

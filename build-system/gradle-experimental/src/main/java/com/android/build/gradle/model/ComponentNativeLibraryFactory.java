@@ -16,12 +16,13 @@
 
 package com.android.build.gradle.model;
 
+import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
+
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
-import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.model.NativeLibraryFactory;
 import com.android.build.gradle.internal.model.NativeLibraryImpl;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -30,8 +31,9 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.managed.NdkAbiOptions;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.NdkOptions;
-import com.android.build.gradle.ndk.internal.BinaryToolHelper;
+import com.android.build.gradle.model.internal.AndroidBinaryInternal;
 import com.android.builder.model.NativeLibrary;
+import com.android.utils.StringHelper;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
@@ -59,7 +61,7 @@ import java.util.Set;
  */
 public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
     @NonNull
-    BinaryContainer binaries;
+    ModelMap<AndroidBinaryInternal> binaries;
     @NonNull
     NdkHandler ndkHandler;
     @NonNull
@@ -70,7 +72,7 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
     Multimap<String, NativeDependencyResolveResult> jniLibsDependencies;
 
     public ComponentNativeLibraryFactory(
-            @NonNull BinaryContainer binaries,
+            @NonNull ModelMap<AndroidBinaryInternal> binaries,
             @NonNull NdkHandler ndkHandler,
             @NonNull ModelMap<NdkAbiOptions> abiOptions,
             @NonNull Multimap<String, NativeDependencyResolveResult> nativeDependencies,
@@ -90,8 +92,8 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
             @NonNull final Abi abi) {
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
 
-        DefaultAndroidBinary androidBinary =
-                (DefaultAndroidBinary) binaries.findByName(variantData.getName());
+        AndroidBinaryInternal androidBinary =
+                binaries.get(COMPONENT_NAME + StringHelper.capitalize(variantData.getName()));
 
         if (androidBinary == null) {
             // Binaries are not created for test variants.
@@ -127,8 +129,8 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
         }
 
         NdkOptions targetOptions = abiOptions.get(abi.getName());
-        List<String> cFlags = BinaryToolHelper.getCCompiler(nativeBinary.get()).getArgs();
-        List<String> cppFlags = BinaryToolHelper.getCppCompiler(nativeBinary.get()).getArgs();
+        List<String> cFlags = nativeBinary.get().getcCompiler().getArgs();
+        List<String> cppFlags = nativeBinary.get().getCppCompiler().getArgs();
         if (targetOptions != null) {
             if (!targetOptions.getCFlags().isEmpty()) {
                 cFlags = ImmutableList.copyOf(Iterables.concat(cFlags, targetOptions.getCFlags()));
@@ -165,7 +167,7 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
      */
     private List<File> findDebuggableLibraryDirectories(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @NonNull AndroidBinary binary,
+            @NonNull AndroidBinaryInternal binary,
             @NonNull Abi abi) {
         // Create LinkedHashSet to remove duplicated while maintaining order.
         Set<File> debuggableLibDir = Sets.newLinkedHashSet();
@@ -179,12 +181,12 @@ public class ComponentNativeLibraryFactory implements NativeLibraryFactory {
 
     private static void addNativeDebuggableLib(
             @NonNull Collection<File> debuggableLibDir,
-            @NonNull AndroidBinary binary,
+            @NonNull AndroidBinaryInternal binary,
             @NonNull final Abi abi,
             @NonNull Multimap<String, NativeDependencyResolveResult> dependencyMap) {
         NativeLibraryBinarySpec nativeBinary =
                 Iterables.find(
-                        ((DefaultAndroidBinary) binary).getNativeBinaries(),
+                        binary.getNativeBinaries(),
                         new Predicate<NativeLibraryBinarySpec>() {
                             @Override
                             public boolean apply(NativeLibraryBinarySpec nativeBinary) {

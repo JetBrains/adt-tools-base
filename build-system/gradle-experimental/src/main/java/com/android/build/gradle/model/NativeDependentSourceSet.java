@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,15 @@
 
 package com.android.build.gradle.model;
 
-import org.gradle.platform.base.TransformationFileType;
+import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpecContainer;
+
+import org.gradle.api.Action;
+import org.gradle.language.base.LanguageSourceSet;
 
 /**
- * Output of an Android LanguageTransform.
+ * Interface for {@link LanguageSourceSet} that supports native dependencies.
  */
-public class AndroidObject implements TransformationFileType {
+public interface NativeDependentSourceSet extends LanguageSourceSet {
+    AndroidNativeDependencySpecContainer getDependencies();
+
 }

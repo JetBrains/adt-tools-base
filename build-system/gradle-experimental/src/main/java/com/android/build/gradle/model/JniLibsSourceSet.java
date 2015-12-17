@@ -25,8 +25,7 @@ import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.nativeplatform.HeaderExportingSourceSet;
 
 /**
- * Implementation of LanguageSourceSet for prebuilt JNI libraries.
+ * LanguageSourceSet for prebuilt JNI libraries.
  */
-public class JniLibsSourceSet extends AbstractNativeDependentSourceSet implements
-        LanguageSourceSet {
+public interface JniLibsSourceSet extends NativeDependentSourceSet, LanguageSourceSet {
 }

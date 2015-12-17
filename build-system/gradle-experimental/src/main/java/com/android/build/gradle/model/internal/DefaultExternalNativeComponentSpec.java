@@ -14,17 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model;
+package com.android.build.gradle.model.internal;
 
 import com.android.build.gradle.managed.NativeBuildConfig;
+import com.android.build.gradle.model.ExternalNativeComponentSpec;
 
-import org.gradle.platform.base.ComponentSpec;
+import org.gradle.platform.base.component.BaseComponentSpec;
 
 /**
- * Component for ExternalNativeComponentModelPlugin.
+ * Implementation for {@link ExternalNativeComponentSpec}
  */
-public interface ExternalNativeComponentSpec extends ComponentSpec {
-    NativeBuildConfig getConfig();
+public class DefaultExternalNativeComponentSpec extends BaseComponentSpec
+        implements ExternalNativeComponentSpec {
+    private NativeBuildConfig config;
 
-    void setConfig(NativeBuildConfig config);
+    @Override
+    public NativeBuildConfig getConfig() {
+        return config;
+    }
+
+    @Override
+    public void setConfig(NativeBuildConfig config) {
+        this.config = config;
+    }
 }

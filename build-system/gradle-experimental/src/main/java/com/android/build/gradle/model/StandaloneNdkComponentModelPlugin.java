@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.ProductFlavor;
+import com.android.build.gradle.model.internal.AndroidBinaryInternal;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.utils.StringHelper;
 
@@ -66,10 +67,10 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public static void copyOutputs(
                 final ModelMap<Task> tasks,
-                ModelMap<AndroidBinary> androidSpecs,
+                ModelMap<AndroidBinaryInternal> androidSpecs,
                 @Path("buildDir") final File buildDir) {
-            for (AndroidBinary androidBinary : androidSpecs.values()) {
-                for (final NativeBinarySpec nativeBinary : ((DefaultAndroidBinary) androidBinary).getNativeBinaries()) {
+            for (AndroidBinaryInternal androidBinary : androidSpecs.values()) {
+                for (final NativeBinarySpec nativeBinary : androidBinary.getNativeBinaries()) {
                     final String copyTaskName = NdkNamingScheme.getTaskName(nativeBinary, "copy", "Output");
                     tasks.create(
                             copyTaskName,

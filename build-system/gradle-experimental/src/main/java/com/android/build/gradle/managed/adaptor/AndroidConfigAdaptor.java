@@ -269,8 +269,8 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
     }
 
     private void applyProjectSourceSet() {
-        for (FunctionalSourceSet source : getSources()) {
-            String name = source.getName();
+        for (String name : getSources().keySet()) {
+            FunctionalSourceSet source = getSources().get(name);
             AndroidSourceSet androidSource = name.equals(BuilderConstants.MAIN) ?
                     sourceSetsContainer.maybeCreate(getDefaultConfig().getName()) :
                     sourceSetsContainer.maybeCreate(name);
@@ -294,7 +294,7 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
             AndroidSourceFile androidFile,
             FunctionalSourceSet source,
             String sourceName) {
-        LanguageSourceSet languageSourceSet = source.findByName(sourceName);
+        LanguageSourceSet languageSourceSet = source.get(sourceName);
         if (languageSourceSet == null) {
             return;
         }
@@ -317,7 +317,7 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
             AndroidSourceDirectorySet androidDir,
             FunctionalSourceSet source,
             String sourceName) {
-        LanguageSourceSet languageSourceSet = source.findByName(sourceName);
+        LanguageSourceSet languageSourceSet = source.get(sourceName);
         if (languageSourceSet == null) {
             return;
         }

@@ -16,18 +16,15 @@
 
 package com.android.build.gradle.ndk.internal;
 
-import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCCompiler;
-import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCppCompiler;
-
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.NativeDependencyLinkage;
+import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
-import com.android.build.gradle.internal.dependency.NativeLibraryArtifactAdaptor;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
 import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
-import com.android.build.gradle.internal.NdkHandler;
-import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.dependency.NativeLibraryArtifactAdaptor;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.model.NativeSourceSet;
 import com.android.build.gradle.tasks.GdbSetupTask;
@@ -44,10 +41,8 @@ import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.tasks.Copy;
-import org.gradle.api.tasks.util.PatternFilterable;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
-import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.c.CSourceSet;
 import org.gradle.language.c.tasks.CCompile;
 import org.gradle.language.cpp.CppSourceSet;
@@ -61,7 +56,7 @@ import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 import org.gradle.nativeplatform.StaticLibraryBinarySpec;
 import org.gradle.nativeplatform.internal.resolve.DefaultNativeDependencySet;
 import org.gradle.platform.base.BinarySpec;
-import org.gradle.platform.base.binary.BaseBinarySpec;
+import org.gradle.platform.base.internal.BinarySpecInternal;
 
 import java.io.File;
 import java.util.Collection;
@@ -92,12 +87,13 @@ public class NdkConfiguration {
                 new Action<BinarySpec>() {
                     @Override
                     public void execute(BinarySpec binary) {
-                        ((BaseBinarySpec) binary).setBuildable(false);
+                        ((BinarySpecInternal) binary).setBuildable(false);
                     }
                 });
 
-        library.getBinaries()
-                .withType(NativeLibraryBinarySpec.class, new Action<NativeLibraryBinarySpec>() {
+        library.getBinaries().withType(
+                NativeLibraryBinarySpec.class,
+                new Action<NativeLibraryBinarySpec>() {
                     @Override
                     public void execute(final NativeLibraryBinarySpec binary) {
                         Map<String, NativeSourceSet> jniSources =
@@ -106,10 +102,10 @@ public class NdkConfiguration {
                             addNativeSourceSets(binary, entry.getKey(), entry.getValue());
                         }
 
-                        getCCompiler(binary).define("ANDROID");
-                        getCppCompiler(binary).define("ANDROID");
-                        getCCompiler(binary).define("ANDROID_NDK");
-                        getCppCompiler(binary).define("ANDROID_NDK");
+                        binary.getcCompiler().define("ANDROID");
+                        binary.getCppCompiler().define("ANDROID");
+                        binary.getcCompiler().define("ANDROID_NDK");
+                        binary.getCppCompiler().define("ANDROID_NDK");
 
                         // Replace output directory of compile tasks.
                         binary.getTasks().withType(CCompile.class, new Action<CCompile>() {
@@ -140,8 +136,8 @@ public class NdkConfiguration {
                         String sysroot = ndkHandler.getSysroot(
                                 Abi.getByName(binary.getTargetPlatform().getName()));
 
-                        getCCompiler(binary).args("--sysroot=" + sysroot);
-                        getCppCompiler(binary).args("--sysroot=" + sysroot);
+                        binary.getcCompiler().args("--sysroot=" + sysroot);
+                        binary.getCppCompiler().args("--sysroot=" + sysroot);
                         binary.getLinker().args("--sysroot=" + sysroot);
                         binary.getLinker().args("-Wl,--build-id");
 
@@ -187,10 +183,10 @@ public class NdkConfiguration {
                 Abi.getByName(binary.getTargetPlatform().getName()));
 
         if (ndkConfig.getRenderscriptNdkMode()) {
-            getCCompiler(binary).args("-I" + sysroot + "/usr/include/rs");
-            getCCompiler(binary).args("-I" + sysroot + "/usr/include/rs/cpp");
-            getCppCompiler(binary).args("-I" + sysroot + "/usr/include/rs");
-            getCppCompiler(binary).args("-I" + sysroot + "/usr/include/rs/cpp");
+            binary.getcCompiler().args("-I" + sysroot + "/usr/include/rs");
+            binary.getcCompiler().args("-I" + sysroot + "/usr/include/rs/cpp");
+            binary.getCppCompiler().args("-I" + sysroot + "/usr/include/rs");
+            binary.getCppCompiler().args("-I" + sysroot + "/usr/include/rs/cpp");
             binary.getLinker().args("-L" + sysroot + "/usr/lib/rs");
         }
 
@@ -211,11 +207,11 @@ public class NdkConfiguration {
 
         // Add flags defined in NdkConfig
         for (String flag : ndkConfig.getCFlags()) {
-            getCCompiler(binary).args(flag.trim());
+            binary.getcCompiler().args(flag.trim());
         }
 
         for (String flag : ndkConfig.getCppFlags()) {
-            getCppCompiler(binary).args(flag.trim());
+            binary.getCppCompiler().args(flag.trim());
         }
 
         for (String flag : ndkConfig.getLdFlags()) {
@@ -234,7 +230,7 @@ public class NdkConfiguration {
             @NonNull NativeSourceSet jniSource) {
         return new NativeDependencyResolver(
                 serviceRegistry,
-                jniSource.getDependencyContainer(),
+                jniSource.getDependencies(),
                 new AndroidNativeDependencySpec(
                         null,
                         null,
@@ -286,7 +282,7 @@ public class NdkConfiguration {
             @NonNull String sourceSetName) {
         FunctionalSourceSet sourceSet = projectSourceSet.get(sourceSetName);
         if (sourceSet != null) {
-            sourceSetMap.put(sourceSetName, (NativeSourceSet) sourceSet.getByName("jni"));
+            sourceSetMap.put(sourceSetName, (NativeSourceSet) sourceSet.get("jni"));
         }
     }
 
@@ -297,12 +293,8 @@ public class NdkConfiguration {
             @NonNull BinarySpec binary,
             @NonNull final String sourceSetName,
             @NonNull final NativeSourceSet jni) {
-        binary.sources(new Action<ModelMap<LanguageSourceSet>>() {
-            @Override
-            public void execute(ModelMap<LanguageSourceSet> languageSourceSets) {
-                // Hardcode the acceptable extension until we find a suitable DSL for user to
-                // modify.
-                languageSourceSets.create(
+        // Hardcode the acceptable extension until we find a suitable DSL for user to modify.
+        binary.getSources().create(
                         sourceSetName + "C",
                         CSourceSet.class,
                         new Action<CSourceSet>() {
@@ -311,16 +303,11 @@ public class NdkConfiguration {
                                 source.getSource().setSrcDirs(jni.getSource().getSrcDirs());
                                 addInclude(source.getSource(), C_FILE_EXTENSIONS);
                                 source.getSource().exclude(jni.getSource().getExcludes());
-                                source.exportedHeaders(new Action<SourceDirectorySet>() {
-                                    @Override
-                                    public void execute(SourceDirectorySet files) {
-                                        files.source(jni.getExportedHeaders());
-                                    }
-                                });
+                                source.getExportedHeaders().source(jni.getExportedHeaders());
                                 configurePrebuiltDependency(source, jni);
                             }
                         });
-                languageSourceSets.create(
+        binary.getSources().create(
                         sourceSetName + "Cpp",
                         CppSourceSet.class,
                         new Action<CppSourceSet>() {
@@ -329,17 +316,10 @@ public class NdkConfiguration {
                                 source.getSource().setSrcDirs(jni.getSource().getSrcDirs());
                                 addInclude(source.getSource(), CPP_FILE_EXTENSIONS);
                                 source.getSource().exclude(jni.getSource().getExcludes());
-                                source.exportedHeaders(new Action<SourceDirectorySet>() {
-                                    @Override
-                                    public void execute(SourceDirectorySet files) {
-                                        files.source(jni.getExportedHeaders());
-                                    }
-                                });
+                                source.getExportedHeaders().source(jni.getExportedHeaders());
                                 configurePrebuiltDependency(source, jni);
                             }
                         });
-            }
-        });
     }
 
     private static void addInclude(
@@ -354,7 +334,7 @@ public class NdkConfiguration {
             DependentSourceSet source,
             NativeSourceSet jni) {
         for(AndroidNativeDependencySpec dependencySpec :
-                jni.getDependencyContainer().getDependencies()) {
+                jni.getDependencies().getDependencies()) {
             if (dependencySpec.getLibraryPath() != null) {
                 ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
                 builder.put("library", dependencySpec.getLibraryPath());

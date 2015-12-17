@@ -28,6 +28,8 @@ import com.android.build.gradle.internal.gson.NativeBuildConfigValue;
 import com.android.build.gradle.managed.JsonConfigFile;
 import com.android.build.gradle.managed.NativeBuildConfig;
 import com.android.build.gradle.managed.NativeLibrary;
+import com.android.build.gradle.model.internal.DefaultExternalNativeBinarySpec;
+import com.android.build.gradle.model.internal.DefaultExternalNativeComponentSpec;
 import com.android.build.gradle.ndk.internal.NdkConfiguration;
 import com.android.utils.StringHelper;
 import com.google.common.collect.Lists;
@@ -98,12 +100,12 @@ public class ExternalNativeComponentModelPlugin implements Plugin<Project> {
         @ComponentType
         public static void defineComponentType(
                 ComponentTypeBuilder<ExternalNativeComponentSpec> builder) {
-            builder.defaultImplementation(ExternalNativeComponentSpec.class);
+            builder.defaultImplementation(DefaultExternalNativeComponentSpec.class);
         }
 
         @BinaryType
         public static void defineBinaryType(BinaryTypeBuilder<ExternalNativeBinarySpec> builder) {
-            builder.defaultImplementation(ExternalNativeBinarySpec.class);
+            builder.defaultImplementation(DefaultExternalNativeBinarySpec.class);
         }
 
         @Model(EXTERNAL_BUILD_CONFIG)

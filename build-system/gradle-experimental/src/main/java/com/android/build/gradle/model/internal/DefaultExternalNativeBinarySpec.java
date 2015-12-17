@@ -14,16 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model;
+package com.android.build.gradle.model.internal;
 
 import com.android.build.gradle.managed.NativeLibrary;
+import com.android.build.gradle.model.ExternalNativeBinarySpec;
 
-import org.gradle.platform.base.BinarySpec;
+import org.gradle.platform.base.binary.BaseBinarySpec;
 
 /**
- * Binary for ExternalNativeComponentModelPlugin.
+ * Implementation of {@link ExternalNativeBinarySpec}
  */
-public interface ExternalNativeBinarySpec extends BinarySpec {
-    NativeLibrary getConfig();
-    void setConfig(NativeLibrary config);
+public class DefaultExternalNativeBinarySpec extends BaseBinarySpec
+        implements ExternalNativeBinarySpec {
+    private NativeLibrary config;
+
+    @Override
+    public NativeLibrary getConfig() {
+        return config;
+    }
+
+    @Override
+    public void setConfig(NativeLibrary config) {
+        this.config = config;
+    }
 }
