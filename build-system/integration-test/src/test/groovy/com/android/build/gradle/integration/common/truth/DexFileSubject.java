@@ -58,9 +58,9 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
     }
 
     /**
-     * stopgap measure before the null supporting subjects are implemented
-     * @deprecated 
+     * @deprecated TODO: Separate out utils for dealing with dex files from truth subjects.
      */
+    @Deprecated
     public boolean containsClass(String className) throws IOException, ProcessException {
         return getClassDexDump(className) != null;
     }
