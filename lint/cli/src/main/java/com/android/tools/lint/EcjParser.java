@@ -49,7 +49,9 @@ import org.eclipse.jdt.internal.compiler.ast.AbstractMethodDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.AbstractVariableDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.AllocationExpression;
 import org.eclipse.jdt.internal.compiler.ast.Annotation;
+import org.eclipse.jdt.internal.compiler.ast.Argument;
 import org.eclipse.jdt.internal.compiler.ast.ArrayInitializer;
+import org.eclipse.jdt.internal.compiler.ast.Block;
 import org.eclipse.jdt.internal.compiler.ast.CharLiteral;
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.DoubleLiteral;
@@ -68,6 +70,7 @@ import org.eclipse.jdt.internal.compiler.ast.MessageSend;
 import org.eclipse.jdt.internal.compiler.ast.NameReference;
 import org.eclipse.jdt.internal.compiler.ast.NullLiteral;
 import org.eclipse.jdt.internal.compiler.ast.NumberLiteral;
+import org.eclipse.jdt.internal.compiler.ast.Statement;
 import org.eclipse.jdt.internal.compiler.ast.StringLiteral;
 import org.eclipse.jdt.internal.compiler.ast.TrueLiteral;
 import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration;
@@ -121,6 +124,8 @@ import java.util.Map;
 import java.util.Set;
 
 import lombok.ast.Node;
+import lombok.ast.Position;
+import lombok.ast.StrictListAccessor;
 import lombok.ast.VariableDeclaration;
 import lombok.ast.VariableDefinition;
 import lombok.ast.VariableDefinitionEntry;
@@ -549,6 +554,16 @@ public class EcjParser extends JavaParser {
     @Override
     public Location getLocation(@NonNull JavaContext context, @NonNull Node node) {
         lombok.ast.Position position = node.getPosition();
+
+        // Not all ECJ nodes have offsets; in particular, VariableDefinitionEntries
+        while (position == Position.UNPLACED) {
+            node = node.getParent();
+            //noinspection ConstantConditions
+            if (node == null) {
+                break;
+            }
+            position = node.getPosition();
+        }
         return Location.create(context.file, context.getContents(),
                 position.getStart(), position.getEnd());
     }
@@ -632,6 +647,73 @@ public class EcjParser extends JavaParser {
             return nativeNode;
         }
 
+        // Special case the handling for variables: these are missing
+        // native nodes in Lombok, but we can generally reconstruct them
+        // by looking at the context and fishing into the ECJ hierarchy.
+        // For example, for a method parameter, we can look at the surrounding
+        // method declaration, which we do have an ECJ node for, and then
+        // iterate through its Argument nodes and match those up with the
+        // variable name.
+        if (node instanceof VariableDeclaration) {
+            node = ((VariableDeclaration)node).astDefinition();
+        }
+        if (node instanceof VariableDefinition) {
+            StrictListAccessor<VariableDefinitionEntry, VariableDefinition>
+                    variables = ((VariableDefinition)node).astVariables();
+            if (variables.size() == 1) {
+                node = variables.first();
+            }
+        }
+        if (node instanceof VariableDefinitionEntry) {
+            VariableDefinitionEntry entry = (VariableDefinitionEntry) node;
+            String name = entry.astName().astValue();
+
+            // Find the nearest surrounding native node
+            Node parent = node.getParent();
+            while (parent != null) {
+                Object parentNativeNode = parent.getNativeNode();
+                if (parentNativeNode != null) {
+                    if (parentNativeNode instanceof AbstractMethodDeclaration) {
+                        // Parameter in a method declaration?
+                        AbstractMethodDeclaration method =
+                                (AbstractMethodDeclaration) parentNativeNode;
+                        for (Argument argument : method.arguments) {
+                            if (sameChars(name, argument.name)) {
+                                return argument;
+                            }
+                        }
+                        for (Statement statement : method.statements) {
+                            if (statement instanceof LocalDeclaration) {
+                                LocalDeclaration declaration = (LocalDeclaration)statement;
+                                if (sameChars(name, declaration.name)) {
+                                    return declaration;
+                                }
+                            }
+                        }
+                    } else if (parentNativeNode instanceof TypeDeclaration) {
+                        TypeDeclaration typeDeclaration = (TypeDeclaration) parentNativeNode;
+                        for (FieldDeclaration fieldDeclaration : typeDeclaration.fields) {
+                            if (sameChars(name, fieldDeclaration.name)) {
+                                return fieldDeclaration;
+                            }
+                        }
+                    } else if (parentNativeNode instanceof Block) {
+                        Block block = (Block)parentNativeNode;
+                        for (Statement statement : block.statements) {
+                            if (statement instanceof LocalDeclaration) {
+                                LocalDeclaration declaration = (LocalDeclaration)statement;
+                                if (sameChars(name, declaration.name)) {
+                                    return declaration;
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                parent = parent.getParent();
+            }
+        }
+
         Node parent = node.getParent();
         // The ECJ native nodes are sometimes spotty; for example, for a
         // MethodInvocation node we can have a null native node, but its
@@ -640,20 +722,6 @@ public class EcjParser extends JavaParser {
             nativeNode = parent.getNativeNode();
             if (nativeNode != null) {
                 return nativeNode;
-            }
-        }
-
-        if (node instanceof VariableDefinitionEntry) {
-            node = node.getParent().getParent();
-        }
-        if (node instanceof VariableDeclaration) {
-            VariableDeclaration declaration = (VariableDeclaration) node;
-            VariableDefinition definition = declaration.astDefinition();
-            if (definition != null) {
-                lombok.ast.TypeReference typeReference = definition.astTypeReference();
-                if (typeReference != null) {
-                    return typeReference.getNativeNode();
-                }
             }
         }
 
@@ -820,6 +888,10 @@ public class EcjParser extends JavaParser {
             nativeNode = ((TypeDeclaration) nativeNode).binding;
         } else if (nativeNode instanceof AbstractMethodDeclaration) {
             nativeNode = ((AbstractMethodDeclaration) nativeNode).binding;
+        } else if (nativeNode instanceof FieldDeclaration) {
+            nativeNode = ((FieldDeclaration) nativeNode).binding;
+        } else if (nativeNode instanceof LocalDeclaration) {
+            nativeNode = ((LocalDeclaration) nativeNode).binding;
         }
 
         if (nativeNode instanceof Binding) {
@@ -1340,17 +1412,15 @@ public class EcjParser extends JavaParser {
         public String getName() {
             String name = new String(mBinding.readableName());
             if (name.indexOf('.') == -1 && mBinding.enclosingType() != null) {
-                return new String(mBinding.enclosingType().readableName()) + '.' +
-                        name;
+                name = new String(mBinding.enclosingType().readableName()) + '.' + name;
             }
-
-            return name;
+            return stripTypeVariables(name);
         }
 
         @NonNull
         @Override
         public String getSimpleName() {
-            return new String(mBinding.shortReadableName());
+            return stripTypeVariables(new String(mBinding.shortReadableName()));
         }
 
         @Override
@@ -1697,6 +1767,32 @@ public class EcjParser extends JavaParser {
         public int hashCode() {
             return mBinding != null ? mBinding.hashCode() : 0;
         }
+    }
+
+    @NonNull
+    private static String stripTypeVariables(String name) {
+        // Strip out type variables; there doesn't seem to be a way to
+        // do it from the ECJ APIs; it unconditionally includes this.
+        // (Converts for example
+        //     android.support.v7.widget.RecyclerView.Adapter<VH>
+        //  to
+        //     android.support.v7.widget.RecyclerView.Adapter
+        if (name.indexOf('<') != -1) {
+            StringBuilder sb = new StringBuilder(name.length());
+            int depth = 0;
+            for (int i = 0, n = name.length(); i < n; i++) {
+                char c = name.charAt(i);
+                if (c == '<') {
+                    depth++;
+                } else if (c == '>') {
+                    depth--;
+                } else if (depth == 0) {
+                    sb.append(c);
+                }
+            }
+            name = sb.toString();
+        }
+        return name;
     }
 
     // "package-info" as a char
