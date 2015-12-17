@@ -22,10 +22,6 @@ import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.android.builder.model.NativeSettings
 import com.android.builder.model.NativeToolchain
-import org.junit.AfterClass
-import org.junit.Before
-import org.junit.BeforeClass
-import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 
@@ -50,7 +46,7 @@ apply plugin: 'com.android.model.external'
 model {
     nativeBuild {
         create {
-            config = file("config.json")
+            config "config.json"
         }
     }
 }
@@ -101,11 +97,11 @@ apply plugin: 'com.android.model.external'
 model {
     nativeBuild {
         create {
-            config = file("config1.json")
-            commandString = "./generate_config1.sh"
+            config "config1.json"
+            commandString "./generate_config1.sh"
         }
         create {
-            config = file("config2.json")
+            config "config2.json"
         }
     }
 }
@@ -202,34 +198,35 @@ model {
         buildFiles.addAll([file("CMakeLists.txt")])
         CFileExtensions.add("c")
         cppFileExtensions.add("cpp")
-    }
-    nativeBuildConfig.libraries {
-        create("foo") {
-            executable = "touch"
-            args.addAll(["output.txt"])
-            toolchain = "toolchain1"
-            output = file("build/libfoo.so")
-            folders.with {
-                create() {
-                    src = file("src/main/jni")
-                    CFlags.addAll(["folderCFlag1", "folderCFlag2"])
-                    cppFlags.addAll(["folderCppFlag1", "folderCppFlag2"])
-                }
-            }
-            files.with {
-                create() {
-                    src = file("src/main/jni/hello.c")
-                    flags.addAll(["fileFlag1", "fileFlag2"])
-                }
-            }
 
+        libraries {
+            create("foo") {
+                executable "touch"
+                args.addAll(["output.txt"])
+                toolchain "toolchain1"
+                output file("build/libfoo.so")
+                folders {
+                    create() {
+                        src "src/main/jni"
+                        CFlags.addAll(["folderCFlag1", "folderCFlag2"])
+                        cppFlags.addAll(["folderCppFlag1", "folderCppFlag2"])
+                    }
+                }
+                files {
+                    create() {
+                        src "src/main/jni/hello.c"
+                        flags.addAll(["fileFlag1", "fileFlag2"])
+                    }
+                }
+
+            }
         }
-    }
-    nativeBuildConfig.toolchains {
-        create("toolchain1") {
-            CCompilerExecutable = file("clang")
-            cppCompilerExecutable = file("clang++")
+        toolchains {
+            create("toolchain1") {
+                CCompilerExecutable = "clang"
+                cppCompilerExecutable "clang++"
 
+            }
         }
     }
 }

@@ -60,15 +60,15 @@ model {
         }
     }
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-    }
-    android.sources {
-        main {
-            jniLibs {
-                dependencies {
-                    project ":lib1" buildType "debug"
-                    library "prebuilt"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        sources {
+            main {
+                jniLibs {
+                    dependencies {
+                        project ":lib1" buildType "debug"
+                        library "prebuilt"
+                    }
                 }
             }
         }
@@ -96,16 +96,16 @@ apply plugin: "com.android.model.native"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-    }
-    android.sources {
-        main {
-            jni {
-                dependencies {
-                    project ":lib2"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        ndk {
+            moduleName "hello-jni"
+        }
+        sources {
+            main {
+                jni {
+                    dependencies {
+                        project ":lib2"
+                    }
                 }
             }
         }
@@ -132,16 +132,16 @@ apply plugin: "com.android.model.native"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-    }
-    android.sources {
-        main {
-            jni {
-                exportedHeaders {
-                    srcDir "src/main/headers"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        ndk {
+            moduleName "hello-jni"
+        }
+        sources {
+            main {
+                jni {
+                    exportedHeaders {
+                        srcDir "src/main/headers"
+                    }
                 }
             }
         }

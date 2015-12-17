@@ -125,13 +125,13 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-        CFlags.addAll(['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"'])
-        CFlags.add(' -DFLAG_WITH_LEADING_SPACE')
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        ndk {
+            moduleName "hello-jni"
+            CFlags.addAll(['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"'])
+            CFlags.add(' -DFLAG_WITH_LEADING_SPACE')
+        }
     }
 }
 """
@@ -141,12 +141,12 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-        cppFlags.addAll(['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"'])
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        ndk {
+            moduleName "hello-jni"
+            cppFlags.addAll(['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"'])
+        }
     }
 }
 """
@@ -156,12 +156,12 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-        ldFlags.addAll("-llog")
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        ndk {
+            moduleName "hello-jni"
+            ldFlags.addAll("-llog")
+        }
     }
 }
 """

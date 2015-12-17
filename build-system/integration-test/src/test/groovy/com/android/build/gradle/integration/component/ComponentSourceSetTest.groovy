@@ -67,34 +67,34 @@ apply plugin: "com.android.model.application"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-    }
-    android.productFlavors {
-        create("flavor1")
-        create("flavor2")
-        create("flavor3")
-    }
-    android.sources {
-        main {
-            manifest {
-                source {
-                    srcDir 'src'
-                }
-            }
-            jni {
-                source {
-                    exclude "**/fail.c"
-                }
-            }
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        ndk {
+            moduleName "hello-jni"
         }
-        flavor3 {
-            jni {
-                source {
-                    srcDir 'src/flavor1/jni'
+        productFlavors {
+            create("flavor1")
+            create("flavor2")
+            create("flavor3")
+        }
+        sources {
+            main {
+                manifest {
+                    source {
+                        srcDir 'src'
+                    }
+                }
+                jni {
+                    source {
+                        exclude "**/fail.c"
+                    }
+                }
+            }
+            flavor3 {
+                jni {
+                    source {
+                        srcDir 'src/flavor1/jni'
+                    }
                 }
             }
         }

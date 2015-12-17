@@ -51,35 +51,35 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-    }
-    android.buildTypes {
-        create("jniDebug") {
-            ndk.debuggable = true;
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        ndk {
+            moduleName "hello-jni"
         }
-    }
-    android.productFlavors {
-        create("x86") {
-            ndk.abiFilters.add("x86")
+        buildTypes {
+            create("jniDebug") {
+                ndk.debuggable true;
+            }
         }
-        create("arm") {
-            ndk.abiFilters.add("armeabi-v7a")
-            ndk.abiFilters.add("armeabi")
+        productFlavors {
+            create("x86") {
+                ndk.abiFilters.add("x86")
+            }
+            create("arm") {
+                ndk.abiFilters.add("armeabi-v7a")
+                ndk.abiFilters.add("armeabi")
+            }
+            create("mips") {
+                ndk.abiFilters.add("mips")
+            }
         }
-        create("mips") {
-            ndk.abiFilters.add("mips")
-        }
-    }
-    android.abis {
-        create("x86") {
-            CFlags.add("-DX86")
-        }
-        create("armeabi-v7a") {
-            CFlags.add("-DARMEABI_V7A")
+        abis {
+            create("x86") {
+                CFlags.add("-DX86")
+            }
+            create("armeabi-v7a") {
+                CFlags.add("-DARMEABI_V7A")
+            }
         }
     }
 }

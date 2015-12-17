@@ -48,25 +48,25 @@ apply plugin: "com.android.model.application"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-        defaultConfig.with {
-            minSdkVersion.apiLevel = 7
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        defaultConfig {
+            minSdkVersion.apiLevel 7
         }
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-    }
-    android.productFlavors {
-        create("f1") {
-            proguardFiles.add(file("proguard.txt"))
-            buildConfigFields.create {
-                type = "String"
-                name = "foo"
-                value = "\\"bar\\""
+        ndk {
+            moduleName "hello-jni"
+        }
+        productFlavors {
+            create("f1") {
+                proguardFiles.add(file("proguard.txt"))
+                buildConfigFields.create {
+                    type "String"
+                    name "foo"
+                    value "\\"bar\\""
+                }
             }
+            create("f2")
         }
-        create("f2")
     }
 }
 

@@ -34,13 +34,13 @@ public class NdkStlVersionTest {
                 "apply plugin: 'com.android.model.application'\n"
                         + "model {\n"
                         + "    android {\n"
-                        + "        compileSdkVersion = " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n"
-                        + "        buildToolsVersion = \"" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "\"\n"
-                        + "    }\n"
-                        + "    android.ndk {\n"
-                        + "        moduleName = \"hello-jni\"\n"
-                        + "        abiFilters.addAll([\"x86\", \"armeabi-v7a\", \"mips\"])\n"
-                        + "        stl = \"gnustl_shared\"\n"
+                        + "        compileSdkVersion " + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION + "\n"
+                        + "        buildToolsVersion \"" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION + "\"\n"
+                        + "        ndk {\n"
+                        + "            moduleName \"hello-jni\"\n"
+                        + "            abiFilters.addAll([\"x86\", \"armeabi-v7a\", \"mips\"])\n"
+                        + "            stl \"gnustl_shared\"\n"
+                        + "        }\n"
                         + "    }\n"
                         + "}\n");
     }
@@ -57,8 +57,10 @@ public class NdkStlVersionTest {
         TestFileUtils.appendToFile(project.getBuildFile(),
                 "apply plugin: 'com.android.model.application'\n"
                         + "model {\n"
-                        + "    android.ndk {\n"
-                        + "        stlVersion = \"4.8\"\n"
+                        + "    android {"
+                        + "        ndk {\n"
+                        + "            stlVersion = \"4.8\"\n"
+                        + "        }\n"
                         + "    }\n"
                         + "}\n");
         project.execute("clean", "assembleDebug");

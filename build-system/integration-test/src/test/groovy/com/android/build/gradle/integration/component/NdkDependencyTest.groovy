@@ -158,17 +158,17 @@ apply plugin: "com.android.model.native"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    }
-    android.ndk {
-        moduleName = "getstring2"
-        stl = "stlport_shared"
-    }
-    android.sources {
-        main {
-            jni {
-                exportedHeaders {
-                    srcDir "src/main/headers"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        ndk {
+            moduleName "getstring2"
+            stl "stlport_shared"
+        }
+        sources {
+            main {
+                jni {
+                    exportedHeaders {
+                        srcDir "src/main/headers"
+                    }
                 }
             }
         }
@@ -227,19 +227,19 @@ apply plugin: "com.android.model.native"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-    }
-    android.sources {
-        main {
-            jni {
-                dependencies {
-                    project ":lib2" linkage "static"
-                }
-                exportedHeaders {
-                    srcDir "src/main/headers"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        ndk {
+            moduleName "hello-jni"
+        }
+        sources {
+            main {
+                jni {
+                    dependencies {
+                        project ":lib2" linkage "static"
+                    }
+                    exportedHeaders {
+                        srcDir "src/main/headers"
+                    }
                 }
             }
         }
