@@ -31,6 +31,7 @@ import com.android.ddmlib.TimeoutException;
 import com.android.utils.ILogger;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import java.io.File;
@@ -103,16 +104,16 @@ public class ConnectedDevice extends DeviceConnector {
             ILogger logger)
             throws DeviceException {
 
-        List<String> apkFileNames = Lists.transform(splitApkFiles, new Function<File, String>() {
-            @Override
-            public String apply(@Nullable File input) {
-                return input != null ? input.getAbsolutePath() : null;
-            }
-        });
         try {
-            iDevice.installPackages(apkFileNames, timeoutInMs, true /*reinstall*/,
-                    options.isEmpty() ? null : options.toArray(new String[options.size()]));
+            iDevice.installPackages(splitApkFiles, true /*reinstall*/,
+                    ImmutableList.copyOf(options), timeoutInMs, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
+            List<String> apkFileNames = Lists.transform(splitApkFiles, new Function<File, String>() {
+                @Override
+                public String apply(@Nullable File input) {
+                    return input != null ? input.getAbsolutePath() : null;
+                }
+            });
             logger.error(e, "Unable to install " + Joiner.on(',').join(apkFileNames));
             throw new DeviceException(e);
         }
