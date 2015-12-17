@@ -22,6 +22,7 @@ import com.android.builder.model.NativeAndroidProject
 import com.android.builder.model.NativeArtifact
 import com.android.builder.model.NativeSettings
 import com.android.builder.model.NativeToolchain
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -30,6 +31,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 /**
  * Test the ExternalNativeComponentModelPlugin.
  */
+@Ignore
 class ExternalNativeComponentPluginTest {
 
     @Rule
