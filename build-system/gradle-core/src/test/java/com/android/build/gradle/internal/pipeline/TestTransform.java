@@ -17,20 +17,15 @@
 package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.transform.api.AsInputTransform;
-import com.android.build.transform.api.CombinedTransform;
-import com.android.build.transform.api.Context;
-import com.android.build.transform.api.ForkTransform;
-import com.android.build.transform.api.NoOpTransform;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Format;
-import com.android.build.transform.api.ScopedContent.Scope;
-import com.android.build.transform.api.Transform;
-import com.android.build.transform.api.TransformException;
-import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformOutput;
+import com.android.build.api.transform.Context;
+import com.android.build.api.transform.QualifiedContent.ContentType;
+import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.Transform;
+import com.android.build.api.transform.TransformException;
+import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformOutputProvider;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -41,8 +36,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -58,16 +53,11 @@ public class TestTransform extends Transform {
     private final Set<ContentType> inputTypes;
     private final Set<ContentType> outputTypes;
     private final Set<Scope> scopes;
-    private final Set<Scope> refedScopes;
-    private final Format format;
+    private final Set<Scope> referencedScopes;
     private final boolean isIncremental;
     private final List<File> secondaryFileInputs;
 
-    // data passed to transform() so that it can be queried later by tests.
-    protected Collection<TransformInput> referencedInputs;
-    protected boolean isIncrementalInputs;
-
-    static Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 
@@ -98,13 +88,7 @@ public class TestTransform extends Transform {
     @NonNull
     @Override
     public Set<Scope> getReferencedScopes() {
-        return refedScopes;
-    }
-
-    @NonNull
-    @Override
-    public Format getOutputFormat() {
-        return format;
+        return referencedScopes;
     }
 
     @NonNull
@@ -118,12 +102,44 @@ public class TestTransform extends Transform {
         return isIncremental;
     }
 
-    public Collection<TransformInput> getReferencedInputs() {
-        return referencedInputs;
+    @Override
+    public void transform(
+            @NonNull Context context,
+            @NonNull Collection<TransformInput> inputs,
+            @NonNull Collection<TransformInput> referencedInputs,
+            @NonNull TransformOutputProvider outputProvider,
+            boolean isIncremental) throws IOException, TransformException, InterruptedException {
+        this.inputs = inputs;
+        this.referencedInputs = referencedInputs;
+        this.output = outputProvider;
+        this.isIncrementalInputs = isIncremental;
+
     }
+
+    // --- data recorded during the fake execution
+
+    private Collection<TransformInput> inputs;
+    private Collection<TransformInput> referencedInputs;
+    private boolean isIncrementalInputs;
+    private TransformOutputProvider output;
+
+
     public boolean isIncrementalInputs() {
         return isIncrementalInputs;
     }
+
+    public Collection<TransformInput> getInputs() {
+        return inputs;
+    }
+
+    public Collection<TransformInput> getReferencedInputs() {
+        return referencedInputs;
+    }
+
+    public TransformOutputProvider getOutput() {
+        return output;
+    }
+
 
     private TestTransform(
             @NonNull String name,
@@ -131,157 +147,15 @@ public class TestTransform extends Transform {
             @NonNull Set<ContentType> outputTypes,
             @NonNull Set<Scope> scopes,
             @NonNull Set<Scope> refedScopes,
-            @NonNull Format format,
             boolean isIncremental,
             @NonNull List<File> secondaryFileInputs) {
         this.name = name;
         this.inputTypes = inputTypes;
         this.outputTypes = outputTypes;
         this.scopes = scopes;
-        this.refedScopes = refedScopes;
-        this.format = format;
+        this.referencedScopes = refedScopes;
         this.isIncremental = isIncremental;
         this.secondaryFileInputs = ImmutableList.copyOf(secondaryFileInputs);
-    }
-
-    public static class TestForkTransform extends TestTransform implements ForkTransform {
-
-        // data passed to transform() so that it can be queried later by tests.
-        private Map<TransformInput, Collection<TransformOutput>> inputs;
-
-        private TestForkTransform(
-                @NonNull String name,
-                @NonNull Set<ContentType> inputTypes,
-                @NonNull Set<ContentType> outputTypes,
-                @NonNull Set<Scope> scopes,
-                @NonNull Set<Scope> referencedScopes,
-                @NonNull Format format,
-                boolean isIncremental,
-                @NonNull List<File> secondaryFileInputs) {
-            super(name, inputTypes, outputTypes, scopes, referencedScopes, format, isIncremental, secondaryFileInputs);
-        }
-
-        public Map<TransformInput, Collection<TransformOutput>> getInputs() {
-            return inputs;
-        }
-
-        @Override
-        public void transform(
-                @NonNull Context context,
-                @NonNull Map<TransformInput, Collection<TransformOutput>> inputs,
-                @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
-                throws IOException, TransformException, InterruptedException {
-            this.inputs = inputs;
-            this.referencedInputs = referencedInputs;
-            this.isIncrementalInputs = isIncremental;
-        }
-    }
-
-    public static class TestAsInputTransform extends TestTransform implements AsInputTransform {
-
-        // data passed to transform() so that it can be queried later by tests.
-        private Map<TransformInput, TransformOutput> inputs;
-
-        private TestAsInputTransform(
-                @NonNull String name,
-                @NonNull Set<ContentType> inputTypes,
-                @NonNull Set<ContentType> outputTypes,
-                @NonNull Set<Scope> scopes,
-                @NonNull Set<Scope> refedScopes,
-                @NonNull Format format,
-                boolean isIncremental,
-                @NonNull List<File> secondaryFileInputs) {
-            super(name, inputTypes, outputTypes, scopes, refedScopes, format, isIncremental, secondaryFileInputs);
-        }
-
-        public Map<TransformInput, TransformOutput> getInputs() {
-            return inputs;
-        }
-
-        @Override
-        public void transform(
-                @NonNull Context context,
-                @NonNull Map<TransformInput, TransformOutput> inputs,
-                @NonNull Collection<TransformInput> referencedInputs, boolean isIncremental)
-                throws IOException, TransformException, InterruptedException {
-            this.inputs = inputs;
-            this.referencedInputs = referencedInputs;
-            this.isIncrementalInputs = isIncremental;
-        }
-    }
-
-    public static class TestCombinedTransform extends TestTransform implements CombinedTransform {
-
-        // data passed to transform() so that it can be queried later by tests.
-        private Collection<TransformInput> inputs;
-        private TransformOutput output;
-
-        public TestCombinedTransform(
-                @NonNull String name,
-                @NonNull Set<ContentType> inputTypes,
-                @NonNull Set<ContentType> outputTypes,
-                @NonNull Set<Scope> scopes,
-                @NonNull Set<Scope> refedScopes,
-                @NonNull Format format,
-                boolean isIncremental,
-                @NonNull List<File> secondaryFileInputs) {
-            super(name, inputTypes, outputTypes, scopes, refedScopes, format, isIncremental, secondaryFileInputs);
-        }
-
-        public Collection<TransformInput> getInputs() {
-            return inputs;
-        }
-        public TransformOutput getOutput() {
-            return output;
-        }
-
-        @Override
-        public void transform(
-                @NonNull Context context,
-                @NonNull Collection<TransformInput> inputs,
-                @NonNull Collection<TransformInput> referencedInputs,
-                @NonNull TransformOutput output,
-                boolean isIncremental)
-                throws IOException, TransformException, InterruptedException {
-            this.inputs = inputs;
-            this.referencedInputs = referencedInputs;
-            this.output = output;
-            this.isIncrementalInputs = isIncremental;
-        }
-    }
-
-    public static class TestNoOpTransform extends TestTransform implements NoOpTransform {
-
-        // data passed to transform() so that it can be queried later by tests.
-        private Collection<TransformInput> inputs;
-
-        public TestNoOpTransform(
-                @NonNull String name,
-                @NonNull Set<ContentType> inputTypes,
-                @NonNull Set<ContentType> outputTypes,
-                @NonNull Set<Scope> scopes,
-                @NonNull Set<Scope> referencedScopes,
-                @NonNull Format format,
-                boolean isIncremental,
-                @NonNull List<File> secondaryFileInputs) {
-            super(name, inputTypes, outputTypes, scopes, referencedScopes, format, isIncremental, secondaryFileInputs);
-        }
-
-        public Collection<TransformInput> getInputs() {
-            return inputs;
-        }
-
-        @Override
-        public void transform(
-                @NonNull Context context,
-                @NonNull Collection<TransformInput> inputs,
-                @NonNull Collection<TransformInput> referencedInputs,
-                boolean isIncremental)
-                throws IOException, TransformException, InterruptedException {
-            this.inputs = inputs;
-            this.referencedInputs = referencedInputs;
-            this.isIncrementalInputs = isIncremental;
-        }
     }
 
     /**
@@ -290,22 +164,11 @@ public class TestTransform extends Transform {
     static final class Builder {
 
         private String name;
-
-        private final Set<ContentType> inputTypes = EnumSet
-                .noneOf(ContentType.class);
-
+        private final Set<ContentType> inputTypes = new HashSet<ContentType>();
         private Set<ContentType> outputTypes;
-
         private final Set<Scope> scopes = EnumSet.noneOf(Scope.class);
-
         private final Set<Scope> referencedScopes = EnumSet.noneOf(Scope.class);
-
-        private Class<?> transformType;
-
-        private Format format = Format.SINGLE_FOLDER;
-
         private boolean isIncremental = false;
-
         private final List<File> secondaryFileInputs = Lists.newArrayList();
 
         Builder setName(String name) {
@@ -320,14 +183,14 @@ public class TestTransform extends Transform {
 
         Builder setOutputTypes(@NonNull ContentType... types) {
             if (outputTypes == null) {
-                outputTypes = EnumSet.noneOf(ContentType.class);
+                outputTypes = new HashSet<ContentType>();
             }
             outputTypes.addAll(Arrays.asList(types));
             return this;
         }
 
         Builder setOutputTypes(@NonNull Set<ContentType> types) {
-            outputTypes = EnumSet.copyOf(types);
+            outputTypes = ImmutableSet.copyOf(types);
             return this;
         }
 
@@ -338,16 +201,6 @@ public class TestTransform extends Transform {
 
         Builder setReferencedScopes(@NonNull Scope... scopes) {
             this.referencedScopes.addAll(Arrays.asList(scopes));
-            return this;
-        }
-
-        Builder setTransformType(@NonNull Class<?> transformType) {
-            this.transformType = transformType;
-            return this;
-        }
-
-        Builder setFormat(@Nullable Format format) {
-            this.format = format;
             return this;
         }
 
@@ -365,63 +218,20 @@ public class TestTransform extends Transform {
         TestTransform build() {
             String name = this.name != null ? this.name : "transform name";
             Assert.assertFalse(this.inputTypes.isEmpty());
-            Set<ContentType> inputTypes = Sets.immutableEnumSet(this.inputTypes);
+            Set<ContentType> inputTypes = ImmutableSet.copyOf(this.inputTypes);
             Set<ContentType> outputTypes = this.outputTypes != null ?
-                    Sets.immutableEnumSet(this.outputTypes) : inputTypes;
+                    ImmutableSet.copyOf(this.outputTypes) : inputTypes;
             Set<Scope> scopes = Sets.immutableEnumSet(this.scopes);
             Set<Scope> refedScopes = Sets.immutableEnumSet(this.referencedScopes);
-            Format format = this.format;
 
-            if (transformType == AsInputTransform.class ||
-                    transformType == TestAsInputTransform.class) {
-                return new TestAsInputTransform(
-                        name,
-                        inputTypes,
-                        outputTypes,
-                        scopes,
-                        refedScopes,
-                        format,
-                        isIncremental,
-                        secondaryFileInputs);
-
-            } else if (transformType == CombinedTransform.class ||
-                    transformType == TestCombinedTransform.class) {
-                return new TestCombinedTransform(
-                        name,
-                        inputTypes,
-                        outputTypes,
-                        scopes,
-                        refedScopes,
-                        format,
-                        isIncremental,
-                        secondaryFileInputs);
-
-            } else if (transformType == NoOpTransform.class ||
-                    transformType == TestNoOpTransform.class) {
-                return new TestNoOpTransform(
-                        name,
-                        inputTypes,
-                        outputTypes,
-                        scopes,
-                        refedScopes,
-                        format,
-                        isIncremental,
-                        secondaryFileInputs);
-
-            } else if (transformType == ForkTransform.class ||
-                    transformType == TestForkTransform.class) {
-                return new TestForkTransform(
-                        name,
-                        inputTypes,
-                        outputTypes,
-                        scopes,
-                        refedScopes,
-                        format,
-                        isIncremental,
-                        secondaryFileInputs);
-            }
-
-            throw new UnsupportedOperationException("Unsupported transform type: " + transformType);
+            return new TestTransform(
+                    name,
+                    inputTypes,
+                    outputTypes,
+                    scopes,
+                    refedScopes,
+                    isIncremental,
+                    secondaryFileInputs);
         }
     }
 }

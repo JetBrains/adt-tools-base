@@ -26,6 +26,8 @@ import com.android.build.gradle.internal.test.TestApplicationTestData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.BuilderConstants;
+import com.android.builder.core.VariantType;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.TestData;
 import com.google.common.collect.ImmutableMap;
@@ -35,7 +37,7 @@ import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
-
+import android.databinding.tool.DataBindingBuilder;
 /**
  * TaskManager for standalone test application that lives in a separate module from the tested
  * application.
@@ -45,11 +47,13 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
 
     public TestApplicationTaskManager(Project project,
             AndroidBuilder androidBuilder,
+            DataBindingBuilder dataBindingBuilder,
             AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
-        super(project, androidBuilder, extension, sdkHandler, dependencyManager, toolingRegistry);
+        super(project, androidBuilder, dataBindingBuilder, extension, sdkHandler, dependencyManager,
+                toolingRegistry);
     }
 
     @Override
@@ -83,28 +87,34 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
                 variantData, testTarget, testTargetMetadata, androidBuilder);
 
         // create the test connected check task.
-        AndroidTask<DeviceProviderInstrumentTestTask> testConnectedCheck =
+        AndroidTask<DeviceProviderInstrumentTestTask> instrumentTestTask =
                 getAndroidTasks().create(
                         tasks,
                         new DeviceProviderInstrumentTestTask.ConfigAction(
                                 variantData.getScope(),
                                 new ConnectedDeviceProvider(
                                         sdkHandler.getSdkInfo().getAdb(),
+                                        getGlobalScope().getExtension().getAdbOptions().getTimeOutInMs(),
                                         new LoggerWrapper(getLogger())),
-                                testData));
+                                testData) {
+                            @NonNull
+                            @Override
+                            public String getName() {
+                                return super.getName() + VariantType.ANDROID_TEST.getSuffix();
+                            }
+                        });
 
         // make the test application connectedCheck depends on the configuration added above so
         // we can retrieve its artifacts
 
-        testConnectedCheck.dependsOn(tasks,
+        instrumentTestTask.dependsOn(tasks,
                 testTarget,
                 testTargetMetadata,
                 variantData.assembleVariantTask);
 
-        // make the main ConnectedCheck task depends on this test connectedCheck
-        Task connectedCheck = tasks.named(CONNECTED_CHECK);
-        if (connectedCheck != null) {
-            connectedCheck.dependsOn(testConnectedCheck.getName());
+        Task connectedAndroidTest = tasks.named(BuilderConstants.CONNECTED + VariantType.ANDROID_TEST.getSuffix());
+        if (connectedAndroidTest != null) {
+            connectedAndroidTest.dependsOn(instrumentTestTask.getName());
         }
     }
 

@@ -50,7 +50,7 @@ public class ArrayInstance extends Instance {
     }
 
     @NonNull
-    private byte[] asRawByteArray(int start, int elementCount) {
+    public byte[] asRawByteArray(int start, int elementCount) {
         getBuffer().setPosition(mValuesOffset);
         assert mType != Type.OBJECT;
         assert start + elementCount <= mLength;
@@ -63,7 +63,8 @@ public class ArrayInstance extends Instance {
     public char[] asCharArray(int offset, int length) {
         assert mType == Type.CHAR;
         // TODO: Make this copy less by supporting offset in asRawByteArray.
-        CharBuffer charBuffer = ByteBuffer.wrap(asRawByteArray(offset, length)).order(DataBuffer.HPROF_BYTE_ORDER).asCharBuffer();
+        CharBuffer charBuffer = ByteBuffer.wrap(asRawByteArray(offset, length)).order(
+                DataBuffer.HPROF_BYTE_ORDER).asCharBuffer();
         char[] result = new char[length];
         charBuffer.get(result);
         return result;
@@ -82,9 +83,9 @@ public class ArrayInstance extends Instance {
             for (Object value : getValues()) {
                 if (value instanceof Instance) {
                     if (!mReferencesAdded) {
-                        ((Instance)value).addReference(null, this);
+                        ((Instance) value).addReference(null, this);
                     }
-                    visitor.visitLater(this, (Instance)value);
+                    visitor.visitLater(this, (Instance) value);
                 }
             }
             mReferencesAdded = true;
@@ -99,6 +100,13 @@ public class ArrayInstance extends Instance {
             // Primitive arrays don't set their classId, we need to do the lookup manually.
             return mHeap.mSnapshot.findClass(Type.getClassNameOfPrimitiveArray(mType));
         }
+    }
+
+    /**
+     * Returns the number of elements in the array.
+     */
+    public int getLength() {
+        return mLength;
     }
 
     public Type getArrayType() {

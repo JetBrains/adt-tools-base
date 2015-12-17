@@ -19,11 +19,13 @@ package com.android.build.gradle.integration.common.truth;
 import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.FN_CLASSES_JAR;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.ide.common.process.ProcessException;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Closer;
 import com.google.common.truth.FailureStrategy;
@@ -31,6 +33,7 @@ import com.google.common.truth.StringSubject;
 import com.google.common.truth.SubjectFactory;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -101,9 +104,9 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject> {
 
         switch (scope) {
             case MAIN:
-                return searchForClassInJar(expectedClassName, FN_CLASSES_JAR);
+                return searchForEntryinZip(expectedClassName, FN_CLASSES_JAR);
             case ALL:
-                if (searchForClassInJar(expectedClassName, FN_CLASSES_JAR)) {
+                if (searchForEntryinZip(expectedClassName, FN_CLASSES_JAR)) {
                     return true;
                 }
                 // intended fall-through
@@ -116,7 +119,7 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject> {
                         ZipEntry zipEntry = zipFileEntries.nextElement();
                         String path = zipEntry.getName();
                         if (path.startsWith("libs/") && path.endsWith(DOT_JAR)) {
-                            if (searchForClassInJar(expectedClassName, path)) {
+                            if (searchForEntryinZip(expectedClassName, path)) {
                                 return true;
                             }
                         }
@@ -131,22 +134,91 @@ public class AarSubject extends AbstractAndroidSubject<AarSubject> {
         return false;
     }
 
-    private boolean searchForClassInJar(@NonNull String expectedClassName,
-            @NonNull String zipEntryPath) throws IOException {
+    private boolean searchForEntryinZip(
+            @NonNull String entryName,
+            @NonNull String zipPath) throws IOException {
         Closer closer = Closer.create();
         ZipFile zipFile = new ZipFile(getSubject());
         try {
-            InputStream stream = closer.register(getInputStream(zipFile, zipEntryPath));
+            InputStream stream = closer.register(getInputStream(zipFile, zipPath));
             ZipInputStream zis = closer.register(new ZipInputStream(stream));
             ZipEntry zipEntry;
             while ((zipEntry = zis.getNextEntry()) != null) {
-                if (expectedClassName.equals(zipEntry.getName())) {
+                if (entryName.equals(zipEntry.getName())) {
                     return true;
                 }
             }
 
             // didn't find the class.
             return false;
+        } finally {
+            closer.close();
+            zipFile.close();
+        }
+    }
+
+    @Override
+    protected boolean checkForJavaResource(@NonNull String resourcePath)
+            throws ProcessException, IOException {
+        return searchForEntryinZip(resourcePath, FN_CLASSES_JAR);
+    }
+
+    /**
+     * Asserts the subject contains a java resources at the given path with the specified String content.
+     *
+     * Content is trimmed when compared.
+     */
+    @Override
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void containsJavaResourceWithContent(@NonNull String path, @NonNull String content)
+            throws IOException, ProcessException {
+        if (checkForJavaResource(path)) {
+            // extract the jar file.
+            File classesJar = extractClassesJar();
+
+            // now check
+            assertThatZip(classesJar).named("<" + getSubject().getName() + "/classes.jar>")
+                    .containsFileWithContent(path, content);
+
+            FileUtils.delete(classesJar);
+        } else {
+            failWithRawMessage("'%s' does not contains java resource '%s'", getSubject(), path);
+        }
+    }
+
+    /**
+     * Asserts the subject contains a java resources at the given path with the specified
+     * byte array content.
+     */
+    @Override
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void containsJavaResourceWithContent(@NonNull String path, @NonNull byte[] content)
+            throws IOException, ProcessException {
+        if (checkForJavaResource(path)) {
+            // extract the jar file.
+            File classesJar = extractClassesJar();
+
+            // now check
+            assertThatZip(classesJar).named("<" + getSubject().getName() + "/classes.jar>")
+                    .containsFileWithContent(path, content);
+
+            FileUtils.delete(classesJar);
+        } else {
+            failWithRawMessage("'%s' does not contains java resource '%s'", getSubject(), path);
+        }
+    }
+
+    @NonNull
+    private File extractClassesJar() throws IOException {
+        File classesJar = File.createTempFile("classes", ".jar");
+
+        Closer closer = Closer.create();
+        ZipFile zipFile = new ZipFile(getSubject());
+        try {
+            InputStream stream = closer.register(getInputStream(zipFile, FN_CLASSES_JAR));
+            ByteStreams.copy(stream, closer.register(new FileOutputStream(classesJar)));
+
+            return classesJar;
         } finally {
             closer.close();
             zipFile.close();

@@ -21,6 +21,7 @@ import com.android.builder.core.VariantConfiguration;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ import proguard.gradle.ProGuardTask;
  * Specialization of the {@link ProGuardTask} that can use {@link Configuration} objects to retrieve
  * input files like the tested application classes and the tested application mapping file.
  */
+@ParallelizableTask
 public class TestModuleProGuardTask extends ProGuardTask {
     private Logger logger;
     private Configuration mappingConfiguration;

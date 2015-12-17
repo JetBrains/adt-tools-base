@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<recipe>
+<recipe folder="root://activities/common">
 
 <#if appCompat && !(hasDependency('com.android.support:appcompat-v7'))>
     <dependency mavenUrl="com.android.support:appcompat-v7:${buildApi}.+"/>
@@ -9,8 +8,8 @@
                  to="${escapeXmlAttribute(resOut)}/layout/${simpleLayoutName}.xml" />
 
 <#if (isNewProject!false) && !(excludeMenu!false)>
-    <execute file="recipe_simple_menu.xml.ftl" />
+    <#include "recipe_simple_menu.xml.ftl" />
 </#if>
 
-    <execute file="recipe_simple_dimens.xml" />
+    <#include "recipe_simple_dimens.xml" />
 </recipe>

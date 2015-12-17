@@ -75,8 +75,6 @@ model {
 #include <string.h>
 #include <jni.h>
 
-char* getString();
-
 jstring
 Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
 {
@@ -107,6 +105,14 @@ model {
 """));
 
         AndroidTestApp lib2 = (AndroidTestApp) base.getSubproject("lib2")
+        lib2.addFile(new TestSourceFile("src/main/headers/", "hello.h", """
+#ifndef HELLO_H
+#define HELLO_H
+
+char* getString();
+
+#endif
+"""))
         lib2.addFile(new TestSourceFile("src/main/jni/", "hello.c", """
 char* getString() {
     return "hello world!";
@@ -122,6 +128,15 @@ model {
     android.ndk {
         moduleName = "hello-jni"
     }
+    android.sources {
+        main {
+            jni {
+                exportedHeaders {
+                    srcDir "src/main/headers"
+                }
+            }
+        }
+    }
 }
 """))
     }
@@ -129,7 +144,7 @@ model {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(base)
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create()
 
     @AfterClass
@@ -152,11 +167,11 @@ model {
     void "check app contains compiled .so"() {
         project.execute("clean", ":app:assembleRelease");
 
-        GradleTestProject lib = project.getSubproject("lib1")
-        assertThat(lib.file("build/intermediates/binaries/debug/lib/x86/libhello-jni.so")).exists();
+        GradleTestProject lib1 = project.getSubproject("lib1")
+        assertThat(lib1.file("build/intermediates/binaries/debug/obj/x86/libhello-jni.so")).exists();
 
         // Check that release lib is not compiled.
-        assertThat(lib.file("build/intermediates/binaries/release/lib/x86/libhello-jni.so")).doesNotExist();
+        assertThat(lib1.file("build/intermediates/binaries/release/obj/x86/libhello-jni.so")).doesNotExist();
 
         File apk = project.getSubproject("app").getApk("release", "unsigned")
         assertThatZip(apk).contains("lib/x86/libhello-jni.so");

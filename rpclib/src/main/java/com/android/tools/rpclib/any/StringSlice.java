@@ -17,6 +17,7 @@
  */
 package com.android.tools.rpclib.any;
 
+import com.android.tools.rpclib.schema.*;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
@@ -53,11 +54,14 @@ final class StringSlice extends Box implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {41, 87, -27, -100, -20, 46, -21, 1, 37, -77, 43, 9, 85, 93, 81, -88, 81, 119, -21, 53, };
-    public static final BinaryID ID = new BinaryID(IDBytes);
+
+    private static final Entity ENTITY = new Entity("any","stringSlice","","");
 
     static {
-        Namespace.register(ID, Klass.INSTANCE);
+        ENTITY.setFields(new Field[]{
+            new Field("value", new Slice("", new Primitive("string", Method.String))),
+        });
+        Namespace.register(Klass.INSTANCE);
     }
     public static void register() {}
     //<<<End:Java.ClassBody:1>>>
@@ -66,7 +70,7 @@ final class StringSlice extends Box implements BinaryObject {
         INSTANCE;
 
         @Override @NotNull
-        public BinaryID id() { return ID; }
+        public Entity entity() { return ENTITY; }
 
         @Override @NotNull
         public BinaryObject create() { return new StringSlice(); }

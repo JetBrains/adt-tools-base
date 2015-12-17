@@ -16,53 +16,112 @@
 
 package com.android.build.gradle.model;
 
+import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
+import static com.android.build.gradle.model.ModelConstants.ARTIFACTS;
+import static com.android.build.gradle.model.ModelConstants.EXTERNAL_BUILD_CONFIG;
+import static com.android.build.gradle.model.ModelConstants.NATIVE_DEPENDENCIES;
+
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.LanguageRegistryUtils;
+import com.android.build.gradle.internal.NativeDependencyLinkage;
 import com.android.build.gradle.internal.NdkHandler;
-import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.dependency.ArtifactContainer;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
+import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.managed.BuildType;
+import com.android.build.gradle.managed.NativeBuildConfig;
+import com.android.build.gradle.managed.NativeLibrary;
+import com.android.build.gradle.managed.NativeSourceFolder;
+import com.android.build.gradle.managed.NativeToolchain;
 import com.android.build.gradle.managed.NdkAbiOptions;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.ProductFlavor;
+import com.android.build.gradle.ndk.internal.BinaryToolHelper;
 import com.android.build.gradle.ndk.internal.NdkConfiguration;
 import com.android.build.gradle.ndk.internal.NdkExtensionConvention;
 import com.android.build.gradle.ndk.internal.NdkNamingScheme;
+import com.android.build.gradle.ndk.internal.StlNativeToolSpecification;
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.core.VariantConfiguration;
+import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import org.gradle.api.*;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import org.gradle.api.Action;
+import org.gradle.api.BuildableModelElement;
+import org.gradle.api.InvalidUserDataException;
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.api.Task;
 import org.gradle.api.internal.project.ProjectIdentifier;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.service.ServiceRegistry;
+import org.gradle.language.base.FunctionalSourceSet;
+import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.language.base.internal.registry.LanguageRegistration;
+import org.gradle.language.base.internal.registry.LanguageRegistry;
 import org.gradle.language.c.plugins.CPlugin;
 import org.gradle.language.cpp.plugins.CppPlugin;
-import org.gradle.model.*;
-import org.gradle.nativeplatform.*;
+import org.gradle.language.nativeplatform.HeaderExportingSourceSet;
+import org.gradle.model.Defaults;
+import org.gradle.model.Finalize;
+import org.gradle.model.Model;
+import org.gradle.model.ModelMap;
+import org.gradle.model.Mutate;
+import org.gradle.model.Path;
+import org.gradle.model.RuleSource;
+import org.gradle.model.Validate;
+import org.gradle.model.internal.registry.ModelRegistry;
+import org.gradle.nativeplatform.BuildTypeContainer;
+import org.gradle.nativeplatform.FlavorContainer;
+import org.gradle.nativeplatform.NativeBinarySpec;
+import org.gradle.nativeplatform.NativeLibraryBinarySpec;
+import org.gradle.nativeplatform.NativeLibrarySpec;
+import org.gradle.nativeplatform.SharedLibraryBinarySpec;
+import org.gradle.nativeplatform.StaticLibraryBinarySpec;
+import org.gradle.nativeplatform.platform.NativePlatform;
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
 import org.gradle.platform.base.BinaryContainer;
 import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.platform.base.PlatformContainer;
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
-import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
-import static com.android.build.gradle.model.ModelConstants.ABI_OPTIONS;
+import javax.inject.Inject;
 
 /**
  * Plugin for Android NDK applications.
  */
 public class NdkComponentModelPlugin implements Plugin<Project> {
     private Project project;
+    @NonNull
+    private final ToolingModelBuilderRegistry toolingRegistry;
+    @NonNull
+    private final ModelRegistry modelRegistry;
+
+    @Inject
+    private NdkComponentModelPlugin(
+            @NonNull ToolingModelBuilderRegistry toolingRegistry,
+            @NonNull ModelRegistry modelRegistry) {
+        this.toolingRegistry = toolingRegistry;
+        this.modelRegistry = modelRegistry;
+    }
 
     @Override
     public void apply(Project project) {
@@ -71,14 +130,14 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         project.getPluginManager().apply(AndroidComponentModelPlugin.class);
         project.getPluginManager().apply(CPlugin.class);
         project.getPluginManager().apply(CppPlugin.class);
+
+        toolingRegistry.register(new NativeComponentModelBuilder(modelRegistry));
     }
 
-    @SuppressWarnings({"MethodMayBeStatic", "unused"})
     public static class Rules extends RuleSource {
 
-        @Mutate
-        public void initializeNdkConfig(@Path("android.ndk") NdkConfig ndk) {
-            NdkOptionsHelper.init(ndk);
+        @Defaults
+        public static void initializeNdkConfig(@Path("android.ndk") NdkConfig ndk) {
             ndk.setModuleName("");
             ndk.setToolchain("");
             ndk.setToolchainVersion("");
@@ -87,12 +146,14 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Finalize
-        public void setDefaultNdkExtensionValue(@Path("android.ndk") NdkConfig ndkConfig) {
+        public static void setDefaultNdkExtensionValue(@Path("android.ndk") NdkConfig ndkConfig) {
             NdkExtensionConvention.setExtensionDefault(ndkConfig);
         }
 
         @Validate
-        public void checkNdkDir(NdkHandler ndkHandler, @Path("android.ndk") NdkConfig ndkConfig) {
+        public static void checkNdkDir(
+                NdkHandler ndkHandler,
+                @Path("android.ndk") NdkConfig ndkConfig) {
             if (!ndkConfig.getModuleName().isEmpty() && !ndkHandler.isNdkDirConfigured()) {
                 throw new InvalidUserDataException(
                         "NDK location not found. Define location with ndk.dir in the "
@@ -100,6 +161,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                 + "variable.");
             }
             if (ndkHandler.isNdkDirConfigured()) {
+                //noinspection ConstantConditions - isNdkDirConfigured ensures getNdkDirectory is not null
                 if (!ndkHandler.getNdkDirectory().exists()) {
                     throw new InvalidUserDataException(
                             "Specified NDK location does not exists.  Please ensure ndk.dir in "
@@ -110,14 +172,25 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             }
         }
 
-        @Mutate
-        public void addDefaultNativeSourceSet(
-                @Path("android.sources") AndroidComponentModelSourceSet sources) {
-            sources.addDefaultSourceSet("jni", NativeSourceSet.class);
+        @Defaults
+        public static void addDefaultNativeSourceSet(
+                @Path("android.sources") ModelMap<FunctionalSourceSet> sources,
+                final LanguageRegistry languageRegistry) {
+            final LanguageRegistration languageRegistration =
+                    LanguageRegistryUtils.find(languageRegistry, NativeSourceSet.class);
+            sources.beforeEach(new Action<FunctionalSourceSet>() {
+                @Override
+                public void execute(FunctionalSourceSet sourceSet) {
+                    sourceSet.registerFactory(
+                            languageRegistration.getSourceSetType(),
+                            languageRegistration.getSourceSetFactory(sourceSet.getName()));
+                    sourceSet.create("jni", NativeSourceSet.class);
+                }
+            });
         }
 
         @Model(ModelConstants.NDK_HANDLER)
-        public NdkHandler ndkHandler(
+        public static NdkHandler ndkHandler(
                 ProjectIdentifier projectId,
                 @Path("android.compileSdkVersion") String compileSdkVersion,
                 @Path("android.ndk") NdkConfig ndkConfig) {
@@ -133,14 +206,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Defaults
-        public void initBuildTypeNdk(@Path("android.buildTypes") ModelMap<BuildType> buildTypes) {
-            buildTypes.beforeEach(new Action<BuildType>() {
-                @Override
-                public void execute(BuildType buildType) {
-                    NdkOptionsHelper.init(buildType.getNdk());
-                }
-            });
-
+        public static void initBuildTypeNdk(
+                @Path("android.buildTypes") ModelMap<BuildType> buildTypes) {
             buildTypes.named(
                     BuilderConstants.DEBUG,
                     new Action<BuildType>() {
@@ -153,19 +220,9 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                     });
         }
 
-        @Defaults
-        public void initProductFlavorNdk(
-                @Path("android.productFlavors") ModelMap<ProductFlavor> productFlavors) {
-            productFlavors.beforeEach(new Action<ProductFlavor>() {
-                @Override
-                public void execute(ProductFlavor productFlavor) {
-                    NdkOptionsHelper.init(productFlavor.getNdk());
-                }
-            });
-        }
-
         @Mutate
-        public void createAndroidPlatforms(PlatformContainer platforms, NdkHandler ndkHandler) {
+        public static void createAndroidPlatforms(PlatformContainer platforms,
+                NdkHandler ndkHandler) {
             if (!ndkHandler.isNdkDirConfigured()) {
                 return;
             }
@@ -173,19 +230,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             ToolchainConfiguration.configurePlatforms(platforms, ndkHandler);
         }
 
-        @Defaults
-        public void initTargetedAbi(
-                @Path(ABI_OPTIONS) ModelMap<NdkAbiOptions> abiConfigs) {
-            abiConfigs.beforeEach(new Action<NdkAbiOptions>() {
-                @Override
-                public void execute(NdkAbiOptions abiOptions) {
-                    NdkOptionsHelper.init(abiOptions);
-                }
-            });
-        }
-
         @Validate
-        public void validateAbi(@Path("android.abis") ModelMap<NdkAbiOptions> abiConfigs) {
+        public static void validateAbi(@Path("android.abis") ModelMap<NdkAbiOptions> abiConfigs) {
             abiConfigs.afterEach(new Action<NdkAbiOptions>() {
                 @Override
                 public void execute(NdkAbiOptions abiOptions) {
@@ -198,7 +244,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createToolchains(
+        public static void createToolchains(
                 NativeToolChainRegistry toolchainRegistry,
                 @Path("android.abis") ModelMap<NdkAbiOptions> abis,
                 @Path("android.ndk") NdkConfig ndkConfig,
@@ -215,7 +261,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createNativeBuildTypes(BuildTypeContainer nativeBuildTypes,
+        public static void createNativeBuildTypes(BuildTypeContainer nativeBuildTypes,
                 @Path("android.buildTypes") ModelMap<BuildType> androidBuildTypes) {
             for (BuildType buildType : androidBuildTypes.values()) {
                 nativeBuildTypes.maybeCreate(buildType.getName());
@@ -223,7 +269,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createNativeFlavors(FlavorContainer nativeFlavors,
+        public static void createNativeFlavors(
+                FlavorContainer nativeFlavors,
                 List<ProductFlavorCombo<ProductFlavor>> androidFlavorGroups) {
             if (androidFlavorGroups.isEmpty()) {
                 // Create empty native flavor to override Gradle's default name.
@@ -236,11 +283,11 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createNativeLibrary(
+        public static void createNativeLibrary(
                 final ComponentSpecContainer specs,
                 @Path("android.ndk") final NdkConfig ndkConfig,
                 final NdkHandler ndkHandler,
-                @Path("android.sources") final AndroidComponentModelSourceSet sources,
+                @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
                 @Path("buildDir") final File buildDir,
                 final ServiceRegistry serviceRegistry) {
             if (!ndkHandler.isNdkDirConfigured()) {
@@ -270,11 +317,42 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             }
         }
 
+        /**
+         * Find the native dependency for each native binaries.
+         *
+         * TODO: Remove duplication of functionality with NdkConfiguration.configureProperties.
+         * We need to predict the NativeBinarySpec that will be produce instead of creating this map
+         * after the binaries are created.
+         */
+        @Model(NATIVE_DEPENDENCIES)
+        public static Multimap<String, NativeDependencyResolveResult> resolveNativeDependencies(
+                ModelMap<NativeLibraryBinarySpec> nativeBinaries,
+                @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
+                final ServiceRegistry serviceRegistry) {
+            Multimap<String, NativeDependencyResolveResult> dependencies =
+                    ArrayListMultimap.create();
+            for (NativeLibraryBinarySpec nativeBinary : nativeBinaries.values()) {
+                Collection<NativeSourceSet> jniSources =
+                        NdkConfiguration.findNativeSourceSets(nativeBinary, sources).values();
+
+                for (NativeSourceSet jniSource : jniSources) {
+                    dependencies.put(
+                            nativeBinary.getName(),
+                            NdkConfiguration.resolveDependency(
+                                    serviceRegistry,
+                                    nativeBinary,
+                                    jniSource));
+                }
+            }
+            return dependencies;
+        }
+
         @Mutate
-        public void createAdditionalTasksForNatives(
+        public static void createAdditionalTasksForNatives(
                 final ModelMap<Task> tasks,
                 ModelMap<AndroidComponentSpec> specs,
                 @Path("android.ndk") final NdkConfig ndkConfig,
+                @Path(NATIVE_DEPENDENCIES) final Multimap<String, NativeDependencyResolveResult> dependencies,
                 final NdkHandler ndkHandler,
                 BinaryContainer binaries,
                 @Path("buildDir") final File buildDir) {
@@ -293,7 +371,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                                     nativeBinary,
                                     buildDir,
                                     binary.getMergedNdkConfig(),
-                                    ndkHandler);
+                                    ndkHandler,
+                                    dependencies);
                         }
                     }
                 });
@@ -301,7 +380,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void configureNativeBinary(
+        public static void configureNativeBinary(
                 BinaryContainer binaries,
                 ComponentSpecContainer specs,
                 @Path("android.ndk") final NdkConfig ndkConfig,
@@ -351,8 +430,68 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                     });
         }
 
+        /**
+         * Create external build config to allow NativeComponentModelBuilder to create native model.
+         */
+        @Model(EXTERNAL_BUILD_CONFIG)
+        public static void createNativeBuildModel(
+                NativeBuildConfig config,
+                ModelMap<DefaultAndroidBinary> binaries,
+                final NdkHandler ndkHandler) {
+            for (final DefaultAndroidBinary binary : binaries.values()) {
+                for (final NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
+                    if (!(nativeBinary instanceof SharedLibraryBinarySpec)) {
+                        continue;
+                    }
+                    final String abi = nativeBinary.getTargetPlatform().getName();
+                    config.getLibraries().create(
+                            binary.getName() + '-' + abi,
+                            new Action<NativeLibrary>() {
+                                @Override
+                                public void execute(NativeLibrary nativeLibrary) {
+                                    nativeLibrary.setOutput(
+                                            ((SharedLibraryBinarySpec) nativeBinary).getSharedLibraryFile());
+                                    Set<File> srcFolders = Sets.newHashSet();
+
+                                    for (LanguageSourceSet sourceSet : nativeBinary.getSources()) {
+                                        srcFolders.addAll(sourceSet.getSource().getSrcDirs());
+                                    }
+                                    final List<String> cFlags =
+                                            BinaryToolHelper.getCCompiler(nativeBinary).getArgs();
+                                    final List<String> cppFlags =
+                                            BinaryToolHelper.getCppCompiler(nativeBinary).getArgs();
+                                    for (final File srcFolder : srcFolders) {
+                                        nativeLibrary.getFolders().create(
+                                                new Action<NativeSourceFolder>() {
+                                                    @Override
+                                                    public void execute(NativeSourceFolder nativeSourceFolder) {
+                                                        nativeSourceFolder.setSrc(srcFolder);
+                                                        nativeSourceFolder.getCFlags().addAll(cFlags);
+                                                        nativeSourceFolder.getCppFlags().addAll(cppFlags);
+                                                    }
+                                                });
+                                    }
+                                    nativeLibrary.setToolchain("ndk-" + abi);
+                                }
+                            });
+                }
+            }
+            for (final Abi abi : ndkHandler.getSupportedAbis()) {
+                config.getToolchains().create("ndk-" + abi.getName(),
+                        new Action<NativeToolchain>() {
+                            @Override
+                            public void execute(NativeToolchain nativeToolchain) {
+                                nativeToolchain.setCCompilerExecutable(
+                                        ndkHandler.getCCompiler(abi));
+                                nativeToolchain.setCppCompilerExecutable(
+                                        ndkHandler.getCppCompiler(abi));
+                            }
+                        });
+            }
+        }
+
         @Finalize
-        public void attachNativeTasksToAndroidBinary(ModelMap<AndroidBinary> binaries) {
+        public static void attachNativeTasksToAndroidBinary(ModelMap<AndroidBinary> binaries) {
             binaries.afterEach(new Action<AndroidBinary>() {
                 @Override
                 public void execute(AndroidBinary androidBinary) {
@@ -360,12 +499,124 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                     for (NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
                         if (binary.getTargetAbi().isEmpty() || binary.getTargetAbi().contains(
                                 nativeBinary.getTargetPlatform().getName())) {
-                            binary.getBuildTask().dependsOn(NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
+                            binary.getBuildTask().dependsOn(
+                                    NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
                         }
                     }
                 }
             });
         }
+
+        @Model(ARTIFACTS)
+        public static void createNativeLibraryArtifacts(
+                ArtifactContainer artifactContainer,
+                ModelMap<DefaultAndroidBinary> binaries,
+                @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
+                final ModelMap<Task> tasks,
+                @Path(NATIVE_DEPENDENCIES) final Multimap<String, NativeDependencyResolveResult> dependencies,
+                NdkHandler ndkHandler) {
+            for(final DefaultAndroidBinary binary : binaries.values()) {
+                for (final NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
+                    final String linkage = nativeBinary instanceof SharedLibraryBinarySpec
+                            ? "shared"
+                            : "static";
+                    String name = Joiner.on('-').join(
+                            binary.getName(),
+                            nativeBinary.getTargetPlatform().getName(),
+                            linkage);
+                    artifactContainer.getNativeArtifacts().create(
+                            name,
+                            new CreateNativeLibraryArtifactAction(
+                                    binary,
+                                    nativeBinary,
+                                    dependencies.get(nativeBinary.getName()),
+                                    ndkHandler));
+                }
+            }
+        }
+
+        private static class CreateNativeLibraryArtifactAction
+                implements Action<NativeLibraryArtifact> {
+            private final DefaultAndroidBinary binary;
+            private final NativeLibraryBinarySpec nativeBinary;
+            private final Collection<NativeDependencyResolveResult> dependencies;
+            private final NdkHandler ndkHandler;
+
+            public CreateNativeLibraryArtifactAction(DefaultAndroidBinary binary,
+                    NativeLibraryBinarySpec nativeBinary,
+                    Collection<NativeDependencyResolveResult> dependencies,
+                    NdkHandler ndkHandler) {
+                this.binary = binary;
+                this.nativeBinary = nativeBinary;
+                this.dependencies = dependencies;
+                this.ndkHandler = ndkHandler;
+            }
+
+            @Override
+            public void execute(NativeLibraryArtifact artifact) {
+                final NativeDependencyLinkage linkage =
+                        nativeBinary instanceof SharedLibraryBinarySpec
+                                ? NativeDependencyLinkage.SHARED
+                                : NativeDependencyLinkage.STATIC;
+                File output  = nativeBinary instanceof SharedLibraryBinarySpec
+                        ? ((SharedLibraryBinarySpec) nativeBinary).getSharedLibraryFile()
+                        : ((StaticLibraryBinarySpec) nativeBinary).getStaticLibraryFile();
+
+                artifact.getLibraries().add(output);
+                artifact.setBuildType(binary.getBuildType().getName());
+                for (ProductFlavor flavor : binary.getProductFlavors()) {
+                    artifact.getProductFlavors().add(flavor.getName());
+                }
+                artifact.setVariantName(binary.getName());
+                artifact.setAbi(nativeBinary.getTargetPlatform().getName());
+                artifact.setLinkage(linkage);
+                artifact.setBuiltBy(nativeBinary);
+                for (LanguageSourceSet sourceSet : nativeBinary.getSources()) {
+                    if (sourceSet instanceof HeaderExportingSourceSet) {
+                        HeaderExportingSourceSet source = (HeaderExportingSourceSet) sourceSet;
+                        artifact.getExportedHeaderDirectories().addAll(
+                                source.getExportedHeaders().getSrcDirs());
+                    }
+                }
+                String stl = binary.getMergedNdkConfig().getStl();
+                if (stl.endsWith("_shared")) {
+                    NativePlatform abi = nativeBinary.getTargetPlatform();
+                    final StlNativeToolSpecification stlConfig = new StlNativeToolSpecification(
+                            ndkHandler,
+                            stl,
+                            abi);
+                    artifact.getLibraries().add(stlConfig.getStlLib(abi.getName()));
+                }
+
+                // Include transitive dependencies.
+                // Dynamic objects from dependencies needs to be added to the library list.
+                Abi abi = Abi.getByName(nativeBinary.getTargetPlatform().getName());
+                assert abi != null;
+                for (NativeDependencyResolveResult dependency : dependencies) {
+                    Iterables.addAll(
+                            artifact.getLibraries(),
+                            Iterables.filter(
+                                    dependency.getLibraryFiles().get(abi),
+                                    SHARED_OBJECT_FILTER));
+                    Collection<NativeLibraryArtifact> artifacts = dependency.getNativeArtifacts();
+                    for (NativeLibraryArtifact dep : artifacts) {
+                        if (abi.getName().equals(dep.getAbi())) {
+                            Iterables.addAll(
+                                    artifact.getLibraries(),
+                                    Iterables.filter(dep.getLibraries(), SHARED_OBJECT_FILTER));
+                        }
+                    }
+                }
+            }
+        }
+
+        private static final Predicate<File> SHARED_OBJECT_FILTER =
+                new Predicate<File>() {
+                    @Override
+                    public boolean apply(File file) {
+                        return file.getName().endsWith(".so");
+                    }
+                };
 
         /**
          * Remove unintended tasks created by Gradle native plugin from task list.
@@ -374,11 +625,11 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
          * them to avoid cluttering the task list.
          */
         @Mutate
-        public void hideNativeTasks(TaskContainer tasks, BinaryContainer binaries) {
-            // Gradle do not support a way to remove created tasks.  The best workaround is to clear the
-            // group of the task and have another task depends on it.  Therefore, we have to create
-            // a dummy task to depend on all the tasks that we do not want to show up on the task
-            // list. The dummy task dependsOn itself, effectively making it non-executable and
+        public static void hideNativeTasks(TaskContainer tasks, BinaryContainer binaries) {
+            // Gradle do not support a way to remove created tasks.  The best workaround is to clear
+            // the group of the task and have another task depends on it.  Therefore, we have to
+            // create a dummy task to depend on all the tasks that we do not want to show up on the
+            // task list. The dummy task dependsOn itself, effectively making it non-executable and
             // invisible unless the --all option is use.
             final Task nonExecutableTask = tasks.create("nonExecutableTask");
             nonExecutableTask.dependsOn(nonExecutableTask);
@@ -419,12 +670,6 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                             config.getBuildType().getName(),
                             config.getFlavorName(),
                             abi.getName())).getParentFile());
-            builder.add(new File(
-                    scope.getGlobalScope().getBuildDir(),
-                    NdkNamingScheme.getDependencyLibraryDirectoryName(
-                            config.getBuildType().getName(),
-                            config.getFlavorName(),
-                            abi.getName())).getParentFile());
         }
         scope.setNdkSoFolder(builder.build());
     }
@@ -452,7 +697,9 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
     /**
      * Return library binaries for a VariantConfiguration.
      */
-    public Collection<? extends BuildableModelElement> getBinaries(final VariantConfiguration variantConfig) {
+    @NonNull
+    public Collection<? extends BuildableModelElement> getBinaries(
+            @NonNull final VariantConfiguration variantConfig) {
         if (variantConfig.getType().isForTesting()) {
             // Do not return binaries for test variants as test source set is not supported at the
             // moment.

@@ -30,14 +30,18 @@ public class AnalysisReport {
     @NonNull
     private List<AnalysisResultEntry> mAnalysisResults = new ArrayList<AnalysisResultEntry>();
 
-    private boolean mCompleted = false;
+    // volatile so other threads can see the updated value, but this is not intrinsically
+    // thread-safe. This is mainly useful for the UI to know that the analysis is complete and
+    // reflect this fact in the UI.
+    private volatile boolean mCompleted = false;
 
-    private boolean mCancelled = false;
+    // volatile for similar reasons as mCompleted.
+    private volatile boolean mCancelled = false;
 
     /**
-     * Add the {@code entry} to the report. Since this is effectively a "reduce" call, the user will
-     * most likely want to call this on the same thread as {@link #addResultListener(Listener)} and
-     * {@link #setCompleted()}.
+     * Add the {@code entry} to the report. Since this is effectively a "reduce" call, the listener
+     * will want to get called on the same thread as {@link #addResultListener(Listener)} and {@link
+     * #setCompleted()}.
      */
     public void addAnalysisResultEntries(@NonNull List<AnalysisResultEntry> entries) {
         mAnalysisResults.addAll(entries);
@@ -73,26 +77,15 @@ public class AnalysisReport {
     }
 
     /**
-     * Add {@code listener} to the list of listeners listening for results or report completion. The
-     * user will most likely want to run this on the same thread as {@link
-     * #addAnalysisResultEntries(List)} and {@link #setCompleted()}.
+     * Adds all {@code listeners} to the set of listeners listening for results or report
+     * completion. The caller will need to add them before analysis starts.
      */
-    public void addResultListener(@NonNull Listener listener) {
-        if (mListeners.contains(listener)) {
-            return;
-        }
-
-        mListeners.add(listener);
-        listener.onResultsAdded(mAnalysisResults);
-        if (mCompleted) {
-            listener.onAnalysisComplete();
-        } else if (mCancelled) {
-            listener.onAnalysisCancelled();
-        }
+    public void addResultListeners(@NonNull Set<Listener> listeners) {
+        mListeners.addAll(listeners);
     }
 
-    public void removeResultListener(@NonNull Listener listener) {
-        mListeners.remove(listener);
+    public void removeResultListener(@NonNull Set<Listener> listener) {
+        mListeners.removeAll(listener);
     }
 
     public interface Listener {

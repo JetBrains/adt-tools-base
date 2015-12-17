@@ -17,37 +17,42 @@
 package com.android.build.gradle.internal;
 
 import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
+import com.android.build.gradle.internal.dependency.NativeLibraryArtifact;
 import com.android.build.gradle.model.AndroidBinary;
 import com.android.build.gradle.model.DefaultAndroidBinary;
 import com.android.build.gradle.model.JniLibsSourceSet;
-import com.android.build.gradle.ndk.internal.NdkNamingScheme;
+import com.android.build.gradle.tasks.StripDependenciesTask;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Task;
-import org.gradle.api.file.CopySpec;
-import org.gradle.api.tasks.Copy;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.internal.SourceTransformTaskConfig;
 import org.gradle.language.base.internal.registry.LanguageTransform;
-import org.gradle.nativeplatform.NativeBinarySpec;
-import org.gradle.nativeplatform.internal.NativeBinarySpecInternal;
 import org.gradle.platform.base.BinarySpec;
 
 import java.io.File;
 import java.util.Map;
 
-import groovy.lang.Closure;
-
 /**
  * {@link LanguageTransform} for {@link JniLibsSourceSet}.
  *
- * The transform creates a task to copy the dependencies into a folder that will be packaged into
- * the APK.
+ * The transform creates a task that strips or copy the dependencies into a folder that will be
+ * packaged into the APK.
  */
 public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSourceSet, SharedObjectFile> {
+
+    private NdkHandler ndkHandler;
+
+    public JniLibsLanguageTransform(NdkHandler ndkHandler) {
+        this.ndkHandler = ndkHandler;
+    }
 
     @Override
     public Class<JniLibsSourceSet> getSourceSetType() {
@@ -74,7 +79,7 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
         return binary instanceof AndroidBinary;
     }
 
-    private static class TransformConfig implements SourceTransformTaskConfig {
+    private class TransformConfig implements SourceTransformTaskConfig {
 
         @Override
         public String getTaskPrefix() {
@@ -83,7 +88,7 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
 
         @Override
         public Class<? extends DefaultTask> getTaskType() {
-            return Copy.class;
+            return StripDependenciesTask.class;
         }
 
         @Override
@@ -118,39 +123,46 @@ public class JniLibsLanguageTransform implements LanguageTransform<JniLibsSource
                                     binaryBuildType,
                                     binaryProductFlavor,
                                     null,
-                                    "shared")).resolve();
-            Copy copyTask = (Copy) task;
-            for (NativeBinarySpec nativeBinary: dependencies.getNativeBinaries()) {
-                // TODO: Handle transitive dependencies.
-                final String abi = nativeBinary.getTargetPlatform().getName();
-                if (binary.getMergedNdkConfig().getAbiFilters().contains(abi)) {
-                    copyTask.dependsOn(
-                            nativeBinary.getBuildTask().getProject().getPath() + ":" +
-                                    NdkNamingScheme.getNdkBuildTaskName(nativeBinary));
+                                    NativeDependencyLinkage.SHARED)).resolve();
 
-                    copyTask.from(
-                            ((NativeBinarySpecInternal) nativeBinary).getPrimaryOutput()
-                                    .getParentFile(), new Closure<Void>(this, this) {
-                                public void doCall(CopySpec copySpec) {
-                                    copySpec.into(abi);
-                                }
-                            });
+            Map<File, Abi> inputFiles = Maps.newHashMap();
+            StripDependenciesTask stripTask = (StripDependenciesTask) task;
+
+            for (NativeLibraryArtifact artifacts: dependencies.getNativeArtifacts()) {
+                final String abi = artifacts.getAbi();
+                assert abi != null;
+
+                if (binary.getMergedNdkConfig().getAbiFilters().contains(abi)) {
+                    stripTask.dependsOn(artifacts.getBuiltBy());
+
+                    // Debug libraries created from another subproject may have debug symbols,
+                    // therefore, the library is stripped before packaging.
+                    for (File output : artifacts.getLibraries()) {
+                        if (output.getName().endsWith(".so")) {
+                            inputFiles.put(output, Abi.getByName(abi));
+                        }
+                    }
                 }
             }
+
+            Map<File, Abi> stripedFiles = Maps.newHashMap();
             for (final Map.Entry<Abi, File> entry : dependencies.getLibraryFiles().entries()) {
-                copyTask.from(
-                        entry.getValue(), new Closure<Void>(this, this) {
-                            public void doCall(CopySpec copySpec) {
-                                copySpec.into(entry.getKey().getName());
-                            }
-                        });
+                System.out.println(entry.getValue());
+                // For dependency on a library file, there is no way to know if it contains debug
+                // symbol, and NDK may not not be set.  We may not have access to the strip tool,
+                // therefore, we assume the library do not have debug symbols and simply copy the
+                // file.
+                stripedFiles.put(entry.getValue(), entry.getKey());
             }
-            copyTask.into(new File(
+
+            new StripDependenciesTask.ConfigAction(binary.getBuildType().getName(),
+                    ProductFlavorCombo.getFlavorComboName(binary.getProductFlavors()),
+                    inputFiles,
+                    stripedFiles,
                     task.getProject().getBuildDir(),
-                    NdkNamingScheme.getDependencyLibraryDirectoryName(
-                            binaryBuildType,
-                            binaryProductFlavor,
-                            "")));
+                    ndkHandler).execute(stripTask);
+
+
             binarySpec.builtBy(task);
         }
     }

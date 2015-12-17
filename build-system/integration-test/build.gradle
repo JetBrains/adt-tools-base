@@ -30,8 +30,8 @@ dependencies {
 def testEnvironment = [
     PROJECT_BUILD_DIR: project.buildDir,
     CUSTOM_REPO: rootProject.file("../out/repo"),
-    CUSTOM_GRADLE: System.env.CUSTOM_GRADLE ?: rootProject.ext.buildVersion,
-    CUSTOM_EXPERIMENTAL_GRADLE: System.env.CUSTOM_EXPERIMENTAL_GRADLE ?:rootProject.ext.experimentalVersion,
+    CUSTOM_GRADLE: System.env.CUSTOM_GRADLE,
+    CUSTOM_EXPERIMENTAL_GRADLE: System.env.CUSTOM_EXPERIMENTAL_GRADLE,
     ANDROID_HOME: System.env.ANDROID_HOME,
     ANDROID_NDK_HOME: System.env.ANDROID_NDK_HOME,
     CUSTOM_BUILDTOOLS: System.env.CUSTOM_BUILDTOOLS,
@@ -39,6 +39,8 @@ def testEnvironment = [
     DEBUG_INNER_TEST: System.env.DEBUG_INNER_TEST,
     RECORD_SPANS: System.env.RECORD_SPANS,
     INTEGRATION_TEST: "true",
+    DATA_BINDING_INTERNAL_REPO : rootProject.file("../tools/data-binding/internal-prebuilts"),
+    DATA_BINDING_REPO : rootProject.file("../tools/data-binding/maven-repo"),
 ].findAll { it.value != null }
 
 // These tasks will not depend on publishLocal, so they will run integration
@@ -71,7 +73,20 @@ configure([test, testPrebuilts]) {
         excludeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
     }
     exclude "com/android/build/gradle/integration/performance/**"
+    exclude "com/android/build/gradle/integration/automatic/**"
 }
+
+task automaticTest(type: Test) {
+    include "com/android/build/gradle/integration/automatic/**"
+
+    systemProperties['junit.parallel.threads'] = Runtime.runtime.availableProcessors() / 2
+
+    // Always run the task, when requested.
+    outputs.upToDateWhen { false }
+    environment = testEnvironment
+}
+
+check.dependsOn automaticTest
 
 task connectedIntegrationTest(type: Test)
 
@@ -94,7 +109,11 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
     outputs.upToDateWhen { false }
 
     forkEvery= 1
-    maxParallelForks = System.env.containsKey("REMOTE_TEST_PROVIDER") ? Runtime.runtime.availableProcessors() : 1
+    def count = Runtime.runtime.availableProcessors()
+    if (count > 8) {
+        count = 8
+    }
+    maxParallelForks = System.env.containsKey("REMOTE_TEST_PROVIDER") ? count : 1
 
     useJUnit {
         includeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
@@ -120,6 +139,7 @@ task performanceTest(type: Test) {
     }
 }
 
+automaticTest.dependsOn ':publishLocal'
 test.dependsOn ':publishLocal'
 connectedIntegrationTest.dependsOn ':publishLocal'
 performanceTest.dependsOn ':publishLocal'

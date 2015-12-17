@@ -96,7 +96,7 @@ model {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(testApp)
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create();
 
     @BeforeClass

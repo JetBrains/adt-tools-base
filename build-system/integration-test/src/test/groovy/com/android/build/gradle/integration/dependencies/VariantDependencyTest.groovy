@@ -41,6 +41,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.fixture.GradleTestProject.DEFAULT_BUILD_TOOL_VERSION
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
@@ -51,7 +52,7 @@ import static org.junit.Assert.assertTrue
 class VariantDependencyTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+            .fromTestApp(HelloWorldApp.noBuildFile())
             .create()
 
     private static AndroidProject model
@@ -69,7 +70,7 @@ class VariantDependencyTest {
 
             android {
                 compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                buildToolsVersion "$DEFAULT_BUILD_TOOL_VERSION"
 
                 flavorDimensions 'model', 'api'
                 productFlavors {
@@ -100,8 +101,11 @@ class VariantDependencyTest {
         model = project.getSingleModel()
 
         File aapt = FileUtils.join(
-                project.getSdkDir(), "build-tools", "20.0.0", SdkConstants.FN_AAPT)
-        assertTrue("Test requires build-tools 20.0.0", aapt.isFile())
+                project.getSdkDir(),
+                "build-tools",
+                DEFAULT_BUILD_TOOL_VERSION,
+                SdkConstants.FN_AAPT)
+        assertTrue("Test requires build-tools " + DEFAULT_BUILD_TOOL_VERSION, aapt.isFile())
         ProcessExecutor processExecutor = new DefaultProcessExecutor(
                 new StdLogger(StdLogger.Level.ERROR))
         apkInfoParser = new ApkInfoParser(aapt, processExecutor)

@@ -35,6 +35,9 @@ import org.objectweb.asm.Type
 import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FieldNode
 
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+
 import static com.google.common.truth.Truth.assertThat
 /**
  * Assemble tests for minify.
@@ -58,11 +61,6 @@ class MinifyTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
         project.executeConnectedCheck()
@@ -70,14 +68,15 @@ class MinifyTest {
 
     @Test
     void 'App APK is minified'() throws Exception {
-        Set<String> minifiedList = gatherContentAsRelativePath(project.file(
+        File jarFile = project.file(
                 "build/" +
                         "$AndroidProject.FD_INTERMEDIATES/" +
                         "transforms/" +
-                        "CLASSES_and_RESOURCES/" +
-                        "FULL_PROJECT/" +
                         "proguard/" +
-                        "minified"))
+                        "minified/" +
+                        "jars/3/1f/main.jar")
+
+        Set<String> minifiedList = getZipEntries(jarFile);
 
         // Ignore JaCoCo stuff.
         minifiedList.removeAll { it =~ /org.jacoco/ }
@@ -93,28 +92,42 @@ class MinifyTest {
 
     @Test
     void 'Test APK is not minified, but mappings are applied'() throws Exception {
-        File rootFolder = project.file(
+        File jarFile = project.file(
                 "build/" +
                         "$AndroidProject.FD_INTERMEDIATES/" +
                         "transforms/" +
-                        "CLASSES_and_RESOURCES/" +
-                        "FULL_PROJECT/" +
                         "proguard/" +
                         "androidTest/" +
-                        "minified")
-        Set<String> minifiedList = gatherContentAsRelativePath(rootFolder)
+                        "minified/" +
+                        "jars/3/1f/main.jar")
+        Set<String> minifiedList = getZipEntries(jarFile)
 
         def testClassFiles = minifiedList.findAll { !it.startsWith("org/hamcrest") }
 
         assertThat(testClassFiles).containsExactly(
-                "LICENSE.txt",
                 "com/android/tests/basic/MainTest.class",
                 "com/android/tests/basic/UnusedTestClass.class",
                 "com/android/tests/basic/UsedTestClass.class",
                 "com/android/tests/basic/test/BuildConfig.class",
         )
 
-        checkClassFile(rootFolder)
+        checkClassFile(jarFile)
+    }
+
+    @NonNull
+    private static Set<String> getZipEntries(@NonNull File file) {
+        Set<String> entries = Sets.newHashSet();
+        ZipFile zipFile = new ZipFile(file);
+        try {
+            Enumeration<? extends ZipEntry> zipFileEntries = zipFile.entries();
+            while (zipFileEntries.hasMoreElements()) {
+                entries.add(zipFileEntries.nextElement().getName());
+            }
+        } finally {
+            zipFile.close();
+        }
+
+        return entries;
     }
 
     @Test
@@ -127,15 +140,22 @@ class MinifyTest {
     }
 
     @CompileDynamic
-    static def checkClassFile(@NonNull File rootFolder) {
-        File classFile = new File(rootFolder, "com/android/tests/basic/MainTest.class")
-        def classReader = new ClassReader(new FileInputStream(classFile))
-        def mainTestClassNode = new ClassNode(Opcodes.ASM5)
-        classReader.accept(mainTestClassNode, 0)
+    static def checkClassFile(@NonNull File jarFile) {
+        ZipFile zipFile = new ZipFile(jarFile);
+        try {
+            ZipEntry entry = zipFile.getEntry("com/android/tests/basic/MainTest.class")
+            assertThat(entry).named("MainTest.class entry").isNotNull()
+            def classReader = new ClassReader(zipFile.getInputStream(entry))
+            def mainTestClassNode = new ClassNode(Opcodes.ASM5)
+            classReader.accept(mainTestClassNode, 0)
 
-        // Make sure bytecode got rewritten to point to renamed classes.
-        FieldNode stringProviderField = mainTestClassNode.fields.find { it.name == "stringProvider" }
-        assert Type.getType(stringProviderField.desc).className == "com.android.tests.basic.a"
+            // Make sure bytecode got rewritten to point to renamed classes.
+            FieldNode stringProviderField = mainTestClassNode.fields.find { it.name == "stringProvider" }
+            assert Type.getType(stringProviderField.desc).className == "com.android.tests.basic.a"
+
+        } finally {
+            zipFile.close();
+        }
     }
 
     public Set<String> gatherContentAsRelativePath(@NonNull File rootFolder) {

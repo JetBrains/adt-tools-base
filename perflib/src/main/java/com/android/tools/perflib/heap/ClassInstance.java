@@ -79,11 +79,50 @@ public class ClassInstance extends Instance {
     }
 
     public final String toString() {
-        return String.format("%s@%d (0x%x)", getClassObj().getClassName(), getUniqueId(), getUniqueId());
+        return String
+                .format("%s@%d (0x%x)", getClassObj().getClassName(), getUniqueId(), getUniqueId());
+    }
+
+    public boolean isStringInstance() {
+        return getClassObj() != null && "java.lang.String".equals(getClassObj().getClassName());
+    }
+
+    @Nullable
+    public final char[] getStringChars() {
+        return getStringChars(Integer.MAX_VALUE);
+    }
+
+    @Nullable
+    public final char[] getStringChars(int maxDecodeStringLength) {
+        int count = -1;
+        int offset = 0;
+        ArrayInstance charBufferArray = null;
+        for (ClassInstance.FieldValue entry : getValues()) {
+            if (charBufferArray == null && "value".equals(entry.getField().getName())) {
+                if (entry.getValue() instanceof ArrayInstance
+                        && ((ArrayInstance) entry.getValue()).getArrayType() == Type.CHAR) {
+                    charBufferArray = (ArrayInstance) entry.getValue();
+                }
+            } else if ("count".equals(entry.getField().getName())) {
+                if (entry.getValue() instanceof Integer) {
+                    count = (Integer) entry.getValue();
+                }
+            } else if ("offset".equals(entry.getField().getName())) {
+                if (entry.getValue() instanceof Integer) {
+                    offset = (Integer) entry.getValue();
+                }
+            }
+        }
+
+        return charBufferArray == null ? null : charBufferArray
+                .asCharArray(offset >= 0 ? offset : 0,
+                        Math.max(Math.min(count, maxDecodeStringLength), 0));
     }
 
     public static class FieldValue {
+
         private Field mField;
+
         private Object mValue;
 
         public FieldValue(@NonNull Field field, @Nullable Object value) {

@@ -20,6 +20,7 @@ import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONE
 import static com.android.build.gradle.model.ModelConstants.ANDROID_BUILDER;
 import static com.android.build.gradle.model.ModelConstants.ANDROID_CONFIG_ADAPTOR;
 import static com.android.build.gradle.model.ModelConstants.EXTRA_MODEL_INFO;
+import static com.android.build.gradle.model.ModelConstants.JNILIBS_DEPENDENCIES;
 import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
@@ -29,13 +30,20 @@ import com.android.build.gradle.internal.AndroidConfigHelper;
 import com.android.build.gradle.internal.ExecutionConfigurationUtil;
 import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.JniLibsLanguageTransform;
+import com.android.build.gradle.internal.LanguageRegistryUtils;
 import com.android.build.gradle.internal.LibraryCache;
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.NativeDependencyLinkage;
+import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.NdkOptionsHelper;
+import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
+import com.android.build.gradle.internal.dependency.AndroidNativeDependencySpec;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolver;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor;
 import com.android.build.gradle.internal.process.GradleProcessExecutor;
@@ -46,13 +54,14 @@ import com.android.build.gradle.internal.transforms.DexTransform;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
-import com.android.build.gradle.managed.ClassField;
+import com.android.build.gradle.managed.DataBindingOptions;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.build.gradle.managed.SigningConfig;
 import com.android.build.gradle.managed.adaptor.AndroidConfigAdaptor;
 import com.android.build.gradle.managed.adaptor.BuildTypeAdaptor;
+import com.android.build.gradle.managed.adaptor.DataBindingOptionsAdapter;
 import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor;
 import com.android.build.gradle.tasks.JillTask;
 import com.android.builder.Version;
@@ -69,8 +78,10 @@ import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.android.resources.Density;
 import com.android.utils.ILogger;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
@@ -87,6 +98,8 @@ import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.language.base.internal.registry.LanguageRegistration;
+import org.gradle.language.base.internal.registry.LanguageRegistry;
 import org.gradle.language.base.internal.registry.LanguageTransformContainer;
 import org.gradle.model.Defaults;
 import org.gradle.model.Model;
@@ -101,9 +114,12 @@ import org.gradle.platform.base.BinaryContainer;
 import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
+import android.databinding.tool.DataBindingBuilder;
+
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -187,6 +203,71 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         modelRegistry.create(ModelCreators.bridgedInstance(
                 ModelReference.of("toolingRegistry", ToolingModelBuilderRegistry.class),
                 toolingRegistry).descriptor("Tooling model builder model registry.").build());
+
+        // Create SDK handler.  This has to be done in the 'apply' method to ensure it is executed.
+        SdkHandler sdkHandler = createSdkHandler(project);
+        modelRegistry.create(ModelCreators.bridgedInstance(
+                ModelReference.of("createSdkHandler", SdkHandler.class),
+                sdkHandler).descriptor("SDK handler.").build());
+    }
+
+    private SdkHandler createSdkHandler(final Project project) {
+        final ILogger logger = new LoggerWrapper(project.getLogger());
+        final SdkHandler sdkHandler = new SdkHandler(project, logger);
+
+        // call back on execution. This is called after the whole build is done (not
+        // after the current project is done).
+        // This is will be called for each (android) projects though, so this should support
+        // being called 2+ times.
+        project.getGradle().buildFinished(new Closure<Object>(this, this) {
+            public void doCall(Object it) {
+                ExecutorSingleton.shutdown();
+                sdkHandler.unload();
+                try {
+                    PreDexCache.getCache().clear(project.getRootProject()
+                            .file(String.valueOf(project.getRootProject().getBuildDir()) + "/"
+                                    + FD_INTERMEDIATES + "/dex-cache/cache.xml"), logger);
+                    JackConversionCache.getCache().clear(project.getRootProject()
+                            .file(String.valueOf(project.getRootProject().getBuildDir()) + "/"
+                                    + FD_INTERMEDIATES + "/jack-cache/cache.xml"), logger);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                LibraryCache.getCache().unload();
+            }
+        });
+
+        project.getGradle().getTaskGraph().whenReady(new Closure<Void>(this, this) {
+            public void doCall(TaskExecutionGraph taskGraph) {
+                for (Task task : taskGraph.getAllTasks()) {
+                    if (task instanceof TransformTask) {
+                        if (((TransformTask) task).getTransform() instanceof DexTransform) {
+                            PreDexCache.getCache().load(project.getRootProject()
+                                    .file(String.valueOf(project.getRootProject().getBuildDir())
+                                            + "/" + FD_INTERMEDIATES + "/dex-cache/cache.xml"));
+                            break;
+                        }
+                    } else if (task instanceof JillTask) {
+                        JackConversionCache.getCache().load(project.getRootProject()
+                                .file(String.valueOf(project.getRootProject().getBuildDir())
+                                        + "/" + FD_INTERMEDIATES + "/jack-cache/cache.xml"));
+                        break;
+                    }
+                }
+            }
+        });
+
+        // setup SDK repositories.
+        for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
+            project.getRepositories().maven(new Action<MavenArtifactRepository>() {
+                @Override
+                public void execute(MavenArtifactRepository repo) {
+                    repo.setUrl(file.toURI());
+
+                }
+            });
+        }
+        return sdkHandler;
     }
 
     private static void createConfiguration(@NonNull ConfigurationContainer configurations,
@@ -200,18 +281,18 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         configuration.setDescription(configurationDescription);
     }
 
-    @SuppressWarnings("MethodMayBeStatic")
     public static class Rules extends RuleSource {
 
         @Mutate
-        void registerLanguageTransform(
+        public static void registerLanguageTransform(
                 LanguageTransformContainer languages,
-                ServiceRegistry serviceRegistry) {
-            languages.add(new JniLibsLanguageTransform());
+                ServiceRegistry serviceRegistry,
+                NdkHandler ndkHandler) {
+            languages.add(new JniLibsLanguageTransform(ndkHandler));
         }
 
         @Defaults
-        public void configureAndroidModel(
+        public static void configureAndroidModel(
                 AndroidConfig androidModel,
                 ServiceRegistry serviceRegistry) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
@@ -219,7 +300,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Defaults
-        public void initSigningConfigs(
+        public static void initSigningConfigs(
                 @Path("android.signingConfigs") ModelMap<SigningConfig> signingConfigs) {
             signingConfigs.beforeEach(new Action<SigningConfig>() {
                 @Override
@@ -246,87 +327,36 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         // com.android.build.gradle.AndroidConfig do not contain an NdkConfig.  Copy it to the
         // defaultConfig for now.
         @Defaults
-        public void copyNdkConfig(
+        public static void copyNdkConfig(
                 @Path("android.defaultConfig.ndk") NdkOptions defaultNdkConfig,
                 @Path("android.ndk") NdkConfig pluginNdkConfig) {
-            NdkOptionsHelper.init(defaultNdkConfig);
             NdkOptionsHelper.merge(defaultNdkConfig, pluginNdkConfig);
+        }
+
+        @Defaults
+        public void configureDefaultDataBindingOptions(
+                @Path("android.dataBinding") DataBindingOptions dataBindingOptions) {
+            dataBindingOptions.setEnabled(false);
+            dataBindingOptions.setAddDefaultAdapters(true);
         }
 
        // TODO: Remove code duplicated from BasePlugin.
         @Model(EXTRA_MODEL_INFO)
-        public ExtraModelInfo createExtraModelInfo(
+        public static ExtraModelInfo createExtraModelInfo(
                 Project project,
                 @NonNull @Path("isApplication") Boolean isApplication) {
             return new ExtraModelInfo(project, isApplication);
         }
 
         @Model
-        public SdkHandler createSdkHandler(final Project project) {
-            final ILogger logger = new LoggerWrapper(project.getLogger());
-            final SdkHandler sdkHandler = new SdkHandler(project, logger);
-
-            // call back on execution. This is called after the whole build is done (not
-            // after the current project is done).
-            // This is will be called for each (android) projects though, so this should support
-            // being called 2+ times.
-            project.getGradle().buildFinished(new Closure<Object>(this, this) {
-                public void doCall(Object it) {
-                    ExecutorSingleton.shutdown();
-                    sdkHandler.unload();
-                    try {
-                        PreDexCache.getCache().clear(project.getRootProject()
-                                .file(String.valueOf(project.getRootProject().getBuildDir()) + "/"
-                                        + FD_INTERMEDIATES + "/dex-cache/cache.xml"), logger);
-                        JackConversionCache.getCache().clear(project.getRootProject()
-                                .file(String.valueOf(project.getRootProject().getBuildDir()) + "/"
-                                        + FD_INTERMEDIATES + "/jack-cache/cache.xml"), logger);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    LibraryCache.getCache().unload();
-                }
-
-                public void doCall() {
-                    doCall(null);
-                }
-            });
-
-            project.getGradle().getTaskGraph().whenReady(new Closure<Void>(this, this) {
-                public void doCall(TaskExecutionGraph taskGraph) {
-                    for (Task task : taskGraph.getAllTasks()) {
-                        if (task instanceof TransformTask) {
-                            if (((TransformTask) task).getTransform() instanceof DexTransform) {
-                                PreDexCache.getCache().load(project.getRootProject()
-                                        .file(String.valueOf(project.getRootProject().getBuildDir())
-                                                + "/" + FD_INTERMEDIATES + "/dex-cache/cache.xml"));
-                                break;
-                            }
-                        } else if (task instanceof JillTask) {
-                            JackConversionCache.getCache().load(project.getRootProject()
-                                    .file(String.valueOf(project.getRootProject().getBuildDir())
-                                            + "/" + FD_INTERMEDIATES + "/jack-cache/cache.xml"));
-                            break;
-                        }
-                    }
-                }
-            });
-
-            // setup SDK repositories.
-            for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
-                project.getRepositories().maven(new Action<MavenArtifactRepository>() {
-                    @Override
-                    public void execute(MavenArtifactRepository repo) {
-                        repo.setUrl(file.toURI());
-
-                    }
-                });
-            }
-            return sdkHandler;
+        public DataBindingBuilder createDataBindingBuilder() {
+            return new DataBindingBuilder();
         }
 
         @Model(ANDROID_BUILDER)
-        public AndroidBuilder createAndroidBuilder(Project project, ExtraModelInfo extraModelInfo) {
+        public static AndroidBuilder createAndroidBuilder(
+                Project project,
+                ExtraModelInfo extraModelInfo) {
             String creator = "Android Gradle";
             ILogger logger = new LoggerWrapper(project.getLogger());
 
@@ -338,7 +368,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Defaults
-        public void initDebugBuildTypes(
+        public static void initDebugBuildTypes(
                 @Path("android.buildTypes") ModelMap<BuildType> buildTypes,
                 @Path("android.signingConfigs") final ModelMap<SigningConfig> signingConfigs) {
             buildTypes.beforeEach(new Action<BuildType>() {
@@ -367,77 +397,60 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             buildType.setEmbedMicroApp(true);
             buildType.setUseJack(false);
             buildType.setShrinkResources(false);
-            buildType.setProguardFiles(Sets.<File>newHashSet());
-            buildType.setConsumerProguardFiles(Sets.<File>newHashSet());
-            buildType.setTestProguardFiles(Sets.<File>newHashSet());
         }
 
         @Defaults
-        public void initDefaultConfig(@Path("android.defaultConfig") ProductFlavor defaultConfig) {
-            initProductFlavor(defaultConfig);
+        public static void initDefaultConfig(
+                @Path("android.defaultConfig") ProductFlavor defaultConfig) {
 
             Set<Density> densities = Density.getRecommendedValuesForDevice();
             Set<String> strings = Sets.newHashSetWithExpectedSize(densities.size());
             for (Density density : densities) {
                 strings.add(density.getResourceValue());
             }
-            defaultConfig.setGeneratedDensities(strings);
         }
 
         @Defaults
-        public void initProductFlavors(
-                @Path("android.productFlavors") final ModelMap<ProductFlavor> productFlavors) {
-            productFlavors.beforeEach(new Action<ProductFlavor>() {
-                @Override
-                public void execute(ProductFlavor productFlavor) {
-                    initProductFlavor(productFlavor);
-                }
-            });
-        }
+        public static void addDefaultAndroidSourceSet(
+                @Path("android.sources") ModelMap<FunctionalSourceSet> sources,
+                final LanguageRegistry languageRegistry) {
+            final LanguageRegistration androidLanguageRegistration =
+                    LanguageRegistryUtils.find(languageRegistry, AndroidLanguageSourceSet.class);
+            final LanguageRegistration jniLibsLanguageRegistration =
+                    LanguageRegistryUtils.find(languageRegistry, JniLibsSourceSet.class);
 
-        private void initProductFlavor(ProductFlavor productFlavor) {
-            productFlavor.setProguardFiles(Sets.<File>newHashSet());
-            productFlavor.setConsumerProguardFiles(Sets.<File>newHashSet());
-            productFlavor.setTestProguardFiles(Sets.<File>newHashSet());
-            productFlavor.setResourceConfigurations(Sets.<String>newHashSet());
-            productFlavor.setJarJarRuleFiles(Lists.<File>newArrayList());
-            productFlavor.getBuildConfigFields().beforeEach(new Action<ClassField>() {
+            sources.beforeEach(new Action<FunctionalSourceSet>() {
                 @Override
-                public void execute(ClassField classField) {
-                    classField.setAnnotations(Sets.<String>newHashSet());
-                }
-            });
-            productFlavor.getResValues().beforeEach(new Action<ClassField>() {
-                @Override
-                public void execute(ClassField classField) {
-                    classField.setAnnotations(Sets.<String>newHashSet());
-                }
-            });
-        }
+                public void execute(FunctionalSourceSet sourceSet) {
+                    sourceSet.registerFactory(
+                            androidLanguageRegistration.getSourceSetType(),
+                            androidLanguageRegistration.getSourceSetFactory(sourceSet.getName()));
+                    sourceSet.registerFactory(
+                            jniLibsLanguageRegistration.getSourceSetType(),
+                            jniLibsLanguageRegistration.getSourceSetFactory(sourceSet.getName()));
+                    sourceSet.create("resources", AndroidLanguageSourceSet.class);
+                    sourceSet.create("java", AndroidLanguageSourceSet.class);
+                    sourceSet.create("manifest", AndroidLanguageSourceSet.class);
+                    sourceSet.create("res", AndroidLanguageSourceSet.class);
+                    sourceSet.create("assets", AndroidLanguageSourceSet.class);
+                    sourceSet.create("aidl", AndroidLanguageSourceSet.class);
+                    sourceSet.create("renderscript", AndroidLanguageSourceSet.class);
+                    sourceSet.create("jniLibs", JniLibsSourceSet.class);
 
-        @Mutate
-        public void addDefaultAndroidSourceSet(
-                @Path("android.sources") AndroidComponentModelSourceSet sources) {
-            sources.addDefaultSourceSet("resources", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("java", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("manifest", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("res", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("assets", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("aidl", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("renderscript", AndroidLanguageSourceSet.class);
-            sources.addDefaultSourceSet("jniLibs", JniLibsSourceSet.class);
-
-            sources.all(new Action<FunctionalSourceSet>() {
-                @Override
-                public void execute(FunctionalSourceSet functionalSourceSet) {
-                    LanguageSourceSet manifest = functionalSourceSet.getByName("manifest");
+                    LanguageSourceSet manifest = sourceSet.getByName("manifest");
                     manifest.getSource().setIncludes(ImmutableList.of("AndroidManifest.xml"));
                 }
             });
         }
 
+        @Mutate
+        public void androidConfigImplicitDependencies(AndroidConfig androidConfig,
+                @Path("android.dataBinding") DataBindingOptions dataBindingOptions) {
+
+        }
+
         @Model(ANDROID_CONFIG_ADAPTOR)
-        public com.android.build.gradle.AndroidConfig createModelAdaptor(
+        public static com.android.build.gradle.AndroidConfig createModelAdaptor(
                 ServiceRegistry serviceRegistry,
                 AndroidConfig androidExtension,
                 Project project,
@@ -447,8 +460,38 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                     .createSourceSetsContainer(project, instantiator, !isApplication));
         }
 
+        @Model(JNILIBS_DEPENDENCIES)
+        public static Multimap<String, NativeDependencyResolveResult> resolveJniLibsDependencies(
+                ModelMap<AndroidBinary> androidBinary,
+                @Path("android.sources") final ModelMap<FunctionalSourceSet> sources,
+                final ServiceRegistry serviceRegistry) {
+            Multimap<String, NativeDependencyResolveResult> dependencies =
+                    ArrayListMultimap.create();
+            for (AndroidBinary binary : androidBinary.values()) {
+                Collection<JniLibsSourceSet> jniSources = binary.getInputs().withType(
+                        JniLibsSourceSet.class);
+
+                for (JniLibsSourceSet sourceSet : jniSources) {
+                    dependencies.put(
+                            binary.getName(),
+                            new NativeDependencyResolver(
+                                    serviceRegistry,
+                                    sourceSet.getDependencies(),
+                                    new AndroidNativeDependencySpec(
+                                            null,
+                                            null,
+                                            binary.getBuildType().getName(),
+                                            ProductFlavorCombo.getFlavorComboName(
+                                                    binary.getProductFlavors()),
+                                            null,
+                                            NativeDependencyLinkage.SHARED)).resolve());
+                }
+            }
+            return dependencies;
+        }
+
         @Mutate
-        public void createAndroidComponents(
+        public static void createAndroidComponents(
                 ComponentSpecContainer androidSpecs,
                 ServiceRegistry serviceRegistry, AndroidConfig androidExtension,
                 com.android.build.gradle.AndroidConfig adaptedModel,
@@ -492,7 +535,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createVariantData(
+        public static void createVariantData(
                 ModelMap<AndroidBinary> binaries,
                 ModelMap<AndroidComponentSpec> specs,
                 TaskManager taskManager) {
@@ -516,17 +559,26 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createLifeCycleTasks(ModelMap<Task> tasks, TaskManager taskManager) {
+        public static void createLifeCycleTasks(ModelMap<Task> tasks, TaskManager taskManager) {
             taskManager.createTasksBeforeEvaluate(new TaskModelMapAdaptor(tasks));
         }
 
         @Mutate
-        public void createAndroidTasks(
+        public void addDataBindingDependenciesIfNecessary(
+                TaskManager taskManager,
+                @Path("android.dataBinding") DataBindingOptions dataBindingOptions) {
+            taskManager.addDataBindingDependenciesIfNecessary(
+                    new DataBindingOptionsAdapter(dataBindingOptions));
+        }
+
+        @Mutate
+        public static void createAndroidTasks(
                 ModelMap<Task> tasks,
                 ModelMap<AndroidComponentSpec> androidSpecs,
                 TaskManager taskManager,
                 SdkHandler sdkHandler,
-                Project project, AndroidComponentModelSourceSet androidSources) {
+                Project project,
+                @Path("android.sources") ModelMap<FunctionalSourceSet> androidSources) {
             // setup SDK repositories.
             for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
                 project.getRepositories().maven(new Action<MavenArtifactRepository>() {
@@ -541,7 +593,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         // TODO: Use @BinaryTasks after figuring how to configure non-binary specific tasks.
         @Mutate
-        public void createBinaryTasks(
+        public static void createBinaryTasks(
                 final ModelMap<Task> tasks,
                 BinaryContainer binaries,
                 ModelMap<AndroidComponentSpec> specs,
@@ -563,7 +615,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
          * Create tasks that must be created after other tasks for variants are created.
          */
         @Mutate
-        public void createRemainingTasks(
+        public static void createRemainingTasks(
                 ModelMap<Task> tasks,
                 TaskManager taskManager,
                 ModelMap<AndroidComponentSpec> spec) {
@@ -576,7 +628,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createReportTasks(
+        public static void createReportTasks(
                 ModelMap<Task> tasks,
                 ModelMap<AndroidComponentSpec> specs) {
             final VariantManager variantManager =
@@ -607,7 +659,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void modifyAssembleTaskDescription(@Path("tasks.assemble") Task assembleTask) {
+        public static void modifyAssembleTaskDescription(
+                @Path("tasks.assemble") Task assembleTask) {
             assembleTask.setDescription(
                     "Assembles all variants of all applications and secondary packages.");
         }

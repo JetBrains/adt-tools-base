@@ -17,6 +17,7 @@
  */
 package com.android.tools.rpclib.any;
 
+import com.android.tools.rpclib.schema.*;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
@@ -53,11 +54,14 @@ final class Uint16Slice extends Box implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {106, 111, 44, -53, 79, -92, 20, 78, -123, -20, -112, 41, 111, 58, -126, 50, -86, 71, 18, 54, };
-    public static final BinaryID ID = new BinaryID(IDBytes);
+
+    private static final Entity ENTITY = new Entity("any","uint16Slice","","");
 
     static {
-        Namespace.register(ID, Klass.INSTANCE);
+        ENTITY.setFields(new Field[]{
+            new Field("value", new Slice("", new Primitive("uint16", Method.Uint16))),
+        });
+        Namespace.register(Klass.INSTANCE);
     }
     public static void register() {}
     //<<<End:Java.ClassBody:1>>>
@@ -66,7 +70,7 @@ final class Uint16Slice extends Box implements BinaryObject {
         INSTANCE;
 
         @Override @NotNull
-        public BinaryID id() { return ID; }
+        public Entity entity() { return ENTITY; }
 
         @Override @NotNull
         public BinaryObject create() { return new Uint16Slice(); }

@@ -24,20 +24,20 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
-import com.google.common.collect.Sets;
 
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
+import android.databinding.tool.DataBindingBuilder;
+
 import java.io.File;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -49,11 +49,13 @@ public class ApplicationTaskManager extends TaskManager {
     public ApplicationTaskManager(
             Project project,
             AndroidBuilder androidBuilder,
+            DataBindingBuilder dataBindingBuilder,
             AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
-        super(project, androidBuilder, extension, sdkHandler, dependencyManager, toolingRegistry);
+        super(project, androidBuilder, dataBindingBuilder, extension, sdkHandler,dependencyManager,
+                toolingRegistry);
     }
 
     @Override
@@ -173,6 +175,11 @@ public class ApplicationTaskManager extends TaskManager {
                     }
                 });
 
+        // Add data binding tasks if enabled
+        if (extension.getDataBinding().isEnabled()) {
+            createDataBindingTasks(tasks, variantScope);
+        }
+
         // Add NDK tasks
         if (isNdkTaskNeeded) {
             ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_NDK_TASK,
@@ -191,6 +198,16 @@ public class ApplicationTaskManager extends TaskManager {
             }
         }
         variantScope.setNdkBuildable(getNdkBuildable(variantData));
+
+        // Add a task to merge the jni libs folders
+        ThreadRecorder.get().record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_JNILIBS_FOLDERS_TASK,
+                new Recorder.Block<Void>() {
+                    @Override
+                    public Void call() {
+                        createMergeJniLibFoldersTasks(tasks, variantScope);
+                        return null;
+                    }
+                });
 
         if (variantData.getSplitHandlingPolicy().equals(
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY)) {
@@ -229,40 +246,10 @@ public class ApplicationTaskManager extends TaskManager {
                 });
     }
 
-    private static final Set<Scope> PREDEX_SCOPES = Sets.immutableEnumSet(
-            Scope.PROJECT_LOCAL_DEPS,
-            Scope.SUB_PROJECTS,
-            Scope.SUB_PROJECTS_LOCAL_DEPS,
-            Scope.EXTERNAL_LIBRARIES);
-
     @NonNull
     @Override
-    protected Set<Scope> computeExtractResAndJavaFromJarScopes(
-            @NonNull VariantScope variantScope) {
-        return computeExtractResAndJavaFromJarScopes2(variantScope);
-    }
-
-    @NonNull
-    static Set<Scope> computeExtractResAndJavaFromJarScopes2(
-            @NonNull VariantScope variantScope) {
-        // for now return all scopes no matter what.
-        // FIXME: only if we have a transform that impacts these scopes and CLASSES content-type.
-        return PREDEX_SCOPES;
-    }
-
-    @NonNull
-    @Override
-    protected Set<Scope> computeExtractResFromJarScopes(@NonNull VariantScope variantScope) {
-        return computeExtractResFromJarScopes(variantScope, this);
-    }
-
-    @NonNull
-    static Set<Scope> computeExtractResFromJarScopes(
-            @NonNull VariantScope variantScope,
-            @NonNull TaskManager taskManager) {
-        // for now return no scopes no matter what.
-        // FIXME: only if we have a transform that impacts these scopes and CLASSES content-type.
-        return TransformManager.EMPTY_SCOPES;
+    protected Set<Scope> getResMergingScopes(@NonNull VariantScope variantScope) {
+        return TransformManager.SCOPE_FULL_PROJECT;
     }
 
     /**

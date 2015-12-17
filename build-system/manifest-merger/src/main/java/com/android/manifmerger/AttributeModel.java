@@ -19,6 +19,7 @@ package com.android.manifmerger;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -114,6 +115,7 @@ class AttributeModel {
      * Creates a new {@link Builder} to describe an attribute.
      * @param attributeName the to be described attribute name
      */
+    @NonNull
     static Builder newModel(String attributeName) {
         return new Builder(attributeName);
     }
@@ -126,6 +128,7 @@ class AttributeModel {
         private String mDefaultValue;
         private Validator mOnReadValidator;
         private Validator mOnWriteValidator;
+        @NonNull
         private MergingPolicy mMergingPolicy = STRICT_MERGING_POLICY;
 
         Builder(String name) {
@@ -137,6 +140,7 @@ class AttributeModel {
          * class names with package settings as provided by the manifest node's package attribute
          * {@link <a href=http://developer.android.com/guide/topics/manifest/manifest-element.html>}
          */
+        @NonNull
         Builder setIsPackageDependent() {
             mIsPackageDependent = true;
             return this;
@@ -145,6 +149,7 @@ class AttributeModel {
         /**
          * Sets the attribute default value.
          */
+        @NonNull
         Builder setDefaultValue(String value) {
             mDefaultValue =  value;
             return this;
@@ -154,6 +159,7 @@ class AttributeModel {
          * Sets a {@link com.android.manifmerger.AttributeModel.Validator} to validate the
          * attribute's values coming from xml files.
          */
+        @NonNull
         Builder setOnReadValidator(Validator validator) {
             mOnReadValidator = validator;
             return this;
@@ -163,12 +169,14 @@ class AttributeModel {
          * Sets a {@link com.android.manifmerger.AttributeModel.Validator} to validate values
          * before they are written to the final merged document.
          */
+        @NonNull
         Builder setOnWriteValidator(Validator validator) {
             mOnWriteValidator = validator;
             return this;
         }
 
-        Builder setMergingPolicy(MergingPolicy mergingPolicy) {
+        @NonNull
+        Builder setMergingPolicy(@NonNull MergingPolicy mergingPolicy) {
             mMergingPolicy = mergingPolicy;
             return this;
         }
@@ -176,6 +184,7 @@ class AttributeModel {
         /**
          * Build an immutable {@link com.android.manifmerger.AttributeModel}
          */
+        @NonNull
         AttributeModel build() {
             return new AttributeModel(
                     XmlNode.fromXmlName("android:" + mName),
@@ -212,6 +221,7 @@ class AttributeModel {
     /**
      * Standard attribute value merging policy, generates an error unless both values are equal.
      */
+    @NonNull
     static final MergingPolicy STRICT_MERGING_POLICY = new MergingPolicy() {
 
         @Override
@@ -268,7 +278,7 @@ class AttributeModel {
      * Decode a decimal or hexadecimal {@link String} into an {@link Integer}.
      * String starting with 0 will be considered decimal, not octal.
      */
-    private static int decodeDecOrHexString(String s) {
+    private static int decodeDecOrHexString(@NonNull String s) {
         long decodedValue = s.startsWith("0x") || s.startsWith("0X")
                 ? Long.decode(s)
                 : Long.parseLong(s);
@@ -312,7 +322,7 @@ class AttributeModel {
         private static final Pattern TRUE_PATTERN = Pattern.compile("true|True|TRUE");
         private static final Pattern FALSE_PATTERN = Pattern.compile("false|False|FALSE");
 
-        private static boolean isTrue(String value) {
+        private static boolean isTrue(@NonNull String value) {
             return TRUE_PATTERN.matcher(value).matches();
         }
 
@@ -343,10 +353,12 @@ class AttributeModel {
      */
     static class MultiValueValidator implements Validator {
 
+        @NonNull
         private final String[] multiValues;
+        @NonNull
         private final String allValues;
 
-        MultiValueValidator(String... multiValues) {
+        MultiValueValidator(@NonNull String... multiValues) {
             this.multiValues = multiValues;
             allValues = Joiner.on(',').join(multiValues);
         }

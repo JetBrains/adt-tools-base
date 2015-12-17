@@ -123,7 +123,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      *
      * @see VariantType#isForTesting()
      */
-    private final VariantConfiguration mTestedConfig;
+    private final VariantConfiguration<T, D, F> mTestedConfig;
 
     /**
      * An optional output that is only valid if the type is Type#LIBRARY so that the test
@@ -225,7 +225,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             @NonNull T buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
             @NonNull VariantType type,
-            @Nullable VariantConfiguration testedConfig,
+            @Nullable VariantConfiguration<T, D, F> testedConfig,
             @Nullable SigningConfig signingConfigOverride) {
         checkNotNull(defaultConfig);
         checkNotNull(defaultSourceProvider);
@@ -1163,7 +1163,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     @NonNull
     public List<ResourceSet> getResourceSets(@NonNull List<File> generatedResFolders,
-                                             boolean includeDependencies) {
+                                             boolean includeDependencies,
+                                             boolean validateEnabled) {
         List<ResourceSet> resourceSets = Lists.newArrayList();
 
         // the list of dependency must be reversed to use the right overlay order.
@@ -1173,7 +1174,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
                 if (!dependency.isOptional()) {
                     File resFolder = dependency.getResFolder();
                     if (resFolder.isDirectory()) {
-                        ResourceSet resourceSet = new ResourceSet(dependency.getFolder().getName());
+                        ResourceSet resourceSet =
+                                new ResourceSet(dependency.getFolder().getName(), validateEnabled);
                         resourceSet.addSource(resFolder);
                         resourceSets.add(resourceSet);
                     }
@@ -1184,7 +1186,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         Collection<File> mainResDirs = mDefaultSourceProvider.getResDirectories();
 
         // the main + generated res folders are in the same ResourceSet
-        ResourceSet resourceSet = new ResourceSet(BuilderConstants.MAIN);
+        ResourceSet resourceSet = new ResourceSet(BuilderConstants.MAIN, validateEnabled);
         resourceSet.addSources(mainResDirs);
         if (!generatedResFolders.isEmpty()) {
             for (File generatedResFolder : generatedResFolders) {
@@ -1201,7 +1203,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             Collection<File> flavorResDirs = sourceProvider.getResDirectories();
             // we need the same of the flavor config, but it's in a different list.
             // This is fine as both list are parallel collections with the same number of items.
-            resourceSet = new ResourceSet(sourceProvider.getName());
+            resourceSet = new ResourceSet(sourceProvider.getName(), validateEnabled);
             resourceSet.addSources(flavorResDirs);
             resourceSets.add(resourceSet);
         }
@@ -1209,7 +1211,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         // multiflavor specific overrides flavor
         if (mMultiFlavorSourceProvider != null) {
             Collection<File> variantResDirs = mMultiFlavorSourceProvider.getResDirectories();
-            resourceSet = new ResourceSet(getFlavorName());
+            resourceSet = new ResourceSet(getFlavorName(), validateEnabled);
             resourceSet.addSources(variantResDirs);
             resourceSets.add(resourceSet);
         }
@@ -1217,7 +1219,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         // build type overrides the flavors
         if (mBuildTypeSourceProvider != null) {
             Collection<File> typeResDirs = mBuildTypeSourceProvider.getResDirectories();
-            resourceSet = new ResourceSet(mBuildType.getName());
+            resourceSet = new ResourceSet(mBuildType.getName(), validateEnabled);
             resourceSet.addSources(typeResDirs);
             resourceSets.add(resourceSet);
         }
@@ -1225,7 +1227,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         // variant specific overrides all
         if (mVariantSourceProvider != null) {
             Collection<File> variantResDirs = mVariantSourceProvider.getResDirectories();
-            resourceSet = new ResourceSet(getFullName());
+            resourceSet = new ResourceSet(getFullName(), validateEnabled);
             resourceSet.addSources(variantResDirs);
             resourceSets.add(resourceSet);
         }
@@ -1312,19 +1314,64 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return assetSets;
     }
 
+    /**
+     * Returns the dynamic list of {@link AssetSet} based on the configuration, its dependencies,
+     * as well as tested config if applicable (test of a library).
+     *
+     * The list is ordered in ascending order of importance, meaning the first set is meant to be
+     * overridden by the 2nd one and so on. This is meant to facilitate usage of the list in a
+     * {@link com.android.ide.common.res2.AssetMerger}.
+     *
+     * @return a list ResourceSet.
+     */
     @NonNull
-    public List<File> getLibraryJniFolders() {
-        List<File> list = Lists.newArrayListWithExpectedSize(mFlatLibraries.size());
+    public List<AssetSet> getJniLibsSets() {
+        List<AssetSet> jniSets = Lists.newArrayList();
 
-        for (int n = mFlatLibraries.size() - 1 ; n >= 0 ; n--) {
-            LibraryDependency dependency = mFlatLibraries.get(n);
-            File jniFolder = dependency.getJniFolder();
-            if (jniFolder.isDirectory()) {
-                list.add(jniFolder);
-            }
+        Collection<File> mainJniLibsDirs = mDefaultSourceProvider.getJniLibsDirectories();
+
+        // the main + generated asset folders are in the same AssetSet
+        AssetSet jniSet = new AssetSet(BuilderConstants.MAIN);
+        jniSet.addSources(mainJniLibsDirs);
+        jniSets.add(jniSet);
+
+        // the list of flavor must be reversed to use the right overlay order.
+        for (int n = mFlavorSourceProviders.size() - 1; n >= 0 ; n--) {
+            SourceProvider sourceProvider = mFlavorSourceProviders.get(n);
+
+            Collection<File> flavorJniDirs = sourceProvider.getJniLibsDirectories();
+            // we need the same of the flavor config, but it's in a different list.
+            // This is fine as both list are parallel collections with the same number of items.
+            jniSet = new AssetSet(mFlavors.get(n).getName());
+            jniSet.addSources(flavorJniDirs);
+            jniSets.add(jniSet);
         }
 
-        return list;
+        // multiflavor specific overrides flavor
+        if (mMultiFlavorSourceProvider != null) {
+            Collection<File> variantJniDirs = mMultiFlavorSourceProvider.getJniLibsDirectories();
+            jniSet = new AssetSet(getFlavorName());
+            jniSet.addSources(variantJniDirs);
+            jniSets.add(jniSet);
+        }
+
+        // build type overrides flavors
+        if (mBuildTypeSourceProvider != null) {
+            Collection<File> typeJniDirs = mBuildTypeSourceProvider.getJniLibsDirectories();
+            jniSet = new AssetSet(mBuildType.getName());
+            jniSet.addSources(typeJniDirs);
+            jniSets.add(jniSet);
+        }
+
+        // variant specific overrides all
+        if (mVariantSourceProvider != null) {
+            Collection<File> variantJniDirs = mVariantSourceProvider.getJniLibsDirectories();
+            jniSet = new AssetSet(getFullName());
+            jniSet.addSources(variantJniDirs);
+            jniSets.add(jniSet);
+        }
+
+        return jniSets;
     }
 
     /**
@@ -1406,19 +1453,6 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return sourceList;
     }
 
-    @NonNull
-    public List<File> getJniLibsList() {
-        List<SourceProvider> providers = getSortedSourceProviders();
-
-        List<File> sourceList = Lists.newArrayListWithExpectedSize(providers.size());
-
-        for (SourceProvider provider : providers) {
-            sourceList.addAll(provider.getJniLibsDirectories());
-        }
-
-        return sourceList;
-    }
-
     /**
      * Returns the compile classpath for this config. If the config tests a library, this
      * will include the classpath of the tested config
@@ -1470,12 +1504,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             }
         }
 
-        for (JarDependency jar : mLocalJars) {
-            File jarFile = jar.getJarFile();
-            if (jar.isPackaged() && jarFile.exists()) {
-                jars.add(jarFile);
-            }
-        }
+        jars.addAll(getLocalPackagedJars());
 
         for (LibraryDependency libraryDependency : mFlatLibraries) {
             if (!libraryDependency.isOptional()) {
@@ -1532,6 +1561,26 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
+     * Returns the list of packaged jars for this config. If the config tests a library, this
+     * will include the jars of the tested config
+     *
+     * @return a non null, but possibly empty list.
+     */
+    @NonNull
+    public ImmutableSet<File> getExternalPackagedJarsWithoutAars() {
+        ImmutableSet.Builder<File> jars = ImmutableSet.builder();
+
+        for (JarDependency jar : mExternalJars) {
+            File jarFile = jar.getJarFile();
+            if (jar.isPackaged() && jarFile.exists()) {
+                jars.add(jarFile);
+            }
+        }
+
+        return jars.build();
+    }
+
+    /**
      * Returns the packaged local Jars
      *
      * @return a non null, but possibly empty immutable set.
@@ -1540,10 +1589,20 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     public ImmutableSet<File> getLocalPackagedJars() {
         ImmutableSet.Builder<File> jars = ImmutableSet.builder();
 
+        // For tests of library projects, the local jars are showing both in
+        // the tested library bundle and in the test variant. This removes
+        // them from the test variant where they don't belong anyway.
+        Set<File> testedlocalJars = null;
+        if (mTestedConfig != null && mTestedConfig.getType() == VariantType.LIBRARY) {
+            testedlocalJars = mTestedConfig.getLocalPackagedJars();
+        }
+
         for (JarDependency jar : mLocalJars) {
             File jarFile = jar.getJarFile();
-            if (jar.isPackaged() && jarFile.exists()) {
-                jars.add(jarFile);
+            if (testedlocalJars == null || !testedlocalJars.contains(jarFile)) {
+                if (jar.isPackaged() && jarFile.exists()) {
+                    jars.add(jarFile);
+                }
             }
         }
 
@@ -1593,6 +1652,50 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
 
         return jars.build();
+    }
+
+    /**
+     * Returns the sub-project jni libs
+     *
+     * @return a non null, but possibly empty immutable set.
+     */
+    @NonNull
+    public ImmutableSet<File> getSubProjectJniLibraries() {
+        ImmutableSet.Builder<File> jniDirectories = ImmutableSet.builder();
+
+        for (LibraryDependency libraryDependency : mFlatLibraries) {
+            // only take the sub-project android libraries.
+            if (!libraryDependency.isOptional() && libraryDependency.getProject() != null) {
+                File jniDir = libraryDependency.getJniFolder();
+                if (jniDir.exists()) {
+                    jniDirectories.add(jniDir);
+                }
+            }
+        }
+
+        return jniDirectories.build();
+    }
+
+    /**
+     * Returns the sub-project jni libs
+     *
+     * @return a non null, but possibly empty immutable set.
+     */
+    @NonNull
+    public ImmutableSet<File> getExternalAarJniLibraries() {
+        ImmutableSet.Builder<File> jniDirectories = ImmutableSet.builder();
+
+        for (LibraryDependency libraryDependency : mFlatLibraries) {
+            // only take the external android libraries.
+            if (!libraryDependency.isOptional() && libraryDependency.getProject() == null) {
+                File jniDir = libraryDependency.getJniFolder();
+                if (jniDir.exists()) {
+                    jniDirectories.add(jniDir);
+                }
+            }
+        }
+
+        return jniDirectories.build();
     }
 
     /**
@@ -1891,8 +1994,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @return a non null list of proguard files.
      */
     @NonNull
-    public List<File> getProguardFiles(boolean includeLibraries, List<File> defaultProguardConfig) {
-        List<File> fullList = Lists.newArrayList();
+    public Set<File> getProguardFiles(boolean includeLibraries, List<File> defaultProguardConfig) {
+        Set<File> fullList = Sets.newHashSet();
 
         // add the config files from the build type, main config and flavors
         fullList.addAll(mDefaultConfig.getProguardFiles());
@@ -1923,8 +2026,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * Returns the proguard config files to be used for the test APK.
      */
     @NonNull
-    public List<File> getTestProguardFiles() {
-        List<File> fullList = Lists.newArrayList();
+    public Set<File> getTestProguardFiles() {
+        Set<File> fullList = Sets.newHashSet();
 
         // add the config files from the build type, main config and flavors
         fullList.addAll(mDefaultConfig.getTestProguardFiles());

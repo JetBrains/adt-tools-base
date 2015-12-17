@@ -6,7 +6,7 @@ project.ext.fakeServer = new com.android.tests.basic.buildscript.FakeServer()
 apply from: "../../commonLocalRepo.gradle"
 
 android {
-    compileSdkVersion 19
+    compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
 
     deviceProvider project.fakeProvider

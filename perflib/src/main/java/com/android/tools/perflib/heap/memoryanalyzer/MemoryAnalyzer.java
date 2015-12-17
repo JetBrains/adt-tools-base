@@ -16,11 +16,14 @@
 package com.android.tools.perflib.heap.memoryanalyzer;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.perflib.analyzer.AnalysisReport;
 import com.android.tools.perflib.analyzer.AnalysisResultEntry;
 import com.android.tools.perflib.analyzer.Analyzer;
+import com.android.tools.perflib.analyzer.AnalyzerTask;
 import com.android.tools.perflib.analyzer.Capture;
 import com.android.tools.perflib.analyzer.CaptureGroup;
+import com.android.tools.perflib.heap.Heap;
 import com.android.tools.perflib.heap.Snapshot;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -28,23 +31,24 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 public class MemoryAnalyzer extends Analyzer {
 
-    private volatile boolean mCancelAnalysis = false;
-
-    private boolean mAnalysisComplete = false;
+    private Set<MemoryAnalyzerTask> mTasks = new HashSet<MemoryAnalyzerTask>();
 
     private AnalysisReport mOutstandingReport;
 
     private ListenableFuture<List<List<AnalysisResultEntry>>> mRunningAnalyzers;
 
-    private MemoryAnalyzerTask[] mTasks = new MemoryAnalyzerTask[]{
-            new LeakedActivityAnalyzerTask()};
+    private volatile boolean mCancelAnalysis = false;
+
+    private boolean mAnalysisComplete = false;
 
     private static boolean accept(@NonNull Capture capture) {
         return Snapshot.TYPE_NAME.equals(capture.getTypeName());
@@ -64,21 +68,31 @@ public class MemoryAnalyzer extends Analyzer {
      * Analyze the given {@code captureGroup}. It is highly recommended to call this method on the
      * same thread as that of the {@code synchronizingExecutor} to avoid race conditions.
      *
-     * @param captureGroup             captures to analyze
-     * @param synchronizingExecutor    executor to synchronize the results aggregation
-     * @param taskExecutor             executor service to run the analyzer tasks on
+     * @param captureGroup          captures to analyze
+     * @param synchronizingExecutor executor to synchronize the results aggregation
+     * @param taskExecutor          executor service to run the analyzer tasks on
      * @return an AnalysisReport in which the caller can listen to
      */
     @NonNull
     @Override
     public AnalysisReport analyze(@NonNull CaptureGroup captureGroup,
+            @NonNull Set<AnalysisReport.Listener> listeners,
+            @NonNull Set<? extends AnalyzerTask> tasks,
             @NonNull final Executor synchronizingExecutor,
             @NonNull ExecutorService taskExecutor) {
+        // TODO move this to Analyzer once Configuration is implemented
         if (mOutstandingReport != null) {
             return mOutstandingReport;
         }
 
+        for (AnalyzerTask task : tasks) {
+            if (task instanceof MemoryAnalyzerTask) {
+                mTasks.add((MemoryAnalyzerTask) task);
+            }
+        }
+
         mOutstandingReport = new AnalysisReport();
+        mOutstandingReport.addResultListeners(listeners);
 
         List<ListenableFutureTask<List<AnalysisResultEntry>>> futuresList
                 = new ArrayList<ListenableFutureTask<List<AnalysisResultEntry>>>();
@@ -90,6 +104,16 @@ public class MemoryAnalyzer extends Analyzer {
                     continue;
                 }
 
+                List<Heap> heapsToUse = new ArrayList<Heap>(snapshot.getHeaps().size());
+                for (Heap heap : snapshot.getHeaps()) {
+                    if ("app".equals(heap.getName())) {
+                        heapsToUse.add(heap);
+                        break;
+                    }
+                }
+                final MemoryAnalyzerTask.Configuration configuration
+                        = new MemoryAnalyzerTask.Configuration(heapsToUse);
+
                 for (final MemoryAnalyzerTask task : mTasks) {
                     final ListenableFutureTask<List<AnalysisResultEntry>> futureTask =
                             ListenableFutureTask.create(new Callable<List<AnalysisResultEntry>>() {
@@ -99,7 +123,7 @@ public class MemoryAnalyzer extends Analyzer {
                                         return null;
                                     }
 
-                                    return task.analyze(snapshot);
+                                    return task.analyze(configuration, snapshot);
                                 }
                             });
                     Futures.addCallback(futureTask,
@@ -114,7 +138,7 @@ public class MemoryAnalyzer extends Analyzer {
                                 }
 
                                 @Override
-                                public void onFailure(Throwable t) {
+                                public void onFailure(@Nullable Throwable t) {
 
                                 }
                             }, synchronizingExecutor);
@@ -128,13 +152,13 @@ public class MemoryAnalyzer extends Analyzer {
         Futures.addCallback(mRunningAnalyzers,
                 new FutureCallback<List<List<AnalysisResultEntry>>>() {
                     @Override
-                    public void onSuccess(List<List<AnalysisResultEntry>> result) {
+                    public void onSuccess(@Nullable List<List<AnalysisResultEntry>> result) {
                         mAnalysisComplete = true;
                         mOutstandingReport.setCompleted();
                     }
 
                     @Override
-                    public void onFailure(Throwable t) {
+                    public void onFailure(@NonNull Throwable t) {
                         mAnalysisComplete = true;
                         mOutstandingReport.setCancelled();
                     }

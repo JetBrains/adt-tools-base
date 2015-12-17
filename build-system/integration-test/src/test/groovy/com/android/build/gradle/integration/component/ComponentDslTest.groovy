@@ -18,9 +18,7 @@ package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.builder.model.AndroidProject
 import groovy.transform.CompileStatic
 import org.junit.Before
@@ -39,7 +37,7 @@ public class ComponentDslTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp())
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create();
 
     @Before
@@ -61,7 +59,7 @@ model {
     }
     android.productFlavors {
         create("f1") {
-            proguardFiles += file("proguard.txt")
+            proguardFiles.add(file("proguard.txt"))
             buildConfigFields.create {
                 type = "String"
                 name = "foo"

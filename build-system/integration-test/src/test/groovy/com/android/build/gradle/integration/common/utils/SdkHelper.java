@@ -16,10 +16,15 @@
 
 package com.android.build.gradle.integration.common.utils;
 
+import static com.android.SdkConstants.FD_PLATFORM_TOOLS;
+import static com.android.SdkConstants.FN_ADB;
+
 import com.android.annotations.NonNull;
+import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.repository.FullRevision;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 
@@ -29,8 +34,6 @@ import java.io.File;
  * Helper for SDK related functions.
  */
 public class SdkHelper {
-
-    private static final String BUILD_TOOLS_VERSION = "21.1.1";
 
     /**
      * Returns the SDK folder as built from the Android source tree.
@@ -51,7 +54,7 @@ public class SdkHelper {
     @NonNull
     public static File getAapt() {
         return getBuildTool(
-                FullRevision.parseRevision(BUILD_TOOLS_VERSION),
+                FullRevision.parseRevision(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION),
                 BuildToolInfo.PathId.AAPT);
     }
 
@@ -63,7 +66,7 @@ public class SdkHelper {
     @NonNull
     public static File getDexDump() {
         return getBuildTool(
-                FullRevision.parseRevision(BUILD_TOOLS_VERSION),
+                FullRevision.parseRevision(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION),
                 BuildToolInfo.PathId.DEXDUMP);
     }
 
@@ -79,5 +82,14 @@ public class SdkHelper {
             throw new RuntimeException("Test requires build-tools " + fullRevision.toString());
         }
         return new File(buildToolInfo.getPath(pathId));
+    }
+
+    @NonNull
+    public static File getAdb() {
+        File adb = FileUtils.join(findSdkDir(), FD_PLATFORM_TOOLS, FN_ADB);
+        if (!adb.exists()) {
+            throw new RuntimeException("Unable to find adb.");
+        }
+        return adb;
     }
 }

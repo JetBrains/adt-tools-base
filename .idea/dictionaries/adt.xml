@@ -180,6 +180,7 @@
       <w>manifmerger</w>
       <w>mdpi</w>
       <w>memalign</w>
+      <w>minified</w>
       <w>minsdk</w>
       <w>mipmap</w>
       <w>mkdirs</w>
@@ -204,6 +205,7 @@
       <w>objectweb</w>
       <w>opcode</w>
       <w>opcodes</w>
+      <w>optim</w>
       <w>pathname</w>
       <w>picasa</w>
       <w>plugin's</w>

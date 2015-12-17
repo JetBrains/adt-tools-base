@@ -69,6 +69,9 @@ final class Device implements IDevice {
     /** State of the device. */
     private DeviceState mState = null;
 
+    /** True if ADB is running as root */
+    private boolean mIsRoot = false;
+
     /** Device properties. */
     private final PropertyFetcher mPropFetcher = new PropertyFetcher(this);
     private final Map<String, String> mMountPoints = new HashMap<String, String>();
@@ -89,6 +92,7 @@ final class Device implements IDevice {
 
     private static final long GET_PROP_TIMEOUT_MS = 100;
     private static final long INITIAL_GET_PROP_TIMEOUT_MS = 250;
+    private static final int QUERY_IS_ROOT_TIMEOUT_MS = 1000;
 
     private static final long INSTALL_TIMEOUT_MINUTES;
 
@@ -150,7 +154,7 @@ final class Device implements IDevice {
                         if (m.matches()) {
                             mErrorMessage = m.group(1);
                         } else {
-                            mErrorMessage = "Unknown failure";
+                            mErrorMessage = "Unknown failure (" + line + ")";
                         }
                     }
                 }
@@ -931,7 +935,7 @@ final class Device implements IDevice {
             int index = 0;
             boolean allUploadSucceeded = true;
             while (allUploadSucceeded && index < apkFilePaths.size()) {
-                allUploadSucceeded = uploadAPK(sessionId, apkFilePaths.get(index), index++);
+                allUploadSucceeded = uploadAPK(sessionId, apkFilePaths.get(index), index++, timeOutInMs);
             }
 
             // if all files were upload successfully, commit otherwise abandon the installation.
@@ -1037,7 +1041,7 @@ final class Device implements IDevice {
             CharMatcher.inRange('a','z').or(CharMatcher.inRange('A','Z'))
                     .or(CharMatcher.anyOf("_-")).negate();
 
-    private boolean uploadAPK(final String sessionId, String apkFilePath, int uniqueId) {
+    private boolean uploadAPK(final String sessionId, String apkFilePath, int uniqueId, int timeOutInMs) {
         Log.d(sessionId, String.format("Uploading APK %1$s ", apkFilePath));
         File fileToUpload = new File(apkFilePath);
         if (!fileToUpload.exists()) {
@@ -1064,7 +1068,7 @@ final class Device implements IDevice {
             InstallReceiver receiver = new InstallReceiver();
             AdbHelper.executeRemoteCommand(AndroidDebugBridge.getSocketAddress(),
                     AdbHelper.AdbService.EXEC, command, this,
-                    receiver, DdmPreferences.getTimeOut(), TimeUnit.MILLISECONDS, inputStream);
+                    receiver, timeOutInMs, TimeUnit.MILLISECONDS, inputStream);
             if (receiver.getErrorMessage() != null) {
                 Log.e(sessionId, String.format("Error while uploading %1$s : %2$s", fileToUpload.getName(),
                         receiver.getErrorMessage()));
@@ -1208,6 +1212,26 @@ final class Device implements IDevice {
     public void reboot(String into)
             throws TimeoutException, AdbCommandRejectedException, IOException {
         AdbHelper.reboot(into, AndroidDebugBridge.getSocketAddress(), this);
+    }
+
+    @Override
+    public boolean root() throws TimeoutException, AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException {
+        if (!mIsRoot) {
+            AdbHelper.root(AndroidDebugBridge.getSocketAddress(), this);
+        }
+        return isRoot();
+    }
+
+    @Override
+    public boolean isRoot() throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+        if (mIsRoot) {
+            return true;
+        }
+        CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+        executeShellCommand("echo $USER_ID", receiver, QUERY_IS_ROOT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        String userID = receiver.getOutput().trim();
+        mIsRoot = userID.equals("0");
+        return mIsRoot;
     }
 
     @Override

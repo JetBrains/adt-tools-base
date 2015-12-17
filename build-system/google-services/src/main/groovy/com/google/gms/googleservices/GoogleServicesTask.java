@@ -73,11 +73,8 @@ public class GoogleServicesTask extends DefaultTask {
     public void action() throws IOException {
         checkVersionConflict();
         if (!quickstartFile.isFile()) {
-            getLogger().warn("File " + quickstartFile.getName() + " is missing from module root folder." +
+            throw new GradleException("File " + quickstartFile.getName() + " is missing from module root folder." +
                     " The Google Services Plugin cannot function without it.");
-
-            // Skip the rest of the actions because it would not make sense if `quickstartFile` is missing.
-            return;
         }
 
         // delete content of outputdir.
@@ -95,14 +92,16 @@ public class GoogleServicesTask extends DefaultTask {
         JsonObject rootObject = root.getAsJsonObject();
 
         Map<String, String> resValues = new TreeMap<String, String>();
+        Map<String, Map<String, String>> resAttributes = new TreeMap<String, Map<String, String>>();
 
-        handleProjectNumber(rootObject, resValues);
+        handleProjectNumber(rootObject, resValues, resAttributes);
 
         JsonObject clientObject = getClientForPackageName(rootObject);
 
         if (clientObject != null) {
             handleAnalytics(clientObject, resValues);
             handleAdsService(clientObject, resValues);
+            handleMapsService(clientObject, resValues, resAttributes);
             handleGoogleAppId(clientObject, resValues);
         } else {
             getLogger().warn("No matching client found for package name '" + packageName + "'");
@@ -114,7 +113,7 @@ public class GoogleServicesTask extends DefaultTask {
             throw new GradleException("Failed to create folder: " + values);
         }
 
-        Files.write(getValuesContent(resValues), new File(values, "values.xml"), Charsets.UTF_8);
+        Files.write(getValuesContent(resValues, resAttributes), new File(values, "values.xml"), Charsets.UTF_8);
     }
 
     /**
@@ -142,14 +141,17 @@ public class GoogleServicesTask extends DefaultTask {
                 if (dependency.getGroup().equals(moduleGroup)
                         && !dependency.getVersion().equals(moduleVersion)) {
                     hasConflict = true;
-                    project.getLogger().warn("Found " + dependency.getGroup() + ":"
-                            + dependency.getName() + ":" + dependency.getVersion() +
-                            ", but version " + moduleVersion + " is needed");
+                    project.getLogger().warn("Found " + dependency.getGroup() + ":" +
+                        dependency.getName() + ":" + dependency.getVersion() + ", but version " +
+                        moduleVersion + " is needed for the google-services plugin.");
                 }
             }
         }
         if (hasConflict) {
-            throw new GradleException("Please fix the version conflict.");
+            throw new GradleException("Please fix the version conflict either by updating the version " +
+                "of the google-services plugin (information about the latest version is available at " +
+                "https://bintray.com/android/android-tools/com.google.gms.google-services/) or updating " +
+                "the version of " + moduleGroup + " to " + moduleVersion + ".");
         }
     }
 
@@ -158,7 +160,8 @@ public class GoogleServicesTask extends DefaultTask {
      * @param rootObject the root Json object.
      * @throws IOException
      */
-    private void handleProjectNumber(JsonObject rootObject, Map<String, String> resValues)
+    private void handleProjectNumber(JsonObject rootObject, Map<String, String> resValues,
+        Map<String, Map<String, String>> resAttributes)
             throws IOException {
         JsonObject projectInfo = rootObject.getAsJsonObject("project_info");
         if (projectInfo == null) {
@@ -171,6 +174,9 @@ public class GoogleServicesTask extends DefaultTask {
         }
 
         resValues.put("gcm_defaultSenderId", projectNumber.getAsString());
+        Map<String, String> attributes = new TreeMap<String, String>();
+        attributes.put("translatable", "false");
+        resAttributes.put("gcm_defaultSenderId", attributes);
     }
 
     /**
@@ -214,6 +220,40 @@ public class GoogleServicesTask extends DefaultTask {
 
         findStringByName(adsService, "test_banner_ad_unit_id", resValues);
         findStringByName(adsService, "test_interstitial_ad_unit_id", resValues);
+    }
+
+    /**
+     * Handle a client object for maps (@string/google_maps_key).
+     * @param clientObject the client Json object.
+     * @throws IOException
+     */
+    private void handleMapsService(JsonObject clientObject, Map<String, String> resValues,
+        Map<String, Map<String, String>> resAttributes)
+            throws IOException {
+        JsonObject mapsService = getServiceByName(clientObject, "maps_service");
+        if (mapsService == null) return;
+
+        JsonArray array = clientObject.getAsJsonArray("api_key");
+        if (array != null) {
+            final int count = array.size();
+            for (int i = 0 ; i < count ; i++) {
+                JsonElement apiKeyElement = array.get(i);
+                if (apiKeyElement == null || !apiKeyElement.isJsonObject()) {
+                    continue;
+                }
+                JsonObject apiKeyObject = apiKeyElement.getAsJsonObject();
+                JsonPrimitive currentKey = apiKeyObject.getAsJsonPrimitive("current_key");
+                if (currentKey == null) {
+                    continue;
+                }
+                resValues.put("google_maps_key", currentKey.getAsString());
+                Map<String, String> attributes = new TreeMap<String, String>();
+                attributes.put("translatable", "false");
+                resAttributes.put("google_maps_key", attributes);
+                return;
+            }
+        }
+        throw new GradleException("Missing api_key/current_key object");
     }
 
     private static void findStringByName(JsonObject jsonObject, String stringName,
@@ -318,15 +358,23 @@ public class GoogleServicesTask extends DefaultTask {
                 "</resources>\n";
     }
 
-    private static String getValuesContent(Map<String, String> entries) {
+    private static String getValuesContent(Map<String, String> values,
+        Map<String, Map<String, String>> attributes) {
         StringBuilder sb = new StringBuilder(256);
 
         sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<resources>\n");
 
-        for (Map.Entry<String, String> entry : entries.entrySet()) {
-            sb.append("    <string name=\"").append(entry.getKey()).append("\">")
-                    .append(entry.getValue()).append("</string>\n");
+        for (Map.Entry<String, String> entry : values.entrySet()) {
+            String name = entry.getKey();
+            sb.append("    <string name=\"").append(name).append("\"");
+            if (attributes.containsKey(name)) {
+                for (Map.Entry<String, String> attr : attributes.get(name).entrySet()) {
+                    sb.append(" ").append(attr.getKey()).append("=\"")
+                        .append(attr.getValue()).append("\"");
+                }
+            }
+            sb.append(">").append(entry.getValue()).append("</string>\n");
         }
 
         sb.append("</resources>\n");

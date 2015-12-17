@@ -17,9 +17,9 @@
 package com.android.ddmlib.logcat;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log.LogLevel;
-import com.google.common.primitives.Ints;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,40 +30,86 @@ import java.util.regex.Pattern;
  * Class to parse raw output of {@code adb logcat -v long} to {@link LogCatMessage} objects.
  */
 public final class LogCatMessageParser {
-    private LogLevel mCurLogLevel = LogLevel.WARN;
-    private String mCurPid = "?";
-    private String mCurTid = "?";
-    private String mCurTag = "?";
-    private String mCurTime = "?:??";
 
     /**
-     * This pattern is meant to parse the first line of a log message with the option
-     * 'logcat -v long'. The first line represents the date, tag, severity, etc.. while the
-     * following lines are the message (can be several lines).<br>
-     * This first line looks something like:<br>
-     * {@code "[ 00-00 00:00:00.000 <pid>:0x<???> <severity>/<tag>]"}
-     * <br>
-     * Note: severity is one of V, D, I, W, E, A? or F. However, there doesn't seem to be
-     *       a way to actually generate an A (assert) message. Log.wtf is supposed to generate
-     *       a message with severity A, however it generates the undocumented F level. In
-     *       such a case, the parser will change the level from F to A.<br>
-     * Note: the fraction of second value can have any number of digit.<br>
-     * Note: the tag should be trimmed as it may have spaces at the end.
+     * Pattern for logcat -v long header ([ MM-DD HH:MM:SS.mmm PID:TID LEVEL/TAG ])
+     * Ex: [ 08-18 16:39:11.760  2977: 2988 D/PhoneInterfaceManager ]
+     * Group 1: Date + Time
+     * Group 2: PID
+     * Group 3: TID (hex on some systems!)
+     * Group 4: Log Level character
+     * Group 5: Tag
      */
     private static final Pattern sLogHeaderPattern = Pattern.compile(
             "^\\[\\s(\\d\\d-\\d\\d\\s\\d\\d:\\d\\d:\\d\\d\\.\\d+)"
-          + "\\s+(\\d*):\\s*(\\S+)\\s([VDIWEAF])/(.*)\\]$");
+                    + "\\s+(\\d*):\\s*(\\S+)\\s([VDIWEAF])/(.*[^\\s])\\s+\\]$");
+
+    @Nullable
+    LogCatHeader mPrevHeader;
 
     /**
-     * Parse a list of strings into {@link LogCatMessage} objects. This method
-     * maintains state from previous calls regarding the last seen header of
-     * logcat messages.
-     * @param lines list of raw strings obtained from logcat -v long
+     * Parse a header line into a {@link LogCatHeader} object, or {@code null} if the input line
+     * doesn't match the expected format.
+     *
+     * @param line   raw text that should be the header line from logcat -v long
+     * @param device device from which these log messages have been received
+     * @return a {@link LogCatHeader} which represents the passed in text
+     */
+    @Nullable
+    public LogCatHeader processLogHeader(@NonNull String line, @Nullable IDevice device) {
+        Matcher matcher = sLogHeaderPattern.matcher(line);
+        if (!matcher.matches()) {
+            return null;
+        }
+
+        int pid = -1;
+        try {
+            pid = Integer.parseInt(matcher.group(2));
+        } catch (NumberFormatException ignored) {
+        }
+
+        int tid = -1;
+        try {
+            // Thread id's may be in hex on some platforms.
+            // Decode and store them in radix 10.
+            tid = Integer.decode(matcher.group(3));
+        } catch (NumberFormatException ignored) {
+        }
+
+        String pkgName = null;
+        if (device != null && pid != -1) {
+            pkgName = device.getClientName(pid);
+        }
+        if (pkgName == null || pkgName.isEmpty()) {
+            pkgName = "?"; //$NON-NLS-1$
+        }
+
+        LogLevel logLevel = LogLevel.getByLetterString(matcher.group(4));
+        if (logLevel == null && matcher.group(4).equals("F")) {
+            logLevel = LogLevel.ASSERT;
+        }
+        if (logLevel == null) {
+            // Should never happen but warn seems like a decent default just in case
+            logLevel = LogLevel.WARN;
+        }
+
+        mPrevHeader = new LogCatHeader(logLevel, pid, tid, pkgName,
+                matcher.group(5), LogCatTimestamp.fromString(matcher.group(1)));
+
+        return mPrevHeader;
+    }
+
+    /**
+     * Parse a list of strings into {@link LogCatMessage} objects. This method maintains state from
+     * previous calls regarding the last seen header of logcat messages.
+     *
+     * @param lines  list of raw strings obtained from logcat -v long
      * @param device device from which these log messages have been received
      * @return list of LogMessage objects parsed from the input
+     * @throws IllegalStateException if given text before ever parsing a header
      */
     @NonNull
-    public List<LogCatMessage> processLogLines(String[] lines, IDevice device) {
+    public List<LogCatMessage> processLogLines(@NonNull String[] lines, @Nullable IDevice device) {
         List<LogCatMessage> messages = new ArrayList<LogCatMessage>(lines.length);
 
         for (String line : lines) {
@@ -71,28 +117,13 @@ public final class LogCatMessageParser {
                 continue;
             }
 
-            Matcher matcher = sLogHeaderPattern.matcher(line);
-            if (matcher.matches()) {
-                mCurTime = matcher.group(1);
-                mCurPid = matcher.group(2);
-                mCurTid = matcher.group(3);
-                mCurLogLevel = LogLevel.getByLetterString(matcher.group(4));
-                mCurTag = matcher.group(5).trim();
-
-                /* LogLevel doesn't support messages with severity "F". Log.wtf() is supposed
-                 * to generate "A", but generates "F". */
-                if (mCurLogLevel == null && matcher.group(4).equals("F")) {
-                    mCurLogLevel = LogLevel.ASSERT;
+            if (processLogHeader(line, device) == null) {
+                // If not a header line, this is a message line
+                if (mPrevHeader == null) {
+                    throw new IllegalStateException(
+                            "No logcat header processed yet, failed to parse line: " + line);
                 }
-            } else {
-                String pkgName = ""; //$NON-NLS-1$
-                Integer pid = Ints.tryParse(mCurPid);
-                if (pid != null && device != null) {
-                    pkgName = device.getClientName(pid);
-                }
-                LogCatMessage m = new LogCatMessage(mCurLogLevel, mCurPid, mCurTid,
-                        pkgName, mCurTag, mCurTime, line);
-                messages.add(m);
+                messages.add(new LogCatMessage(mPrevHeader, line));
             }
         }
 

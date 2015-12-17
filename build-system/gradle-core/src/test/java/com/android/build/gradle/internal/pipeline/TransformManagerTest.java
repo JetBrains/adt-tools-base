@@ -17,33 +17,20 @@
 package com.android.build.gradle.internal.pipeline;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
-import com.android.SdkConstants;
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.scope.AndroidTask;
-import com.android.build.transform.api.AsInputTransform;
-import com.android.build.transform.api.CombinedTransform;
-import com.android.build.transform.api.ForkTransform;
-import com.android.build.transform.api.NoOpTransform;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Format;
-import com.android.build.transform.api.ScopedContent.Scope;
-import com.android.build.transform.api.Transform;
-import com.android.build.transform.api.TransformException;
-import com.google.common.collect.ImmutableSet;
+import com.android.build.api.transform.QualifiedContent.DefaultContentType;
+import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.Transform;
+import com.android.builder.model.SyncIssue;
+import com.google.common.collect.Iterables;
 
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 public class TransformManagerTest extends TaskTestUtils {
 
@@ -53,20 +40,18 @@ public class TransformManagerTest extends TaskTestUtils {
     @Test
     public void simpleTransform() {
         // create a stream and add it to the pipeline
-        TransformStream projectClass = TransformStream.builder()
-                .addContentType(ContentType.CLASSES)
+        TransformStream projectClass = OriginalStream.builder()
+                .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setFolder(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(projectClass);
 
         // add a new transform
         Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES)
+                .setInputTypes(DefaultContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(AsInputTransform.class)
                 .build();
 
         // add the transform
@@ -82,9 +67,9 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // and a new one is up
         streamTester()
-                .withContentTypes(ContentType.CLASSES)
+                .withContentTypes(DefaultContentType.CLASSES)
+                .withScopes(Scope.PROJECT)
                 .withDependency(TASK_NAME)
-                .withParentStream(projectClass)
                 .test();
 
         // check the task contains the stream
@@ -92,64 +77,68 @@ public class TransformManagerTest extends TaskTestUtils {
         assertThat(transformTask).isNotNull();
         assertThat(transformTask.consumedInputStreams).containsExactly(projectClass);
         assertThat(transformTask.referencedInputStreams).isEmpty();
-        assertThat(transformTask.outputStreams).containsExactlyElementsIn(streams);
+        assertThat(transformTask.outputStream).isSameAs(Iterables.getOnlyElement(streams));
     }
 
     @Test
     public void missingStreams() {
         // create a stream and add it to the pipeline
-        TransformStream projectClass = TransformStream.builder()
-                .addContentType(ContentType.CLASSES)
+        TransformStream projectClass = OriginalStream.builder()
+                .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setFolder(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(projectClass);
 
         // add a new transform
         Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.RESOURCES)
+                .setInputTypes(DefaultContentType.RESOURCES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(AsInputTransform.class)
                 .build();
 
         // add the transform
-        exception.expect(RuntimeException.class);
-        exception.expectMessage(
-                "Unable to add Transform 'transform name' on variant 'null': requested streams not available: [PROJECT]/[RESOURCES]");
-        AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, scope, t);
+        transformManager.addTransform(taskFactory, scope, t);
+
+        SyncIssue syncIssue = errorReporter.getSyncIssue();
+        assertThat(syncIssue).isNotNull();
+        assertThat(syncIssue.getMessage()).isEqualTo(
+                "Unable to add Transform 'transform name' on variant 'null': requested streams not available: [PROJECT]+[] / [RESOURCES]");
+        assertThat(syncIssue.getType()).isEqualTo(SyncIssue.TYPE_GENERIC);
     }
 
     @Test
     public void referencedScope() {
         // create streams and add them to the pipeline
-        TransformStream projectClass = TransformStream.builder()
-                .addContentType(ContentType.CLASSES)
+        TransformStream projectClass = OriginalStream.builder()
+                .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setFolder(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(projectClass);
 
-        TransformStream libClasses = TransformStream.builder()
-                .addContentType(ContentType.CLASSES)
+        TransformStream libClasses = OriginalStream.builder()
+                .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.EXTERNAL_LIBRARIES)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setFolder(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(libClasses);
 
+        TransformStream modulesClasses = OriginalStream.builder()
+                .addContentType(DefaultContentType.CLASSES)
+                .addScope(Scope.SUB_PROJECTS)
+                .setFolder(new File("my file"))
+                .setDependency("my dependency")
+                .build();
+        transformManager.addStream(modulesClasses);
 
         // add a new transform
         Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES)
+                .setInputTypes(DefaultContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setReferencedScopes(Scope.EXTERNAL_LIBRARIES)
-                .setTransformType(AsInputTransform.class)
+                .setReferencedScopes(Scope.EXTERNAL_LIBRARIES, Scope.SUB_PROJECTS)
                 .build();
 
         // add the transform
@@ -158,41 +147,39 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // get the new stream
         List<TransformStream> streams = transformManager.getStreams();
-        assertThat(streams).hasSize(2);
+        assertThat(streams).hasSize(3);
 
         // check the class stream was consumed.
         assertThat(streams).doesNotContain(projectClass);
         // check the referenced stream is still present
-        assertThat(streams).contains(libClasses);
+        assertThat(streams).containsAllOf(libClasses, modulesClasses);
 
         // check the task contains the stream
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
         assertThat(transformTask).isNotNull();
         assertThat(transformTask.consumedInputStreams).containsExactly(projectClass);
-        assertThat(transformTask.referencedInputStreams).containsExactly(libClasses);
+        assertThat(transformTask.referencedInputStreams).containsAllOf(libClasses, modulesClasses);
     }
 
     @Test
-    public void splitStream() throws Exception {
+    public void splitStreamByTypes() throws Exception {
         // test the case where the input stream has more types than gets consumed,
         // and we need to create a new stream with the unused types.
         // (class+res) -[class]-> (class, transformed) + (res, untouched)
 
         // create streams and add them to the pipeline
-        TransformStream projectClassAndResources = TransformStream.builder()
-                .addContentTypes(ContentType.CLASSES, ContentType.RESOURCES)
+        OriginalStream projectClassAndResources = OriginalStream.builder()
+                .addContentTypes(DefaultContentType.CLASSES, DefaultContentType.RESOURCES)
                 .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setFolder(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(projectClassAndResources);
 
         // add a new transform
         Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES)
+                .setInputTypes(DefaultContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(AsInputTransform.class)
                 .build();
 
         // add the transform
@@ -209,51 +196,54 @@ public class TransformManagerTest extends TaskTestUtils {
         // check we now have 2 streams, one for classes and one for resources.
         // the one for resources should match projectClassAndResources for location and dependency.
         streamTester()
-                .withContentTypes(ContentType.CLASSES)
+                .withContentTypes(DefaultContentType.CLASSES)
+                .withScopes(Scope.PROJECT)
                 .withDependency(TASK_NAME)
-                .withParentStream(projectClassAndResources)
                 .test();
         streamTester()
-                .withContentTypes(ContentType.RESOURCES)
+                .withContentTypes(DefaultContentType.RESOURCES)
+                .withScopes(Scope.PROJECT)
                 .withDependencies(projectClassAndResources.getDependencies())
-                .withFiles(projectClassAndResources.getFiles().get())
+                .withFolders(projectClassAndResources.getFolders().get())
                 .test();
 
         // check the task contains the stream
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
         assertThat(transformTask).isNotNull();
-        assertThat(transformTask.consumedInputStreams).containsExactly(projectClassAndResources);
+        streamTester(transformTask.consumedInputStreams)
+                .withContentTypes(DefaultContentType.CLASSES)
+                .withScopes(Scope.PROJECT)
+                .withDependencies(projectClassAndResources.getDependencies())
+                .withFolders(projectClassAndResources.getFolders().get())
+                .test();
     }
 
     @Test
-    public void splitReferencedStream() {
+    public void splitReferencedStreamByTypes() {
         // transform processes classes.
         // There's a (class, res) stream in a scope that's referenced. This stream should not
         // be split in two since it's not consumed.
-        TransformStream projectClass = TransformStream.builder()
-                .addContentTypes(ContentType.CLASSES)
+        TransformStream projectClass = OriginalStream.builder()
+                .addContentTypes(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setJar(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(projectClass);
 
-        TransformStream libClassAndResources = TransformStream.builder()
-                .addContentTypes(ContentType.CLASSES, ContentType.RESOURCES)
+        TransformStream libClassAndResources = OriginalStream.builder()
+                .addContentTypes(DefaultContentType.CLASSES, DefaultContentType.RESOURCES)
                 .addScope(Scope.EXTERNAL_LIBRARIES)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setJar(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(libClassAndResources);
 
         // add a new transform
         Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES)
+                .setInputTypes(DefaultContentType.CLASSES)
                 .setScopes(Scope.PROJECT)
                 .setReferencedScopes(Scope.EXTERNAL_LIBRARIES)
-                .setTransformType(AsInputTransform.class)
                 .build();
         AndroidTask<TransformTask> task = transformManager.addTransform(
                 taskFactory, scope, t);
@@ -267,31 +257,88 @@ public class TransformManagerTest extends TaskTestUtils {
     }
 
     @Test
+    public void splitStreamByScopes() throws Exception {
+        // test the case where the input stream has more types than gets consumed,
+        // and we need to create a new stream with the unused types.
+        // (project+libs) -[project]-> (project, transformed) + (libs, untouched)
+
+        // create streams and add them to the pipeline
+        IntermediateStream projectAndLibsClasses = IntermediateStream.builder()
+                .addContentTypes(DefaultContentType.CLASSES)
+                .addScopes(Scope.PROJECT, Scope.EXTERNAL_LIBRARIES)
+                .setRootLocation(new File("folder"))
+                .setDependency("my dependency")
+                .build();
+
+        transformManager.addStream(projectAndLibsClasses);
+
+        // add a new transform
+        Transform t = TestTransform.builder()
+                .setInputTypes(DefaultContentType.CLASSES)
+                .setScopes(Scope.PROJECT)
+                .build();
+
+        // add the transform
+        AndroidTask<TransformTask> task = transformManager.addTransform(
+                taskFactory, scope, t);
+
+        // get the new streams
+        List<TransformStream> streams = transformManager.getStreams();
+        assertThat(streams).hasSize(2);
+
+        // check the class stream was consumed.
+        assertThat(streams).doesNotContain(projectAndLibsClasses);
+
+        // check we now have 2 streams, one for classes and one for resources.
+        // the one for resources should match projectClassAndResources for location and dependency.
+        streamTester()
+                .withContentTypes(DefaultContentType.CLASSES)
+                .withScopes(Scope.PROJECT)
+                .withDependency(TASK_NAME)
+                .test();
+        streamTester()
+                .withContentTypes(DefaultContentType.CLASSES)
+                .withScopes(Scope.EXTERNAL_LIBRARIES)
+                .withDependencies(projectAndLibsClasses.getDependencies())
+                .withRootLocation(projectAndLibsClasses.getRootLocation().get())
+                .test();
+
+        // we also check that the stream used by the transform only has the requested scopes.
+
+        // check the task contains the stream
+        TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
+        assertThat(transformTask).isNotNull();
+        streamTester(transformTask.consumedInputStreams)
+                .withContentTypes(DefaultContentType.CLASSES)
+                .withScopes(Scope.PROJECT)
+                .withDependencies(projectAndLibsClasses.getDependencies())
+                .withRootLocation(projectAndLibsClasses.getRootLocation().get())
+                .test();
+    }
+
+    @Test
     public void combinedScopes() throws Exception {
         // create streams and add them to the pipeline
-        TransformStream projectClass = TransformStream.builder()
-                .addContentType(ContentType.CLASSES)
+        TransformStream projectClass = OriginalStream.builder()
+                .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setJar(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(projectClass);
 
-        TransformStream libClasses = TransformStream.builder()
-                .addContentType(ContentType.CLASSES)
+        TransformStream libClasses = OriginalStream.builder()
+                .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.EXTERNAL_LIBRARIES)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setJar(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(libClasses);
 
         // add a new transform
         Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES)
+                .setInputTypes(DefaultContentType.CLASSES)
                 .setScopes(Scope.PROJECT, Scope.EXTERNAL_LIBRARIES)
-                .setTransformType(CombinedTransform.class)
                 .build();
 
         // add the transform
@@ -300,7 +347,7 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // get the new stream
         List<TransformStream> streams = transformManager.getStreams();
-        assertEquals(1, streams.size());
+        assertThat(streams).hasSize(1);
 
         // check the class stream was consumed.
         assertThat(streams).doesNotContain(projectClass);
@@ -308,72 +355,74 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // check we now have 1 streams, containing both scopes.
         streamTester()
-                .withContentTypes(ContentType.CLASSES)
+                .withContentTypes(DefaultContentType.CLASSES)
                 .withScopes(Scope.PROJECT, Scope.EXTERNAL_LIBRARIES)
                 .withDependency(TASK_NAME)
                 .test();
 
         // check the task contains the stream
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
-        assertNotNull(transformTask);
+        assertThat(transformTask).isNotNull();
         assertThat(transformTask.consumedInputStreams).containsAllOf(projectClass, libClasses);
         assertThat(transformTask.referencedInputStreams).isEmpty();
-        assertThat(transformTask.outputStreams).containsExactlyElementsIn(streams);
+        assertThat(transformTask.outputStream).isSameAs(Iterables.getOnlyElement(streams));
     }
 
     @Test
     public void noOpTransform() throws Exception {
         // create stream and add them to the pipeline
-        TransformStream projectClass = TransformStream.builder()
-                .addContentType(ContentType.CLASSES)
+        TransformStream projectClass = OriginalStream.builder()
+                .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setJar(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(projectClass);
 
         // add a new transform
         Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES)
-                .setScopes(Scope.PROJECT)
-                .setTransformType(NoOpTransform.class)
+                .setInputTypes(DefaultContentType.CLASSES)
+                .setReferencedScopes(Scope.PROJECT)
                 .build();
 
         // add the transform
         AndroidTask<TransformTask> task = transformManager.addTransform(
                 taskFactory, scope, t);
 
-        // check the class stream was no consumed.
+        // check the class stream was not consumed.
         assertThat(transformManager.getStreams()).containsExactly(projectClass);
+
+        // check the task contains no consumed streams
+        TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
+        assertThat(transformTask).isNotNull();
+        assertThat(transformTask.consumedInputStreams).isEmpty();
+        assertThat(transformTask.referencedInputStreams).containsExactly(projectClass);
+        assertThat(transformTask.outputStream).isNull();
     }
 
     @Test
     public void combinedTypes() {
         // create streams and add them to the pipeline
-        TransformStream projectClass = TransformStream.builder()
-                .addContentType(ContentType.CLASSES)
+        TransformStream projectClass = OriginalStream.builder()
+                .addContentType(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setJar(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(projectClass);
 
-        TransformStream libClasses = TransformStream.builder()
-                .addContentType(ContentType.RESOURCES)
+        TransformStream libClasses = OriginalStream.builder()
+                .addContentType(DefaultContentType.RESOURCES)
                 .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setJar(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(libClasses);
 
         // add a new transform
         Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES, ContentType.RESOURCES)
+                .setInputTypes(DefaultContentType.CLASSES, DefaultContentType.RESOURCES)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(CombinedTransform.class)
                 .build();
 
         // add the transform
@@ -390,7 +439,7 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // check we now have 1 streams, containing both types.
         streamTester()
-                .withContentTypes(ContentType.CLASSES, ContentType.RESOURCES)
+                .withContentTypes(DefaultContentType.CLASSES, DefaultContentType.RESOURCES)
                 .withScopes(Scope.PROJECT)
                 .withDependency(TASK_NAME)
                 .test();
@@ -400,68 +449,7 @@ public class TransformManagerTest extends TaskTestUtils {
         assertThat(transformTask).isNotNull();
         assertThat(transformTask.consumedInputStreams).containsExactly(projectClass, libClasses);
         assertThat(transformTask.referencedInputStreams).isEmpty();
-        assertThat(transformTask.outputStreams).containsExactlyElementsIn(streams);
-    }
-
-    private static class BrokenTransform extends Transform {
-
-        @NonNull
-        @Override
-        public String getName() {
-            return "transform";
-        }
-
-        @NonNull
-        @Override
-        public Set<ContentType> getInputTypes() {
-            return ImmutableSet.of();
-        }
-
-        @NonNull
-        @Override
-        public Set<Scope> getScopes() {
-            return ImmutableSet.of();
-        }
-
-        @Nullable
-        @Override
-        public Format getOutputFormat() {
-            return null;
-        }
-
-        @Override
-        public boolean isIncremental() {
-            return false;
-        }
-    }
-
-    @Test
-    public void missingImplementation() {
-        Transform t = new BrokenTransform();
-
-        exception.expect(UnsupportedOperationException.class);
-        exception.expectMessage(
-                "Transform type 'com.android.build.gradle.internal.pipeline.TransformManagerTest$BrokenTransform' must implement one of: [AsInputTransform, CombinedTransform, ForkTransform, NoOpTransform]");
-        // add the transform
-        transformManager.addTransform(taskFactory, scope, t);
-    }
-
-    @Test
-    public void forkInputWithTooManyContentTypes() {
-        // Create the transform with too many input content type for a FORK_INPUT type
-        Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES, ContentType.DEX)
-                .setOutputTypes(ContentType.CLASSES, ContentType.DEX)
-                .setScopes(Scope.PROJECT)
-                .setTransformType(ForkTransform.class)
-                .build();
-
-        exception.expect(RuntimeException.class);
-        exception.expectMessage(
-                "ForkTransform only works with single input type. Transform 'transform name' declared with [CLASSES, DEX]");
-
-        // add the transform
-        transformManager.addTransform(taskFactory, scope, t);
+        assertThat(transformTask.outputStream).isSameAs(Iterables.getOnlyElement(streams));
     }
 
     @Test
@@ -470,21 +458,19 @@ public class TransformManagerTest extends TaskTestUtils {
         // (class) -[class]-> (class) + (dex)
 
         // create streams and add them to the pipeline
-        TransformStream projectClass = TransformStream.builder()
-                .addContentTypes(ContentType.CLASSES)
+        TransformStream projectClass = OriginalStream.builder()
+                .addContentTypes(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setJar(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(projectClass);
 
         // add a new transform
         Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES)
-                .setOutputTypes(ContentType.CLASSES, ContentType.DEX)
+                .setInputTypes(DefaultContentType.CLASSES)
+                .setOutputTypes(DefaultContentType.CLASSES, ExtendedContentType.DEX)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(ForkTransform.class)
                 .build();
 
         // add the transform
@@ -493,22 +479,15 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // get the new stream
         List<TransformStream> streams = transformManager.getStreams();
-        assertThat(streams).hasSize(2);
+        assertThat(streams).hasSize(1);
 
         // check the class stream was consumed.
         assertThat(streams).doesNotContain(projectClass);
 
-        // check we now have a DEX stream.
+        // check we now have a DEX/RES stream.
         streamTester()
-                .withContentTypes(ContentType.DEX)
+                .withContentTypes(DefaultContentType.CLASSES, ExtendedContentType.DEX)
                 .withDependency(TASK_NAME)
-                .withParentStream(projectClass)
-                .test();
-        // and a class stream
-        streamTester()
-                .withContentTypes(ContentType.CLASSES)
-                .withDependency(TASK_NAME)
-                .withParentStream(projectClass)
                 .test();
 
         // check the task contains the stream
@@ -516,7 +495,7 @@ public class TransformManagerTest extends TaskTestUtils {
         assertThat(transformTask).isNotNull();
         assertThat(transformTask.consumedInputStreams).containsExactly(projectClass);
         assertThat(transformTask.referencedInputStreams).isEmpty();
-        assertThat(transformTask.outputStreams).containsExactlyElementsIn(streams);
+        assertThat(transformTask.outputStream).isSameAs(Iterables.getOnlyElement(streams));
     }
 
     @Test
@@ -525,30 +504,27 @@ public class TransformManagerTest extends TaskTestUtils {
         // (class) -[class]-> (class) + (dex)
 
         // create streams and add them to the pipeline
-        TransformStream projectClass = TransformStream.builder()
-                .addContentTypes(ContentType.CLASSES)
+        TransformStream projectClass = OriginalStream.builder()
+                .addContentTypes(DefaultContentType.CLASSES)
                 .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setJar(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(projectClass);
 
-        TransformStream libClass = TransformStream.builder()
-                .addContentTypes(ContentType.CLASSES)
+        TransformStream libClass = OriginalStream.builder()
+                .addContentTypes(DefaultContentType.CLASSES)
                 .addScope(Scope.SUB_PROJECTS)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setJar(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(libClass);
 
         // add a new transform
         Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES)
-                .setOutputTypes(ContentType.CLASSES, ContentType.DEX)
+                .setInputTypes(DefaultContentType.CLASSES)
+                .setOutputTypes(DefaultContentType.CLASSES, ExtendedContentType.DEX)
                 .setScopes(Scope.PROJECT, Scope.SUB_PROJECTS)
-                .setTransformType(ForkTransform.class)
                 .build();
 
         // add the transform
@@ -557,37 +533,17 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // get the new stream
         List<TransformStream> streams = transformManager.getStreams();
-        assertThat(streams).hasSize(4);
+        assertThat(streams).hasSize(1);
 
         // check the class stream was consumed.
         assertThat(streams).doesNotContain(projectClass);
         assertThat(streams).doesNotContain(libClass);
 
-        // check we now have two DEX streams, one in each scope.
+        // check we now have a single stream with CLASS/DEX and both scopes.
         streamTester()
-                .withContentTypes(ContentType.DEX)
-                .withScopes(Scope.PROJECT)
+                .withContentTypes(DefaultContentType.CLASSES, ExtendedContentType.DEX)
+                .withScopes(Scope.PROJECT, Scope.SUB_PROJECTS)
                 .withDependency(TASK_NAME)
-                .withParentStream(projectClass)
-                .test();
-        streamTester()
-                .withContentTypes(ContentType.DEX)
-                .withScopes(Scope.SUB_PROJECTS)
-                .withDependency(TASK_NAME)
-                .withParentStream(libClass)
-                .test();
-        // and two class streams, one in each scope
-        streamTester()
-                .withContentTypes(ContentType.CLASSES)
-                .withScopes(Scope.PROJECT)
-                .withDependency(TASK_NAME)
-                .withParentStream(projectClass)
-                .test();
-        streamTester()
-                .withContentTypes(ContentType.CLASSES)
-                .withScopes(Scope.SUB_PROJECTS)
-                .withDependency(TASK_NAME)
-                .withParentStream(libClass)
                 .test();
 
         // check the task contains the streams
@@ -595,8 +551,9 @@ public class TransformManagerTest extends TaskTestUtils {
         assertThat(transformTask).isNotNull();
         assertThat(transformTask.consumedInputStreams).containsExactly(projectClass, libClass);
         assertThat(transformTask.referencedInputStreams).isEmpty();
-        assertThat(transformTask.outputStreams).containsExactlyElementsIn(streams);
+        assertThat(transformTask.outputStream).isSameAs(Iterables.getOnlyElement(streams));
     }
+
     @Test
     public void forkInputWithSplitStream() {
         // test the case where the transform creates an additional stream, and the original
@@ -604,21 +561,19 @@ public class TransformManagerTest extends TaskTestUtils {
         // (class+res) -[class]-> (res, untouched) + (class, transformed) +(dex, transformed)
 
         // create streams and add them to the pipeline
-        TransformStream projectClass = TransformStream.builder()
-                .addContentTypes(ContentType.CLASSES, ContentType.RESOURCES)
+        TransformStream projectClass = OriginalStream.builder()
+                .addContentTypes(DefaultContentType.CLASSES, DefaultContentType.RESOURCES)
                 .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
+                .setJar(new File("my file"))
                 .setDependency("my dependency")
                 .build();
         transformManager.addStream(projectClass);
 
         // add a new transform
         Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES)
-                .setOutputTypes(ContentType.CLASSES, ContentType.DEX)
+                .setInputTypes(DefaultContentType.CLASSES)
+                .setOutputTypes(DefaultContentType.CLASSES, ExtendedContentType.DEX)
                 .setScopes(Scope.PROJECT)
-                .setTransformType(ForkTransform.class)
                 .build();
 
         // add the transform
@@ -627,166 +582,35 @@ public class TransformManagerTest extends TaskTestUtils {
 
         // get the new stream
         List<TransformStream> streams = transformManager.getStreams();
-        assertThat(streams).hasSize(3);
+        assertThat(streams).hasSize(2);
 
         // check the multi-stream was consumed.
         assertThat(streams).doesNotContain(projectClass);
 
-        // check we now have a DEX stream.
-        TransformStream newDex = streamTester()
-                .withContentTypes(ContentType.DEX)
+        // check we now have a DEX/CLASS stream.
+        TransformStream outStream = streamTester()
+                .withContentTypes(DefaultContentType.CLASSES, ExtendedContentType.DEX)
+                .withScopes(Scope.PROJECT)
                 .withDependency(TASK_NAME)
-                .withParentStream(projectClass)
-                .test();
-        // and a class stream
-        TransformStream newClass = streamTester()
-                .withContentTypes(ContentType.CLASSES)
-                .withDependency(TASK_NAME)
-                .withParentStream(projectClass)
                 .test();
         // and the remaining res stream, with the original dependency, and location
         streamTester()
-                .withContentTypes(ContentType.RESOURCES)
-                .withDependency("my dependency")
-                .withFile(new File("my file"))
-                .test();
-
-        // check the task contains the stream
-        TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
-        assertThat(transformTask).isNotNull();
-        assertThat(transformTask.consumedInputStreams).containsExactly(projectClass);
-        assertThat(transformTask.referencedInputStreams).isEmpty();
-        assertThat(transformTask.outputStreams).containsExactly(newClass, newDex);
-    }
-
-    @Test
-    public void keepInputFormat() {
-        // test the case where an AS_INPUT transform doesn't change the format
-
-        // create streams and add them to the pipeline
-        TransformStream projectClass = TransformStream.builder()
-                .addContentTypes(ContentType.CLASSES)
-                .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("my file"))
-                .setDependency("my dependency")
-                .build();
-        transformManager.addStream(projectClass);
-
-        TransformStream externalClass = TransformStream.builder()
-                .addContentTypes(ContentType.CLASSES)
-                .addScope(Scope.EXTERNAL_LIBRARIES)
-                .setFormat(Format.MULTI_FOLDER)
-                .setFiles(new File("my file"))
-                .setDependency("my dependency")
-                .build();
-        transformManager.addStream(externalClass);
-
-        // add a new transform
-        Transform t = TestTransform.builder()
-                .setInputTypes(ContentType.CLASSES)
-                .setOutputTypes(ContentType.CLASSES)
-                .setScopes(Scope.PROJECT, Scope.EXTERNAL_LIBRARIES)
-                .setTransformType(AsInputTransform.class)
-                .setFormat(null) // Keep format of input streams.
-                .build();
-
-        // add the transform
-        AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, scope, t);
-
-        // get the new streams
-        List<TransformStream> streams = transformManager.getStreams();
-        assertThat(streams).hasSize(2);
-
-        // check the original stream were consumed.
-        assertThat(streams).doesNotContain(projectClass);
-        assertThat(streams).doesNotContain(externalClass);
-
-        // check we still have the same streams.
-        streamTester()
-                .withContentTypes(ContentType.CLASSES)
+                .withContentTypes(DefaultContentType.RESOURCES)
                 .withScopes(Scope.PROJECT)
-                .withDependency(TASK_NAME)
-                .withFormat(Format.SINGLE_FOLDER)
-                .withParentStream(projectClass)
-                .test();
-        // and a class stream
-        streamTester()
-                .withContentTypes(ContentType.CLASSES)
-                .withScopes(Scope.EXTERNAL_LIBRARIES)
-                .withDependency(TASK_NAME)
-                .withFormat(Format.MULTI_FOLDER)
-                .withParentStream(externalClass)
+                .withDependency("my dependency")
+                .withJar(new File("my file"))
                 .test();
 
         // check the task contains the stream
         TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
         assertThat(transformTask).isNotNull();
-        assertThat(transformTask.consumedInputStreams).containsExactly(projectClass, externalClass);
+        streamTester(transformTask.consumedInputStreams)
+                .withContentTypes(DefaultContentType.CLASSES)
+                .withScopes(Scope.PROJECT)
+                .withDependency("my dependency")
+                .withJar(new File("my file"))
+                .test();
         assertThat(transformTask.referencedInputStreams).isEmpty();
-        assertThat(transformTask.outputStreams).containsExactlyElementsIn(streams);
-    }
-
-    @Test
-    public void asInputJarTransform() throws TransformException, InterruptedException, IOException {
-        testJarTransform(TestTransform.TestAsInputTransform.class, null);
-    }
-
-    @Test
-    public void combinedJarTransform() throws TransformException, InterruptedException, IOException {
-        testJarTransform(TestTransform.TestCombinedTransform.class, null);
-    }
-
-    @Test
-    public void forkInputJarTransform() throws TransformException, InterruptedException, IOException {
-        testJarTransform(TestTransform.TestForkTransform.class,
-                EnumSet.of(ContentType.CLASSES, ContentType.DEX));
-    }
-
-    private <T extends TestTransform> void testJarTransform(
-            @NonNull Class<T> transformClass,
-            @Nullable Set<ContentType> outputTypes)
-            throws TransformException, InterruptedException, IOException {
-
-        // create a stream and add it to the pipeline
-        TransformStream projectClass = TransformStream.builder()
-                .addContentType(ContentType.CLASSES)
-                .addScope(Scope.PROJECT)
-                .setFormat(Format.SINGLE_FOLDER)
-                .setFiles(new File("input file"))
-                .setDependency("my dependency")
-                .build();
-        transformManager.addStream(projectClass);
-
-        // create the transform
-        TestTransform.Builder builder = TestTransform.builder();
-        builder.setInputTypes(ContentType.CLASSES)
-                .setScopes(Scope.PROJECT)
-                .setTransformType(transformClass)
-                .setFormat(Format.JAR);
-        if (outputTypes != null) {
-            builder.setOutputTypes(outputTypes);
-        }
-
-        //noinspection unchecked
-        T t = (T) builder.build();
-
-        // add the transform to the manager
-        AndroidTask<TransformTask> task = transformManager.addTransform(
-                taskFactory, scope, t);
-        // and get the real gradle task object
-        TransformTask transformTask = (TransformTask) taskFactory.named(task.getName());
-        assertThat(transformTask).isNotNull();
-
-        // get the current output Stream in the transform manager.
-        List<TransformStream> streams = transformManager.getStreams();
-
-        // check the new streams have a jar file as their output.
-        for (TransformStream stream : streams) {
-            for (File file : stream.getFiles().get()) {
-                assertThat(file.getName()).isEqualTo(SdkConstants.FN_CLASSES_JAR);
-            }
-        }
+        assertThat(transformTask.outputStream).isSameAs(outStream);
     }
 }

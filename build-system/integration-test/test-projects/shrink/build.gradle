@@ -4,8 +4,8 @@ buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion '19.1.0'
+    compileSdkVersion rootProject.latestCompileSdk
+    buildToolsVersion rootProject.buildToolsVersion
 
     defaultConfig {
         versionCode 12

@@ -24,7 +24,7 @@ import ${applicationPackage}.R;
  * TextView will repeatedly, move from the left to the right of screen, at a
  * random y-value.
 <#if configurable>
- * The generated {@link BlahDreamServiceSettingsActivity} allows
+ * The generated {@link ${settingsClassName}} allows
  * the user to change the text which is displayed.
 </#if>
  * <p />

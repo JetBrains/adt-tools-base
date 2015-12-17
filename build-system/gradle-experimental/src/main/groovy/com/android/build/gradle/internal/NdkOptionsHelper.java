@@ -27,19 +27,6 @@ import com.google.common.collect.Sets;
 public class NdkOptionsHelper {
 
     /**
-     * Initialize an NdkOptions.
-     *
-     * Should be unnecessary when Gradle supports managed List of String.
-     */
-    public static void init(NdkOptions ndk) {
-        ndk.setCFlags(Lists.<String>newArrayList());
-        ndk.setCppFlags(Lists.<String>newArrayList());
-        ndk.setLdFlags(Lists.<String>newArrayList());
-        ndk.setLdLibs(Lists.<String>newArrayList());
-        ndk.setAbiFilters(Sets.<String>newHashSet());
-    }
-
-    /**
      * Merge one NdkOptions to another.
      * @param base NdkOptions to merge to.  base is mutated to contain the merged result.
      * @param other NdkOptions to merge.  Options in other has priority over base if both are set.

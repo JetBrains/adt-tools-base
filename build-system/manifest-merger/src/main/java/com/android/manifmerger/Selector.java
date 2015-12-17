@@ -42,7 +42,7 @@ public class Selector {
      * Returns true if the passed element is "selected" by this selector. If so, any action this
      * selector decorated will be applied to the element.
      */
-    boolean appliesTo(XmlElement element) {
+    boolean appliesTo(@NonNull XmlElement element) {
         Optional<XmlAttribute> packageName = element.getDocument().getPackage();
         return packageName.isPresent() && mPackageName.equals(packageName.get().getValue());
     }
@@ -50,10 +50,11 @@ public class Selector {
     /**
      * Returns true if the passed resolver can resolve this selector, false otherwise.
      */
-    boolean isResolvable(KeyResolver<String> resolver) {
+    boolean isResolvable(@NonNull KeyResolver<String> resolver) {
         return resolver.resolve(mPackageName) != null;
     }
 
+    @NonNull
     @Override
     public String toString() {
         return mPackageName;

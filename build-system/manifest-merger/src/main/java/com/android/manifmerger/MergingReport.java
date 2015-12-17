@@ -36,10 +36,14 @@ import com.google.common.collect.ImmutableList;
 public class MergingReport {
 
     private final Optional<XmlDocument> mMergedDocument;
+    @NonNull
     private final Result mResult;
     // list of logging events, ordered by their recording time.
+    @NonNull
     private final ImmutableList<Record> mRecords;
+    @NonNull
     private final ImmutableList<String> mIntermediaryStages;
+    @NonNull
     private final Actions mActions;
 
     private MergingReport(Optional<XmlDocument> mergedDocument,
@@ -57,7 +61,7 @@ public class MergingReport {
     /**
      * dumps all logging records to a logger.
      */
-    public void log(ILogger logger) {
+    public void log(@NonNull ILogger logger) {
         for (Record record : mRecords) {
             switch(record.mSeverity) {
                 case WARNING:
@@ -93,6 +97,7 @@ public class MergingReport {
      * {@link com.android.manifmerger.ManifestMerger2.Invoker.Feature#KEEP_INTERMEDIARY_STAGES}
      * is set.
      */
+    @NonNull
     public ImmutableList<String> getIntermediaryStages() {
         return mIntermediaryStages;
     }
@@ -162,8 +167,11 @@ public class MergingReport {
 
         public enum Severity {WARNING, ERROR, INFO }
 
+        @NonNull
         private final Severity mSeverity;
+        @NonNull
         private final String mLog;
+        @NonNull
         private final SourceFilePosition mSourceLocation;
 
         private Record(
@@ -175,14 +183,22 @@ public class MergingReport {
             this.mLog = mLog;
         }
 
+        @NonNull
         public Severity getSeverity() {
             return mSeverity;
         }
 
+        @NonNull
         public String getMessage() {
             return mLog;
         }
 
+        @NonNull
+        public SourceFilePosition getSourceLocation() {
+            return mSourceLocation;
+        }
+
+        @NonNull
         @Override
         public String toString() {
             return mSourceLocation.toString() // needs short string.
@@ -204,10 +220,13 @@ public class MergingReport {
     static class Builder {
 
         private Optional<XmlDocument> mMergedDocument = Optional.absent();
+        @NonNull
         private ImmutableList.Builder<Record> mRecordBuilder = new ImmutableList.Builder<Record>();
+        @NonNull
         private ImmutableList.Builder<String> mIntermediaryStages = new ImmutableList.Builder<String>();
         private boolean mHasWarnings = false;
         private boolean mHasErrors = false;
+        @NonNull
         private ActionRecorder mActionRecorder = new ActionRecorder();
         private final ILogger mLogger;
 
@@ -216,11 +235,13 @@ public class MergingReport {
         }
 
 
+        @NonNull
         Builder setMergedDocument(@NonNull XmlDocument mergedDocument) {
             mMergedDocument = Optional.of(mergedDocument);
             return this;
         }
 
+        @NonNull
         @VisibleForTesting
         Builder addMessage(@NonNull SourceFile sourceFile,
                 int line,
@@ -234,6 +255,7 @@ public class MergingReport {
                     message);
         }
 
+        @NonNull
         Builder addMessage(@NonNull SourceFile sourceFile,
                 @NonNull Record.Severity severity,
                 @NonNull String message) {
@@ -243,6 +265,7 @@ public class MergingReport {
                     message);
         }
 
+        @NonNull
         Builder addMessage(@NonNull SourceFilePosition sourceFilePosition,
                     @NonNull Record.Severity severity,
                     @NonNull String message) {
@@ -258,7 +281,8 @@ public class MergingReport {
             return this;
         }
 
-        Builder addMergingStage(String xml) {
+        @NonNull
+        Builder addMergingStage(@NonNull String xml) {
             mIntermediaryStages.add(xml);
             return this;
         }
@@ -270,10 +294,12 @@ public class MergingReport {
             return mHasErrors;
         }
 
+        @NonNull
         ActionRecorder getActionRecorder() {
             return mActionRecorder;
         }
 
+        @NonNull
         MergingReport build() {
             Result result = mHasErrors
                     ? Result.ERROR

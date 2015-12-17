@@ -17,6 +17,7 @@
  */
 package com.android.tools.rpclib.any;
 
+import com.android.tools.rpclib.schema.*;
 import org.jetbrains.annotations.NotNull;
 
 import com.android.tools.rpclib.binary.BinaryClass;
@@ -53,11 +54,14 @@ final class Bool extends Box implements BinaryObject {
     @Override @NotNull
     public BinaryClass klass() { return Klass.INSTANCE; }
 
-    private static final byte[] IDBytes = {-39, -7, 57, -82, 83, -9, 74, 72, -102, 45, 12, 58, 119, -121, -35, -117, 39, -59, -23, -13, };
-    public static final BinaryID ID = new BinaryID(IDBytes);
+
+    private static final Entity ENTITY = new Entity("any","bool_","","");
 
     static {
-        Namespace.register(ID, Klass.INSTANCE);
+        ENTITY.setFields(new Field[]{
+            new Field("value", new Primitive("bool", Method.Bool)),
+        });
+        Namespace.register(Klass.INSTANCE);
     }
     public static void register() {}
     //<<<End:Java.ClassBody:1>>>
@@ -66,7 +70,7 @@ final class Bool extends Box implements BinaryObject {
         INSTANCE;
 
         @Override @NotNull
-        public BinaryID id() { return ID; }
+        public Entity entity() { return ENTITY; }
 
         @Override @NotNull
         public BinaryObject create() { return new Bool(); }

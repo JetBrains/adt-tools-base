@@ -23,6 +23,7 @@ import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
@@ -85,6 +86,7 @@ public class ActionRecorder {
     // iterator should be ordered by the key insertion order. This is not a concurrent map so we
     // will need to guard multi-threaded access when adding/removing elements.
     @GuardedBy("this")
+    @NonNull
     private final Map<NodeKey, Actions.DecisionTreeRecord> mRecords =
             new LinkedHashMap<NodeKey, Actions.DecisionTreeRecord>();
 
@@ -94,7 +96,7 @@ public class ActionRecorder {
      *
      * @param xmlElement xml element added to the initial merged document.
      */
-    void recordDefaultNodeAction(XmlElement xmlElement) {
+    void recordDefaultNodeAction(@NonNull XmlElement xmlElement) {
         if (!mRecords.containsKey(xmlElement.getOriginalId())) {
             recordNodeAction(xmlElement, Actions.ActionType.ADDED);
             for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
@@ -116,7 +118,7 @@ public class ActionRecorder {
      * @param xmlElement the implied element that was added to the resulting xml.
      * @param reason optional contextual information whey the implied element was added.
      */
-    void recordImpliedNodeAction(XmlElement xmlElement, String reason) {
+    void recordImpliedNodeAction(@NonNull XmlElement xmlElement, @Nullable String reason) {
         NodeKey storageKey = xmlElement.getOriginalId();
         Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
         if (nodeDecisionTree == null) {
@@ -141,8 +143,8 @@ public class ActionRecorder {
      * @param actionType the action's type
      */
     synchronized void recordNodeAction(
-            XmlElement xmlElement,
-            Actions.ActionType actionType) {
+            @NonNull XmlElement xmlElement,
+            @NonNull Actions.ActionType actionType) {
         recordNodeAction(xmlElement, actionType, xmlElement);
     }
 
@@ -155,9 +157,9 @@ public class ActionRecorder {
      *                      indicates what is the element being rejected or replaced.
      */
     synchronized void recordNodeAction(
-            XmlElement mergedElement,
-            Actions.ActionType actionType,
-            XmlElement targetElement) {
+            @NonNull XmlElement mergedElement,
+            @NonNull Actions.ActionType actionType,
+            @NonNull XmlElement targetElement) {
 
         Actions.NodeRecord record = new Actions.NodeRecord(actionType,
                 new SourceFilePosition(
@@ -176,8 +178,8 @@ public class ActionRecorder {
      * @param nodeRecord the record of the action.
      */
     synchronized void recordNodeAction(
-            XmlElement mergedElement,
-            Actions.NodeRecord nodeRecord) {
+            @NonNull XmlElement mergedElement,
+            @NonNull Actions.NodeRecord nodeRecord) {
 
         NodeKey storageKey = mergedElement.getOriginalId();
         Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
@@ -240,8 +242,8 @@ public class ActionRecorder {
      * @param attributeRecord the record of the action.
      */
     synchronized void recordAttributeAction(
-            XmlAttribute attribute,
-            Actions.AttributeRecord attributeRecord) {
+            @NonNull XmlAttribute attribute,
+            @NonNull Actions.AttributeRecord attributeRecord) {
 
         List<Actions.AttributeRecord> attributeRecords = getAttributeRecords(attribute);
         attributeRecords.add(attributeRecord);
@@ -276,7 +278,8 @@ public class ActionRecorder {
      * added for the first time into the resulting merged xml document.
      */
     @Nullable
-    synchronized Actions.AttributeRecord getAttributeCreationRecord(XmlAttribute attribute) {
+    synchronized Actions.AttributeRecord getAttributeCreationRecord(
+            @NonNull XmlAttribute attribute) {
         for (Actions.AttributeRecord attributeRecord : getAttributeRecords(attribute)) {
             if (attributeRecord.getActionType() == Actions.ActionType.ADDED) {
                 return attributeRecord;
@@ -285,12 +288,13 @@ public class ActionRecorder {
         return null;
     }
 
-    private List<Actions.AttributeRecord> getAttributeRecords(XmlAttribute attribute) {
+    @NonNull
+    private List<Actions.AttributeRecord> getAttributeRecords(@NonNull XmlAttribute attribute) {
         XmlElement originElement = attribute.getOwnerElement();
         NodeKey storageKey = originElement.getOriginalId();
-        Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
+        @Nullable Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
         // by now the node should have been added for this element.
-        assert (nodeDecisionTree != null);
+        Preconditions.checkNotNull(nodeDecisionTree);
         List<Actions.AttributeRecord> attributeRecords =
                 nodeDecisionTree.mAttributeRecords.get(attribute.getName());
         if (attributeRecords == null) {
@@ -300,6 +304,7 @@ public class ActionRecorder {
         return attributeRecords;
     }
 
+    @NonNull
     Actions build() {
         return new Actions(new ImmutableMap.Builder<NodeKey, Actions.DecisionTreeRecord>()
                 .putAll(mRecords).build());

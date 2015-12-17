@@ -17,6 +17,7 @@ public class WorldWriteableFile {
     public void foo() {
         OutputStream out = null;
         SharedPreferences prefs = null;
+        File dir = null;
 
         boolean success = false;
         try {
@@ -29,6 +30,25 @@ public class WorldWriteableFile {
             prefs = getSharedPreferences(mContext, MODE_PRIVATE); // ok
             prefs = getSharedPreferences(mContext, MODE_WORLD_WRITEABLE);
             prefs = getSharedPreferences(mContext, MODE_WORLD_READABLE);
+
+            dir = getDir(mFile.getName(), MODE_PRIVATE); // ok
+            dir = getDir(mFile.getName(), MODE_WORLD_WRITEABLE);
+            dir = getDir(mFile.getName(), MODE_WORLD_READABLE);
+
+            mFile.setReadable(true, true); // ok
+            mFile.setReadable(false, true); // ok
+            mFile.setReadable(false, false); // ok
+            mFile.setReadable(true, false);
+            mFile.setReadable(true); // ok
+            mFile.setReadable(false); // ok
+
+            mFile.setWritable(true, true); // ok
+            mFile.setWritable(false, true); // ok
+            mFile.setWritable(false, false); // ok
+            mFile.setWritable(true, false);
+            mFile.setWritable(true); // ok
+            mFile.setWritable(false); // ok
+
             // Flickr.get().downloadPhoto(params[0], Flickr.PhotoSize.LARGE,
             // out);
             success = true;

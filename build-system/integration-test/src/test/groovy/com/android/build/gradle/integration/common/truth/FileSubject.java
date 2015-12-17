@@ -24,6 +24,7 @@ import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
+import com.google.common.truth.TestVerb;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,9 +32,14 @@ import java.io.IOException;
 /**
  * Truth support for validating File.
  */
+@SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")  // Functions do not return.
 public class FileSubject extends Subject<FileSubject, File> {
     public FileSubject(FailureStrategy failureStrategy, File subject) {
         super(failureStrategy, subject);
+    }
+
+    public void hasName(String name) {
+        check().that(getSubject().getName()).named(getDisplaySubject()).isEqualTo(name);
     }
 
     public void exists() {
@@ -48,21 +54,18 @@ public class FileSubject extends Subject<FileSubject, File> {
         }
     }
 
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void isFile() {
         if (!getSubject().isFile()) {
             fail("is a file");
         }
     }
 
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void isDirectory() {
         if (!getSubject().isDirectory()) {
             fail("is a directory");
         }
     }
 
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void containsAllOf(String... expectedContents) {
         isFile();
 
@@ -75,6 +78,27 @@ public class FileSubject extends Subject<FileSubject, File> {
             }
         } catch (IOException e) {
             failWithRawMessage("Unable to read %s", getSubject());
+        }
+    }
+
+    public void wasModifiedAt(long timestamp) {
+        long lastModified = getSubject().lastModified();
+        if (getSubject().lastModified() != timestamp) {
+            failWithBadResults("was not modified at", timestamp, "was modified at", lastModified);
+        }
+    }
+
+    public void isNewerThan(long timestamp) {
+        long lastModified = getSubject().lastModified();
+        if (getSubject().lastModified() <= timestamp) {
+            failWithBadResults("is newer than", timestamp, "was modified at", lastModified);
+        }
+    }
+
+    public void isOlderThan(long timestamp) {
+        long lastModified = getSubject().lastModified();
+        if (getSubject().lastModified() >= timestamp) {
+            failWithBadResults("is older than", timestamp, "was modified at", lastModified);
         }
     }
 

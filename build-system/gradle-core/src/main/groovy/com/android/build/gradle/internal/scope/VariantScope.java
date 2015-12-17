@@ -23,13 +23,15 @@ import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
+import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
+import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
-import com.android.build.gradle.tasks.MergeAssets;
+import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
@@ -75,9 +77,6 @@ public interface VariantScope extends BaseScope {
     File getNdkDebuggableLibraryFolders(@NonNull Abi abi);
 
     void addNdkDebuggableLibraryFolders(@NonNull Abi abi, @NonNull File searchPath);
-
-    @NonNull
-    Set<File> getJniFolders();
 
     @Nullable
     BaseVariantData getTestedVariantData();
@@ -141,6 +140,9 @@ public interface VariantScope extends BaseScope {
     File getMergeAssetsOutputDir();
 
     @NonNull
+    File getMergeNativeLibsOutputDir();
+
+    @NonNull
     File getBuildConfigSourceOutputDir();
 
     @NonNull
@@ -168,16 +170,14 @@ public interface VariantScope extends BaseScope {
     File getAidlSourceOutputDir();
 
     @NonNull
-    File getAidlIncrementalDir();
+    File getPackagedAidlDir();
 
+    /**
+     * Returns a place to store incremental build data. The {@code name} argument has to be unique
+     * per task, ideally generated with {@link TaskConfigAction#getName()}.
+     */
     @NonNull
-    File getAidlParcelableDir();
-
-    @NonNull
-    File getJackIncrementalDir();
-
-    @NonNull
-    File getJackTempDir();
+    File getIncrementalDir(String name);
 
     @NonNull
     File getJillPackagedLibrariesDir();
@@ -192,6 +192,18 @@ public interface VariantScope extends BaseScope {
     File getJackClassesZip();
 
     @NonNull
+    File getClassOutputForDataBinding();
+
+    @NonNull
+    File getLayoutInfoOutputForDataBinding();
+
+    @NonNull
+    File getLayoutFolderOutputForDataBinding();
+
+    @NonNull
+    File getGeneratedClassListOutputFileForDataBinding();
+
+    @NonNull
     File getProguardOutputFolder();
 
     @NonNull
@@ -199,81 +211,86 @@ public interface VariantScope extends BaseScope {
 
     File getMappingFile();
 
+    @NonNull
+    File getAaptFriendlyManifestOutputFile();
+
+    @NonNull
+    File  getManifestReportFile();
+
     AndroidTask<Task> getPreBuildTask();
 
-    void setPreBuildTask(
-            AndroidTask<Task> preBuildTask);
+    void setPreBuildTask(AndroidTask<Task> preBuildTask);
 
     AndroidTask<PrepareDependenciesTask> getPrepareDependenciesTask();
 
-    void setPrepareDependenciesTask(
-            AndroidTask<PrepareDependenciesTask> prepareDependenciesTask);
+    void setPrepareDependenciesTask(AndroidTask<PrepareDependenciesTask> prepareDependenciesTask);
 
     AndroidTask<ProcessAndroidResources> getGenerateRClassTask();
 
-    void setGenerateRClassTask(
-            AndroidTask<ProcessAndroidResources> generateRClassTask);
+    void setGenerateRClassTask(AndroidTask<ProcessAndroidResources> generateRClassTask);
 
     AndroidTask<Task> getSourceGenTask();
 
-    void setSourceGenTask(
-            AndroidTask<Task> sourceGenTask);
+    void setSourceGenTask(AndroidTask<Task> sourceGenTask);
 
     AndroidTask<Task> getResourceGenTask();
 
-    void setResourceGenTask(
-            AndroidTask<Task> resourceGenTask);
+    void setResourceGenTask(AndroidTask<Task> resourceGenTask);
 
     AndroidTask<Task> getAssetGenTask();
 
-    void setAssetGenTask(
-            AndroidTask<Task> assetGenTask);
+    void setAssetGenTask(AndroidTask<Task> assetGenTask);
 
     AndroidTask<CheckManifest> getCheckManifestTask();
 
-    void setCheckManifestTask(
-            AndroidTask<CheckManifest> checkManifestTask);
+    void setCheckManifestTask(AndroidTask<CheckManifest> checkManifestTask);
 
     AndroidTask<RenderscriptCompile> getRenderscriptCompileTask();
 
-    void setRenderscriptCompileTask(
-            AndroidTask<RenderscriptCompile> renderscriptCompileTask);
+    void setRenderscriptCompileTask(AndroidTask<RenderscriptCompile> renderscriptCompileTask);
 
     AndroidTask<AidlCompile> getAidlCompileTask();
 
-    void setAidlCompileTask(
-            AndroidTask<AidlCompile> aidlCompileTask);
+    void setAidlCompileTask(AndroidTask<AidlCompile> aidlCompileTask);
 
     @Nullable
     AndroidTask<MergeResources> getMergeResourcesTask();
 
-    void setMergeResourcesTask(
-            @Nullable AndroidTask<MergeResources> mergeResourcesTask);
+    void setMergeResourcesTask(@Nullable AndroidTask<MergeResources> mergeResourcesTask);
 
     @Nullable
-    AndroidTask<MergeAssets> getMergeAssetsTask();
+    AndroidTask<MergeSourceSetFolders> getMergeAssetsTask();
 
-    void setMergeAssetsTask(
-            @Nullable AndroidTask<MergeAssets> mergeAssetsTask);
+    void setMergeAssetsTask(@Nullable AndroidTask<MergeSourceSetFolders> mergeAssetsTask);
+
+    @Nullable
+    AndroidTask<MergeSourceSetFolders> getMergeJniLibFoldersTask();
+
+    void setMergeJniLibFoldersTask(@Nullable AndroidTask<MergeSourceSetFolders> mergeJniLibsTask);
 
     AndroidTask<GenerateBuildConfig> getGenerateBuildConfigTask();
 
-    void setGenerateBuildConfigTask(
-            AndroidTask<GenerateBuildConfig> generateBuildConfigTask);
+    void setGenerateBuildConfigTask(AndroidTask<GenerateBuildConfig> generateBuildConfigTask);
 
     AndroidTask<GenerateResValues> getGenerateResValuesTask();
 
-    void setGenerateResValuesTask(
-            AndroidTask<GenerateResValues> generateResValuesTask);
+    void setGenerateResValuesTask(AndroidTask<GenerateResValues> generateResValuesTask);
+
+    @Nullable
+    AndroidTask<DataBindingExportBuildInfoTask> getDataBindingExportInfoTask();
+
+    void setDataBindingExportInfoTask(
+            @Nullable AndroidTask<DataBindingExportBuildInfoTask> dataBindingExportInfoTask);
+
+    @Nullable
+    AndroidTask<DataBindingProcessLayoutsTask> getDataBindingProcessLayoutsTask();
+
+    void setDataBindingProcessLayoutsTask(
+            @Nullable AndroidTask<DataBindingProcessLayoutsTask> dataBindingProcessLayoutsTask);
 
     AndroidTask<Sync> getProcessJavaResourcesTask();
 
-    void setProcessJavaResourcesTask(
-            AndroidTask<Sync> processJavaResourcesTask);
-
-    void setPackagingOptionsFilter(SignedJarBuilder.IZipEntryFilter filter);
-
-    SignedJarBuilder.IZipEntryFilter getPackagingOptionsFilter();
+    void setProcessJavaResourcesTask(AndroidTask<Sync> processJavaResourcesTask);
 
     void setMergeJavaResourcesTask(AndroidTask<TransformTask> mergeJavaResourcesTask);
 
@@ -285,22 +302,18 @@ public interface VariantScope extends BaseScope {
     @Nullable
     AndroidTask<JackTask> getJackTask();
 
-    void setJackTask(
-            @Nullable AndroidTask<JackTask> jackTask);
+    void setJackTask(@Nullable AndroidTask<JackTask> jackTask);
 
     @Nullable
     AndroidTask<JavaCompile> getJavacTask();
 
-    void setJavacTask(
-            @Nullable AndroidTask<JavaCompile> javacTask);
+    void setJavacTask(@Nullable AndroidTask<JavaCompile> javacTask);
 
-    void setJavaCompilerTask(
-            @NonNull AndroidTask<? extends AbstractCompile> javaCompileTask);
+    void setJavaCompilerTask(@NonNull AndroidTask<? extends AbstractCompile> javaCompileTask);
 
     AndroidTask<Task> getCompileTask();
 
-    void setCompileTask(
-            AndroidTask<Task> compileTask);
+    void setCompileTask(AndroidTask<Task> compileTask);
 
     AndroidTask<?> getCoverageReportTask();
 

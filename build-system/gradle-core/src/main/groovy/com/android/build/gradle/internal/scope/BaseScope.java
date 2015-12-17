@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Base Scope for Variants and Variant Outputs
@@ -39,9 +38,23 @@ public interface BaseScope {
     @NonNull
     String getTaskName(@NonNull String prefix, @NonNull String suffix);
 
+    /**
+     * Returns a unique directory name (can include multiple folders) for the variant,
+     * based on build type, flavor and test.
+     *
+     * <p>This always uses forward slashes ('/') as separator on all platform.
+     *
+     * @return the directory name for the variant
+     */
     @NonNull
     String getDirName();
 
+    /**
+     * Returns a unique directory name (can include multiple folders) for the variant,
+     * based on build type, flavor and test.
+     *
+     * @return the directory name for the variant
+     */
     @NonNull
     Collection<String> getDirectorySegments();
 }

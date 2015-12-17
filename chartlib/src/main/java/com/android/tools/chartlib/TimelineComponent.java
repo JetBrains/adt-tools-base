@@ -31,7 +31,9 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.Icon;
@@ -86,9 +88,19 @@ public final class TimelineComponent extends AnimatedComponent
     private boolean mFirstFrame;
 
     /**
+     * The boolean value whether to stack all streams together, by default it is true.
+     */
+    private boolean mStackStreams = true;
+
+    /**
      * The current maximum range in y-axis units.
      */
     private float mCurrentMax;
+
+    /**
+     * The current minimum non-negative range in y-axis units.
+     */
+    private float mCurrentMin;
 
     /**
      * Marker separation in y-axis units.
@@ -198,6 +210,12 @@ public final class TimelineComponent extends AnimatedComponent
     private float mEventProgress;
 
     /**
+     * The reference values for which guiding horizontal lines are drawn. The colored lines provide guidance like the stream values
+     * should be at most a reference value, or at least a reference value.
+     */
+    private List<Reference> mReferences = new ArrayList<Reference>();
+
+    /**
      * Creates a timeline component that renders the given timeline data. It will animate the
      * timeline data by showing the value at the current time on the right y-axis of the graph.
      *
@@ -239,6 +257,10 @@ public final class TimelineComponent extends AnimatedComponent
         reset();
     }
 
+    public void setStackStreams(boolean stackStreams) {
+        mStackStreams = stackStreams;
+    }
+
     public void configureStream(int stream, String name, Color color) {
         mStreamNames[stream] = name;
         mStreamColors[stream] = color;
@@ -259,6 +281,7 @@ public final class TimelineComponent extends AnimatedComponent
 
     public void reset() {
         mCurrentMax = mInitialMax;
+        mCurrentMin = 0.0f;
         mMarkerSeparation = mInitialMarkerSeparation;
         mEvenMarkersAlpha = 1.0f;
         mFirstFrame = true;
@@ -283,6 +306,7 @@ public final class TimelineComponent extends AnimatedComponent
         drawLabels(g2d);
         drawTimeMarkers(g2d);
         drawMarkers(g2d);
+        drawReferenceLines(g2d);
         drawGuides(g2d);
 
         mFirstFrame = false;
@@ -311,7 +335,7 @@ public final class TimelineComponent extends AnimatedComponent
     }
 
     private void drawTimelineData(Graphics2D g2d) {
-        mYScale = (mBottom - TOP_MARGIN) / mCurrentMax;
+        mYScale = (mBottom - TOP_MARGIN) / (mCurrentMax - mCurrentMin);
         if (mSize > 1) {
             int from = 0;
             // Optimize to not render too many samples since they get clipped.
@@ -478,7 +502,7 @@ public final class TimelineComponent extends AnimatedComponent
     }
 
     private float valueToY(float val) {
-        return mBottom - val * mYScale;
+        return mBottom - (val - mCurrentMin) * mYScale;
     }
 
     private float timeToX(float time) {
@@ -493,10 +517,8 @@ public final class TimelineComponent extends AnimatedComponent
             int y = TOP_MARGIN + 15 + (mStreamNames.length - i - 1) * 20;
             g2d.fillRect(mRight + 20, y, 15, 15);
             g2d.setColor(TEXT_COLOR);
-            g2d.drawString(
-                    String.format("%s [%.2f %s]", mStreamNames[i], mCurrent[i], mUnits),
-                    mRight + 40,
-                    y + 7 + metrics.getAscent() * .5f);
+            g2d.drawString(String.format("%s [%.2f %s]", mStreamNames[i], mCurrent[i], mUnits), mRight + 40,
+                           y + 7 + metrics.getAscent() * .5f);
         }
     }
 
@@ -506,49 +528,64 @@ public final class TimelineComponent extends AnimatedComponent
         FontMetrics metrics = g2d.getFontMetrics();
         float offset = metrics.stringWidth("000") * 0.5f;
         Path2D.Float lines = new Path2D.Float();
+        float zeroY = valueToY(0.0f);
         for (int sec = Math.max((int) Math.ceil(mBeginTime), 0); sec < mEndTime; sec++) {
             float x = timeToX(sec);
             boolean big = sec % 5 == 0;
             if (big) {
                 String text = formatTime(sec);
                 g2d.drawString(text, x - metrics.stringWidth(text) + offset,
-                        mBottom + metrics.getAscent() + 5);
+                        zeroY + metrics.getAscent() + 5);
             }
-            lines.moveTo(x, mBottom);
-            lines.lineTo(x, mBottom + (big ? 5 : 2));
+            lines.moveTo(x, zeroY);
+            lines.lineTo(x, zeroY + (big ? 5 : 2));
         }
         g2d.draw(lines);
     }
 
     @VisibleForTesting
     static String formatTime(int seconds) {
-        int[] factors = {60, seconds};
-        String[] suffix = {"m", "h"};
-        String ret = seconds % 60 + "s";
-        int t = seconds / 60;
-        for (int i = 0; i < suffix.length && t > 0; i++) {
-            ret = t % factors[i] + suffix[i] + " " + ret;
-            t /= factors[i];
+        final char[] suffix = {'h', 'm', 's'};
+        final int[] secsPer = {60*60, 60, 1};
+
+        StringBuilder sb = new StringBuilder(12); // "999h 59m 59s"
+        for (int i = 0; i < suffix.length; i++) {
+            int value = seconds / secsPer[i];
+            seconds = seconds % secsPer[i];
+            if (value == 0 && sb.length() == 0 && i != (suffix.length - 1)) {
+                continue;
+            }
+
+            if (sb.length() > 0) {
+                sb.append(' ');
+            }
+            sb.append(value);
+            sb.append(suffix[i]);
         }
-        return ret;
+        return sb.toString();
     }
 
     private void drawMarkers(Graphics2D g2d) {
+        drawMarkers(g2d, 1.0f, mCurrentMax);
+        drawMarkers(g2d, -1.0f, mCurrentMin);
+    }
+
+    private void drawMarkers(Graphics2D g2d, float direction, float max) {
         if (mYScale <= 0) {
             return;
         }
 
-        int markers = (int) (mCurrentMax / mMarkerSeparation);
+        int markers = (int) (max / mMarkerSeparation * direction);
         float markerPosition = LEFT_MARGIN - 10;
         for (int i = 0; i < markers + 1; i++) {
-            float markerValue = (i + 1) * mMarkerSeparation;
+            float markerValue = (i + 1) * mMarkerSeparation * direction;
             int y = (int) valueToY(markerValue);
-            // Too close to the top
-            if (mCurrentMax - markerValue < mMarkerSeparation * 0.5f) {
-                markerValue = mCurrentMax;
+            // Too close to the end
+            if (direction * (max - markerValue) < mMarkerSeparation * 0.5f) {
+                markerValue = max;
                 //noinspection AssignmentToForLoopParameter
                 i = markers;
-                y = TOP_MARGIN;
+                y = (int) valueToY(max);
             }
             if (i < markers && i % 2 == 0 && mEvenMarkersAlpha < 1.0f) {
                 g2d.setColor(
@@ -566,9 +603,24 @@ public final class TimelineComponent extends AnimatedComponent
         }
     }
 
+    private void drawReferenceLines(Graphics2D g2d) {
+        for (Reference reference : mReferences) {
+            if (reference.value <= mCurrentMax && reference.value >= mCurrentMin) {
+                g2d.setColor(reference.color);
+                int y = (int)valueToY(reference.value);
+                g2d.drawLine(LEFT_MARGIN, y, mRight, y);
+            }
+        }
+    }
+
+    public void addReference(float reference, @NonNull Color color) {
+        mReferences.add(new Reference(reference, color));
+    }
+
     private void drawGuides(Graphics2D g2d) {
         g2d.setColor(TEXT_COLOR);
-        g2d.drawLine(LEFT_MARGIN - 10, mBottom, mRight + 10, mBottom);
+        int zeroY = (int) valueToY(0.0f);
+        g2d.drawLine(LEFT_MARGIN - 10, zeroY, mRight + 10, zeroY);
         if (mYScale > 0) {
             g2d.drawLine(LEFT_MARGIN, mBottom, LEFT_MARGIN, TOP_MARGIN);
             g2d.drawLine(mRight, mBottom, mRight, TOP_MARGIN);
@@ -596,8 +648,7 @@ public final class TimelineComponent extends AnimatedComponent
                 mTypes[i] = sample.type;
                 float value = 0.0f;
                 for (int j = 0; j < mData.getStreamCount(); ++j) {
-                    value += sample.values[j];
-                    mValues[j][i] = value;
+                    mValues[j][i] = mStackStreams ? (value += sample.values[j]) : sample.values[j];
                 }
             }
             for (int j = 0; j < mData.getStreamCount(); ++j) {
@@ -608,9 +659,15 @@ public final class TimelineComponent extends AnimatedComponent
             mEndTime = mData.getEndTime() - mBufferTime;
             mBeginTime = mEndTime - (mRight - LEFT_MARGIN) / X_SCALE;
             // Animate the current maximum towards the real one.
-            float cappedMax = Math.min(mData.getMaxTotal(), mAbsoluteMax);
+            float cappedMax = mStackStreams ? mData.getMaxTotal() : mData.getStreamMax();
+            cappedMax = Math.min(cappedMax, mAbsoluteMax);
             if (cappedMax > mCurrentMax) {
                 mCurrentMax = lerp(mCurrentMax, cappedMax, mFirstFrame ? 1.f : .95f);
+            }
+            float cappedMin = mStackStreams ? mData.getMinTotal() : mData.getStreamMin();
+            cappedMin = Math.max(cappedMin, -mAbsoluteMax);
+            if (cappedMin == 0.0f || cappedMin < mCurrentMin) {
+                mCurrentMin = lerp(mCurrentMin, cappedMin, mFirstFrame ? 1.f : .95f);
             }
 
             // Animate the fade in/out of markers.
@@ -663,6 +720,19 @@ public final class TimelineComponent extends AnimatedComponent
         NONE,
         SOLID,
         DASHED
+    }
+
+    private static class Reference {
+
+        public final float value;
+
+        @NonNull
+        public final Color color;
+
+        private Reference(float value, @NonNull Color color) {
+            this.value = value;
+            this.color = color;
+        }
     }
 
     private static class EventInfo {

@@ -9,8 +9,8 @@ allprojects {
   plugins.withId('android-library') {
 
     android {
-      buildToolsVersion rootProject.ext.buildToolsVersion
-      compileSdkVersion 22
+      buildToolsVersion rootProject.buildToolsVersion
+      compileSdkVersion rootProject.latestCompileSdk
 
       defaultConfig {
         minSdkVersion 22

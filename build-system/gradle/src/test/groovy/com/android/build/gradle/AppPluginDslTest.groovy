@@ -453,7 +453,7 @@ public class AppPluginDslTest extends BaseTest {
         ]
 
         expectedFiles.each { name, expected ->
-            List<File> actual = variantMap[name].testProguardFiles
+            Set<File> actual = variantMap[name].testProguardFiles
             assert (actual*.name as Set) == (expected as Set), name
         }
     }
@@ -646,6 +646,10 @@ public class AppPluginDslTest extends BaseTest {
                 f3 {
                     generatedDensities = defaultConfig.generatedDensities - ["ldpi", "mdpi"]
                 }
+
+                f4  {
+                    generatedDensities = []
+                }
             }
         }
 
@@ -660,6 +664,8 @@ public class AppPluginDslTest extends BaseTest {
 
         assert project.mergeF3DebugResources.generatedDensities ==
                 ["hdpi", "xhdpi", "xxhdpi", "xxxhdpi"] as Set
+
+        assert project.mergeF4DebugResources.generatedDensities == [] as Set
     }
 
     private static void checkTestedVariant(@NonNull String variantName,

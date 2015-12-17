@@ -20,7 +20,6 @@ package com.android.tools.rpclib.any;
 public final class Factory {
     public static void register() {
         //<<<Start:Java.FactoryBody:2>>>
-        AnyType.register();
         BoolSlice.register();
         Bool.register();
         Float32Slice.register();

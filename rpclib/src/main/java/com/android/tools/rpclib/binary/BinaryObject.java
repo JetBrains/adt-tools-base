@@ -21,8 +21,6 @@ import org.jetbrains.annotations.NotNull;
  * An object that can be encoded and decoded using its {@link class}.
  */
 public interface BinaryObject {
-  int NULL_ID = 0;
-
   /**
    * @return the object's type class.
    */

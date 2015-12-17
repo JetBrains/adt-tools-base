@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -30,6 +31,7 @@ import java.io.File;
 /**
  * Task sending APKs out to a {@link TestServer}
  */
+@ParallelizableTask
 public class TestServerTask extends DefaultAndroidTask {
 
     private File testApk;

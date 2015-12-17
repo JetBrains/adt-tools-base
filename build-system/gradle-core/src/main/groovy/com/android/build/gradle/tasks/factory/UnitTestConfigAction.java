@@ -72,6 +72,9 @@ public class UnitTestConfigAction implements TaskConfigAction<Test> {
         final BaseVariantData testedVariantData =
                 (BaseVariantData) variantData.getTestedVariantData();
 
+        // we run by default in headless mode, so the forked JVM doesn't steal focus.
+        runTestsTask.systemProperty("java.awt.headless", "true");
+
         runTestsTask.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
         runTestsTask.setDescription(
                 "Run unit tests for the "

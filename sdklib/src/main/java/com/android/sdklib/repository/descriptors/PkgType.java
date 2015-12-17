@@ -118,7 +118,12 @@ public enum PkgType implements IPkgCapabilities {
 
     /** The SDK/ndk folder. */
     PKG_NDK(0x8000, SdkConstants.FD_NDK, "",
-                    false, true, false, false, false, false, false, false);
+                    false, true, false, false, false, false, false, false),
+
+    /** The SDK/lldb folder. */
+    PKG_LLDB(0xA000, SdkConstants.FD_LLDB, "",
+             false, true, false, false, false, false, false, false);
+
 
     /** A collection of all the known PkgTypes. */
     public static final EnumSet<PkgType> PKG_ALL = EnumSet.allOf(PkgType.class);

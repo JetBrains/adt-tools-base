@@ -18,36 +18,42 @@ package com.android.builder.packaging;
 
 import com.android.annotations.NonNull;
 import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter.ZipAbortException;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * An exception thrown during packaging of an APK file.
  */
 public final class DuplicateFileException extends ZipAbortException {
     private static final long serialVersionUID = 1L;
+    @NonNull
     private final String mArchivePath;
-    private final File mFile1;
-    private final File mFile2;
+    @NonNull
+    private final List<File> mSourceFiles;
 
-    public DuplicateFileException(@NonNull String archivePath, @NonNull File file1,
-                                  @NonNull File file2) {
+
+    public DuplicateFileException(@NonNull String archivePath, @NonNull File... sourceFiles) {
         super();
         mArchivePath = archivePath;
-        mFile1 = file1;
-        mFile2 = file2;
+        this.mSourceFiles = ImmutableList.copyOf(sourceFiles);
     }
 
+    public DuplicateFileException(@NonNull String archivePath, @NonNull List<File> sourceFiles) {
+        super();
+        mArchivePath = archivePath;
+        this.mSourceFiles = ImmutableList.copyOf(sourceFiles);
+    }
+
+    @NonNull
     public String getArchivePath() {
         return mArchivePath;
     }
 
-    public File getFile1() {
-        return mFile1;
-    }
-
-    public File getFile2() {
-        return mFile2;
+    @NonNull
+    public List<File> getSourceFiles() {
+        return mSourceFiles;
     }
 
     @Override
@@ -55,8 +61,10 @@ public final class DuplicateFileException extends ZipAbortException {
         StringBuilder sb = new StringBuilder();
 
         sb.append("Duplicate files copied in APK ").append(mArchivePath).append('\n');
-        sb.append("\tFile 1: ").append(mFile1).append('\n');
-        sb.append("\tFile 2: ").append(mFile2).append('\n');
+        int index = 1;
+        for (File file : mSourceFiles) {
+            sb.append("\tFile").append(index++).append(": ").append(file).append('\n');
+        }
 
         return sb.toString();
     }

@@ -85,8 +85,7 @@ public class PlaceholderHandlerTest extends TestCase {
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 TestUtils.sourceFile(getClass(), "testPlaceholders#xml"), xml);
 
-        PlaceholderHandler handler = new PlaceholderHandler();
-        handler.visit(
+        PlaceholderHandler.visit(
                 ManifestMerger2.MergeType.APPLICATION,
                 refDocument, new KeyBasedValueResolver<String>() {
                     @Override
@@ -140,8 +139,7 @@ public class PlaceholderHandlerTest extends TestCase {
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 TestUtils.sourceFile(getClass(), "testPlaceholders#xml"), xml);
 
-        PlaceholderHandler handler = new PlaceholderHandler();
-        handler.visit(
+        PlaceholderHandler.visit(
                 ManifestMerger2.MergeType.APPLICATION,
                 refDocument, new KeyBasedValueResolver<String>() {
                     @Override
@@ -201,8 +199,8 @@ public class PlaceholderHandlerTest extends TestCase {
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 TestUtils.sourceFile(getClass(), "testPlaceholders#xml"), xml);
 
-        PlaceholderHandler handler = new PlaceholderHandler();
-        handler.visit(ManifestMerger2.MergeType.APPLICATION, refDocument, nullResolver, mBuilder);
+        PlaceholderHandler
+                .visit(ManifestMerger2.MergeType.APPLICATION, refDocument, nullResolver, mBuilder);
         // verify the error was recorded.
         verify(mBuilder).addMessage(
                 any(SourceFilePosition.class),
@@ -221,8 +219,8 @@ public class PlaceholderHandlerTest extends TestCase {
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
                 TestUtils.sourceFile(getClass(), "testPlaceholders#xml"), xml);
 
-        PlaceholderHandler handler = new PlaceholderHandler();
-        handler.visit(ManifestMerger2.MergeType.LIBRARY, refDocument, nullResolver, mBuilder);
+        PlaceholderHandler
+                .visit(ManifestMerger2.MergeType.LIBRARY, refDocument, nullResolver, mBuilder);
         // verify the error was recorded.
         verify(mBuilder).addMessage(
                 any(SourceFilePosition.class),

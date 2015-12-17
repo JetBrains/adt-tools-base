@@ -15,8 +15,13 @@
  */
 
 ext {
-    buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '22.0.1'].find()
-    latestCompileSdk = 21
+    buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '23.0.1'].find()
+    latestCompileSdk = [System.env.COMPILE_SDK, project.properties["CUSTOM_COMPILE_SDK"], 23].find() as int
+
+    // Last SDK that contained java 6 bytecode.
+    java6BasedSdk = 19
+    // Some of our tests use deprecated RenderScript APIs. TODO: upgrade.
+    oldSdkForRenderscript = 15
 
     useJack = System.env.CUSTOM_JACK ||
             Boolean.valueOf((String) project.properties[

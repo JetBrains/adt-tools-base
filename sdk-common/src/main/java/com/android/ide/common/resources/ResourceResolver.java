@@ -29,6 +29,8 @@ import com.android.ide.common.rendering.api.RenderResources;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.resources.ResourceType;
+import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 
 import java.util.Collection;
@@ -38,6 +40,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ResourceResolver extends RenderResources {
     public static final String THEME_NAME = "Theme";
@@ -45,6 +49,15 @@ public class ResourceResolver extends RenderResources {
     public static final String XLIFF_NAMESPACE_PREFIX = "urn:oasis:names:tc:xliff:document:";
     public static final String XLIFF_G_TAG = "g";
     public static final String ATTR_EXAMPLE = "example";
+
+    /**
+     * Constant passed to {@link #setDeviceDefaults(String)} to indicate the DeviceDefault styles
+     * should point to the default styles
+     */
+    public static final String LEGACY_THEME = "";
+
+    public static final Pattern DEVICE_DEFAULT_PATTERN = Pattern
+            .compile("(\\p{Alpha}+)?\\.?DeviceDefault\\.?(.+)?");
 
     /**
      * Number of indirections we'll follow for resource resolution before assuming there
@@ -70,6 +83,8 @@ public class ResourceResolver extends RenderResources {
     private Map<String, String> mReverseFrameworkStyles;
     @Nullable
     private Map<String, String> mReverseProjectStyles;
+    /** Contains the default parent for DeviceDefault styles (e.g. for API 18, "Holo") */
+    private String mDeviceDefaultParent = null;
 
     private ResourceResolver(
             Map<ResourceType, Map<String, ResourceValue>> projectResources,
@@ -104,31 +119,53 @@ public class ResourceResolver extends RenderResources {
     }
 
     /**
-     * Sets up the light and dark default styles with the given concrete styles. This is used if we
-     * want to override the defaults configured in the framework for this particular platform.
+     * This will override the DeviceDefault styles so they point to the given parent styles (e.g. If
+     * "Material" is passed, Theme.DeviceDefault parent will become Theme.Material). This patches
+     * all the styles (not only themes) and takes care of the light and dark variants. If {@link
+     * #LEGACY_THEME} is passed, parents will be directed to the default themes (i.e. Theme).
      */
-    public void setDeviceDefaults(@Nullable String lightStyle, @Nullable String darkStyle) {
-        if (darkStyle != null) {
-            replace("Theme.DeviceDefault", darkStyle);
+    public void setDeviceDefaults(@NonNull String deviceDefaultParent) {
+        if (deviceDefaultParent.equals(mDeviceDefaultParent)) {
+            // No need to patch again with the same parent
+            return;
         }
-        if (lightStyle != null && replace("Theme.DeviceDefault.Light", lightStyle)) {
-            replace("Theme.DeviceDefault.Light.DarkActionBar", lightStyle + ".DarkActionBar");
+
+        mDeviceDefaultParent = deviceDefaultParent;
+        // The joiner will ignore nulls so if the caller specified an empty name, we replace it with
+        // a null so it gets ignored
+        String parentName = Strings.emptyToNull(deviceDefaultParent);
+
+        // The regexp gets the prefix and suffix if they exist (without the dots)
+        for (ResourceValue value : mFrameworkResources.get(ResourceType.STYLE).values()) {
+            Matcher matcher = DEVICE_DEFAULT_PATTERN.matcher(value.getName());
+            if (!matcher.matches()) {
+                continue;
+            }
+
+            String newParentStyle =
+                    Joiner.on('.').skipNulls().join(matcher.group(1), parentName,
+                            ((matcher.groupCount() > 1) ? matcher.group(2) : null));
+            patchFrameworkStyleParent(value.getName(), newParentStyle);
         }
     }
 
-    private boolean replace(String fromStyleName, String toStyleName) {
+    /**
+     * Updates the parent of a given framework style. This method is used to patch DeviceDefault
+     * styles when using a CompatibilityTarget
+     */
+    private void patchFrameworkStyleParent(String childStyleName, String parentName) {
         Map<String, ResourceValue> map = mFrameworkResources.get(ResourceType.STYLE);
         if (map != null) {
-            ResourceValue from = map.get(fromStyleName);
-            if (from instanceof StyleResourceValue) {
-                ResourceValue to = map.get(toStyleName);
-                if (to instanceof StyleResourceValue) {
-                    mStyleInheritanceMap.put((StyleResourceValue)from, (StyleResourceValue)to);
-                    return true;
-                }
+            StyleResourceValue from = (StyleResourceValue)map.get(childStyleName);
+            StyleResourceValue to = (StyleResourceValue)map.get(parentName);
+
+            if (from != null && to != null) {
+                StyleResourceValue newStyle = new StyleResourceValue(ResourceType.STYLE,
+                        from.getName(), parentName, from.isFramework());
+                newStyle.replaceWith(from);
+                mStyleInheritanceMap.put(newStyle, to);
             }
         }
-        return false;
     }
 
     // ---- Methods to help dealing with older LayoutLibs.
@@ -523,17 +560,15 @@ public class ResourceResolver extends RenderResources {
     private void computeStyleInheritance(Collection<ResourceValue> styles,
             Map<String, ResourceValue> inProjectStyleMap,
             Map<String, ResourceValue> inFrameworkStyleMap) {
+        // This method will recalculate the inheritance map so any modifications done by
+        // setDeviceDefault will be lost. Set mDeviceDefaultParent to null so when setDeviceDefault
+        // is called again, it knows that it needs to modify the inheritance map again.
+        mDeviceDefaultParent = null;
         for (ResourceValue value : styles) {
             if (value instanceof StyleResourceValue) {
                 StyleResourceValue style = (StyleResourceValue)value;
 
-                // first look for a specified parent.
-                String parentName = style.getParentStyle();
-
-                // no specified parent? try to infer it from the name of the style.
-                if (parentName == null) {
-                    parentName = getParentName(value.getName());
-                }
+                String parentName = getParentName(style);
 
                 if (parentName != null) {
                     StyleResourceValue parentStyle = getStyle(parentName, inProjectStyleMap,
@@ -550,12 +585,18 @@ public class ResourceResolver extends RenderResources {
     /**
      * Computes the name of the parent style, or <code>null</code> if the style is a root style.
      */
-    private static String getParentName(String styleName) {
+    @Nullable
+    public static String getParentName(StyleResourceValue style) {
+        String parentName = style.getParentStyle();
+        if (parentName != null) {
+            return parentName;
+        }
+
+        String styleName = style.getName();
         int index = styleName.lastIndexOf('.');
         if (index != -1) {
             return styleName.substring(0, index);
         }
-
         return null;
     }
 

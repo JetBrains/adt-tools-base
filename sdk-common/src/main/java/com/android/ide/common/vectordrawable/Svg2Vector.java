@@ -25,6 +25,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.awt.geom.AffineTransform;
 import java.io.*;
 import java.util.HashSet;
 import java.util.logging.Level;
@@ -32,6 +33,13 @@ import java.util.logging.Logger;
 
 /**
  * Converts SVG to VectorDrawable's XML
+ *
+ * There are 2 major functions:
+ * 1. parse(file)
+ *   This include parse the .svg file and build an internal tree. The optimize this tree.
+ *
+ * 2. writeFile()
+ *   This is traversing the whole tree, and write the group / path info into the XML.
  */
 public class Svg2Vector {
     private static Logger logger = Logger.getLogger(Svg2Vector.class.getSimpleName());
@@ -42,11 +50,9 @@ public class Svg2Vector {
     public static final String SVG_CIRCLE = "circle";
     public static final String SVG_LINE = "line";
     public static final String SVG_PATH = "path";
+    public static final String SVG_ELLIPSE = "ellipse";
     public static final String SVG_GROUP = "g";
     public static final String SVG_TRANSFORM = "transform";
-    public static final String SVG_WIDTH = "width";
-    public static final String SVG_HEIGHT = "height";
-    public static final String SVG_VIEW_BOX = "viewBox";
     public static final String SVG_STYLE = "style";
     public static final String SVG_DISPLAY = "display";
 
@@ -71,7 +77,8 @@ public class Svg2Vector {
             .put(SVG_STROKE_WIDTH, "android:strokeWidth")
             .put(SVG_FILL_COLOR, "android:fillColor")
             .put(SVG_FILL_OPACITY, "android:fillAlpha")
-            .put(SVG_CLIP, "android:clip").put(SVG_OPACITY, "android:fillAlpha")
+            .put(SVG_CLIP, "android:clip")
+            .put(SVG_OPACITY, "android:fillAlpha")
             .build();
 
     // List all the Svg nodes that we don't support. Categorized by the types.
@@ -91,7 +98,7 @@ public class Svg2Vector {
         // Gradient elements
         "linearGradient", "radialGradient", "stop",
         // Graphics elements
-        "ellipse", "text", "use",
+        "ellipse", "text",
         // Light source elements
         "feDistantLight", "fePointLight", "feSpotLight",
         // Structural elements
@@ -119,42 +126,23 @@ public class Svg2Vector {
         for (int i = 0; i < nSvgNode.getLength(); i++) {
             Node nNode = nSvgNode.item(i);
             if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-                parseDimension(svgTree, nNode);
+                svgTree.parseDimension(nNode);
             }
         }
 
-        if (svgTree.viewBox == null) {
+        if (svgTree.getViewBox() == null) {
             svgTree.logErrorLine("Missing \"viewBox\" in <svg> element", rootNode, SvgTree.SvgLogLevel.ERROR);
             return svgTree;
         }
 
-        if ((svgTree.w == 0 || svgTree.h == 0) && svgTree.viewBox[2] > 0 && svgTree.viewBox[3] > 0) {
-            svgTree.w = svgTree.viewBox[2];
-            svgTree.h = svgTree.viewBox[3];
-        }
-
-        // Parse transformation information.
-        // TODO: Properly handle transformation in the group level. In the "use" case, we treat
-        // it as global for now.
-        NodeList nUseTags;
-        svgTree.matrix = new float[6];
-        svgTree.matrix[0] = 1;
-        svgTree.matrix[3] = 1;
-
-        nUseTags = doc.getElementsByTagName("use");
-        for (int temp = 0; temp < nUseTags.getLength(); temp++) {
-            Node nNode = nUseTags.item(temp);
-            if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-                parseTransformation(svgTree, nNode);
-            }
-        }
+        // TODO: Properly handle "use" tag
 
         SvgGroupNode root = new SvgGroupNode(svgTree, rootNode, "root");
         svgTree.setRoot(root);
 
         // Parse all the group and path node recursively.
         traverseSVGAndExtract(svgTree, root, rootNode);
-
+        svgTree.flattern();
         svgTree.dump(root);
 
         return svgTree;
@@ -177,6 +165,7 @@ public class Svg2Vector {
             if (SVG_PATH.equals(nodeName) ||
                 SVG_RECT.equals(nodeName) ||
                 SVG_CIRCLE.equals(nodeName) ||
+                SVG_ELLIPSE.equals(nodeName) ||
                 SVG_POLYGON.equals(nodeName) ||
                 SVG_POLYLINE.equals(nodeName) ||
                 SVG_LINE.equals(nodeName)) {
@@ -201,65 +190,6 @@ public class Svg2Vector {
             }
         }
 
-    }
-
-    private static void parseTransformation(SvgTree avg, Node nNode) {
-        NamedNodeMap a = nNode.getAttributes();
-        int len = a.getLength();
-
-        for (int i = 0; i < len; i++) {
-            Node n = a.item(i);
-            String name = n.getNodeName();
-            String value = n.getNodeValue();
-            if (SVG_TRANSFORM.equals(name)) {
-                if (value.startsWith("matrix(")) {
-                    value = value.substring("matrix(".length(), value.length() - 1);
-                    String[] sp = value.split(" ");
-                    for (int j = 0; j < sp.length; j++) {
-                        avg.matrix[j] = Float.parseFloat(sp[j]);
-                    }
-                }
-            } else if (name.equals("y")) {
-                Float.parseFloat(value);
-            } else if (name.equals("x")) {
-                Float.parseFloat(value);
-            }
-
-        }
-    }
-
-    private static void parseDimension(SvgTree avg, Node nNode) {
-        NamedNodeMap a = nNode.getAttributes();
-        int len = a.getLength();
-
-        for (int i = 0; i < len; i++) {
-            Node n = a.item(i);
-            String name = n.getNodeName();
-            String value = n.getNodeValue();
-            int subStringSize = value.length();
-            if (subStringSize > 2) {
-                if (value.endsWith("px")) {
-                    subStringSize = subStringSize - 2;
-                }
-            }
-
-            if (SVG_WIDTH.equals(name)) {
-                avg.w = Float.parseFloat(value.substring(0, subStringSize));
-            } else if (SVG_HEIGHT.equals(name)) {
-                avg.h = Float.parseFloat(value.substring(0, subStringSize));
-            } else if (SVG_VIEW_BOX.equals(name)) {
-                avg.viewBox = new float[4];
-                String[] strbox = value.split(" ");
-                for (int j = 0; j < avg.viewBox.length; j++) {
-                    avg.viewBox[j] = Float.parseFloat(strbox[j]);
-                }
-            }
-        }
-        if (avg.viewBox == null && avg.w != 0 && avg.h != 0) {
-            avg.viewBox = new float[4];
-            avg.viewBox[2] = avg.w;
-            avg.viewBox[3] = avg.h;
-        }
     }
 
     // Read the content from currentItem, and fill into "child"
@@ -332,6 +262,10 @@ public class Svg2Vector {
 
         if (SVG_LINE.equals(currentGroupNode.getNodeName())) {
             extractLineItem(avg, child, currentGroupNode);
+        }
+
+        if (SVG_ELLIPSE.equals(currentGroupNode.getNodeName())) {
+            extractEllipseItem(avg, child, currentGroupNode);
         }
     }
 
@@ -417,6 +351,8 @@ public class Svg2Vector {
             float y = 0;
             float width = Float.NaN;
             float height = Float.NaN;
+            float rx = 0;
+            float ry = 0;
 
             NamedNodeMap a = currentGroupNode.getAttributes();
             int len = a.getLength();
@@ -438,6 +374,10 @@ public class Svg2Vector {
                     x = Float.parseFloat(value);
                 } else if (name.equals("y")) {
                     y = Float.parseFloat(value);
+                } else if (name.equals("rx")) {
+                    rx = Float.parseFloat(value);
+                } else if (name.equals("ry")) {
+                    ry = Float.parseFloat(value);
                 } else if (name.equals("width")) {
                     width = Float.parseFloat(value);
                 } else if (name.equals("height")) {
@@ -445,18 +385,41 @@ public class Svg2Vector {
                 } else if (name.equals("style")) {
 
                 }
-
             }
 
             if (!pureTransparent && avg != null && !Float.isNaN(x) && !Float.isNaN(y)
                     && !Float.isNaN(width)
                     && !Float.isNaN(height)) {
-                // "M x, y h width v height h -width z"
                 PathBuilder builder = new PathBuilder();
-                builder.absoluteMoveTo(x, y);
-                builder.relativeHorizontalTo(width);
-                builder.relativeVerticalTo(height);
-                builder.relativeHorizontalTo(-width);
+                if (rx <= 0 && ry <= 0) {
+                    // "M x, y h width v height h -width z"
+                    builder.absoluteMoveTo(x, y);
+                    builder.relativeHorizontalTo(width);
+                    builder.relativeVerticalTo(height);
+                    builder.relativeHorizontalTo(-width);
+                } else {
+                    // Refer to http://www.w3.org/TR/SVG/shapes.html#RectElement
+                    assert rx > 0 || ry > 0;
+                    if (ry == 0) {
+                        ry = rx;
+                    } else if (rx == 0) {
+                        rx = ry;
+                    }
+                    if (rx > width / 2) rx = width / 2;
+                    if (ry > height / 2) ry = height / 2;
+
+                    builder.absoluteMoveTo(x + rx, y);
+                    builder.absoluteLineTo(x + width - rx, y);
+                    builder.absoluteArcTo(rx, ry, false, false, true, x + width, y + ry);
+                    builder.absoluteLineTo(x + width, y + height - ry);
+
+                    builder.absoluteArcTo(rx, ry, false, false, true, x + width - rx, y + height);
+                    builder.absoluteLineTo(x + rx,  y + height);
+
+                    builder.absoluteArcTo(rx, ry, false, false, true, x, y + height - ry);
+                    builder.absoluteLineTo(x,  y + ry);
+                    builder.absoluteArcTo(rx, ry, false, false, true, x + rx, y);
+                }
                 builder.relativeClose();
                 child.setPathData(builder.toString());
             }
@@ -507,6 +470,60 @@ public class Svg2Vector {
                 builder.relativeMoveTo(-radius, 0);
                 builder.relativeArcTo(radius, radius, false, true, true, 2 * radius, 0);
                 builder.relativeArcTo(radius, radius, false, true, true, -2 * radius, 0);
+                child.setPathData(builder.toString());
+            }
+        }
+    }
+
+    /**
+     * Convert ellipse element into a path.
+     */
+    private static void extractEllipseItem(SvgTree avg, SvgLeafNode child, Node currentGroupNode) {
+        logger.log(Level.FINE, "ellipse found" + currentGroupNode.getTextContent());
+
+        if (currentGroupNode.getNodeType() == Node.ELEMENT_NODE) {
+            float cx = 0;
+            float cy = 0;
+            float rx = 0;
+            float ry = 0;
+
+            NamedNodeMap a = currentGroupNode.getAttributes();
+            int len = a.getLength();
+            boolean pureTransparent = false;
+            for (int j = 0; j < len; j++) {
+                Node n = a.item(j);
+                String name = n.getNodeName();
+                String value = n.getNodeValue();
+                if (name.equals(SVG_STYLE)) {
+                    addStyleToPath(child, value);
+                    if (value.contains("opacity:0;")) {
+                        pureTransparent = true;
+                    }
+                } else if (presentationMap.containsKey(name)) {
+                    child.fillPresentationAttributes(name, value);
+                } else if (name.equals("clip-path") && value.startsWith("url(#SVGID_")) {
+
+                } else if (name.equals("cx")) {
+                    cx = Float.parseFloat(value);
+                } else if (name.equals("cy")) {
+                    cy = Float.parseFloat(value);
+                } else if (name.equals("rx")) {
+                    rx = Float.parseFloat(value);
+                } else if (name.equals("ry")) {
+                    ry = Float.parseFloat(value);
+                }
+
+            }
+
+            if (!pureTransparent && avg != null
+                    && !Float.isNaN(cx) && !Float.isNaN(cy)
+                    && rx > 0 && ry > 0) {
+                // "M cx -rx, cy a rx,ry 0 1,0 (rx * 2),0 a rx,ry 0 1,0 -(rx * 2),0"
+                PathBuilder builder = new PathBuilder();
+                builder.absoluteMoveTo(cx - rx, cy);
+                builder.relativeArcTo(rx, ry, false, true, false, 2 * rx, 0);
+                builder.relativeArcTo(rx, ry, false, true, false, -2 * rx, 0);
+                builder.relativeClose();
                 child.setPathData(builder.toString());
             }
         }
@@ -621,13 +638,13 @@ public class Svg2Vector {
 
         OutputStreamWriter fw = new OutputStreamWriter(outStream);
         fw.write(head);
-        float finalWidth = svgTree.w;
-        float finalHeight = svgTree.h;
+        float viewportWidth = svgTree.getViewportWidth();
+        float viewportHeight = svgTree.getViewportHeight();
 
-        fw.write(getSizeString(finalWidth, finalHeight, svgTree.mScaleFactor));
+        fw.write(getSizeString(svgTree.getWidth(), svgTree.getHeight(), svgTree.getScaleFactor()));
 
-        fw.write("        android:viewportWidth=\"" + svgTree.w + "\"\n");
-        fw.write("        android:viewportHeight=\"" + svgTree.h + "\">\n");
+        fw.write("        android:viewportWidth=\"" + viewportWidth + "\"\n");
+        fw.write("        android:viewportHeight=\"" + viewportHeight + "\">\n");
 
         svgTree.normalize();
         // TODO: this has to happen in the tree mode!!!

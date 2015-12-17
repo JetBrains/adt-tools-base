@@ -63,7 +63,6 @@ class DefaultManifestParser implements ManifestParser {
     }
 
     @Override
-    @NonNull
     public synchronized int getVersionCode(@NonNull File manifestFile) {
         if (mVersionCode == null) {
             mVersionCode = Optional.absent();

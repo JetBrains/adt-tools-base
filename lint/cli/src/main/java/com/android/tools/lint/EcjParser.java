@@ -100,6 +100,7 @@ import org.eclipse.jdt.internal.compiler.lookup.PackageBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemFieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemMethodBinding;
+import org.eclipse.jdt.internal.compiler.lookup.ProblemPackageBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
@@ -1280,8 +1281,9 @@ public class EcjParser extends JavaParser {
      * return all these "duplicates" when you ask for the annotation on a given element.
      * This method filters out duplicates.
      */
+    @VisibleForTesting
     @NonNull
-    private static List<ResolvedAnnotation> ensureUnique(@NonNull List<ResolvedAnnotation> list) {
+    static List<ResolvedAnnotation> ensureUnique(@NonNull List<ResolvedAnnotation> list) {
         if (list.size() < 2) {
             return list;
         }
@@ -1294,14 +1296,15 @@ public class EcjParser extends JavaParser {
         // Instead we'll just do an O(n^2) iteration comparing each subsequent element with each
         // previous element and removing if matches, which is fine for these tiny lists.
         int n = list.size();
-        for (int i = 1; i < n; i++) {
+        for (int i = 0; i < n - 1; i++) {
             ResolvedAnnotation current = list.get(i);
             String currentName = current.getName();
-            for (int j = 0; j < i; j++) {
-                ResolvedAnnotation earlier = list.get(j);
-                String earlierName = earlier.getName();
-                if (currentName.equals(earlierName)) {
-                    list.remove(i);
+            // Deleting duplicates at end reduces number of elements that have to be shifted
+            for (int j = n - 1; j > i; j--) {
+                ResolvedAnnotation later = list.get(j);
+                String laterName = later.getName();
+                if (currentName.equals(laterName)) {
+                    list.remove(j);
                     n--;
                 }
             }
@@ -1375,10 +1378,36 @@ public class EcjParser extends JavaParser {
                     cls = cls.superclass();
                 }
                 for (; cls != null; cls = cls.superclass()) {
-                    if (sameChars(name, cls.readableName())) {
+                    if (equalsCompound(name, cls.compoundName)) {
                         return true;
                     }
                 }
+            }
+
+            return false;
+        }
+
+        @Override
+        public boolean isImplementing(@NonNull String name, boolean strict) {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding cls = (ReferenceBinding) mBinding;
+                if (strict) {
+                    cls = cls.superclass();
+                }
+                return isInheritor(cls, name);
+            }
+
+            return false;
+        }
+
+        @Override
+        public boolean isInheritingFrom(@NonNull String name, boolean strict) {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding cls = (ReferenceBinding) mBinding;
+                if (strict) {
+                    cls = cls.superclass();
+                }
+                return isInheritor(cls, name);
             }
 
             return false;
@@ -1709,6 +1738,37 @@ public class EcjParser extends JavaParser {
 
             all = ensureUnique(all);
             return all;
+        }
+
+        @Override
+        @Nullable
+        public ResolvedPackage getParentPackage() {
+            char[][] compoundName = mBinding.compoundName;
+            if (compoundName.length == 1) {
+                return null;
+            } else {
+                PackageBinding defaultPackage = mBinding.environment.defaultPackage;
+                PackageBinding packageBinding =
+                        (PackageBinding) defaultPackage.getTypeOrPackage(compoundName[0]);
+                if (packageBinding == null || packageBinding instanceof ProblemPackageBinding) {
+                    return null;
+                }
+
+                for (int i = 1, packageLength = compoundName.length - 1; i < packageLength; i++) {
+                    Binding next = packageBinding.getTypeOrPackage(compoundName[i]);
+                    if (next == null) {
+                        return null;
+                    }
+                    if (next instanceof PackageBinding) {
+                        if (next instanceof ProblemPackageBinding) {
+                            return null;
+                        }
+                        packageBinding = (PackageBinding) next;
+                    }
+                }
+
+                return new EcjResolvedPackage(packageBinding);
+            }
         }
 
         @Override
@@ -2215,6 +2275,8 @@ public class EcjParser extends JavaParser {
             }
         } else if (value instanceof AnnotationBinding) {
             return new EcjResolvedAnnotation((AnnotationBinding) value);
+        } else if (value instanceof FieldBinding) {
+            return new EcjResolvedField((FieldBinding)value);
         }
 
         return value;
@@ -2254,7 +2316,10 @@ public class EcjParser extends JavaParser {
                 if (index == length) {
                     return false; // Don't allow prefix in a compound name
                 }
-                if (name.charAt(index) != o[j]) {
+                if (name.charAt(index) != o[j]
+                        // Allow using . as an inner class separator whereas the
+                        // symbol table will always use $
+                        && !(o[j] == '$' && name.charAt(index) == '.')) {
                     return false;
                 }
                 index++;
@@ -2290,7 +2355,10 @@ public class EcjParser extends JavaParser {
                 if (index == length) {
                     return false; // Don't allow prefix in a compound name
                 }
-                if (name.charAt(index) != o[j]) {
+                if (name.charAt(index) != o[j]
+                        // Allow using . as an inner class separator whereas the
+                        // symbol table will always use $
+                        && !(o[j] == '$' && name.charAt(index) == '.')) {
                     return false;
                 }
                 index++;
@@ -2310,5 +2378,23 @@ public class EcjParser extends JavaParser {
         }
 
         return index == length;
+    }
+
+    /** Checks whether the given class extends or implements a class with the given name */
+    private static boolean isInheritor(@Nullable ReferenceBinding cls, @NonNull String name) {
+        for (; cls != null; cls = cls.superclass()) {
+            ReferenceBinding[] interfaces = cls.superInterfaces();
+            for (ReferenceBinding binding : interfaces) {
+                if (isInheritor(binding, name)) {
+                    return true;
+                }
+            }
+
+            if (equalsCompound(name, cls.compoundName)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -27,13 +27,15 @@ import static com.android.build.gradle.model.ModelConstants.TASK_MANAGER;
 
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
+import com.android.build.gradle.internal.dependency.NativeDependencyResolveResult;
 import com.android.build.gradle.internal.model.ModelBuilder;
-import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.managed.NdkAbiOptions;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.AndroidProject;
+import com.google.common.collect.Multimap;
 
 import org.gradle.api.Project;
 import org.gradle.model.ModelMap;
@@ -76,10 +78,14 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
     }
 
     /**
-     * A method for creating ModelType<ModelMap<NdkAbiOptions>> using ModelType.returnType.
-     * Used by getAbiOptionModelType().  The method is public to allow Gradle's reflection to work.
+     * Methods for creating ModelType with parameterized type using ModelType.returnType.  The
+     * method is public to allow Gradle's reflection to work.
      */
     public static ModelMap<NdkAbiOptions> abiOptionType() {
+        return null;
+    }
+
+    public static Multimap<String, NativeDependencyResolveResult> nativeDependenciesType() {
         return null;
     }
 
@@ -91,7 +97,17 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
         try {
             return ModelType.returnType(getClass().getMethod("abiOptionType"));
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Should not happen.");
+            throw new RuntimeException("Should not happen.  "
+                    + "ComponenetModelBuilder is missing method 'abiOptionsType'.");
+        }
+    }
+
+    private ModelType<Multimap<String, NativeDependencyResolveResult>> getNativeDependenciesType() {
+        try {
+            return ModelType.returnType(getClass().getMethod("nativeDependenciesType"));
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Should not happen.  "
+                    + "ComponenetModelBuilder is missing methed 'nativeDependenciesType'.");
         }
     }
 
@@ -125,11 +141,19 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
         ModelMap<NdkAbiOptions> abiOptions = registry.realize(
                 new ModelPath(ModelConstants.ABI_OPTIONS),
                 getAbiOptionModelType());
+        Multimap<String, NativeDependencyResolveResult> nativeDependencies = registry.realize(
+                new ModelPath(ModelConstants.JNILIBS_DEPENDENCIES),
+                getNativeDependenciesType());
 
         return new ModelBuilder(
-                androidBuilder, variantManager, taskManager,
-                extension, extraModelInfo, ndkHandler,
-                new ComponentNativeLibraryFactory(binaries, ndkHandler, abiOptions),
+                androidBuilder,
+                variantManager,
+                taskManager,
+                extension,
+                extraModelInfo,
+                ndkHandler,
+                new ComponentNativeLibraryFactory(
+                        binaries, ndkHandler, abiOptions, nativeDependencies),
                 !isApplication);
     }
 }

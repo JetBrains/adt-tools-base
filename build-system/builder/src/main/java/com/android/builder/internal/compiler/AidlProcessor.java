@@ -26,10 +26,12 @@ import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.process.ProcessResult;
 import com.android.sdklib.io.FileOp;
+import com.android.utils.FileUtils;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -46,7 +48,9 @@ public class AidlProcessor implements SourceSearcher.SourceFileProcessor {
     @NonNull
     private final File mSourceOutputDir;
     @Nullable
-    private final File mParcelableOutputDir;
+    private final File mPackagedOutputDir;
+    @Nullable
+    private Collection<String> mPackageWhiteList;
     @NonNull
     private final DependencyFileProcessor mDependencyFileProcessor;
     @NonNull
@@ -59,7 +63,8 @@ public class AidlProcessor implements SourceSearcher.SourceFileProcessor {
             @NonNull String frameworkLocation,
             @NonNull List<File> importFolders,
             @NonNull File sourceOutputDir,
-            @Nullable File parcelableOutputDir,
+            @Nullable File packagedOutputDir,
+            @Nullable Collection<String> packageWhiteList,
             @NonNull DependencyFileProcessor dependencyFileProcessor,
             @NonNull ProcessExecutor processExecutor,
             @NonNull ProcessOutputHandler processOutputHandler) {
@@ -67,7 +72,8 @@ public class AidlProcessor implements SourceSearcher.SourceFileProcessor {
         mFrameworkLocation = frameworkLocation;
         mImportFolders = importFolders;
         mSourceOutputDir = sourceOutputDir;
-        mParcelableOutputDir = parcelableOutputDir;
+        mPackagedOutputDir = packagedOutputDir;
+        mPackageWhiteList = packageWhiteList;
         mDependencyFileProcessor = dependencyFileProcessor;
         mProcessExecutor = processExecutor;
         mProcessOutputHandler = processOutputHandler;
@@ -101,17 +107,26 @@ public class AidlProcessor implements SourceSearcher.SourceFileProcessor {
         // send the dependency file to the processor.
         DependencyData data = mDependencyFileProcessor.processFile(depFile);
 
-        if (mParcelableOutputDir != null && data != null && data.getOutputFiles().isEmpty()) {
-            // looks like a parcelable. Store it in the 2ndary output of the DependencyData object.
+        if (mPackagedOutputDir != null && data != null) {
+
+            boolean isParcelable = data.getOutputFiles().isEmpty();
 
             String relative = FileOp.makeRelative(sourceFolder, sourceFile);
+            boolean isWhiteListed =
+                    mPackageWhiteList != null && mPackageWhiteList.contains(relative);
 
-            File destFile = new File(mParcelableOutputDir, relative);
-            destFile.getParentFile().mkdirs();
-            Files.copy(sourceFile, destFile);
-            data.addSecondaryOutputFile(destFile.getPath());
+            if (isParcelable || isWhiteListed)  {
+                // looks like a parcelable or is white-listed.
+                // Store it in the 2ndary output of the DependencyData object.
+
+                File destFile = new File(mPackagedOutputDir, relative);
+                //noinspection ResultOfMethodCallIgnored
+                destFile.getParentFile().mkdirs();
+                Files.copy(sourceFile, destFile);
+                data.addSecondaryOutputFile(destFile.getPath());
+            }
         }
 
-        depFile.delete();
+        FileUtils.delete(depFile);
     }
 }

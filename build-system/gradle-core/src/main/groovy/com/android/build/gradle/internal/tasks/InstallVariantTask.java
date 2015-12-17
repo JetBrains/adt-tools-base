@@ -51,6 +51,7 @@ import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
@@ -62,6 +63,7 @@ import java.util.concurrent.Callable;
  * Task installing an app variant. It looks at connected device and install the best matching
  * variant output on each device.
  */
+@ParallelizableTask
 public class InstallVariantTask extends BaseTask {
 
     private File adbExe;
@@ -91,7 +93,9 @@ public class InstallVariantTask extends BaseTask {
     @TaskAction
     public void install() throws DeviceException, ProcessException, InterruptedException {
         final ILogger iLogger = new LoggerWrapper(getLogger(), LogLevel.LIFECYCLE);
-        DeviceProvider deviceProvider = new ConnectedDeviceProvider(getAdbExe(), iLogger);
+        DeviceProvider deviceProvider = new ConnectedDeviceProvider(getAdbExe(),
+                getTimeOutInMs(),
+                iLogger);
         deviceProvider.init();
 
         VariantConfiguration variantConfig = variantData.getVariantConfiguration();

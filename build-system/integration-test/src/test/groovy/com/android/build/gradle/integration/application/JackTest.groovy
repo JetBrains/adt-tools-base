@@ -19,6 +19,7 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.google.common.collect.ImmutableList
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
@@ -33,7 +34,7 @@ import org.junit.experimental.categories.Category
 class JackTest {
     private final static List<String> JACK_OPTIONS = ImmutableList.of(
             "-PCUSTOM_JACK=1",
-            "-PCUSTOM_BUILDTOOLS=21.1.0")
+            "-PCUSTOM_BUILDTOOLS=" + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION)
 
     @ClassRule
     static public GradleTestProject basic = GradleTestProject.builder()
@@ -83,6 +84,11 @@ class JackTest {
     @Category(DeviceTests.class)
     void "multiDex connectedCheck"() {
         multiDex.executeConnectedCheck(JACK_OPTIONS)
+    }
+
+    @Test
+    void "check classes.dex is packaged"() {
+        TruthHelper.assertThatApk(basic.getApk("debug")).contains("classes.dex");
     }
 
     @Test

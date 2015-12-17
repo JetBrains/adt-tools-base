@@ -1,9 +1,29 @@
 apply plugin: 'com.android.test'
 
 android {
-    compileSdkVersion 19
+    compileSdkVersion rootProject.latestCompileSdk
     buildToolsVersion = rootProject.buildToolsVersion
 
     targetProjectPath ':app'
     targetVariant 'debug'
+}
+
+task checkDependencies << {
+    assert project.connectedCheck instanceof Task
+    def deps =  project.connectedCheck.taskDependencies.getDependencies(project.connectedCheck)
+
+    def connectedAndroidTest = deps.find { it.name == "connectedAndroidTest" }
+    assert connectedAndroidTest instanceof Task
+
+    deps = connectedAndroidTest.taskDependencies.getDependencies(connectedAndroidTest)
+    def actualTestTask = deps.find { it.name == "connectedDebugAndroidTest" }
+    // The actual class name has the _Decorated suffix.
+    assert actualTestTask.class.name.contains(".DeviceProviderInstrumentTestTask")
+
+    deps = actualTestTask.taskDependencies.getDependencies(actualTestTask)
+    def assembleTestModule = deps.find { it.name == "assembleDebug" }
+    assert assembleTestModule != null
+
+    // :test:assembleDebug will fail if the app module is not built, so other tests verify
+    // that this ends up compiling the app module.
 }

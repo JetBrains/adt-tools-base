@@ -36,8 +36,21 @@ public class TimelineData {
     @GuardedBy("this")
     private long mStart;
 
+    // The highest value across all streams being stacked together.
     @GuardedBy("this")
     private float mMaxTotal;
+
+    // The lowest value across all streams being stacked together.
+    @GuardedBy("this")
+    private float mMinTotal;
+
+    // The highest value of any single stream.
+    @GuardedBy("this")
+    private float mStreamMax;
+
+    // The lowest value of any single stream.
+    @GuardedBy("this")
+    private float mStreamMin;
 
     public TimelineData(int streams, int capacity) {
         myStreams = streams;
@@ -56,6 +69,19 @@ public class TimelineData {
 
     public synchronized float getMaxTotal() {
         return mMaxTotal;
+    }
+
+
+    public synchronized  float getMinTotal() {
+        return mMinTotal;
+    }
+
+    public synchronized float getStreamMax() {
+        return mStreamMax;
+    }
+
+    public synchronized float getStreamMin() {
+        return mStreamMin;
     }
 
     public synchronized void add(long time, int type, float... values) {
@@ -88,7 +114,7 @@ public class TimelineData {
         float[] nonZeroIntervalsForStreams = new float[streamSize];
         float[] endValuesForStreams = new float[streamSize];
         for (int i = 0; i < streamSize; i++) {
-            if (startValues[i] * maxInterval / 2 < areas[i]) {
+            if (Math.abs(startValues[i]) * maxInterval / 2 < Math.abs(areas[i])) {
                 nonZeroIntervalsForStreams[i] = maxInterval;
                 endValuesForStreams[i] = areas[i] * 2 / maxInterval - startValues[i];
             }
@@ -110,10 +136,9 @@ public class TimelineData {
         for (float interval : ascendingIntervals) {
             float[] sampleValues = new float[streamSize];
             for (int j = 0; j < streamSize; j++) {
-                sampleValues[j] = startValues[j] - (startValues[j] - endValuesForStreams[j]) * interval / nonZeroIntervalsForStreams[j];
-                if (sampleValues[j] < 0) {
-                    sampleValues[j] = 0.0f;
-                }
+                sampleValues[j] = nonZeroIntervalsForStreams[j] < interval
+                                  ? 0.0f
+                                  : startValues[j] - (startValues[j] - endValuesForStreams[j]) * interval / nonZeroIntervalsForStreams[j];
             }
             sampleList.add(new Sample(interval + startTime, type, sampleValues));
             if (interval == maxInterval) {
@@ -126,7 +151,6 @@ public class TimelineData {
         }
         return sampleList;
     }
-
 
     /**
      * Adds the stream values which are values converted from the areas values. The values depends on both last sample values and
@@ -147,17 +171,21 @@ public class TimelineData {
     private void add(Sample sample) {
         float[] values = sample.values;
         assert values.length == myStreams;
-        float total = 0.0f;
+        float stacked = 0.0f;
         for (float value : values) {
-            total += value;
+            stacked += value;
+            mMaxTotal = Math.max(mMaxTotal, stacked);
+            mMinTotal = Math.min(mMinTotal, stacked);
+            mStreamMax = Math.max(mStreamMax, value);
+            mStreamMin = Math.min(mStreamMin, value);
         }
-        mMaxTotal = Math.max(mMaxTotal, total);
         mSamples.add(sample);
     }
 
     public synchronized void clear() {
         mSamples.clear();
         mMaxTotal = 0.0f;
+        mStreamMax = 0.0f;
         mStart = System.currentTimeMillis();
     }
 

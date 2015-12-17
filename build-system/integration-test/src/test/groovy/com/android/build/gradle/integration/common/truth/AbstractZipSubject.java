@@ -16,13 +16,10 @@
 
 package com.android.build.gradle.integration.common.truth;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.CharStreams;
@@ -61,7 +58,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      */
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void contains(@NonNull String path) throws IOException {
-        ZipFile zip=getZip();
+        ZipFile zip = getZip();
         try {
             if (zip.getEntry(path) == null) {
                 failWithRawMessage("'%s' does not contain '%s'", zip.getName(), path);
@@ -110,7 +107,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
         } finally {
             zipFile.close();
         }
-        return assertThat(entries.build());
+        return check().that(entries.build());
     }
 
     /**
@@ -120,7 +117,8 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      */
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void containsFileWithContent(@NonNull String path, @NonNull String content) {
-        assertThat(extractContentAsString(path).trim()).named(path).isEqualTo(content.trim());
+        check().that(extractContentAsString(path).trim()).named(internalCustomName() + ": " + path).isEqualTo(
+                content.trim());
     }
 
     /**
@@ -128,7 +126,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      */
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void containsFileWithContent(@NonNull String path, @NonNull byte[] content) {
-        assertThat(extractContentAsByte(path)).named(path).isEqualTo(content);
+        check().that(extractContentAsByte(path)).named(internalCustomName() + ": " + path).isEqualTo(content);
     }
 
     /**

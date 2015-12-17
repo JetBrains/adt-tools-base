@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+ <g>
+   <g>
+     <rect x="20" y="20" width="50" height="50"
+         style="fill: #cc3333"/>
+   </g>
+   <g>
+     <path d="M20,20H 0,20,60  v 20 10 -10 h -20 -20 0 V 40 0 20"
+         style="fill: #3333cc" />
+   </g>
+ </g>
+</svg>

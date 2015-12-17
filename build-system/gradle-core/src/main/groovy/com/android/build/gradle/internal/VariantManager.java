@@ -247,6 +247,8 @@ public class VariantManager implements VariantModel {
 
     /**
      * Variant/Task creation entry point.
+     *
+     * Not used by gradle-experimental.
      */
     public void createAndroidTasks() {
         variantFactory.validateModel(this);
@@ -699,7 +701,9 @@ public class VariantManager implements VariantModel {
 
         // create the internal storage for this variant.
         TestVariantData testVariantData = new TestVariantData(
-                extension, taskManager, testVariantConfig, (TestedVariantData) testedVariantData);
+                extension, taskManager,
+                testVariantConfig, (TestedVariantData) testedVariantData,
+                androidBuilder.getErrorReporter());
         // link the testVariant to the tested variant in the other direction
         ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData, type);
 
@@ -826,7 +830,7 @@ public class VariantManager implements VariantModel {
                     new com.android.build.gradle.internal.dsl.SigningConfig("externalOverride");
 
             signingConfigDsl.setStoreFile(new File(signingOptions.storeFile));
-            signingConfigDsl.setStorePassword(signingOptions.keyPassword);
+            signingConfigDsl.setStorePassword(signingOptions.storePassword);
             signingConfigDsl.setKeyAlias(signingOptions.keyAlias);
             signingConfigDsl.setKeyPassword(signingOptions.keyPassword);
 

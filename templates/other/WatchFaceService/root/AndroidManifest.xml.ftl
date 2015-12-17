@@ -3,10 +3,6 @@
 
     <uses-feature android:name="android.hardware.type.watch" />
 
-    <!-- Required to act as a custom watch face. -->
-    <uses-permission android:name="com.google.android.permission.PROVIDE_BACKGROUND" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-
     <application>
         <service
             android:name="${relativePackage}.${serviceClass}"

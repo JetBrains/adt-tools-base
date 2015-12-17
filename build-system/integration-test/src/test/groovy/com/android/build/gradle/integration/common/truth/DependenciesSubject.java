@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.integration.common.truth;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-
 import com.android.annotations.NonNull;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
@@ -62,7 +60,7 @@ public class DependenciesSubject extends Subject<DependenciesSubject, Dependenci
     public AndroidLibrary hasOneLibrary() {
         Collection<AndroidLibrary> libs = getSubject().getLibraries();
 
-        assertThat(libs).hasSize(1);
+        check().that(libs).hasSize(1);
 
         return libs.iterator().next();
     }

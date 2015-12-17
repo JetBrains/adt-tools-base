@@ -16,12 +16,10 @@
 package com.android.ddmlib.logcat;
 
 import com.android.ddmlib.Log.LogLevel;
-import com.android.ddmlib.logcat.LogCatFilter;
-import com.android.ddmlib.logcat.LogCatMessage;
-
-import java.util.List;
 
 import junit.framework.TestCase;
+
+import java.util.List;
 
 public class LogCatFilterTest extends TestCase {
     public void testFilterByLogLevel() {
@@ -29,13 +27,11 @@ public class LogCatFilterTest extends TestCase {
                 "", "", "", "", LogLevel.DEBUG);
 
         /* filter message below filter's log level */
-        LogCatMessage msg = new LogCatMessage(LogLevel.VERBOSE,
-                "", "", "", "", "", "");
+        LogCatMessage msg = new MessageBuilder().setLevel(LogLevel.VERBOSE).build();
         assertEquals(false, filter.matches(msg));
 
         /* do not filter message above filter's log level */
-        msg = new LogCatMessage(LogLevel.ERROR,
-                "", "", "", "", "", "");
+        msg = new MessageBuilder().setLevel(LogLevel.ERROR).build();
         assertEquals(true, filter.matches(msg));
     }
 
@@ -44,13 +40,11 @@ public class LogCatFilterTest extends TestCase {
                 "", "", "123", "", LogLevel.VERBOSE);
 
         /* show message with pid matching filter */
-        LogCatMessage msg = new LogCatMessage(LogLevel.VERBOSE,
-                "123", "", "", "", "", "");
+        LogCatMessage msg = new MessageBuilder().setPid(123).build();
         assertEquals(true, filter.matches(msg));
 
         /* don't show message with pid not matching filter */
-        msg = new LogCatMessage(LogLevel.VERBOSE,
-                "12", "", "", "", "", "");
+        msg = new MessageBuilder().setPid(12).build();
         assertEquals(false, filter.matches(msg));
     }
 
@@ -58,14 +52,12 @@ public class LogCatFilterTest extends TestCase {
         LogCatFilter filter = new LogCatFilter("",
                 "", "", "", "dalvik.*", LogLevel.VERBOSE);
 
-        /* show message with pid matching filter */
-        LogCatMessage msg = new LogCatMessage(LogLevel.VERBOSE,
-                "", "", "dalvikvm1", "", "", "");
+        /* show message with process name matching filter */
+        LogCatMessage msg = new MessageBuilder().setAppName("dalvikvm1").build();
         assertEquals(true, filter.matches(msg));
 
-        /* don't show message with pid not matching filter */
-        msg = new LogCatMessage(LogLevel.VERBOSE,
-                "", "", "system", "", "", "");
+        /* don't show message with process name not matching filter */
+        msg = new MessageBuilder().setAppName("system").build();
         assertEquals(false, filter.matches(msg));
     }
 
@@ -74,12 +66,10 @@ public class LogCatFilterTest extends TestCase {
                 "tag.*", "", "", "", LogLevel.VERBOSE);
 
         /* show message with tag matching filter */
-        LogCatMessage msg = new LogCatMessage(LogLevel.VERBOSE,
-                "", "", "", "tag123", "", "");
+        LogCatMessage msg = new MessageBuilder().setTag("tag123").build();
         assertEquals(true, filter.matches(msg));
 
-        msg = new LogCatMessage(LogLevel.VERBOSE,
-                "", "", "", "ta123", "", "");
+        msg = new MessageBuilder().setTag("ta123").build();
         assertEquals(false, filter.matches(msg));
     }
 
@@ -88,52 +78,41 @@ public class LogCatFilterTest extends TestCase {
                 "", "text.*", "", "", LogLevel.VERBOSE);
 
         /* show message with text matching filter */
-        LogCatMessage msg = new LogCatMessage(LogLevel.VERBOSE,
-                "", "", "", "", "", "text123");
+        LogCatMessage msg = new MessageBuilder().setMessage("text123").build();
         assertEquals(true, filter.matches(msg));
 
-        msg = new LogCatMessage(LogLevel.VERBOSE,
-                "", "", "", "", "", "te123");
+        msg = new MessageBuilder().setMessage("te123").build();
         assertEquals(false, filter.matches(msg));
     }
 
     public void testMatchingText() {
-        LogCatMessage msg = new LogCatMessage(LogLevel.VERBOSE,
-                "", "", "", "", "",                        //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-                "message with word1 and word2");       //$NON-NLS-1$
-        assertEquals(true, search("word1 with", msg)); //$NON-NLS-1$
-        assertEquals(true, search("text:w.* ", msg));  //$NON-NLS-1$
-        assertEquals(false, search("absent", msg));    //$NON-NLS-1$
+        LogCatMessage msg = new MessageBuilder().setMessage("message with word1 and word2").build();
+        assertEquals(true, search("word1 with", msg));
+        assertEquals(true, search("text:w.* ", msg));
+        assertEquals(false, search("absent", msg));
     }
 
     public void testTagKeyword() {
-        LogCatMessage msg = new LogCatMessage(LogLevel.VERBOSE,
-                "", "", "", "tag", "",                     //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-                "sample message");                     //$NON-NLS-1$
-        assertEquals(false, search("t.*", msg));       //$NON-NLS-1$
-        assertEquals(true, search("tag:t.*", msg));    //$NON-NLS-1$
+        LogCatMessage msg = new MessageBuilder().setTag("tag").setMessage("sample message").build();
+        assertEquals(false, search("t.*", msg));
+        assertEquals(true, search("tag:t.*", msg));
     }
 
     public void testPidKeyword() {
-        LogCatMessage msg = new LogCatMessage(LogLevel.VERBOSE,
-                "123", "", "", "", "",                     //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-                "sample message");                     //$NON-NLS-1$
-        assertEquals(false, search("123", msg));       //$NON-NLS-1$
-        assertEquals(true, search("pid:123", msg));    //$NON-NLS-1$
+        LogCatMessage msg = new MessageBuilder().setPid(123).setMessage("sample message").build();
+        assertEquals(false, search("123", msg));
+        assertEquals(true, search("pid:123", msg));
     }
 
     public void testAppNameKeyword() {
-        LogCatMessage msg = new LogCatMessage(LogLevel.VERBOSE,
-                "", "", "dalvik", "", "",                  //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-                "sample message");                     //$NON-NLS-1$
-        assertEquals(false, search("dalv.*", msg));    //$NON-NLS-1$
-        assertEquals(true, search("app:dal.*k", msg)); //$NON-NLS-1$
+        LogCatMessage msg = new MessageBuilder().setAppName("dalvik").setMessage("sample message")
+                .build();
+        assertEquals(false, search("dalv.*", msg));
+        assertEquals(true, search("app:dal.*k", msg));
     }
 
     public void testCaseSensitivity() {
-        LogCatMessage msg = new LogCatMessage(LogLevel.VERBOSE,
-                "", "", "", "", "",
-                "Sample message");
+        LogCatMessage msg = new MessageBuilder().setMessage("Sample message").build();
 
         // if regex has an upper case character, it should be
         // treated as a case sensitive search
@@ -150,7 +129,7 @@ public class LogCatFilterTest extends TestCase {
      * @param message text to search in
      * @return true if the encoded query is present in message
      */
-    private boolean search(String query, LogCatMessage message) {
+    private static boolean search(String query, LogCatMessage message) {
         List<LogCatFilter> filters = LogCatFilter.fromString(query,
                 LogLevel.VERBOSE);
 
@@ -161,5 +140,50 @@ public class LogCatFilterTest extends TestCase {
             }
         }
         return true;
+    }
+
+    private static class MessageBuilder {
+
+        private LogLevel mLevel = LogLevel.VERBOSE;
+        private int mPid = -1;
+        private int mTid = -1;
+        private String mAppName = "";
+        private String mTagName = "";
+        private LogCatTimestamp mTimestamp = LogCatTimestamp.ZERO;
+        private String mMessage = "";
+
+        public MessageBuilder setLevel(LogLevel level) {
+            mLevel = level;
+            return this;
+        }
+
+        public MessageBuilder setPid(int pid) {
+            mPid = pid;
+            return this;
+        }
+
+        public MessageBuilder setAppName(String appName) {
+            mAppName = appName;
+            return this;
+        }
+
+        public MessageBuilder setTag(String tagName) {
+            mTagName = tagName;
+            return this;
+        }
+
+        public MessageBuilder setTimestamp(LogCatTimestamp timestamp) {
+            mTimestamp = timestamp;
+            return this;
+        }
+
+        public MessageBuilder setMessage(String message) {
+            mMessage = message;
+            return this;
+        }
+
+        public LogCatMessage build() {
+            return new LogCatMessage(mLevel, mPid, mTid, mAppName, mTagName, mTimestamp, mMessage);
+        }
     }
 }

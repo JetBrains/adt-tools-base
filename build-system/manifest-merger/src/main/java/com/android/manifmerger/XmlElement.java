@@ -26,6 +26,7 @@ import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
@@ -54,19 +55,31 @@ import java.util.Map;
  */
 public class XmlElement extends OrphanXmlElement {
 
-    @NonNull private final XmlDocument mDocument;
+    @NonNull
+    private final XmlDocument mDocument;
 
+    @Nullable
     private final NodeOperationType mNodeOperationType;
+
     // list of non tools related attributes.
+    @NonNull
     private final ImmutableList<XmlAttribute> mAttributes;
+
     // map of all tools related attributes keyed by target attribute name
+    @NonNull
     private final Map<NodeName, AttributeOperationType> mAttributesOperationTypes;
+
     // list of mergeable children elements.
+    @NonNull
     private final ImmutableList<XmlElement> mMergeableChildren;
+
     // optional selector declared on this xml element.
-    @Nullable private final Selector mSelector;
+    @Nullable
+    private final Selector mSelector;
+
     // optional list of libraries that we should ignore the minSdk version
-    @NonNull private final List<Selector> mOverrideUsesSdkLibrarySelectors;
+    @NonNull
+    private final List<Selector> mOverrideUsesSdkLibrarySelectors;
 
 
     public XmlElement(@NonNull Element xml, @NonNull XmlDocument document) {
@@ -121,7 +134,7 @@ public class XmlElement extends OrphanXmlElement {
                             throw new RuntimeException(MergingException.wrapException(e)
                                     .withMessage(errorMessage)
                                     .withFile(mDocument.getSourceFile())
-                                    .withPosition(mDocument.getNodePosition(xml)).build());
+                                    .withPosition(XmlDocument.getNodePosition(xml)).build());
                         }
                     }
                     for (String attributeName : Splitter.on(',').trimResults()
@@ -188,6 +201,7 @@ public class XmlElement extends OrphanXmlElement {
      * explicitly specify how conflicting elements should be handled, a
      * {@link com.android.manifmerger.NodeOperationType#MERGE} will be returned.
      */
+    @NonNull
     public NodeOperationType getOperationType() {
         return mNodeOperationType != null
                 ? mNodeOperationType
@@ -199,12 +213,14 @@ public class XmlElement extends OrphanXmlElement {
      * explicitly specify how conflicting attributes should be handled, a
      * {@link AttributeOperationType#STRICT} will be returned.
      */
+    @NonNull
     public AttributeOperationType getAttributeOperationType(NodeName attributeName) {
         return mAttributesOperationTypes.containsKey(attributeName)
                 ? mAttributesOperationTypes.get(attributeName)
                 : AttributeOperationType.STRICT;
     }
 
+    @NonNull
     public Collection<Map.Entry<NodeName, AttributeOperationType>> getAttributeOperations() {
         return mAttributesOperationTypes.entrySet();
     }
@@ -218,7 +234,7 @@ public class XmlElement extends OrphanXmlElement {
     @NonNull
     @Override
     public SourcePosition getPosition() {
-        return mDocument.getNodePosition(this);
+        return XmlDocument.getNodePosition(this);
     }
 
     @NonNull
@@ -238,8 +254,8 @@ public class XmlElement extends OrphanXmlElement {
      * @param mergingReport the merging report to log errors and actions.
      */
     public void mergeWithLowerPriorityNode(
-            XmlElement lowerPriorityNode,
-            MergingReport.Builder mergingReport) {
+            @NonNull XmlElement lowerPriorityNode,
+            @NonNull MergingReport.Builder mergingReport) {
 
 
         if (mSelector != null && !mSelector.isResolvable(getDocument().getSelectors())) {
@@ -307,6 +323,7 @@ public class XmlElement extends OrphanXmlElement {
         }
     }
 
+    @NonNull
     public ImmutableList<XmlElement> getMergeableElements() {
         return mMergeableChildren;
     }
@@ -318,6 +335,7 @@ public class XmlElement extends OrphanXmlElement {
      * @return the child of {@link com.google.common.base.Optional#absent()} if no child of this
      * type and key exist.
      */
+    @NonNull
     public Optional<XmlElement> getNodeByTypeAndKey(
             ManifestModel.NodeTypes type,
             @Nullable String keyValue) {
@@ -337,6 +355,7 @@ public class XmlElement extends OrphanXmlElement {
      * @param type the type of children element requested.
      * @return the list (potentially empty) of children.
      */
+    @NonNull
     public ImmutableList<XmlElement> getAllNodesByType(ManifestModel.NodeTypes type) {
         ImmutableList.Builder<XmlElement> listBuilder = ImmutableList.builder();
         for (XmlElement mergeableChild : initMergeableChildren()) {
@@ -348,8 +367,8 @@ public class XmlElement extends OrphanXmlElement {
     }
 
     // merge this higher priority node with a lower priority node.
-    public void mergeChildren(XmlElement lowerPriorityNode,
-            MergingReport.Builder mergingReport) {
+    public void mergeChildren(@NonNull XmlElement lowerPriorityNode,
+            @NonNull MergingReport.Builder mergingReport) {
 
         // read all lower priority mergeable nodes.
         // if the same node is not defined in this document merge it in.
@@ -371,7 +390,7 @@ public class XmlElement extends OrphanXmlElement {
     }
 
     // merge a child of a lower priority node into this higher priority node.
-    private void mergeChild(XmlElement lowerPriorityChild, MergingReport.Builder mergingReport) {
+    private void mergeChild(@NonNull XmlElement lowerPriorityChild, @NonNull MergingReport.Builder mergingReport) {
 
         ILogger logger = mergingReport.getLogger();
 
@@ -409,7 +428,7 @@ public class XmlElement extends OrphanXmlElement {
                 // if the two elements are equal, just skip it.
 
                 // but check first that we are not supposed to replace or remove it.
-                NodeOperationType operationType =
+                @NonNull NodeOperationType operationType =
                         calculateNodeOperationType(thisChild, lowerPriorityChild);
                 if (operationType == NodeOperationType.REMOVE ||
                         operationType == NodeOperationType.REPLACE) {
@@ -440,8 +459,8 @@ public class XmlElement extends OrphanXmlElement {
      * @param customElement the custom element present in the lower priority document.
      * @param mergingReport the merging report to log errors and actions.
      */
-    private void handleCustomElement(XmlElement customElement,
-            MergingReport.Builder mergingReport) {
+    private void handleCustomElement(@NonNull XmlElement customElement,
+            @NonNull MergingReport.Builder mergingReport) {
         addElement(customElement, mergingReport);
 
         // add the custom namespace to the document generation.
@@ -449,7 +468,7 @@ public class XmlElement extends OrphanXmlElement {
         if (!nodeName.contains(":")) {
             return;
         }
-        String prefix = nodeName.substring(0, nodeName.indexOf(':'));
+        @NonNull String prefix = nodeName.substring(0, nodeName.indexOf(':'));
         String namespace = customElement.getDocument().getRootNode()
                 .getXml().getAttribute(SdkConstants.XMLNS_PREFIX + prefix);
 
@@ -470,8 +489,8 @@ public class XmlElement extends OrphanXmlElement {
      * @param mergingReport the merging report to log errors and actions.
      */
     private void mergeChildrenWithMultipleDeclarations(
-            XmlElement lowerPriorityChild,
-            MergingReport.Builder mergingReport) {
+            @NonNull XmlElement lowerPriorityChild,
+            @NonNull MergingReport.Builder mergingReport) {
 
         Preconditions.checkArgument(lowerPriorityChild.getType().areMultipleDeclarationAllowed());
         if (lowerPriorityChild.getType().areMultipleDeclarationAllowed()) {
@@ -502,8 +521,8 @@ public class XmlElement extends OrphanXmlElement {
      * @return true if the element should be ignored, false otherwise.
      */
     private boolean shouldIgnore(
-            XmlElement lowerPriorityChild,
-            MergingReport.Builder mergingReport) {
+            @NonNull XmlElement lowerPriorityChild,
+            @NonNull MergingReport.Builder mergingReport) {
 
         if (lowerPriorityChild.getType().getMergeType() == MergeType.IGNORE) {
             return true;
@@ -542,11 +561,11 @@ public class XmlElement extends OrphanXmlElement {
      * @param mergingReport the merging report to log errors and actions.
      */
     private void handleTwoElementsExistence(
-            XmlElement higherPriority,
-            XmlElement lowerPriority,
-            MergingReport.Builder mergingReport) {
+            @NonNull XmlElement higherPriority,
+            @NonNull XmlElement lowerPriority,
+            @NonNull MergingReport.Builder mergingReport) {
 
-        NodeOperationType operationType = calculateNodeOperationType(higherPriority, lowerPriority);
+        @NonNull NodeOperationType operationType = calculateNodeOperationType(higherPriority, lowerPriority);
         // 2 nodes exist, 3 possibilities :
         //  higher priority one has a tools:node="remove", remove the low priority one
         //  higher priority one has a tools:node="replace", replace the low priority one
@@ -601,11 +620,12 @@ public class XmlElement extends OrphanXmlElement {
      * @return the effective {@link NodeOperationType} that should be used to affect higher and
      * lower priority nodes merging.
      */
+    @NonNull
     private static NodeOperationType calculateNodeOperationType(
             @NonNull XmlElement higherPriority,
             @NonNull XmlElement lowerPriority) {
 
-        NodeOperationType operationType = higherPriority.getOperationType();
+        @NonNull NodeOperationType operationType = higherPriority.getOperationType();
         // if the operation's selector exists and the lower priority node is not selected,
         // we revert to default operation type which is merge.
         if (higherPriority.supportsSelector()
@@ -621,7 +641,8 @@ public class XmlElement extends OrphanXmlElement {
      * @param elementToBeAdded xml element to be added to the current element.
      * @param mergingReport the merging report to log errors and actions.
      */
-    private void addElement(XmlElement elementToBeAdded, MergingReport.Builder mergingReport) {
+    private void addElement(
+            @NonNull XmlElement elementToBeAdded, @NonNull MergingReport.Builder mergingReport) {
 
         List<Node> comments = getLeadingComments(elementToBeAdded.getXml());
         // record all the actions before the node is moved from the library document to the main
@@ -661,6 +682,7 @@ public class XmlElement extends OrphanXmlElement {
      * @return a {@link String} describing the differences between the two XML elements or
      * {@link Optional#absent()} if they are equals.
      */
+    @NonNull
     public Optional<String> compareTo(Object other) {
 
         if (!(other instanceof XmlElement)) {
@@ -704,13 +726,13 @@ public class XmlElement extends OrphanXmlElement {
         }
 
         // compare children
-        List<Node> expectedChildren = filterUninterestingNodes(getXml().getChildNodes());
-        List<Node> actualChildren = filterUninterestingNodes(otherNode.getXml().getChildNodes());
+        @NonNull List<Node> expectedChildren = filterUninterestingNodes(getXml().getChildNodes());
+        @NonNull List<Node> actualChildren = filterUninterestingNodes(otherNode.getXml().getChildNodes());
         if (expectedChildren.size() != actualChildren.size()) {
 
             if (expectedChildren.size() > actualChildren.size()) {
                 // missing some.
-                List<String> missingChildrenNames =
+                @NonNull List<String> missingChildrenNames =
                         Lists.transform(expectedChildren, NODE_TO_NAME);
                 missingChildrenNames.removeAll(Lists.transform(actualChildren, NODE_TO_NAME));
                 return Optional.of(String.format(
@@ -723,7 +745,7 @@ public class XmlElement extends OrphanXmlElement {
                         Joiner.on(",").join(missingChildrenNames)));
             } else {
                 // extra ones.
-                List<String> extraChildrenNames = Lists.transform(actualChildren, NODE_TO_NAME);
+                @NonNull List<String> extraChildrenNames = Lists.transform(actualChildren, NODE_TO_NAME);
                 extraChildrenNames.removeAll(Lists.transform(expectedChildren, NODE_TO_NAME));
                 return Optional.of(String.format(
                         "%1$s: Number of children do not match up: "
@@ -737,7 +759,7 @@ public class XmlElement extends OrphanXmlElement {
         }
         for (Node expectedChild : expectedChildren) {
             if (expectedChild.getNodeType() == Node.ELEMENT_NODE) {
-                XmlElement expectedChildNode = new XmlElement((Element) expectedChild, mDocument);
+                @NonNull XmlElement expectedChildNode = new XmlElement((Element) expectedChild, mDocument);
                 message = findAndCompareNode(otherNode, actualChildren, expectedChildNode);
                 if (message.isPresent()) {
                     return message;
@@ -748,14 +770,14 @@ public class XmlElement extends OrphanXmlElement {
     }
 
     private Optional<String> findAndCompareNode(
-            XmlElement otherElement,
-            List<Node> otherElementChildren,
-            XmlElement childNode) {
+            @NonNull XmlElement otherElement,
+            @NonNull List<Node> otherElementChildren,
+            @NonNull XmlElement childNode) {
 
         Optional<String> message = Optional.absent();
         for (Node potentialNode : otherElementChildren) {
             if (potentialNode.getNodeType() == Node.ELEMENT_NODE) {
-                XmlElement otherChildNode = new XmlElement((Element) potentialNode, mDocument);
+                @NonNull XmlElement otherChildNode = new XmlElement((Element) potentialNode, mDocument);
                 if (childNode.getType() == otherChildNode.getType()) {
                     // check if this element uses a key.
                     if (childNode.getType().getNodeKeyResolver().getKeyAttributesNames()
@@ -788,7 +810,8 @@ public class XmlElement extends OrphanXmlElement {
                         otherElement.printPosition()));
     }
 
-    private static List<Node> filterUninterestingNodes(NodeList nodeList) {
+    @NonNull
+    private static List<Node> filterUninterestingNodes(@NonNull NodeList nodeList) {
         List<Node> interestingNodes = new ArrayList<Node>();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
@@ -806,8 +829,8 @@ public class XmlElement extends OrphanXmlElement {
     }
 
     private static Optional<String> checkAttributes(
-            XmlElement expected,
-            XmlElement actual) {
+            @NonNull XmlElement expected,
+            @NonNull XmlElement actual) {
 
         for (XmlAttribute expectedAttr : expected.getAttributes()) {
             XmlAttribute.NodeName attributeName = expectedAttr.getName();
@@ -832,6 +855,7 @@ public class XmlElement extends OrphanXmlElement {
         return Optional.absent();
     }
 
+    @SuppressWarnings("SpellCheckingInspection")
     private ImmutableList<XmlElement> initMergeableChildren() {
         ImmutableList.Builder<XmlElement> mergeableNodes = new ImmutableList.Builder<XmlElement>();
         NodeList nodeList = getXml().getChildNodes();
@@ -849,8 +873,8 @@ public class XmlElement extends OrphanXmlElement {
      * Returns all leading comments in the source xml before the node to be adopted.
      * @param nodeToBeAdopted node that will be added as a child to this node.
      */
-    static List<Node> getLeadingComments(Node nodeToBeAdopted) {
-        ImmutableList.Builder<Node> nodesToAdopt = new ImmutableList.Builder<Node>();
+    static List<Node> getLeadingComments(@NonNull Node nodeToBeAdopted) {
+        @NonNull ImmutableList.Builder<Node> nodesToAdopt = new ImmutableList.Builder<Node>();
         Node previousSibling = nodeToBeAdopted.getPreviousSibling();
         while (previousSibling != null
                 && (previousSibling.getNodeType() == Node.COMMENT_NODE
@@ -864,9 +888,9 @@ public class XmlElement extends OrphanXmlElement {
         return nodesToAdopt.build().reverse();
     }
 
-    void addMessage(MergingReport.Builder mergingReport,
-            MergingReport.Record.Severity severity,
-            String message) {
+    void addMessage(@NonNull MergingReport.Builder mergingReport,
+            @NonNull MergingReport.Record.Severity severity,
+            @NonNull String message) {
         mergingReport.addMessage(getSourceFilePosition(),
                 severity,
                 message);

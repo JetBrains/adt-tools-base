@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.fixture;
 
-import com.android.builder.model.AndroidProject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -30,21 +29,27 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * a Build Action that returns all the models for all the Gradle projects
+ * a Build Action that returns all the models of the parameterized type for all the Gradle projects
  */
-public class GetAndroidModelAction implements BuildAction<Map<String, AndroidProject>> {
+public class GetAndroidModelAction<T> implements BuildAction<Map<String, T>> {
 
     private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
 
+    private Class<T> type;
+
+    public GetAndroidModelAction(Class<T> type) {
+        this.type = type;
+    }
+
     @Override
-    public Map<String, AndroidProject> execute(BuildController buildController) {
+    public Map<String, T> execute(BuildController buildController) {
 
         long t1 = System.currentTimeMillis();
         GradleBuild gradleBuild = buildController.getBuildModel();
         DomainObjectSet<? extends BasicGradleProject> projects = gradleBuild.getProjects();
 
         final int projectCount = projects.size();
-        Map<String, AndroidProject> modelMap = Maps.newHashMapWithExpectedSize(projectCount);
+        Map<String, T> modelMap = Maps.newHashMapWithExpectedSize(projectCount);
 
         List<BasicGradleProject> projectList = Lists.newArrayList(projects);
         List<Thread> threads = Lists.newArrayListWithCapacity(CPU_COUNT);
@@ -85,7 +90,7 @@ public class GetAndroidModelAction implements BuildAction<Map<String, AndroidPro
 
     class ModelQuery implements Runnable {
 
-        private final Map<String, AndroidProject> models;
+        private final Map<String, T> models;
         private final List<BasicGradleProject> projects;
         private final BuildController buildController;
 
@@ -98,7 +103,7 @@ public class GetAndroidModelAction implements BuildAction<Map<String, AndroidPro
             models = Maps.newHashMapWithExpectedSize(projects.size() / CPU_COUNT);
         }
 
-        public Map<String, AndroidProject> getModels() {
+        public Map<String, T> getModels() {
             return models;
         }
 
@@ -109,8 +114,7 @@ public class GetAndroidModelAction implements BuildAction<Map<String, AndroidPro
             int index;
             while ((index = getNextIndex()) < count) {
                 BasicGradleProject project = projects.get(index);
-
-                AndroidProject model = buildController.findModel(project, AndroidProject.class);
+                T model = buildController.findModel(project, type);
                 if (model != null) {
                     models.put(project.getPath(), model);
                 }

@@ -85,6 +85,8 @@ public class GradleCoordinateTest extends BaseTestCase {
                         new GradleCoordinate.StringComponent("SNAPSHOT")));
         actual = GradleCoordinate.parseCoordinateString("a.b.c:package:v1-1.17.0-rc-SNAPSHOT");
         assertEquals(expected, actual);
+        assertNotNull(actual);
+        assertTrue(actual.isPreview());
     }
 
     public void testToString() throws Exception {

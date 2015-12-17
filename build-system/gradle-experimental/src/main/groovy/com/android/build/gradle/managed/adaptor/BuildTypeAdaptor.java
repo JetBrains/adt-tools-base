@@ -117,10 +117,4 @@ public class BuildTypeAdaptor extends BaseConfigAdaptor implements CoreBuildType
     public boolean isShrinkResources() {
         return buildType.getShrinkResources();
     }
-
-    @NonNull
-    @Override
-    public List<File> getJarJarRuleFiles() {
-        return buildType.getJarJarRuleFiles();
-    }
 }

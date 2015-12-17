@@ -27,6 +27,7 @@ import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -154,7 +155,7 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
     @NonNull
     @Override
     public Collection<String> getResourceConfigurations() {
-        return productFlavor.getResourceConfigurations();
+        return ImmutableList.copyOf(productFlavor.getResourceConfigurations());
     }
 
     @Nullable
@@ -168,7 +169,7 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
     @Nullable
     @Override
     public Set<String> getGeneratedDensities() {
-        return productFlavor.getGeneratedDensities();
+        return ImmutableSet.copyOf(productFlavor.getGeneratedDensities());
     }
 
     @Override
@@ -179,11 +180,5 @@ public class ProductFlavorAdaptor extends BaseConfigAdaptor implements CoreProdu
     @Override
     public Boolean getUseJack() {
         return productFlavor.getUseJack();
-    }
-
-    @NonNull
-    @Override
-    public List<File> getJarJarRuleFiles() {
-        return productFlavor.getJarJarRuleFiles();
     }
 }

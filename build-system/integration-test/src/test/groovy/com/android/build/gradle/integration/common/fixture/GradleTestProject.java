@@ -37,6 +37,7 @@ import com.android.io.StreamException;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
 import com.android.sdklib.repository.FullRevision;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
@@ -76,6 +77,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * JUnit4 test rule for integration test.
@@ -91,8 +94,17 @@ import java.util.concurrent.TimeUnit;
 public class GradleTestProject implements TestRule {
 
     public static final File TEST_RES_DIR = new File("src/test/resources");
+    public static final File TEST_PROJECT_DIR = new File("test-projects");
 
-    public static final int DEFAULT_COMPILE_SDK_VERSION = 21;
+    public static final int DEFAULT_COMPILE_SDK_VERSION = 23;
+    public static final int LATEST_NDK_VERSION = 21;
+
+    /**
+     * Last SDK that contained java 6 bytecode in the platform jar. Since we run integration tests
+     * on Java 6, this is needed to cover unit testing support.
+     */
+    public static final int LAST_JAVA6_SDK_VERSION = 19;
+
     public static final String DEFAULT_BUILD_TOOL_VERSION;
     public static final String REMOTE_TEST_PROVIDER = System.getenv().get("REMOTE_TEST_PROVIDER");
 
@@ -100,12 +112,13 @@ public class GradleTestProject implements TestRule {
             REMOTE_TEST_PROVIDER : BuilderConstants.CONNECTED;
 
     public static final String GRADLE_TEST_VERSION = "2.2.1";
-    public static final String GRADLE_EXP_TEST_VERSION = "2.6";
+    public static final String GRADLE_EXP_TEST_VERSION = "2.8";
 
     public static final String ANDROID_GRADLE_PLUGIN_VERSION;
 
     public static final String CUSTOM_JACK;
     public static final boolean USE_JACK;
+
 
     private static final String RECORD_BENCHMARK_NAME = "com.android.benchmark.name";
     private static final String RECORD_BENCHMARK_MODE = "com.android.benchmark.mode";
@@ -117,7 +130,7 @@ public class GradleTestProject implements TestRule {
     static {
         String envBuildToolVersion = System.getenv("CUSTOM_BUILDTOOLS");
         DEFAULT_BUILD_TOOL_VERSION = !Strings.isNullOrEmpty(envBuildToolVersion) ?
-                envBuildToolVersion : "22.0.1";
+                envBuildToolVersion : "23.0.1";
         String envVersion = System.getenv().get("CUSTOM_GRADLE");
         ANDROID_GRADLE_PLUGIN_VERSION = !Strings.isNullOrEmpty(envVersion) ? envVersion
                 : Version.ANDROID_GRADLE_PLUGIN_VERSION;
@@ -134,8 +147,6 @@ public class GradleTestProject implements TestRule {
     private static final String DEFAULT_TEST_PROJECT_NAME = "project";
 
     public static class Builder {
-        private static final File SAMPLE_PROJECT_DIR = new File("samples");
-        private static final File TEST_PROJECT_DIR = new File("test-projects");
 
         @Nullable
         private String name;
@@ -206,7 +217,7 @@ public class GradleTestProject implements TestRule {
         /**
          * Use experimental plugin for the test project.
          */
-        public Builder forExpermimentalPlugin(boolean mode) {
+        public Builder forExperimentalPlugin(boolean mode) {
             this.experimentalMode = mode;
             return this;
         }
@@ -250,10 +261,18 @@ public class GradleTestProject implements TestRule {
          * Create GradleTestProject from an existing test project.
          */
         public Builder fromTestProject(@NonNull String project) {
+            return fromTestProject(project, null);
+        }
+
+        /**
+         * Create GradleTestProject from an existing test project.
+         * @param buildFileSuffix if non-null, imports files named build.suffix.gradle.
+         */
+        public Builder fromTestProject(@NonNull String project, @Nullable String buildFileSuffix) {
             AndroidTestApp app = new EmptyTestApp();
             name = project;
             File projectDir = new File(TEST_PROJECT_DIR, project);
-            addAllFiles(app, projectDir);
+            addAllFiles(app, projectDir, buildFileSuffix);
             return fromTestApp(app);
         }
 
@@ -268,7 +287,7 @@ public class GradleTestProject implements TestRule {
                     .getParentFile().getParentFile().getParentFile();
             parentDir = new File(parentDir, "external");
             File projectDir = new File(parentDir, project);
-            addAllFiles(app, projectDir);
+            addAllFiles(app, projectDir, null /*buildFileSuffix*/);
             return fromTestApp(app);
         }
 
@@ -424,17 +443,28 @@ public class GradleTestProject implements TestRule {
         }
     }
 
+    private static final Pattern BUILD_FILE_PATTERN = Pattern.compile("build\\.(.+\\.)?gradle");
+
     /**
      * Add all files in a directory to an AndroidTestApp.
      */
-    private static void addAllFiles(AndroidTestApp app, File projectDir) {
+    private static void addAllFiles(AndroidTestApp app, File projectDir, String buildFileSuffix) {
+        String buildFileNameToKeep = (buildFileSuffix != null) ?
+                "build." + buildFileSuffix + ".gradle" : "build.gradle";
         for (String filePath : FileHelper.listFiles(projectDir)) {
             File file = new File(filePath);
             try {
+                String fileName = file.getName();
+                if (BUILD_FILE_PATTERN.matcher(fileName).matches()) {
+                    if (!fileName.equals(buildFileNameToKeep)) {
+                        continue;
+                    }
+                    fileName = "build.gradle";
+                }
                 app.addFile(
                         new TestSourceFile(
                                 file.getParent(),
-                                file.getName(),
+                                fileName,
                                 Files.toByteArray(new File(projectDir, filePath))));
             } catch (IOException e) {
                 fail(e.toString());
@@ -443,18 +473,29 @@ public class GradleTestProject implements TestRule {
     }
 
     @Override
-    public Statement apply(final Statement base, Description description) {
-        // on windows, move the temporary copy as close to root to avoid running into path too
+    public Statement apply(final Statement base, final Description description) {
+        return new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                createTestDirectory(description.getTestClass(), description.getMethodName());
+                base.evaluate();
+            }
+        };
+    }
+
+    public void createTestDirectory(Class<?> testClass, String methodName)
+            throws IOException, StreamException {
+        // On windows, move the temporary copy as close to root to avoid running into path too
         // long exceptions.
         testDir = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS
-            ? new File(new File(new File(System.getProperty("user.home")), "android-tests"),
-                description.getTestClass().getSimpleName())
-            : new File(outDir, description.getTestClass().getSimpleName());
+                ? new File(new File(new File(System.getProperty("user.home")), "android-tests"),
+                testClass.getSimpleName())
+                : new File(outDir, testClass.getSimpleName());
 
         // Create separate directory based on test method name if @Rule is used.
         // getMethodName() is null if this rule is used as a @ClassRule.
-        if (description.getMethodName() != null) {
-            String dirName = description.getMethodName();
+        if (methodName != null) {
+            String dirName = methodName;
             dirName = dirName.replaceAll("[^a-zA-Z0-9_]", "_");
             testDir = new File(testDir, dirName);
         }
@@ -463,47 +504,41 @@ public class GradleTestProject implements TestRule {
         buildFile = new File(testDir, "build.gradle");
         sourceDir = new File(testDir, "src");
 
-        return new Statement() {
-            @Override
-            public void evaluate() throws Throwable {
-                if (testDir.exists()) {
-                    deleteRecursive(testDir);
-                }
-                assertTrue(testDir.mkdirs());
-                assertTrue(sourceDir.mkdirs());
+        if (testDir.exists()) {
+            deleteRecursive(testDir);
+        }
+        assertTrue(testDir.mkdirs());
+        assertTrue(sourceDir.mkdirs());
 
-                Files.copy(
-                        new File(Builder.TEST_PROJECT_DIR, COMMON_HEADER),
-                        new File(testDir.getParent(), COMMON_HEADER));
-                Files.copy(
-                        new File(Builder.TEST_PROJECT_DIR, COMMON_LOCAL_REPO),
-                        new File(testDir.getParent(), COMMON_LOCAL_REPO));
-                Files.copy(
-                        new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT),
-                        new File(testDir.getParent(), COMMON_BUILD_SCRIPT));
-                Files.copy(
-                        new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT_EXP),
-                        new File(testDir.getParent(), COMMON_BUILD_SCRIPT_EXP));
-                Files.copy(
-                        new File(Builder.TEST_PROJECT_DIR, COMMON_GRADLE_PLUGIN_VERSION),
-                        new File(testDir.getParent(), COMMON_GRADLE_PLUGIN_VERSION));
+        Files.copy(
+                new File(TEST_PROJECT_DIR, COMMON_HEADER),
+                new File(testDir.getParent(), COMMON_HEADER));
+        Files.copy(
+                new File(TEST_PROJECT_DIR, COMMON_LOCAL_REPO),
+                new File(testDir.getParent(), COMMON_LOCAL_REPO));
+        Files.copy(
+                new File(TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT),
+                new File(testDir.getParent(), COMMON_BUILD_SCRIPT));
+        Files.copy(
+                new File(TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT_EXP),
+                new File(testDir.getParent(), COMMON_BUILD_SCRIPT_EXP));
+        Files.copy(
+                new File(TEST_PROJECT_DIR, COMMON_GRADLE_PLUGIN_VERSION),
+                new File(testDir.getParent(), COMMON_GRADLE_PLUGIN_VERSION));
 
-                if (testProject != null) {
-                    testProject.write(
-                            testDir,
-                            testProject.containsFullBuildScript() ? "" :getGradleBuildscript());
-                } else {
-                    Files.write(
-                            getGradleBuildscript(),
-                            buildFile,
-                            Charsets.UTF_8);
-                }
+        if (testProject != null) {
+            testProject.write(
+                    testDir,
+                    testProject.containsFullBuildScript() ? "" :getGradleBuildscript());
+        } else {
+            Files.write(
+                    getGradleBuildscript(),
+                    buildFile,
+                    Charsets.UTF_8);
+        }
 
-                createLocalProp(testDir, sdkDir, ndkDir);
-                createGradleProp();
-                base.evaluate();
-            }
-        };
+        createLocalProp(testDir, sdkDir, ndkDir);
+        createGradleProp();
     }
 
     /**
@@ -673,11 +708,21 @@ public class GradleTestProject implements TestRule {
      * @param tasks Variadic list of tasks to execute.
      */
     public void execute(String ... tasks) {
-        execute(Collections.<String>emptyList(), false, false, ExpectedBuildResult.SUCCESS, tasks);
+        execute(AndroidProject.class,
+                Collections.<String>emptyList(),
+                false,
+                false,
+                ExpectedBuildResult.SUCCESS,
+                tasks);
     }
 
     public void execute(@NonNull List<String> arguments, String ... tasks) {
-        execute(arguments, false, false, ExpectedBuildResult.SUCCESS, tasks);
+        execute(AndroidProject.class,
+                arguments,
+                false,
+                false,
+                ExpectedBuildResult.SUCCESS,
+                tasks);
     }
 
     public void executeWithBenchmark(
@@ -688,7 +733,12 @@ public class GradleTestProject implements TestRule {
                 "-P" + RECORD_BENCHMARK_NAME + "=" + benchmarkName,
                 "-P" + RECORD_BENCHMARK_MODE + "=" + benchmarkMode.name().toLowerCase(Locale.US)
         );
-        execute(arguments, false, false, ExpectedBuildResult.SUCCESS, tasks);
+        execute(AndroidProject.class,
+                arguments,
+                false,
+                false,
+                ExpectedBuildResult.SUCCESS,
+                tasks);
     }
 
     public void executeExpectingFailure(String... tasks) {
@@ -696,7 +746,7 @@ public class GradleTestProject implements TestRule {
     }
 
     public void executeExpectingFailure(@NonNull List<String> arguments, String... tasks) {
-        execute(
+        execute(AndroidProject.class,
                 arguments,
                 false /*returnModel*/,
                 false /*emulateStudio_1_0*/,
@@ -725,6 +775,20 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
+     * Runs gradle on the project, and returns the model of the specified type.
+     * Throws exception on failure.
+     *
+     * @param modelClass Class of the model to return
+     * @param tasks Variadic list of tasks to execute.
+     *
+     * @return the model for the project with the specified type.
+     */
+    @NonNull
+    public <T> T executeAndReturnModel(Class<T> modelClass, String ... tasks) {
+        return this.<T>executeAndReturnModel(modelClass, false, tasks);
+    }
+
+    /**
      * Runs gradle on the project, and returns the project model.  Throws exception on failure.
      *
      * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
@@ -735,7 +799,26 @@ public class GradleTestProject implements TestRule {
     @NonNull
     public AndroidProject executeAndReturnModel(boolean emulateStudio_1_0, String ... tasks) {
         //noinspection ConstantConditions
-        return execute(Collections.<String>emptyList(), true, emulateStudio_1_0,
+        return execute(AndroidProject.class, Collections.<String>emptyList(), true, emulateStudio_1_0,
+                ExpectedBuildResult.SUCCESS, tasks);
+    }
+
+    /**
+     * Runs gradle on the project, and returns the project model.  Throws exception on failure.
+     *
+     * @param modelClass Class of the model to return
+     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param tasks Variadic list of tasks to execute.
+     *
+     * @return the AndroidProject model for the project.
+     */
+    @NonNull
+    public <T> T executeAndReturnModel(
+            Class<T> modelClass,
+            boolean emulateStudio_1_0,
+            String ... tasks) {
+        //noinspection ConstantConditions
+        return execute(modelClass, Collections.<String>emptyList(), true, emulateStudio_1_0,
                 ExpectedBuildResult.SUCCESS, tasks);
     }
 
@@ -768,7 +851,12 @@ public class GradleTestProject implements TestRule {
             executeBuild(Collections.<String>emptyList(), connection, tasks,
                     ExpectedBuildResult.SUCCESS);
 
-            return buildModel(connection, new GetAndroidModelAction(), emulateStudio_1_0, null, null);
+            return buildModel(
+                    connection,
+                    new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
+                    emulateStudio_1_0,
+                    null,
+                    null);
 
         } finally {
             connection.close();
@@ -832,7 +920,7 @@ public class GradleTestProject implements TestRule {
         try {
             Map<String, AndroidProject> modelMap = buildModel(
                     connection,
-                    new GetAndroidModelAction(),
+                    new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
                     emulateStudio_1_0,
                     null,
                     null);
@@ -871,7 +959,11 @@ public class GradleTestProject implements TestRule {
     public Map<String, AndroidProject> getAllModelsWithBenchmark(
             @Nullable String benchmarkName,
             @Nullable BenchmarkMode benchmarkMode) {
-        Map<String, AndroidProject> allModels = getAllModels(new GetAndroidModelAction(), false, benchmarkName, benchmarkMode);
+        Map<String, AndroidProject> allModels = getAllModels(
+                new GetAndroidModelAction<AndroidProject>(AndroidProject.class),
+                false,
+                benchmarkName,
+                benchmarkMode);
         for (AndroidProject project : allModels.values()) {
             assertNoSyncIssues(project);
         }
@@ -900,7 +992,7 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> getAllModelsIgnoringSyncIssues() {
-        return getAllModels(new GetAndroidModelAction(), false, null, null);
+        return getAllModels(new GetAndroidModelAction<AndroidProject>(AndroidProject.class), false, null, null);
     }
 
     /**
@@ -949,7 +1041,8 @@ public class GradleTestProject implements TestRule {
      * @return the model, if <var>returnModel</var> was true, null otherwise
      */
     @Nullable
-    private AndroidProject execute(
+    private <T> T execute(
+            Class<T> type,
             @NonNull List<String> arguments,
             boolean returnModel,
             boolean emulateStudio_1_0,
@@ -960,9 +1053,9 @@ public class GradleTestProject implements TestRule {
             executeBuild(arguments, connection, tasks, expectedBuildResult);
 
             if (returnModel) {
-                Map<String, AndroidProject> modelMap = buildModel(
+                Map<String, T> modelMap = buildModel(
                         connection,
-                        new GetAndroidModelAction(),
+                        new GetAndroidModelAction(type),
                         emulateStudio_1_0,
                         null,
                         null);
@@ -1114,7 +1207,7 @@ public class GradleTestProject implements TestRule {
      * @param path Full path of the file.  May be a relative path.
      */
     public File file(String path) {
-        File result = new File(path);
+        File result = new File(FileUtils.toSystemDependentPath(path));
         if (result.isAbsolute()) {
             return result;
         } else {
@@ -1202,21 +1295,23 @@ public class GradleTestProject implements TestRule {
      * @param lineNumber the line number, starting at 1
      * @param line the line to replace with.
      * @throws IOException
+     *
+     * TODO: Inline.
      */
     public void replaceLine(
             String relativePath,
             int lineNumber,
             String line) throws IOException {
+        FileHelper.replaceLine(file(relativePath), lineNumber, line);
+    }
+
+    public void replaceInFile(
+            String relativePath,
+            String search,
+            String replace) throws IOException {
         File file = new File(testDir, relativePath.replace("/", File.separator));
-
-        List<String> lines = Files.readLines(file, Charsets.UTF_8);
-
-        lines.add(lineNumber, line);
-        lines.remove(lineNumber - 1);
-
-        Files.write(
-                Joiner.on(System.getProperty("line.separator")).join(lines),
-                file,
-                Charsets.UTF_8);
+        String content = Files.toString(file, Charset.defaultCharset());
+        String newContent = content.replaceAll(search, replace);
+        Files.write(newContent, file, Charset.defaultCharset());
     }
 }

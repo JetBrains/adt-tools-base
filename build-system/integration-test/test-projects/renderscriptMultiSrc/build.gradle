@@ -4,8 +4,8 @@ buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 15
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    compileSdkVersion rootProject.oldSdkForRenderscript
+    buildToolsVersion = rootProject.buildToolsVersion
 
     defaultConfig {
         renderscriptTargetApi = 11

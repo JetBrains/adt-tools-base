@@ -361,6 +361,7 @@ public final class SdkConstants {
     public static final String FD_EXTRAS = "extras";                    //$NON-NLS-1$
     public static final String FD_M2_REPOSITORY = "m2repository";       //$NON-NLS-1$
     public static final String FD_NDK = "ndk-bundle";                   //$NON-NLS-1$
+    public static final String FD_LLDB = "lldb";                        //$NON-NLS-1$
     /**
      * Name of an extra's sample folder.
      * Ideally extras should have one {@link #FD_SAMPLES} folder containing
@@ -587,6 +588,9 @@ public final class SdkConstants {
      * no rendering in the graphical layout editor. */
     public static final String CLASS_MOCK_VIEW = "com.android.layoutlib.bridge.MockView"; //$NON-NLS-1$
     public static final String CLASS_LAYOUT_INFLATER = "android.view.LayoutInflater"; //$NON-NLS-1$
+    public static final String CLASS_DATA_BINDING_COMPONENT = "android.databinding.DataBindingComponent"; //$NON-NLS-1$
+    public static final String CLASS_NAME_DATA_BINDING_COMPONENT = "DataBindingComponent"; //$NON-NLS-1$
+    public static final String CLASS_DATA_BINDING_BASE_BINDING = "android.databinding.ViewDataBinding";
 
     /* Android Design Support Class Constants */
     public static final String CLASS_COORDINATOR_LAYOUT = "android.support.design.widget.CoordinatorLayout"; //$NON-NLS-1$
@@ -1142,6 +1146,8 @@ public final class SdkConstants {
     public static final String DOT_BC = DOT + EXT_BC;
     /** Dot-Extension of dependency files, i.e. ".d" */
     public static final String DOT_DEP = DOT + EXT_DEP;
+    /** Dot-Extension of native dynamic libraries, i.e. ".so" */
+    public static final String DOT_NATIVE_LIBS = DOT + EXT_NATIVE_LIB;
     /** Dot-Extension of dex files, i.e. ".dex" */
     public static final String DOT_DEX = DOT + EXT_DEX;
     /** Dot-Extension for temporary resource files, ie "ap_ */
@@ -1345,6 +1351,9 @@ public final class SdkConstants {
     /** The android.webkit. package prefix */
     public static final String ANDROID_WEBKIT_PKG = ANDROID_PKG_PREFIX + "webkit."; //$NON-NLS-1$
 
+    /** The android.app. package prefix */
+    public static final String ANDROID_APP_PKG = ANDROID_PKG_PREFIX + "app."; //$NON-NLS-1$
+
     /** The LayoutParams inner-class name suffix, .LayoutParams */
     public static final String DOT_LAYOUT_PARAMS = ".LayoutParams"; //$NON-NLS-1$
 
@@ -1430,9 +1439,9 @@ public final class SdkConstants {
 
     public static final String GRADLE_PLUGIN_NAME = "com.android.tools.build:gradle:";
     public static final String GRADLE_MINIMUM_VERSION = "2.2.1";
-    public static final String GRADLE_LATEST_VERSION = "2.4";
+    public static final String GRADLE_LATEST_VERSION = "2.8";
     public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "1.0.0";
-    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "1.3.0";
+    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "1.5.0";
     public static final String GRADLE_PLUGIN_LATEST_VERSION = GRADLE_PLUGIN_RECOMMENDED_VERSION;
     public static final String MIN_BUILD_TOOLS_VERSION = "19.1.0";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
@@ -1445,9 +1454,15 @@ public final class SdkConstants {
     public static final String TYPE_DEF_VALUE_ATTRIBUTE = "value";
     public static final String TYPE_DEF_FLAG_ATTRIBUTE = "flag";
     public static final String FN_ANNOTATIONS_ZIP = "annotations.zip";
+    public static final String BINDING_ADAPTER_ANNOTATION = "android.databinding.BindingAdapter";
 
     // Data Binding MISC
     public static final String DATA_BINDING_LIB_ARTIFACT = "com.android.databinding:library";
+    public static final String DATA_BINDING_BASELIB_ARTIFACT = "com.android.databinding:baseLibrary";
+    public static final String DATA_BINDING_ANNOTATION_PROCESSOR_ARTIFACT =
+            "com.android.databinding:compiler";
+    public static final String DATA_BINDING_ADAPTER_LIB_ARTIFACT =
+            "com.android.databinding:adapters";
     public static final String[] TAGS_DATA_BINDING = new String[]{TAG_VARIABLE,
         TAG_IMPORT, TAG_LAYOUT, TAG_DATA};
     public static final String[] ATTRS_DATA_BINDING = new String[]{ATTR_NAME,

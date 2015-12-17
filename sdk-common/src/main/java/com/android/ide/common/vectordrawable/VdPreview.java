@@ -26,7 +26,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Locale;
@@ -46,10 +49,36 @@ public class VdPreview {
     public static final int MIN_PREVIEW_IMAGE_SIZE = 1;
 
     /**
+     * Parse the VectorDrawable's XML file into a document object.
+     *
+     * @param xmlFileContent the content of the VectorDrawable's XML file.
+     * @param errorLog when errors were found, log them in this builder if it is not null.
+     * @return parsed document or null if errors happened.
+     */
+    @Nullable
+    public static Document parseVdStringIntoDocument(@NonNull String xmlFileContent,
+                                                     @Nullable StringBuilder errorLog) {
+      DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+      DocumentBuilder db;
+      Document document;
+      try {
+        db = dbf.newDocumentBuilder();
+        document = db.parse(new InputSource(new StringReader(xmlFileContent)));
+      }
+      catch (Exception e) {
+        if (errorLog != null) {
+          errorLog.append("Exception while parsing XML file:\n").append(e.getMessage());
+        }
+        return null;
+      }
+      return document;
+    }
+
+    /**
      * This encapsulates the information used to determine the preview image size.
      * The reason we have different ways here is that both Studio UI and build process need
      * to use this common code path to generate images for vectordrawable.
-     * When {@value mUseWidth} is true, use {@code mImageMaxDimension} as the maximum
+     * When {@code mUseWidth} is true, use {@code mImageMaxDimension} as the maximum
      * dimension value while keeping the aspect ratio.
      * Otherwise, use {@code mImageScale} to scale the image based on the XML's size information.
      */
@@ -103,6 +132,7 @@ public class VdPreview {
         format.setIndent(4);
         format.setEncoding("UTF-8");
         format.setOmitComments(true);
+        format.setOmitXMLDeclaration(true);
         return format;
     }
 
@@ -133,7 +163,6 @@ public class VdPreview {
      * @param document the parsed document of original VectorDrawable's XML file.
      * @param info incoming override information for VectorDrawable.
      * @param errorLog log for the parsing errors and warnings.
-     * @param srcSize as an output, store the original size of the VectorDrawable
      * @return the overridden XML file in one string. If exception happens
      * or no attributes needs to be overriden, return null.
      */
@@ -174,6 +203,7 @@ public class VdPreview {
             }
             isXmlFileContentChanged = true;
         }
+
         // When auto mirror is set to true, then we always need to set it.
         // Because SVG has no such attribute at all.
         if (info.needsOverrideAutoMirrored()) {

@@ -9,8 +9,8 @@ repositories {
 }
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    compileSdkVersion rootProject.latestCompileSdk
+    buildToolsVersion = rootProject.buildToolsVersion
 
     // Lower than com.google.android:android:4.1.1.4
     defaultConfig.minSdkVersion 14

@@ -63,6 +63,10 @@ public abstract class AbstractAndroidSubject<T extends AbstractZipSubject<T>> ex
             @NonNull ClassFileScope scope)
             throws ProcessException, IOException;
 
+    protected abstract boolean checkForJavaResource(
+            @NonNull String resourcePath)
+            throws ProcessException, IOException;
+
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void containsClass(@NonNull String className) throws IOException, ProcessException {
         containsClass(className, ClassFileScope.ALL);
@@ -102,6 +106,37 @@ public abstract class AbstractAndroidSubject<T extends AbstractZipSubject<T>> ex
         }
     }
 
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void containsJavaResource(@NonNull String name) throws IOException, ProcessException {
+        if (!checkForJavaResource(name)) {
+            failWithRawMessage("'%s' does not contain Java resource '%s'", getDisplaySubject(), name);
+        }
+    }
+
+    public void doesNotContainJavaResource(@NonNull String name) throws IOException, ProcessException {
+        if (checkForJavaResource(name)) {
+            failWithRawMessage("'%s' unexpectedly contains Java resource '%s'",
+                    getDisplaySubject(), name);
+        }
+    }
+
+    /**
+     * Asserts the subject contains a java resource at the given path with the specified String content.
+     *
+     * Content is trimmed when compared.
+     */
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public abstract void containsJavaResourceWithContent(
+            @NonNull String path, @NonNull String content) throws IOException, ProcessException;
+
+    /**
+     * Asserts the subject contains a java resource at the given path with the specified
+     * byte array content.
+     */
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public abstract void containsJavaResourceWithContent(
+            @NonNull String path, @NonNull byte[] content) throws IOException, ProcessException;
+
     @Override
     protected String getDisplaySubject() {
         String name = (internalCustomName() == null) ? "" : "\"" + internalCustomName() + "\" ";
@@ -109,14 +144,11 @@ public abstract class AbstractAndroidSubject<T extends AbstractZipSubject<T>> ex
     }
 
     private boolean checkForResource(String name) throws IOException {
-        ZipFile zipFile = null;
+        ZipFile zipFile = new ZipFile(getSubject());
         try {
-            zipFile = new ZipFile(getSubject());
             return zipFile.getEntry("res/" + name) != null;
         } finally {
-            if (zipFile != null) {
-                zipFile.close();
-            }
+            zipFile.close();
         }
     }
 }

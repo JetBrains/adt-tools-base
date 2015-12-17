@@ -51,11 +51,6 @@ class EmbbedTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     void "check embedded"() {
         String embeddedApkPath = FD_RES + '/' + FD_RES_RAW + '/' + ANDROID_WEAR_MICRO_APK +
                 DOT_ANDROID_PACKAGE;

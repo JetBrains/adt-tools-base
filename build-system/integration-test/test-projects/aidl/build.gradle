@@ -4,6 +4,7 @@ buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdkVersion rootProject.latestCompileSdk
+    buildToolsVersion rootProject.buildToolsVersion
+    aidlPackageWhiteList = ["com/android/tests/basicprojectwithaidl/WhiteListed.aidl"]
 }

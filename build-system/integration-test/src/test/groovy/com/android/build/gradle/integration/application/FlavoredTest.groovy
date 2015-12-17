@@ -51,11 +51,6 @@ class FlavoredTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
         project.executeConnectedCheck()

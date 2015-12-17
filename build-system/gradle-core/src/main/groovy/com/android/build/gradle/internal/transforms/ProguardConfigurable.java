@@ -16,27 +16,28 @@
 
 package com.android.build.gradle.internal.transforms;
 
-import com.android.build.transform.api.Transform;
+import com.android.build.api.transform.Transform;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Lists;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
 /**
  * Base class for transforms that consume ProGuard configuration files.
  */
 public abstract class ProguardConfigurable extends Transform {
-    protected final List<Supplier<List<File>>> configurationFiles =
+    protected final List<Supplier<Collection<File>>> configurationFiles =
             Lists.newArrayListWithExpectedSize(3);
 
-    public void configurationFiles(Supplier<List<File>> configFiles) {
+    public void setConfigurationFiles(Supplier<Collection<File>> configFiles) {
         configurationFiles.add(configFiles);
     }
 
     protected List<File> getAllConfigurationFiles() {
         List<File> files = Lists.newArrayList();
-        for (Supplier<List<File>> supplier : configurationFiles) {
+        for (Supplier<Collection<File>> supplier : configurationFiles) {
             files.addAll(supplier.get());
         }
         return files;

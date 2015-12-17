@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.component
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import com.android.build.gradle.integration.common.utils.DeviceHelper
 import com.android.builder.core.BuilderConstants
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
@@ -39,7 +40,7 @@ class NdkComponentVariantTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp())
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create()
 
     @BeforeClass
@@ -63,22 +64,22 @@ model {
     }
     android.productFlavors {
         create("x86") {
-            ndk.abiFilters += "x86"
+            ndk.abiFilters.add("x86")
         }
         create("arm") {
-            ndk.abiFilters += "armeabi-v7a"
-            ndk.abiFilters += "armeabi"
+            ndk.abiFilters.add("armeabi-v7a")
+            ndk.abiFilters.add("armeabi")
         }
         create("mips") {
-            ndk.abiFilters += "mips"
+            ndk.abiFilters.add("mips")
         }
     }
     android.abis {
         create("x86") {
-            CFlags += "-DX86"
+            CFlags.add("-DX86")
         }
         create("armeabi-v7a") {
-            CFlags += "-DARMEABI_V7A"
+            CFlags.add("-DARMEABI_V7A")
         }
     }
 }
@@ -168,7 +169,12 @@ model {
     @Category(DeviceTests.class)
     public void connectedAndroidTest() {
         if (GradleTestProject.DEVICE_PROVIDER_NAME.equals(BuilderConstants.CONNECTED)) {
-            project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "ArmDebugAndroidTest")
+            Collection<String> abis = DeviceHelper.getDeviceAbis()
+            if (abis.contains("x86")) {
+                project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "x86DebugAndroidTest")
+            } else {
+                project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "ArmDebugAndroidTest")
+            }
         } else {
             project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "X86DebugAndroidTest")
         }

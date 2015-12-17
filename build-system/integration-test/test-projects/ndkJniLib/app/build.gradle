@@ -12,8 +12,8 @@ dependencies {
 ext.versionCodes = ["armeabi-v7a":1, "mips":2, "x86":3, "all":0]
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    compileSdkVersion rootProject.latestCompileSdk
+    buildToolsVersion = rootProject.buildToolsVersion
 
     // This actual the app version code. Giving ourselves 100,000 values [0, 99999]
     defaultConfig.versionCode = 123

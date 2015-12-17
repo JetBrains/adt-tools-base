@@ -27,7 +27,8 @@ public interface SyncIssue {
     int SEVERITY_WARNING = 1;
     int SEVERITY_ERROR = 2;
 
-    int TYPE_NONE                     = 0;
+    // Generic error with no data payload, and no expected quick fix in IDE.
+    int TYPE_GENERIC                     = 0;
 
     // data is expiration data
     int TYPE_PLUGIN_OBSOLETE          = 1;
@@ -62,9 +63,10 @@ public interface SyncIssue {
     // data is dependency coordinate
     int TYPE_OPTIONAL_LIB_NOT_FOUND   = 10;
 
-    int TYPE_WRONG_TRANSFORM_SCOPE_ON_LIB = 11;
+    // data is the component that does not support Jack. Data is variant name.
+    int TYPE_JACK_IS_NOT_SUPPORTED    = 11;
 
-    int TYPE_MAX                      = 12; // increment when adding new types.
+    int TYPE_MAX                      = 11; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.

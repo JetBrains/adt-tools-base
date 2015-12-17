@@ -30,7 +30,8 @@ import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
-import com.android.build.gradle.internal.variant.ApkVariantData;
+import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
+import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
@@ -40,21 +41,18 @@ import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
-import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
+import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
-import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
@@ -66,7 +64,6 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * A scope containing data for a specific variant.
@@ -106,13 +103,21 @@ public class VariantScopeImpl implements VariantScope {
     @Nullable
     private AndroidTask<MergeResources> mergeResourcesTask;
     @Nullable
-    private AndroidTask<MergeAssets> mergeAssetsTask;
+    private AndroidTask<MergeSourceSetFolders> mergeAssetsTask;
     private AndroidTask<GenerateBuildConfig> generateBuildConfigTask;
     private AndroidTask<GenerateResValues> generateResValuesTask;
 
     private AndroidTask<Sync> processJavaResourcesTask;
     private AndroidTask<TransformTask> mergeJavaResourcesTask;
+
+    private AndroidTask<MergeSourceSetFolders> mergeJniLibsFolderTask;
+
     private AndroidTask<NdkCompile> ndkCompileTask;
+
+    @Nullable
+    private AndroidTask<DataBindingExportBuildInfoTask> dataBindingExportInfoTask;
+    @Nullable
+    private AndroidTask<DataBindingProcessLayoutsTask> dataBindingProcessLayoutsTask;
 
     /** @see BaseVariantData#javaCompilerTask */
     @Nullable
@@ -205,6 +210,30 @@ public class VariantScopeImpl implements VariantScope {
         this.ndkBuildable = ndkBuildable;
     }
 
+    @Nullable
+    @Override
+    public AndroidTask<DataBindingExportBuildInfoTask> getDataBindingExportInfoTask() {
+        return dataBindingExportInfoTask;
+    }
+
+    @Override
+    public void setDataBindingExportInfoTask(
+            @Nullable AndroidTask<DataBindingExportBuildInfoTask> dataBindingExportInfoTask) {
+        this.dataBindingExportInfoTask = dataBindingExportInfoTask;
+    }
+
+    @Nullable
+    @Override
+    public AndroidTask<DataBindingProcessLayoutsTask> getDataBindingProcessLayoutsTask() {
+        return dataBindingProcessLayoutsTask;
+    }
+
+    @Override
+    public void setDataBindingProcessLayoutsTask(
+            @Nullable AndroidTask<DataBindingProcessLayoutsTask> dataBindingProcessLayoutsTask) {
+        this.dataBindingProcessLayoutsTask = dataBindingProcessLayoutsTask;
+    }
+
     @Override
     @Nullable
     public Collection<File> getNdkSoFolder() {
@@ -242,37 +271,12 @@ public class VariantScopeImpl implements VariantScope {
     }
 
     @Override
-    @NonNull
-    public Set<File> getJniFolders() {
-        assert getNdkSoFolder() != null;
-
-        VariantConfiguration config = getVariantConfiguration();
-        ApkVariantData apkVariantData = (ApkVariantData) variantData;
-        // for now only the project's compilation output.
-        Set<File> set = Sets.newHashSet();
-        set.addAll(getNdkSoFolder());
-        set.add(getRenderscriptLibOutputDir());
-        set.addAll(config.getLibraryJniFolders());
-        set.addAll(config.getJniLibsList());
-
-        if (config.getMergedFlavor().getRenderscriptSupportModeEnabled() != null &&
-                config.getMergedFlavor().getRenderscriptSupportModeEnabled()) {
-            File rsLibs = globalScope.getAndroidBuilder().getSupportNativeLibFolder();
-            if (rsLibs != null && rsLibs.isDirectory()) {
-                set.add(rsLibs);
-            }
-        }
-        return set;
-    }
-
-    @Override
     @Nullable
     public BaseVariantData getTestedVariantData() {
         return variantData instanceof TestVariantData ?
                 (BaseVariantData) ((TestVariantData) variantData).getTestedVariantData() :
                 null;
     }
-
 
     // Precomputed file paths.
 
@@ -428,6 +432,13 @@ public class VariantScopeImpl implements VariantScope {
                         "/assets/" + getVariantConfiguration().getDirName());
     }
 
+    @NonNull
+    @Override
+    public File getMergeNativeLibsOutputDir() {
+        return FileUtils.join(globalScope.getIntermediatesDir(),
+                "/jniLibs/" + getVariantConfiguration().getDirName());
+    }
+
     @Override
     @NonNull
     public File getBuildConfigSourceOutputDir() {
@@ -500,35 +511,18 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     @NonNull
-    public File getAidlIncrementalDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "incremental/aidl/" + getVariantConfiguration().getDirName());
+    public File getIncrementalDir(String name) {
+        return FileUtils.join(
+                globalScope.getIntermediatesDir(),
+                "incremental",
+                name);
     }
 
     @Override
     @NonNull
-    public File getAidlParcelableDir() {
+    public File getPackagedAidlDir() {
         return new File(globalScope.getIntermediatesDir(),
                 DIR_BUNDLES + "/" + getVariantConfiguration().getDirName() + "/aidl");
-    }
-
-    /**
-     * Returns the location of an intermediate directory that can be used by the Jack toolchain
-     * to store states necessary to support incremental compilation.
-     * @return a variant specific directory.
-     */
-    @Override
-    @NonNull
-    public File getJackIncrementalDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "incremental/jack/" + getVariantConfiguration().getDirName());
-    }
-
-    @Override
-    @NonNull
-    public File getJackTempDir() {
-        return new File(globalScope.getIntermediatesDir(),
-                "tmp/jack/" + getVariantConfiguration().getDirName());
     }
 
     @Override
@@ -561,6 +555,33 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     @NonNull
+    public File getClassOutputForDataBinding() {
+        return new File(globalScope.getIntermediatesDir(),
+                "dataBindingInfo/" + getVariantConfiguration().getDirName());
+    }
+
+    @Override
+    @NonNull
+    public File getLayoutInfoOutputForDataBinding() {
+        return new File(globalScope.getIntermediatesDir() + "/data-binding-info/" +
+                getVariantConfiguration().getDirName());
+    }
+
+    @Override
+    @NonNull
+    public File getLayoutFolderOutputForDataBinding() {
+        return new File(globalScope.getIntermediatesDir() + "/data-binding-layout-out/" +
+                getVariantConfiguration().getDirName());
+    }
+
+    @Override
+    @NonNull
+    public File getGeneratedClassListOutputFileForDataBinding() {
+        return new File(getLayoutInfoOutputForDataBinding(), "_generated.txt");
+    }
+
+    @Override
+    @NonNull
     public File getProguardOutputFolder() {
         return new File(globalScope.getBuildDir(), "/" + FD_OUTPUTS + "/mapping/" +
                 getVariantConfiguration().getDirName());
@@ -577,6 +598,21 @@ public class VariantScopeImpl implements VariantScope {
     public File getMappingFile() {
         return new File(globalScope.getOutputsDir(),
                 "/mapping/" + getVariantConfiguration().getDirName() + "/mapping.txt");
+    }
+
+    @NonNull
+    @Override
+    public File getAaptFriendlyManifestOutputFile() {
+            return FileUtils.join(globalScope.getIntermediatesDir(), DIR_BUNDLES,
+                    getVariantConfiguration().getDirName(), "aapt", "AndroidManifest.xml");
+    }
+
+    @NonNull
+    @Override
+    public File getManifestReportFile() {
+        return FileUtils.join(getGlobalScope().getOutputsDir(),
+                "logs", "manifest-merger-" + variantData.getVariantConfiguration().getBaseName()
+                        + "-report.txt");
     }
 
     // Tasks getters/setters.
@@ -694,14 +730,26 @@ public class VariantScopeImpl implements VariantScope {
 
     @Override
     @Nullable
-    public AndroidTask<MergeAssets> getMergeAssetsTask() {
+    public AndroidTask<MergeSourceSetFolders> getMergeAssetsTask() {
         return mergeAssetsTask;
     }
 
     @Override
     public void setMergeAssetsTask(
-            @Nullable AndroidTask<MergeAssets> mergeAssetsTask) {
+            @Nullable AndroidTask<MergeSourceSetFolders> mergeAssetsTask) {
         this.mergeAssetsTask = mergeAssetsTask;
+    }
+
+    @Nullable
+    @Override
+    public AndroidTask<MergeSourceSetFolders> getMergeJniLibFoldersTask() {
+        return mergeJniLibsFolderTask;
+    }
+
+    @Override
+    public void setMergeJniLibFoldersTask(
+            @Nullable AndroidTask<MergeSourceSetFolders> mergeJniLibsFolderTask) {
+        this.mergeJniLibsFolderTask = mergeJniLibsFolderTask;
     }
 
     @Override
@@ -735,23 +783,6 @@ public class VariantScopeImpl implements VariantScope {
     public void setProcessJavaResourcesTask(
             AndroidTask<Sync> processJavaResourcesTask) {
         this.processJavaResourcesTask = processJavaResourcesTask;
-    }
-
-    SignedJarBuilder.IZipEntryFilter packagingOptionsFilter;
-
-    @Override
-    public void setPackagingOptionsFilter(SignedJarBuilder.IZipEntryFilter filter) {
-        this.packagingOptionsFilter = filter;
-    }
-
-    /**
-     * Returns the {@link SignedJarBuilder.IZipEntryFilter} instance
-     * that manages all resources inclusion in the final APK following the rules defined in
-     * {@link com.android.builder.model.PackagingOptions} settings.
-     */
-    @Override
-    public SignedJarBuilder.IZipEntryFilter getPackagingOptionsFilter() {
-        return packagingOptionsFilter;
     }
 
     @Override

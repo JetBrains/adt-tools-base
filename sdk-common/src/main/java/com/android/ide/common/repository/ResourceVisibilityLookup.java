@@ -156,10 +156,18 @@ public abstract class ResourceVisibilityLookup {
     private static String getMapKey(@NonNull AndroidLibrary library) {
         MavenCoordinates c = library.getResolvedCoordinates();
         if (c != null) {
-            return c.getGroupId() + ":" + c.getArtifactId() + ":" + c.getVersion();
+            return c.getGroupId() + ':' + c.getArtifactId() + ':' + c.getVersion();
         } else {
             return library.getBundle().getPath();
         }
+    }
+
+    private static String getMapKey(@NonNull AndroidArtifact artifact) {
+        return artifact.getApplicationId();
+    }
+
+    private static String getMapKey(@NonNull Variant variant) {
+        return getMapKey(variant.getMainArtifact()) + '-' + variant.getName();
     }
 
     /**
@@ -271,7 +279,8 @@ public abstract class ResourceVisibilityLookup {
          */
         @NonNull
         public ResourceVisibilityLookup get(@NonNull AndroidLibrary library) {
-            ResourceVisibilityLookup visibility = mInstances.get(library);
+            String key = getMapKey(library);
+            ResourceVisibilityLookup visibility = mInstances.get(key);
             if (visibility == null) {
                 visibility = new LibraryResourceVisibility(library, mSymbols);
                 if (visibility.isEmpty()) {
@@ -292,7 +301,7 @@ public abstract class ResourceVisibilityLookup {
                         visibility = new MultipleLibraryResourceVisibility(list);
                     }
                 }
-                mInstances.put(library, visibility);
+                mInstances.put(key, visibility);
             }
             return visibility;
         }
@@ -306,7 +315,8 @@ public abstract class ResourceVisibilityLookup {
          */
         @NonNull
         public ResourceVisibilityLookup get(@NonNull AndroidArtifact artifact) {
-            ResourceVisibilityLookup visibility = mInstances.get(artifact);
+            String key = getMapKey(artifact);
+            ResourceVisibilityLookup visibility = mInstances.get(key);
             if (visibility == null) {
                 Collection<AndroidLibrary> dependsOn = artifact.getDependencies().getLibraries();
                 List<ResourceVisibilityLookup> list =
@@ -319,7 +329,7 @@ public abstract class ResourceVisibilityLookup {
                 }
                 int size = list.size();
                 visibility = size == 0 ? NONE : size == 1 ? list.get(0) : new MultipleLibraryResourceVisibility(list);
-                mInstances.put(artifact, visibility);
+                mInstances.put(key, visibility);
             }
             return visibility;
         }
@@ -350,7 +360,8 @@ public abstract class ResourceVisibilityLookup {
         public ResourceVisibilityLookup get(
                 @NonNull AndroidProject project,
                 @NonNull Variant variant) {
-            ResourceVisibilityLookup visibility = mInstances.get(variant);
+            String key = getMapKey(variant);
+            ResourceVisibilityLookup visibility = mInstances.get(key);
             if (visibility == null) {
                 if (isVisibilityAwareModel(project)) {
                     AndroidArtifact artifact = variant.getMainArtifact();
@@ -358,7 +369,7 @@ public abstract class ResourceVisibilityLookup {
                 } else {
                     visibility = NONE;
                 }
-                mInstances.put(variant, visibility);
+                mInstances.put(key, visibility);
             }
             return visibility;
         }

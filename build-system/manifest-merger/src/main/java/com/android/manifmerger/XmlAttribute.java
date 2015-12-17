@@ -40,7 +40,9 @@ import org.w3c.dom.Attr;
  */
 public class XmlAttribute extends XmlNode {
 
+    @NonNull
     private final XmlElement mOwnerElement;
+    @NonNull
     private final Attr mXml;
     @Nullable
     private final AttributeModel mAttributeModel;
@@ -82,6 +84,7 @@ public class XmlAttribute extends XmlNode {
     /**
      * Returns the attribute's name, providing isolation from details like namespaces handling.
      */
+    @NonNull
     @Override
     public NodeName getName() {
         return XmlNode.unwrapName(mXml);
@@ -90,6 +93,7 @@ public class XmlAttribute extends XmlNode {
     /**
      * Returns the attribute's value
      */
+    @NonNull
     public String getValue() {
         return mXml.getValue();
     }
@@ -98,6 +102,7 @@ public class XmlAttribute extends XmlNode {
      * Returns a display friendly identification string that can be used in machine and user
      * readable messages.
      */
+    @NonNull
     @Override
     public NodeKey getId() {
         // (Id of the parent element)@(my name)
@@ -109,7 +114,7 @@ public class XmlAttribute extends XmlNode {
     @Override
     public SourcePosition getPosition() {
         try {
-            return mOwnerElement.getDocument().getNodePosition(this);
+            return XmlDocument.getNodePosition(this);
         } catch(Exception e) {
             return SourcePosition.UNKNOWN;
         }
@@ -126,18 +131,19 @@ public class XmlAttribute extends XmlNode {
         return mAttributeModel;
     }
 
+    @NonNull
     XmlElement getOwnerElement() {
         return mOwnerElement;
     }
 
-    void mergeInHigherPriorityElement(XmlElement higherPriorityElement,
-            MergingReport.Builder mergingReport) {
+    void mergeInHigherPriorityElement(@NonNull XmlElement higherPriorityElement,
+            @NonNull MergingReport.Builder mergingReport) {
 
         // does the higher priority has the same attribute as myself ?
         Optional<XmlAttribute> higherPriorityAttributeOptional =
                 higherPriorityElement.getAttribute(getName());
 
-        AttributeOperationType attributeOperationType =
+        @NonNull AttributeOperationType attributeOperationType =
                 higherPriorityElement.getAttributeOperationType(getName());
 
         if (higherPriorityAttributeOptional.isPresent()) {
@@ -184,8 +190,8 @@ public class XmlAttribute extends XmlNode {
      * @param operationType user operation type optionally requested by the user.
      */
     private void handleBothAttributePresent(
-            MergingReport.Builder report,
-            XmlAttribute higherPriority,
+            @NonNull MergingReport.Builder report,
+            @NonNull XmlAttribute higherPriority,
             AttributeOperationType operationType) {
 
         // handles tools: attribute separately.
@@ -229,7 +235,7 @@ public class XmlAttribute extends XmlNode {
      * @param higherPriority the higherPriority attribute
      */
     private void handleBothToolsAttributePresent(
-            XmlAttribute higherPriority) {
+            @NonNull XmlAttribute higherPriority) {
 
         // do not merge tools:node attributes, the higher priority one wins.
         if (getName().getLocalName().equals(NodeOperationType.NODE_LOCAL_NAME)) {
@@ -237,8 +243,8 @@ public class XmlAttribute extends XmlNode {
         }
 
         // everything else should be merged, duplicates should be eliminated.
-        Splitter splitter = Splitter.on(',');
-        ImmutableSet.Builder<String> targetValues = ImmutableSet.builder();
+        @NonNull Splitter splitter = Splitter.on(',');
+        @NonNull ImmutableSet.Builder<String> targetValues = ImmutableSet.builder();
         targetValues.addAll(splitter.split(higherPriority.getValue()));
         targetValues.addAll(splitter.split(getValue()));
         higherPriority.getXml().setValue(Joiner.on(',').join(targetValues.build()));
@@ -252,8 +258,9 @@ public class XmlAttribute extends XmlNode {
      * @return the merged value that should be stored in the attribute or null if nothing should
      * be stored.
      */
-    private String mergeThisAndDefaultValue(MergingReport.Builder mergingReport,
-            XmlElement implicitNode) {
+    @Nullable
+    private String mergeThisAndDefaultValue(@NonNull MergingReport.Builder mergingReport,
+            @NonNull XmlElement implicitNode) {
 
         String mergedValue = getValue();
         if (mAttributeModel == null || mAttributeModel.getDefaultValue() == null
@@ -291,7 +298,7 @@ public class XmlAttribute extends XmlNode {
      * @param implicitNode the lower priority node where the implicit attribute value resides.
      */
     void mergeWithLowerPriorityDefaultValue(
-            MergingReport.Builder mergingReport, XmlElement implicitNode) {
+            @NonNull MergingReport.Builder mergingReport, @NonNull XmlElement implicitNode) {
 
         if (mAttributeModel == null || mAttributeModel.getDefaultValue() == null
                 || !mAttributeModel.getMergingPolicy().shouldMergeDefaultValues()) {
@@ -303,7 +310,7 @@ public class XmlAttribute extends XmlNode {
             mergingReport.getActionRecorder().recordImplicitRejection(this, implicitNode);
             return;
         }
-        String mergedValue = mAttributeModel.getMergingPolicy().merge(
+        @Nullable String mergedValue = mAttributeModel.getMergingPolicy().merge(
                 getValue(), mAttributeModel.getDefaultValue());
         if (mergedValue == null) {
             addIllegalImplicitOverrideMessage(mergingReport, mAttributeModel, implicitNode);
@@ -331,8 +338,8 @@ public class XmlAttribute extends XmlNode {
     }
 
     private void addConflictingValueMessage(
-            MergingReport.Builder report,
-            XmlAttribute higherPriority) {
+            @NonNull MergingReport.Builder report,
+            @NonNull XmlAttribute higherPriority) {
 
         Actions.AttributeRecord attributeRecord = report.getActionRecorder()
                 .getAttributeCreationRecord(higherPriority);
@@ -375,16 +382,16 @@ public class XmlAttribute extends XmlNode {
                 MergingReport.Record.Severity.ERROR, error);
     }
 
-    void addMessage(MergingReport.Builder report,
-            MergingReport.Record.Severity severity,
-            String message) {
+    void addMessage(@NonNull MergingReport.Builder report,
+            @NonNull MergingReport.Record.Severity severity,
+            @NonNull String message) {
         addMessage(report, getPosition(), severity, message);
     }
 
-    void addMessage(MergingReport.Builder report,
-            SourcePosition position,
-            MergingReport.Record.Severity severity,
-            String message) {
+    void addMessage(@NonNull MergingReport.Builder report,
+            @NonNull SourcePosition position,
+            @NonNull MergingReport.Record.Severity severity,
+            @NonNull String message) {
         report.addMessage(
                 new SourceFilePosition(getOwnerElement().getDocument().getSourceFile(), position),
                 severity, message);

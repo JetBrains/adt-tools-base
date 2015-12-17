@@ -36,7 +36,7 @@ public class StlNativeToolSpecification extends AbstractNativeToolSpecification 
     private Boolean isStatic;
     private NativePlatform platform;
 
-    StlNativeToolSpecification(NdkHandler ndkHandler, String stl, NativePlatform platform) {
+    public StlNativeToolSpecification(NdkHandler ndkHandler, String stl, NativePlatform platform) {
         this.ndkHandler = ndkHandler;
         this.stl = stl;
         this.stlName = stl.equals("system") ? stl : stl.substring(0, stl.indexOf('_'));

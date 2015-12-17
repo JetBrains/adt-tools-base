@@ -34,7 +34,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  */
 @Category(SmokeTests.class)
 class UnitTestingComponentTest {
-    static AndroidTestApp app = new HelloWorldApp();
+    static AndroidTestApp app = HelloWorldApp.noBuildFile();
     static {
         app.addFile(new TestSourceFile("src/test/java/com/android/tests", "UnitTest.java", """
 package com.android.tests;
@@ -66,7 +66,7 @@ public class UnitTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(app)
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .withoutNdk()
             .create();
 
@@ -78,7 +78,7 @@ apply plugin: "com.android.model.application"
 model {
     android {
         // We need an android.jar that contains Java 6 bytecode, since Jenkins runs on Java 6.
-        compileSdkVersion = 19
+        compileSdkVersion = $GradleTestProject.LAST_JAVA6_SDK_VERSION
         buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
 
         testOptions.unitTests.returnDefaultValues = true

@@ -5,8 +5,8 @@ buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 apply plugin: 'com.android.application'
 
 android {
-  compileSdkVersion 21
-  buildToolsVersion = rootProject.ext.buildToolsVersion
+  compileSdkVersion rootProject.latestCompileSdk
+  buildToolsVersion = rootProject.buildToolsVersion
 
   defaultConfig {
     buildConfigField "String", "FOO", "\"foo\""
@@ -35,10 +35,11 @@ android {
   }
 
   lintOptions {
-    abortOnError !rootProject.ext.useJack
+    abortOnError !rootProject.useJack
   }
 }
 
 dependencies {
+    compile 'com.android.support:support-v4:20.0.0'
     androidTestCompile 'junit:junit:4.12'
 }

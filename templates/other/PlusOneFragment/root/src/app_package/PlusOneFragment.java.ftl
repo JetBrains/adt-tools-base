@@ -1,6 +1,6 @@
 package ${packageName};
 
-<#if includeCallbacks>import android.app.Activity;</#if>
+<#if includeCallbacks>import android.content.Context;</#if>
 <#if includeCallbacks>import android.net.Uri;</#if>
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -112,12 +112,12 @@ public class ${className} extends Fragment {
     }
 
     @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        try {
-            mListener = (OnFragmentInteractionListener) activity;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof OnFragmentInteractionListener) {
+            mListener = (OnFragmentInteractionListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
                     + " must implement OnFragmentInteractionListener");
         }
     }
@@ -140,7 +140,7 @@ public class ${className} extends Fragment {
      */
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
-        public void onFragmentInteraction(Uri uri);
+        void onFragmentInteraction(Uri uri);
     }
 </#if>
 

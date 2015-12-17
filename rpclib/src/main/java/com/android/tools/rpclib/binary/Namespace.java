@@ -15,6 +15,7 @@
  */
 package com.android.tools.rpclib.binary;
 
+import com.android.tools.rpclib.schema.Entity;
 import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,14 +27,14 @@ import java.util.Map;
  *
  */
 public class Namespace {
-  private static Map<BinaryID, BinaryClass> registry = new HashMap<BinaryID, BinaryClass>();
+  private static Map<String, BinaryClass> registry = new HashMap<String, BinaryClass>();
 
   @NotNull private static final Logger LOG = Logger.getInstance(Namespace.class);
-  public static void register(BinaryID id, BinaryClass creator) {
-    registry.put(id, creator);
+  public static void register(BinaryClass creator) {
+    registry.put(creator.entity().signature(), creator);
   }
 
-  public static BinaryClass lookup(BinaryID id) {
-    return registry.get(id);
+  public static BinaryClass lookup(Entity entity) {
+    return registry.get(entity.signature());
   }
 }

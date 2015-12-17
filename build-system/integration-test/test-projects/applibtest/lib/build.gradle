@@ -3,8 +3,8 @@ apply plugin: 'com.android.library'
 apply from: "../../commonLocalRepo.gradle"
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    compileSdkVersion rootProject.latestCompileSdk
+    buildToolsVersion = rootProject.buildToolsVersion
 
     defaultConfig {
         testApplicationId = "com.android.tests.testprojecttest.testlib"

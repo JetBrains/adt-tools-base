@@ -26,6 +26,7 @@ import com.google.common.io.ByteStreams;
 
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
 import org.gradle.api.tasks.incremental.InputFileDetails;
@@ -46,6 +47,7 @@ import java.util.jar.JarFile;
  * Extract all packaged jar files java resources into a directory. Each jar file will be extracted
  * in a jar specific folder, and only java resources are extracted.
  */
+@ParallelizableTask
 public class ExtractJavaResourcesTask extends DefaultAndroidTask {
 
     // the fact we use a SET is not right, we should have an ordered list of jars...

@@ -16,14 +16,11 @@
 
 package com.android.build.gradle.internal;
 
+import static com.android.SdkConstants.FD_JNI;
 import static com.android.SdkConstants.FD_RENDERSCRIPT;
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
 import static com.android.SdkConstants.FN_CLASSES_JAR;
 import static com.android.SdkConstants.LIBS_FOLDER;
-import static com.android.build.transform.api.ScopedContent.ContentType.CLASSES;
-import static com.android.build.transform.api.ScopedContent.ContentType.RESOURCES;
-import static com.android.build.transform.api.ScopedContent.Scope.PROJECT;
-import static com.android.build.transform.api.ScopedContent.Scope.PROJECT_LOCAL_DEPS;
 import static com.android.builder.dependency.LibraryBundle.FN_PROGUARD_TXT;
 
 import com.android.SdkConstants;
@@ -33,15 +30,14 @@ import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.AndroidTask;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.tasks.FilteredJarCopyTask;
+import com.android.build.gradle.internal.tasks.LibraryJarTransform;
+import com.android.build.gradle.internal.tasks.LibraryJniLibsTransform;
 import com.android.build.gradle.internal.tasks.MergeFileTask;
-import com.android.build.gradle.internal.tasks.SingleFileCopyTask;
-import com.android.build.gradle.internal.transforms.MultiStreamJarTransform;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibVariantOutputData;
@@ -49,13 +45,10 @@ import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.VariantHelper;
 import com.android.build.gradle.tasks.ExtractAnnotations;
 import com.android.build.gradle.tasks.MergeResources;
-import com.android.build.transform.api.ScopedContent;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Scope;
-import com.android.build.transform.api.Transform;
+import com.android.build.api.transform.QualifiedContent.Scope;
+import com.android.build.api.transform.Transform;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
-import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryBundle;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.dependency.ManifestDependency;
@@ -67,9 +60,6 @@ import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
@@ -79,12 +69,12 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.Sync;
-import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.bundling.Zip;
-import org.gradle.api.tasks.bundling.ZipEntryCompression;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.tooling.BuildException;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
+
+import android.databinding.tool.DataBindingBuilder;
 
 import java.io.File;
 import java.util.Collection;
@@ -104,11 +94,12 @@ public class LibraryTaskManager extends TaskManager {
     public LibraryTaskManager (
             Project project,
             AndroidBuilder androidBuilder,
+            DataBindingBuilder dataBindingBuilder,
             AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
-        super(project, androidBuilder, extension, sdkHandler, dependencyManager, toolingRegistry);
+        super(project, androidBuilder, dataBindingBuilder, extension, sdkHandler,dependencyManager, toolingRegistry);
     }
 
     @Override
@@ -120,8 +111,9 @@ public class LibraryTaskManager extends TaskManager {
         final CoreBuildType buildType = variantConfig.getBuildType();
 
         final VariantScope variantScope = variantData.getScope();
+        GlobalScope globalScope = variantScope.getGlobalScope();
 
-        final File intermediatesDir = variantScope.getGlobalScope().getIntermediatesDir();
+        final File intermediatesDir = globalScope.getIntermediatesDir();
         final Collection<String> variantDirectorySegments = variantConfig.getDirectorySegments();
         final File variantBundleDir = FileUtils.join(
                 intermediatesDir,
@@ -258,10 +250,10 @@ public class LibraryTaskManager extends TaskManager {
                     }
                 });
 
-        // package the prebuilt native libs into the bundle folder
-        final Sync packageJniLibs = project.getTasks().create(
-                variantScope.getTaskName("package", "JniLibs"),
-                Sync.class);
+        // Add data binding tasks if enabled
+        if (extension.getDataBinding().isEnabled()) {
+            createDataBindingTasks(tasks, variantScope);
+        }
 
         // Add dependencies on NDK tasks if NDK plugin is applied.
         if (isNdkTaskNeeded) {
@@ -271,34 +263,20 @@ public class LibraryTaskManager extends TaskManager {
                         @Override
                         public Void call() throws Exception {
                             createNdkTasks(variantScope);
-                            packageJniLibs.dependsOn(variantData.ndkCompileTask);
-                            packageJniLibs.from(variantData.ndkCompileTask.getSoFolder())
-                                    .include("**/*.so");
                             return null;
                         }
                     });
-        } else {
-            if (variantData.compileTask != null) {
-                variantData.compileTask.dependsOn(getNdkBuildable(variantData));
-            } else {
-                variantScope.getCompileTask().dependsOn(tasks, getNdkBuildable(variantData));
-            }
-            packageJniLibs.dependsOn(getNdkBuildable(variantData));
-            packageJniLibs.from(variantScope.getNdkSoFolder())
-                    .include("**/*.so");
         }
         variantScope.setNdkBuildable(getNdkBuildable(variantData));
+
+        // merge jni libs.
+        createMergeJniLibFoldersTasks(tasks, variantScope);
 
         Sync packageRenderscript = ThreadRecorder.get().record(
                 ExecutionType.LIB_TASK_MANAGER_CREATE_PACKAGING_TASK,
                 new Recorder.Block<Sync>() {
                     @Override
                     public Sync call() throws Exception {
-                        // package from 2 sources.
-                        packageJniLibs.from(variantConfig.getJniLibsList())
-                                .include("**/*.so");
-                        packageJniLibs.into(new File(variantBundleDir, "jni"));
-
                         // package the renderscript header files files into the bundle folder
                         Sync packageRenderscript = project.getTasks().create(
                                 variantScope.getTaskName("package", "Renderscript"), Sync.class);
@@ -335,12 +313,11 @@ public class LibraryTaskManager extends TaskManager {
                 variantScope.getTaskName("copy", "Lint"), Copy.class);
         lintCopy.dependsOn(LINT_COMPILE);
         lintCopy.from(new File(
-                variantScope.getGlobalScope().getIntermediatesDir(),
+                globalScope.getIntermediatesDir(),
                 "lint/lint.jar"));
         lintCopy.into(variantBundleDir);
 
         final Zip bundle = project.getTasks().create(variantScope.getTaskName("bundle"), Zip.class);
-
         if (variantData.getVariantDependency().isAnnotationsPresent()) {
             libVariantData.generateAnnotationsTask =
                     createExtractAnnotations(project, variantData);
@@ -379,8 +356,8 @@ public class LibraryTaskManager extends TaskManager {
                             if (!difference.isEmpty()) {
                                 String scopes = difference.toString();
                                 androidBuilder.getErrorReporter().handleSyncError(
-                                        scopes,
-                                        SyncIssue.TYPE_WRONG_TRANSFORM_SCOPE_ON_LIB,
+                                        "",
+                                        SyncIssue.TYPE_GENERIC,
                                         String.format("Transforms with scopes '%s' cannot be applied to library projects.",
                                                 scopes));
                             }
@@ -396,156 +373,53 @@ public class LibraryTaskManager extends TaskManager {
                         // ----- Minify next -----
                         if (buildType.isMinifyEnabled()) {
                             createMinifyTransform(tasks, variantScope, false);
-
-                            // we're going to get a single stream with all the stuff we need.
-                            // Find it.
-                            TransformStream stream = transformManager.getSingleStream(
-                                    new TransformManager.StreamFilter() {
-                                        @Override
-                                        public boolean accept(
-                                                @NonNull Set<ContentType> types,
-                                                @NonNull Set<Scope> scopes) {
-                                            return scopes.equals(
-                                                    TransformManager.SCOPE_FULL_LIBRARY) &&
-                                                    types.equals(TransformManager.CONTENT_JARS);
-                                        }
-                                    });
-
-                            // jar/copy it.
-                            handleMainClassJar(
-                                    stream,
-                                    ImmutableList.<TransformStream>of(),
-                                    variantScope,
-                                    variantConfig,
-                                    variantBundleDir,
-                                    libVariantData,
-                                    bundle);
-                        } else {
-                            // get all the streams we need to bundle.
-                            // Look for the class and resources separately. What matters is whether
-                            // the classes are together or not (the resources are always merged so
-                            // we always have a single res stream.
-                            // Note that we could really get any type of streams here due to
-                            // third party transforms.
-                            List<TransformStream> classStreams = transformManager.getStreams(
-                                    new TransformManager.StreamFilter() {
-                                        @Override
-                                        public boolean accept(
-                                                @NonNull Set<ContentType> types,
-                                                @NonNull Set<Scope> scopes) {
-                                            return (scopes.contains(PROJECT) ||
-                                                    scopes.contains(PROJECT_LOCAL_DEPS)) &&
-                                                    types.contains(CLASSES);
-                                        }
-                                    });
-                            List<TransformStream> resStreams = transformManager.getStreams(
-                                    new TransformManager.StreamFilter() {
-                                        @Override
-                                        public boolean accept(
-                                                @NonNull Set<ContentType> types,
-                                                @NonNull Set<Scope> scopes) {
-                                            return (scopes.contains(PROJECT) ||
-                                                    scopes.contains(PROJECT_LOCAL_DEPS)) &&
-                                                    types.contains(RESOURCES);
-                                        }
-                                    });
-
-                            if (classStreams.size() == 1) {
-                                // all code is combined, create a single jar task, using all the
-                                // streams, or if the output is already a jar, just copy it where
-                                // it needs to go.
-                                handleMainClassJar(
-                                        Iterables.getOnlyElement(classStreams),
-                                        resStreams,
-                                        variantScope,
-                                        variantConfig,
-                                        variantBundleDir,
-                                        libVariantData,
-                                        bundle);
-
-                            } else {
-                                // looks like the code and the libraries are separate, we're going
-                                // to jar them separately, and package the local jars in the
-                                // libs folder.
-                                // All the merged resources will go in with the main jar file.
-
-                                // 1. find the main code stream.
-                                TransformStream mainClassStreams = transformManager
-                                        .getSingleStream(
-                                                new TransformManager.StreamFilter() {
-                                                    @Override
-                                                    public boolean accept(
-                                                            @NonNull Set<ContentType> types,
-                                                            @NonNull Set<Scope> scopes) {
-                                                        return scopes.contains(PROJECT) &&
-                                                                types.contains(CLASSES);
-                                                    }
-                                                });
-
-                                // jar/copy it.
-                                handleMainClassJar(
-                                        mainClassStreams,
-                                        resStreams,
-                                        variantScope,
-                                        variantConfig,
-                                        variantBundleDir,
-                                        libVariantData,
-                                        bundle);
-
-                                // 2. now handle the remaining local jars as a transform
-                                // to more easily create a bunch of jars.
-
-                                // Create the sync task first that will copy from the jars temp
-                                // location to the final location, taking care of removing
-                                // obsolete jars.
-                                Sync syncLocalJars = project.getTasks().create(
-                                        variantScope.getTaskName(
-                                                "sync",
-                                                "LocalJar"),
-                                        Sync.class);
-                                syncLocalJars.into(new File(variantBundleDir, LIBS_FOLDER));
-                                bundle.dependsOn(syncLocalJars);
-
-                                transformManager.addTransform(
-                                        tasks, variantScope,
-                                        new MultiStreamJarTransform());
-
-                                // get the resulting stream to find the location.
-                                List<TransformStream> localClassStreams = transformManager
-                                        .getStreams(
-                                                new TransformManager.StreamFilter() {
-                                                    @Override
-                                                    public boolean accept(
-                                                            @NonNull Set<ContentType> types,
-                                                            @NonNull Set<Scope> scopes) {
-                                                        return scopes.contains(PROJECT_LOCAL_DEPS)
-                                                                &&
-                                                                types.contains(CLASSES);
-                                                    }
-                                                });
-
-                                // update the sync task with source and dependencies.
-                                // there should be only one stream anyway.
-                                for (TransformStream stream : localClassStreams) {
-                                    syncLocalJars.from(stream.getFiles().get());
-                                    syncLocalJars.dependsOn(stream.getDependencies());
-                                }
-                            }
                         }
+
+                        // now add a transform that will take all the class/res and package them
+                        // into the main and secondary jar files.
+                        // This transform technically does not use its transform output, but that's
+                        // ok. We use the transform mechanism to get incremental data from
+                        // the streams.
+
+                        String packageName = variantConfig.getPackageFromManifest();
+                        if (packageName == null) {
+                            throw new BuildException("Failed to read manifest", null);
+                        }
+
+                        LibraryJarTransform transform = new LibraryJarTransform(
+                                new File(variantBundleDir, FN_CLASSES_JAR),
+                                new File(variantBundleDir, LIBS_FOLDER),
+                                packageName,
+                                getExtension().getPackageBuildConfig());
+                        excludeDataBindingClassesIfNecessary(variantScope, transform);
+
+                        AndroidTask<TransformTask> jarPackagingTask = transformManager
+                                .addTransform(tasks, variantScope, transform);
+                        bundle.dependsOn(jarPackagingTask.getName());
+
+                        // now add a transform that will take all the native libs and package
+                        // them into the libs folder of the bundle.
+                        LibraryJniLibsTransform jniTransform = new LibraryJniLibsTransform(
+                                new File(variantBundleDir, FD_JNI));
+                        AndroidTask<TransformTask> jniPackagingTask = transformManager
+                                .addTransform(tasks, variantScope, jniTransform);
+                        bundle.dependsOn(jniPackagingTask.getName());
 
                         return null;
                     }
                 });
 
-        bundle.dependsOn(packageRes.getName(), packageRenderscript, lintCopy, packageJniLibs,
+        bundle.dependsOn(packageRes.getName(), packageRenderscript, lintCopy,
                 mergeProGuardFileTask);
         bundle.dependsOn(variantScope.getNdkBuildable());
 
         bundle.setDescription("Assembles a bundle containing the library in " +
                 variantConfig.getFullName() + ".");
-        bundle.setDestinationDir(new File(variantScope.getGlobalScope().getOutputsDir(), "aar"));
-        bundle.setArchiveName(project.getName() + "-" + variantConfig.getBaseName() + "."
-                + BuilderConstants.EXT_LIB_ARCHIVE);
+        bundle.setDestinationDir(
+                new File(globalScope.getOutputsDir(), BuilderConstants.EXT_LIB_ARCHIVE));
+        bundle.setArchiveName(globalScope.getProjectBaseName()
+                + "-" + variantConfig.getBaseName()
+                + "." + BuilderConstants.EXT_LIB_ARCHIVE);
         bundle.setExtension(BuilderConstants.EXT_LIB_ARCHIVE);
         bundle.from(variantBundleDir);
         bundle.from(FileUtils.join(intermediatesDir,
@@ -628,24 +502,6 @@ public class LibraryTaskManager extends TaskManager {
             public boolean isOptional() {
                 return false;
             }
-
-            @NonNull
-            @Override
-            public List<JarDependency> getLocalDependencies() {
-                // because the test artifact already directly depends on the local jars
-                // we make this fake AndroidLibrary not include them, otherwise
-                // they'll be there twice.
-                return ImmutableList.of();
-            }
-
-            @NonNull
-            @Override
-            public List<File> getLocalJars() {
-                // because the test artifact already directly depends on the local jars
-                // we make this fake AndroidLibrary not include them, otherwise
-                // they'll be there twice.
-                return ImmutableList.of();
-            }
         });
 
         ThreadRecorder.get().record(ExecutionType.LIB_TASK_MANAGER_CREATE_LINT_TASK,
@@ -658,152 +514,33 @@ public class LibraryTaskManager extends TaskManager {
                 });
     }
 
-    private void handleMainClassJar(
-            TransformStream classStream,
-            List<TransformStream> resStreams,
-            VariantScope variantScope,
-            GradleVariantConfiguration variantConfig,
-            File variantBundleDir,
-            LibraryVariantData libVariantData,
-            Zip bundle) {
-        ScopedContent.Format format = classStream.getFormat();
-        switch (format) {
-            case SINGLE_FOLDER:
-                // jar the content.
-                Jar jar = createMainJarTask(
-                        ImmutableList.of(classStream),
-                        resStreams,
-                        variantScope,
-                        variantConfig,
-                        variantBundleDir,
-                        libVariantData);
-                bundle.dependsOn(jar);
-                break;
-            case MULTI_FOLDER:
-                throw new RuntimeException("Unsupported ScopedContent.Format value: " + format.name());
-            case JAR:
-                // sync the content. We need to rewrite the jar file to remove the R class,
-                // so we cannot use a simple copy task.
-                String packageName = variantConfig.getPackageFromManifest();
-                if (packageName == null) {
-                    throw new BuildException("Failed to read manifest", null);
-                }
-
-                packageName = packageName.replace(".", "/");
-                List<String> excludes = Lists.newArrayListWithExpectedSize(5);
-
-                // these must be regexp to match the zip entries
-                excludes.add(packageName + "/R.class");
-                excludes.add(packageName + "/R\\$(.*).class");
-                if (!getExtension().getPackageBuildConfig()) {
-                    excludes.add(packageName + "/Manifest.class");
-                    excludes.add(packageName + "/Manifest\\$(.*).class");
-                    excludes.add(packageName + "/BuildConfig.class");
-                }
-
-                FilteredJarCopyTask copyTask = project.getTasks().create(
-                        variantScope.getTaskName("copyMain", "Jar"),
-                        FilteredJarCopyTask.class);
-                copyTask.setInputFile(Iterables.getOnlyElement(
-                        classStream.getFiles().get()));
-                copyTask.setOutputFile(
-                        new File(variantBundleDir, FN_CLASSES_JAR));
-                copyTask.setExcludes(excludes);
-                copyTask.dependsOn(classStream.getDependencies());
-                bundle.dependsOn(copyTask);
-                break;
-            default:
-                throw new RuntimeException("Unsupported ScopedContent.Format value: " + format.name());
+    private void excludeDataBindingClassesIfNecessary(final VariantScope variantScope,
+            LibraryJarTransform transform) {
+        if (!extension.getDataBinding().isEnabled()) {
+            return;
         }
-    }
-
-    @NonNull
-    private Jar createMainJarTask(
-            @NonNull List<TransformStream> streamList1,
-            @NonNull List<TransformStream> streamList2,
-            @NonNull VariantScope variantScope,
-            @NonNull GradleVariantConfiguration variantConfig,
-            @NonNull File variantBundleDir,
-            @NonNull LibraryVariantData libVariantData) {
-        Jar jarTask = createJarTask(streamList1,
-                streamList2,
-                variantScope,
-                "ClassesJar",
-                variantBundleDir,
-                FN_CLASSES_JAR);
-
-        String packageName = variantConfig.getPackageFromManifest();
-        if (packageName == null) {
-            throw new BuildException("Failed to read manifest", null);
-        }
-
-        packageName = packageName.replace(".", "/");
-
-        jarTask.exclude(packageName + "/R.class");
-        jarTask.exclude(packageName + "/R$*.class");
-        if (!getExtension().getPackageBuildConfig()) {
-            jarTask.exclude(packageName + "/Manifest.class");
-            jarTask.exclude(packageName + "/Manifest$*.class");
-            jarTask.exclude(packageName + "/BuildConfig.class");
-        }
-
-        if (libVariantData.generateAnnotationsTask != null) {
-            // In case extract annotations strips out private typedef annotation classes
-            jarTask.dependsOn(libVariantData.generateAnnotationsTask);
-        }
-
-        return jarTask;
-    }
-
-    @NonNull
-    private Jar createJarTask(
-            @NonNull List<TransformStream> streamList1,
-            @NonNull List<TransformStream> streamList2,
-            @NonNull VariantScope variantScope,
-            @NonNull String suffix,
-            @NonNull File destinationDir,
-            @NonNull String jarName) {
-        Jar jar = project.getTasks().create(
-                variantScope.getTaskName("package", suffix), Jar.class);
-        jar.setEntryCompression(ZipEntryCompression.STORED);
-
-        for (TransformStream stream : Iterables.concat(streamList1, streamList2)) {
-            if (stream.getFormat() == ScopedContent.Format.JAR || stream.getFormat() == ScopedContent.Format.MULTI_FOLDER) {
-                throw new RuntimeException("Cannot create jar task for stream: " + stream);
-            }
-
-            jar.from(stream.getFiles().get());
-            jar.dependsOn(stream.getDependencies());
-        }
-
-        jar.setDestinationDir(destinationDir);
-        jar.setArchiveName(jarName);
-
-        return jar;
+        transform.addExcludeListProvider(
+                new LibraryJarTransform.ExcludeListProvider() {
+                    @Nullable
+                    @Override
+                    public List<String> getExcludeList() {
+                        final File excludeFile = variantScope.getVariantData().getType()
+                                .isExportDataBindingClassList() ? variantScope
+                                .getGeneratedClassListOutputFileForDataBinding() : null;
+                        return dataBindingBuilder.getJarExcludeList(
+                                variantScope.getVariantData().getLayoutXmlProcessor(), excludeFile
+                        );
+                    }
+                });
     }
 
     @NonNull
     @Override
-    protected Set<Scope> computeExtractResAndJavaFromJarScopes(
-            @NonNull VariantScope variantScope) {
+    protected Set<Scope> getResMergingScopes(@NonNull VariantScope variantScope) {
         if (variantScope.getTestedVariantData() != null) {
-            // if it's the test app for a library, behave like an app rather than a library.
-            return ApplicationTaskManager.computeExtractResAndJavaFromJarScopes2(variantScope);
+            return TransformManager.SCOPE_FULL_PROJECT;
         }
-
-        // otherwise always extract everything so that we can merge the local jars anyway.
-        return Sets.immutableEnumSet(PROJECT_LOCAL_DEPS);
-    }
-
-    @NonNull
-    @Override
-    protected Set<Scope> computeExtractResFromJarScopes(@NonNull VariantScope variantScope) {
-        if (variantScope.getTestedVariantData() != null) {
-            // if it's the test app for a library, behave like an app rather than a library.
-            return ApplicationTaskManager.computeExtractResFromJarScopes(variantScope, this);
-        }
-
-        return TransformManager.EMPTY_SCOPES;
+        return TransformManager.SCOPE_FULL_LIBRARY;
     }
 
     public ExtractAnnotations createExtractAnnotations(
@@ -851,7 +588,6 @@ public class LibraryTaskManager extends TaskManager {
         });
 
         return task;
-
     }
 
 

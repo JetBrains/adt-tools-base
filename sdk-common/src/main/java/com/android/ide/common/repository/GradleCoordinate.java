@@ -168,6 +168,11 @@ public class GradleCoordinate {
             return o instanceof PaddedNumberComponent
                     && ((PaddedNumberComponent) o).mString.equals(mString);
         }
+
+        @Override
+        public int hashCode() {
+            return mString.hashCode();
+        }
     }
 
     public static class StringComponent extends RevisionComponent {
@@ -189,7 +194,7 @@ public class GradleCoordinate {
 
         @Override
         public boolean isPreview() {
-            return mString.startsWith(PREVIEW_ID);
+            return mString.startsWith(PREVIEW_ID) || mString.equals("SNAPSHOT");
         }
 
         @Override

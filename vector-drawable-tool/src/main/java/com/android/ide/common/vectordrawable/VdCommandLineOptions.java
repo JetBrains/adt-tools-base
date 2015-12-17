@@ -31,9 +31,16 @@ public class VdCommandLineOptions {
 
     private static final String OPTION_OUT = "-out";
 
+    private static final String OPTION_FORCE_WIDTH_DP = "-widthDp";
+
+    private static final String OPTION_FORCE_HEIGHT_DP = "-heightDp";
+
+    private static final String OPTION_ADD_HEADER = "-addHeader";
+
     public static final String COMMAND_LINE_OPTION = "Converts SVG files to VectorDrawable XML files.\n"
             + "Displays VectorDrawables.\n"
-            + "Usage: [-c] [-d] [-in <file or directory>] [-out <directory>]\n"
+            + "Usage: [-c] [-d] [-in <file or directory>] [-out <directory>] [-widthDp <size>] "
+            + "[-heightDp <size>] [-addHeader]\n"
             + "Options:\n"
             + "  -in <file or directory>:  If -c is specified, Converts the given .svg file \n"
             + "                            to VectorDrawable XML, or if a directory is specified,\n"
@@ -47,8 +54,19 @@ public class VdCommandLineOptions {
             + "  -c                        If present, SVG files are converted to VectorDrawable XML\n"
             + "                            and written out.\n"
             + "  -d                        Displays the given VectorDrawable(s), or if -c is\n"
-            + "                            specified the results of the conversion.\n";
-
+            + "                            specified the results of the conversion.\n"
+            + "  -widthDp <size>           Force the width to be <size> dp, <size> must be integer\n"
+            + "  -heightDp <size>          Force the height to be <size> dp, <size> must be integer\n"
+            + "  -addHeader                Add AOSP header to the top of the generated XML file\n"
+            + "Examples:                   \n"
+            + "  1) Convert SVG files from <directory> into XML files at the same directory"
+            + " and visualize the XML file results:\n"
+            + "  vd-tool -c -d -in <directory> \n"
+            + "  2) Convert SVG file and visualize the XML file results:\n"
+            + "  vd-tool -c -d -in file.svg \n"
+            + "  3) Display VectorDrawable's XML files from <directory>:\n"
+            + "  vd-tool -d -in <directory> \n"
+            ;
 
     private boolean mConvertSvg;
 
@@ -57,6 +75,24 @@ public class VdCommandLineOptions {
     private File mOutputDir;
 
     private boolean mDisplayXml;
+
+    public int getForceWidth() {
+        return mForceWidth;
+    }
+
+    public int getForceHeight() {
+        return mForceHeight;
+    }
+
+    public boolean isAddHeader() {
+        return mAddHeader;
+    }
+
+    private int mForceWidth = -1;
+
+    private int mForceHeight = -1;
+
+    private boolean mAddHeader = false;
 
     public boolean getDisplayXml() {
         return mDisplayXml;
@@ -110,6 +146,21 @@ public class VdCommandLineOptions {
                         System.out.println(OPTION_OUT + " parsed " + mOutputDir.getAbsolutePath());
                         index++;
                     }
+                }  else if (OPTION_FORCE_WIDTH_DP.equalsIgnoreCase(currentArg)) {
+                    if ((index + 1) < args.length) {
+                        mForceWidth = Integer.parseInt(args[index + 1]);
+                        System.out.println(OPTION_FORCE_WIDTH_DP + " parsed " + mForceWidth);
+                        index++;
+                    }
+                }  else if (OPTION_FORCE_HEIGHT_DP.equalsIgnoreCase(currentArg)) {
+                    if ((index + 1) < args.length) {
+                        mForceHeight = Integer.parseInt(args[index + 1]);
+                        System.out.println(OPTION_FORCE_HEIGHT_DP + " parsed " + mForceHeight);
+                        index++;
+                    }
+                }  else if (OPTION_ADD_HEADER.equalsIgnoreCase(currentArg)) {
+                    mAddHeader = true;
+                    System.out.println(OPTION_ADD_HEADER + " parsed, add AOSP header to the XML file");
                 } else {
                     return "ERROR: unrecognized option " + currentArg;
                 }

@@ -61,7 +61,7 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
     public static GradleTestProject cProject = GradleTestProject.builder()
             .withName("c_project")
             .fromTestApp(cApp)
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create();
 
     static AndroidTestApp cppApp = new HelloWorldJniApp(useCppSource: true)
@@ -93,7 +93,7 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
     public static GradleTestProject cppProject = GradleTestProject.builder()
             .withName("cpp_project")
             .fromTestApp(cppApp)
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create();
 
     static AndroidTestApp ldApp = new HelloWorldJniApp()
@@ -114,7 +114,7 @@ void log() {
     public static GradleTestProject ldProject = GradleTestProject.builder()
             .withName("ld_project")
             .fromTestApp(ldApp)
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create();
 
 
@@ -130,8 +130,8 @@ model {
     }
     android.ndk {
         moduleName = "hello-jni"
-        CFlags += ['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"']
-        CFlags += ' -DFLAG_WITH_LEADING_SPACE'
+        CFlags.addAll(['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"'])
+        CFlags.add(' -DFLAG_WITH_LEADING_SPACE')
     }
 }
 """
@@ -146,7 +146,7 @@ model {
     }
     android.ndk {
         moduleName = "hello-jni"
-        cppFlags = ['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"']
+        cppFlags.addAll(['-DHELLO_WORLD="hello world"', '-DEXCLAMATION_MARK="!"'])
     }
 }
 """
@@ -161,7 +161,7 @@ model {
     }
     android.ndk {
         moduleName = "hello-jni"
-        ldFlags += "-llog"
+        ldFlags.addAll("-llog")
     }
 }
 """

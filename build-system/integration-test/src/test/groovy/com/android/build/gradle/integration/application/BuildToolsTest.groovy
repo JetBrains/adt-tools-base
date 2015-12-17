@@ -28,6 +28,7 @@ import org.junit.Test
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.google.common.truth.Truth.assert_
 
 @CompileStatic
@@ -59,7 +60,7 @@ class BuildToolsTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+            .fromTestApp(HelloWorldApp.noBuildFile())
             .captureStdOut(true)
             .create()
 
@@ -93,16 +94,16 @@ android {
         // in that case, downgrade to 21.1.2.
         // The point is, change the build tools version from what it was when the "assemble" task
         // was executed right before this comment.
-        String newBuildToolVersion =
-                GradleTestProject.DEFAULT_BUILD_TOOL_VERSION.contentEquals("22.0.1") ?
-                        "21.1.2" : "22.0.1"
+        String oldBuildToolsVersion = "22.0.1"
+        // Sanity check:
+        assertThat(oldBuildToolsVersion).isNotEqualTo(GradleTestProject.DEFAULT_BUILD_TOOL_VERSION)
 
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    buildToolsVersion '$newBuildToolVersion'
+    buildToolsVersion '$oldBuildToolsVersion'
 }
 """
 

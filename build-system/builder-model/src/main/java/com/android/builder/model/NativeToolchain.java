@@ -17,6 +17,7 @@
 package com.android.builder.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import java.io.File;
 
@@ -37,17 +38,19 @@ public interface NativeToolchain {
 
     /**
      * Returns the full path of the C compiler.
+     * May be null if project do not contain C sources.
      *
      * @return the C compiler path.
      */
-    @NonNull
+    @Nullable
     File getCCompilerExecutable();
 
     /**
      * Returns the full path of the C++ compiler.
+     * May be null if project do not contain C++ sources.
      *
      * @return the C++ compiler path.
      */
-    @NonNull
+    @Nullable
     File getCppCompilerExecutable();
 }

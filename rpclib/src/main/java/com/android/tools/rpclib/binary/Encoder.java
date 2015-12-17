@@ -15,6 +15,7 @@
  */
 package com.android.tools.rpclib.binary;
 
+import com.android.tools.rpclib.schema.Entity;
 import gnu.trove.TObjectIntHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,15 +33,19 @@ import java.util.Map;
  */
 public class Encoder {
   @NotNull private final OutputStream mOutputStream;
+  @NotNull private final TObjectIntHashMap<Entity> mEntities;
   @NotNull private final TObjectIntHashMap<BinaryObject> mObjects;
-  @NotNull private final TObjectIntHashMap<BinaryID> mIDs;
   @NotNull private final byte[] mBuffer;
+  private boolean mControlNeeded = false;
+  @NotNull private final EncodingControl mControl = new EncodingControl();
 
   public Encoder(@NotNull OutputStream out) {
+    mEntities = new TObjectIntHashMap<Entity>();
     mObjects = new TObjectIntHashMap<BinaryObject>();
-    mIDs = new TObjectIntHashMap<BinaryID>();
     mOutputStream = out;
     mBuffer = new byte[9];
+    mEntities.put(null, 0);
+    mObjects.put(null, 0);
   }
 
   public void write(byte[] b, int len) throws IOException {
@@ -148,15 +153,30 @@ public class Encoder {
     }
   }
 
-  public void id(@NotNull BinaryID id) throws IOException {
-    if (mIDs.containsKey(id)) {
-      int sid = mIDs.get(id);
-      uint32(sid << 1);
+  public void nonCompactString(@Nullable String v) throws IOException {
+    if (mControl.mode != EncodingControl.Compact) {
+      string(v);
     }
-    int sid = mIDs.size() + 1;
-    mIDs.put(id, sid);
-    uint32((sid << 1 ) | 1);
-    id.write(this);
+  }
+
+  public void writeSid(int sid, boolean encoded) throws IOException {
+    if (mControlNeeded) {
+      mControlNeeded = false; // set early to prevent recursive triggering
+      uint32(1);             // encoded sid 0 is a special marker
+      mControl.encode(this);      // and write the control block itself
+    }
+    uint32((sid << 1) | (encoded ? 1 : 0));
+  }
+
+  public void entity(Entity entity) throws IOException {
+    if (mEntities.containsKey(entity)) {
+      writeSid(mEntities.get(entity), false);
+    } else {
+      int sid = mEntities.size();
+      mEntities.put(entity, sid);
+      writeSid(sid, true);
+      entity.encode(this);
+    }
   }
 
   public void value(@Nullable BinaryObject obj) throws IOException {
@@ -165,31 +185,39 @@ public class Encoder {
 
   public void variant(@Nullable BinaryObject obj) throws IOException {
     if (obj == null) {
-      id(BinaryID.INVALID);
-      return;
+      entity(null);
+    } else {
+      BinaryClass c = obj.klass();
+      entity(c.entity());
+      c.encode(this, obj);
     }
-    BinaryClass c = obj.klass();
-    id(c.id());
-    c.encode(this, obj);
   }
 
   public void object(@Nullable BinaryObject obj) throws IOException {
-    if (obj == null) {
-      uint32(BinaryObject.NULL_ID);
-      return;
-    }
     if (mObjects.containsKey(obj)) {
-      int sid = mObjects.get(obj);
-      uint32(sid << 1);
-      return;
+      writeSid(mObjects.get(obj), false);
+    } else {
+      int sid = mObjects.size();
+      mObjects.put(obj, sid);
+      writeSid(sid, true);
+      variant(obj);
     }
-    int sid = mObjects.size() + 1;
-    mObjects.put(obj, sid);
-    uint32((sid << 1) | 1);
-    variant(obj);
   }
 
   public OutputStream stream() {
     return mOutputStream;
+  }
+
+  public int getMode() {
+    return mControl.mode;
+  }
+
+  public int setMode(int mode) {
+    int oldMode = mControl.mode;
+    if (oldMode != mode) {
+      mControlNeeded = true;
+      mControl.mode = mode;
+    }
+    return oldMode;
   }
 }

@@ -15,55 +15,72 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.builder.model.AndroidProject
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-
+import static com.android.build.gradle.integration.common.utils.FileHelper.searchAndReplace
 /**
  * Ensures that archivesBaseName setting on android project is used when choosing the apk file
  * names
  */
 @CompileStatic
+@RunWith(FilterableParameterized)
 class ArchivesBaseNameTest {
+    private static final String OLD_NAME = "random_name"
+    private static final String NEW_NAME = "changed_name"
 
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
-            .fromTestProject("basic")
+     @Parameterized.Parameters(name = "{0}")
+     public static Iterable<Object[]> data() {
+         return [
+                 ["com.android.application", "apk"].toArray(),
+                 ["com.android.library", "aar"].toArray(),
+         ]
+     }
+
+    @Rule
+    public GradleTestProject project
+
+    private String extension
+
+    public ArchivesBaseNameTest(String plugin, String extension) {
+        project = GradleTestProject.builder()
+            .fromTestApp(HelloWorldApp.forPlugin(plugin))
             .create()
-    static Map<String, AndroidProject> models
 
-    @BeforeClass
-    static void setUp() {
-        project.getBuildFile() << """
-
-android {
-    archivesBaseName = 'random_apk_name'
-}
-"""
-        models = project.getAllModels()
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
-        models = null
+        this.extension = extension
     }
 
     @Test
-    void "check model failed to load"() {
-        File outputFile = models.get(":").getVariants().iterator().next()
+    void testArtifactName() {
+        checkApkName('project', extension)
+
+        project.buildFile << """
+            archivesBaseName = '$OLD_NAME'
+        """
+        checkApkName(OLD_NAME, extension)
+
+        searchAndReplace(project.buildFile, OLD_NAME, NEW_NAME)
+        checkApkName(NEW_NAME, extension)
+    }
+
+    private void checkApkName(String name, String extension) {
+        AndroidProject model = project.executeAndReturnModel("assembleDebug")
+        File outputFile = model.getVariants().find { it.name == "debug" }
                 .getMainArtifact()
-                .getOutputs().iterator().next()
+                .getOutputs().first()
                 .getMainOutputFile()
                 .getOutputFile()
 
-        assertThat(outputFile.getName()).startsWith("random_apk_name")
+
+        assertThat(outputFile.getName()).isEqualTo("$name-debug.$extension".toString())
+        assertThat(outputFile).isFile()
     }
 }

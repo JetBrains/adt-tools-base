@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
@@ -72,15 +73,16 @@ public class ${serviceClass} extends CanvasWatchFaceService {
                 mTime.setToNow();
             }
         };
-
         boolean mRegisteredTimeZoneReceiver = false;
 
         Paint mBackgroundPaint;
         Paint mTextPaint;
 
         boolean mAmbient;
-
         Time mTime;
+<#if isInteractive>
+        int mTapCount;
+</#if>
 
         float mXOffset;
         float mYOffset;
@@ -99,12 +101,15 @@ public class ${serviceClass} extends CanvasWatchFaceService {
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
                     .setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
                     .setShowSystemUiTime(false)
+<#if isInteractive>
+                    .setAcceptsTapEvents(true)
+</#if>
                     .build());
             Resources resources = ${serviceClass}.this.getResources();
             mYOffset = resources.getDimension(R.dimen.digital_y_offset);
 
             mBackgroundPaint = new Paint();
-            mBackgroundPaint.setColor(resources.getColor(R.color.digital_background));
+            mBackgroundPaint.setColor(resources.getColor(R.color.background));
 
             mTextPaint = new Paint();
             mTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
@@ -205,10 +210,40 @@ public class ${serviceClass} extends CanvasWatchFaceService {
             updateTimer();
         }
 
+<#if isInteractive>
+        /**
+         * Captures tap event (and tap type) and toggles the background color if the user finishes
+         * a tap.
+         */
+        @Override
+        public void onTapCommand(int tapType, int x, int y, long eventTime) {
+            Resources resources = ${serviceClass}.this.getResources();
+            switch (tapType) {
+                case TAP_TYPE_TOUCH:
+                    // The user has started touching the screen.
+                    break;
+                case TAP_TYPE_TOUCH_CANCEL:
+                    // The user has started a different gesture or otherwise cancelled the tap.
+                    break;
+                case TAP_TYPE_TAP:
+                    // The user has completed the tap gesture.
+                    mTapCount++;
+                    mBackgroundPaint.setColor(resources.getColor(mTapCount % 2 == 0 ?
+                            R.color.background : R.color.background2));
+                    break;
+            }
+            invalidate();
+        }
+
+</#if>
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
             // Draw the background.
-            canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
+            if (isInAmbientMode()) {
+                canvas.drawColor(Color.BLACK);
+            } else {
+                canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
+            }
 
             // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
             mTime.setToNow();

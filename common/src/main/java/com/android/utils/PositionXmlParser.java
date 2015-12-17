@@ -318,7 +318,7 @@ public class PositionXmlParser {
             xml = new String(data, offset, length, charset);
         } catch (UnsupportedEncodingException e) {
             try {
-                if (charset != defaultCharset) {
+                if (!charset.equals(defaultCharset)) {
                     xml = new String(data, offset, length, defaultCharset);
                 }
             } catch (UnsupportedEncodingException u) {
@@ -551,6 +551,7 @@ public class PositionXmlParser {
         }
 
         /** Returns the document parsed by the handler */
+        @NonNull
         Document getDocument() {
             return mDocument;
         }

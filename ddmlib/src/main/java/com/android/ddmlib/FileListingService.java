@@ -106,7 +106,8 @@ public final class FileListingService {
     private Device mDevice;
     private FileEntry mRoot;
 
-    private ArrayList<Thread> mThreadList = new ArrayList<Thread>();
+    // Used for locking so final.
+    final private ArrayList<Thread> mThreadList = new ArrayList<Thread>();
 
     /**
      * Represents an entry in a directory. This can be a file or a directory.

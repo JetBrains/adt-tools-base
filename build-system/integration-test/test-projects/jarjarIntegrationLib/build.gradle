@@ -9,8 +9,8 @@ if (buildToolsVersion < '21.0.0') {
 apply plugin: 'com.android.library'
 
 android {
-  compileSdkVersion 21
-  buildToolsVersion = rootProject.ext.buildToolsVersion
+  compileSdkVersion rootProject.latestCompileSdk
+  buildToolsVersion = rootProject.buildToolsVersion
 
   defaultConfig {
     versionCode 12

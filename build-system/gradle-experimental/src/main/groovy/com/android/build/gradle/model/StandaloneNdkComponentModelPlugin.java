@@ -53,8 +53,6 @@ public class StandaloneNdkComponentModelPlugin implements Plugin<Project> {
         project.getPluginManager().apply(NdkComponentModelPlugin.class);
     }
 
-    // Rules class is used by Gradle's component model.  Suppress unused warning.
-    @SuppressWarnings("unused")
     public static class Rules extends RuleSource {
 
         @Validate

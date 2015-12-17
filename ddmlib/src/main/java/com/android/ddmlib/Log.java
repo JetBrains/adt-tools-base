@@ -257,6 +257,7 @@ public final class Log {
      * will be used.
      * @param logOutput The {@link ILogOutput} to use to print the log.
      */
+    @Deprecated
     public static void setLogOutput(ILogOutput logOutput) {
         sLogOutput = logOutput;
     }

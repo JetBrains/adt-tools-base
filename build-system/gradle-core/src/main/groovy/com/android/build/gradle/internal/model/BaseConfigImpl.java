@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.io.File;
@@ -61,7 +62,7 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
         mMultiDexEnabled = baseConfig.getMultiDexEnabled();
         mMultiDexKeepFile = baseConfig.getMultiDexKeepFile();
         mMultiDexKeepProguard = baseConfig.getMultiDexKeepProguard();
-        mJarJarRuleFiles = baseConfig.getJarJarRuleFiles();
+        mJarJarRuleFiles = ImmutableList.copyOf(baseConfig.getJarJarRuleFiles());
     }
 
     @Nullable

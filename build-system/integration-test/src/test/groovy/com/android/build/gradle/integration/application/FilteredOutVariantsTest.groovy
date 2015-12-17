@@ -66,9 +66,4 @@ class FilteredOutVariantsTest {
                     flavors.contains("mips") && flavors.contains("cupcake"))
         }
     }
-
-    @Test
-    void lint() {
-        project.execute("lint")
-    }
 }

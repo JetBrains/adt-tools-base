@@ -34,7 +34,7 @@ import static com.android.build.gradle.integration.common.fixture.GradleTestProj
  * Performance test on gradle plugin with multiple subprojects and multiple variants.
  */
 class MultiProjectsAndroidTest {
-    public static AndroidTestApp app = new HelloWorldApp()
+    public static AndroidTestApp app = HelloWorldApp.noBuildFile()
     static {
         app.addFile(new TestSourceFile("", "build.gradle",
                 new VariantBuildScriptGenerator(

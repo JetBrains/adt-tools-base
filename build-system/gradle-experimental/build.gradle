@@ -4,7 +4,7 @@ apply plugin: 'idea'
 apply plugin: 'jacoco'
 
 // Extract gradle libraries to ensure gradle-core is compatible with older version.
-String gradleVersion = "2.6"
+String gradleVersion = "2.8"
 File gradleBinary = file("$rootProject.projectDir/external/gradle/gradle-$gradleVersion-all.zip")
 File gradleLib = file("$rootProject.ext.androidHostOut/alternate-gradle/gradle-$gradleVersion/lib")
 
@@ -12,8 +12,6 @@ task extractGradleLibs(type: Copy) {
     from zipTree(gradleBinary)
     into gradleLib.parentFile.parentFile
 }
-
-compileJava.dependsOn extractGradleLibs
 
 task setupGradleInIde {
     dependsOn extractGradleLibs

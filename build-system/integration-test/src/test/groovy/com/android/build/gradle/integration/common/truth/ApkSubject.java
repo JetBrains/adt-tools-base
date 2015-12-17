@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.truth;
 
-import static com.android.SdkConstants.FN_APK_CLASSES_DEX;
 import static com.android.SdkConstants.FN_APK_CLASSES_N_DEX;
 
 import com.android.annotations.NonNull;
@@ -24,20 +23,23 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.integration.common.utils.ApkHelper;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
+import com.android.build.gradle.integration.common.utils.XmlHelper;
 import com.android.builder.core.ApkInfoParser;
 import com.android.ide.common.process.DefaultProcessExecutor;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
+import com.android.utils.XmlUtils;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.SubjectFactory;
-import com.google.common.truth.Truth;
 
 import org.junit.Assert;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,6 +49,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Truth support for apk files.
@@ -75,11 +79,58 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         }
     }
 
+    /**
+     * XMLDump of the main dex file via dexdump
+     */
+    private Node mainDexDump;
 
     public ApkSubject(
             @NonNull FailureStrategy failureStrategy,
             @NonNull File subject) {
         super(failureStrategy, subject);
+    }
+
+    public Node getClassDexDump(@NonNull String className)
+            throws SAXException, ParserConfigurationException, ProcessException, IOException {
+        if (!className.startsWith("L") || !className.endsWith(";")) {
+            throw new RuntimeException("class name must be in the format Lcom/foo/Main;");
+        }
+        className = className.substring(1, className.length() - 1).replace('/', '.');
+        final int lastDot = className.lastIndexOf('.');
+        final String pkg;
+        final String name;
+        if (lastDot < 0) {
+            name = className;
+            pkg = "";
+        } else {
+            pkg = className.substring(0, lastDot);
+            name = className.substring(lastDot + 1);
+        }
+        Node mainDexDump = getMainDexDump();
+        Node packageNode = XmlHelper
+                .findChildWithTagAndAttrs(mainDexDump, "package", "name", pkg);
+        if (packageNode == null) {
+            fail("%s does not contain package %s", getSubject(), pkg);
+        }
+        Node classNode = XmlHelper.findChildWithTagAndAttrs(packageNode, "class", "name", name);
+        if (classNode == null) {
+            fail("%s does not cointain class %s", getSubject(), className);
+        }
+        return classNode;
+    }
+
+    private Node getMainDexDump()
+            throws SAXException, ParserConfigurationException, ProcessException, IOException {
+        if (mainDexDump != null) {
+            return mainDexDump;
+        }
+
+        File apkFile = getSubject();
+
+        // get the dexdump exec
+        File dexDumpExe = SdkHelper.getDexDump();
+        mainDexDump = loadDexDump(apkFile, dexDumpExe);
+        return mainDexDump;
     }
 
     @NonNull
@@ -91,7 +142,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
             Assert.fail(String.format("locales not found in badging output for %s", apk));
         }
 
-        return Truth.assertThat(locales);
+        return check().that(locales);
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
@@ -214,6 +265,55 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
         }
 
         return false;
+    }
+
+    @Override
+    protected boolean checkForJavaResource(@NonNull String resourcePath)
+            throws ProcessException, IOException {
+        ZipFile zipFile = new ZipFile(getSubject());
+        try {
+            return zipFile.getEntry(resourcePath) != null;
+        } finally {
+            zipFile.close();
+        }
+    }
+
+    /**
+     * Asserts the subject contains a java resources at the given path with the specified String content.
+     *
+     * Content is trimmed when compared.
+     */
+    @Override
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void containsJavaResourceWithContent(@NonNull String path, @NonNull String content)
+            throws IOException, ProcessException {
+        containsFileWithContent(path, content);
+    }
+
+    /**
+     * Asserts the subject contains a java resources at the given path with the specified
+     * byte array content.
+     */
+    @Override
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void containsJavaResourceWithContent(@NonNull String path, @NonNull byte[] content)
+            throws IOException, ProcessException {
+        containsFileWithContent(path, content);
+    }
+
+    /**
+     * Exports the dex information in XML format and returns it as a Document.
+     */
+    private static Node loadDexDump(@NonNull File file, @NonNull File dexDumpExe)
+            throws IOException, SAXException, ParserConfigurationException, ProcessException {
+        ProcessExecutor executor = new DefaultProcessExecutor(new StdLogger(StdLogger.Level.ERROR));
+
+        ProcessInfoBuilder builder = new ProcessInfoBuilder();
+        builder.setExecutable(dexDumpExe);
+        builder.addArgs("-l", "xml", "-d", file.getAbsolutePath());
+
+        String output = ApkHelper.runAndGetRawOutput(builder.createProcess(), executor);
+        return XmlUtils.parseDocument(output, false).getChildNodes().item(0);
     }
 
     /**

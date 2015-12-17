@@ -18,11 +18,23 @@ package com.android.tools.perflib.heap.memoryanalyzer;
 import com.android.annotations.NonNull;
 import com.android.tools.perflib.analyzer.AnalysisResultEntry;
 import com.android.tools.perflib.analyzer.AnalyzerTask;
+import com.android.tools.perflib.heap.Heap;
 import com.android.tools.perflib.heap.Snapshot;
 
+import java.util.Collection;
 import java.util.List;
 
-public abstract class MemoryAnalyzerTask extends AnalyzerTask {
+public abstract class MemoryAnalyzerTask implements AnalyzerTask {
 
-    abstract List<AnalysisResultEntry> analyze(@NonNull Snapshot snapshot);
+    public static class Configuration {
+
+        public Collection<Heap> mHeaps;
+
+        public Configuration(@NonNull Collection<Heap> heaps) {
+            mHeaps = heaps;
+        }
+    }
+
+    abstract List<AnalysisResultEntry> analyze(@NonNull Configuration configuration,
+            @NonNull Snapshot snapshot);
 }

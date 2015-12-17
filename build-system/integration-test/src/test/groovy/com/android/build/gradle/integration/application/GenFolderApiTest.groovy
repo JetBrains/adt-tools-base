@@ -54,11 +54,6 @@ class GenFolderApiTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     void "check the custom java generation task ran"() throws Exception {
         assertThatApk(project.getApk("debug")).containsClass("Lcom/custom/Foo;")
     }
@@ -131,6 +126,6 @@ class GenFolderApiTest {
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
         assertThat(FileUtils.sha1(project.file("build.gradle")))
-                .isEqualTo("0d39ec75ccdc0f4adbc95b69a639117246bc0574")
+                .isEqualTo("976b508cb69c150a810cd3b8b087376adaafa903")
     }
 }

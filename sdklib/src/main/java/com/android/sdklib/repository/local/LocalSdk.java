@@ -446,7 +446,8 @@ public class LocalSdk {
         if (filter != PkgType.PKG_TOOLS &&
             filter != PkgType.PKG_PLATFORM_TOOLS &&
             filter != PkgType.PKG_DOC &&
-            filter != PkgType.PKG_NDK) {
+            filter != PkgType.PKG_NDK &&
+            filter != PkgType.PKG_LLDB) {
             assert false;
             return null;
         }
@@ -474,6 +475,10 @@ public class LocalSdk {
                     break;
                 case PKG_NDK:
                     info = scanNdk(uniqueDir);
+                    break;
+                case PKG_LLDB:
+                    info = scanLLDB(uniqueDir);
+                    break;
                 default:
                     break;
                 }
@@ -534,7 +539,8 @@ public class LocalSdk {
             if (filter == PkgType.PKG_TOOLS ||
                     filter == PkgType.PKG_PLATFORM_TOOLS ||
                     filter == PkgType.PKG_DOC ||
-                    filter == PkgType.PKG_NDK) {
+                    filter == PkgType.PKG_NDK ||
+                    filter == PkgType.PKG_LLDB) {
                 LocalPkgInfo info = getPkgInfo(filter);
                 if (info != null) {
                     list.add(info);
@@ -589,6 +595,7 @@ public class LocalSdk {
                         case PKG_PLATFORM_TOOLS:
                         case PKG_DOC:
                         case PKG_NDK:
+                        case PKG_LLDB:
                             break;
                         default:
                             throw new IllegalArgumentException(
@@ -905,6 +912,21 @@ public class LocalSdk {
         return new LocalNdkPkgInfo(this, ndkFolder, props, rev);
     }
 
+    /**
+     * Try to find an LLDB package at the given location.
+     * Returns null if not found.
+     */
+    @Nullable
+    private LocalLLDBPkgInfo scanLLDB(@NonNull File lldbFolder) {
+        // Can we find some properties?
+        Properties props = parseProperties(new File(lldbFolder, SdkConstants.FN_SOURCE_PROP));
+        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+        if (rev == null) {
+            return null;
+        }
+
+        return new LocalLLDBPkgInfo(this, lldbFolder, props, rev);
+    }
 
     /**
      * Helper used by scanXyz methods below to check whether a directory should be visited.

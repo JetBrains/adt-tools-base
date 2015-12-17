@@ -23,8 +23,8 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    compileSdkVersion rootProject.latestCompileSdk
+    buildToolsVersion = rootProject.buildToolsVersion
 
     publishNonDefault true
 
@@ -36,7 +36,7 @@ android {
         minified.initWith(buildTypes.debug)
         minified {
             minifyEnabled true
-            useJack rootProject.ext.useJack
+            useJack rootProject.useJack
             proguardFiles getDefaultProguardFile('proguard-android.txt')
         }
     }

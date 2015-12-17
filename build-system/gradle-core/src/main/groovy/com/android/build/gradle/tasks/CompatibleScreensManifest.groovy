@@ -26,13 +26,14 @@ import com.google.common.base.Charsets
 import com.google.common.io.Files
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 
 /**
  * Task to generate a manifest snippet that just contains a compatible-screens
  * node with the given density and the given list of screen sizes.
-
  */
+@ParallelizableTask
 class CompatibleScreensManifest extends DefaultAndroidTask {
 
     @Input

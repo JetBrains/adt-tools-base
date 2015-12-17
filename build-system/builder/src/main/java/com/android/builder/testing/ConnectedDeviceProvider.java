@@ -42,14 +42,19 @@ public class ConnectedDeviceProvider extends DeviceProvider {
 
     @NonNull
     private final File adbLocation;
+
+    private final int timeOutInMs;
+
     @NonNull
     private final ILogger iLogger;
 
     @NonNull
     private final List<ConnectedDevice> localDevices = Lists.newArrayList();
 
-    public ConnectedDeviceProvider(@NonNull File adbLocation, @NonNull ILogger logger) {
+    public ConnectedDeviceProvider(@NonNull File adbLocation, int timeOutInMs,
+            @NonNull ILogger logger) {
         this.adbLocation = adbLocation;
+        this.timeOutInMs = timeOutInMs;
         iLogger = logger;
     }
 
@@ -148,7 +153,7 @@ public class ConnectedDeviceProvider extends DeviceProvider {
 
     @Override
     public int getTimeoutInMs() {
-        return 0;
+        return timeOutInMs;
     }
 
     @Override

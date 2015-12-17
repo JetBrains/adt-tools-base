@@ -19,7 +19,6 @@ package com.android.ide.common.process;
 import com.android.annotations.NonNull;
 
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
@@ -47,13 +46,13 @@ public abstract class BaseProcessOutputHandler implements ProcessOutputHandler {
 
         @NonNull
         @Override
-        public OutputStream getStandardOutput() {
+        public ByteArrayOutputStream getStandardOutput() {
             return mStandardOutput;
         }
 
         @NonNull
         @Override
-        public OutputStream getErrorOutput() {
+        public ByteArrayOutputStream getErrorOutput() {
             return mErrorOutput;
         }
 

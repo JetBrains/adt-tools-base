@@ -6,29 +6,30 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.pipeline.ExtendedContentType;
+import com.android.build.gradle.internal.pipeline.FilterableStreamCollection;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.tasks.ValidateSigningTask;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.transform.api.ScopedContent.ContentType;
-import com.android.build.transform.api.ScopedContent.Format;
-import com.android.build.transform.api.ScopedContent.Scope;
+import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.QualifiedContent.ContentType;
+import com.android.build.api.transform.QualifiedContent.Scope;
 import com.android.builder.packaging.DuplicateFileException;
-import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.StringHelper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 import org.gradle.api.Task;
-import org.gradle.api.file.FileTree;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Nested;
@@ -38,29 +39,37 @@ import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.tooling.BuildException;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
 @ParallelizableTask
 public class PackageApplication extends IncrementalTask implements FileSupplier {
 
-    public static final TransformManager.StreamFilter sDexFilter =
+    public static final FilterableStreamCollection.StreamFilter sDexFilter =
             new TransformManager.StreamFilter() {
                 @Override
                 public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
-                    return types.contains(ContentType.DEX);
+                    return types.contains(ExtendedContentType.DEX);
                 }
             };
 
-    public static final TransformManager.StreamFilter sResFilter =
+    public static final FilterableStreamCollection.StreamFilter sResFilter =
             new TransformManager.StreamFilter() {
                 @Override
                 public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
-                    return types.contains(ContentType.RESOURCES) &&
+                    return types.contains(QualifiedContent.DefaultContentType.RESOURCES) &&
+                            !scopes.contains(Scope.PROVIDED_ONLY) &&
+                            !scopes.contains(Scope.TESTED_CODE);
+                }
+            };
+
+    public static final FilterableStreamCollection.StreamFilter sNativeLibsFilter =
+            new TransformManager.StreamFilter() {
+                @Override
+                public boolean accept(@NonNull Set<ContentType> types, @NonNull Set<Scope> scopes) {
+                    return types.contains(ExtendedContentType.NATIVE_LIBS) &&
                             !scopes.contains(Scope.PROVIDED_ONLY) &&
                             !scopes.contains(Scope.TESTED_CODE);
                 }
@@ -77,27 +86,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         this.resourceFile = resourceFile;
     }
 
-    @InputFiles
-    public Collection<File> getDexFolderList() {
-        return getDexFolders().keySet();
-    }
-
-    public Set<File> getJniFolders() {
-        return jniFolders;
-    }
-
-    public void setJniFolders(Set<File> jniFolders) {
-        this.jniFolders = jniFolders;
-    }
-
-    public File getMergingFolder() {
-        return mergingFolder;
-    }
-
-    public void setMergingFolder(File mergingFolder) {
-        this.mergingFolder = mergingFolder;
-    }
-
     @OutputFile
     public File getOutputFile() {
         return outputFile;
@@ -108,7 +96,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
     }
 
     @Input
-    @Optional
     public Set<String> getAbiFilters() {
         return abiFilters;
     }
@@ -119,33 +106,29 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     // ----- PRIVATE TASK API -----
 
-    @InputDirectory
+    @InputFiles
     @Optional
-    public File getJavaResourceDir() {
-        return javaResourceDir;
+    public Collection<File> getJavaResourceFiles() {
+        return javaResourceFiles;
+    }
+    @InputFiles
+    @Optional
+    public Collection<File> getJniFolders() {
+        return jniFolders;
     }
 
-    @InputFile
-    @Optional
-    public File getJavaResourceJar() {
-        return javaResourceJar;
-    }
 
     private File resourceFile;
 
-    private Map<File, Format> dexFolders;
-    public Map<File, Format> getDexFolders() {
+    private Set<File> dexFolders;
+    @InputFiles
+    public Set<File> getDexFolders() {
         return dexFolders;
     }
 
-    /** directory for the merged java resources. only valid if the jar below is null  */
-    private File javaResourceDir;
-    /** jar for the merged java resources. only valid if the folder above is null  */
-    private File javaResourceJar;
-
+    /** list of folders and/or jars that contain the merged java resources. */
+    private Set<File> javaResourceFiles;
     private Set<File> jniFolders;
-
-    private File mergingFolder;
 
     @ApkFile
     private File outputFile;
@@ -157,8 +140,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
     private CoreSigningConfig signingConfig;
 
     private PackagingOptions packagingOptions;
-
-    private SignedJarBuilder.IZipEntryFilter packagingOptionsFilter;
 
     @Input
     public boolean getJniDebugBuild() {
@@ -192,51 +173,28 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         this.packagingOptions = packagingOptions;
     }
 
-    public SignedJarBuilder.IZipEntryFilter getPackagingOptionsFilter() {
-        return packagingOptionsFilter;
-    }
-
-    public void setPackagingOptionsFilter(SignedJarBuilder.IZipEntryFilter filter) {
-        this.packagingOptionsFilter = filter;
-    }
-
-    @InputFiles
-    public FileTree getNativeLibraries() {
-        FileTree src = null;
-        Set<File> folders = getJniFolders();
-        if (!folders.isEmpty()) {
-            src = getProject().files(new ArrayList<Object>(folders)).getAsFileTree();
-        }
-
-        return src == null ? getProject().files().getAsFileTree() : src;
-    }
-
     @Override
     protected void doFullTaskAction() {
         try {
-            File resourceLocation = getJavaResourceDir();
-            if (resourceLocation == null) {
-                resourceLocation = getJavaResourceJar();
-            }
+            Collection<File> javaResourceFiles = getJavaResourceFiles();
             getBuilder().packageApk(
                     getResourceFile().getAbsolutePath(),
                     getDexFolders(),
-                    resourceLocation,
+                    javaResourceFiles == null ? ImmutableList.<File>of() : javaResourceFiles,
                     getJniFolders(),
-                    getMergingFolder(),
                     getAbiFilters(),
                     getJniDebugBuild(),
                     getSigningConfig(),
-                    getPackagingOptions(),
-                    getPackagingOptionsFilter(),
                     getOutputFile().getAbsolutePath());
         } catch (DuplicateFileException e) {
             Logger logger = getLogger();
             logger.error("Error: duplicate files during packaging of APK " + getOutputFile()
                     .getAbsolutePath());
             logger.error("\tPath in archive: " + e.getArchivePath());
-            logger.error("\tOrigin 1: " + e.getFile1());
-            logger.error("\tOrigin 2: " + e.getFile2());
+            int index = 1;
+            for (File file : e.getSourceFiles()) {
+                logger.error("\tOrigin " + (index++) + ": " + file);
+            }
             logger.error("You can ignore those files in your build.gradle:");
             logger.error("\tandroid {");
             logger.error("\t  packagingOptions {");
@@ -247,7 +205,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         } catch (Exception e) {
             throw new BuildException(e.getMessage(), e);
         }
-
     }
 
     // ----- FileSupplierTask -----
@@ -273,27 +230,30 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             this.scope = scope;
         }
 
+        @NonNull
         @Override
         public String getName() {
             return scope.getTaskName("package");
         }
 
+        @NonNull
         @Override
         public Class<PackageApplication> getType() {
             return PackageApplication.class;
         }
 
         @Override
-        public void execute(PackageApplication packageApp) {
-            final ApkVariantData variantData = (ApkVariantData) scope.getVariantScope().getVariantData();
+        public void execute(@NonNull PackageApplication packageApp) {
+            final VariantScope variantScope = scope.getVariantScope();
+            final ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData();
             final ApkVariantOutputData variantOutputData = (ApkVariantOutputData) scope
                     .getVariantOutputData();
-            final GradleVariantConfiguration config = scope.getVariantScope().getVariantConfiguration();
+            final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
 
             variantOutputData.packageApplicationTask = packageApp;
             packageApp.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             packageApp.setVariantName(
-                    scope.getVariantScope().getVariantConfiguration().getFullName());
+                    variantScope.getVariantConfiguration().getFullName());
 
             if (config.isMinifyEnabled() && config.getBuildType().isShrinkResources() && !config
                     .getUseJack()) {
@@ -312,46 +272,39 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 });
             }
 
-            ConventionMappingHelper.map(packageApp, "dexFolders", new Callable< Map<File, Format>>() {
+            ConventionMappingHelper.map(packageApp, "dexFolders", new Callable<Set<File>>() {
                 @Override
-                public  Map<File, Format> call() {
-                    return scope.getVariantScope().getTransformManager().getPipelineOutput(
-                            sDexFilter, null);
+                public  Set<File> call() {
+                    if (config.getUseJack()) {
+                        return ImmutableSet.of(variantScope.getJackDestinationDir());
+                    }
+
+                    return variantScope.getTransformManager()
+                            .getPipelineOutput(sDexFilter).keySet();
                 }
             });
 
-            ConventionMappingHelper.map(packageApp, "javaResourceDir", new Callable<File>() {
+            ConventionMappingHelper.map(packageApp, "javaResourceFiles", new Callable<Set<File>>() {
                 @Override
-                public File call() throws Exception {
-                    return scope.getVariantScope().getTransformManager().getSinglePipelineOutput(
-                            sResFilter, Format.SINGLE_FOLDER);
+                public Set<File> call() throws Exception {
+                    return variantScope.getTransformManager().getPipelineOutput(
+                            sResFilter).keySet();
                 }
             });
-
-            ConventionMappingHelper.map(packageApp, "javaResourceJar", new Callable<File>() {
-                @Override
-                public File call() throws Exception {
-                    return scope.getVariantScope().getTransformManager().getSinglePipelineOutput(
-                            sResFilter, Format.JAR);
-                }
-            });
-
-            packageApp.setMergingFolder(new File(scope.getGlobalScope().getIntermediatesDir(),
-                    variantOutputData.getFullName() + "/merging"));
-
 
             ConventionMappingHelper.map(packageApp, "jniFolders", new Callable<Set<File>>() {
                 @Override
                 public Set<File> call() {
-
                     if (variantData.getSplitHandlingPolicy() ==
                             BaseVariantData.SplitHandlingPolicy.PRE_21_POLICY) {
-                        return scope.getVariantScope().getJniFolders();
+                        return variantScope.getTransformManager().getPipelineOutput(
+                                sNativeLibsFilter).keySet();
                     }
+
                     Set<String> filters = AbiSplitOptions.getAbiFilters(
                             scope.getGlobalScope().getExtension().getSplits().getAbiFilters());
-                    return filters.isEmpty() ? scope.getVariantScope().getJniFolders() : Collections.<File>emptySet();
-
+                    return filters.isEmpty() ? variantScope.getTransformManager().getPipelineOutput(
+                            sNativeLibsFilter).keySet() : Collections.<File>emptySet();
                 }
             });
 
@@ -363,7 +316,12 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                                 variantOutputData.getMainOutputFile()
                                         .getFilter(com.android.build.OutputFile.ABI));
                     }
-                    return config.getSupportedAbis();
+                    Set<String> supportedAbis = config.getSupportedAbis();
+                    if (supportedAbis != null) {
+                        return supportedAbis;
+                    }
+
+                    return ImmutableSet.of();
                 }
             });
             ConventionMappingHelper.map(packageApp, "jniDebugBuild", new Callable<Boolean>() {
@@ -386,7 +344,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                                     ValidateSigningTask.class);
                     validateSigningTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
                     validateSigningTask.setVariantName(
-                            scope.getVariantScope().getVariantConfiguration().getFullName());
+                            variantScope.getVariantConfiguration().getFullName());
                     validateSigningTask.setSigningConfig(sc);
                 }
 
@@ -397,14 +355,6 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 @Override
                 public PackagingOptions call() throws Exception {
                     return scope.getGlobalScope().getExtension().getPackagingOptions();
-                }
-            });
-
-            ConventionMappingHelper.map(packageApp, "packagingOptionsFilter",
-                    new Callable<SignedJarBuilder.IZipEntryFilter>() {
-                @Override
-                public SignedJarBuilder.IZipEntryFilter call() throws Exception {
-                    return scope.getVariantScope().getPackagingOptionsFilter();
                 }
             });
 

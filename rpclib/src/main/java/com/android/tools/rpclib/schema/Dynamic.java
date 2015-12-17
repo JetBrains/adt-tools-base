@@ -17,74 +17,88 @@ package com.android.tools.rpclib.schema;
 
 
 import com.android.tools.rpclib.binary.*;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
 public class Dynamic implements BinaryObject {
-  private Klass mKlass;
-  private Object[] mFields;
-  public Dynamic(Klass klass) {
-    mKlass = klass;
-  }
 
-  public SchemaClass type() {
-    return mKlass.mType;
-  }
+    private Klass mKlass;
 
-  public static void register(SchemaClass type) {
-    Namespace.register(type.getTypeID(), new Klass(type));
-  }
+    private Object[] mFields;
 
-  public int getFieldCount() {
-    return mFields.length;
-  }
-
-  public Field getFieldInfo(int index) {
-    return mKlass.mType.getFields()[index];
-  }
-
-  public Object getFieldValue(int index) {
-    return mFields[index];
-  }
-
-  @NotNull
-  @Override
-  public Klass klass() {
-    return mKlass;
-  }
-
-  public static class Klass implements BinaryClass {
-    private SchemaClass mType;
-
-    Klass(SchemaClass type) {
-      mType = type;
+    public Dynamic(Klass klass) {
+        mKlass = klass;
     }
-    @Override @NotNull
-    public BinaryID id() { return mType.getTypeID(); }
 
-    @Override @NotNull
-    public BinaryObject create() { return new Dynamic(this); }
+    public Entity type() {
+        return mKlass.mType;
+    }
 
+    public static BinaryClass register(Entity type) {
+        BinaryClass klass = new Klass(type);
+        Namespace.register(klass);
+        return klass;
+    }
+
+    public int getFieldCount() {
+        return mFields.length;
+    }
+
+    public Field getFieldInfo(int index) {
+        return mKlass.mType.getFields()[index];
+    }
+
+    public Object getFieldValue(int index) {
+        return mFields[index];
+    }
+
+    @NotNull
     @Override
-    public void encode(@NotNull Encoder e, BinaryObject obj) throws IOException {
-      Dynamic o = (Dynamic)obj;
-      assert(o.mKlass == this);
-      for (int i = 0; i < mType.getFields().length; i++) {
-        Field field = mType.getFields()[i];
-        Object value = o.mFields[i];
-        field.getType().encodeValue(e, value);
-      }
+    public Klass klass() {
+        return mKlass;
     }
 
-    @Override
-    public void decode(@NotNull Decoder d, BinaryObject obj) throws IOException {
-      Dynamic o = (Dynamic)obj;
-      o.mFields = new Object[mType.getFields().length];
-      for (int i = 0; i < mType.getFields().length; i++) {
-        Field field = mType.getFields()[i];
-        o.mFields[i] = field.getType().decodeValue(d);
-      }
+    public static class Klass implements BinaryClass {
+
+        private Entity mType;
+
+        Klass(Entity type) {
+            mType = type;
+        }
+
+        @NotNull
+        @Override
+        public Entity entity() {
+            return mType;
+        }
+
+        @Override
+        @NotNull
+        public BinaryObject create() {
+            return new Dynamic(this);
+        }
+
+        @Override
+        public void encode(@NotNull Encoder e, BinaryObject obj) throws IOException {
+            Dynamic o = (Dynamic) obj;
+            assert (o.mKlass == this);
+            for (int i = 0; i < mType.getFields().length; i++) {
+                Field field = mType.getFields()[i];
+                Object value = o.mFields[i];
+                field.getType().encodeValue(e, value);
+            }
+        }
+
+        @Override
+        public void decode(@NotNull Decoder d, BinaryObject obj) throws IOException {
+            Dynamic o = (Dynamic) obj;
+            o.mFields = new Object[mType.getFields().length];
+            for (int i = 0; i < mType.getFields().length; i++) {
+                Field field = mType.getFields()[i];
+                o.mFields[i] = field.getType().decodeValue(d);
+            }
+        }
     }
-  }
 }

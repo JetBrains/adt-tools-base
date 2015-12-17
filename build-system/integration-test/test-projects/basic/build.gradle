@@ -18,19 +18,10 @@ dependencies {
 }
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    compileSdkVersion rootProject.latestCompileSdk
+    buildToolsVersion = rootProject.buildToolsVersion
 
     testBuildType "debug"
-
-    signingConfigs {
-        myConfig {
-            storeFile file("debug.keystore")
-            storePassword "android"
-            keyAlias "androiddebugkey"
-            keyPassword "android"
-        }
-    }
 
     defaultConfig {
         versionCode 12
@@ -58,7 +49,6 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
-            signingConfig signingConfigs.myConfig
 
             testCoverageEnabled true
 

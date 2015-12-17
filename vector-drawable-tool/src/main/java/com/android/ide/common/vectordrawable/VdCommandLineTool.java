@@ -19,11 +19,17 @@ package com.android.ide.common.vectordrawable;
 import com.android.SdkConstants;
 import com.google.common.io.Files;
 
+import org.w3c.dom.Document;
+
 import java.awt.*;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -43,6 +49,8 @@ public class VdCommandLineTool {
 
     public static final String BROKEN_FILE_EXTENSION = ".broken";
 
+    private static final boolean DBG_COPY_BROKEN_SVG = false;
+
     private static void exitWithErrorMessage(String message) {
         System.err.println(message);
         System.exit(-1);;
@@ -60,7 +68,7 @@ public class VdCommandLineTool {
 
         File[] filesToDisplay = options.getInputFiles();
         if (needsConvertSvg) {
-            filesToDisplay = convertSVGToXml(options.getInputFiles(), options.getOutputDir());
+            filesToDisplay = convertSVGToXml(options);
         }
         if (needsDisplayXml) {
             displayXmlAsync(filesToDisplay);
@@ -175,7 +183,26 @@ public class VdCommandLineTool {
         frame.setVisible(true);
     }
 
-    private static File[] convertSVGToXml(File[] inputSVGFiles, File outputDir) {
+    private final static String AOSP_HEADER = "<!--\n" +
+            "Copyright (C) " + Calendar.getInstance().get(Calendar.YEAR) +
+            " The Android Open Source Project\n\n" +
+            "   Licensed under the Apache License, Version 2.0 (the \"License\");\n" +
+            "    you may not use this file except in compliance with the License.\n" +
+            "    You may obtain a copy of the License at\n\n" +
+
+            "         http://www.apache.org/licenses/LICENSE-2.0\n\n" +
+
+            "    Unless required by applicable law or agreed to in writing, software\n" +
+            "    distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
+            "    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
+            "    See the License for the specific language governing permissions and\n" +
+            "    limitations under the License.\n" +
+            "-->\n";
+
+
+    private static File[] convertSVGToXml(VdCommandLineOptions options) {
+        File[] inputSVGFiles = options.getInputFiles();
+        File outputDir = options.getOutputDir();
         int totalSvgFileCounter = 0;
         int errorSvgFileCounter = 0;
         ArrayList<File> allOutputFiles = new ArrayList<File>();
@@ -189,17 +216,39 @@ public class VdCommandLineTool {
             File outputFile = new File(outputDir, svgFilenameWithoutExtension + SdkConstants.DOT_XML);
             allOutputFiles.add(outputFile);
             try {
+                ByteArrayOutputStream byteArrayOutStream = new ByteArrayOutputStream();
+
                 String error = Svg2Vector
-                        .parseSvgToXml(inputSVGFiles[i], new FileOutputStream(outputFile));
+                        .parseSvgToXml(inputSVGFiles[i], byteArrayOutStream);
+
                 if (error != null && !error.isEmpty()) {
                     errorSvgFileCounter++;
                     System.err.println("error is " + error);
-
-                    // Copy the broken svg file in the same directory but with a new extension.
-                    String brokenFileName = svgFilename + BROKEN_FILE_EXTENSION;
-                    File brokenSvgFile = new File(outputDir, brokenFileName);
-                    Files.copy(inputSVGFiles[i], brokenSvgFile);
+                    if (DBG_COPY_BROKEN_SVG) {
+                        // Copy the broken svg file in the same directory but with a new extension.
+                        String brokenFileName = svgFilename + BROKEN_FILE_EXTENSION;
+                        File brokenSvgFile = new File(outputDir, brokenFileName);
+                        Files.copy(inputSVGFiles[i], brokenSvgFile);
+                    }
                 }
+
+                // Override the size info if needed. Negative value will be ignored.
+                String vectorXmlContent = byteArrayOutStream.toString();
+                if (options.getForceHeight() > 0 || options.getForceWidth() > 0) {
+                    Document vdDocument = VdPreview.parseVdStringIntoDocument(vectorXmlContent, null);
+
+                    VdOverrideInfo info = new VdOverrideInfo(options.getForceWidth(), options.getForceHeight(),
+                            -1 /* opacity */, false /*auto mirrored*/);
+                    vectorXmlContent = VdPreview.overrideXmlContent(vdDocument, info, null);
+                }
+                if (options.isAddHeader()) {
+                    vectorXmlContent = AOSP_HEADER + vectorXmlContent;
+                }
+
+                // Write the final result into the output XML file.
+                PrintWriter writer = new PrintWriter(outputFile);
+                writer.print(vectorXmlContent);
+                writer.close();
             } catch (Exception e) {
                 System.err.println("exception" + e.getMessage());
                 e.printStackTrace();

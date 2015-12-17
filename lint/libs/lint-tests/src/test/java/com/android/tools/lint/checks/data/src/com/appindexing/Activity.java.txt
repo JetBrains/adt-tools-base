@@ -1,0 +1,6 @@
+package android.app;
+
+import android.content.Context
+
+// Stub class for testing.
+public class Activity extends Context {}

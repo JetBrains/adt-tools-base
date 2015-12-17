@@ -129,7 +129,6 @@ public class PackagingUtils {
                     .add("d")               // Dependency files
                     .add("java")            // Java files
                     .add("scala")           // Scala files
-                    .add("so")              // native .so libraries
                     .add("scc")             // VisualSourceSafe
                     .add("swp")             // vi swap file
                     .build();

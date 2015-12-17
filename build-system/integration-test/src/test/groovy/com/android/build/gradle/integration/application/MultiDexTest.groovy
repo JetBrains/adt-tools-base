@@ -53,17 +53,16 @@ class MultiDexTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
     void "check main classes.dex"() {
         // manually inspect the apk to ensure that the classes.dex that was created is the same
         // one in the apk. This tests that the packaging didn't rename the multiple dex files
         // around when we packaged them.
-        File classesDex = project.file("build/" + FD_INTERMEDIATES + "/transforms/DEX/" +
-                "FULL_PROJECT/dex/ics/debug/classes.dex")
+        File classesDex = project.file(
+                "build/" + FD_INTERMEDIATES +
+                "/transforms/dex/" +
+                "ics/debug/" +
+                "folders/1000/1f/main/" +
+                "classes.dex")
         File apk = project.getApk("ics", "debug")
 
         assertThatZip(apk).containsFileWithContent("classes.dex", Files.toByteArray(classesDex))

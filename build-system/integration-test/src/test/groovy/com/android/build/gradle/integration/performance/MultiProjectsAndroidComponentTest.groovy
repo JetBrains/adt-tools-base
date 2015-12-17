@@ -34,7 +34,7 @@ import static com.android.build.gradle.integration.common.fixture.GradleTestProj
  * Performance test on gradle experimental plugin with multiple sub-projects and multiple variants.
  */
 class MultiProjectsAndroidComponentTest {
-    public static AndroidTestApp app = new HelloWorldApp()
+    public static AndroidTestApp app = HelloWorldApp.noBuildFile()
     static {
         VariantBuildScriptGenerator generator = new VariantBuildScriptGenerator(
                 buildTypes: VariantBuildScriptGenerator.MEDIUM_NUMBER,
@@ -68,7 +68,7 @@ class MultiProjectsAndroidComponentTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(baseProject)
-            .forExpermimentalPlugin(true)
+            .forExperimentalPlugin(true)
             .create()
 
     @BeforeClass

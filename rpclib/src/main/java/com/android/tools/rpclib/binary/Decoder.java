@@ -15,6 +15,8 @@
  */
 package com.android.tools.rpclib.binary;
 
+import com.android.tools.rpclib.schema.Dynamic;
+import com.android.tools.rpclib.schema.Entity;
 import gnu.trove.TIntObjectHashMap;
 import gnu.trove.TObjectIntHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -32,16 +34,19 @@ import java.util.Map;
  * https://android.googlesource.com/platform/tools/gpu/+/master/binary/doc.go
  */
 public class Decoder {
+  @NotNull private final TIntObjectHashMap<Entity> mEntities;
   @NotNull private final TIntObjectHashMap<BinaryObject> mObjects;
-  @NotNull private final TIntObjectHashMap<BinaryID> mIDs;
   @NotNull private final InputStream mInputStream;
   @NotNull private final byte[] mBuffer;
+  @NotNull private final EncodingControl mControl = new EncodingControl();
 
   public Decoder(@NotNull InputStream in) {
+    mEntities = new TIntObjectHashMap<Entity>();
     mObjects = new TIntObjectHashMap<BinaryObject>();
-    mIDs = new TIntObjectHashMap<BinaryID>();
     mInputStream = in;
     mBuffer = new byte[9];
+    mEntities.put(0, null);
+    mObjects.put(0, null);
   }
 
   public void read(byte[] buf, int count) throws IOException {
@@ -154,20 +159,34 @@ public class Decoder {
     }
   }
 
-  @NotNull
-  public BinaryID id() throws IOException {
+  public String nonCompactString() throws IOException {
+    return (mControl.mode != EncodingControl.Compact) ? string() : "";
+  }
+
+  private int readSid() throws IOException {
     int v = uint32();
+    if (v == 1) { // encoded sid 0 is a special marker
+      // read control block.
+      mControl.decode(this);
+      // read the real sid
+      v = uint32();
+    }
+    return v;
+  }
+
+  public Entity entity() throws IOException {
+    int v = readSid();
     int sid = v >> 1;
     if ((v & 1) != 0) {
-      BinaryID id = new BinaryID(this);
-      mIDs.put(sid, id);
-      return id;
+      Entity entity = new Entity();
+      mEntities.put(sid, entity);
+      entity.decode(this);
+      return entity;
     }
-    BinaryID id = mIDs.get(sid);
-    if (id == null) {
-      throw new RuntimeException("Unknown id: " + sid);
+    if (!mEntities.containsKey(sid)) {
+      throw new RuntimeException("Unknown entity: " + sid);
     }
-    return id;
+    return mEntities.get(sid);
   }
 
   public void value(@NotNull BinaryObject obj) throws IOException {
@@ -176,10 +195,13 @@ public class Decoder {
 
   @Nullable
   public BinaryObject variant() throws IOException {
-    BinaryID id = id();
-    BinaryClass c = Namespace.lookup(id);
+    Entity entity = entity();
+    if (entity == null) {
+      return  null;
+    }
+    BinaryClass c = Namespace.lookup(entity);
     if (c == null) {
-      throw new RuntimeException("Unknown type id: " + id);
+      c = Dynamic.register(entity);
     }
     BinaryObject obj = c.create();
     c.decode(this, obj);
@@ -188,20 +210,24 @@ public class Decoder {
 
   @Nullable
   public BinaryObject object() throws IOException {
-    int v = uint32();
-    if (v == BinaryObject.NULL_ID) {
-      return null;
-    }
+    int v = readSid();
     int sid = v >> 1;
     if ((v & 1) != 0) {
       BinaryObject obj = variant();
       mObjects.put(sid, obj);
       return obj;
     }
+    if (!mObjects.containsKey(sid)) {
+      throw new RuntimeException("Unknown object: " + sid);
+    }
     return mObjects.get(sid);
   }
 
   public InputStream stream() {
     return mInputStream;
+  }
+
+  public int getMode() {
+    return mControl.mode;
   }
 }

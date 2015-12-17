@@ -22,22 +22,43 @@ import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
+import java.nio.charset.Charset;
 import java.util.List;
 
 public final class FileUtils {
 
+    private FileUtils() {}
+
     private static final Joiner PATH_JOINER = Joiner.on(File.separatorChar);
     private static final Joiner COMMA_SEPARATED_JOINER = Joiner.on(", ");
     private static final Joiner UNIX_NEW_LINE_JOINER = Joiner.on('\n');
+
+    public static final Function<File, String> GET_NAME = new Function<File, String>() {
+        @Override
+        public String apply(File file) {
+            return file.getName();
+        }
+    };
+
+    @NonNull
+    public static Predicate<File> withExtension(@NonNull final String extension) {
+        checkArgument(extension.charAt(0) != '.', "Extension should not start with a dot.");
+
+        return new Predicate<File>() {
+            @Override
+            public boolean apply(File input) {
+                return Files.getFileExtension(input.getName()).equals(extension);
+            }
+        };
+    }
 
     public static void deleteFolder(@NonNull final File folder) throws IOException {
         if (!folder.exists()) {
@@ -79,7 +100,10 @@ public final class FileUtils {
     }
 
     public static void mkdirs(@NonNull File folder) {
-        if (!folder.exists() && !folder.mkdirs()) {
+        // attempt to create first.
+        // if failure only throw if folder does not exist.
+        // This makes this method able to create the same folder(s) from different thread
+        if (!folder.mkdirs() && !folder.exists()) {
             throw new RuntimeException("Cannot create directory " + folder);
         }
     }
@@ -95,6 +119,13 @@ public final class FileUtils {
         boolean result = file.delete();
         if (!result && file.exists()) {
             throw new IOException("Failed to delete " + file.getAbsolutePath());
+        }
+    }
+
+    public static void renameTo(@NonNull File file, @NonNull File to) throws IOException {
+        boolean result = file.renameTo(to);
+        if (!result) {
+            throw new IOException("Failed to rename " + file.getAbsolutePath() + " to " + to);
         }
     }
 
@@ -138,6 +169,17 @@ public final class FileUtils {
     }
 
     /**
+     * Joins a set of segment into a string, separating each segments with a host-specific
+     * path separator.
+     * @param paths the segments.
+     * @return a string with the segments.
+     */
+    @NonNull
+    public static String join(@NonNull Iterable<String> paths) {
+        return PATH_JOINER.join(paths);
+    }
+
+    /**
      * Loads a text file forcing the line separator to be of Unix style '\n' rather than being
      * Windows style '\r\n'.
      */
@@ -156,11 +198,14 @@ public final class FileUtils {
     @NonNull
     public static String relativePossiblyNonExistingPath(@NonNull File file, @NonNull File dir) {
         String path = dir.toURI().relativize(file.toURI()).getPath();
+        return toSystemDependentPath(path);
+    }
 
+    @NonNull
+    public static String toSystemDependentPath(@NonNull String path) {
         if (File.separatorChar != '/') {
             path = path.replace('/', File.separatorChar);
         }
-
         return path;
     }
 
@@ -179,10 +224,4 @@ public final class FileUtils {
         return COMMA_SEPARATED_JOINER.join(Iterables.transform(files, GET_NAME));
     }
 
-    private static final Function<File, String> GET_NAME = new Function<File, String>() {
-        @Override
-        public String apply(File file) {
-            return file.getName();
-        }
-    };
 }

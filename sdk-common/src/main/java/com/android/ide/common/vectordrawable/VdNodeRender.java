@@ -34,8 +34,8 @@ class VdNodeRender {
         float[] current = new float[6];
         char lastCmd = ' ';
         for (int i = 0; i < node.length; i++) {
-            addCommand(path, current, node[i].type, lastCmd,node[i].params);
-            lastCmd = node[i].type;
+            addCommand(path, current, node[i].getType(), lastCmd,node[i].getmParams());
+            lastCmd = node[i].getType();
         }
     }
 
@@ -359,9 +359,9 @@ class VdNodeRender {
         // Taken from equations at:
         // http://spaceroots.org/documents/ellipse/node8.html
         // and http://www.spaceroots.org/documents/ellipse/node22.html
-
         // Maximum of 45 degrees per cubic Bezier segment
-        int numSegments = Math.abs((int) Math.ceil(sweep * 4 / Math.PI));
+        int numSegments = (int) Math.ceil(Math.abs(sweep * 4 / Math.PI));
+
 
         double eta1 = start;
         double cosTheta = Math.cos(theta);

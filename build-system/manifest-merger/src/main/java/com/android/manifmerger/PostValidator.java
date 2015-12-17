@@ -73,7 +73,7 @@ public class PostValidator {
         XmlElement manifest = xmlDocument.getRootNode();
         for (XmlAttribute xmlAttribute : manifest.getAttributes()) {
             if (xmlAttribute.getXml().getName().startsWith(SdkConstants.XMLNS) &&
-                    xmlAttribute.getValue().equals(SdkConstants.ANDROID_URI)) {
+                    SdkConstants.ANDROID_URI.equals(xmlAttribute.getValue())) {
                 return;
             }
         }
@@ -91,7 +91,7 @@ public class PostValidator {
      * </li>
      * @param xmlElement the root element of the manifest document.
      */
-    private static void reOrderElements(XmlElement xmlElement) {
+    private static void reOrderElements(@NonNull XmlElement xmlElement) {
 
         reOrderApplication(xmlElement);
         reOrderUsesSdk(xmlElement);
@@ -102,7 +102,7 @@ public class PostValidator {
      *
      * @param xmlElement the root element of the manifest document.
      */
-    private static void reOrderApplication(XmlElement xmlElement) {
+    private static void reOrderApplication(@NonNull XmlElement xmlElement) {
 
         // look up application element.
         Optional<XmlElement> element = xmlElement
@@ -129,7 +129,7 @@ public class PostValidator {
      *
      * @param xmlElement the root element of the manifest document.
      */
-    private static void reOrderUsesSdk(XmlElement xmlElement) {
+    private static void reOrderUsesSdk(@NonNull XmlElement xmlElement) {
 
         // look up application element.
         Optional<XmlElement> element = xmlElement
@@ -167,9 +167,9 @@ public class PostValidator {
      * instructions were applied once or {@link MergingReport.Result#WARNING} otherwise.
      */
     private static void validate(
-            XmlElement xmlElement,
-            Actions actions,
-            MergingReport.Builder mergingReport) {
+            @NonNull XmlElement xmlElement,
+            @NonNull Actions actions,
+            @NonNull MergingReport.Builder mergingReport) {
 
         NodeOperationType operationType = xmlElement.getOperationType();
         switch (operationType) {
@@ -213,11 +213,11 @@ public class PostValidator {
      * Verifies that all merging attributes on a passed xml element were applied.
      */
     private static void validateAttributes(
-            XmlElement xmlElement,
-            Actions actions,
-            MergingReport.Builder mergingReport) {
+            @NonNull XmlElement xmlElement,
+            @NonNull Actions actions,
+            @NonNull MergingReport.Builder mergingReport) {
 
-        Collection<Map.Entry<XmlNode.NodeName, AttributeOperationType>> attributeOperations
+        @NonNull Collection<Map.Entry<XmlNode.NodeName, AttributeOperationType>> attributeOperations
                 = xmlElement.getAttributeOperations();
         for (Map.Entry<XmlNode.NodeName, AttributeOperationType> attributeOperation :
                 attributeOperations) {
@@ -260,8 +260,8 @@ public class PostValidator {
      * {@link com.android.manifmerger.Actions.ActionType} action was recorded on the passed element.
      * @return true if it was applied, false otherwise.
      */
-    private static boolean isNodeOperationPresent(XmlElement xmlElement,
-            Actions actions,
+    private static boolean isNodeOperationPresent(@NonNull XmlElement xmlElement,
+            @NonNull Actions actions,
             ActionType action) {
 
         for (Actions.NodeRecord nodeRecord : actions.getNodeRecords(xmlElement.getId())) {
@@ -277,9 +277,9 @@ public class PostValidator {
      * {@link com.android.manifmerger.Actions.ActionType} action was recorded on the passed element.
      * @return true if it was applied, false otherwise.
      */
-    private static boolean isAttributeOperationPresent(XmlElement xmlElement,
-            Map.Entry<XmlNode.NodeName, AttributeOperationType> attributeOperation,
-            Actions actions,
+    private static boolean isAttributeOperationPresent(@NonNull XmlElement xmlElement,
+            @NonNull Map.Entry<XmlNode.NodeName, AttributeOperationType> attributeOperation,
+            @NonNull Actions actions,
             ActionType action) {
 
         for (Actions.AttributeRecord attributeRecord : actions.getAttributeRecords(
@@ -298,8 +298,8 @@ public class PostValidator {
      * @param xmlElement xml element to check the attributes from.
      * @param mergingReport report for errors and warnings.
      */
-    private static void validateAndroidAttributes(XmlElement xmlElement,
-            MergingReport.Builder mergingReport) {
+    private static void validateAndroidAttributes(@NonNull XmlElement xmlElement,
+            @NonNull MergingReport.Builder mergingReport) {
 
         for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
             if (xmlAttribute.getModel() != null) {

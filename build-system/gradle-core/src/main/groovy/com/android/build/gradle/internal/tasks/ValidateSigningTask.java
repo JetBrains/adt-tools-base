@@ -25,18 +25,19 @@ import com.android.prefs.AndroidLocation;
 
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.ParallelizableTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.tooling.BuildException;
 
 import java.io.File;
 
 /**
- * A validate task that creates the debug keystore if it's missing.
- * It only creates it if it's in the default debug keystore location.
+ * A validate task that creates the debug keystore if it's missing. It only creates it if it's in
+ * the default debug keystore location.
  *
  * It's linked to a given SigningConfig
- *
  */
+@ParallelizableTask
 public class ValidateSigningTask extends BaseTask {
 
     private SigningConfig signingConfig;
@@ -52,12 +53,14 @@ public class ValidateSigningTask extends BaseTask {
     /**
      * Annotated getter for task input.
      *
-     * This is an Input and not an InputFile because the file might not exist.
-     * This is not actually used by the task, this is only for Gradle to check inputs.
+     * This is an Input and not an InputFile because the file might not exist. This is not actually
+     * used by the task, this is only for Gradle to check inputs.
      *
      * @return the path of the keystore.
      */
-    @Input @Optional
+    @Input
+    @Optional
+    @SuppressWarnings("unused")
     public String getStoreLocation() {
         File f = signingConfig.getStoreFile();
         if (f != null) {
@@ -76,6 +79,14 @@ public class ValidateSigningTask extends BaseTask {
         if (!storeFile.exists()) {
             if (KeystoreHelper.defaultDebugKeystoreLocation().equals(storeFile.getAbsolutePath())) {
                 checkState(signingConfig.isSigningReady(), "Debug signing config not ready.");
+                File storeDirectory = storeFile.getParentFile();
+
+                if (!storeDirectory.canWrite()) {
+                    String message = "Unable to create debug keystore in \""
+                            + storeDirectory.getAbsolutePath() + "\" because it is not writable.";
+
+                    throw new BuildException(message, null);
+                }
 
                 getLogger().info(
                         "Creating default debug keystore at {}",

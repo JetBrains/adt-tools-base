@@ -6,8 +6,8 @@ apply plugin: 'com.android.application'
 apply from: "../commonLocalRepo.gradle"
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    compileSdkVersion rootProject.latestCompileSdk
+    buildToolsVersion = rootProject.buildToolsVersion
 
     buildTypes.debug {
         zipAlignEnabled true

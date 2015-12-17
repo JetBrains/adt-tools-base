@@ -15,30 +15,27 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
 import org.junit.Before
-import org.junit.BeforeClass
-import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import static com.android.build.gradle.integration.common.utils.FileHelper.searchAndReplace
 /**
  * Test setting applicationId and applicationIdSuffix.
  */
 @CompileStatic
 class ApplicationIdTest {
-    @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(HelloWorldApp.noBuildFile())
             .create();
 
-    @BeforeClass
-    public static void setUp() {
+    @Before
+    public void setUp() {
         project.buildFile << """
 apply plugin: "com.android.application"
 
@@ -65,16 +62,25 @@ android {
 """
     }
 
-    @AfterClass
-    static void cleanUp() {
-        project = null
-    }
-
     @Test
     public void "check application id"() {
-        project.execute("assembleF1Debug");
-        TruthHelper.assertThatApk(project.getApk("f1", "debug"))
+        project.execute("assembleF1");
+        assertThatApk(project.getApk("f1", "debug"))
                 .hasPackageName("com.example.applicationidtest.default.f1.debug")
+        assertThatApk(project.getApk("f1", "release", "unsigned"))
+                .hasPackageName("com.example.applicationidtest.default.f1")
+
+        searchAndReplace(
+                project.buildFile,
+                'applicationIdSuffix ".debug"',
+                'applicationIdSuffix ".foo"')
+
+        project.execute("assembleF1");
+
+        assertThatApk(project.getApk("f1", "debug"))
+                .hasPackageName("com.example.applicationidtest.default.f1.foo")
+        assertThatApk(project.getApk("f1", "release", "unsigned"))
+                .hasPackageName("com.example.applicationidtest.default.f1")
     }
 
 }

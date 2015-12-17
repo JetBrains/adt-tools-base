@@ -38,13 +38,16 @@ import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
-import com.android.build.gradle.tasks.MergeAssets;
+import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
+import com.android.builder.core.ErrorReporter;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.SourceProvider;
+import com.android.ide.common.blame.MergingLog;
+import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
@@ -58,8 +61,11 @@ import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 
+import android.databinding.tool.LayoutXmlProcessor;
+
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -111,7 +117,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public RenderscriptCompile renderscriptCompileTask;
     public AidlCompile aidlCompileTask;
     public MergeResources mergeResourcesTask;
-    public MergeAssets mergeAssetsTask;
+    public MergeSourceSetFolders mergeAssetsTask;
     public GenerateBuildConfig generateBuildConfigTask;
     public GenerateResValues generateResValuesTask;
     public Copy copyApkTask;
@@ -148,6 +154,9 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     private Set<String> languageFilters;
     private Set<String> abiFilters;
 
+    @Nullable
+    private LayoutXmlProcessor layoutXmlProcessor;
+
     /**
      * If true, variant outputs will be considered signed. Only set if you manually set the outputs
      * to point to signed files built by other tasks.
@@ -160,7 +169,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public BaseVariantData(
             @NonNull AndroidConfig androidConfig,
             @NonNull TaskManager taskManager,
-            @NonNull GradleVariantConfiguration variantConfiguration) {
+            @NonNull GradleVariantConfiguration variantConfiguration,
+            @NonNull ErrorReporter errorReporter) {
         this.androidConfig = androidConfig;
         this.variantConfiguration = variantConfiguration;
         this.taskManager = taskManager;
@@ -183,11 +193,37 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         }
         scope = new VariantScopeImpl(
                 taskManager.getGlobalScope(),
-                new TransformManager(taskManager.getAndroidTasks()),
+                new TransformManager(taskManager.getAndroidTasks(), errorReporter),
                 this);
         taskManager.configureScopeForNdk(scope);
     }
 
+    @NonNull
+    public LayoutXmlProcessor getLayoutXmlProcessor() {
+        if (layoutXmlProcessor == null) {
+            File resourceBlameLogDir = getScope().getResourceBlameLogDir();
+            final MergingLog mergingLog = new MergingLog(resourceBlameLogDir);
+            layoutXmlProcessor = new LayoutXmlProcessor(
+                    getVariantConfiguration().getOriginalApplicationId(),
+                    taskManager.getDataBindingBuilder()
+                            .createJavaFileWriter(scope.getClassOutputForDataBinding()),
+                    getVariantConfiguration().getMinSdkVersion().getApiLevel(),
+                    getType() == VariantType.LIBRARY,
+                    new LayoutXmlProcessor.OriginalFileLookup() {
+
+                        @Override
+                        public File getOriginalFileFor(File file) {
+                            SourceFile input = new SourceFile(file);
+                            SourceFile original = mergingLog.find(input);
+                            // merged log api returns the file back if original cannot be found.
+                            // it is not what we want so we alter the response.
+                            return original == input ? null : original.getSourceFile();
+                        }
+                    }
+            );
+        }
+        return layoutXmlProcessor;
+    }
 
     public SplitHandlingPolicy getSplitHandlingPolicy() {
         return mSplitHandlingPolicy;
@@ -354,7 +390,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public void calculateFilters(Splits splits) {
 
         List<ResourceSet> resourceSets = variantConfiguration
-                .getResourceSets(getGeneratedResFolders(), false);
+                .getResourceSets(getGeneratedResFolders(), false, false /*validate*/);
         densityFilters = getFilters(resourceSets, DiscoverableFilterType.DENSITY, splits);
         languageFilters = getFilters(resourceSets, DiscoverableFilterType.LANGUAGE, splits);
         abiFilters = getFilters(resourceSets, DiscoverableFilterType.ABI, splits);
@@ -406,7 +442,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public List<String> discoverListOfResourceConfigs() {
         List<String> resFoldersOnDisk = new ArrayList<String>();
         List<ResourceSet> resourceSets = variantConfiguration.getResourceSets(
-                getGeneratedResFolders(), false /* no libraries resources */);
+                getGeneratedResFolders(), false /* no libraries resources */, false /*validate*/);
         resFoldersOnDisk.addAll(getAllFilters(
                 resourceSets,
                 DiscoverableFilterType.LANGUAGE.folderPrefix,
@@ -418,7 +454,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public List<String> discoverListOfResourceConfigsNotDensities() {
         List<String> resFoldersOnDisk = new ArrayList<String>();
         List<ResourceSet> resourceSets = variantConfiguration.getResourceSets(
-                getGeneratedResFolders(), false /* no libraries resources */);
+                getGeneratedResFolders(), false /* no libraries resources */, false /*validate*/);
         resFoldersOnDisk.addAll(getAllFilters(
                 resourceSets,
                 DiscoverableFilterType.LANGUAGE.folderPrefix));

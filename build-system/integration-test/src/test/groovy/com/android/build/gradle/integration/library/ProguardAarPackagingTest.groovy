@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue
  */
 class ProguardAarPackagingTest {
 
-    static public AndroidTestApp testApp = new HelloWorldApp()
+    static public AndroidTestApp testApp = HelloWorldApp.noBuildFile()
     static public AndroidTestApp libraryInJar = new EmptyAndroidTestApp()
 
     static {

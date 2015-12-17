@@ -36,6 +36,8 @@ import org.gradle.model.Model;
 import org.gradle.model.RuleSource;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
+import android.databinding.tool.DataBindingBuilder;
+
 /**
  * Gradle component model plugin class for 'application' projects.
  */
@@ -47,20 +49,20 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
         project.getPluginManager().apply(AndroidComponentModelTestPlugin.class);
     }
 
-    @SuppressWarnings("MethodMayBeStatic")
     public static class Rules extends RuleSource {
 
         @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
         @Model(IS_APPLICATION)
-        public Boolean isApplication() {
+        public static Boolean isApplication() {
             return false;
         }
 
         @Model(TASK_MANAGER)
-        public TaskManager createTaskManager(
+        public static TaskManager createTaskManager(
                 AndroidConfig androidExtension,
                 Project project,
                 AndroidBuilder androidBuilder,
+                DataBindingBuilder dataBindingBuilder,
                 SdkHandler sdkHandler,
                 ExtraModelInfo extraModelInfo,
                 ToolingModelBuilderRegistry toolingRegistry) {
@@ -69,6 +71,7 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
             return new LibraryComponentTaskManager(
                     project,
                     androidBuilder,
+                    dataBindingBuilder,
                     androidExtension,
                     sdkHandler,
                     dependencyManager,
@@ -76,7 +79,7 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
         }
 
         @Model
-        public VariantFactory createVariantFactory(
+        public static VariantFactory createVariantFactory(
                 ServiceRegistry serviceRegistry,
                 AndroidBuilder androidBuilder,
                 AndroidConfig extension) {

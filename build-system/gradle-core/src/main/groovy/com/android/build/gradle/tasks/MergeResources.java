@@ -25,22 +25,28 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.builder.model.AndroidProject;
 import com.android.builder.png.QueuedCruncher;
 import com.android.builder.png.VectorDrawableRenderer;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.ide.common.process.BaseProcessOutputHandler;
 import com.android.ide.common.process.LoggedProcessOutputHandler;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessOutput;
+import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.ide.common.res2.FileStatus;
 import com.android.ide.common.res2.FileValidity;
 import com.android.ide.common.res2.GeneratedResourceSet;
 import com.android.ide.common.res2.MergedResourceWriter;
 import com.android.ide.common.res2.MergingException;
+import com.android.ide.common.res2.NoOpResourcePreprocessor;
 import com.android.ide.common.res2.ResourceMerger;
 import com.android.ide.common.res2.ResourcePreprocessor;
 import com.android.ide.common.res2.ResourceSet;
 import com.android.resources.Density;
 import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
+import com.android.utils.ILogger;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.tasks.Input;
@@ -52,11 +58,15 @@ import org.gradle.api.tasks.ParallelizableTask;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 @ParallelizableTask
 public class MergeResources extends IncrementalTask {
@@ -83,7 +93,7 @@ public class MergeResources extends IncrementalTask {
 
     private boolean useNewCruncher;
 
-    private boolean insertSourceMarkers = true;
+    private boolean validateEnabled;
 
     private File blameLogFolder;
     // actual inputs
@@ -93,8 +103,10 @@ public class MergeResources extends IncrementalTask {
 
     private Collection<String> generatedDensities;
 
-    // fake input to detect changes. Not actually used by the task
+    private int minSdk;
+
     @InputFiles
+    @SuppressWarnings("unused") // Fake input to detect changes. Not actually used by the task.
     public Iterable<File> getRawInputFolders() {
         return flattenSourceSets(getInputResourceSets());
     }
@@ -111,6 +123,8 @@ public class MergeResources extends IncrementalTask {
 
     private PngCruncher getCruncher() {
         if (getUseNewCruncher()) {
+            // At this point ensureTargetSetup() has been called, so no NPE below.
+            // noinspection ConstantConditions
             if (getBuilder().getTargetInfo().getBuildTools().getRevision().getMajor() >= 22) {
                 return QueuedCruncher.Builder.INSTANCE.newCruncher(
                         getBuilder().getTargetInfo().getBuildTools().getPath(
@@ -118,7 +132,13 @@ public class MergeResources extends IncrementalTask {
             }
             getLogger().info("New PNG cruncher will be enabled with build tools 22 and above.");
         }
-        return getBuilder().getAaptCruncher(new LoggedProcessOutputHandler(getBuilder().getLogger()));
+
+        final FilterProcessOutputHandler handler = new FilterProcessOutputHandler(
+                new LoggedProcessOutputHandler(getBuilder().getLogger()), getBuilder().getLogger());
+        handler.addFilter(Pattern.compile(".*libpng warning: iCCP: "
+                + "Not recognizing known sRGB profile that has been edited.*"));
+
+        return getBuilder().getAaptCruncher(handler);
     }
 
     @Override
@@ -239,16 +259,26 @@ public class MergeResources extends IncrementalTask {
         }
     }
 
-    @NonNull
+    @Nullable
     private ResourcePreprocessor getPreprocessor() {
         // Only one pre-processor for now. The code will need slight changes when we add more.
+        Collection<String> generatedDensitiesNames = getGeneratedDensities();
+
+        if (generatedDensitiesNames.isEmpty()) {
+            // If the user doesn't want any PNGs, leave the XML file alone as well.
+            return new NoOpResourcePreprocessor();
+        }
 
         Collection<Density> densities = Lists.newArrayList();
-        for (String density : getGeneratedDensities()) {
+        for (String density : generatedDensitiesNames) {
             densities.add(Density.getEnum(density));
         }
 
-        return new VectorDrawableRenderer(getGeneratedPngsOutputDir(), densities, getILogger());
+        return new VectorDrawableRenderer(
+                getMinSdk(),
+                getGeneratedPngsOutputDir(),
+                densities,
+                getILogger());
     }
 
     @NonNull
@@ -268,30 +298,11 @@ public class MergeResources extends IncrementalTask {
         return resourceSets;
     }
 
-    @Input
-    public boolean isProcess9Patch() {
-        return process9Patch;
-    }
-
-    @Input
-    public boolean isCrunchPng() {
-        return crunchPng;
-    }
-
-    @Input
-    public boolean isUseNewCruncher() {
-        return useNewCruncher;
-    }
-
-    @Input
-    public boolean isInsertSourceMarkers() {
-        return insertSourceMarkers;
-    }
-
     public List<ResourceSet> getInputResourceSets() {
         return inputResourceSets;
     }
 
+    @SuppressWarnings("unused") // Property set with convention mapping.
     public void setInputResourceSets(
             List<ResourceSet> inputResourceSets) {
         this.inputResourceSets = inputResourceSets;
@@ -340,7 +351,19 @@ public class MergeResources extends IncrementalTask {
         this.publicFile = publicFile;
     }
 
+    // Synthetic input: the validation flag is set on the resource sets in ConfigAction.execute.
+    @SuppressWarnings("unused")
+    @Input
+    public boolean isValidateEnabled() {
+        return validateEnabled;
+    }
+
+    public void setValidateEnabled(boolean validateEnabled) {
+        this.validateEnabled = validateEnabled;
+    }
+
     @OutputDirectory
+    @Optional
     public File getBlameLogFolder() {
         return blameLogFolder;
     }
@@ -353,8 +376,26 @@ public class MergeResources extends IncrementalTask {
         return generatedPngsOutputDir;
     }
 
+    public void setGeneratedPngsOutputDir(File generatedPngsOutputDir) {
+        this.generatedPngsOutputDir = generatedPngsOutputDir;
+    }
+
+    @Input
     public Collection<String> getGeneratedDensities() {
         return generatedDensities;
+    }
+
+    @Input
+    public int getMinSdk() {
+        return minSdk;
+    }
+
+    public void setMinSdk(int minSdk) {
+        this.minSdk = minSdk;
+    }
+
+    public void setGeneratedDensities(Collection<String> generatedDensities) {
+        this.generatedDensities = generatedDensities;
     }
 
     public static class ConfigAction implements TaskConfigAction<MergeResources> {
@@ -403,35 +444,32 @@ public class MergeResources extends IncrementalTask {
                     scope.getVariantData();
             final AndroidConfig extension = scope.getGlobalScope().getExtension();
 
+            mergeResourcesTask.setMinSdk(
+                    variantData.getVariantConfiguration().getMinSdkVersion().getApiLevel());
+
             mergeResourcesTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
             mergeResourcesTask.setVariantName(scope.getVariantConfiguration().getFullName());
-            mergeResourcesTask.setIncrementalFolder(new File(
-                    scope.getGlobalScope().getBuildDir() + "/" + AndroidProject.FD_INTERMEDIATES +
-                            "/incremental/" + taskNamePrefix + "Resources/" +
-                            variantData.getVariantConfiguration().getDirName()));
+            mergeResourcesTask.setIncrementalFolder(scope.getIncrementalDir(getName()));
 
-            mergeResourcesTask.setBlameLogFolder(scope.getResourceBlameLogDir());
-
-            mergeResourcesTask.process9Patch = process9Patch;
-            mergeResourcesTask.crunchPng = extension.getAaptOptions()
-                    .getCruncherEnabled();
-
-            mergeResourcesTask.generatedDensities =
-                    variantData.getVariantConfiguration().getMergedFlavor().getGeneratedDensities();
-
-            if (mergeResourcesTask.generatedDensities == null) {
-                mergeResourcesTask.generatedDensities = Collections.emptySet();
+            // Libraries use this task twice, once for compilation (with dependencies),
+            // where blame is useful, and once for packaging where it is not.
+            if (includeDependencies) {
+                mergeResourcesTask.setBlameLogFolder(scope.getResourceBlameLogDir());
             }
+            mergeResourcesTask.setProcess9Patch(process9Patch);
+            mergeResourcesTask.setCrunchPng(extension.getAaptOptions().getCruncherEnabled());
 
+            Set<String> generatedDensities =
+                    variantData.getVariantConfiguration().getMergedFlavor().getGeneratedDensities();
+            mergeResourcesTask.setGeneratedDensities(
+                    Objects.firstNonNull(generatedDensities, Collections.<String>emptySet()));
 
-            ConventionMappingHelper.map(mergeResourcesTask, "useNewCruncher",
-                    new Callable<Boolean>() {
-                        @Override
-                        public Boolean call() throws Exception {
-                            return extension.getAaptOptions()
-                                    .getUseNewCruncher();
-                        }
-                    });
+            mergeResourcesTask.setUseNewCruncher(extension.getAaptOptions().getUseNewCruncher());
+
+            final boolean validateEnabled = AndroidGradleOptions.isResourceValidationEnabled(
+                    scope.getGlobalScope().getProject());
+
+            mergeResourcesTask.setValidateEnabled(validateEnabled);
 
             ConventionMappingHelper.map(mergeResourcesTask, "inputResourceSets",
                     new Callable<List<ResourceSet>>() {
@@ -450,21 +488,83 @@ public class MergeResources extends IncrementalTask {
                                 generatedResFolders.add(
                                         variantData.generateApkDataTask.getResOutputDir());
                             }
-                            return variantData.getVariantConfiguration()
-                                    .getResourceSets(generatedResFolders, includeDependencies);
+
+                            return variantData.getVariantConfiguration().getResourceSets(
+                                    generatedResFolders, includeDependencies, validateEnabled);
                         }
                     });
 
-            mergeResourcesTask.outputDir =
+            mergeResourcesTask.setOutputDir(
                     outputLocation != null
                             ? outputLocation
-                            : scope.getDefaultMergeResourcesOutputDir();
+                            : scope.getDefaultMergeResourcesOutputDir());
 
-            mergeResourcesTask.generatedPngsOutputDir = scope.getGeneratedPngsOutputDir();
+            mergeResourcesTask.setGeneratedPngsOutputDir(scope.getGeneratedPngsOutputDir());
 
             variantData.mergeResourcesTask = mergeResourcesTask;
         }
     }
+
+    /**
+     * Process output handler that will delegate output to another handler but allows filtering
+     * of stderr lines writing them to a logger as warning.
+     */
+    private static class FilterProcessOutputHandler extends BaseProcessOutputHandler {
+        @NonNull private ProcessOutputHandler mDelegate;
+        @NonNull private List<Pattern> mFilters;
+        @NonNull private ILogger mLogger;
+
+        /**
+         * Creates a new output handler that wraps the provided delegate.
+         * @param delegate the delegate that is being wrapped
+         */
+        FilterProcessOutputHandler(@NonNull ProcessOutputHandler delegate,
+                @NonNull ILogger logger) {
+            mDelegate = delegate;
+            mFilters = Lists.newArrayList();
+            mLogger = logger;
+        }
+
+
+        /**
+         * Adds a new filter pattern.
+         */
+        void addFilter(@NonNull Pattern p) {
+            mFilters.add(p);
+        }
+
+        @Override
+        public void handleOutput(@NonNull ProcessOutput processOutput)
+                throws ProcessException {
+            BaseProcessOutput output = (BaseProcessOutput) processOutput;
+
+            ProcessOutput delOutput = mDelegate.createOutput();
+
+            try {
+                // stdout goes unmodified.
+                delOutput.getStandardOutput().write(output.getStandardOutput().toByteArray());
+
+                String[] lines = output.getErrorOutputAsString().split(
+                        System.getProperty("line.separator"));
+                Writer errWriter = new OutputStreamWriter(delOutput.getErrorOutput());
+                boolean hasPrev = false;
+                for (String l : lines) {
+                    for (Pattern p : mFilters) {
+                        if (p.matcher(l).matches()) {
+                            mLogger.info(l);
+                        } else {
+                            if (hasPrev) {
+                                errWriter.write(System.getProperty("line.separator"));
+                            }
+
+                            errWriter.write(l);
+                            hasPrev = true;
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                throw new ProcessException(e);
+            }
+        }
+    }
 }
-
-

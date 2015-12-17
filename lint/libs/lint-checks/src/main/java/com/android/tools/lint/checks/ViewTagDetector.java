@@ -30,6 +30,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.utils.AsmUtils;
 
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
@@ -152,7 +153,7 @@ public class ViewTagDetector extends Detector implements ClassScanner {
                     String parent = sdkInfo.getParentViewClass(className);
                     if (parent == null) {
                         if (internalName == null) {
-                            internalName = className.replace('.', '/');
+                            internalName = AsmUtils.toInternalName(className);
                         }
                         assert internalName != null;
                         parent = driver.getSuperClass(internalName);

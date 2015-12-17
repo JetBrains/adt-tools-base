@@ -22,8 +22,10 @@ import com.android.ide.common.blame.SourcePosition;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Strings;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.awt.geom.AffineTransform;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
@@ -37,11 +39,15 @@ import java.util.logging.Logger;
 class SvgTree {
     private static Logger logger = Logger.getLogger(SvgTree.class.getSimpleName());
 
-    public float w;
-    public float h;
-    public float[] matrix;
-    public float[] viewBox;
-    public float mScaleFactor = 1;
+    public static final String SVG_WIDTH = "width";
+    public static final String SVG_HEIGHT = "height";
+    public static final String SVG_VIEW_BOX = "viewBox";
+
+    private float w = -1;
+    private float h = -1;
+    private AffineTransform mRootTransform = new AffineTransform();
+    private float[] viewBox;
+    private float mScaleFactor = 1;
 
     private SvgGroupNode mRoot;
     private String mFileName;
@@ -50,8 +56,22 @@ class SvgTree {
 
     private boolean mHasLeafNode = false;
 
+
+    public float getWidth() { return w; }
+    public float getHeight() { return h; }
+    public float getScaleFactor() { return mScaleFactor; }
     public void setHasLeafNode(boolean hasLeafNode) {
         mHasLeafNode = hasLeafNode;
+    }
+
+    public float[] getViewBox() { return viewBox; }
+
+    /**
+     * From the root, top down, pass the transformation (TODO: attributes)
+     * down the children.
+     */
+    public void flattern() {
+        mRoot.flattern(new AffineTransform());
     }
 
     public enum SvgLogLevel {
@@ -66,18 +86,15 @@ class SvgTree {
     }
 
     public void normalize() {
-        if (matrix != null) {
-            transform(matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5]);
-        }
+        // mRootTransform is always setup, now just need to apply the viewbox info into.
+        mRootTransform.preConcatenate(new AffineTransform(1, 0, 0, 1, -viewBox[0], -viewBox[1]));
+        transform(mRootTransform);
 
-        if (viewBox != null && (viewBox[0] != 0 || viewBox[1] != 0)) {
-            transform(1, 0, 0, 1, -viewBox[0], -viewBox[1]);
-        }
-        logger.log(Level.FINE, "matrix=" + Arrays.toString(matrix));
+        logger.log(Level.FINE, "matrix=" + mRootTransform);
     }
 
-    private void transform(float a, float b, float c, float d, float e, float f) {
-        mRoot.transform(a, b, c, d, e, f);
+    private void transform(AffineTransform rootTransform) {
+        mRoot.transformIfNeeded(rootTransform);
     }
 
     public void dump(SvgGroupNode root) {
@@ -132,4 +149,66 @@ class SvgTree {
         return PositionXmlParser.getPosition(node);
     }
 
+    public float getViewportWidth() {
+        return (viewBox == null) ? -1 : viewBox[2];
+    }
+
+    public float getViewportHeight() { return (viewBox == null) ? -1 : viewBox[3]; }
+
+    private enum SizeType {
+        PIXEL,
+        PERCENTAGE;
+    }
+
+    public void parseDimension(Node nNode) {
+        NamedNodeMap a = nNode.getAttributes();
+        int len = a.getLength();
+        SizeType widthType = SizeType.PIXEL;
+        SizeType heightType = SizeType.PIXEL;
+        for (int i = 0; i < len; i++) {
+            Node n = a.item(i);
+            String name = n.getNodeName().trim();
+            String value = n.getNodeValue().trim();
+            int subStringSize = value.length();
+            SizeType currentType = SizeType.PIXEL;
+            if (value.endsWith("px")) {
+                subStringSize = subStringSize - 2;
+            } else if (value.endsWith("%")) {
+                subStringSize = subStringSize - 1;
+                currentType = SizeType.PERCENTAGE;
+            }
+
+            if (SVG_WIDTH.equals(name)) {
+                w = Float.parseFloat(value.substring(0, subStringSize));
+                widthType = currentType;
+            } else if (SVG_HEIGHT.equals(name)) {
+                h = Float.parseFloat(value.substring(0, subStringSize));
+                heightType = currentType;
+            } else if (SVG_VIEW_BOX.equals(name)) {
+                viewBox = new float[4];
+                String[] strbox = value.split(" ");
+                for (int j = 0; j < viewBox.length; j++) {
+                    viewBox[j] = Float.parseFloat(strbox[j]);
+                }
+            }
+        }
+        // If there is no viewbox, then set it up according to w, h.
+        // From now on, viewport should be read from viewBox, and size should be from w and h.
+        // w and h can be set to percentage too, in this case, set it to the viewbox size.
+        if (viewBox == null && w > 0 && h > 0) {
+            viewBox = new float[4];
+            viewBox[2] = w;
+            viewBox[3] = h;
+        } else if ((w < 0 || h < 0) && viewBox != null) {
+            w = viewBox[2];
+            h = viewBox[3];
+        }
+
+        if (widthType == SizeType.PERCENTAGE && w > 0) {
+            w = viewBox[2] * w / 100;
+        }
+        if (heightType == SizeType.PERCENTAGE && h > 0) {
+            h = viewBox[3] * h / 100;
+        }
+    }
 }

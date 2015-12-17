@@ -15,16 +15,13 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.build.gradle.integration.common.utils.SigningConfigHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.JavaCompileOptions
-import com.android.builder.model.SigningConfig
 import com.android.builder.model.Variant
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
@@ -33,13 +30,11 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
-import static com.android.builder.core.BuilderConstants.DEBUG
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertNull
 import static org.junit.Assert.assertTrue
-
 /**
  * Assemble tests for basic.
  */
@@ -67,13 +62,13 @@ class BasicTest {
 
     @Test
     void report() {
-        project.execute("androidDependencies", "signingReport")
+        project.execute("androidDependencies")
     }
 
     @Test
     void basicModel() {
         assertFalse("Library Project", model.isLibrary())
-        assertEquals("Compile Target", "android-21", model.getCompileTarget())
+        assertEquals("Compile Target", "android-23", model.getCompileTarget())
         assertFalse("Non empty bootclasspath", model.getBootClasspath().isEmpty())
 
         assertNotNull("aaptOptions not null", model.getAaptOptions())
@@ -106,41 +101,6 @@ class BasicTest {
             AndroidArtifact artifact = variant.getMainArtifact()
             assertNull(artifact.getVariantSourceProvider())
             assertNull(artifact.getMultiFlavorSourceProvider())
-        }
-    }
-
-    @Test
-    public void signingConfigsModel() {
-        Collection<SigningConfig> signingConfigs = model.getSigningConfigs()
-        assertNotNull("SigningConfigs null-check", signingConfigs)
-        assertEquals("Number of signingConfig", 2, signingConfigs.size())
-
-        SigningConfig debugSigningConfig = ModelHelper.getSigningConfig(signingConfigs, DEBUG)
-        assertNotNull("debug signing config null-check", debugSigningConfig)
-        new SigningConfigHelper(debugSigningConfig, DEBUG, true).test()
-
-        SigningConfig mySigningConfig = ModelHelper.getSigningConfig(signingConfigs, "myConfig")
-        assertNotNull("myConfig signing config null-check", mySigningConfig)
-        new SigningConfigHelper(mySigningConfig, "myConfig", true)
-                .setStoreFile(new File(project.getTestDir(), "debug.keystore"))
-                .test()
-    }
-
-    @Test
-    void "check custom signing"() throws Exception {
-        Collection<Variant> variants = model.getVariants()
-
-        for (Variant variant : variants) {
-            // Release variant doesn't specify the signing config, so it should not be considered
-            // signed.
-            if (variant.getName().equals("release")) {
-                assertFalse(variant.getMainArtifact().isSigned())
-            }
-
-            // customSigning is identical to release, but overrides the signing check.
-            if (variant.getName().equals("customSigning")) {
-                assertTrue(variant.getMainArtifact().isSigned())
-            }
         }
     }
 

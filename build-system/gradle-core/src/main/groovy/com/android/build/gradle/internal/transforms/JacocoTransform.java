@@ -15,29 +15,31 @@
  */
 package com.android.build.gradle.internal.transforms;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.annotations.concurrency.Immutable;
+import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.coverage.JacocoPlugin;
 import com.android.build.gradle.internal.pipeline.TransformManager;
-import com.android.build.transform.api.AsInputTransform;
-import com.android.build.transform.api.Context;
-import com.android.build.transform.api.ScopedContent;
-import com.android.build.transform.api.Transform;
-import com.android.build.transform.api.TransformException;
-import com.android.build.transform.api.TransformInput;
-import com.android.build.transform.api.TransformInput.FileStatus;
-import com.android.build.transform.api.TransformOutput;
+import com.android.build.api.transform.Context;
+import com.android.build.api.transform.DirectoryInput;
+import com.android.build.api.transform.Format;
+import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.Status;
+import com.android.build.api.transform.Transform;
+import com.android.build.api.transform.TransformException;
+import com.android.build.api.transform.TransformInput;
+import com.android.build.api.transform.TransformOutputProvider;
 import com.android.utils.FileUtils;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
-import org.gradle.api.Project;
 import org.gradle.api.artifacts.ConfigurationContainer;
 import org.jacoco.core.instr.Instrumenter;
 import org.jacoco.core.runtime.OfflineInstrumentationAccessGenerator;
@@ -46,14 +48,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Jacoco Transform
  */
-public class JacocoTransform extends Transform implements AsInputTransform {
+public class JacocoTransform extends Transform {
 
     @NonNull
     private final Supplier<Collection<File>> jacocoClasspath;
@@ -67,7 +68,6 @@ public class JacocoTransform extends Transform implements AsInputTransform {
         });
     }
 
-
     @NonNull
     @Override
     public String getName() {
@@ -76,21 +76,15 @@ public class JacocoTransform extends Transform implements AsInputTransform {
 
     @NonNull
     @Override
-    public Set<ScopedContent.ContentType> getInputTypes() {
+    public Set<QualifiedContent.ContentType> getInputTypes() {
         return TransformManager.CONTENT_CLASS;
     }
 
     @NonNull
     @Override
-    public Set<ScopedContent.Scope> getScopes() {
+    public Set<QualifiedContent.Scope> getScopes() {
         // only run on the project classes
-        return Sets.immutableEnumSet(ScopedContent.Scope.PROJECT);
-    }
-
-    @NonNull
-    @Override
-    public ScopedContent.Format getOutputFormat() {
-        return ScopedContent.Format.SINGLE_FOLDER;
+        return Sets.immutableEnumSet(QualifiedContent.Scope.PROJECT);
     }
 
     @NonNull
@@ -107,19 +101,25 @@ public class JacocoTransform extends Transform implements AsInputTransform {
     @Override
     public void transform(
             @NonNull Context context,
-            @NonNull Map<TransformInput, TransformOutput> inputOutputs,
+            @NonNull Collection<TransformInput> inputs,
             @NonNull Collection<TransformInput> referencedInputs,
+            @Nullable TransformOutputProvider outputProvider,
             boolean isIncremental) throws IOException, TransformException, InterruptedException {
 
-        TransformInput input = Iterables.getOnlyElement(inputOutputs.keySet());
-        TransformOutput output = Iterables.getOnlyElement(inputOutputs.values());
+        checkNotNull(outputProvider, "Missing output object for transform " + getName());
+        File outputDir = outputProvider.getContentLocation("main", getOutputTypes(), getScopes(),
+                Format.DIRECTORY);
+        FileUtils.mkdirs(outputDir);
 
-        File inputDir = Iterables.getOnlyElement(input.getFiles());
-        File outputDir = output.getOutFile();
+        TransformInput input = Iterables.getOnlyElement(inputs);
+        // we don't want jar inputs.
+        Preconditions.checkState(input.getJarInputs().isEmpty());
+        DirectoryInput directoryInput = Iterables.getOnlyElement(input.getDirectoryInputs());
+        File inputDir = directoryInput.getFile();
 
         Instrumenter instrumenter = new Instrumenter(new OfflineInstrumentationAccessGenerator());
         if (isIncremental) {
-            instrumentFilesIncremental(instrumenter, inputDir, outputDir, input.getChangedFiles());
+            instrumentFilesIncremental(instrumenter, inputDir, outputDir, directoryInput.getChangedFiles());
         } else {
             instrumentFilesFullRun(instrumenter, inputDir, outputDir);
         }
@@ -129,14 +129,15 @@ public class JacocoTransform extends Transform implements AsInputTransform {
             @NonNull Instrumenter instrumenter,
             @NonNull File inputDir,
             @NonNull File outputDir,
-            @NonNull Map<File, FileStatus> changedFiles) throws IOException {
-        for (Map.Entry<File, FileStatus> changedInput : changedFiles.entrySet()) {
+            @NonNull Map<File, Status> changedFiles) throws IOException {
+        for (Map.Entry<File, Status> changedInput : changedFiles.entrySet()) {
             File inputFile = changedInput.getKey();
             if (!inputFile.getName().endsWith(SdkConstants.DOT_CLASS)) {
                 continue;
             }
 
-            File outputFile = new File(outputDir, FileUtils.relativePath(inputFile, inputDir));
+            File outputFile = new File(outputDir,
+                    FileUtils.relativePossiblyNonExistingPath(inputFile, inputDir));
             switch (changedInput.getValue()) {
                 case REMOVED:
                     FileUtils.delete(outputFile);

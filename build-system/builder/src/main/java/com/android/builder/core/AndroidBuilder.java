@@ -18,7 +18,6 @@ package com.android.builder.core;
 
 import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.DOT_DEX;
-import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.FD_RES_XML;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR;
@@ -29,10 +28,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.transform.api.ScopedContent.Format;
 import com.android.builder.compiling.DependencyFileProcessor;
 import com.android.builder.core.BuildToolsServiceLoader.BuildToolServiceLoader;
 import com.android.builder.dependency.ManifestDependency;
@@ -96,6 +93,7 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.IAndroidTarget.OptionalLibrary;
 import com.android.sdklib.repository.FullRevision;
+import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
@@ -140,7 +138,7 @@ import java.util.zip.ZipFile;
  * {@link #mergeManifests(File, List, List, String, int, String, String, String, Integer, String, String, ManifestMerger2.MergeType, Map, File)}
  * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, File, List, Map, File, File)}
  * {@link #processResources(AaptPackageProcessBuilder, boolean, ProcessOutputHandler)}
- * {@link #compileAllAidlFiles(List, File, File, List, DependencyFileProcessor, ProcessOutputHandler)}
+ * {@link #compileAllAidlFiles(List, File, File, Collection, List, DependencyFileProcessor, ProcessOutputHandler)}
  * {@link #convertByteCode(Collection, File, boolean, File, DexOptions, List, boolean, boolean, ProcessOutputHandler)}
  * {@link #packageApk(String, Map, File, Collection, File, Set, boolean, SigningConfig, PackagingOptions, SignedJarBuilder.IZipEntryFilter, String)}
  *
@@ -593,7 +591,7 @@ public class AndroidBuilder {
             @NonNull String outManifestLocation,
             @Nullable String outAaptSafeManifestLocation,
             ManifestMerger2.MergeType mergeType,
-            Map<String, String> placeHolders,
+            Map<String, Object> placeHolders,
             @Nullable File reportFile) {
 
         try {
@@ -629,7 +627,7 @@ public class AndroidBuilder {
                     }
                     save(xmlDocument, new File(outManifestLocation));
                     if (outAaptSafeManifestLocation != null) {
-                        new PlaceholderEncoder().visit(xmlDocument);
+                        PlaceholderEncoder.visit(xmlDocument);
                         save(xmlDocument, new File(outAaptSafeManifestLocation));
                     }
                     mLogger.info("Merged manifest saved to " + outManifestLocation);
@@ -686,7 +684,7 @@ public class AndroidBuilder {
      * @param xmlDocument xml document to save.
      * @param out file to save to.
      */
-    private void save(XmlDocument xmlDocument, File out) {
+    private static void save(XmlDocument xmlDocument, File out) {
         try {
             Files.write(xmlDocument.prettyPrint(), out, Charsets.UTF_8);
         } catch(IOException e) {
@@ -752,8 +750,8 @@ public class AndroidBuilder {
      */
     public void processTestManifest(
             @NonNull String testApplicationId,
-            @Nullable String minSdkVersion,
-            @Nullable String targetSdkVersion,
+            @NonNull String minSdkVersion,
+            @NonNull String targetSdkVersion,
             @NonNull String testedApplicationId,
             @NonNull String instrumentationRunner,
             @NonNull Boolean handleProfiling,
@@ -762,7 +760,7 @@ public class AndroidBuilder {
             @NonNull List<? extends ManifestDependency> libraries,
             @NonNull Map<String, Object> manifestPlaceholders,
             @NonNull File outManifest,
-            @NonNull File tmpDir) {
+            @NonNull File tmpDir) throws IOException {
         checkNotNull(testApplicationId, "testApplicationId cannot be null.");
         checkNotNull(testedApplicationId, "testedApplicationId cannot be null.");
         checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
@@ -771,10 +769,17 @@ public class AndroidBuilder {
         checkNotNull(libraries, "libraries cannot be null.");
         checkNotNull(outManifest, "outManifestLocation cannot be null.");
 
+        // These temp files are only need in the middle of processing manifests; delete
+        // them when they're done. We're not relying on File#deleteOnExit for this
+        // since in the Gradle daemon for example that would leave the files around much
+        // longer than we want.
+        File tempFile1 = null;
+        File tempFile2 = null;
         try {
-            tmpDir.mkdirs();
+            FileUtils.mkdirs(tmpDir);
             File generatedTestManifest = libraries.isEmpty() && testManifestFile == null
-                    ? outManifest : File.createTempFile("manifestMerger", ".xml", tmpDir);
+                    ? outManifest
+                    : (tempFile1 = File.createTempFile("manifestMerger", ".xml", tmpDir));
 
             mLogger.verbose("Generating in %1$s", generatedTestManifest.getAbsolutePath());
             generateTestManifest(
@@ -788,7 +793,7 @@ public class AndroidBuilder {
                     generatedTestManifest);
 
             if (testManifestFile != null) {
-                File mergedTestManifest = File.createTempFile("manifestMerger", ".xml", tmpDir);
+                tempFile2 = File.createTempFile("manifestMerger", ".xml", tmpDir);
                 mLogger.verbose("Merging user supplied manifest in %1$s",
                         generatedTestManifest.getAbsolutePath());
                 Invoker invoker = ManifestMerger2.newMerger(
@@ -798,9 +803,9 @@ public class AndroidBuilder {
                         .setPlaceHolderValue(PlaceholderHandler.INSTRUMENTATION_RUNNER,
                                 instrumentationRunner)
                         .addLibraryManifests(generatedTestManifest);
-                if (minSdkVersion != null) {
-                    invoker.setOverride(SystemProperty.MIN_SDK_VERSION, minSdkVersion);
-                }
+
+                invoker.setOverride(SystemProperty.MIN_SDK_VERSION, minSdkVersion);
+
                 if (!targetSdkVersion.equals("-1")) {
                     invoker.setOverride(SystemProperty.TARGET_SDK_VERSION, targetSdkVersion);
                 }
@@ -808,8 +813,8 @@ public class AndroidBuilder {
                 if (libraries.isEmpty()) {
                     handleMergingResult(mergingReport, outManifest);
                 } else {
-                    handleMergingResult(mergingReport, mergedTestManifest);
-                    generatedTestManifest = mergedTestManifest;
+                    handleMergingResult(mergingReport, tempFile2);
+                    generatedTestManifest = tempFile2;
                 }
             }
 
@@ -826,6 +831,13 @@ public class AndroidBuilder {
             }
         } catch(Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            if (tempFile1 != null) {
+                FileUtils.delete(tempFile1);
+            }
+            if (tempFile2 != null) {
+                FileUtils.delete(tempFile2);
+            }
         }
     }
 
@@ -1023,7 +1035,7 @@ public class AndroidBuilder {
 
         // xml folder
         File resXmlFile = new File(outResFolder, FD_RES_XML);
-        resXmlFile.mkdirs();
+        FileUtils.mkdirs(resXmlFile);
 
         Files.write(content,
                 new File(resXmlFile, ANDROID_WEAR_MICRO_APK + DOT_XML),
@@ -1060,6 +1072,9 @@ public class AndroidBuilder {
      *
      * @param sourceFolders all the source folders to find files to compile
      * @param sourceOutputDir the output dir in which to generate the source code
+     * @param packagedOutputDir the output dir for the AIDL files that will be packaged in an aar
+     * @param packageWhiteList a list of AIDL FQCNs that are not parcelable that should also be
+     *                         packaged in an aar
      * @param importFolders import folders
      * @param dependencyFileProcessor the dependencyFileProcessor to record the dependencies
      *                                of the compilation.
@@ -1069,7 +1084,8 @@ public class AndroidBuilder {
      */
     public void compileAllAidlFiles(@NonNull List<File> sourceFolders,
                                     @NonNull File sourceOutputDir,
-                                    @Nullable File parcelableOutputDir,
+                                    @Nullable File packagedOutputDir,
+                                    @Nullable Collection<String> packageWhiteList,
                                     @NonNull List<File> importFolders,
                                     @Nullable DependencyFileProcessor dependencyFileProcessor,
                                     @NonNull ProcessOutputHandler processOutputHandler)
@@ -1098,7 +1114,8 @@ public class AndroidBuilder {
                 target.getPath(IAndroidTarget.ANDROID_AIDL),
                 fullImportList,
                 sourceOutputDir,
-                parcelableOutputDir,
+                packagedOutputDir,
+                packageWhiteList,
                 dependencyFileProcessor != null ?
                         dependencyFileProcessor : sNoOpDependencyFileProcessor,
                 mProcessExecutor,
@@ -1124,7 +1141,8 @@ public class AndroidBuilder {
     public void compileAidlFile(@NonNull File sourceFolder,
                                 @NonNull File aidlFile,
                                 @NonNull File sourceOutputDir,
-                                @Nullable File parcelableOutputDir,
+                                @Nullable File packagedOutputDir,
+                                @Nullable Collection<String> packageWhitelist,
                                 @NonNull List<File> importFolders,
                                 @Nullable DependencyFileProcessor dependencyFileProcessor,
                                 @NonNull ProcessOutputHandler processOutputHandler)
@@ -1148,7 +1166,8 @@ public class AndroidBuilder {
                 target.getPath(IAndroidTarget.ANDROID_AIDL),
                 importFolders,
                 sourceOutputDir,
-                parcelableOutputDir,
+                packagedOutputDir,
+                packageWhitelist,
                 dependencyFileProcessor != null ?
                         dependencyFileProcessor : sNoOpDependencyFileProcessor,
                 mProcessExecutor,
@@ -1172,7 +1191,7 @@ public class AndroidBuilder {
      * @param targetApi the target api
      * @param debugBuild whether the build is debug
      * @param optimLevel the optimization level
-     * @param ndkMode
+     * @param ndkMode whether the renderscript code should be compiled to generate C/C++ bindings
      * @param supportMode support mode flag to generate .so files.
      * @param abiFilters ABI filters in case of support mode
      *
@@ -1314,46 +1333,6 @@ public class AndroidBuilder {
                 .setMultiDex(multidex)
                 .setMainDexList(mainDexList)
                 .addInputs(verifiedInputs.build());
-
-        if (additionalParameters != null) {
-            builder.additionalParameters(additionalParameters);
-        }
-
-        JavaProcessInfo javaProcessInfo = builder.build(buildToolInfo, dexOptions);
-
-        ProcessResult result = mJavaProcessExecutor.execute(javaProcessInfo, processOutputHandler);
-        result.rethrowFailure().assertNormalExitValue();
-    }
-
-    /**
-     * Converts the bytecode to Dalvik format
-     * @param inputs the input file
-     * @param outFile the location of the output file
-     * @param dexOptions dex options
-     * @param additionalParameters list of additional parameters to give to dx
-     *
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws ProcessException
-     */
-    public void convertByteCode(
-            @NonNull List<File> inputs,
-            @NonNull File outFile,
-            @NonNull DexOptions dexOptions,
-            @Nullable List<String> additionalParameters,
-            @NonNull ProcessOutputHandler processOutputHandler)
-            throws IOException, InterruptedException, ProcessException {
-        checkNotNull(inputs, "input cannot be null.");
-        checkNotNull(dexOptions, "dexOptions cannot be null.");
-        checkState(mTargetInfo != null,
-                "Cannot call convertByteCode() before setTargetInfo() is called.");
-
-        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
-        DexProcessBuilder builder = new DexProcessBuilder(outFile);
-
-        builder.setVerbose(mVerboseExec)
-                .setNoStrict(true)
-                .addInputs(inputs);
 
         if (additionalParameters != null) {
             builder.additionalParameters(additionalParameters);
@@ -1690,9 +1669,7 @@ public class AndroidBuilder {
             builder.setMultiDex(true).setMinSdkVersion(minSdkVersion);
         }
 
-        if (jarJarRuleFiles != null) {
-            builder.setJarJarRuleFiles(jarJarRuleFiles);
-        }
+        builder.setJarJarRuleFiles(jarJarRuleFiles);
 
         mJavaProcessExecutor.execute(
                 builder.build(mTargetInfo.getBuildTools()), processOutputHandler)
@@ -1826,13 +1803,11 @@ public class AndroidBuilder {
      *
      * @param androidResPkgLocation the location of the packaged resource file
      * @param dexFolders the folder(s) with the dex file(s).
-     * @param javaResourcesLocation the processed Java resource folder
-     * @param jniLibsFolders the folders containing jni shared libraries
-     * @param mergingFolder folder to contain files that are being merged
+     * @param javaResourcesLocations the processed Java resource folders and/or jars
+     * @param jniLibsLocations the folders containing jni shared libraries
      * @param abiFilters optional ABI filter
      * @param jniDebugBuild whether the app should include jni debug data
      * @param signingConfig the signing configuration
-     * @param packagingOptions the packaging options
      * @param outApkLocation location of the APK.
      * @throws DuplicateFileException
      * @throws FileNotFoundException if the store location was not found
@@ -1843,15 +1818,12 @@ public class AndroidBuilder {
      */
     public void packageApk(
             @NonNull String androidResPkgLocation,
-            @NonNull Map<File, Format> dexFolders,
-            @Nullable File javaResourcesLocation,
-            @Nullable Collection<File> jniLibsFolders,
-            @NonNull File mergingFolder,
-            @Nullable Set<String> abiFilters,
+            @NonNull Set<File> dexFolders,
+            @NonNull Collection<File> javaResourcesLocations,
+            @NonNull Collection<File> jniLibsLocations,
+            @NonNull Set<String> abiFilters,
             boolean jniDebugBuild,
             @Nullable SigningConfig signingConfig,
-            @Nullable PackagingOptions packagingOptions,
-            @Nullable SignedJarBuilder.IZipEntryFilter packagingOptionsFilter,
             @NonNull String outApkLocation)
             throws DuplicateFileException, FileNotFoundException,
             KeytoolException, PackagerException, SigningException {
@@ -1864,15 +1836,12 @@ public class AndroidBuilder {
             certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
                     signingConfig.getStoreFile(), signingConfig.getStorePassword(),
                     signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
-            if (certificateInfo == null) {
-                throw new SigningException("Failed to read key from keystore");
-            }
         }
 
         try {
             Packager packager = new Packager(
-                    outApkLocation, androidResPkgLocation, mergingFolder,
-                    certificateInfo, mCreatedBy, packagingOptions, packagingOptionsFilter, mLogger);
+                    outApkLocation, androidResPkgLocation,
+                    certificateInfo, mCreatedBy, mLogger);
 
             // add dex folder to the apk root.
             if (!dexFolders.isEmpty()) {
@@ -1881,17 +1850,14 @@ public class AndroidBuilder {
 
             packager.setJniDebugMode(jniDebugBuild);
 
-            if (javaResourcesLocation != null) {
+            // add the output of the java resource merger
+            for (File javaResourcesLocation : javaResourcesLocations) {
                 packager.addResources(javaResourcesLocation);
             }
 
-            // also add resources from library projects and jars
-            if (jniLibsFolders != null) {
-                for (File jniFolder : jniLibsFolders) {
-                    if (jniFolder.isDirectory()) {
-                        packager.addNativeLibraries(jniFolder, abiFilters);
-                    }
-                }
+            // and the output of the native lib merger.
+            for (File jniLibsLocation : jniLibsLocations) {
+                packager.addNativeLibraries(jniLibsLocation, abiFilters);
             }
 
             packager.sealApk();
@@ -1924,9 +1890,6 @@ public class AndroidBuilder {
             certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
                     signingConfig.getStoreFile(), signingConfig.getStorePassword(),
                     signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
-            if (certificateInfo == null) {
-                throw new SigningException("Failed to read key from keystore");
-            }
         }
 
         SignedJarBuilder signedJarBuilder = new SignedJarBuilder(

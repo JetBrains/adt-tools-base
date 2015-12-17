@@ -29,6 +29,13 @@
     </parameter>
 
     <parameter
+        id="isInteractive"
+        name="Interactive"
+        type="boolean"
+        default="true"
+        help="Whether or not to include code for interactive touch handling" />
+
+    <parameter
         id="packageName"
         name="Package name"
         type="string"

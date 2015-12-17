@@ -69,7 +69,7 @@ public class PlaceholderHandler {
      * @param valueProvider the placeholder value provider.
      * @param mergingReportBuilder to report errors and log actions.
      */
-    public void visit(
+    public static void visit(
             @NonNull ManifestMerger2.MergeType mergeType,
             @NonNull XmlDocument xmlDocument,
             @NonNull KeyBasedValueResolver<String> valueProvider,
@@ -78,7 +78,7 @@ public class PlaceholderHandler {
         visit(mergeType, xmlDocument.getRootNode(), valueProvider, mergingReportBuilder);
     }
 
-    private void visit(
+    private static void visit(
             @NonNull ManifestMerger2.MergeType mergeType,
             @NonNull XmlElement xmlElement,
             @NonNull KeyBasedValueResolver<String> valueProvider,
