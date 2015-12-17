@@ -143,7 +143,7 @@ public class InstantRunVerifierTransformTest {
     }
 
     @Test
-    public void testIncrementalMode() throws TransformException, IOException, InterruptedException {
+    public void testIncrementalMode_changedAndAdded() throws TransformException, IOException, InterruptedException {
 
         InstantRunVerifierTransform transform = getTransform();
         final File tmpDir = Files.createTempDir();
@@ -153,6 +153,70 @@ public class InstantRunVerifierTransformTest {
         assertTrue(addedFile.createNewFile());
 
         final File changedFile = new File(tmpDir, "com/foo/bar/ChangedFile.class");
+        assertTrue(changedFile.createNewFile());
+        final File lastIterationChangedFile =
+                new File(backupDir, "com/foo/bar/ChangedFile.class");
+        Files.createParentDirs(lastIterationChangedFile);
+        assertTrue(lastIterationChangedFile.createNewFile());
+
+        ImmutableList<TransformInput> transformInputs =
+                ImmutableList.<TransformInput>of(new TransformInput() {
+                    @NonNull
+                    @Override
+                    public Collection<JarInput> getJarInputs() {
+                        return ImmutableList.of();
+                    }
+
+                    @NonNull
+                    @Override
+                    public Collection<DirectoryInput> getDirectoryInputs() {
+                        return ImmutableList.<DirectoryInput>of(new DirectoryInputForTests() {
+
+                            @NonNull
+                            @Override
+                            public Map<File, Status> getChangedFiles() {
+                                return ImmutableMap.<File, Status>builder()
+                                        .put(addedFile, Status.ADDED)
+                                        .put(changedFile, Status.CHANGED)
+                                        .build();                            }
+
+                            @NonNull
+                            @Override
+                            public File getFile() {
+                                return tmpDir;
+                            }
+                        });
+                    }
+                });
+
+        transform.transform(new TransformInvocationBuilder(context)
+                .addOutputProvider(transformOutputProvider)
+                .addReferencedInputs(transformInputs)
+                .setIncrementalMode(true)
+                .build());
+
+        // clean up.
+        FileUtils.deleteFolder(tmpDir);
+
+        // changed class should have been verified
+        assertThat(recordedVerification).isEmpty();
+
+        // new classes should have been copied, and changed ones updated.
+        assertThat(recordedCopies).hasSize(2);
+        assertThat(recordedCopies).containsEntry(
+                changedFile, lastIterationChangedFile);
+        assertThat(recordedCopies).containsEntry(addedFile,
+                new File(backupDir, "com/foo/bar/NewInputFile.class"));
+    }
+
+    @Test
+    public void testIncrementalMode_changedAndDeleted() throws TransformException, IOException, InterruptedException {
+
+        InstantRunVerifierTransform transform = getTransform();
+        final File tmpDir = Files.createTempDir();
+
+        final File changedFile = new File(tmpDir, "com/foo/bar/ChangedFile.class");
+        Files.createParentDirs(changedFile);
         assertTrue(changedFile.createNewFile());
         final File lastIterationChangedFile =
                 new File(backupDir, "com/foo/bar/ChangedFile.class");
@@ -178,7 +242,6 @@ public class InstantRunVerifierTransformTest {
                             @Override
                             public Map<File, Status> getChangedFiles() {
                                 return ImmutableMap.<File, Status>builder()
-                                        .put(addedFile, Status.ADDED)
                                         .put(changedFile, Status.CHANGED)
                                         .put(deletedFile, Status.REMOVED)
                                         .build();                            }
@@ -207,11 +270,9 @@ public class InstantRunVerifierTransformTest {
                 lastIterationChangedFile, changedFile);
 
         // new classes should have been copied, and changed ones updated.
-        assertThat(recordedCopies).hasSize(2);
+        assertThat(recordedCopies).hasSize(1);
         assertThat(recordedCopies).containsEntry(
                 changedFile, lastIterationChangedFile);
-        assertThat(recordedCopies).containsEntry(addedFile,
-                new File(backupDir, "com/foo/bar/NewInputFile.class"));
     }
 
     @Test
