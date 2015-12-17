@@ -16,60 +16,39 @@
 
 package com.android.sdklib;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
-import com.android.prefs.AndroidLocation;
-import com.android.prefs.AndroidLocation.AndroidLocationException;
-import com.android.sdklib.internal.androidTarget.AddOnTarget;
-import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.repository.Revision;
-import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.repository.descriptors.PkgType;
-import com.android.sdklib.repository.local.LocalExtraPkgInfo;
-import com.android.sdklib.repository.local.LocalPkgInfo;
 import com.android.sdklib.repository.local.LocalSdk;
 import com.android.utils.ILogger;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
- * The SDK manager parses the SDK folder and gives access to the content.
- * @see PlatformTarget
- * @see AddOnTarget
+ * This class is obsolete. Do not use it in new code.
  */
 public class SdkManager {
 
     @SuppressWarnings("unused")
     private static final boolean DEBUG = System.getenv("SDKMAN_DEBUG") != null;        //$NON-NLS-1$
 
-    /** Preference file containing the usb ids for adb */
-    private static final String ADB_INI_FILE = "adb_usb.ini";                          //$NON-NLS-1$
-       //0--------90--------90--------90--------90--------90--------90--------90--------9
-       private static final String ADB_INI_HEADER =
-        "# ANDROID 3RD PARTY USB VENDOR ID LIST -- DO NOT EDIT.\n" +                   //$NON-NLS-1$
-        "# USE 'android update adb' TO GENERATE.\n" +                                  //$NON-NLS-1$
-        "# 1 USB VENDOR ID PER LINE.\n";                                               //$NON-NLS-1$
-
-    /** Embedded reference to the new local SDK object. */
+    /**
+     * Embedded reference to the new local SDK object.
+     */
     private final LocalSdk mLocalSdk;
 
     /**
-     * Create a new {@link SdkManager} instance.
-     * External users should use {@link #createManager(String, ILogger)}.
+     * Create a new {@link SdkManager} instance. External users should use
+     * {@link #createManager(String, ILogger)}.
      *
      * @param osSdkPath the location of the SDK.
      */
-    @VisibleForTesting(visibility=Visibility.PRIVATE)
+    @VisibleForTesting(visibility = Visibility.PRIVATE)
     protected SdkManager(@NonNull String osSdkPath) {
         mLocalSdk = new LocalSdk(new File(osSdkPath));
     }
@@ -85,8 +64,9 @@ public class SdkManager {
 
     /**
      * Creates an {@link SdkManager} for a given sdk location.
+     *
      * @param osSdkPath the location of the SDK.
-     * @param log the ILogger object receiving warning/error from the parsing.
+     * @param log       the ILogger object receiving warning/error from the parsing.
      * @return the created {@link SdkManager} or null if the location is not valid.
      */
     @Nullable
@@ -95,7 +75,7 @@ public class SdkManager {
             @NonNull ILogger log) {
         try {
             SdkManager manager = new SdkManager(osSdkPath);
-            manager.reloadSdk(log);
+            manager.reloadSdk();
 
             return manager;
         } catch (Throwable throwable) {
@@ -111,6 +91,7 @@ public class SdkManager {
      * @param localSdk the SDK to use with the SDK manager
      */
     @NonNull
+    @SuppressWarnings("unused")
     public static SdkManager createManager(@NonNull LocalSdk localSdk) {
         return new SdkManager(localSdk);
     }
@@ -120,43 +101,38 @@ public class SdkManager {
         return mLocalSdk;
     }
 
-    /**
-     * Reloads the content of the SDK.
-     *
-     * @param log the ILogger object receiving warning/error from the parsing.
-     */
-    public void reloadSdk(@NonNull ILogger log) {
+    public void reloadSdk() {
         mLocalSdk.clearLocalPkg(PkgType.PKG_ALL);
     }
 
     /**
-     * Checks whether any of the SDK platforms/add-ons/build-tools have changed on-disk
-     * since we last loaded the SDK. This does not reload the SDK nor does it
-     * change the underlying targets.
-     *
-     * @return True if at least one directory or source.prop has changed.
+     * @deprecated Use {@link #reloadSdk()} instead
      */
+    @Deprecated
+    public void reloadSdk(@NonNull @SuppressWarnings("UnusedParameters") ILogger log) {
+        reloadSdk();
+    }
+
     public boolean hasChanged() {
-        return hasChanged(null);
+        return mLocalSdk.hasChanged(EnumSet.of(
+                PkgType.PKG_BUILD_TOOLS,
+                PkgType.PKG_PLATFORM,
+                PkgType.PKG_ADDON));
     }
 
     /**
-     * Checks whether any of the SDK platforms/add-ons/build-tools have changed on-disk
-     * since we last loaded the SDK. This does not reload the SDK nor does it
-     * change the underlying targets.
-     *
-     * @param log An optional logger used to print verbose info on what changed. Can be null.
-     * @return True if at least one directory or source.prop has changed.
+     * @deprecated Use {@link #hasChanged()} instead
      */
+    @Deprecated
+    @SuppressWarnings("unused")
     public boolean hasChanged(@Nullable ILogger log) {
-        return mLocalSdk.hasChanged(EnumSet.of(PkgType.PKG_PLATFORM,
-                                               PkgType.PKG_ADDON,
-                                               PkgType.PKG_BUILD_TOOLS));
+        return hasChanged();
     }
 
     /**
-     * Returns the location of the SDK.
+     * @deprecated Use {@link #getLocalSdk()} and {@link LocalSdk#getLocation()} instead
      */
+    @Deprecated
     @NonNull
     public String getLocation() {
         File f = mLocalSdk.getLocation();
@@ -166,11 +142,11 @@ public class SdkManager {
     }
 
     /**
-     * Returns the targets (platforms & addons) that are available in the SDK.
-     * The target list is created on demand the first time then cached.
-     * It will not refreshed unless {@link #reloadSdk(ILogger)} is called.
-     * <p/>
-     * The array can be empty but not null.
+     * <p>Returns the targets (platforms & addons) that are available in the SDK. The target list is
+     * created on demand the first time then cached. It will not refreshed unless
+     * {@link #reloadSdk(ILogger)} is called.
+     *
+     * <p>The array can be empty but not null.
      */
     @NonNull
     public IAndroidTarget[] getTargets() {
@@ -191,8 +167,8 @@ public class SdkManager {
      * Returns the {@link BuildToolInfo} for the given revision.
      *
      * @param revision The requested revision.
-     * @return A {@link BuildToolInfo}. Can be null if {@code revision} is null or is
-     *  not part of the known set returned by {@link #getBuildTools()}.
+     * @return A {@link BuildToolInfo}. Can be null if {@code revision} is null or is not part of
+     * the known set returned by getBuildTools().
      */
     @Nullable
     public BuildToolInfo getBuildTool(@Nullable Revision revision) {
@@ -211,12 +187,11 @@ public class SdkManager {
     }
 
     /**
-     * Returns the greatest {@link LayoutlibVersion} found amongst all platform
-     * targets currently loaded in the SDK.
-     * <p/>
-     * We only started recording Layoutlib Versions recently in the platform meta data
-     * so it's possible to have an SDK with many platforms loaded but no layoutlib
-     * version defined.
+     * <p>Returns the greatest {@link LayoutlibVersion} found amongst all platform targets currently
+     * loaded in the SDK.
+     *
+     * <p>We only started recording Layoutlib Versions recently in the platform meta data so it's
+     * possible to have an SDK with many platforms loaded but no layoutlib version defined.
      *
      * @return The greatest {@link LayoutlibVersion} or null if none is found.
      * @deprecated This does NOT solve the right problem and will be changed later.
@@ -240,92 +215,12 @@ public class SdkManager {
         return maxVersion;
     }
 
-    /**
-     * Returns a map of the <em>root samples directories</em> located in the SDK/extras packages.
-     * No guarantee is made that the extras' samples directory actually contain any valid samples.
-     * The only guarantee is that the root samples directory actually exists.
-     * The map is { File: Samples root directory => String: Extra package display name. }
-     *
-     * @return A non-null possibly empty map of extra samples directories and their associated
-     *   extra package display name.
-     */
-    @NonNull
-    public Map<File, String> getExtraSamples() {
-
-        LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(PkgType.PKG_EXTRA);
-        Map<File, String> samples = new HashMap<File, String>();
-
-        for (LocalPkgInfo info : pkgsInfos) {
-            assert info instanceof LocalExtraPkgInfo;
-
-            File root = info.getLocalDir();
-            File path = new File(root, SdkConstants.FD_SAMPLES);
-            if (path.isDirectory()) {
-                samples.put(path, info.getListDescription());
-                continue;
-            }
-            // Some old-style extras simply have a single "sample" directory.
-            // Accept it if it contains an AndroidManifest.xml.
-            path = new File(root, SdkConstants.FD_SAMPLE);
-            if (path.isDirectory() &&
-                    new File(path, SdkConstants.FN_ANDROID_MANIFEST_XML).isFile()) {
-                samples.put(path, info.getListDescription());
-            }
-        }
-
-        return samples;
-    }
-
-    /**
-     * Returns a map of all the extras found in the <em>local</em> SDK with their major revision.
-     * <p/>
-     * Map keys are in the form "vendor-id/path-id". These ids uniquely identify an extra package.
-     * The version is the incremental integer major revision of the package.
-     *
-     * @return A non-null possibly empty map of { string "vendor/path" => integer major revision }
-     * @deprecated Starting with add-on schema 6, extras can have full revisions instead of just
-     *   major revisions. This API only returns the major revision. Callers should be modified
-     *   to use the new {code LocalSdk.getPkgInfo(PkgType.PKG_EXTRAS)} API instead.
-     */
-    @Deprecated
-    @NonNull
-    public Map<String, Integer> getExtrasVersions() {
-        LocalPkgInfo[] pkgsInfos = mLocalSdk.getPkgsInfos(PkgType.PKG_EXTRA);
-        Map<String, Integer> extraVersions = new TreeMap<String, Integer>();
-
-        for (LocalPkgInfo info : pkgsInfos) {
-            assert info instanceof LocalExtraPkgInfo;
-            if (info instanceof LocalExtraPkgInfo) {
-                LocalExtraPkgInfo ei = (LocalExtraPkgInfo) info;
-                IPkgDesc d = ei.getDesc();
-                String vendor = d.getVendor().getId();
-                String path   = d.getPath();
-                int majorRev  = d.getRevision().getMajor();
-
-                extraVersions.put(vendor + '/' + path, majorRev);
-            }
-        }
-
-        return extraVersions;
-    }
-
-    /** Returns the platform tools version if installed, null otherwise. */
-    @Nullable
-    public String getPlatformToolsVersion() {
-        LocalPkgInfo info = mLocalSdk.getPkgInfo(PkgType.PKG_PLATFORM_TOOLS);
-        IPkgDesc d = info == null ? null : info.getDesc();
-        if (d != null) {
-            return d.getRevision().toShortString();
-        }
-
-        return null;
-    }
-
-
     // -------------
 
     public static class LayoutlibVersion implements Comparable<LayoutlibVersion> {
+
         private final int mApi;
+
         private final int mRevision;
 
         public static final int NOT_SPECIFIED = 0;
@@ -347,7 +242,7 @@ public class SdkManager {
         public int compareTo(@NonNull LayoutlibVersion rhs) {
             boolean useRev = this.mRevision > NOT_SPECIFIED && rhs.mRevision > NOT_SPECIFIED;
             int lhsValue = (this.mApi << 16) + (useRev ? this.mRevision : 0);
-            int rhsValue = (rhs.mApi  << 16) + (useRev ? rhs.mRevision  : 0);
+            int rhsValue = (rhs.mApi << 16) + (useRev ? rhs.mRevision : 0);
             return lhsValue - rhsValue;
         }
     }
