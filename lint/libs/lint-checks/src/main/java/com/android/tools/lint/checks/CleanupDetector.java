@@ -578,6 +578,8 @@ public class CleanupDetector extends Detector implements JavaScanner {
 
         @Override
         public boolean visitBinaryExpression(BinaryExpression node) {
+            // TODO: If we assign to one of our variables, clear it from the list again!
+
             if (node.astOperator() == BinaryOperator.ASSIGN) {
                 Expression rhs = node.astRight();
                 boolean clearLhs = true;
