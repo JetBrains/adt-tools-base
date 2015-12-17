@@ -10,6 +10,7 @@ public abstract class FragmentTransaction {
     public abstract FragmentTransaction attach(Fragment fragment);
     public abstract FragmentTransaction detach(Fragment fragment);
     public abstract FragmentTransaction add(int containerViewId, Fragment fragment);
+    public abstract FragmentTransaction add(Fragment fragment, String tag);
     public abstract FragmentTransaction addToBackStack(String name);
     public abstract FragmentTransaction disallowAddToBackStack();
     public abstract FragmentTransaction setBreadCrumbShortTitle(int res);

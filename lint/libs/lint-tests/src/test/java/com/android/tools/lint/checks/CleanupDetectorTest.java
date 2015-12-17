@@ -25,13 +25,6 @@ public class CleanupDetectorTest extends AbstractCheckTest {
         return new CleanupDetector();
     }
 
-    @Override
-    protected boolean allowCompilationErrors() {
-        // Some of these unit tests are still relying on source code that references
-        // unresolved symbols etc.
-        return true;
-    }
-
     public void testRecycle() throws Exception {
         assertEquals(
             "src/test/pkg/RecycleTest.java:56: Warning: This TypedArray should be recycled after use with #recycle() [Recycle]\n" +
@@ -81,20 +74,26 @@ public class CleanupDetectorTest extends AbstractCheckTest {
     }
 
     public void testCommit() throws Exception {
-        assertEquals("" +
-            "src/test/pkg/CommitTest.java:25: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n" +
-            "        getFragmentManager().beginTransaction(); // Missing commit\n" +
-            "                             ~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/CommitTest.java:30: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n" +
-            "        FragmentTransaction transaction2 = getFragmentManager().beginTransaction(); // Missing commit\n" +
-            "                                                                ~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/CommitTest.java:39: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n" +
-            "        getFragmentManager().beginTransaction(); // Missing commit\n" +
-            "                             ~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/CommitTest.java:65: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n" +
-            "        getSupportFragmentManager().beginTransaction();\n" +
-            "                                    ~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 4 warnings\n",
+        assertEquals(""
+                + "src/test/pkg/CommitTest.java:25: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
+                + "        getFragmentManager().beginTransaction(); // Missing commit\n"
+                + "                             ~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CommitTest.java:30: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
+                + "        FragmentTransaction transaction2 = getFragmentManager().beginTransaction(); // Missing commit\n"
+                + "                                                                ~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CommitTest.java:39: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
+                + "        getFragmentManager().beginTransaction(); // Missing commit\n"
+                + "                             ~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CommitTest.java:65: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
+                + "        getSupportFragmentManager().beginTransaction();\n"
+                + "                                    ~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CommitTest.java:123: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
+                + "        transaction = getFragmentManager().beginTransaction();\n"
+                + "                                           ~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CommitTest.java:132: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
+                + "        transaction = getFragmentManager().beginTransaction();\n"
+                + "                                           ~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 6 warnings\n",
 
             lintProject(
                     "apicheck/classpath=>.classpath",
