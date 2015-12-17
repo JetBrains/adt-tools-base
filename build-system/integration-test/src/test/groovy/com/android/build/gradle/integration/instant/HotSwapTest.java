@@ -16,63 +16,38 @@
 
 package com.android.build.gradle.integration.instant;
 
-import com.android.annotations.NonNull;
-import com.android.build.gradle.OptionalCompilationStep;
+import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertNotNull;
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
-import com.android.build.gradle.integration.common.truth.DexClassSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
-import com.android.build.gradle.integration.common.truth.FileSubject;
-import com.android.builder.model.AndroidProject;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.builder.model.InstantRun;
-import com.android.builder.model.Variant;
-import com.android.ide.common.process.ProcessException;
-import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.io.Files;
 import com.google.common.truth.Expect;
 
-import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
-import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Smoke test for hot swap builds.
  */
 public class HotSwapTest {
 
-    @ClassRule
-    public static GradleTestProject sProject =
+    @Rule
+    public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create();
 
     @Rule
     public Expect expect = Expect.create();
-
-    @AfterClass
-    public static void cleanUp() {
-        sProject = null;
-    }
 
     @Before
     public void activityClass() throws IOException {
@@ -80,152 +55,50 @@ public class HotSwapTest {
     }
 
     @Test
-    public void buildIncrementallyWithInstantRunForDalvik()
-            throws IOException, ProcessException, ParserConfigurationException, SAXException {
-        buildIncrementallyWithInstantRun(15);
-    }
+    public void buildIncrementallyWithInstantRun() throws Exception {
+        project.execute("clean");
+        InstantRun instantRunModel = InstantRunTestUtils
+                .getInstantRunModel(project.getSingleModel());
 
-    @Test
-    public void buildIncrementallyWithInstantRunForLollipop()
-            throws IOException, ProcessException, ParserConfigurationException, SAXException {
-        buildIncrementallyWithInstantRun(21);
-    }
+        project.execute(InstantRunTestUtils.getInstantRunArgs(), "assembleDebug");
 
-    @Test
-    public void buildIncrementallyWithInstantRunForMarshMallow()
-            throws IOException, ProcessException, ParserConfigurationException, SAXException {
-        buildIncrementallyWithInstantRun(23);
-    }
+        // As no injected API level, will default to no splits.
+        DexFileSubject dexFile = expect.about(ApkSubject.FACTORY)
+                .that(project.getApk("debug")).hasMainDexFile().that();
+        dexFile.hasClass("Lcom/example/helloworld/HelloWorld;")
+                .that().hasMethod("onCreate");
+        dexFile.hasClass("Lcom/android/tools/fd/runtime/BootstrapApplication;");
 
-    private void buildIncrementallyWithInstantRun(int apiLevel)
-            throws IOException, ProcessException, ParserConfigurationException, SAXException {
-        sProject.execute("clean");
-        InstantRun instantRunModel = getInstantRunModel(sProject.getSingleModel());
-
-        sProject.execute(getInstantRunArgs(apiLevel, OptionalCompilationStep.RESTART_ONLY),
-                "assembleDebug");
-        ApkSubject debugApk = expect.about(ApkSubject.FACTORY)
-                .that(sProject.getApk("debug"));
-        List<String> entries = debugApk.entries();
-        for (String entry : entries) {
-            if (entry.endsWith(".dex")) {
-                DexFileSubject dexFile = debugApk.getDexFile(entry).that();
-                if (dexFile.containsClass("Lcom/example/helloworld/HelloWorld;")) {
-                    dexFile.hasClass("Lcom/example/helloworld/HelloWorld;")
-                            .that().hasMethod("onCreate");
-                }
-            }
-        }
-        checkHotSwapCompatibleChange(apiLevel, instantRunModel);
-        checkColdSwapCompatibleChange(apiLevel, instantRunModel);
+        checkHotSwapCompatibleChange(instantRunModel);
     }
 
     /**
      * Check a hot-swap compatible change works as expected.
      */
-    private void checkHotSwapCompatibleChange(int apiLevel, InstantRun instantRunModel)
-            throws IOException, ProcessException {
+    private void checkHotSwapCompatibleChange(InstantRun instantRunModel) throws Exception {
         createActivityClass("import java.util.logging.Logger;",
                 "Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).warning(\"Added some logging\");");
 
-        sProject.execute(getInstantRunArgs(apiLevel),
+        project.execute(InstantRunTestUtils.getInstantRunArgs(),
                 instantRunModel.getIncrementalAssembleTaskName());
+
+        InstantRunBuildContext context = InstantRunTestUtils.loadContext(instantRunModel);
+
+        assertNotNull(context.getLastBuild());
+        assertThat(context.getLastBuild().getArtifacts()).hasSize(1);
+
+        InstantRunBuildContext.Artifact artifact =
+                Iterables.getOnlyElement(context.getLastBuild().getArtifacts());
+
+        assertThat(artifact.getType()).isEqualTo(InstantRunBuildContext.FileType.RELOAD_DEX);
 
         expect.about(DexFileSubject.FACTORY)
-                .that(instantRunModel.getReloadDexFile())
+                .that(artifact.getLocation())
                 .hasClass("Lcom/example/helloworld/HelloWorld$override;")
                 .that().hasMethod("onCreate");
-
-        // the restart.dex should not be present.
-        expect.about(FileSubject.FACTORY).that(instantRunModel.getRestartDexFile()).doesNotExist();
     }
 
-    private void createColdSwapCompatibleChange(int apiLevel, InstantRun instantRunModel)
-            throws IOException {
-
-        createActivityClass("import java.util.logging.Logger;", "newMethod();\n"
-                + "    }\n"
-                + "    public void newMethod() {\n"
-                + "        Logger.getLogger(Logger.GLOBAL_LOGGER_NAME)\n"
-                + "                .warning(\"Added some logging\");\n"
-                + "");
-
-        sProject.execute(getInstantRunArgs(apiLevel),
-                instantRunModel.getIncrementalAssembleTaskName());
-        expect.about(FileSubject.FACTORY).that(instantRunModel.getReloadDexFile())
-                .doesNotExist();    }
-
-    /**
-     * Check that an incompatible change produce the right artifact to restart the application
-     * depending on the target apiLevel.
-     */
-    private void checkColdSwapCompatibleChange(int apiLevel, InstantRun instantRunModel)
-            throws IOException, ProcessException, ParserConfigurationException, SAXException {
-
-        createColdSwapCompatibleChange(apiLevel, instantRunModel);
-
-        // read the resulting build-info file containing changed artifacts.
-        Document document = XmlUtils.parseUtfXmlFile(
-                instantRunModel.getInfoFile(), false /* namespaceAware */);
-
-        List<Node> artifacts = getLastBuildArtifacts(document);
-        expect.that(artifacts.size()).isEqualTo(1);
-        NamedNodeMap attributes = artifacts.get(0).getAttributes();
-        expect.that(attributes.getLength()).isEqualTo(2);
-
-
-        if (apiLevel < 21) {
-            checkUpdatedClassPresence(instantRunModel.getRestartDexFile()).hasMethod("newMethod");
-            // also check the build-info content
-            expect.that(attributes.getNamedItem("type").getNodeValue()).isEqualTo("RESTART_DEX");
-            File dexFile = new File(attributes.getNamedItem("location").getNodeValue());
-            expect.that(dexFile.getAbsolutePath()).isEqualTo(
-                    instantRunModel.getRestartDexFile().getAbsolutePath());
-            return;
-        }
-        if (apiLevel < 23) {
-            expect.that(attributes.getNamedItem("type").getNodeValue()).isEqualTo("DEX");
-            File dexFile = new File(attributes.getNamedItem("location").getNodeValue());
-            checkUpdatedClassPresence(dexFile);
-            return;
-        }
-        // fall back into marsh-mellow case.
-        expect.that(attributes.getNamedItem("type").getNodeValue()).isEqualTo("SPLIT");
-        File apkFile = new File(attributes.getNamedItem("location").getNodeValue());
-        checkUpdatedClassPresence(apkFile);
-
-    }
-
-    /**
-     * Returns the top-level artifact nodes (corresponding to the last build)
-     */
-    @NonNull
-    private static List<Node> getLastBuildArtifacts(@NonNull Document document) {
-        Node instantRun = document.getFirstChild();
-        NodeList childNodes = instantRun.getChildNodes();
-        ImmutableList.Builder<Node> artifacts = ImmutableList.builder();
-        for (int i=0; i<childNodes.getLength(); i++) {
-            Node item = childNodes.item(i);
-            if (item.getNodeName().equals("artifact")) {
-                artifacts.add(item);
-            }
-        }
-        return artifacts.build();
-    }
-
-    private DexClassSubject checkUpdatedClassPresence(File dexFile)
-            throws IOException, ProcessException {
-        DexClassSubject helloWorldClass = expect.about(DexFileSubject.FACTORY)
-                .that(dexFile)
-                .hasClass("Lcom/example/helloworld/HelloWorld;")
-                .that();
-        helloWorldClass.hasMethod("onCreate");
-        return helloWorldClass;
-    }
-
-
-
-    private static void createActivityClass(String imports, String newMethodBody)
+    private void createActivityClass(String imports, String newMethodBody)
             throws IOException {
         String javaCompile = "package com.example.helloworld;\n" + imports +
                 "\n"
@@ -243,24 +116,8 @@ public class HotSwapTest {
                 "    }\n"
                 + "}";
         Files.write(javaCompile,
-                sProject.file("src/main/java/com/example/helloworld/HelloWorld.java"),
+                project.file("src/main/java/com/example/helloworld/HelloWorld.java"),
                 Charsets.UTF_8);
     }
 
-    private static List<String> getInstantRunArgs(int apiLevel, OptionalCompilationStep... flags) {
-        String property = "-P" + AndroidProject.OPTIONAL_COMPILATION_STEPS + "=" +
-                OptionalCompilationStep.INSTANT_DEV + "," + Joiner.on(',').join(flags);
-        String version = String.format("-Pandroid.injected.build.api=%d", apiLevel);
-        return ImmutableList.of(property, version);
-    }
-
-    private static InstantRun getInstantRunModel(AndroidProject project) {
-        Collection<Variant> variants = project.getVariants();
-        for (Variant variant : variants) {
-            if ("debug".equals(variant.getName())) {
-                return variant.getMainArtifact().getInstantRun();
-            }
-        }
-        throw new AssertionError("Could not find debug variant.");
-    }
 }

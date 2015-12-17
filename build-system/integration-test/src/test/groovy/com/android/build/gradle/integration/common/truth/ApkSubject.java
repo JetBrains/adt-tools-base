@@ -96,12 +96,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
 
     @NonNull
     public IndirectSubject<DexFileSubject> hasMainDexFile() throws IOException {
-        return hasDexFile("classes.dex");
-    }
-
-    @NonNull
-    public IndirectSubject<DexFileSubject> hasDexFile(String dexFileName) throws IOException {
-        contains(dexFileName);
+        contains("classes.dex");
         return new IndirectSubject<DexFileSubject>() {
             @Override
             @NonNull
@@ -112,7 +107,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     }
 
     @NonNull
-    public IndirectSubject<DexFileSubject> getDexFile(String dexFileName) throws IOException {
+    public IndirectSubject<DexFileSubject> hasDexFile(String dexFileName) throws IOException {
         InputStream dexFileInputStream = getLenientInputStream(new ZipFile(getSubject()),
                 dexFileName);
         if (dexFileInputStream == null) {

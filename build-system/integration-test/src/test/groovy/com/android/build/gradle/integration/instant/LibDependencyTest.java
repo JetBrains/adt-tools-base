@@ -18,9 +18,7 @@ package com.android.build.gradle.integration.instant;
 
 import com.android.build.gradle.OptionalCompilationStep;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.truth.ApkSubject;
-import com.android.build.gradle.integration.common.truth.DexClassSubject;
 import com.android.build.gradle.integration.common.truth.DexFileSubject;
 import com.android.build.gradle.integration.common.truth.FileSubject;
 import com.android.builder.model.AndroidProject;
@@ -79,7 +77,7 @@ public class LibDependencyTest {
         // Check that original class is included.
         sProject.execute(getInstantRunArgs(), "clean", "assembleRelease", "assembleDebug");
         expect.about(ApkSubject.FACTORY)
-                .that(sProject.getSubproject("app").getApk("debug")).getDexFile("classes.dex")
+                .that(sProject.getSubproject("app").getApk("debug")).hasDexFile("classes.dex")
                 .that().hasClass("Lcom/android/tests/libstest/lib/MainActivity;")
                 .that().hasMethod("onCreate");
 
