@@ -350,8 +350,8 @@ public class InstantRunVerifierTransform extends Transform {
     @NonNull
     @Override
     public Set<QualifiedContent.Scope> getReferencedScopes() {
-        return Sets.immutableEnumSet(QualifiedContent.Scope.PROJECT);
-
+        return Sets.immutableEnumSet(
+                QualifiedContent.Scope.PROJECT, QualifiedContent.Scope.SUB_PROJECTS);
     }
 
     @NonNull
