@@ -136,7 +136,7 @@ public class InstantRunVerifierTransform extends Transform {
 
         InstantRunVerifierStatus resultSoFar = InstantRunVerifierStatus.COMPATIBLE;
         for (TransformInput transformInput : inputs) {
-            resultSoFar = processFolderInputs(isIncremental, transformInput);
+            resultSoFar = processFolderInputs(resultSoFar, isIncremental, transformInput);
             resultSoFar = processJarInputs(resultSoFar, transformInput);
         }
         variantScope.getInstantRunBuildContext().setVerifierResult(resultSoFar);
@@ -144,10 +144,10 @@ public class InstantRunVerifierTransform extends Transform {
 
     @NonNull
     private InstantRunVerifierStatus processFolderInputs(
+            @NonNull InstantRunVerifierStatus verificationResult,
             boolean isIncremental,
             @NonNull TransformInput transformInput) throws IOException {
 
-        InstantRunVerifierStatus verificationResult = InstantRunVerifierStatus.COMPATIBLE;
         for (DirectoryInput DirectoryInput : transformInput.getDirectoryInputs()) {
 
             File inputDir = DirectoryInput.getFile();
