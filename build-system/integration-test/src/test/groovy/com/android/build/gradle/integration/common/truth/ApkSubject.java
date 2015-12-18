@@ -137,7 +137,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
             @Override
             @NonNull
             public DexFileSubject that() {
-                return new DexFileSubject(failureStrategy, tempFile);
+                return DexFileSubject.FACTORY.getSubject(failureStrategy, tempFile);
             }
         };
     }
