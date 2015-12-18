@@ -16,7 +16,6 @@
 package com.android.tools.rpclib.binary;
 
 import junit.framework.TestCase;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 
 import java.io.ByteArrayOutputStream;
@@ -227,13 +226,13 @@ public class EncoderTest extends TestCase {
   public void testEncodeObject() throws IOException {
     final TypeA dummyObject = new TypeA();
     dummyObject.setData("dummy");
-    final BinaryObject[] input = new BinaryObject[]{null, dummyObject, dummyObject};
+    final BinaryObject[] input = new BinaryObject[]{dummyObject, dummyObject};
     byte[] expected = null;
 
     ByteArrayOutputStream expectedStream = new ByteArrayOutputStream();
 
     // null BinaryObject:
-    expectedStream.write(new byte[]{(byte)0x00}); // BinaryObject.NULL_ID
+//    expectedStream.write(new byte[]{(byte)0x00}); // BinaryObject.NULL_ID
 
     // dummyObject:
     expectedStream.write(new byte[]{0x03}); // object sid + encoded
