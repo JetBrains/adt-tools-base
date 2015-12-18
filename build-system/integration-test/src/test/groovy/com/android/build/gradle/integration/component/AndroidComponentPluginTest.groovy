@@ -41,12 +41,14 @@ import com.android.build.gradle.model.AndroidComponentModelPlugin
 apply plugin: AndroidComponentModelPlugin
 
 model {
-    android.buildTypes {
-        create("custom")
-    }
-    android.productFlavors {
-        create("flavor1")
-        create("flavor2")
+    android {
+        buildTypes {
+            create("custom")
+        }
+        productFlavors {
+            create("flavor1")
+            create("flavor2")
+        }
     }
 }
 """

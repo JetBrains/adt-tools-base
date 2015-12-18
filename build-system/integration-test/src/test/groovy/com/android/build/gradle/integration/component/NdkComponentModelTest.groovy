@@ -51,14 +51,14 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-        CFlags.add("-DTEST_C_FLAG")
-        cppFlags.add("-DTEST_CPP_FLAG")
-        toolchain = "clang"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        ndk {
+            moduleName "hello-jni"
+            CFlags.add("-DTEST_C_FLAG")
+            cppFlags.add("-DTEST_CPP_FLAG")
+            toolchain "clang"
+        }
     }
 }
 """
@@ -83,16 +83,18 @@ model {
 project.buildFile <<
 """
 model {
-    android.ndk {
-        abiFilters.add("x86")
-        abiFilters.add("armeabi-v7a")
-    }
-    android.abis {
-        create("x86") {
-            CFlags.add("-DX86")
+    android {
+        ndk {
+            abiFilters.add("x86")
+            abiFilters.add("armeabi-v7a")
         }
-        create("armeabi-v7a") {
-            CFlags.add("-DARMEABI_V7A")
+        abis {
+            create("x86") {
+                CFlags.add("-DX86")
+            }
+            create("armeabi-v7a") {
+                CFlags.add("-DARMEABI_V7A")
+            }
         }
     }
 }

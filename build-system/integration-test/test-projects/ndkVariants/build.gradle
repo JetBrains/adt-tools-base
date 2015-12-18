@@ -7,21 +7,21 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion = rootProject.latestCompileSdk
-        buildToolsVersion = rootProject.buildToolsVersion
-    }
+        compileSdkVersion rootProject.latestCompileSdk
+        buildToolsVersion rootProject.buildToolsVersion
 
-    android.ndk {
-        moduleName = "simple-jni"
+        ndk {
+            moduleName "simple-jni"
 
-        // TODO: Include a way to set include directories the DSL.
-        cppFlags.add("-I$rootDir/src/include".toString())
-        stl = "stlport_static"
-    }
+            // TODO: Include a way to set include directories the DSL.
+            cppFlags.add("-I$rootDir/src/include".toString())
+            stl "stlport_static"
+        }
 
-    android.productFlavors {
-        create("free")
-        create("premium")
+        productFlavors {
+            create("free")
+            create("premium")
+        }
     }
 
     // Set binary specific C++ flags.

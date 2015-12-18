@@ -65,15 +65,15 @@ apply plugin: "com.android.model.native"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-    }
-    android.sources {
-        main {
-            jni {
-                exportedHeaders.srcDir("src/main/headers")
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        ndk {
+            moduleName "hello-jni"
+        }
+        sources {
+            main {
+                jni {
+                    exportedHeaders.srcDir("src/main/headers")
+                }
             }
         }
     }
@@ -92,49 +92,49 @@ apply plugin: "com.android.model.native"
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    }
-    android.ndk {
-        moduleName = "hello-jni"
-    }
-    android.buildTypes {
-        debug {
-            ndk.with {
-                CFlags.add("-DDEBUG_C")
-                cppFlags.add("-DDEBUG_CPP")
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        ndk {
+            moduleName "hello-jni"
+        }
+        buildTypes {
+            debug {
+                ndk {
+                    CFlags.add("-DDEBUG_C")
+                    cppFlags.add("-DDEBUG_CPP")
+                }
+            }
+            release {
+                ndk {
+                    CFlags.add("-DRELEASE_C")
+                    cppFlags.add("-DRELEASE_CPP")
+                }
+            }
+            create("optimized") {
+                ndk {
+                    CFlags.add("-DOPTIMIZED_C")
+                    cppFlags.add("-DOPTIMIZED_CPP")
+                }
             }
         }
-        release {
-            ndk.with {
-                CFlags.add("-DRELEASE_C")
-                cppFlags.add("-DRELEASE_CPP")
+        productFlavors {
+            create("free") {
+                ndk {
+                    CFlags.add("-DFREE_C")
+                    cppFlags.add("-DFREE_CPP")
+                }
+            }
+            create("premium") {
+                ndk {
+                    CFlags.add("-DPREMIUM_C")
+                    cppFlags.add("-DPREMIUM_CPP")
+                }
             }
         }
-        create("optimized") {
-            ndk.with {
-                CFlags.add("-DOPTIMIZED_C")
-                cppFlags.add("-DOPTIMIZED_CPP")
-            }
-        }
-    }
-    android.productFlavors {
-        create("free") {
-            ndk.with {
-                CFlags.add("-DFREE_C")
-                cppFlags.add("-DFREE_CPP")
-            }
-        }
-        create("premium") {
-            ndk.with {
-                CFlags.add("-DPREMIUM_C")
-                cppFlags.add("-DPREMIUM_CPP")
-            }
-        }
-    }
-    android.sources {
-        main {
-            jni {
-                exportedHeaders.srcDir("src/main/headers")
+        sources {
+            main {
+                jni {
+                    exportedHeaders.srcDir("src/main/headers")
+                }
             }
         }
     }

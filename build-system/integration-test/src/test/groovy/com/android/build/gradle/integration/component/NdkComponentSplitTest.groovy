@@ -48,13 +48,13 @@ apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-        generatePureSplits = true
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        generatePureSplits true
 
-        defaultConfig.with {
-            minSdkVersion.with {
-                 apiLevel = 21
+        defaultConfig {
+            minSdkVersion {
+                 apiLevel 21
             }
         }
 
@@ -65,9 +65,9 @@ model {
                 include "x86", "armeabi-v7a", "mips"
             }
         }
-    }
-    android.ndk {
-        moduleName = "hello-jni"
+        ndk {
+            moduleName "hello-jni"
+        }
     }
 }
 """
