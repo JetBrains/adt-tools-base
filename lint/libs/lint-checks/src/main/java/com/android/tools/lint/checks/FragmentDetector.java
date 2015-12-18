@@ -99,7 +99,7 @@ public class FragmentDetector extends Detector implements JavaScanner {
     public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
             @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass cls) {
         if (node == null) {
-            String message = "Fragments should not be static since they cannot be re-instantiated by " +
+            String message = "Fragments should be static such that they can be re-instantiated by " +
                              "the system, and anonymous classes are not static";
             Node locationNode = declarationOrAnonymous;
             if (locationNode.getParent() instanceof ConstructorInvocation) {
