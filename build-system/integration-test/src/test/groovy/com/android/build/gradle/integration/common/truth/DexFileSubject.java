@@ -27,6 +27,7 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
 import com.android.utils.XmlUtils;
+import com.google.common.base.Preconditions;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
 import com.google.common.truth.SubjectFactory;
@@ -47,12 +48,12 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
     public static final SubjectFactory<DexFileSubject, File> FACTORY =
             new SubjectFactory<DexFileSubject, File>() {
                 @Override
-                public DexFileSubject getSubject(FailureStrategy fs, File that) {
+                public DexFileSubject getSubject(@NonNull FailureStrategy fs, @Nullable File that) {
                     return new DexFileSubject(fs, that);
                 }
             };
 
-    public DexFileSubject(FailureStrategy fs, File that) {
+    private DexFileSubject(@NonNull FailureStrategy fs, @Nullable File that) {
         super(fs, that);
     }
 
@@ -64,17 +65,17 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
         return getClassDexDump(className) != null;
     }
 
-    public IndirectSubject<DexClassSubject> hasClass(String className)
+    public IndirectSubject<DexClassSubject> hasClass(@NonNull String className)
             throws ProcessException, IOException {
         final Node classNode = getClassDexDump(className);
-        if (classNode == null) {
+        if (assertSubjectIsNonNull() && classNode == null) {
             fail("contains class", getSubject(), className);
         }
         return new IndirectSubject<DexClassSubject>() {
             @NonNull
             @Override
             public DexClassSubject that() {
-                return new DexClassSubject(failureStrategy, classNode);
+                return DexClassSubject.FACTORY.getSubject(failureStrategy, classNode);
             }
         };
     }
@@ -82,7 +83,11 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
     @Nullable
     private Node getClassDexDump(@NonNull String className) throws ProcessException, IOException {
         if (!className.startsWith("L") || !className.endsWith(";")) {
-            throw new RuntimeException("class name must be in the format L" + "com/foo/Main;");
+            throw new IllegalArgumentException(
+                    "class name must be in the format L" + "com/foo/Main;");
+        }
+        if (getSubject() == null) {
+            return null;
         }
         className = className.substring(1, className.length() - 1).replace('/', '.');
         final int lastDot = className.lastIndexOf('.');
@@ -93,7 +98,7 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
             pkg = "";
         } else {
             pkg = className.substring(0, lastDot);
-            name = className.substring(lastDot + 1).replace('$','.');
+            name = className.substring(lastDot + 1).replace('$', '.');
         }
         Node mainDexDump = getMainDexDump();
         Node packageNode = XmlHelper
@@ -105,12 +110,15 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
         return XmlHelper.findChildWithTagAndAttrs(packageNode, "class", "name", name);
     }
 
+    /**
+     * Should not be called when the subject is null.
+     */
     @NonNull
     private Node getMainDexDump() throws ProcessException, IOException {
         if (mainDexDump != null) {
             return mainDexDump;
         }
-        mainDexDump = loadDexDump(getSubject(), SdkHelper.getDexDump());
+        mainDexDump = loadDexDump(Preconditions.checkNotNull(getSubject()), SdkHelper.getDexDump());
         return mainDexDump;
     }
 
@@ -134,5 +142,13 @@ public class DexFileSubject extends Subject<DexFileSubject, File> {
         } catch (SAXException e) {
             throw new IOException(e);
         }
+    }
+
+    private boolean assertSubjectIsNonNull() {
+        if (getSubject() == null) {
+            fail("Cannot assert about the contents of a dex file that does not exist.");
+            return false;
+        }
+        return true;
     }
 }
