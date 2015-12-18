@@ -28,6 +28,7 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.ClassContext;
+import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
@@ -108,6 +109,7 @@ import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeConstants;
+import org.eclipse.jdt.internal.compiler.lookup.VariableBinding;
 import org.eclipse.jdt.internal.compiler.parser.Parser;
 import org.eclipse.jdt.internal.compiler.problem.AbortCompilation;
 import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
@@ -123,6 +125,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import lombok.ast.Identifier;
+import lombok.ast.MethodDeclaration;
 import lombok.ast.Node;
 import lombok.ast.Position;
 import lombok.ast.StrictListAccessor;
@@ -581,6 +585,29 @@ public class EcjParser extends JavaParser {
         int end = Math.min(contents == null ? Integer.MAX_VALUE : contents.length(),
                 to.getPosition().getEnd() + toDelta);
         return Location.create(context.file, contents, start, end);
+    }
+
+    @Override
+    @NonNull
+    public Location getNameLocation(@NonNull JavaContext context, @NonNull Node node) {
+        // The range on method name identifiers is wrong in the ECJ nodes; just take start of
+        // name + length of name
+        if (node instanceof MethodDeclaration) {
+            MethodDeclaration declaration = (MethodDeclaration) node;
+            Identifier identifier = declaration.astMethodName();
+            Location location = getLocation(context, identifier);
+            com.android.tools.lint.detector.api.Position start = location.getStart();
+            com.android.tools.lint.detector.api.Position end = location.getEnd();
+            int methodNameLength = identifier.astValue().length();
+            if (start != null && end != null &&
+                    end.getOffset() - start.getOffset() > methodNameLength) {
+                end = new DefaultPosition(start.getLine(), start.getColumn() + methodNameLength,
+                        start.getOffset() + methodNameLength);
+                return Location.create(location.getFile(), start, end);
+            }
+            return location;
+        }
+        return super.getNameLocation(context, node);
     }
 
     @NonNull
@@ -1470,15 +1497,26 @@ public class EcjParser extends JavaParser {
         @Nullable
         @Override
         public ResolvedClass getSuperClass() {
-            if (mBinding instanceof ReferenceBinding) {
-                ReferenceBinding refBinding = (ReferenceBinding) mBinding;
-                ReferenceBinding superClass = refBinding.superclass();
-                if (superClass != null) {
-                    return new EcjResolvedClass(superClass);
-                }
+            ReferenceBinding superClass = mBinding.superclass();
+            if (superClass != null) {
+                return new EcjResolvedClass(superClass);
             }
 
             return null;
+        }
+
+        @Override
+        @NonNull
+        public Iterable<ResolvedClass> getInterfaces() {
+            ReferenceBinding[] interfaces = mBinding.superInterfaces();
+            if (interfaces.length == 0) {
+                return Collections.emptyList();
+            }
+            List<ResolvedClass> classes = Lists.newArrayListWithExpectedSize(interfaces.length);
+            for (ReferenceBinding binding : interfaces) {
+                classes.add(new EcjResolvedClass(binding));
+            }
+            return classes;
         }
 
         @Nullable
@@ -1496,15 +1534,13 @@ public class EcjParser extends JavaParser {
 
         @Override
         public boolean isSubclassOf(@NonNull String name, boolean strict) {
-            if (mBinding instanceof ReferenceBinding) {
-                ReferenceBinding cls = (ReferenceBinding) mBinding;
-                if (strict) {
-                    cls = cls.superclass();
-                }
-                for (; cls != null; cls = cls.superclass()) {
-                    if (equalsCompound(name, cls.compoundName)) {
-                        return true;
-                    }
+            ReferenceBinding cls = (ReferenceBinding) mBinding;
+            if (strict) {
+                cls = cls.superclass();
+            }
+            for (; cls != null; cls = cls.superclass()) {
+                if (equalsCompound(name, cls.compoundName)) {
+                    return true;
                 }
             }
 
@@ -1764,6 +1800,11 @@ public class EcjParser extends JavaParser {
                 return cls.getAccessFlags();
             }
             return 0;
+        }
+
+        @Override
+        public TypeDescriptor getType() {
+            return new EcjTypeDescriptor(mBinding);
         }
 
         @Override
@@ -2059,9 +2100,9 @@ public class EcjParser extends JavaParser {
     }
 
     private class EcjResolvedVariable extends ResolvedVariable {
-        private LocalVariableBinding mBinding;
+        private VariableBinding mBinding;
 
-        private EcjResolvedVariable(LocalVariableBinding binding) {
+        private EcjResolvedVariable(VariableBinding binding) {
             mBinding = binding;
         }
 

@@ -23,7 +23,9 @@ import static com.android.tools.lint.checks.JavaPerformanceDetector.ON_MEASURE;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
@@ -109,10 +111,10 @@ public class WrongCallDetector extends Detector implements Detector.JavaScanner 
 
     private static void report(JavaContext context, MethodInvocation node) {
         // Make sure the call is on a view
-        JavaParser.ResolvedNode resolved = context.resolve(node);
-        if (resolved instanceof JavaParser.ResolvedMethod) {
-            JavaParser.ResolvedMethod method = (JavaParser.ResolvedMethod) resolved;
-            JavaParser.ResolvedClass containingClass = method.getContainingClass();
+        ResolvedNode resolved = context.resolve(node);
+        if (resolved instanceof ResolvedMethod) {
+            ResolvedMethod method = (ResolvedMethod) resolved;
+            ResolvedClass containingClass = method.getContainingClass();
             if (!containingClass.isSubclassOf(CLASS_VIEW, false)) {
                 return;
             }

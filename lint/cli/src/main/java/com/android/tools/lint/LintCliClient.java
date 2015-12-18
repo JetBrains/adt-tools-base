@@ -92,13 +92,16 @@ public class LintCliClient extends LintClient {
 
     /** Creates a CLI driver */
     public LintCliClient() {
+        super(CLIENT_CLI);
         mFlags = new LintCliFlags();
         TextReporter reporter = new TextReporter(this, mFlags, new PrintWriter(System.out, true),
                 false);
         mFlags.getReporters().add(reporter);
     }
 
-    public LintCliClient(LintCliFlags flags) {
+    /** Creates a CLI driver */
+    public LintCliClient(@NonNull LintCliFlags flags, @NonNull String clientName) {
+        super(clientName);
         mFlags = flags;
     }
 

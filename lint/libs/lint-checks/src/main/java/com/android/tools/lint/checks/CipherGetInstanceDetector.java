@@ -18,7 +18,9 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedField;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
@@ -81,11 +83,11 @@ public class CipherGetInstanceDetector extends Detector implements Detector.Java
     public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
             @NonNull MethodInvocation node) {
         // Ignore if the method doesn't fit our description.
-        JavaParser.ResolvedNode resolved = context.resolve(node);
-        if (!(resolved instanceof JavaParser.ResolvedMethod)) {
+        ResolvedNode resolved = context.resolve(node);
+        if (!(resolved instanceof ResolvedMethod)) {
             return;
         }
-        JavaParser.ResolvedMethod method = (JavaParser.ResolvedMethod) resolved;
+        ResolvedMethod method = (ResolvedMethod) resolved;
         if (!method.getContainingClass().isSubclassOf(CIPHER, false)) {
             return;
         }
@@ -97,9 +99,9 @@ public class CipherGetInstanceDetector extends Detector implements Detector.Java
                 String parameter = argument.astValue();
                 checkParameter(context, node, argument, parameter, false);
             } else {
-                JavaParser.ResolvedNode resolve = context.resolve(expression);
-                if (resolve instanceof JavaParser.ResolvedField) {
-                    JavaParser.ResolvedField field = (JavaParser.ResolvedField) resolve;
+                ResolvedNode resolve = context.resolve(expression);
+                if (resolve instanceof ResolvedField) {
+                    ResolvedField field = (ResolvedField) resolve;
                     Object value = field.getValue();
                     if (value instanceof String) {
                         checkParameter(context, node, expression, (String)value, true);

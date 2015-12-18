@@ -390,7 +390,7 @@ public abstract class LintDetectorTest extends SdkTestCase {
         private File mIncrementalCheck;
 
         public TestLintClient() {
-            super(new LintCliFlags());
+            super(new LintCliFlags(), "test");
             mFlags.getReporters().add(new TextReporter(this, mFlags, mWriter, false));
         }
 

@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_PKG;
 import static com.android.SdkConstants.R_CLASS;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
@@ -336,6 +337,29 @@ public class JavaVisitor {
         mParser.dispose();
     }
 
+    @Nullable
+    private static Set<String> getInterfaceNames(
+            @Nullable Set<String> addTo,
+            @NonNull ResolvedClass cls) {
+        Iterable<ResolvedClass> interfaces = cls.getInterfaces();
+        for (ResolvedClass resolvedInterface : interfaces) {
+            String name = resolvedInterface.getName();
+            if (addTo == null) {
+                addTo = Sets.newHashSet();
+            } else if (addTo.contains(name)) {
+                // Superclasses can explicitly implement the same interface,
+                // so keep track of visited interfaces as we traverse up the
+                // super class chain to avoid checking the same interface
+                // more than once.
+                continue;
+            }
+            addTo.add(name);
+            getInterfaceNames(addTo, resolvedInterface);
+        }
+
+        return addTo;
+    }
+
     private static class VisitingDetector {
         private AstVisitor mVisitor; // construct lazily, and clear out on context switch!
         private JavaContext mContext;
@@ -402,6 +426,20 @@ public class JavaVisitor {
                     }
                 }
 
+                // Check interfaces too
+                Set<String> interfaceNames = getInterfaceNames(null, cls);
+                if (interfaceNames != null) {
+                    for (String name : interfaceNames) {
+                        list = mSuperClassDetectors.get(name);
+                        if (list != null) {
+                            for (VisitingDetector v : list) {
+                                v.getJavaScanner().checkClass(mContext, node, node,
+                                        resolvedClass);
+                            }
+                        }
+                    }
+                }
+
                 cls = cls.getSuperClass();
             }
 
@@ -412,10 +450,7 @@ public class JavaVisitor {
         public boolean visitConstructorInvocation(ConstructorInvocation node) {
             NormalTypeBody anonymous = node.astAnonymousClassBody();
             if (anonymous != null) {
-                ResolvedNode resolved = mContext.resolve(anonymous);
-                if (resolved instanceof ResolvedMethod) {
-                    resolved = ((ResolvedMethod) resolved).getContainingClass();
-                }
+                ResolvedNode resolved = mContext.resolve(node.astTypeReference());
                 if (!(resolved instanceof ResolvedClass)) {
                     return true;
                 }
@@ -428,6 +463,20 @@ public class JavaVisitor {
                         for (VisitingDetector v : list) {
                             v.getJavaScanner().checkClass(mContext, null, anonymous,
                                     resolvedClass);
+                        }
+                    }
+
+                    // Check interfaces too
+                    Set<String> interfaceNames = getInterfaceNames(null, cls);
+                    if (interfaceNames != null) {
+                        for (String name : interfaceNames) {
+                            list = mSuperClassDetectors.get(name);
+                            if (list != null) {
+                                for (VisitingDetector v : list) {
+                                    v.getJavaScanner().checkClass(mContext, null, anonymous,
+                                            resolvedClass);
+                                }
+                            }
                         }
                     }
 

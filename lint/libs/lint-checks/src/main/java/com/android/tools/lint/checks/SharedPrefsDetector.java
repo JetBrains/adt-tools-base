@@ -22,7 +22,7 @@ import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -289,7 +289,7 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
             ResolvedNode resolved = mContext.resolve(node);
             if (resolved instanceof ResolvedMethod) {
                 ResolvedMethod method = (ResolvedMethod) resolved;
-                JavaParser.ResolvedClass clz = method.getContainingClass();
+                ResolvedClass clz = method.getContainingClass();
                 if (clz.isSubclassOf("android.content.SharedPreferences.Editor", false)
                         && mContext.getProject().getMinSdkVersion().getApiLevel() >= 9) {
                     // See if the return value is read: can only replace commit with

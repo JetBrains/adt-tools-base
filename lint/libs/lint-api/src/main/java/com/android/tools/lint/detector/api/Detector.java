@@ -252,6 +252,7 @@ public abstract class Detector {
          * @param node the class declaration node or the anonymous class construction node
          * @param resolvedClass the resolved class
          */
+        // TODO: Change signature to pass in the NormalTypeBody instead of the plain Node?
         void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration declaration,
                 @NonNull Node node, @NonNull ResolvedClass resolvedClass);
     }

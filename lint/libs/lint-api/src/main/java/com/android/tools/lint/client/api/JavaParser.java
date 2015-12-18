@@ -40,7 +40,6 @@ import lombok.ast.Return;
 import lombok.ast.StrictListAccessor;
 import lombok.ast.Switch;
 import lombok.ast.Throw;
-import lombok.ast.TypeDeclaration;
 import lombok.ast.TypeReference;
 import lombok.ast.TypeReferencePart;
 import lombok.ast.While;
@@ -423,6 +422,20 @@ public abstract class JavaParser {
         public boolean isInPackage(@NonNull String pkg, boolean includeSubPackages) {
             return getSignature().startsWith(pkg);
         }
+
+        /**
+         * Attempts to find the corresponding AST node, if possible. This won't work if for example
+         * the resolved node is from a binary (such as a compiled class in a .jar) or if the
+         * underlying parser doesn't support it.
+         * <p>
+         * Note that looking up the AST node can result in different instances for each lookup.
+         *
+         * @return an AST node, if possible.
+         */
+        @Nullable
+        public Node findAstNode() {
+            return null;
+        }
     }
 
     /** A resolved class declaration (class, interface, enumeration or annotation) */
@@ -452,6 +465,9 @@ public abstract class JavaParser {
 
         @Nullable
         public abstract ResolvedClass getSuperClass();
+
+        @NonNull
+        public abstract Iterable<ResolvedClass> getInterfaces();
 
         @Nullable
         public abstract ResolvedClass getContainingClass();

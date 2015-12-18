@@ -84,6 +84,14 @@ import java.util.Set;
 public abstract class LintClient {
     private static final String PROP_BIN_DIR  = "com.android.tools.lint.bindir";  //$NON-NLS-1$
 
+    protected LintClient(@NonNull String clientName) {
+        sClientName = clientName;
+    }
+
+    protected LintClient() {
+        sClientName = "unknown";
+    }
+
     /**
      * Returns a configuration for use by the given project. The configuration
      * provides information about which issues are enabled, any customizations
@@ -1141,5 +1149,64 @@ public abstract class LintClient {
             mResourceVisibility = new ResourceVisibilityLookup.Provider();
         }
         return mResourceVisibility;
+    }
+
+    /**
+     * The client name returned by {@link #getClientName()} when running in
+     * Android Studio/IntelliJ IDEA
+     */
+    public static final String CLIENT_STUDIO = "studio";
+
+    /**
+     * The client name returned by {@link #getClientName()} when running in
+     * Gradle
+     */
+    public static final String CLIENT_GRADLE = "gradle";
+
+    /**
+     * The client name returned by {@link #getClientName()} when running in
+     * the CLI (command line interface) version of lint, {@code lint}
+     */
+    public static final String CLIENT_CLI = "cli";
+
+    /**
+     * The client name returned by {@link #getClientName()} when running in
+     * some unknown client
+     */
+    public static final String CLIENT_UNKNOWN = "unknown";
+
+    /** The client name. */
+    @NonNull
+    private static String sClientName = CLIENT_UNKNOWN;
+
+    /**
+     * Returns the name of the embedding client. It could be not just
+     * {@link #CLIENT_STUDIO}, {@link #CLIENT_GRADLE}, {@link #CLIENT_CLI}
+     * etc but other values too as lint is integrated in other embedding contexts.
+     *
+     * @return the name of the embedding client
+     */
+    @NonNull
+    public static String getClientName() {
+        return sClientName;
+    }
+
+    /**
+     * Returns true if the embedding client currently running lint is Android Studio
+     * (or IntelliJ IDEA)
+     *
+     * @return true if running in Android Studio / IntelliJ IDEA
+     */
+    public static boolean isStudio() {
+        return CLIENT_STUDIO.equals(sClientName);
+    }
+
+    /**
+     * Returns true if the embedding client currently running lint is Gradle
+     *
+     * @return true if running in Gradle
+     */
+    public static boolean isGradle() {
+        return CLIENT_GRADLE.equals(sClientName);
     }
 }

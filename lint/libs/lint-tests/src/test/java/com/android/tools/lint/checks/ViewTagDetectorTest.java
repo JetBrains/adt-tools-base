@@ -18,37 +18,72 @@ package com.android.tools.lint.checks;
 
 import com.android.tools.lint.detector.api.Detector;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "ClassNameDiffersFromFileName"})
 public class ViewTagDetectorTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
         return new ViewTagDetector();
     }
 
-    public void test() throws Exception {
-        assertEquals(
-            "src/test/pkg/ViewTagTest.java:21: Warning: Avoid setting views as values for setTag: Can lead to memory leaks in versions older than Android 4.0 [ViewTag]\n" +
-            "        view.setTag(android.R.id.button1, group); // ERROR\n" +
-            "             ~~~~~~\n" +
-            "src/test/pkg/ViewTagTest.java:22: Warning: Avoid setting views as values for setTag: Can lead to memory leaks in versions older than Android 4.0 [ViewTag]\n" +
-            "        view.setTag(android.R.id.icon, view.findViewById(android.R.id.icon)); // ERROR\n" +
-            "             ~~~~~~\n" +
-            "src/test/pkg/ViewTagTest.java:23: Warning: Avoid setting cursors as values for setTag: Can lead to memory leaks in versions older than Android 4.0 [ViewTag]\n" +
-            "        view.setTag(android.R.id.icon1, cursor1); // ERROR\n" +
-            "             ~~~~~~\n" +
-            "src/test/pkg/ViewTagTest.java:24: Warning: Avoid setting cursors as values for setTag: Can lead to memory leaks in versions older than Android 4.0 [ViewTag]\n" +
-            "        view.setTag(android.R.id.icon2, cursor2); // ERROR\n" +
-            "             ~~~~~~\n" +
-            "src/test/pkg/ViewTagTest.java:25: Warning: Avoid setting view holders as values for setTag: Can lead to memory leaks in versions older than Android 4.0 [ViewTag]\n" +
-            "        view.setTag(android.R.id.copy, new MyViewHolder()); // ERROR\n" +
-            "             ~~~~~~\n" +
-            "0 errors, 5 warnings\n",
+    private final TestFile mViewTagTest = java("src/test/pkg/ViewTagTest.java", ""
+            + "package test.pkg;\n"
+            + "\n"
+            + "import android.annotation.SuppressLint;\n"
+            + "import android.content.Context;\n"
+            + "import android.database.Cursor;\n"
+            + "import android.database.MatrixCursor;\n"
+            + "import android.view.LayoutInflater;\n"
+            + "import android.view.View;\n"
+            + "import android.view.ViewGroup;\n"
+            + "import android.widget.CursorAdapter;\n"
+            + "import android.widget.ImageView;\n"
+            + "import android.widget.TextView;\n"
+            + "\n"
+            + "@SuppressWarnings(\"unused\")\n"
+            + "public abstract class ViewTagTest {\n"
+            + "    public View newView(Context context, ViewGroup group, Cursor cursor1,\n"
+            + "            MatrixCursor cursor2) {\n"
+            + "        LayoutInflater inflater = LayoutInflater.from(context);\n"
+            + "        View view = inflater.inflate(android.R.layout.activity_list_item, null);\n"
+            + "        view.setTag(android.R.id.background, \"Some random tag\"); // OK\n"
+            + "        view.setTag(android.R.id.button1, group); // ERROR\n"
+            + "        view.setTag(android.R.id.icon, view.findViewById(android.R.id.icon)); // ERROR\n"
+            + "        view.setTag(android.R.id.icon1, cursor1); // ERROR\n"
+            + "        view.setTag(android.R.id.icon2, cursor2); // ERROR\n"
+            + "        view.setTag(android.R.id.copy, new MyViewHolder()); // ERROR\n"
+            + "        return view;\n"
+            + "    }\n"
+            + "\n"
+            + "    @SuppressLint(\"ViewTag\")\n"
+            + "    public static void checkSuppress(Context context, View view) {\n"
+            + "        view.setTag(android.R.id.icon, view.findViewById(android.R.id.icon));\n"
+            + "    }\n"
+            + "\n"
+            + "    private class MyViewHolder {\n"
+            + "        View view;\n"
+            + "    }\n"
+            + "}\n");
 
-            lintProject(
-                    "bytecode/.classpath=>.classpath",
-                    "bytecode/ViewTagTest.java.txt=>src/test/pkg/ViewTagTest.java",
-                    "bytecode/ViewTagTest.class.data=>bin/classes/test/pkg/ViewTagTest.class"
-                    ));
+    public void test() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/ViewTagTest.java:21: Warning: Avoid setting views as values for setTag: Can lead to memory leaks in versions older than Android 4.0 [ViewTag]\n"
+                + "        view.setTag(android.R.id.button1, group); // ERROR\n"
+                + "                                          ~~~~~\n"
+                + "src/test/pkg/ViewTagTest.java:22: Warning: Avoid setting views as values for setTag: Can lead to memory leaks in versions older than Android 4.0 [ViewTag]\n"
+                + "        view.setTag(android.R.id.icon, view.findViewById(android.R.id.icon)); // ERROR\n"
+                + "                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/ViewTagTest.java:23: Warning: Avoid setting cursors as values for setTag: Can lead to memory leaks in versions older than Android 4.0 [ViewTag]\n"
+                + "        view.setTag(android.R.id.icon1, cursor1); // ERROR\n"
+                + "                                        ~~~~~~~\n"
+                + "src/test/pkg/ViewTagTest.java:24: Warning: Avoid setting cursors as values for setTag: Can lead to memory leaks in versions older than Android 4.0 [ViewTag]\n"
+                + "        view.setTag(android.R.id.icon2, cursor2); // ERROR\n"
+                + "                                        ~~~~~~~\n"
+                + "src/test/pkg/ViewTagTest.java:25: Warning: Avoid setting view holders as values for setTag: Can lead to memory leaks in versions older than Android 4.0 [ViewTag]\n"
+                + "        view.setTag(android.R.id.copy, new MyViewHolder()); // ERROR\n"
+                + "                                       ~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 5 warnings\n",
+
+            lintProject(mViewTagTest));
     }
 
     public void testICS() throws Exception {
@@ -56,10 +91,7 @@ public class ViewTagDetectorTest extends AbstractCheckTest {
             "No warnings.",
 
             lintProject(
-                    "bytecode/.classpath=>.classpath",
-                    "apicheck/minsdk14.xml=>AndroidManifest.xml",
-                    "bytecode/ViewTagTest.java.txt=>src/test/pkg/ViewTagTest.java",
-                    "bytecode/ViewTagTest.class.data=>bin/classes/test/pkg/ViewTagTest.class"
-                    ));
+                    mViewTagTest,
+                    copy("apicheck/minsdk14.xml", "AndroidManifest.xml")));
     }
 }
