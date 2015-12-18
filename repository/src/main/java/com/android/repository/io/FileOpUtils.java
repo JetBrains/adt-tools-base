@@ -86,6 +86,9 @@ public final class FileOpUtils {
             }
         } else if (fop.isFile(src)) {
             fop.copyFile(src, dest);
+            if (fop.canExecute(src)) {
+                fop.setExecutablePermission(dest);
+            }
         }
     }
 

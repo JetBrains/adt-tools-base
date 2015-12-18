@@ -36,8 +36,9 @@ import java.util.List;
 public class AddonListSourceProviderTest extends TestCase {
 
     public void testRemoteSource() throws Exception {
-        FakeDownloader downloader = new FakeDownloader();
-        AndroidSdkHandler handler = new AndroidSdkHandler(new MockFileOp(), true);
+        MockFileOp fop = new MockFileOp();
+        FakeDownloader downloader = new FakeDownloader(fop);
+        AndroidSdkHandler handler = new AndroidSdkHandler(fop, true);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         RepositorySourceProvider provider = handler.getRemoteListSourceProvider(progress);
 

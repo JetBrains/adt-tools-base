@@ -17,6 +17,7 @@
 package com.android.repository.impl.sources;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemoteListSourceProvider;
 import com.android.repository.api.RepoManager;
@@ -31,6 +32,7 @@ import com.google.common.collect.Maps;
 
 import junit.framework.TestCase;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -45,15 +47,14 @@ public class RemoteListSourceProviderTest extends TestCase {
 
     public void testSimple() throws Exception {
         MockFileOp fop = new MockFileOp();
-        RepoManager mgr = RepoManager.create(fop);
 
         Map<Class<? extends RepositorySource>, Collection<SchemaModule>> permittedModules =
                 Maps.newHashMap();
         permittedModules.put(RemoteListSourceProvider.GenericSite.class,
-                ImmutableList.of(mgr.getCommonModule()));
+                ImmutableList.of(RepoManager.getCommonModule()));
         RemoteListSourceProvider provider = RemoteListSourceProvider
                 .create("http://example.com/sourceList.xml", null, permittedModules);
-        FakeDownloader downloader = new FakeDownloader();
+        FakeDownloader downloader = new FakeDownloader(fop);
         downloader.registerUrl(new URL("http://example.com/sourceList.xml"),
                 getClass().getResourceAsStream("../testData/testSourceList-1.xml"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
@@ -62,36 +63,46 @@ public class RemoteListSourceProviderTest extends TestCase {
         RepositorySource source1 = sources.get(0);
         assertEquals("My Example Add-ons.", source1.getDisplayName());
         assertEquals("http://www.example.com/my_addons2.xml", source1.getUrl());
-        assertEquals(ImmutableList.of(mgr.getCommonModule()), source1.getPermittedModules());
+        assertEquals(ImmutableList.of(RepoManager.getCommonModule()),
+                source1.getPermittedModules());
 
         RepositorySource source2 = sources.get(1);
         assertEquals("ありがとうございます。", source2.getDisplayName());
         assertEquals("http://www.example.co.jp/addons.xml", source2.getUrl());
-        assertEquals(ImmutableList.of(mgr.getCommonModule()), source2.getPermittedModules());
+        assertEquals(ImmutableList.of(RepoManager.getCommonModule()),
+                source2.getPermittedModules());
     }
 
     public void testCache() throws Exception {
         MockFileOp fop = new MockFileOp();
-        RepoManager mgr = RepoManager.create(fop);
 
         Map<Class<? extends RepositorySource>, Collection<SchemaModule>> permittedModules =
                 Maps.newHashMap();
         permittedModules.put(RemoteListSourceProvider.GenericSite.class,
-                ImmutableList.of(mgr.getCommonModule()));
+                ImmutableList.of(RepoManager.getCommonModule()));
         RemoteListSourceProvider provider = RemoteListSourceProvider
                 .create("http://example.com/sourceList.xml", null, permittedModules);
-        FakeDownloader downloader = new FakeDownloader();
+        FakeDownloader downloader = new FakeDownloader(fop);
         downloader.registerUrl(new URL("http://example.com/sourceList.xml"),
                 getClass().getResourceAsStream("../testData/testSourceList-1.xml"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
         provider.getSources(downloader, null, progress, false);
         progress.assertNoErrorsOrWarnings();
 
-        downloader = new FakeDownloader() {
+        downloader = new FakeDownloader(fop) {
             @NonNull
             @Override
-            public InputStream download(@NonNull URL url,
-                    @NonNull SettingsController controller,
+            public InputStream downloadAndStream(@NonNull URL url,
+                                                 @Nullable SettingsController controller,
+                                                 @NonNull ProgressIndicator indicator) throws IOException {
+                fail("shouldn't be downloading again");
+                return null;
+            }
+
+            @NonNull
+            @Override
+            public File downloadFully(@NonNull URL url,
+                    @Nullable SettingsController controller,
                     @NonNull ProgressIndicator indicator) throws IOException {
                 fail("shouldn't be downloading again");
                 return null;
@@ -103,25 +114,26 @@ public class RemoteListSourceProviderTest extends TestCase {
         RepositorySource source1 = sources.get(0);
         assertEquals("My Example Add-ons.", source1.getDisplayName());
         assertEquals("http://www.example.com/my_addons2.xml", source1.getUrl());
-        assertEquals(ImmutableList.of(mgr.getCommonModule()), source1.getPermittedModules());
+        assertEquals(ImmutableList.of(RepoManager.getCommonModule()),
+                source1.getPermittedModules());
 
         RepositorySource source2 = sources.get(1);
         assertEquals("ありがとうございます。", source2.getDisplayName());
         assertEquals("http://www.example.co.jp/addons.xml", source2.getUrl());
-        assertEquals(ImmutableList.of(mgr.getCommonModule()), source2.getPermittedModules());
+        assertEquals(ImmutableList.of(RepoManager.getCommonModule()),
+                source2.getPermittedModules());
     }
 
     public void testForceRefresh() throws Exception {
         MockFileOp fop = new MockFileOp();
-        RepoManager mgr = RepoManager.create(fop);
 
         Map<Class<? extends RepositorySource>, Collection<SchemaModule>> permittedModules =
                 Maps.newHashMap();
         permittedModules.put(RemoteListSourceProvider.GenericSite.class,
-                ImmutableList.of(mgr.getCommonModule()));
+                ImmutableList.of(RepoManager.getCommonModule()));
         RemoteListSourceProvider provider = RemoteListSourceProvider
                 .create("http://example.com/sourceList.xml", null, permittedModules);
-        FakeDownloader downloader = new FakeDownloader();
+        FakeDownloader downloader = new FakeDownloader(fop);
         downloader.registerUrl(new URL("http://example.com/sourceList.xml"),
                 getClass().getResourceAsStream("../testData/testSourceList-1.xml"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
@@ -136,12 +148,13 @@ public class RemoteListSourceProviderTest extends TestCase {
         RepositorySource source1 = sources.get(0);
         assertEquals("A different displayname from testSourceList-1", source1.getDisplayName());
         assertEquals("http://www.example.com/different_site.xml", source1.getUrl());
-        assertEquals(ImmutableList.of(mgr.getCommonModule()), source1.getPermittedModules());
+        assertEquals(ImmutableList.of(RepoManager.getCommonModule()),
+                source1.getPermittedModules());
 
         RepositorySource source2 = sources.get(1);
         assertEquals("今日は土曜日です", source2.getDisplayName());
         assertEquals("http://www.example.co.jp/different_site.xml", source2.getUrl());
-        assertEquals(ImmutableList.of(mgr.getCommonModule()), source2.getPermittedModules());
-
+        assertEquals(ImmutableList.of(RepoManager.getCommonModule()),
+                source2.getPermittedModules());
     }
 }

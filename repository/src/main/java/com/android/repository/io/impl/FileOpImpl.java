@@ -340,4 +340,14 @@ public class FileOpImpl implements FileOp {
     public boolean isWindows() {
         return System.getProperty("os.name").startsWith("Windows");
     }
+
+    @Override
+    public boolean canExecute(@NonNull File file) {
+        return file.canExecute();
+    }
+
+    @Override
+    public File ensureRealFile(@NonNull File in) {
+        return in;
+    }
 }

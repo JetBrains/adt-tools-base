@@ -17,21 +17,22 @@
 package com.android.repository.impl.remote;
 
 import com.android.annotations.NonNull;
-import com.android.repository.testframework.FakeDownloader;
-import com.android.repository.testframework.FakeProgressIndicator;
-import com.android.repository.testframework.FakeSettingsController;
 import com.android.repository.Revision;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.RemotePackage;
+import com.android.repository.api.RepoManager;
 import com.android.repository.api.RepositorySource;
 import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SettingsController;
 import com.android.repository.api.SimpleRepositorySource;
 import com.android.repository.impl.manager.RemoteRepoLoader;
-import com.android.repository.impl.manager.RepoManagerImpl;
 import com.android.repository.impl.meta.Archive;
 import com.android.repository.impl.meta.RemotePackageImpl;
+import com.android.repository.testframework.FakeDownloader;
+import com.android.repository.testframework.FakeProgressIndicator;
+import com.android.repository.testframework.FakeSettingsController;
+import com.android.repository.testframework.MockFileOp;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
@@ -51,9 +52,9 @@ public class RemoteRepoTest extends TestCase {
     public void testRemoteRepo() throws Exception {
         RepositorySource source = new SimpleRepositorySource("http://www.example.com",
                 "Source UI Name", true,
-                ImmutableSet.of(new RepoManagerImpl(null).getCommonModule()),
+                ImmutableSet.of(RepoManager.getCommonModule()),
                 null);
-        FakeDownloader downloader = new FakeDownloader();
+        FakeDownloader downloader = new FakeDownloader(new MockFileOp());
         downloader.registerUrl(new URL("http://www.example.com"),
                 getClass().getResourceAsStream("../testData/testRepo.xml"));
         FakeProgressIndicator progress = new FakeProgressIndicator();
@@ -66,10 +67,10 @@ public class RemoteRepoTest extends TestCase {
         RemotePackage p1 = pkgs.get("dummy;foo").iterator().next();
         assertEquals(new Revision(1, 2, 3), p1.getVersion());
         assertEquals("the license text", p1.getLicense().getValue().trim());
-        assertEquals(2, ((RemotePackageImpl) p1).getAllArchives().size());
+        assertEquals(3, ((RemotePackageImpl) p1).getAllArchives().size());
         assertTrue(p1.getTypeDetails() == null);
         Collection<Archive> archives = ((RemotePackageImpl) p1).getAllArchives();
-        assertEquals(2, archives.size());
+        assertEquals(3, archives.size());
         Iterator<Archive> archiveIter = ((RemotePackageImpl) p1).getAllArchives().iterator();
         Archive a1 = archiveIter.next();
         assertEquals(1234, a1.getComplete().getSize());

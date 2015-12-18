@@ -168,5 +168,19 @@ public interface FileOp {
      */
     boolean createNewFile(@NonNull File file) throws IOException;
 
+    /**
+     * Returns {@code true} if we're on windows, {@code false} otherwise.
+     */
     boolean isWindows();
+
+    /**
+     * @see File#canExecute()
+     */
+    boolean canExecute(@NonNull File file);
+
+    /**
+     * If {@code in} is an in-memory file, write it out as a proper file and return it.
+     * Otherwise just return {@code in}.
+     */
+    File ensureRealFile(@NonNull File in) throws IOException;
 }

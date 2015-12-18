@@ -8,6 +8,7 @@ version = rootProject.ext.baseVersion
 
 dependencies {
     compile project(':base:common')
+    compile 'org.apache.commons:commons-compress:1.8.1'
 
     testCompile 'junit:junit:4.12'
 }

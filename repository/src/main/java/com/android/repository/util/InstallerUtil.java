@@ -43,6 +43,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -52,12 +55,11 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import javax.xml.bind.JAXBElement;
 
@@ -76,59 +78,67 @@ public class InstallerUtil {
      * @param progress     Currently only used for logging.
      * @throws IOException If we're unable to read or write.
      */
-    public static void unzip(@NonNull InputStream in, @NonNull File out, @NonNull FileOp fop,
+    public static void unzip(@NonNull File in, @NonNull File out, @NonNull FileOp fop,
             long expectedSize, @NonNull ProgressIndicator progress)
             throws IOException {
         if (!fop.exists(out) || !fop.isDirectory(out)) {
             throw new IllegalArgumentException("out must exist and be a directory.");
         }
+        // ZipFile requires an actual (not mock) file, so make sure we have a real one.
+        in = fop.ensureRealFile(in);
+
         progress.setText("Unzipping...");
         double fraction = 0;
-        ZipInputStream input = new ZipInputStream(new BufferedInputStream(in));
-        try {
-            ZipEntry entry;
-            while ((entry = input.getNextEntry()) != null) {
-                String name = entry.getName();
-                File entryFile = new File(out, name);
-                progress.setSecondaryText(name);
-                if (entry.isDirectory()) {
-                    if (fop.exists(entryFile)) {
-                        progress.logWarning(entryFile + " already exists");
-                    } else {
-                        if (!fop.mkdirs(entryFile)) {
-                            progress.logWarning("failed to mkdirs " + entryFile);
-                        }
-                    }
-                } else {
-                    if (!fop.exists(entryFile)) {
-                        File parent = entryFile.getParentFile();
-                        if (parent != null && !fop.exists(parent)) {
-                            fop.mkdirs(parent);
-                        }
-                        if (!fop.createNewFile(entryFile)) {
-                            throw new IOException("Failed to create file " + entryFile);
-                        }
-                    }
-
-                    int size;
-                    byte[] buf = new byte[8192];
-                    BufferedOutputStream bos = new BufferedOutputStream(
-                            fop.newFileOutputStream(entryFile));
-                    try {
-                        while ((size = input.read(buf)) > -1) {
-                            bos.write(buf, 0, size);
-                            fraction += ((double) entry.getCompressedSize() / expectedSize) *
-                                    ((double) size / entry.getSize());
-                            progress.setFraction(fraction);
-                        }
-                    } finally {
-                        bos.close();
+        ZipFile zipFile = new ZipFile(in);
+        Enumeration entries = zipFile.getEntries();
+        while (entries.hasMoreElements()) {
+            ZipArchiveEntry entry = (ZipArchiveEntry) entries.nextElement();
+            String name = entry.getName();
+            File entryFile = new File(out, name);
+            progress.setSecondaryText(name);
+            if (entry.isDirectory()) {
+                if (!fop.exists(entryFile)) {
+                    if (!fop.mkdirs(entryFile)) {
+                        progress.logWarning("failed to mkdirs " + entryFile);
                     }
                 }
-                input.closeEntry();
+            } else {
+                if (!fop.exists(entryFile)) {
+                    File parent = entryFile.getParentFile();
+                    if (parent != null && !fop.exists(parent)) {
+                        fop.mkdirs(parent);
+                    }
+                    if (!fop.createNewFile(entryFile)) {
+                        throw new IOException("Failed to create file " + entryFile);
+                    }
+                }
+
+                int size;
+                byte[] buf = new byte[8192];
+                BufferedOutputStream bos = new BufferedOutputStream(
+                        fop.newFileOutputStream(entryFile));
+                InputStream s = new BufferedInputStream(zipFile.getInputStream(entry));
+                try {
+                    while ((size = s.read(buf)) > -1) {
+                        bos.write(buf, 0, size);
+                        fraction += ((double) entry.getCompressedSize() / expectedSize) *
+                                ((double) size / entry.getSize());
+                        progress.setFraction(fraction);
+                    }
+                } finally {
+                    bos.close();
+                    s.close();
+                }
+                if (!fop.isWindows()) {
+                    // get the mode and test if it contains the executable bit
+                    int mode = entry.getUnixMode();
+                    if ((mode & 0111) != 0) {
+                        try {
+                            fop.setExecutablePermission(entryFile);
+                        } catch (IOException ignore) {}
+                    }
+                }
             }
-        } finally {
-            input.close();
         }
     }
 
@@ -221,9 +231,9 @@ public class InstallerUtil {
      *
      * Packages are returned in install order (that is, if we request A which depends on B, the
      * result will be [B, A]). If a dependency cycle is encountered the order of the returned
-     * results at or below the cycle is undefined. For example if we have A -> [B, C], B -> D, and
-     * D -> B then the returned list will be either [B, D, C, A] or [D, B, C, A].
-     * 
+     * results at or below the cycle is undefined. For example if we have A -> [B, C], B -> D, and D
+     * -> B then the returned list will be either [B, D, C, A] or [D, B, C, A].
+     *
      * Note that we assume installed packages already have their dependencies met.
      */
     @Nullable

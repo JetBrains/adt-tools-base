@@ -19,6 +19,7 @@ package com.android.repository.api;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -39,6 +40,18 @@ public interface Downloader {
      *         download is cancelled.
      */
     @Nullable
-    InputStream download(@NonNull URL url, @Nullable SettingsController settings,
+    InputStream downloadAndStream(@NonNull URL url, @Nullable SettingsController settings,
+            @NonNull ProgressIndicator indicator) throws IOException;
+
+    /**
+     * Downloads the content at the given URL to a temporary file and returns a handle to that file.
+     *
+     * @param url       The URL to fetch.
+     * @param settings  Settings (e.g. proxy configuration) for the connection.
+     * @param indicator Facility for showing download progress and logging.
+     * @return The temporary file, or {@code null} if the download is cancelled.
+     */
+    @Nullable
+    File downloadFully(@NonNull URL url, @Nullable SettingsController settings,
             @NonNull ProgressIndicator indicator) throws IOException;
 }

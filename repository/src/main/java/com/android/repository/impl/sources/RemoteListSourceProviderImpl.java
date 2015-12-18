@@ -33,8 +33,6 @@ import com.google.common.collect.Lists;
 
 import org.w3c.dom.ls.LSResourceResolver;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -144,7 +142,7 @@ public class RemoteListSourceProviderImpl extends RemoteListSourceProvider {
             String urlStr = String.format(mUrl, version);
             try {
                 url = new URL(urlStr);
-                xml = downloader.download(url, settingsController, progress);
+                xml = downloader.downloadAndStream(url, settingsController, progress);
             } catch (FileNotFoundException expected) {
                 // do nothing
             } catch (UnknownHostException e) {
