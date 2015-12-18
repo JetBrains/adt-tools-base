@@ -55,7 +55,7 @@ public class MavenInstallerTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
         File root = new File("/repo");
         mgr.setLocalPath(root);
-        FakeDownloader downloader = new FakeDownloader();
+        FakeDownloader downloader = new FakeDownloader(fop);
         URL repoUrl = new URL("http://example.com/dummy.xml");
 
         // The repo we're going to download
@@ -155,7 +155,7 @@ public class MavenInstallerTest extends TestCase {
         progress.assertNoErrorsOrWarnings();
         File root = new File("/repo");
         mgr.setLocalPath(root);
-        FakeDownloader downloader = new FakeDownloader();
+        FakeDownloader downloader = new FakeDownloader(fop);
         URL repoUrl = new URL("http://example.com/dummy.xml");
 
         // The repo we're going to download
@@ -289,7 +289,7 @@ public class MavenInstallerTest extends TestCase {
         mgr.registerSchemaModule(androidSdkHandler.getAddonModule(progress));
 
         FakeProgressRunner runner = new FakeProgressRunner();
-        FakeDownloader downloader = new FakeDownloader();
+        FakeDownloader downloader = new FakeDownloader(fop);
         // Reload
         mgr.load(0, ImmutableList.<RepoLoadedCallback>of(), ImmutableList.<RepoLoadedCallback>of(),
                 ImmutableList.<Runnable>of(), runner, downloader, new FakeSettingsController(false),

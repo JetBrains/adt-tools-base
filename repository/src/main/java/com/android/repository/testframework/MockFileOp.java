@@ -24,12 +24,14 @@ import com.android.repository.io.impl.FileOpImpl;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.ByteStreams;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -284,6 +286,33 @@ public class MockFileOp implements FileOp {
     @Override
     public void setExecutablePermission(@NonNull File file) throws IOException {
         // pass
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * <em>Note: this mock version does nothing.</em>
+     */
+    @Override
+    public boolean canExecute(@NonNull File file) {
+        return false;
+    }
+
+    @Override
+    public File ensureRealFile(@NonNull File in) throws IOException {
+        if (!exists(in)) {
+            return in;
+        }
+        File result = File.createTempFile("MockFileOp", null);
+        result.deleteOnExit();
+        OutputStream os = new FileOutputStream(result);
+        try {
+            ByteStreams.copy(newFileInputStream(in), os);
+        }
+        finally {
+            os.close();
+        }
+        return result;
     }
 
     @Override

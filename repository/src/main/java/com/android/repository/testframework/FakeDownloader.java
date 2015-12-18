@@ -17,11 +17,16 @@
 package com.android.repository.testframework;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.repository.api.Downloader;
 import com.android.repository.api.ProgressIndicator;
 import com.android.repository.api.SettingsController;
+import com.android.repository.io.FileOp;
 import com.google.common.collect.Maps;
+import com.google.common.io.ByteStreams;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -33,35 +38,50 @@ import java.util.Map;
  */
 public class FakeDownloader implements Downloader {
 
-    private Map<String, InputStream> mUrlStreamMap = Maps.newHashMap();
+    private final MockFileOp mFileOp;
 
-    public void registerUrl(URL url, InputStream stream) {
-        mUrlStreamMap.put(url.toExternalForm(), stream);
+    public FakeDownloader(MockFileOp fop) {
+        mFileOp = fop;
+    }
+
+    public void registerUrl(URL url, byte[] data) {
+        String filename = getFileName(url);
+        mFileOp.recordExistingFile(filename, data);
+    }
+
+    public void registerUrl(URL url, InputStream content) throws IOException {
+        byte[] data = ByteStreams.toByteArray(content);
+        String filename = getFileName(url);
+        mFileOp.recordExistingFile(filename, data);
+    }
+
+    @NonNull
+    public String getFileName(URL url) {
+        return "/tmp" + url.getFile();
     }
 
     @Override
     @NonNull
-    public InputStream download(@NonNull URL url, @NonNull SettingsController controller,
-            @NonNull ProgressIndicator indicator) throws IOException {
-        InputStream toWrap = mUrlStreamMap.get(url.toExternalForm());
+    public InputStream downloadAndStream(@NonNull URL url, @Nullable SettingsController controller,
+                                         @NonNull ProgressIndicator indicator) throws IOException {
+        InputStream toWrap = null;
+        try {
+            toWrap = mFileOp.newFileInputStream(new File(getFileName(url)));
+        }
+        catch (Exception e) {
+            // nothing
+        }
         if (toWrap != null) {
             return new ReopeningInputStream(toWrap);
         }
         throw new IOException("Failed to open " + url);
     }
 
-    /**
-     * Close all input streams, since they will have been prevented from being closed by {@link
-     * ReopeningInputStream}.
-     */
-    public void dispose() {
-        for (InputStream s : mUrlStreamMap.values()) {
-            try {
-                s.close();
-            } catch (IOException e) {
-                // ignore
-            }
-        }
+    @Nullable
+    @Override
+    public File downloadFully(@NonNull URL url, @Nullable SettingsController settings,
+            @NonNull ProgressIndicator indicator) throws IOException {
+        return new File(getFileName(url));
     }
 
     /**

@@ -33,9 +33,12 @@ import com.google.common.io.ByteStreams;
 
 import junit.framework.TestCase;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -65,7 +68,7 @@ public class BasicInstallerTest extends TestCase {
         // Load the local packages.
         mgr.load(0, ImmutableList.<RepoManager.RepoLoadedCallback>of(),
                 ImmutableList.<RepoManager.RepoLoadedCallback>of(), ImmutableList.<Runnable>of(),
-                runner, new FakeDownloader(), new FakeSettingsController(false), true);
+                runner, new FakeDownloader(fop), new FakeSettingsController(false), true);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
         RepositoryPackages pkgs = mgr.getPackages();
 
@@ -90,7 +93,7 @@ public class BasicInstallerTest extends TestCase {
         RepoManager mgr = new RepoManagerImpl(fop);
         File root = new File("/repo");
         mgr.setLocalPath(root);
-        FakeDownloader downloader = new FakeDownloader();
+        FakeDownloader downloader = new FakeDownloader(fop);
         URL repoUrl = new URL("http://example.com/dummy.xml");
 
         // The repo we're going to download
@@ -168,7 +171,7 @@ public class BasicInstallerTest extends TestCase {
         mgr.setLocalPath(root);
 
         // Create the archive and register the repo to be downloaded.
-        FakeDownloader downloader = new FakeDownloader();
+        FakeDownloader downloader = new FakeDownloader(fop);
         URL repoUrl = new URL("http://example.com/dummy.xml");
         downloader.registerUrl(repoUrl, getClass().getResourceAsStream("../testData/testRepo.xml"));
         URL archiveUrl = new URL("http://example.com/2/arch1");
@@ -184,9 +187,9 @@ public class BasicInstallerTest extends TestCase {
         ByteArrayInputStream is = new ByteArrayInputStream(baos.toByteArray());
         downloader.registerUrl(archiveUrl, is);
 
-        // Register the sourec provider
+        // Register the source provider
         mgr.registerSourceProvider(new ConstantSourceProvider(repoUrl.toString(), "dummy",
-                ImmutableList.of(mgr.getCommonModule())));
+                ImmutableList.of(RepoManager.getCommonModule())));
         FakeProgressRunner runner = new FakeProgressRunner();
 
         // Load

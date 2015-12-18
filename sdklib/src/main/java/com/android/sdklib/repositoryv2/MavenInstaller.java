@@ -107,7 +107,7 @@ public class MavenInstaller implements PackageInstaller {
             path = path.replace(RepoPackage.PATH_SEPARATOR, File.separatorChar);
             File dest = new File(new File(manager.getLocalPath(), MAVEN_DIR_NAME), path);
 
-            InputStream in = downloader.download(url, settings, progress);
+            File in = downloader.downloadFully(url, settings, progress);
 
             File out = FileOpUtils.getNewTempDir("BasicInstaller", fop);
             if (out == null || !fop.mkdirs(out)) {

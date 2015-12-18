@@ -38,7 +38,6 @@
                     <checksum>4321432143214321432143214321432143214321</checksum>
                     <url>http://example.com/arch1</url>
                 </complete>
-                <host-bits>64</host-bits>
                 <host-os>linux</host-os>
             </archive>
             <archive>
@@ -47,7 +46,6 @@
                     <checksum>8765876587658765876587658765876587658765</checksum>
                     <url>http://example.com/arch2</url>
                 </complete>
-                <host-bits>32</host-bits>
                 <host-os>windows</host-os>
                 <patches>
                     <patch>
@@ -69,6 +67,13 @@
                         <url>http://example.com/patch2</url>
                     </patch>
                 </patches>
+            </archive>
+            <archive>
+                <complete>
+                    <size>9876</size>
+                    <checksum>2350927340957820498572350293847502934875</checksum>
+                    <url>http://example.com/arch3</url>
+                </complete>
             </archive>
         </archives>
     </remotePackage>

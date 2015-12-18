@@ -103,7 +103,7 @@ public class RemoteRepoLoader {
                 }
                 try {
                     InputStream repoStream = downloader
-                            .download(new URL(source.getUrl()), settings, progress);
+                            .downloadAndStream(new URL(source.getUrl()), settings, progress);
                     final List<String> errors = Lists.newArrayList();
 
                     // Don't show the errors, in case the fallback loader can read it. But keep
