@@ -23,6 +23,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.AndroidVersionHelper;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.repository.IDescription;
@@ -158,7 +159,7 @@ public class PlatformPackage extends MinToolsPackage
     public void saveProperties(Properties props) {
         super.saveProperties(props);
 
-        mVersion.saveProperties(props);
+        AndroidVersionHelper.saveProperties(mVersion, props);
         mLayoutlibVersion.saveProperties(props);
 
         if (mVersionName != null) {

@@ -18,6 +18,7 @@ package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
+import com.android.sdklib.AndroidVersionHelper;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.repository.PkgProps;
 
@@ -55,7 +56,7 @@ public class AddonSystemImagePackageTest extends PackageTest {
     private SystemImagePackage createSystemImagePackage(Properties props)
             throws AndroidVersionException {
         SystemImagePackage p = new SysImgPackageFakeArchive(
-                new AndroidVersion(props),
+                AndroidVersionHelper.create(props),
                 1 /*revision*/,
                 props.getProperty(PkgProps.ADDON_VENDOR_ID),
                 props.getProperty(PkgProps.SYS_IMG_TAG_ID),

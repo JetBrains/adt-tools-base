@@ -18,6 +18,7 @@ package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
+import com.android.sdklib.AndroidVersionHelper;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.repository.PkgProps;
 
@@ -46,7 +47,7 @@ public class SourcePackageTest extends PackageTest {
 
     private SourcePackage createSourcePackageTest(Properties props) throws AndroidVersionException {
         SourcePackage p = new SourcePackageFakeArchive(
-                new AndroidVersion(props),
+                AndroidVersionHelper.create(props),
                 1 /*revision*/,
                 props);
         return p;

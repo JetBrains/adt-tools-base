@@ -19,7 +19,6 @@ package com.android.sdklib;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.repository.PkgProps;
 
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -52,7 +51,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
 
     /**
      * Thrown when an {@link AndroidVersion} object could not be created.
-     * @see AndroidVersion#AndroidVersion(Properties)
+     * @see AndroidVersionHelper#create(Properties)
      */
     public static final class AndroidVersionException extends Exception {
         private static final long serialVersionUID = 1L;
@@ -69,52 +68,6 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
     public AndroidVersion(int apiLevel, @Nullable String codename) {
         mApiLevel = apiLevel;
         mCodename = sanitizeCodename(codename);
-    }
-
-    /**
-     * Creates an {@link AndroidVersion} from {@link Properties}, with default values if the
-     * {@link Properties} object doesn't contain the expected values.
-     * <p/>The {@link Properties} is expected to have been filled with
-     * {@link #saveProperties(Properties)}.
-     */
-    public AndroidVersion(@Nullable Properties properties,
-                                    int        defaultApiLevel,
-                          @Nullable String     defaultCodeName) {
-        if (properties == null) {
-            mApiLevel = defaultApiLevel;
-            mCodename = sanitizeCodename(defaultCodeName);
-        } else {
-            mApiLevel = Integer.parseInt(properties.getProperty(PkgProps.VERSION_API_LEVEL,
-                                                                Integer.toString(defaultApiLevel)));
-            mCodename = sanitizeCodename(
-                            properties.getProperty(PkgProps.VERSION_CODENAME, defaultCodeName));
-        }
-    }
-
-    /**
-     * Creates an {@link AndroidVersion} from {@link Properties}. The properties must contain
-     * android version information, or an exception will be thrown.
-     * @throws AndroidVersionException if no Android version information have been found
-     *
-     * @see #saveProperties(Properties)
-     */
-    public AndroidVersion(@NonNull Properties properties) throws AndroidVersionException {
-        Exception error = null;
-
-        String apiLevel = properties.getProperty(PkgProps.VERSION_API_LEVEL, null/*defaultValue*/);
-        if (apiLevel != null) {
-            try {
-                mApiLevel = Integer.parseInt(apiLevel);
-                mCodename = sanitizeCodename(properties.getProperty(PkgProps.VERSION_CODENAME,
-                                                                    null/*defaultValue*/));
-                return;
-            } catch (NumberFormatException e) {
-                error = e;
-            }
-        }
-
-        // reaching here means the Properties object did not contain the apiLevel which is required.
-        throw new AndroidVersionException(PkgProps.VERSION_API_LEVEL + " not found!", error);
     }
 
     /**
@@ -155,13 +108,6 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
             throw new AndroidVersionException(
                     "Invalid android API or codename " + apiOrCodename,     //$NON-NLS-1$
                     null);
-        }
-    }
-
-    public void saveProperties(@NonNull Properties props) {
-        props.setProperty(PkgProps.VERSION_API_LEVEL, Integer.toString(mApiLevel));
-        if (mCodename != null) {
-            props.setProperty(PkgProps.VERSION_CODENAME, mCodename);
         }
     }
 

@@ -21,6 +21,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.AndroidVersionHelper;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.IAndroidTarget.OptionalLibrary;
 import com.android.sdklib.SdkManager;
@@ -432,7 +433,7 @@ public class AddonPackage extends MajorRevisionPackage
     public void saveProperties(Properties props) {
         super.saveProperties(props);
 
-        mVersion.saveProperties(props);
+        AndroidVersionHelper.saveProperties(mVersion, props);
         mLayoutlibVersion.saveProperties(props);
 
         props.setProperty(PkgProps.ADDON_NAME_ID,        mNameId);

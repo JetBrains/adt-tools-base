@@ -22,6 +22,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
+import com.android.sdklib.AndroidVersionHelper;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
@@ -138,7 +139,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
             error = String.format("Missing file %1$s", SdkConstants.FN_SOURCE_PROP);
         } else {
             try {
-                version = new AndroidVersion(props);
+                version = AndroidVersionHelper.create(props);
                 // The constructor will extract the revision from the properties
                 // and it will not consider a missing revision as being fatal.
                 return new SourcePackage(version, 0 /*revision*/, props, srcDir.getAbsolutePath());
@@ -204,7 +205,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
     @Override
     public void saveProperties(Properties props) {
         super.saveProperties(props);
-        mVersion.saveProperties(props);
+        AndroidVersionHelper.saveProperties(mVersion, props);
     }
 
     /**

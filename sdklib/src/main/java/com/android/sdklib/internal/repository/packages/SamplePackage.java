@@ -20,6 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
+import com.android.sdklib.AndroidVersionHelper;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.repository.IDescription;
@@ -166,7 +167,7 @@ public class SamplePackage extends MinToolsPackage
               archiveOsPath                           //archiveOsPath
               );
 
-        mVersion = new AndroidVersion(props);
+        mVersion = AndroidVersionHelper.create(props);
 
         mMinApiLevel = getPropertyInt(props, PkgProps.SAMPLE_MIN_API_LEVEL,
                                              MIN_API_LEVEL_NOT_SPECIFIED);
@@ -190,7 +191,7 @@ public class SamplePackage extends MinToolsPackage
     public void saveProperties(Properties props) {
         super.saveProperties(props);
 
-        mVersion.saveProperties(props);
+        AndroidVersionHelper.saveProperties(mVersion, props);
 
         if (getMinApiLevel() != MIN_API_LEVEL_NOT_SPECIFIED) {
             props.setProperty(PkgProps.SAMPLE_MIN_API_LEVEL, Integer.toString(getMinApiLevel()));

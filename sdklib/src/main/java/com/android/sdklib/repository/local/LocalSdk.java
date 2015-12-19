@@ -916,7 +916,7 @@ public class LocalSdk {
         }
 
         try {
-            AndroidVersion vers = new AndroidVersion(props);
+            AndroidVersion vers = AndroidVersionHelper.create(props);
             LocalDocPkgInfo info = new LocalDocPkgInfo(this, docFolder, props, vers, rev);
 
             // To start with, a doc folder should have an "index.html" to be acceptable.
@@ -1030,7 +1030,7 @@ public class LocalSdk {
             }
 
             try {
-                AndroidVersion vers = new AndroidVersion(props);
+                AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 LocalPlatformPkgInfo pkgInfo =
                     new LocalPlatformPkgInfo(this, platformDir, props, vers, rev, minToolsRev);
@@ -1057,7 +1057,7 @@ public class LocalSdk {
             rev = fullySpecifyRevision(rev);
 
             try {
-                AndroidVersion vers = new AndroidVersion(props);
+                AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 // Starting with addon-4.xsd, we have vendor-id and name-id available
                 // in the add-on source properties so we'll use that directly.
@@ -1155,7 +1155,7 @@ public class LocalSdk {
             }
 
             try {
-                AndroidVersion vers = new AndroidVersion(props);
+                AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 IdDisplay tag = LocalSysImgPkgInfo.extractTagFromProps(props);
                 String vendorId = props.getProperty(PkgProps.ADDON_VENDOR_ID, null);
@@ -1201,7 +1201,7 @@ public class LocalSdk {
             }
 
             try {
-                AndroidVersion vers = new AndroidVersion(props);
+                AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 LocalSamplePkgInfo pkgInfo =
                     new LocalSamplePkgInfo(this, platformDir, props, vers, rev, minToolsRev);
@@ -1226,7 +1226,7 @@ public class LocalSdk {
             }
 
             try {
-                AndroidVersion vers = new AndroidVersion(props);
+                AndroidVersion vers = AndroidVersionHelper.create(props);
 
                 LocalSourcePkgInfo pkgInfo =
                     new LocalSourcePkgInfo(this, platformDir, props, vers, rev);
