@@ -211,7 +211,7 @@ public class SplitApkInstaller {
             }
         }
 
-        if (device.getApiLevel() < 21) {
+        if (!device.getVersion().isGreaterOrEqualThan(21)) {
             if (apks.size() > 1) {
                 throw new IllegalArgumentException(
                   "Cannot install split APKs on device with API level < 21");
