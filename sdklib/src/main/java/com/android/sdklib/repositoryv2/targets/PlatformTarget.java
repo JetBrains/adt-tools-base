@@ -148,10 +148,10 @@ public class PlatformTarget implements IAndroidTarget {
         mBuildToolInfo = sdkHandler.getLatestBuildTool(progress);
         SystemImageManager sysImgMgr = sdkHandler.getSystemImageManager(progress);
         mSystemImages = HashBasedTable.create();
-        Map<ISystemImage, LocalPackage> systemImages = sysImgMgr.getImageMap(progress);
+        Map<SystemImage, LocalPackage> systemImages = sysImgMgr.getImageMap();
         mSkins = Sets
                 .newTreeSet(PackageParserUtils.parseSkinFolder(getFile(IAndroidTarget.SKINS), fop));
-        for (ISystemImage img : systemImages.keySet()) {
+        for (SystemImage img : systemImages.keySet()) {
             LocalPackage pkg = systemImages.get(img);
             TypeDetails typeDetails = pkg.getTypeDetails();
             if (pkg.equals(mPackage) || (typeDetails instanceof DetailsTypes.SysImgDetailsType &&
