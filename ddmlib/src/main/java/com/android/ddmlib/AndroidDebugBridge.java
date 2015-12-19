@@ -18,9 +18,11 @@ package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.GuardedBy;
 import com.android.ddmlib.Log.LogLevel;
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
@@ -36,6 +38,7 @@ import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -80,15 +83,17 @@ public final class AndroidDebugBridge {
 
     private DeviceMonitor mDeviceMonitor;
 
-    private static final ArrayList<IDebugBridgeChangeListener> sBridgeListeners =
-        new ArrayList<IDebugBridgeChangeListener>();
-    private static final ArrayList<IDeviceChangeListener> sDeviceListeners =
-        new ArrayList<IDeviceChangeListener>();
-    private static final ArrayList<IClientChangeListener> sClientListeners =
-        new ArrayList<IClientChangeListener>();
-
     // lock object for synchronization
-    private static final Object sLock = sBridgeListeners;
+    private static final Object sLock = new Object();
+
+    @GuardedBy("sLock")
+    private static final Set<IDebugBridgeChangeListener> sBridgeListeners =
+            Sets.newCopyOnWriteArraySet();
+
+    private static final Set<IDeviceChangeListener> sDeviceListeners =
+            Sets.newCopyOnWriteArraySet();
+    private static final Set<IClientChangeListener> sClientListeners =
+            Sets.newCopyOnWriteArraySet();
 
     /**
      * Classes which implement this interface provide a method that deals
@@ -276,17 +281,9 @@ public final class AndroidDebugBridge {
                 sThis = null;
             }
 
-            // because the listeners could remove themselves from the list while processing
-            // their event callback, we make a copy of the list and iterate on it instead of
-            // the main list.
-            // This mostly happens when the application quits.
-            IDebugBridgeChangeListener[] listenersCopy = sBridgeListeners.toArray(
-                    new IDebugBridgeChangeListener[sBridgeListeners.size()]);
-
             // notify the listeners of the change
-            for (IDebugBridgeChangeListener listener : listenersCopy) {
-                // we attempt to catch any exception so that a bad listener doesn't kill our
-                // thread
+            for (IDebugBridgeChangeListener listener : sBridgeListeners) {
+                // we attempt to catch any exception so that a bad listener doesn't kill our thread
                 try {
                     listener.bridgeChanged(sThis);
                 } catch (Exception e) {
@@ -332,17 +329,9 @@ public final class AndroidDebugBridge {
                 sThis = null;
             }
 
-            // because the listeners could remove themselves from the list while processing
-            // their event callback, we make a copy of the list and iterate on it instead of
-            // the main list.
-            // This mostly happens when the application quits.
-            IDebugBridgeChangeListener[] listenersCopy = sBridgeListeners.toArray(
-                    new IDebugBridgeChangeListener[sBridgeListeners.size()]);
-
             // notify the listeners of the change
-            for (IDebugBridgeChangeListener listener : listenersCopy) {
-                // we attempt to catch any exception so that a bad listener doesn't kill our
-                // thread
+            for (IDebugBridgeChangeListener listener : sBridgeListeners) {
+                // we attempt to catch any exception so that a bad listener doesn't kill our thread
                 try {
                     listener.bridgeChanged(sThis);
                 } catch (Exception e) {
@@ -374,15 +363,8 @@ public final class AndroidDebugBridge {
                 sThis.stop();
                 sThis = null;
 
-                // because the listeners could remove themselves from the list while processing
-                // their event callback, we make a copy of the list and iterate on it instead of
-                // the main list.
-                // This mostly happens when the application quits.
-                IDebugBridgeChangeListener[] listenersCopy = sBridgeListeners.toArray(
-                        new IDebugBridgeChangeListener[sBridgeListeners.size()]);
-
                 // notify the listeners.
-                for (IDebugBridgeChangeListener listener : listenersCopy) {
+                for (IDebugBridgeChangeListener listener : sBridgeListeners) {
                     // we attempt to catch any exception so that a bad listener doesn't kill our
                     // thread
                     try {
@@ -401,18 +383,16 @@ public final class AndroidDebugBridge {
      * in the {@link IDebugBridgeChangeListener} interface.
      * @param listener The listener which should be notified.
      */
-    public static void addDebugBridgeChangeListener(IDebugBridgeChangeListener listener) {
+    public static void addDebugBridgeChangeListener(@NonNull IDebugBridgeChangeListener listener) {
         synchronized (sLock) {
-            if (!sBridgeListeners.contains(listener)) {
-                sBridgeListeners.add(listener);
-                if (sThis != null) {
-                    // we attempt to catch any exception so that a bad listener doesn't kill our
-                    // thread
-                    try {
-                        listener.bridgeChanged(sThis);
-                    } catch (Exception e) {
-                        Log.e(DDMS, e);
-                    }
+            sBridgeListeners.add(listener);
+
+            if (sThis != null) {
+                // we attempt to catch any exception so that a bad listener doesn't kill our thread
+                try {
+                    listener.bridgeChanged(sThis);
+                } catch (Exception e) {
+                    Log.e(DDMS, e);
                 }
             }
         }
@@ -431,53 +411,45 @@ public final class AndroidDebugBridge {
 
     /**
      * Adds the listener to the collection of listeners who will be notified when a {@link IDevice}
-     * is connected, disconnected, or when its properties or its {@link Client} list changed,
-     * by sending it one of the messages defined in the {@link IDeviceChangeListener} interface.
+     * is connected, disconnected, or when its properties or its {@link Client} list changed, by
+     * sending it one of the messages defined in the {@link IDeviceChangeListener} interface.
+     *
      * @param listener The listener which should be notified.
      */
-    public static void addDeviceChangeListener(IDeviceChangeListener listener) {
-        synchronized (sLock) {
-            if (!sDeviceListeners.contains(listener)) {
-                sDeviceListeners.add(listener);
-            }
-        }
+    public static void addDeviceChangeListener(@NonNull IDeviceChangeListener listener) {
+        sDeviceListeners.add(listener);
     }
 
     /**
-     * Removes the listener from the collection of listeners who will be notified when a
-     * {@link IDevice} is connected, disconnected, or when its properties or its {@link Client}
-     * list changed.
+     * Removes the listener from the collection of listeners who will be notified when a {@link
+     * IDevice} is connected, disconnected, or when its properties or its {@link Client} list
+     * changed.
+     *
      * @param listener The listener which should no longer be notified.
      */
     public static void removeDeviceChangeListener(IDeviceChangeListener listener) {
-        synchronized (sLock) {
-            sDeviceListeners.remove(listener);
-        }
+        sDeviceListeners.remove(listener);
     }
 
     /**
      * Adds the listener to the collection of listeners who will be notified when a {@link Client}
-     * property changed, by sending it one of the messages defined in the
-     * {@link IClientChangeListener} interface.
+     * property changed, by sending it one of the messages defined in the {@link
+     * IClientChangeListener} interface.
+     *
      * @param listener The listener which should be notified.
      */
     public static void addClientChangeListener(IClientChangeListener listener) {
-        synchronized (sLock) {
-            if (!sClientListeners.contains(listener)) {
-                sClientListeners.add(listener);
-            }
-        }
+        sClientListeners.add(listener);
     }
 
     /**
-     * Removes the listener from the collection of listeners who will be notified when a
-     * {@link Client} property changed.
+     * Removes the listener from the collection of listeners who will be notified when a {@link
+     * Client} property changes.
+     *
      * @param listener The listener which should no longer be notified.
      */
     public static void removeClientChangeListener(IClientChangeListener listener) {
-        synchronized (sLock) {
-            sClientListeners.remove(listener);
-        }
+        sClientListeners.remove(listener);
     }
 
 
@@ -758,20 +730,8 @@ public final class AndroidDebugBridge {
      * @see #getLock()
      */
     static void deviceConnected(@NonNull IDevice device) {
-        // because the listeners could remove themselves from the list while processing
-        // their event callback, we make a copy of the list and iterate on it instead of
-        // the main list.
-        // This mostly happens when the application quits.
-        IDeviceChangeListener[] listenersCopy = null;
-        synchronized (sLock) {
-            listenersCopy = sDeviceListeners.toArray(
-                    new IDeviceChangeListener[sDeviceListeners.size()]);
-        }
-
-        // Notify the listeners
-        for (IDeviceChangeListener listener : listenersCopy) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our
-            // thread
+        for (IDeviceChangeListener listener : sDeviceListeners) {
+            // we attempt to catch any exception so that a bad listener doesn't kill our thread
             try {
                 listener.deviceConnected(device);
             } catch (Exception e) {
@@ -794,18 +754,7 @@ public final class AndroidDebugBridge {
      * @see #getLock()
      */
     static void deviceDisconnected(@NonNull IDevice device) {
-        // because the listeners could remove themselves from the list while processing
-        // their event callback, we make a copy of the list and iterate on it instead of
-        // the main list.
-        // This mostly happens when the application quits.
-        IDeviceChangeListener[] listenersCopy = null;
-        synchronized (sLock) {
-            listenersCopy = sDeviceListeners.toArray(
-                    new IDeviceChangeListener[sDeviceListeners.size()]);
-        }
-
-        // Notify the listeners
-        for (IDeviceChangeListener listener : listenersCopy) {
+        for (IDeviceChangeListener listener : sDeviceListeners) {
             // we attempt to catch any exception so that a bad listener doesn't kill our
             // thread
             try {
@@ -830,18 +779,8 @@ public final class AndroidDebugBridge {
      * @see #getLock()
      */
     static void deviceChanged(@NonNull IDevice device, int changeMask) {
-        // because the listeners could remove themselves from the list while processing
-        // their event callback, we make a copy of the list and iterate on it instead of
-        // the main list.
-        // This mostly happens when the application quits.
-        IDeviceChangeListener[] listenersCopy = null;
-        synchronized (sLock) {
-            listenersCopy = sDeviceListeners.toArray(
-                    new IDeviceChangeListener[sDeviceListeners.size()]);
-        }
-
         // Notify the listeners
-        for (IDeviceChangeListener listener : listenersCopy) {
+        for (IDeviceChangeListener listener : sDeviceListeners) {
             // we attempt to catch any exception so that a bad listener doesn't kill our
             // thread
             try {
@@ -867,19 +806,8 @@ public final class AndroidDebugBridge {
      * @see #getLock()
      */
     static void clientChanged(@NonNull Client client, int changeMask) {
-        // because the listeners could remove themselves from the list while processing
-        // their event callback, we make a copy of the list and iterate on it instead of
-        // the main list.
-        // This mostly happens when the application quits.
-        IClientChangeListener[] listenersCopy = null;
-        synchronized (sLock) {
-            listenersCopy = sClientListeners.toArray(
-                    new IClientChangeListener[sClientListeners.size()]);
-
-        }
-
         // Notify the listeners
-        for (IClientChangeListener listener : listenersCopy) {
+        for (IClientChangeListener listener : sClientListeners) {
             // we attempt to catch any exception so that a bad listener doesn't kill our
             // thread
             try {
