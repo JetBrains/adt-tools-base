@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,6 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
 
     /**
      * Thrown when an {@link AndroidVersion} object could not be created.
-     * @see AndroidVersionHelper#create(Properties)
      */
     public static final class AndroidVersionException extends Exception {
         private static final long serialVersionUID = 1L;
@@ -173,8 +172,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion> {
      * for the given <var>version</var>.
      * <p/>
      * Be aware that this is not a perfect test, as other properties could break compatibility
-     * despite this method returning true. For a more comprehensive test, see
-     * {@link IAndroidTarget#canRunOn(IAndroidTarget)}.
+     * despite this method returning true.
      * <p/>
      * Nevertheless, when testing if an application can run on a device (where there is no
      * access to the list of optional libraries), this method can give a good indication of whether
