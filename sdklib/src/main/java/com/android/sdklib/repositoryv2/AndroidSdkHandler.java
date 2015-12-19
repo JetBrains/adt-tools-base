@@ -207,7 +207,7 @@ public final class AndroidSdkHandler {
                 mRepoManager = result;
             }
         }
-        return result;
+        return mRepoManager;
     }
 
     /**
@@ -550,7 +550,6 @@ public final class AndroidSdkHandler {
     public BuildToolInfo getLatestBuildTool(ProgressIndicator progress) {
         if (mLatestBuildTool == null) {
             RepoManager manager = getSdkManager(progress);
-            manager.loadSynchronously(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, null, null);
             BuildToolInfo info = null;
             for (LocalPackage p : manager.getPackages().getLocalPackages().values()) {
                 if (p.getPath().startsWith(SdkConstants.FD_BUILD_TOOLS) &&

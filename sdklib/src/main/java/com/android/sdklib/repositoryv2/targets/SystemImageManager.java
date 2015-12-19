@@ -189,9 +189,6 @@ public class SystemImageManager {
         @NonNull
         @Override
         public Map<ISystemImage, LocalPackage> getImageMap(@NonNull ProgressIndicator progress) {
-            mRepoManager
-                    .loadSynchronously(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress, null,
-                            null);
             Map<ISystemImage, LocalPackage> result = Maps.newHashMap();
             Map<AndroidVersion, File> platformSkins = Maps.newHashMap();
             for (LocalPackage p : mRepoManager.getPackages().getLocalPackages().values()) {

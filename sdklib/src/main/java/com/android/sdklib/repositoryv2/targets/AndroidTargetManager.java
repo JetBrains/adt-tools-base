@@ -188,8 +188,6 @@ public class AndroidTargetManager {
         public Collection<IAndroidTarget> getTargets(ProgressIndicator progress) {
             List<IAndroidTarget> result = Lists.newArrayList();
             RepoManager manager = mSdkHandler.getSdkManager(progress);
-            manager.loadSynchronously(RepoManager.DEFAULT_EXPIRATION_PERIOD_MS, progress,
-                    null, null);
             Map<AndroidVersion, PlatformTarget> platformTargets = Maps.newHashMap();
             for (LocalPackage p : manager.getPackages().getLocalPackages().values()) {
                 TypeDetails details = p.getTypeDetails();
