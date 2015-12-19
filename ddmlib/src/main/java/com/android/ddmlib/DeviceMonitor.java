@@ -183,7 +183,7 @@ final class DeviceMonitor {
         DeviceListComparisonResult result = DeviceListComparisonResult.compare(mDevices, newList);
         for (IDevice device : result.removed) {
             removeDevice((Device) device);
-            mServer.deviceDisconnected(device);
+            AndroidDebugBridge.deviceDisconnected(device);
         }
 
         List<Device> newlyOnline = Lists.newArrayListWithExpectedSize(mDevices.size());
@@ -200,7 +200,7 @@ final class DeviceMonitor {
 
         for (IDevice device : result.added) {
             mDevices.add((Device) device);
-            mServer.deviceConnected(device);
+            AndroidDebugBridge.deviceConnected(device);
             if (device.isOnline()) {
                 newlyOnline.add((Device) device);
             }
@@ -507,7 +507,7 @@ final class DeviceMonitor {
             }
 
             if (!pidsToAdd.isEmpty() || !clientsToRemove.isEmpty()) {
-                mServer.deviceChanged(device, Device.CHANGE_CLIENT_LIST);
+                AndroidDebugBridge.deviceChanged(device, Device.CHANGE_CLIENT_LIST);
             }
         }
     }
@@ -644,7 +644,7 @@ final class DeviceMonitor {
         public void connectionError(@NonNull Exception e) {
             for (Device device : mDevices) {
                 removeDevice(device);
-                mServer.deviceDisconnected(device);
+                AndroidDebugBridge.deviceDisconnected(device);
             }
         }
 

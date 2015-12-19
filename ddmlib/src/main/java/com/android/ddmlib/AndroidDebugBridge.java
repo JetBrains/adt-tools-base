@@ -99,9 +99,10 @@ public final class AndroidDebugBridge {
          * Sent when a new {@link AndroidDebugBridge} is connected.
          * <p/>
          * This is sent from a non UI thread.
-         * @param bridge the new {@link AndroidDebugBridge} object.
+         * @param bridge the new {@link AndroidDebugBridge} object, null if there were errors while
+         *               initializing the bridge
          */
-        void bridgeChanged(AndroidDebugBridge bridge);
+        void bridgeChanged(@Nullable AndroidDebugBridge bridge);
     }
 
     /**
@@ -115,7 +116,7 @@ public final class AndroidDebugBridge {
          * This is sent from a non UI thread.
          * @param device the new device.
          */
-        void deviceConnected(IDevice device);
+        void deviceConnected(@NonNull IDevice device);
 
         /**
          * Sent when the a device is connected to the {@link AndroidDebugBridge}.
@@ -123,7 +124,7 @@ public final class AndroidDebugBridge {
          * This is sent from a non UI thread.
          * @param device the new device.
          */
-        void deviceDisconnected(IDevice device);
+        void deviceDisconnected(@NonNull IDevice device);
 
         /**
          * Sent when a device data changed, or when clients are started/terminated on the device.
@@ -134,7 +135,7 @@ public final class AndroidDebugBridge {
          * values: {@link IDevice#CHANGE_BUILD_INFO}, {@link IDevice#CHANGE_STATE},
          * {@link IDevice#CHANGE_CLIENT_LIST}
          */
-        void deviceChanged(IDevice device, int changeMask);
+        void deviceChanged(@NonNull IDevice device, int changeMask);
     }
 
     /**
@@ -153,7 +154,7 @@ public final class AndroidDebugBridge {
          * {@link Client#CHANGE_THREAD_DATA}, {@link Client#CHANGE_HEAP_MODE},
          * {@link Client#CHANGE_HEAP_DATA}, {@link Client#CHANGE_NATIVE_HEAP_DATA}
          */
-        void clientChanged(Client client, int changeMask);
+        void clientChanged(@NonNull Client client, int changeMask);
     }
 
     /**
@@ -756,7 +757,7 @@ public final class AndroidDebugBridge {
      * @param device the new <code>IDevice</code>.
      * @see #getLock()
      */
-    void deviceConnected(IDevice device) {
+    static void deviceConnected(@NonNull IDevice device) {
         // because the listeners could remove themselves from the list while processing
         // their event callback, we make a copy of the list and iterate on it instead of
         // the main list.
@@ -792,7 +793,7 @@ public final class AndroidDebugBridge {
      * @param device the disconnected <code>IDevice</code>.
      * @see #getLock()
      */
-    void deviceDisconnected(IDevice device) {
+    static void deviceDisconnected(@NonNull IDevice device) {
         // because the listeners could remove themselves from the list while processing
         // their event callback, we make a copy of the list and iterate on it instead of
         // the main list.
@@ -828,7 +829,7 @@ public final class AndroidDebugBridge {
      * @param device the modified <code>IDevice</code>.
      * @see #getLock()
      */
-    void deviceChanged(IDevice device, int changeMask) {
+    static void deviceChanged(@NonNull IDevice device, int changeMask) {
         // because the listeners could remove themselves from the list while processing
         // their event callback, we make a copy of the list and iterate on it instead of
         // the main list.
@@ -865,7 +866,7 @@ public final class AndroidDebugBridge {
      * @param changeMask the mask indicating what changed in the <code>Client</code>
      * @see #getLock()
      */
-    void clientChanged(Client client, int changeMask) {
+    static void clientChanged(@NonNull Client client, int changeMask) {
         // because the listeners could remove themselves from the list while processing
         // their event callback, we make a copy of the list and iterate on it instead of
         // the main list.
