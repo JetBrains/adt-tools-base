@@ -19,6 +19,8 @@ package com.android.ddmlib;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.DebugPortManager.IDebugPortProvider;
 import com.android.ddmlib.AndroidDebugBridge.IClientChangeListener;
+import com.android.ddmlib.jdwp.JdwpAgent;
+import com.android.ddmlib.jdwp.JdwpProtocol;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
@@ -26,7 +28,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -37,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * {@link ClientData} class. Each <code>Client</code> object has its own <code>ClientData</code>
  * accessed through {@link #getClientData()}.
  */
-public class Client {
+public class Client extends JdwpAgent {
 
     private static final int SERVER_PROTOCOL_VERSION = 1;
 
@@ -78,10 +79,6 @@ public class Client {
     // debugger we're associated with, if any
     private Debugger mDebugger;
     private int mDebuggerListenPort;
-
-    // list of IDs for requests we have sent to the client
-    // Used for locking so final.
-    final private HashMap<Integer,ChunkHandler> mOutstandingReqs;
 
     // chunk handlers stash state data in here
     private ClientData mClientData;
@@ -127,12 +124,11 @@ public class Client {
      * @param pid the client pid.
      */
     Client(Device device, SocketChannel chan, int pid) {
+        super(new JdwpProtocol());
         mDevice = device;
         mChan = chan;
 
         mReadBuffer = ByteBuffer.allocate(INITIAL_BUF_SIZE);
-
-        mOutstandingReqs = new HashMap<Integer,ChunkHandler>();
 
         mConnState = ST_INIT;
 
@@ -205,7 +201,7 @@ public class Client {
     /**
      * Return the Debugger object associated with this client.
      */
-    Debugger getDebugger() {
+    public Debugger getDebugger() {
         return mDebugger;
     }
 
@@ -638,9 +634,8 @@ public class Client {
      * Another goal is to avoid unnecessary buffer copies, so we write
      * directly out of the JdwpPacket's ByteBuffer.
      */
-    void send(JdwpPacket packet, ChunkHandler replyHandler)
-        throws IOException {
-
+    @Override
+    protected void send(@NonNull JdwpPacket packet) throws IOException {
         // Fix to avoid a race condition on mChan. This should be better synchronized
         // but just capturing the channel here, avoids a NPE.
         SocketChannel chan = mChan;
@@ -648,15 +643,6 @@ public class Client {
             // can happen for e.g. THST packets
             Log.v("ddms", "Not sending packet -- client is closed");
             return;
-        }
-
-        if (replyHandler != null) {
-            /*
-             * Add the ID to the list of outstanding requests.  We have to do
-             * this before sending the packet, in case the response comes back
-             * before our thread returns from the packet-send function.
-             */
-            addRequestId(packet.getId(), replyHandler);
         }
 
         // Synchronizing on this variable is still useful as we do not want to threads
@@ -668,26 +654,9 @@ public class Client {
                 packet.write(chan);
             }
             catch (IOException ioe) {
-                removeRequestId(packet.getId());
+                removeReplyInterceptor(packet.getId());
                 throw ioe;
             }
-        }
-    }
-
-    /**
-     * Forward the packet to the debugger (if still connected to one).
-     *
-     * Consumes the packet.
-     */
-    void forwardPacketToDebugger(JdwpPacket packet)
-        throws IOException {
-
-        Debugger dbg = mDebugger;
-
-        if (dbg == null) {
-            Log.d("ddms", "Discarding packet");
-        } else {
-            dbg.send(packet);
         }
     }
 
@@ -805,51 +774,6 @@ public class Client {
         return null;
     }
 
-    /*
-     * Add the specified ID to the list of request IDs for which we await
-     * a response.
-     */
-    private void addRequestId(int id, ChunkHandler handler) {
-        synchronized (mOutstandingReqs) {
-            if (Log.Config.LOGV) Log.v("ddms",
-                "Adding req 0x" + Integer.toHexString(id) +" to set");
-            mOutstandingReqs.put(id, handler);
-        }
-    }
-
-    /*
-     * Remove the specified ID from the list, if present.
-     */
-    void removeRequestId(int id) {
-        synchronized (mOutstandingReqs) {
-            if (Log.Config.LOGV) Log.v("ddms",
-                "Removing req 0x" + Integer.toHexString(id) + " from set");
-            mOutstandingReqs.remove(id);
-        }
-
-        //Log.w("ddms", "Request " + Integer.toHexString(id)
-        //    + " could not be removed from " + this);
-    }
-
-    /**
-     * Determine whether this is a response to a request we sent earlier.
-     * If so, return the ChunkHandler responsible.
-     */
-    ChunkHandler isResponseToUs(int id) {
-
-        synchronized (mOutstandingReqs) {
-            ChunkHandler handler = mOutstandingReqs.get(id);
-            if (handler != null) {
-                if (Log.Config.LOGV) Log.v("ddms",
-                    "Found 0x" + Integer.toHexString(id)
-                    + " in request set - " + handler);
-                return handler;
-            }
-        }
-
-        return null;
-    }
-
     /**
      * An earlier request resulted in a failure.  This is the expected
      * response to a HELO message when talking to a non-DDM client.
@@ -896,8 +820,7 @@ public class Client {
     void close(boolean notify) {
         Log.d("ddms", "Closing " + this.toString());
 
-        mOutstandingReqs.clear();
-
+        clear();
         try {
             if (mChan != null) {
                 mChan.close();
@@ -927,5 +850,6 @@ public class Client {
     void update(int changeMask) {
         mDevice.update(this, changeMask);
     }
+
 }
 
