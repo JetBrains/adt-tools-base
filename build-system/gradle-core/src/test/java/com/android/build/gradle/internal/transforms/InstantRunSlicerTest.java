@@ -93,7 +93,7 @@ public class InstantRunSlicerTest {
         when(variantScope.getInstantRunBuildContext()).thenReturn(instantRunBuildContext);
         when(variantScope.getGlobalScope()).thenReturn(globalScope);
         when(instantRunBuildContext.hasPassedVerification()).thenReturn(Boolean.FALSE);
-        when(globalScope.isActive(OptionalCompilationStep.RESTART_DEX_ONLY))
+        when(globalScope.isActive(OptionalCompilationStep.RESTART_ONLY))
                 .thenReturn(Boolean.FALSE);
     }
 

@@ -6,6 +6,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.FilterableStreamCollection;
 import com.android.build.gradle.internal.pipeline.TransformManager;
@@ -146,6 +147,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     private ApiVersion minSdkVersion;
 
+    private InstantRunBuildContext instantRunBuildContext;
+
     @Input
     public boolean getJniDebugBuild() {
         return jniDebugBuild;
@@ -227,6 +230,10 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             }
             throw new BuildException(e.getMessage(), e);
         }
+        // mark this APK production, this will eventually be saved when instant-run is enabled.
+        // this might get overriden if the apk is signed/aligned.
+        instantRunBuildContext.addChangedFile(InstantRunBuildContext.FileType.MAIN,
+                getOutputFile());
     }
 
     // ----- FileSupplierTask -----
@@ -279,6 +286,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             packageApp.setVariantName(
                     variantScope.getVariantConfiguration().getFullName());
             packageApp.setMinSdkVersion(config.getMinSdkVersion());
+            packageApp.instantRunBuildContext = variantScope.getInstantRunBuildContext();
 
             if (config.isMinifyEnabled()
                     && config.getBuildType().isShrinkResources()

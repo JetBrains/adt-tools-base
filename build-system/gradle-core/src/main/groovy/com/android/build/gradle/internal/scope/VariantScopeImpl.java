@@ -28,12 +28,12 @@ import com.android.build.gradle.internal.coverage.JacocoReportTask;
 import com.android.build.gradle.internal.incremental.InstantRunAnchorTask;
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
+import com.android.build.gradle.internal.incremental.InstantRunWrapperTask;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
-import com.android.build.gradle.internal.transforms.InstantRunVerifierTransform;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingExportBuildInfoTask;
 import com.android.build.gradle.internal.tasks.databinding.DataBindingProcessLayoutsTask;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -308,6 +308,12 @@ public class VariantScopeImpl implements VariantScope {
         return new File(globalScope.getIntermediatesDir(), "/split-apk/" + getVariantConfiguration().getDirName());
     }
 
+    @NonNull
+    @Override
+    public File getInstantRunPastIterationsFolder() {
+        return new File(globalScope.getIntermediatesDir(), "/builds/" + getVariantConfiguration().getDirName());
+    }
+
     // Precomputed file paths.
 
     @Override
@@ -342,7 +348,7 @@ public class VariantScopeImpl implements VariantScope {
     @NonNull
     @Override
     public File getIncrementalRuntimeSupportJar() {
-        return new File(globalScope.getIntermediatesDir(), "/incremental-runtime-classes/" +
+        return new File(globalScope.getIntermediatesDir(), "/incremental-runtimfe-classes/" +
                 variantData.getVariantConfiguration().getDirName() + "/instant-run.jar");
     }
 
@@ -985,15 +991,31 @@ public class VariantScopeImpl implements VariantScope {
         return instantRunBuildContext;
     }
 
-    private AndroidTask<InstantRunAnchorTask> instantRunAnchorTask;
+    private AndroidTask<InstantRunWrapperTask> instantRunWrapperTask;
 
+    @NonNull
     @Override
-    public AndroidTask<InstantRunAnchorTask> getInstantRunAnchorTask() {
-        return instantRunAnchorTask;
+    public AndroidTask<InstantRunWrapperTask> getInstantRunIncrementalTask() {
+        return instantRunWrapperTask;
     }
 
     @Override
-    public void setInstantRunAnchorTask(AndroidTask<InstantRunAnchorTask> instantRunAnchorTask) {
-        this.instantRunAnchorTask = instantRunAnchorTask;
+    public void setInstantRunIncrementalTask(
+            @NonNull AndroidTask<InstantRunWrapperTask> instantRunWrapperTask) {
+        this.instantRunWrapperTask = instantRunWrapperTask;
+    }
+
+    private AndroidTask<InstantRunAnchorTask> instantRunAllActions;
+
+    @NonNull
+    @Override
+    public AndroidTask<InstantRunAnchorTask> getInstantRunAnchorTask() {
+        return instantRunAllActions;
+    }
+
+    @Override
+    public void setInstantRunAnchorTask(
+            @NonNull AndroidTask<InstantRunAnchorTask> instantAllActionsTask) {
+        this.instantRunAllActions = instantAllActionsTask;
     }
 }

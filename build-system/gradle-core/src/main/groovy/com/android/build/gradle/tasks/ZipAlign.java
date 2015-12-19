@@ -4,6 +4,7 @@ import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.annotations.ApkFile;
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -53,6 +54,8 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
     @ApkFile
     private File zipAlignExe;
 
+    private InstantRunBuildContext instantRunBuildContext;
+
     @InputFile
     public File getZipAlignExe() {
         return zipAlignExe;
@@ -73,6 +76,9 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
                 execSpec.args(getOutputFile());
             }
         });
+        // mark this APK production, this will eventually be saved when instant-run is enabled.
+        instantRunBuildContext.addChangedFile(InstantRunBuildContext.FileType.MAIN,
+                getOutputFile());
     }
 
     // ----- FileSupplierTask -----
@@ -142,6 +148,7 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
                     return null;
                 }
             });
+            zipAlign.instantRunBuildContext = scope.getVariantScope().getInstantRunBuildContext();
         }
     }
 

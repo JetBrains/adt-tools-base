@@ -129,7 +129,7 @@ public class InstantRunDexTest {
                 return ImmutableMap.of("android.injected.build.api", "23");
             }
         });
-        when(globalScope.isActive(OptionalCompilationStep.RESTART_DEX_ONLY))
+        when(globalScope.isActive(OptionalCompilationStep.RESTART_ONLY))
                 .thenReturn(Boolean.FALSE);
 
         File tmp = new File(System.getProperty("java.io.tmpdir"));

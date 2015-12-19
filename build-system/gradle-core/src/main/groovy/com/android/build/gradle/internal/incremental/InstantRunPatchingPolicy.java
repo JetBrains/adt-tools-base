@@ -55,13 +55,29 @@ public enum InstantRunPatchingPolicy {
     /**
      * Returns the patching policy following the {@link AndroidProject#PROPERTY_BUILD_API} value
      * passed by Android Studio.
-     * @param logger logger to log failures, information.
-     * @param project the project being built
+     * @param version the {@link AndroidVersion}
      * @return a {@link InstantRunPatchingPolicy} instance.
      */
     @NonNull
-    public static InstantRunPatchingPolicy getPatchingPolicy(
-            @NonNull Logger logger, @NonNull Project project) {
+    public static InstantRunPatchingPolicy getPatchingPolicy(@NonNull AndroidVersion version) {
+        if (version.getApiLevel() < 21) {
+            return PRE_LOLLIPOP;
+        } else if (version.getApiLevel() < 23) {
+            return LOLLIPOP;
+        } else {
+            return MARSHMALLOW_AND_ABOVE;
+        }
+    }
+
+    /**
+     * Returns the {@link AndroidVersion} for the target device.
+     * @param logger logger to log failures
+     * @param project the project being built
+     * @return a {@link AndroidVersion} for the targeted device, following the
+     * {@link AndroidProject#PROPERTY_BUILD_API} value passed by Android Studio.
+     */
+    @NonNull
+    public static AndroidVersion getApiLevel(@NonNull Logger logger, @NonNull Project project) {
         String apiVersion = AndroidGradleOptions.getBuildTargetApi(project);
         AndroidVersion version = AndroidVersion.DEFAULT;
         if (apiVersion != null) {
@@ -71,17 +87,9 @@ public enum InstantRunPatchingPolicy {
                 logger.warn("Wrong build target version passed ", e);
             }
         }
-        if (version.getApiLevel() < 21) {
-            logger.info(String.format("InstantRun patching policy %1$s", PRE_LOLLIPOP));
-            return PRE_LOLLIPOP;
-        } else {
-            if (version.getApiLevel() == 21) {
-                logger.info(String.format("InstantRun patching policy %1$s", LOLLIPOP));
-                return LOLLIPOP;
-            } else  {
-                logger.info(String.format("InstantRun patching policy %s", MARSHMALLOW_AND_ABOVE));
-                return MARSHMALLOW_AND_ABOVE;
-            }
+        if (logger.isQuietEnabled()) {
+            logger.info(String.format("InstantRun: apiLevel set to %d", version.getApiLevel()));
         }
+        return version;
     }
 }
