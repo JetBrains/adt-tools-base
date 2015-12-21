@@ -16,6 +16,11 @@
 
 apply plugin: 'java'
 
+File androidJar = new File(System.env.ANDROID_HOME + '/platforms/android-22/android.jar');
+if (!androidJar.exists()) {
+    throw new RuntimeException("android-22 android.jar not found at " + androidJar.absolutePath)
+}
+
 repositories {
     maven { url System.env.ANDROID_HOME + '/extras/android/m2repository/' }
 }
@@ -26,7 +31,7 @@ configurations {
 
 dependencies {
     compile project(':base:instant-run:instant-run-runtime')
-    provided files(System.env.ANDROID_HOME + '/platforms/android-22/android.jar')
+    provided files(androidJar)
 }
 
 sourceSets {
