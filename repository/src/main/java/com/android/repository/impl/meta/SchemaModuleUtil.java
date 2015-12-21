@@ -32,8 +32,6 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -110,7 +108,8 @@ public class SchemaModuleUtil {
         }
         JAXBContext jc = null;
         try {
-            jc = JAXBContext.newInstance(Joiner.on(":").join(packages));
+            jc = JAXBContext.newInstance(Joiner.on(":").join(packages),
+                    SchemaModuleUtil.class.getClassLoader());
         } catch (JAXBException e1) {
             assert false : "Failed to create context!\n" + e1.toString();
         }
