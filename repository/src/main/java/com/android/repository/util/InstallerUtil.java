@@ -225,9 +225,9 @@ public class InstallerUtil {
 
     /**
      * Compute the complete list of packages that need to be installed to meet the dependencies of
-     * the given list (including the requested packages themselves). Returns {@code null} if we were
-     * unable to compute a complete list of dependencies due to not being able to find required
-     * packages of the specified version.
+     * the given list (including the requested packages themselves, if they are not already installed).
+     * Returns {@code null} if we were unable to compute a complete list of dependencies due to not
+     * being able to find required packages of the specified version.
      *
      * Packages are returned in install order (that is, if we request A which depends on B, the
      * result will be [B, A]). If a dependency cycle is encountered the order of the returned
@@ -244,10 +244,18 @@ public class InstallerUtil {
         Map<String, UpdatablePackage> consolidatedPackages = packages.getConsolidatedPkgs();
 
         Set<String> seen = Sets.newHashSet();
-        Queue<RemotePackage> current = Lists.newLinkedList(requests);
-        requiredPackages.addAll(requests);
         Multimap<String, Dependency> allDependencies = HashMultimap.create();
-        Set<RemotePackage> roots = Sets.newHashSet(requests);
+        Set<RemotePackage> roots = Sets.newHashSet();
+        Queue<RemotePackage> current = Lists.newLinkedList();
+        for (RemotePackage request : requests) {
+            UpdatablePackage updatable = consolidatedPackages.get(request.getPath());
+            if (!updatable.hasLocal() || updatable.isUpdate(true)) {
+                current.add(request);
+                roots.add(request);
+                requiredPackages.add(request);
+                seen.add(request.getPath());
+            }
+        }
 
         while (!current.isEmpty()) {
             RemotePackage currentPackage = current.remove();

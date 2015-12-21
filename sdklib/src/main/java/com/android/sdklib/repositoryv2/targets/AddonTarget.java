@@ -146,7 +146,7 @@ public class AddonTarget implements IAndroidTarget {
 
     @Override
     public String getName() {
-        return mPackage.getDisplayName();
+        return mDetails.getTag().getDisplay();
     }
 
     @Override

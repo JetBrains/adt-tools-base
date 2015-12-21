@@ -38,7 +38,8 @@ public class AddonListSourceProviderTest extends TestCase {
     public void testRemoteSource() throws Exception {
         MockFileOp fop = new MockFileOp();
         FakeDownloader downloader = new FakeDownloader(fop);
-        AndroidSdkHandler handler = new AndroidSdkHandler(fop, true);
+        AndroidSdkHandler handler = new AndroidSdkHandler(fop);
+
         FakeProgressIndicator progress = new FakeProgressIndicator();
         RepositorySourceProvider provider = handler.getRemoteListSourceProvider(progress);
 
@@ -89,7 +90,7 @@ public class AddonListSourceProviderTest extends TestCase {
                 new File(AndroidLocation.getFolder(), AndroidSdkHandler.LOCAL_ADDONS_FILENAME)
                         .getAbsolutePath(),
                 FileUtils.loadFileWithUnixLineSeparators(testFile));
-        AndroidSdkHandler handler = new AndroidSdkHandler(fop, true);
+        AndroidSdkHandler handler = new AndroidSdkHandler(fop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         handler.getSdkManager(progress);
         RepositorySourceProvider provider = handler.getUserSourceProvider(progress);

@@ -47,7 +47,7 @@ public class MavenInstallerTest extends TestCase {
 
     public void testInstallFirst() throws Exception {
         MockFileOp fop = new MockFileOp();
-        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(fop, true);
+        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(fop);
         RepoManager mgr = new RepoManagerImpl(fop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.registerSchemaModule(androidSdkHandler.getCommonModule(progress));
@@ -147,7 +147,7 @@ public class MavenInstallerTest extends TestCase {
                         + "    <lastUpdated>20151006162600</lastUpdated>\n"
                         + "  </versioning>\n"
                         + "</metadata>\n");
-        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(fop, true);
+        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(fop);
         RepoManager mgr = new RepoManagerImpl(fop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.registerSchemaModule(androidSdkHandler.getCommonModule(progress));
@@ -281,7 +281,7 @@ public class MavenInstallerTest extends TestCase {
                         + "  </versioning>\n"
                         + "</metadata>\n");
 
-        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(fop, true);
+        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(fop);
         RepoManager mgr = new RepoManagerImpl(fop);
         mgr.setLocalPath(new File("/repo"));
         FakeProgressIndicator progress = new FakeProgressIndicator();

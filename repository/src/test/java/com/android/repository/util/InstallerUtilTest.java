@@ -15,20 +15,13 @@
  */
 package com.android.repository.util;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.repository.api.Dependency;
-import com.android.repository.api.License;
 import com.android.repository.api.LocalPackage;
 import com.android.repository.api.RemotePackage;
-import com.android.repository.api.RepoPackage;
-import com.android.repository.api.RepositorySource;
-import com.android.repository.impl.meta.Archive;
-import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.RepositoryPackages;
-import com.android.repository.impl.meta.RevisionType;
-import com.android.repository.impl.meta.TypeDetails;
+import com.android.repository.testframework.FakeDependency;
+import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
@@ -38,8 +31,6 @@ import com.google.common.collect.Sets;
 
 import junit.framework.TestCase;
 
-import java.io.File;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -90,6 +81,47 @@ public class InstallerUtilTest extends TestCase {
                                 .addRemote(r2)
                                 .addRemote(r3)
                                 .build(), progress));
+        progress.assertNoErrorsOrWarnings();
+    }
+
+    /**
+     * Request r1 and r1. The latest version of r1 is installed so only r2 is returned.
+     */
+    public void testLocalInstalled() throws Exception {
+        RemotePackage r1 = new FakePackage("r1", new Revision(1), NONE);
+        RemotePackage r2 = new FakePackage("r2", new Revision(1), NONE);
+
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        ImmutableList<RemotePackage> request = ImmutableList.of(r1, r2);
+        ImmutableList<RemotePackage> expected = ImmutableList.of(r2);
+        assertEquals(expected,
+                InstallerUtil.computeRequiredPackages(request,
+                        new RepositoryPackagesBuilder()
+                                .addLocal(new FakePackage("r1", new Revision(1), NONE))
+                                .addRemote(r1)
+                                .addRemote(r2)
+                                .build(), progress));
+        progress.assertNoErrorsOrWarnings();
+    }
+
+    /**
+     * Request r1 and r1. r1 is installed but there is an update for it available, and so both
+     * r1 and r2 are returned.
+     */
+    public void testLocalInstalledWithUpdate() throws Exception {
+        RemotePackage r1 = new FakePackage("r1", new Revision(2), NONE);
+        RemotePackage r2 = new FakePackage("r2", new Revision(1), NONE);
+
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        ImmutableList<RemotePackage> request = ImmutableList.of(r1, r2);
+        List<RemotePackage> result = InstallerUtil.computeRequiredPackages(request,
+                        new RepositoryPackagesBuilder()
+                                .addLocal(new FakePackage("r1", new Revision(1), NONE))
+                                .addRemote(r1)
+                                .addRemote(r2)
+                                .build(), progress);
+        assertTrue(result.get(0).equals(r1) || result.get(1).equals(r1));
+        assertTrue(result.get(0).equals(r2) || result.get(1).equals(r2));
         progress.assertNoErrorsOrWarnings();
     }
 
@@ -354,144 +386,6 @@ public class InstallerUtilTest extends TestCase {
 
         public RepositoryPackages build() {
             return new RepositoryPackages(mLocals, mRemotes);
-        }
-    }
-
-    private static class FakeDependency extends Dependency {
-
-        private final String mPath;
-        private final RevisionType mRevision;
-
-        public FakeDependency(String path) {
-            this(path, null, null, null);
-        }
-
-        public FakeDependency(String path, final Integer major, final Integer minor, final Integer micro) {
-            mPath = path;
-            mRevision = major == null ? null : new RevisionType() {
-                @Override
-                public int getMajor() {
-                    return major;
-                }
-
-                @Nullable
-                @Override
-                public Integer getMicro() {
-                    return minor;
-                }
-
-                @Nullable
-                @Override
-                public Integer getMinor() {
-                    return micro;
-                }
-            };
-        }
-
-        @NonNull
-        @Override
-        public String getPath() {
-            return mPath;
-        }
-
-        @Nullable
-        @Override
-        public RevisionType getMinRevision() {
-            return mRevision;
-        }
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    private static class FakePackage implements LocalPackage, RemotePackage {
-        private final String mPath;
-        private final Revision mVersion;
-        private final Collection<Dependency> mDependencies;
-
-        public FakePackage(String path, Revision version, Collection<Dependency> dependencies) {
-            mPath = path;
-            mVersion = version;
-            mDependencies = dependencies == null ? ImmutableList.<Dependency>of() : dependencies;
-        }
-
-        @NonNull
-        @Override
-        public RepositorySource getSource() {
-            return null;
-        }
-
-        @Override
-        public void setSource(@NonNull RepositorySource source) {}
-
-        @Nullable
-        @Override
-        public Archive getArchive() {
-            return null;
-        }
-
-        @Nullable
-        @Override
-        public TypeDetails getTypeDetails() {
-            return null;
-        }
-
-        @NonNull
-        @Override
-        public Revision getVersion() {
-            return mVersion;
-        }
-
-        @NonNull
-        @Override
-        public String getDisplayName() {
-            return null;
-        }
-
-        @Nullable
-        @Override
-        public License getLicense() {
-            return null;
-        }
-
-        @NonNull
-        @Override
-        public Collection<Dependency> getAllDependencies() {
-            return mDependencies;
-        }
-
-        @NonNull
-        @Override
-        public String getPath() {
-            return mPath;
-        }
-
-        @Override
-        public boolean obsolete() {
-            return false;
-        }
-
-        @NonNull
-        @Override
-        public CommonFactory createFactory() {
-            return null;
-        }
-
-        @Override
-        public int compareTo(@NonNull RepoPackage o) {
-            return 0;
-        }
-
-        @NonNull
-        @Override
-        public File getLocation() {
-            return null;
-        }
-
-        @Override
-        public void setInstalledPath(@NonNull File root) {}
-
-        @Override
-        public String toString() {
-            return mPath;
         }
     }
 

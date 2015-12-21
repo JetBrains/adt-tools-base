@@ -23,6 +23,7 @@ import com.android.annotations.Nullable;
 import com.android.prefs.AndroidLocation;
 import com.android.prefs.AndroidLocation.AndroidLocationException;
 import com.android.repository.io.FileOpUtils;
+import com.android.repository.testframework.MockFileOp;
 import com.android.resources.Density;
 import com.android.resources.Keyboard;
 import com.android.resources.KeyboardState;
@@ -54,6 +55,7 @@ import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.local.LocalPlatformPkgInfo;
 import com.android.sdklib.repository.local.LocalSysImgPkgInfo;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.utils.ILogger;
 
 import java.io.File;
@@ -77,6 +79,7 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
     private MockLog mLog;
 
     private SdkManager mSdkManager;
+    private AndroidSdkHandler mSdkHandler;
 
     private AvdManager mAvdManager;
 
@@ -94,6 +97,10 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
      */
     public SdkManager getSdkManager() {
         return mSdkManager;
+    }
+
+    public AndroidSdkHandler getSdkHandler() {
+        return mSdkHandler;
     }
 
     /**
@@ -122,12 +129,14 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
      */
     protected void createSdkAvdManagers() throws AndroidLocationException {
         mSdkManager = SdkManager.createManager(mFakeSdk.getAbsolutePath(), mLog);
+        mSdkHandler = new AndroidSdkHandler(new MockFileOp());
+        mSdkHandler.setLocation(mFakeSdk);
         assertNotNull("SdkManager location was invalid", mSdkManager);
         // Note: it's safe to use the default AvdManager implementation since makeFakeAndroidHome
         // above overrides the ANDROID_HOME folder to use a temp folder; consequently all
         // the AVDs created here will be located in this temp folder and will not alter
         // or pollute the default user's AVD folder.
-        mAvdManager = new AvdManager(mSdkManager.getLocalSdk(), mLog) {
+        mAvdManager = new AvdManager(mSdkHandler, mLog) {
             @Override
             protected boolean createSdCard(
                     String toolLocation,

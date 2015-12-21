@@ -22,6 +22,7 @@ import com.android.repository.io.FileOp;
 import com.android.repository.io.FileOpUtils;
 import com.android.repository.io.impl.FileOpImpl;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
@@ -32,9 +33,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -84,6 +87,54 @@ public class MockFileOp implements FileOp {
     @Override
     public boolean isWindows() {
         return mIsWindows;
+    }
+
+    @NonNull
+    @Override
+    public String toString(@NonNull File f, @NonNull Charset c) throws IOException {
+        FileInfo fileInfo = mExistingFiles.get(f.getAbsolutePath());
+        if (fileInfo == null || fileInfo.getContent() == null) {
+            throw new FileNotFoundException();
+        }
+        return new String(fileInfo.getContent(), c);
+    }
+
+    @Override
+    @Nullable
+    public String[] list(@NonNull File folder, @Nullable FilenameFilter filenameFilter) {
+        File contents[] = listFiles(folder);
+        String names[] = new String[contents.length];
+        for (int i = 0; i < contents.length; i++) {
+            names[i] = contents[i].getName();
+        }
+        if (filenameFilter == null) {
+            return names;
+        }
+        List<String> result = Lists.newArrayList();
+        for (String name : names) {
+            if (filenameFilter.accept(folder, name)) {
+                result.add(name);
+            }
+        }
+        return result.toArray(new String[result.size()]);
+
+    }
+
+    @Override
+    @Nullable
+    public File[] listFiles(@NonNull File folder, @Nullable FilenameFilter filenameFilter) {
+        File contents[] = listFiles(folder);
+        if (filenameFilter == null) {
+            return contents;
+        }
+        List<File> result = Lists.newArrayList();
+        for (File f : contents) {
+            if (filenameFilter.accept(folder, f.getName())) {
+                result.add(f);
+            }
+        }
+        return result.toArray(new File[result.size()]);
+
     }
 
     public void setIsWindows(boolean isWindows) {

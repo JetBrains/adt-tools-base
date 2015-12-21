@@ -45,6 +45,7 @@ import com.android.sdklib.internal.repository.updater.SettingsController.OnChang
 import com.android.sdklib.repository.ISdkChangeListener;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
+import com.android.sdklib.repositoryv2.AndroidSdkHandler;
 import com.android.sdklib.util.LineUtil;
 import com.android.utils.ILogger;
 import com.android.utils.IReaderLogger;
@@ -86,7 +87,7 @@ public class UpdaterData implements IUpdaterData {
     public static final int TOOLS_MSG_UPDATED_FROM_ADT = 1;
     public static final int TOOLS_MSG_UPDATED_FROM_SDKMAN = 2;
 
-    private String mOsSdkRoot;
+    private AndroidSdkHandler mSdkHandler;
 
     private final LocalSdkParser mLocalSdkParser = new LocalSdkParser();
     /** Holds all sources. Do not use this directly.
@@ -117,10 +118,10 @@ public class UpdaterData implements IUpdaterData {
      * Creates a new updater data.
      *
      * @param sdkLog Logger. Cannot be null.
-     * @param osSdkRoot The OS path to the SDK root.
+     * @param sdkHandler The SDK Handler.
      */
-    public UpdaterData(String osSdkRoot, ILogger sdkLog) {
-        mOsSdkRoot = osSdkRoot;
+    public UpdaterData(AndroidSdkHandler sdkHandler, ILogger sdkLog) {
+        mSdkHandler = sdkHandler;
         mSdkLog = sdkLog;
 
         mSettingsController = initSettingsController();
@@ -130,7 +131,7 @@ public class UpdaterData implements IUpdaterData {
     // ----- getters, setters ----
 
     public String getOsSdkRoot() {
-        return mOsSdkRoot;
+        return mSdkHandler.getLocation().getAbsolutePath();
     }
 
     @Override
@@ -253,10 +254,10 @@ public class UpdaterData implements IUpdaterData {
      */
     @VisibleForTesting(visibility=Visibility.PRIVATE)
     protected void initSdk() {
-        setSdkManager(SdkManager.createManager(mOsSdkRoot, mSdkLog));
+        setSdkManager(SdkManager.createManager(getOsSdkRoot(), mSdkLog));
         try {
-          mAvdManager = null;
-          mAvdManager = AvdManager.getInstance(mSdkManager.getLocalSdk(), mSdkLog);
+          mAvdManager = AvdManager.getInstance(mSdkHandler, mSdkLog);
+
         } catch (AndroidLocationException e) {
             mSdkLog.error(e, "Unable to read AVDs: " + e.getMessage());  //$NON-NLS-1$
 
@@ -483,7 +484,7 @@ public class UpdaterData implements IUpdaterData {
 
                         ArchiveInstaller installer = createArchiveInstaler();
                         if (installer.install(ai,
-                                              mOsSdkRoot,
+                                              getOsSdkRoot(),
                                               forceHttp,
                                               mSdkManager,
                                               getDownloadCache(),

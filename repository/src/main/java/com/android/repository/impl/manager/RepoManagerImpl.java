@@ -427,6 +427,9 @@ public class RepoManagerImpl extends RepoManager {
                 RepositoryPackages packages = new RepositoryPackages();
 
                 if (mLocalPath != null) {
+                    if (mFallbackLocalRepoLoader != null) {
+                        mFallbackLocalRepoLoader.refresh();
+                    }
                     LocalRepoLoader local = new LocalRepoLoader(mLocalPath, RepoManagerImpl.this,
                             mFallbackLocalRepoLoader, mFop);
                     indicator.setText("Loading local repository...");

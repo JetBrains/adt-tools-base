@@ -28,18 +28,6 @@ import com.android.repository.impl.meta.TypeDetails;
 public abstract class RepoFactory extends ElementFactory<Repository> {
 
     /**
-     * Create an instance of {@link DetailsTypes.PlatformToolDetailsType }
-     */
-    @NonNull
-    public abstract DetailsTypes.PlatformToolDetailsType createPlatformToolDetailsType();
-
-    /**
-     * Create an instance of {@link DetailsTypes.BuildToolDetailsType }
-     */
-    @NonNull
-    public abstract DetailsTypes.BuildToolDetailsType createBuildToolDetailsType();
-
-    /**
      * Create an instance of {@link DetailsTypes.SourceDetailsType }
      */
     @NonNull
@@ -52,21 +40,9 @@ public abstract class RepoFactory extends ElementFactory<Repository> {
     public abstract DetailsTypes.PlatformDetailsType createPlatformDetailsType();
 
     /**
-     * Create an instance of {@link DetailsTypes.DocDetailsType }
-     */
-    @NonNull
-    public abstract DetailsTypes.DocDetailsType createDocDetailsType();
-
-    /**
      * Create an instance of {@link DetailsTypes.PlatformDetailsType.LayoutlibType }
      */
     @NonNull
     public abstract DetailsTypes.PlatformDetailsType.LayoutlibType createLayoutlibType();
-
-    /**
-     * Create an instance of {@link DetailsTypes.ToolDetailsType }
-     */
-    @NonNull
-    public abstract DetailsTypes.ToolDetailsType createToolDetailsType();
 
 }

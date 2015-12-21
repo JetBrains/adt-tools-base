@@ -20,7 +20,13 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.repository.Revision;
-import com.android.repository.api.*;
+import com.android.repository.api.Dependency;
+import com.android.repository.api.FallbackLocalRepoLoader;
+import com.android.repository.api.License;
+import com.android.repository.api.LocalPackage;
+import com.android.repository.api.ProgressIndicator;
+import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoPackage;
 import com.android.repository.impl.meta.CommonFactory;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.repository.io.FileOp;
@@ -98,6 +104,7 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         LocalPkgInfo info;
         if (mPkgs == null) {
             Map<File, LocalPkgInfo> result = Maps.newHashMap();
+            mLocalSdk.clearLocalPkg(PkgType.PKG_ALL);
             for (LocalPkgInfo local : mLocalSdk.getPkgsInfos(PkgType.PKG_ALL)) {
                 result.put(local.getLocalDir(), local);
             }
@@ -112,6 +119,11 @@ public class LegacyLocalRepoLoader implements FallbackLocalRepoLoader {
         }
 
         return new LegacyLocalPackage(info, progress);
+    }
+
+    @Override
+    public void refresh() {
+        mPkgs = null;
     }
 
     /**

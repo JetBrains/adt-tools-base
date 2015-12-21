@@ -96,15 +96,18 @@ public class AndroidTargetManager {
     @NonNull
     public Collection<IAndroidTarget> getTargets(boolean includeMissing,
             @NonNull ProgressIndicator progress) {
-        if (mMissingTargets == null) {
-            List<IAndroidTarget> result = Lists.newArrayList();
-            result.addAll(getTargets(progress));
-            if (includeMissing) {
+        if (includeMissing) {
+            if (mMissingTargets == null) {
+                List<IAndroidTarget> result = Lists.newArrayList();
                 result.addAll(myImpl.getMissingTargets(progress));
+                result.addAll(getTargets(progress));
+                mMissingTargets = result;
             }
-            mMissingTargets = result;
+            return mMissingTargets;
         }
-        return mMissingTargets;
+        else {
+            return getTargets(progress);
+        }
     }
 
 

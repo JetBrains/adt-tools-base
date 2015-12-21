@@ -18,6 +18,8 @@ package com.android.sdklib.repositoryv2;
 
 import com.android.annotations.NonNull;
 
+import java.util.Locale;
+
 import javax.xml.bind.annotation.XmlTransient;
 
 /**
@@ -77,6 +79,31 @@ public abstract class IdDisplay implements Comparable<IdDisplay> {
     @Override
     public String toString() {
         return String.format("%1$s [%2$s]", getId(), getDisplay());
+    }
+
+    /**
+     * Computes a display-friendly tag string based on the id.
+     * This is typically used when there's no display attribute.
+     *
+     * @param id A non-null id to sanitize for display.
+     * @return The id with all non-alphanum symbols replaced by spaces and trimmed.
+     */
+    @NonNull
+    public static String idToDisplay(@NonNull String id) {
+        String name;
+        name = id.replaceAll("[^A-Za-z0-9]+", " ");
+        name = name.replaceAll(" +", " ");
+        name = name.trim();
+
+        if (!name.isEmpty()) {
+            char c = name.charAt(0);
+            if (!Character.isUpperCase(c)) {
+                StringBuilder sb = new StringBuilder(name);
+                sb.replace(0, 1, String.valueOf(c).toUpperCase(Locale.US));
+                name = sb.toString();
+            }
+        }
+        return name;
     }
 
 }

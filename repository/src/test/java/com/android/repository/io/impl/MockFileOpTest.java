@@ -17,10 +17,15 @@
 package com.android.repository.io.impl;
 
 import com.android.repository.testframework.MockFileOp;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -200,5 +205,37 @@ public class MockFileOpTest extends TestCase {
 
         assertTrue(m.canWrite(f1));
         assertFalse(m.canWrite(f2));
+    }
+
+    public void testToString() throws Exception {
+        m.recordExistingFile("/root/blah", "foo");
+        assertEquals("foo", m.toString(new File("/root/blah"), Charsets.UTF_8));
+        try {
+            m.toString(new File("/root/bogus"), Charsets.UTF_8);
+            fail();
+        }
+        catch (Exception expected) {
+            // nothing
+        }
+    }
+
+    public void testListWithFilter() throws Exception {
+        m.recordExistingFile("/root/foo/a.txt");
+        m.recordExistingFile("/root/foo/b.csv");
+        m.recordExistingFile("/root/foo/c.txt");
+        m.recordExistingFile("/root/foo/d.txt/d.txtWasActuallyAFolder");
+        m.recordExistingFile("/root/foofoo/blah");
+        m.recordExistingFile("/root/foo/bar/baz.txt");
+        String[] result = m.list(new File("/root/foo"), new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.endsWith(".txt");
+            }
+        });
+        assertEquals(result.length, 3);
+        List<String> resultList = Lists.newArrayList(result);
+        assertTrue(resultList.contains("a.txt"));
+        assertTrue(resultList.contains("c.txt"));
+        assertTrue(resultList.contains("d.txt"));
     }
 }

@@ -19,7 +19,7 @@ package com.android.sdklib.repositoryv2.meta;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
+import com.android.repository.api.RepoPackage;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
@@ -36,7 +36,8 @@ import javax.xml.bind.annotation.XmlTransient;
  */
 public final class DetailsTypes {
 
-    private DetailsTypes() {}
+    private DetailsTypes() {
+    }
 
     /**
      * Common methods shared by all android version-specific details types.
@@ -70,19 +71,9 @@ public final class DetailsTypes {
      * Trivial details type for source packages.
      */
     @XmlTransient
-    public interface SourceDetailsType extends ApiDetailsType {}
+    public interface SourceDetailsType extends ApiDetailsType {
 
-    /**
-     * Trivial details type for build tools packages.
-     */
-    @XmlTransient
-    public interface BuildToolDetailsType {}
-
-    /**
-     * Trivial details type for doc packages.
-     */
-    @XmlTransient
-    public interface DocDetailsType {}
+    }
 
     /**
      * Details type for platform packages. Contains info on the layout lib version provided.
@@ -114,18 +105,6 @@ public final class DetailsTypes {
     }
 
     /**
-     * Trivial details type for platform-tool packages.
-     */
-    @XmlTransient
-    public interface PlatformToolDetailsType {}
-
-    /**
-     * Trivial details type for tool packages.
-     */
-    @XmlTransient
-    public interface ToolDetailsType {}
-
-    /**
      * Details type for extra packages. Includes a {@link IdDisplay} for the vendor.
      */
     @XmlTransient
@@ -138,7 +117,6 @@ public final class DetailsTypes {
 
         /**
          * Gets the vendor for this package.
-         * @return
          */
         @NonNull
         IdDisplay getVendor();
@@ -149,27 +127,27 @@ public final class DetailsTypes {
      */
     @XmlTransient
     public interface AddonDetailsType extends ApiDetailsType {
+
         void setVendor(@NonNull IdDisplay vendor);
 
         @NonNull
         IdDisplay getVendor();
 
         /**
-         * Gets the {@link IAndroidTarget.OptionalLibrary}s provided by this
-         * package.
+         * Gets the {@link IAndroidTarget.OptionalLibrary}s provided by this package.
          */
         @Nullable
         Libraries getLibraries();
 
         /**
-         * Sets the tag for this package. Used to match addon packages with corresponding
-         * system images.
+         * Sets the tag for this package. Used to match addon packages with corresponding system
+         * images.
          */
         void setTag(@NonNull IdDisplay tag);
 
         /**
-         * Gets the tag for this package. Used to match addon packages with corresponding
-         * system images.
+         * Gets the tag for this package. Used to match addon packages with corresponding system
+         * images.
          */
         @NonNull
         IdDisplay getTag();
@@ -184,6 +162,7 @@ public final class DetailsTypes {
          * List of all {@link Library}s included in this package.
          */
         abstract class Libraries {
+
             @NonNull
             public abstract List<Library> getLibrary();
         }
@@ -191,8 +170,8 @@ public final class DetailsTypes {
     }
 
     /**
-     * Details type for system images packages. Includes information on the abi (architecture),
-     * tag (device type), and vendor.
+     * Details type for system images packages. Includes information on the abi (architecture), tag
+     * (device type), and vendor.
      */
     @XmlTransient
     public interface SysImgDetailsType extends ApiDetailsType {
@@ -214,14 +193,14 @@ public final class DetailsTypes {
         boolean isValidAbi(@Nullable String value);
 
         /**
-         * Sets the tag for this package. Used to match addon packages with corresponding
-         * system images.
+         * Sets the tag for this package. Used to match addon packages with corresponding system
+         * images.
          */
         void setTag(@NonNull IdDisplay tag);
 
         /**
-         * Sets the tag for this package. Used to match addon packages with corresponding
-         * system images.
+         * Sets the tag for this package. Used to match addon packages with corresponding system
+         * images.
          */
         @NonNull
         IdDisplay getTag();
@@ -243,16 +222,76 @@ public final class DetailsTypes {
      * repository.
      */
     @XmlTransient
-    public interface MavenType {}
+    public interface MavenType {
+
+    }
 
     /**
-     * Convenience method to create an {@link AndroidVersion} with the information from the
-     * given {@link ApiDetailsType}.
+     * Convenience method to create an {@link AndroidVersion} with the information from the given
+     * {@link ApiDetailsType}.
+     *
+     * TODO: move this into ApiDetailsType when we support java 8
      */
     @NonNull
     public static AndroidVersion getAndroidVersion(@NonNull ApiDetailsType details) {
         return new AndroidVersion(details.getApiLevel(), details.getCodename());
     }
+
+    /**
+     * Gets the path/unique id for the platform of the given {@link AndroidVersion}.
+     *
+     * TODO: move this into PlatformDetailsType when we support java 8
+     */
+    public static String getPlatformPath(AndroidVersion version) {
+        return SdkConstants.FD_PLATFORMS + RepoPackage.PATH_SEPARATOR + "android-" +
+                version.getApiString();
+    }
+
+    /**
+     * Gets the path/unique id for the sources of the given {@link AndroidVersion}.
+     *
+     * TODO: move this into PlatformDetailsType when we support java 8
+     */
+    public static String getSourcesPath(AndroidVersion version) {
+        return SdkConstants.FD_PKG_SOURCES + RepoPackage.PATH_SEPARATOR + "android-" +
+                version.getApiString();
+    }
+
+    /**
+     * Gets the default path/unique id for the given addon
+     *
+     * TODO: move this into AddonDetailsType when we support java 8
+     */
+    public static String getAddonPath(IdDisplay vendor, AndroidVersion version, IdDisplay name) {
+        return new StringBuilder().append(SdkConstants.FD_ADDONS)
+                .append(RepoPackage.PATH_SEPARATOR)
+                .append("addon-")
+                .append(name.getId())
+                .append("-")
+                .append(vendor.getId())
+                .append("-")
+                .append(version.getApiString())
+                .toString();
+    }
+
+    /**
+     * Gets the default path/unique id for the given system image
+     *
+     * TODO: move this into SysImgDetailsType when we support java 8
+     */
+    public static String getSysImgPath(IdDisplay vendorGoogle, AndroidVersion version, IdDisplay name, String abi) {
+        return new StringBuilder()
+                .append(SdkConstants.FD_SYSTEM_IMAGES)
+                .append(RepoPackage.PATH_SEPARATOR)
+                .append("android-")
+                .append(version.getApiString())
+                .append(RepoPackage.PATH_SEPARATOR)
+                .append(name.getId())
+                .append(RepoPackage.PATH_SEPARATOR)
+                .append(abi)
+                .toString();
+    }
+
 
     /**
      * Information about a {@link IAndroidTarget.OptionalLibrary} provided by a package.

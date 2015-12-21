@@ -38,4 +38,10 @@ public interface FallbackLocalRepoLoader {
      */
     @Nullable
     LocalPackage parseLegacyLocalPackage(@NonNull File f, @NonNull ProgressIndicator progress);
+
+    /**
+     * Refreshes the loader's internal state if necessary. This should probably be done (by the repo
+     * manager) whenever a new local repo load is started.
+     */
+    void refresh();
 }
