@@ -48,6 +48,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import com.sun.istack.internal.NotNull;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -129,7 +131,7 @@ public final class AndroidSdkHandler {
     /**
      * Singleton instance of this class.
      */
-    private static AndroidSdkHandler sInstance;
+    private static Map<File, AndroidSdkHandler> sInstances = Maps.newConcurrentMap();
 
     /**
      * Location of the local SDK.
@@ -139,28 +141,35 @@ public final class AndroidSdkHandler {
     /**
      * Loader capable of loading old-style repository xml files, with namespace like
      * http://schemas.android.com/sdk/android/repository/NN or similar.
+     *
+     * Static, shared among {@link AndroidSdkHandler} instances.
      */
-    private FallbackRemoteRepoLoader mRemoteFallback;
+    private static FallbackRemoteRepoLoader sRemoteFallback;
 
     /**
-     * Lazily-initialized class containing our static repository configuration.
+     * Lazily-initialized class containing our static repository configuration, shared between
+     * AndroidSdkHandler instances.
      */
-    private RepoConfig mRepoConfig;
+    private static RepoConfig sRepoConfig;
 
     /**
      * Get a {@code AndroidSdkHandler} instance.
      */
     @NonNull
     public static AndroidSdkHandler getInstance() {
-        if (sInstance == null) {
-            sInstance = new AndroidSdkHandler(FileOpUtils.create());
+        File localPath = new File("");
+        AndroidSdkHandler instance = sInstances.get(localPath);
+        if (instance == null) {
+            instance = new AndroidSdkHandler(FileOpUtils.create());
+            instance.setLocation(localPath);
+            sInstances.put(localPath, instance);
         }
-        return sInstance;
+        return instance;
     }
 
     /**
      * Don't use this, use {@link #getInstance()}, unless you're in a unit test and need to specify
-     * a custom {@link FileOp}. For new code, useSdkV2 should probably be {@code true}.
+     * a custom {@link FileOp}.
      *
      * This should be called very rarely. Unless you're in a test, or in the middle of changing
      * the local SDK path or something similar, you probably want {@link #getInstance()}.
@@ -174,7 +183,6 @@ public final class AndroidSdkHandler {
     public AndroidSdkHandler clone() {
         AndroidSdkHandler result = new AndroidSdkHandler(mFop);
         result.mLocation = mLocation;
-        result.mRemoteFallback = mRemoteFallback;
         return result;
     }
 
@@ -192,10 +200,11 @@ public final class AndroidSdkHandler {
                 mAndroidTargetManager = null;
                 mLatestBuildTool = null;
 
-                mRepoManager = getRepoConfig(progress).createRepoManager();
+                result = getRepoConfig(progress)
+                  .createRepoManager(progress, mLocation, sRemoteFallback, mFop);
                 // Invalidate system images, targets, the latest build tool, and the legacy local
                 // package manager when local packages change
-                mRepoManager.registerLocalChangeListener(new RepoManager.RepoLoadedCallback() {
+                result.registerLocalChangeListener(new RepoManager.RepoLoadedCallback() {
                     @Override
                     public void doRun(@NonNull RepositoryPackages packages) {
                         mSystemImageManager = null;
@@ -203,7 +212,7 @@ public final class AndroidSdkHandler {
                         mLatestBuildTool = null;
                     }
                 });
-                result = mRepoManager;
+                mRepoManager = result;
             }
         }
         return result;
@@ -259,10 +268,19 @@ public final class AndroidSdkHandler {
      * repositories we might receive.<p> Invalidates the repo manager; it will be recreated when
      * next retrieved.
      */
-    public void setRemoteFallback(@Nullable FallbackRemoteRepoLoader fallbackSdk) {
+    public static void setRemoteFallback(@Nullable FallbackRemoteRepoLoader fallbackSdk) {
         synchronized (MANAGER_LOCK) {
-            mRemoteFallback = fallbackSdk;
-            mRepoManager = null;
+            sRemoteFallback = fallbackSdk;
+            invalidateAll();
+        }
+    }
+
+    /**
+     * Resets the {@link RepoManager}s of all cached {@link AndroidSdkHandler}s.
+     */
+    private static void invalidateAll() {
+        for (AndroidSdkHandler handler : sInstances.values()) {
+            handler.mRepoManager = null;
         }
     }
 
@@ -319,17 +337,19 @@ public final class AndroidSdkHandler {
 
     @NonNull
     private RepoConfig getRepoConfig(@NonNull ProgressIndicator progress) {
-        if (mRepoConfig == null) {
-            mRepoConfig = new RepoConfig(progress);
+        if (sRepoConfig == null) {
+            sRepoConfig = new RepoConfig(progress, mFop);
         }
-        return mRepoConfig;
+        return sRepoConfig;
     }
 
     /**
-     * Class containing the repository configuration we can (lazily) create statically. as well
+     * Class containing the repository configuration we can (lazily) create statically, as well
      * as a method to create a new {@link RepoManager} based on that configuration.
+     *
+     * Instances of this class may be shared between {@link AndroidSdkHandler} instances.
      */
-    private class RepoConfig {
+    private static class RepoConfig {
 
         /**
          * Schema module containing the package type information to be used in addon repos.
@@ -377,7 +397,7 @@ public final class AndroidSdkHandler {
          *
          * @param progress Used for error logging.
          */
-        public RepoConfig(@NonNull ProgressIndicator progress) {
+        public RepoConfig(@NonNull ProgressIndicator progress, @NotNull FileOp fileOp) {
             try {
                 mAddonModule = new SchemaModule(
                         "com.android.sdklib.repositoryv2.generated.addon.v%d.ObjectFactory",
@@ -427,7 +447,7 @@ public final class AndroidSdkHandler {
             try {
                 mUserSourceProvider = new LocalSourceProvider(new File(
                         AndroidLocation.getFolder(), LOCAL_ADDONS_FILENAME), ImmutableList
-                        .of(mSysImgModule, mAddonModule), mFop);
+                        .of(mSysImgModule, mAddonModule), fileOp);
             } catch (AndroidLocation.AndroidLocationException e) {
                 progress.logWarning("Couldn't find android folder", e);
             }
@@ -491,8 +511,10 @@ public final class AndroidSdkHandler {
         }
 
         @NonNull
-        public RepoManager createRepoManager() {
-            RepoManager result = RepoManager.create(mFop);
+        public RepoManager createRepoManager(@NotNull ProgressIndicator progress,
+                @Nullable File localLocation,
+                @Nullable FallbackRemoteRepoLoader remoteFallbackLoader, @NotNull FileOp fop) {
+            RepoManager result = RepoManager.create(fop);
 
             // Create the schema modules etc. if they haven't been already.
             result.registerSchemaModule(mAddonModule);
@@ -511,16 +533,20 @@ public final class AndroidSdkHandler {
             }
 
 
-            result.setLocalPath(mLocation);
+            result.setLocalPath(localLocation);
 
-            // If we have a local sdk path set, set up the old-style loader so we can parse
-            // any legacy packages.
-            if (mLocation != null) {
+            if (localLocation != null) {
+                // If we have a local sdk path set, set up the old-style loader so we can parse
+                // any legacy packages.
                 result.setFallbackLocalRepoLoader(
-                        new LegacyLocalRepoLoader(mLocation, mFop, result));
+                        new LegacyLocalRepoLoader(localLocation, fop, result));
+
+                // If a location is set we'll always want at least the local packages loaded, so
+                // load them now.
+                result.loadSynchronously(0, progress, null, null);
             }
 
-            result.setFallbackRemoteRepoLoader(mRemoteFallback);
+            result.setFallbackRemoteRepoLoader(remoteFallbackLoader);
             return result;
         }
     }
