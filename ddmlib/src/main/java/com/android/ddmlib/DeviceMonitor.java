@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -559,6 +560,9 @@ final class DeviceMonitor {
             try {
                 if (AndroidDebugBridge.getClientSupport()) {
                     client.listenForDebugger(debuggerPort);
+                    String msg = String.format(Locale.US, "Opening a debugger listener at port %1$d for client with pid %2$d",
+                                               debuggerPort, pid);
+                    Log.i("ddms", msg);
                 }
             } catch (IOException ioe) {
                 client.getClientData().setDebuggerConnectionStatus(DebuggerStatus.ERROR);
