@@ -19,6 +19,7 @@ package com.android.sdklib.repositoryv2.meta;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.repository.Revision;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.impl.meta.TypeDetails;
 import com.android.sdklib.AndroidVersion;
@@ -292,6 +293,12 @@ public final class DetailsTypes {
                 .toString();
     }
 
+    /**
+     * Gets the default path/unique id for the given build tools
+     */
+    public static String getBuildToolsPath(Revision revision) {
+        return SdkConstants.FD_BUILD_TOOLS + RepoPackage.PATH_SEPARATOR + revision.toString();
+    }
 
     /**
      * Information about a {@link IAndroidTarget.OptionalLibrary} provided by a package.

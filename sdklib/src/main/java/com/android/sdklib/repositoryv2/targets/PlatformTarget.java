@@ -133,8 +133,9 @@ public class PlatformTarget implements IAndroidTarget {
         File buildProp = new File(getLocation(), SdkConstants.FN_BUILD_PROP);
 
         if (!fop.isFile(buildProp)) {
-            progress.logWarning("Build properties not found for package " + p);
-            throw new IllegalArgumentException();
+            String message = "Build properties not found for package " + p.getDisplayName();
+            progress.logWarning(message);
+            throw new IllegalArgumentException(message);
         }
 
         try {
