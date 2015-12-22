@@ -730,7 +730,7 @@ final class Device implements IDevice {
             mClients.remove(client);
         }
         if (notify) {
-            mMonitor.getServer().deviceChanged(this, CHANGE_CLIENT_LIST);
+            AndroidDebugBridge.deviceChanged(this, CHANGE_CLIENT_LIST);
         }
 
         removeClientInfo(client);
@@ -752,11 +752,11 @@ final class Device implements IDevice {
     }
 
     void update(int changeMask) {
-        mMonitor.getServer().deviceChanged(this, changeMask);
+        AndroidDebugBridge.deviceChanged(this, changeMask);
     }
 
-    void update(Client client, int changeMask) {
-        mMonitor.getServer().clientChanged(client, changeMask);
+    void update(@NonNull Client client, int changeMask) {
+        AndroidDebugBridge.clientChanged(client, changeMask);
         updateClientInfo(client, changeMask);
     }
 
