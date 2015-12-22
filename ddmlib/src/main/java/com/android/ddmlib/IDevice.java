@@ -19,6 +19,7 @@ package com.android.ddmlib;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ddmlib.log.LogReceiver;
+import com.android.sdklib.AndroidVersion;
 
 import java.io.File;
 import java.io.IOException;
@@ -659,6 +660,7 @@ public interface IDevice extends IShellEnabledDevice {
      *
      * @return the user's language, or null if it's unknown
      */
+    @Nullable
     String getLanguage();
 
     /**
@@ -666,12 +668,14 @@ public interface IDevice extends IShellEnabledDevice {
      *
      * @return the user's region, or null if it's unknown
      */
+    @Nullable
     String getRegion();
 
     /**
      * Returns the API level of the device.
      *
-     * @return the API level of the device, or -1 if it cannot be determined ().
+     * @return the API level if it can be determined, {@link AndroidVersion#DEFAULT} otherwise.
      */
-    int getApiLevel();
+    @NonNull
+    AndroidVersion getVersion();
 }

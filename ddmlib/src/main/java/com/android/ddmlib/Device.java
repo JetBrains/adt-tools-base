@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.ddmlib.log.LogReceiver;
+import com.android.sdklib.AndroidVersion;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -121,6 +122,7 @@ final class Device implements IDevice {
     private Set<String> mHardwareCharacteristics;
 
     private int mApiLevel;
+    @Nullable private AndroidVersion mVersion;
     private String mName;
 
     /**
@@ -349,7 +351,7 @@ final class Device implements IDevice {
     public boolean supportsFeature(@NonNull Feature feature) {
         switch (feature) {
             case SCREEN_RECORD:
-                if (getApiLevel() < 19) {
+                if (!getVersion().isGreaterOrEqualThan(19)) {
                     return false;
                 }
                 if (mHasScreenRecorder == null) {
@@ -357,7 +359,7 @@ final class Device implements IDevice {
                 }
                 return mHasScreenRecorder;
             case PROCSTATS:
-                return getApiLevel() >= 19;
+                return getVersion().isGreaterOrEqualThan(19);
             default:
                 return false;
         }
@@ -384,18 +386,25 @@ final class Device implements IDevice {
         return mHardwareCharacteristics.contains(feature.getCharacteristic());
     }
 
+    @NonNull
     @Override
-    public int getApiLevel() {
-        if (mApiLevel > 0) {
-            return mApiLevel;
+    public AndroidVersion getVersion() {
+        if (mVersion != null) {
+            return mVersion;
         }
 
         try {
             String buildApi = getProperty(PROP_BUILD_API_LEVEL);
-            mApiLevel = buildApi == null ? -1 : Integer.parseInt(buildApi);
-            return mApiLevel;
+            if (buildApi == null) {
+                return AndroidVersion.DEFAULT;
+            }
+
+            int api = Integer.parseInt(buildApi);
+            String codeName = getProperty(PROP_BUILD_CODENAME);
+            mVersion = new AndroidVersion(api, codeName);
+            return mVersion;
         } catch (Exception e) {
-            return -1;
+            return AndroidVersion.DEFAULT;
         }
     }
 
