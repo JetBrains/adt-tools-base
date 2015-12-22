@@ -16,7 +16,9 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
 import com.android.ddmlib.ClientData.DebuggerStatus;
+import com.android.ddmlib.jdwp.JdwpAgent;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -31,7 +33,7 @@ import java.nio.channels.SocketChannel;
 /**
  * This represents a pending or established connection with a JDWP debugger.
  */
-class Debugger {
+public class Debugger extends JdwpAgent {
 
     /*
      * Messages from the debugger should be pretty small; may not even
@@ -63,7 +65,7 @@ class Debugger {
      * on a specific port.
      */
     Debugger(Client client, int listenPort) throws IOException {
-
+        super(client.getJdwpProtocol());
         mClient = client;
         mListenPort = listenPort;
 
@@ -279,18 +281,6 @@ class Debugger {
     }
 
     /**
-     * Forward a packet to the client.
-     *
-     * "mClient" will never be null, though it's possible that the channel
-     * in the client has closed and our send attempt will fail.
-     *
-     * Consumes the packet.
-     */
-    void forwardPacketToClient(JdwpPacket packet) throws IOException {
-        mClient.send(packet, null);
-    }
-
-    /**
      * Send the handshake to the debugger.  We also send along any packets
      * we already received from the client (usually just a VM_START event,
      * if anything at all).
@@ -330,23 +320,24 @@ class Debugger {
      * coordinate the buffered data with mChannel creation, so this whole
      * method is synchronized.
      */
-    synchronized void send(JdwpPacket packet)
-        throws IOException {
-
-        if (mChannel == null) {
-            /*
-             * Buffer this up so we can send it to the debugger when it
-             * finally does connect.  This is essential because the VM_START
-             * message might be telling the debugger that the VM is
-             * suspended.  The alternative approach would be for us to
-             * capture and interpret VM_START and send it later if we
-             * didn't choose to un-suspend the VM for our own purposes.
-             */
-            Log.d("ddms", "Saving packet 0x"
-                    + Integer.toHexString(packet.getId()));
-            packet.move(mPreDataBuffer);
-        } else {
-            packet.write(mChannel);
+    @Override
+    protected void send(@NonNull JdwpPacket packet) throws IOException {
+        synchronized (this) {
+            if (mChannel == null) {
+                /*
+                 * Buffer this up so we can send it to the debugger when it
+                 * finally does connect.  This is essential because the VM_START
+                 * message might be telling the debugger that the VM is
+                 * suspended.  The alternative approach would be for us to
+                 * capture and interpret VM_START and send it later if we
+                 * didn't choose to un-suspend the VM for our own purposes.
+                 */
+                Log.d("ddms", "Saving packet 0x"
+                        + Integer.toHexString(packet.getId()));
+                packet.move(mPreDataBuffer);
+            } else {
+                packet.write(mChannel);
+            }
         }
     }
 }

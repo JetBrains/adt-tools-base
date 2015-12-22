@@ -34,11 +34,8 @@ import java.nio.channels.SocketChannel;
  * Use the constructor to create an empty packet, or "findPacket()" to
  * wrap a JdwpPacket around existing data.
  */
-final class JdwpPacket {
+public final class JdwpPacket {
     public static final int JDWP_HEADER_LEN = 11;
-
-    private static final int DDMS_CMD_SET = 0xc7;       // 'G' + 128
-    private static final int DDMS_CMD = 0x01;
 
     private static final int REPLY_PACKET = 0x80;
 
@@ -51,6 +48,7 @@ final class JdwpPacket {
     private int mErrCode;
 
     private static int sSerialId = 0x40000000;
+
 
     /**
      * Create a new, empty packet, in "buf".
@@ -72,7 +70,7 @@ final class JdwpPacket {
      *
      * On exit, "position" points to the end of the data.
      */
-    void finishPacket(int payloadLength) {
+    void finishPacket(int cmdSet, int cmd, int payloadLength) {
 
         ByteOrder oldOrder = mBuffer.order();
         mBuffer.order(ChunkHandler.CHUNK_ORDER);
@@ -80,8 +78,8 @@ final class JdwpPacket {
         mLength = JDWP_HEADER_LEN + payloadLength;
         mId = getNextSerial();
         mFlags = 0;
-        mCmdSet = DDMS_CMD_SET;
-        mCmd = DDMS_CMD;
+        mCmdSet = cmdSet;
+        mCmd = cmd;
 
         mBuffer.putInt(0x00, mLength);
         mBuffer.putInt(0x04, mId);
@@ -113,7 +111,7 @@ final class JdwpPacket {
      *
      * Doesn't examine the packet at all -- works on empty buffers.
      */
-    ByteBuffer getPayload() {
+    public ByteBuffer getPayload() {
         ByteBuffer buf;
         int oldPosn = mBuffer.position();
 
@@ -128,20 +126,9 @@ final class JdwpPacket {
     }
 
     /**
-     * Returns "true" if this JDWP packet has a JDWP command type.
-     *
-     * This never returns "true" for reply packets.
-     */
-    boolean isDdmPacket() {
-        return (mFlags & REPLY_PACKET) == 0 &&
-               mCmdSet == DDMS_CMD_SET &&
-               mCmd == DDMS_CMD;
-    }
-
-    /**
      * Returns "true" if this JDWP packet is tagged as a reply.
      */
-    boolean isReply() {
+    public boolean isReply() {
         return (mFlags & REPLY_PACKET) != 0;
     }
 
@@ -164,7 +151,7 @@ final class JdwpPacket {
      * Return the packet's ID.  For a reply packet, this allows us to
      * match the reply with the original request.
      */
-    int getId() {
+    public int getId() {
         return mId;
     }
 
@@ -220,10 +207,6 @@ final class JdwpPacket {
      */
     void consume()
     {
-        //Log.d("ddms", "consuming " + mLength + " bytes");
-        //Log.d("ddms", "  posn=" + mBuffer.position()
-        //    + ", limit=" + mBuffer.limit());
-
         /*
          * The "flip" call sets "limit" equal to the position (usually the
          * end of data) and "position" equal to zero.
@@ -237,12 +220,10 @@ final class JdwpPacket {
          * so that position..limit spans our data, advance "position" past
          * the current packet, then compact.
          */
-        mBuffer.flip();         // limit<-posn, posn<-0
+        mBuffer.flip();
         mBuffer.position(mLength);
-        mBuffer.compact();      // shift posn...limit, posn<-pending data
+        mBuffer.compact();
         mLength = 0;
-        //Log.d("ddms", "  after compact, posn=" + mBuffer.position()
-        //    + ", limit=" + mBuffer.limit());
     }
 
     /**
@@ -297,6 +278,15 @@ final class JdwpPacket {
         }
 
         return pkt;
+    }
+
+    @Override
+    public String toString() {
+        return isReply() ? " < # " + mId : " > " + mCmdSet + "." + mCmd + " # " + mId;
+    }
+
+    public boolean is(int cmdSet, int cmd) {
+        return cmdSet == mCmdSet && cmd == mCmd;
     }
 }
 
