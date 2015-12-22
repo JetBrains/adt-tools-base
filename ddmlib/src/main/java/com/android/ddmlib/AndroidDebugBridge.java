@@ -20,9 +20,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.ddmlib.Log.LogLevel;
+import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
+import com.google.common.io.Closeables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
@@ -943,18 +945,19 @@ public final class AndroidDebugBridge {
      * @return the process return code.
      * @throws InterruptedException
      */
-    private int grabProcessOutput(final Process process, final ArrayList<String> errorOutput,
-            final ArrayList<String> stdOutput, boolean waitForReaders)
+    private static int grabProcessOutput(final Process process, final ArrayList<String> errorOutput,
+      final ArrayList<String> stdOutput, boolean waitForReaders)
             throws InterruptedException {
         assert errorOutput != null;
         assert stdOutput != null;
         // read the lines as they come. if null is returned, it's
         // because the process finished
-        Thread t1 = new Thread("") { //$NON-NLS-1$
+        Thread t1 = new Thread("adb:stderr reader") { //$NON-NLS-1$
             @Override
             public void run() {
                 // create a buffer to read the stderr output
-                InputStreamReader is = new InputStreamReader(process.getErrorStream());
+                InputStreamReader is = new InputStreamReader(process.getErrorStream(),
+                  Charsets.UTF_8);
                 BufferedReader errReader = new BufferedReader(is);
 
                 try {
@@ -969,14 +972,17 @@ public final class AndroidDebugBridge {
                     }
                 } catch (IOException e) {
                     // do nothing.
+                } finally {
+                    Closeables.closeQuietly(errReader);
                 }
             }
         };
 
-        Thread t2 = new Thread("") { //$NON-NLS-1$
+        Thread t2 = new Thread("adb:stdout reader") { //$NON-NLS-1$
             @Override
             public void run() {
-                InputStreamReader is = new InputStreamReader(process.getInputStream());
+                InputStreamReader is = new InputStreamReader(process.getInputStream(),
+                  Charsets.UTF_8);
                 BufferedReader outReader = new BufferedReader(is);
 
                 try {
@@ -991,6 +997,8 @@ public final class AndroidDebugBridge {
                     }
                 } catch (IOException e) {
                     // do nothing.
+                } finally {
+                    Closeables.closeQuietly(outReader);
                 }
             }
         };
