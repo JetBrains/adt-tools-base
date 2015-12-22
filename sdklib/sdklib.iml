@@ -9,7 +9,7 @@
       <excludeFolder url="file://$MODULE_DIR$/build" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="IDEA jdk" jdkType="JavaSDK" />
     <orderEntry type="module" module-name="common" exported="" />
     <orderEntry type="module" module-name="dvlib" exported="" />
     <orderEntry type="module" module-name="layoutlib-api" exported="" />

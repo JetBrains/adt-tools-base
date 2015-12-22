@@ -8,7 +8,7 @@
       <excludeFolder url="file://$MODULE_DIR$/build" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="IDEA jdk" jdkType="JavaSDK" />
     <orderEntry type="library" exported="" name="asm-tools" level="project" />
     <orderEntry type="library" exported="" name="lombok-ast" level="project" />
     <orderEntry type="library" exported="" name="builder-model" level="project" />

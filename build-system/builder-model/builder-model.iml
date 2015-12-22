@@ -8,7 +8,7 @@
     <content url="file://$MODULE_DIR$/../../../../out/build/base/builder-model/build/generated">
       <sourceFolder url="file://$MODULE_DIR$/../../../../out/build/base/builder-model/build/generated/java" isTestSource="false" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="IDEA jdk" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="android-annotations" exported="" />
   </component>
