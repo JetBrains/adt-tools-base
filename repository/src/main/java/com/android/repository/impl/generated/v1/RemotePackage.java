@@ -31,6 +31,7 @@ import com.android.repository.impl.meta.TrimStringAdapter;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
  *       &lt;sequence&gt;
  *         &lt;group ref="{http://schemas.android.com/repository/android/common/01}packageFields"/&gt;
+ *         &lt;element name="channel" type="{http://schemas.android.com/repository/android/common/01}channelType" minOccurs="0"/&gt;
  *         &lt;element name="archives" type="{http://schemas.android.com/repository/android/common/01}archivesType"/&gt;
  *       &lt;/sequence&gt;
  *       &lt;attGroup ref="{http://schemas.android.com/repository/android/common/01}packageAttributes"/&gt;
@@ -48,6 +49,7 @@ import com.android.repository.impl.meta.TrimStringAdapter;
     "displayName",
     "usesLicense",
     "dependencies",
+    "channel",
     "archives"
 })
 @SuppressWarnings({
@@ -68,6 +70,8 @@ public class RemotePackage
     @XmlElement(name = "uses-license")
     protected LicensesType usesLicense;
     protected DependenciesType dependencies;
+    @XmlJavaTypeAdapter(TrimStringAdapter.class)
+    protected String channel;
     @XmlElement(required = true)
     protected ArchivesType archives;
     @XmlAttribute(name = "path", required = true)
@@ -197,6 +201,30 @@ public class RemotePackage
     }
 
     /**
+     * Gets the value of the channel property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getChannel() {
+        return channel;
+    }
+
+    /**
+     * Sets the value of the channel property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setChannel(String value) {
+        this.channel = value;
+    }
+
+    /**
      * Gets the value of the archives property.
      * 
      * @return
@@ -266,6 +294,14 @@ public class RemotePackage
      */
     public void setObsolete(Boolean value) {
         this.obsolete = value;
+    }
+
+    public String[] getValidChannels() {
+        return new String[] {"00-stable", "10-beta", "20-dev", "30-canary"};
+    }
+
+    public boolean isValidChannel(String value) {
+        return ((value == null)||((((value.equals("00-stable"))||(value.equals("10-beta")))||(value.equals("20-dev")))||(value.equals("30-canary"))));
     }
 
     public void setTypeDetails(com.android.repository.impl.meta.TypeDetails value) {

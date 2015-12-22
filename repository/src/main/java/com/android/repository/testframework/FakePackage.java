@@ -39,6 +39,7 @@ public class FakePackage implements LocalPackage, RemotePackage {
     private final Revision mVersion;
     private final Collection<Dependency> mDependencies;
     private TypeDetails mDetails;
+    private String mChannel;
 
     public FakePackage(String path, Revision version, Collection<Dependency> dependencies) {
         mPath = path;
@@ -60,6 +61,27 @@ public class FakePackage implements LocalPackage, RemotePackage {
     @Override
     public Archive getArchive() {
         return null;
+    }
+
+    public void setChannel(String channel) {
+        assert isValidChannel(channel);
+        mChannel = channel;
+    }
+
+    @Nullable
+    @Override
+    public String getChannel() {
+        return mChannel;
+    }
+
+    @Override
+    public boolean isValidChannel(String value) {
+        return false;
+    }
+
+    @Override
+    public String[] getValidChannels() {
+        return new String[0];
     }
 
     public void setTypeDetails(TypeDetails details) {

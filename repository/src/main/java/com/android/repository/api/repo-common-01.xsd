@@ -121,6 +121,8 @@
         </xsd:annotation>
         <xsd:sequence>
             <xsd:group ref="repo:packageFields"/>
+            <!-- The channel this package is in. E.g. "01-stable" -->
+            <xsd:element name="channel" type="repo:channelType" minOccurs="0"/>
             <!-- A list of file archives for this package. -->
             <xsd:element name="archives" minOccurs="1" type="repo:archivesType"/>
         </xsd:sequence>
@@ -343,6 +345,24 @@
             <xsd:group ref="repo:archiveFields"/>
         </xsd:sequence>
     </xsd:complexType>
+
+    <xsd:simpleType name="channelType">
+        <xsd:annotation>
+            <xsd:documentation>
+                The channel for this package. Current channels are:
+                00-stable
+                10-beta
+                20-dev
+                30-canary
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="00-stable"/>
+            <xsd:enumeration value="10-beta"/>
+            <xsd:enumeration value="20-dev"/>
+            <xsd:enumeration value="30-canary"/>
+        </xsd:restriction>
+    </xsd:simpleType>
 
     <xsd:complexType name="revisionType">
         <xsd:annotation>

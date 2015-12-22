@@ -124,7 +124,7 @@ public class CompleteType
     }
 
     public boolean isValidChecksum(String value) {
-        return value.matches("^([0-9a-fA-F]){40}$");
+        return ((value != null)&&(value.matches("^([0-9a-fA-F]){40}$")));
     }
 
     public ObjectFactory createFactory() {

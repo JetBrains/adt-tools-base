@@ -43,4 +43,21 @@ public interface RemotePackage extends RepoPackage {
      */
     @Nullable
     Archive getArchive();
+
+    /**
+     * Gets the channel for this package. Channels are sorted in lexicographic order, with the
+     * first being the most stable.
+     */
+    @Nullable
+    String getChannel();
+
+    /**
+     * @return {@code true} if the given value is a valid channel name.
+     */
+    boolean isValidChannel(String value);
+
+    /**
+     * @return The valid values for the channel.
+     */
+    String[] getValidChannels();
 }

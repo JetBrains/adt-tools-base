@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.sun.codemodel.JAnnotationArrayMember;
+import com.sun.codemodel.JArray;
 import com.sun.codemodel.JBlock;
 import com.sun.codemodel.JClass;
 import com.sun.codemodel.JCodeModel;
@@ -32,6 +33,7 @@ import com.sun.codemodel.JMethod;
 import com.sun.codemodel.JMod;
 import com.sun.codemodel.JOp;
 import com.sun.codemodel.JPackage;
+import com.sun.codemodel.JStringLiteral;
 import com.sun.codemodel.JType;
 import com.sun.tools.xjc.Options;
 import com.sun.tools.xjc.Plugin;
@@ -494,10 +496,29 @@ public class InheritancePlugin extends Plugin {
                     XSType type = ((XSElementDecl)term).getType();
                     if (type instanceof XSSimpleType) {
                         // TODO: support other facets
-                        XSFacet facet = ((XSSimpleType)type).getFacet("pattern");
-                        if (facet != null) {
-                            String pattern = facet.getValue().toString();
+                        XSFacet patternFacet = ((XSSimpleType)type).getFacet("pattern");
+                        if (patternFacet != null) {
+                            String pattern = patternFacet.getValue().toString();
                             conditions.add(JExpr.direct("value.matches(\"^" + pattern + "$\")"));
+                        }
+                        List<XSFacet> enums = ((XSSimpleType)type).getFacets("enumeration");
+                        if (!enums.isEmpty()) {
+                            JExpression enumExpr = JExpr.FALSE;
+                            for (XSFacet enumVal : enums) {
+                                enumExpr = enumExpr.cor(JExpr.direct(
+                                        "value.equals(\"" + enumVal.getValue().toString() + "\")"));
+                            }
+                            conditions.add(enumExpr);
+
+                            // Also create a "get valid options" method.
+                            JMethod method = classOutline.implClass
+                                    .method(JMod.PUBLIC, codeModel.ref(String.class).array(),
+                                            "getValid" + info.getName(true) + "s");
+                            JArray arr = JExpr.newArray(codeModel.ref(String.class));
+                            for (XSFacet enumVal : enums) {
+                                arr.add(JExpr.lit(enumVal.getValue().toString()));
+                            }
+                            method.body()._return(arr);
                         }
                     }
                 }
