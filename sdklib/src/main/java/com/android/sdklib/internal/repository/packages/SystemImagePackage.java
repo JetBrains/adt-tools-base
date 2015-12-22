@@ -24,6 +24,7 @@ import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
+import com.android.sdklib.AndroidVersionHelper;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.devices.Abi;
@@ -220,7 +221,7 @@ public class SystemImagePackage extends PreciseRevisionPackage
             error = String.format("Missing file %1$s", SdkConstants.FN_SOURCE_PROP);
         } else {
             try {
-                version = new AndroidVersion(props);
+                version = AndroidVersionHelper.create(props);
 
                 tag = LocalSysImgPkgInfo.extractTagFromProps(props);
                 String abi = props.getProperty(PkgProps.SYS_IMG_ABI);
@@ -336,7 +337,7 @@ public class SystemImagePackage extends PreciseRevisionPackage
     public void saveProperties(Properties props) {
         super.saveProperties(props);
 
-        mVersion.saveProperties(props);
+        AndroidVersionHelper.saveProperties(mVersion, props);
         props.setProperty(PkgProps.SYS_IMG_ABI,         mAbi);
         props.setProperty(PkgProps.SYS_IMG_TAG_ID,      mTag.getId());
         props.setProperty(PkgProps.SYS_IMG_TAG_DISPLAY, mTag.getDisplay());

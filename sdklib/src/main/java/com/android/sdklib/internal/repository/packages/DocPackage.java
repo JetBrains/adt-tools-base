@@ -19,6 +19,7 @@ package com.android.sdklib.internal.repository.packages;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.AndroidVersionHelper;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.IDescription;
@@ -116,7 +117,7 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
                 description,
                 descUrl,
                 archiveOsPath);
-        mVersion = new AndroidVersion(props, apiLevel, codename);
+        mVersion = AndroidVersionHelper.create(props, apiLevel, codename);
 
         mPkgDesc = setDescriptions(PkgDesc.Builder.newDoc(mVersion, getRevision()))
                 .create();
@@ -136,7 +137,7 @@ public class DocPackage extends MajorRevisionPackage implements IAndroidVersionP
     public void saveProperties(Properties props) {
         super.saveProperties(props);
 
-        mVersion.saveProperties(props);
+        AndroidVersionHelper.saveProperties(mVersion, props);
     }
 
     /**
