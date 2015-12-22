@@ -135,7 +135,7 @@ public final class AndroidSdkHandler {
     /**
      * Location of the local SDK.
      */
-    private File mLocation;
+    private final File mLocation;
 
     /**
      * Loader capable of loading old-style repository xml files, with namespace like
@@ -153,36 +153,29 @@ public final class AndroidSdkHandler {
 
     /**
      * Get a {@code AndroidSdkHandler} instance.
+     *
+     * @param localPath The path to the local SDK. If {@code null} this handler will only be used
+     *                  for remote operations.
      */
     @NonNull
-    public static AndroidSdkHandler getInstance() {
-        File localPath = new File("");
-        AndroidSdkHandler instance = sInstances.get(localPath);
+    public static AndroidSdkHandler getInstance(@Nullable File localPath) {
+        File key = localPath == null ? new File("") : localPath;
+        AndroidSdkHandler instance = sInstances.get(key);
         if (instance == null) {
-            instance = new AndroidSdkHandler(FileOpUtils.create());
-            instance.setLocation(localPath);
-            sInstances.put(localPath, instance);
+            instance = new AndroidSdkHandler(localPath, FileOpUtils.create());
+            sInstances.put(key, instance);
         }
         return instance;
     }
 
     /**
-     * Don't use this, use {@link #getInstance()}, unless you're in a unit test and need to specify
-     * a custom {@link FileOp}.
-     *
-     * This should be called very rarely. Unless you're in a test, or in the middle of changing
-     * the local SDK path or something similar, you probably want {@link #getInstance()}.
+     * Don't use this, use {@link #getInstance(File)}, unless you're in a unit test and need to
+     * specify a custom {@link FileOp}.
      */
     @VisibleForTesting
-    public AndroidSdkHandler(@NonNull FileOp fop) {
+    public AndroidSdkHandler(@Nullable File localPath, @NonNull FileOp fop) {
         mFop = fop;
-    }
-
-    @Override
-    public AndroidSdkHandler clone() {
-        AndroidSdkHandler result = new AndroidSdkHandler(mFop);
-        result.mLocation = mLocation;
-        return result;
+        mLocation = localPath;
     }
 
     /**
@@ -241,17 +234,6 @@ public final class AndroidSdkHandler {
             mAndroidTargetManager = new AndroidTargetManager(this, mFop);
         }
         return mAndroidTargetManager;
-    }
-
-    /**
-     * Sets the path of the SDK.<p> Invalidates the repo manager; it will be recreated when
-     * next retrieved.
-     */
-    public void setLocation(@Nullable File location) {
-        synchronized (MANAGER_LOCK) {
-            mLocation = location;
-            mRepoManager = null;
-        }
     }
 
     /**

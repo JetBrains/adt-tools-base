@@ -58,9 +58,8 @@ public class LegacyLocalRepoTest extends TestCase {
 
         File root = new File("/sdk");
         FakeProgressIndicator progress = new FakeProgressIndicator();
-        RepoManager mgr = AndroidSdkHandler.getInstance().getSdkManager(progress);
+        RepoManager mgr = AndroidSdkHandler.getInstance(root).getSdkManager(progress);
         progress.assertNoErrorsOrWarnings();
-        mgr.setLocalPath(root);
 
         LocalRepoLoader sdk = new LocalRepoLoader(root, mgr,
                 new LegacyLocalRepoLoader(root, mockFop, mgr), mockFop);
@@ -89,11 +88,12 @@ public class LegacyLocalRepoTest extends TestCase {
 
         FakeProgressIndicator progress = new FakeProgressIndicator();
         File root = new File("/sdk");
-        RepoManager mgr = new AndroidSdkHandler(mockFop).getSdkManager(progress);
+        RepoManager mgr = new AndroidSdkHandler(root, mockFop).getSdkManager(progress);
 
-        mgr.registerSchemaModule(AndroidSdkHandler.getInstance().getAddonModule(progress));
-        mgr.registerSchemaModule(AndroidSdkHandler.getInstance().getRepositoryModule(progress));
-        mgr.registerSchemaModule(AndroidSdkHandler.getInstance().getSysImgModule(progress));
+        AndroidSdkHandler instance = AndroidSdkHandler.getInstance(null);
+        mgr.registerSchemaModule(instance.getAddonModule(progress));
+        mgr.registerSchemaModule(instance.getRepositoryModule(progress));
+        mgr.registerSchemaModule(instance.getSysImgModule(progress));
         progress.assertNoErrorsOrWarnings();
 
         LocalRepoLoader sdk = new LocalRepoLoader(root, mgr,

@@ -32,6 +32,7 @@ import com.google.common.collect.Maps;
 
 import junit.framework.TestCase;
 
+import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,7 @@ public class UnmarshalTest extends TestCase {
         InputStream xmlStream = getClass().getResourceAsStream(filename);
         assertNotNull("Missing test file: " + filename, xmlStream);
 
-        AndroidSdkHandler handler = new AndroidSdkHandler(new MockFileOp());
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File(filename), new MockFileOp());
         FakeProgressIndicator progress = new FakeProgressIndicator();
         SchemaModule repoEx = handler.getRepositoryModule(progress);
         SchemaModule addonEx = handler.getAddonModule(progress);

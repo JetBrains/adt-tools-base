@@ -79,7 +79,7 @@ public class SdkUpdaterNoWindow {
             String proxyPort) {
         mSdkLog = sdkLog;
         mForce = force;
-        mUpdaterData = new UpdaterData(AndroidSdkHandler.getInstance(), sdkLog);
+        mUpdaterData = new UpdaterData(AndroidSdkHandler.getInstance(new File(osSdkRoot)), sdkLog);
 
         // Read and apply settings from settings file, so that http/https proxy is set
         // and let the command line args override them as necessary.

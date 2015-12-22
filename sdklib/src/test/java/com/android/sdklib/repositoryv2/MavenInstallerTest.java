@@ -46,14 +46,14 @@ import java.util.zip.ZipOutputStream;
 public class MavenInstallerTest extends TestCase {
 
     public void testInstallFirst() throws Exception {
+        File root = new File("/repo");
         MockFileOp fop = new MockFileOp();
-        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(fop);
+        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(root, fop);
         RepoManager mgr = new RepoManagerImpl(fop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.registerSchemaModule(androidSdkHandler.getCommonModule(progress));
         mgr.registerSchemaModule(androidSdkHandler.getAddonModule(progress));
         progress.assertNoErrorsOrWarnings();
-        File root = new File("/repo");
         mgr.setLocalPath(root);
         FakeDownloader downloader = new FakeDownloader(fop);
         URL repoUrl = new URL("http://example.com/dummy.xml");
@@ -147,13 +147,13 @@ public class MavenInstallerTest extends TestCase {
                         + "    <lastUpdated>20151006162600</lastUpdated>\n"
                         + "  </versioning>\n"
                         + "</metadata>\n");
-        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(fop);
+        File root = new File("/repo");
+        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(root, fop);
         RepoManager mgr = new RepoManagerImpl(fop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.registerSchemaModule(androidSdkHandler.getCommonModule(progress));
         mgr.registerSchemaModule(androidSdkHandler.getAddonModule(progress));
         progress.assertNoErrorsOrWarnings();
-        File root = new File("/repo");
         mgr.setLocalPath(root);
         FakeDownloader downloader = new FakeDownloader(fop);
         URL repoUrl = new URL("http://example.com/dummy.xml");
@@ -281,9 +281,10 @@ public class MavenInstallerTest extends TestCase {
                         + "  </versioning>\n"
                         + "</metadata>\n");
 
-        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(fop);
+        File root = new File("/repo");
+        AndroidSdkHandler androidSdkHandler = new AndroidSdkHandler(root, fop);
         RepoManager mgr = new RepoManagerImpl(fop);
-        mgr.setLocalPath(new File("/repo"));
+        mgr.setLocalPath(root);
         FakeProgressIndicator progress = new FakeProgressIndicator();
         mgr.registerSchemaModule(androidSdkHandler.getCommonModule(progress));
         mgr.registerSchemaModule(androidSdkHandler.getAddonModule(progress));

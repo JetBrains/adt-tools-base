@@ -49,7 +49,7 @@ public class LegacyRepoUtils {
     public static TypeDetails createTypeDetails(@NonNull IPkgDesc desc,
             @Nullable LayoutlibVersion layoutLibVersion, ProgressIndicator progress) {
 
-        AndroidSdkHandler handler = AndroidSdkHandler.getInstance();
+        AndroidSdkHandler handler = AndroidSdkHandler.getInstance(null);
         SdkCommonFactory sdkFactory = (SdkCommonFactory) handler
                 .getCommonModule(progress).createLatestFactory();
         SchemaModule repoExt = handler.getRepositoryModule(progress);

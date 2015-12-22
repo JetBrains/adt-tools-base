@@ -48,8 +48,7 @@ public class AndroidTargetManagerTest extends TestCase {
         recordSysImg13(fop);
         recordGoogleApisSysImg23(fop);
 
-        AndroidSdkHandler handler = new AndroidSdkHandler(fop);
-        handler.setLocation(new File("/sdk"));
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), fop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
 
         AndroidTargetManager mgr = handler.getAndroidTargetManager(progress);
@@ -74,8 +73,7 @@ public class AndroidTargetManagerTest extends TestCase {
         recordSysImg13(fop);
         recordGoogleApisSysImg23(fop);
 
-        AndroidSdkHandler handler = new AndroidSdkHandler(fop);
-        handler.setLocation(new File("/sdk"));
+        AndroidSdkHandler handler = new AndroidSdkHandler(new File("/sdk"), fop);
         FakeProgressIndicator progress = new FakeProgressIndicator();
 
         AndroidTargetManager mgr = handler.getAndroidTargetManager(progress);
