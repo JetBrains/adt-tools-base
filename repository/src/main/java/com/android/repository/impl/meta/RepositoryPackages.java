@@ -23,7 +23,6 @@ import com.android.repository.api.UpdatablePackage;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import com.google.common.collect.TreeMultimap;
 
 import java.util.Map;
 import java.util.Set;
@@ -72,7 +71,7 @@ public final class RepositoryPackages {
      * more than one version of the same {@link RemotePackage} available, for example if there is a
      * stable and a preview version available.
      */
-    private Multimap<String, RemotePackage> mRemotePackages = TreeMultimap.create();
+    private Map<String, RemotePackage> mRemotePackages = Maps.newTreeMap();
 
     private final Object mLock = new Object();
 
@@ -81,7 +80,7 @@ public final class RepositoryPackages {
     }
 
     public RepositoryPackages(@NonNull Map<String, LocalPackage> localPkgs,
-            @NonNull Multimap<String, RemotePackage> remotePkgs) {
+            @NonNull Map<String, RemotePackage> remotePkgs) {
         this();
         setLocalPkgInfos(localPkgs);
         setRemotePkgInfos(remotePkgs);
@@ -142,7 +141,7 @@ public final class RepositoryPackages {
      * available, for example if there is a stable and a preview version available.
      */
     @NonNull
-    public Multimap<String, RemotePackage> getRemotePackages() {
+    public Map<String, RemotePackage> getRemotePackages() {
         return mRemotePackages;
     }
 
@@ -161,7 +160,7 @@ public final class RepositoryPackages {
      * Sets the collection of known {@link RemotePackage}s, and recomputes the list of updates and
      * new packages, if {@link LocalPackage}s have been set.
      */
-    public void setRemotePkgInfos(@NonNull Multimap<String, RemotePackage> packages) {
+    public void setRemotePkgInfos(@NonNull Map<String, RemotePackage> packages) {
         synchronized (mLock) {
             mRemotePackages = packages;
             computeUpdates();
@@ -178,23 +177,15 @@ public final class RepositoryPackages {
             newConsolidatedPkgs.put(path, updatable);
             if (mRemotePackages.containsKey(path)) {
                 updates.add(updatable);
-                for (RemotePackage remote : mRemotePackages.get(path)) {
-                    updatable.addRemote(remote);
-                }
+                updatable.setRemote(mRemotePackages.get(path));
             }
         }
         Set<RemotePackage> news = Sets.newHashSet();
         for (String path : mRemotePackages.keySet()) {
             if (!newConsolidatedPkgs.containsKey(path)) {
-                UpdatablePackage updatable = null;
-                for (RemotePackage remote : mRemotePackages.get(path)) {
-                    news.add(remote);
-                    if (updatable == null) {
-                        updatable = new UpdatablePackage(remote);
-                    } else {
-                        updatable.addRemote(remote);
-                    }
-                }
+                RemotePackage remote = mRemotePackages.get(path);
+                news.add(remote);
+                UpdatablePackage updatable = new UpdatablePackage(remote);
                 newConsolidatedPkgs.put(path, updatable);
             }
         }

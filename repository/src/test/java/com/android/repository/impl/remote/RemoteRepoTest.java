@@ -35,7 +35,6 @@ import com.android.repository.testframework.FakeSettingsController;
 import com.android.repository.testframework.MockFileOp;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
 
 import junit.framework.TestCase;
 
@@ -43,6 +42,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Tests for {@link com.android.repository.impl.manager.RemoteRepoLoader}
@@ -60,11 +60,11 @@ public class RemoteRepoTest extends TestCase {
         FakeProgressIndicator progress = new FakeProgressIndicator();
         RemoteRepoLoader loader = new RemoteRepoLoader(ImmutableList.<RepositorySourceProvider>of(
                 new FakeRepositorySourceProvider(ImmutableList.of(source))), null, null);
-        Multimap<String, RemotePackage> pkgs = loader
+        Map<String, RemotePackage> pkgs = loader
                 .fetchPackages(progress, downloader, new FakeSettingsController(false));
         progress.assertNoErrorsOrWarnings();
         assertEquals(2, pkgs.size());
-        RemotePackage p1 = pkgs.get("dummy;foo").iterator().next();
+        RemotePackage p1 = pkgs.get("dummy;foo");
         assertEquals(new Revision(1, 2, 3), p1.getVersion());
         assertEquals("the license text", p1.getLicense().getValue().trim());
         assertEquals(3, ((RemotePackageImpl) p1).getAllArchives().size());
@@ -80,6 +80,44 @@ public class RemoteRepoTest extends TestCase {
         assertEquals(new Revision(1, 3, 2), patch.getBasedOn().toRevision());
         patch = patchIter.next();
         assertEquals(new Revision(2), patch.getBasedOn().toRevision());
+    }
+
+    public void testChannels() throws Exception {
+        RepositorySource source = new SimpleRepositorySource("http://www.example.com",
+                                                             "Source UI Name", true,
+                                                             ImmutableSet.of(RepoManager.getCommonModule()),
+                                                             null);
+        FakeDownloader downloader = new FakeDownloader(new MockFileOp());
+        downloader.registerUrl(new URL("http://www.example.com"),
+                               getClass().getResourceAsStream("../testData/testRepoWithChannels.xml"));
+        FakeProgressIndicator progress = new FakeProgressIndicator();
+        RemoteRepoLoader loader = new RemoteRepoLoader(ImmutableList.<RepositorySourceProvider>of(
+          new FakeRepositorySourceProvider(ImmutableList.of(source))), null, null);
+        FakeSettingsController settings = new FakeSettingsController(false);
+        Map<String, RemotePackage> pkgs = loader
+          .fetchPackages(progress, downloader, settings);
+
+        assertEquals(2, pkgs.size());
+        assertEquals(new Revision(1, 2, 3), pkgs.get("dummy;foo").getVersion());
+        assertEquals(new Revision(4, 5, 6), pkgs.get("dummy;bar").getVersion());
+
+        settings.setChannel("10-beta");
+        pkgs = loader.fetchPackages(progress, downloader, settings);
+        assertEquals(2, pkgs.size());
+        assertEquals(new Revision(1, 2, 4), pkgs.get("dummy;foo").getVersion());
+        assertEquals(new Revision(4, 5, 6), pkgs.get("dummy;bar").getVersion());
+
+        settings.setChannel("20-dev");
+        pkgs = loader.fetchPackages(progress, downloader, settings);
+        assertEquals(2, pkgs.size());
+        assertEquals(new Revision(1, 2, 5), pkgs.get("dummy;foo").getVersion());
+        assertEquals(new Revision(4, 5, 6), pkgs.get("dummy;bar").getVersion());
+
+        settings.setChannel("30-canary");
+        pkgs = loader.fetchPackages(progress, downloader, settings);
+        assertEquals(2, pkgs.size());
+        assertEquals(new Revision(1, 2, 5), pkgs.get("dummy;foo").getVersion());
+        assertEquals(new Revision(4, 5, 7), pkgs.get("dummy;bar").getVersion());
     }
 
     private static class FakeRepositorySourceProvider implements RepositorySourceProvider {

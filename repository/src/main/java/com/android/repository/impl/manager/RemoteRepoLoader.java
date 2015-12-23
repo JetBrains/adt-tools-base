@@ -29,8 +29,8 @@ import com.android.repository.api.RepositorySourceProvider;
 import com.android.repository.api.SchemaModule;
 import com.android.repository.api.SettingsController;
 import com.android.repository.impl.meta.SchemaModuleUtil;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
 import org.w3c.dom.ls.LSResourceResolver;
@@ -41,6 +41,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Utility class that loads {@link Repository}s from {@link RepositorySource}s.
@@ -92,9 +93,9 @@ public class RemoteRepoLoader {
      * be at most two versions for a given package: a stable version and/or a preview version.
      */
     @NonNull
-    public Multimap<String, RemotePackage> fetchPackages(@NonNull ProgressIndicator progress,
+    public Map<String, RemotePackage> fetchPackages(@NonNull ProgressIndicator progress,
             @NonNull Downloader downloader, @Nullable SettingsController settings) {
-        Multimap<String, RemotePackage> result = HashMultimap.create();
+        Map<String, RemotePackage> result = Maps.newHashMap();
         for (RepositorySourceProvider provider : mSourceProviders) {
             for (RepositorySource source : provider
                     .getSources(downloader, settings, progress, false)) {
@@ -139,7 +140,22 @@ public class RemoteRepoLoader {
                     }
                     if (parsedPackages != null && !parsedPackages.isEmpty()) {
                         for (RemotePackage pkg : parsedPackages) {
-                            if (pkg.getArchive() != null) {
+                            RemotePackage existing = result.get(pkg.getPath());
+                            if (existing != null
+                              && existing.getVersion().compareTo(pkg.getVersion()) > 0) {
+                                // If there are multiple version of the same package available,
+                                // pick the latest.
+                                continue;
+                            }
+                            String defaultChannel = pkg.getValidChannels()[0];
+                            String settingsChannel =
+                                    settings == null || settings.getChannel() == null
+                                            ? defaultChannel : settings.getChannel();
+                            String newChannel = pkg.getChannel() == null ? defaultChannel
+                                    : pkg.getChannel();
+
+                            if (pkg.getArchive() != null
+                                    && newChannel.compareTo(settingsChannel) <= 0) {
                                 pkg.setSource(source);
                                 result.put(pkg.getPath(), pkg);
                             }

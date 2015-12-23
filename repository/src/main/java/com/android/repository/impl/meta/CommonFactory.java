@@ -48,6 +48,9 @@ public abstract class CommonFactory extends ElementFactory<Repository> {
     public abstract LocalPackageImpl createLocalPackage();
 
     @NonNull
+    public abstract RemotePackageImpl createRemotePackage();
+
+    @NonNull
     protected abstract RevisionType createRevisionType();
 
     /**

@@ -24,6 +24,7 @@ import com.android.repository.api.SettingsController;
 public class FakeSettingsController implements SettingsController {
 
     private boolean mForceHttp;
+    private String myChannel;
 
     public FakeSettingsController(boolean forceHttp) {
         mForceHttp = forceHttp;
@@ -37,5 +38,14 @@ public class FakeSettingsController implements SettingsController {
     @Override
     public void setForceHttp(boolean force) {
         mForceHttp = force;
+    }
+
+    public void setChannel(String channel) {
+        myChannel = channel;
+    }
+
+    @Override
+    public String getChannel() {
+        return myChannel;
     }
 }

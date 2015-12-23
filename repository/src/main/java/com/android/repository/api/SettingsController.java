@@ -16,6 +16,8 @@
 
 package com.android.repository.api;
 
+import com.android.annotations.Nullable;
+
 /**
  * Settings used by the repository framework.
  * TODO: implement more settings.
@@ -31,4 +33,10 @@ public interface SettingsController {
      * @param force If {@code true}, all connections should be made using HTTP rather than HTTPS.
      */
     void setForceHttp(boolean force);
+
+    /**
+     * Gets the current channel. Only packages of channels at least as stable as specified will be
+     * downloaded.
+     */
+    String getChannel();
 }

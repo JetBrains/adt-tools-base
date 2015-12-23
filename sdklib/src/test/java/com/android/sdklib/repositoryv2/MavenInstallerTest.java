@@ -16,17 +16,17 @@
 
 package com.android.sdklib.repositoryv2;
 
+import com.android.repository.Revision;
+import com.android.repository.api.ConstantSourceProvider;
+import com.android.repository.api.LocalPackage;
+import com.android.repository.api.RepoManager;
+import com.android.repository.api.RepoManager.RepoLoadedCallback;
+import com.android.repository.impl.manager.RepoManagerImpl;
+import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.testframework.FakeDownloader;
 import com.android.repository.testframework.FakeProgressIndicator;
 import com.android.repository.testframework.FakeProgressRunner;
 import com.android.repository.testframework.FakeSettingsController;
-import com.android.repository.Revision;
-import com.android.repository.api.ConstantSourceProvider;
-import com.android.repository.api.LocalPackage;
-import com.android.repository.api.RepoManager.RepoLoadedCallback;
-import com.android.repository.api.RepoManager;
-import com.android.repository.impl.manager.RepoManagerImpl;
-import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.testframework.MockFileOp;
 import com.google.common.collect.ImmutableList;
 
@@ -90,8 +90,7 @@ public class MavenInstallerTest extends TestCase {
 
         // Install
         new MavenInstaller().install(
-                pkgs.getRemotePackages().get("com;android;group1;artifact1;1.2.3").iterator()
-                        .next(),
+                pkgs.getRemotePackages().get("com;android;group1;artifact1;1.2.3"),
                 downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
                 fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();
@@ -191,8 +190,7 @@ public class MavenInstallerTest extends TestCase {
 
         // Install
         new MavenInstaller().install(
-                pkgs.getRemotePackages().get("com;android;group1;artifact1;1.2.3").iterator()
-                        .next(),
+                pkgs.getRemotePackages().get("com;android;group1;artifact1;1.2.3"),
                 downloader, new FakeSettingsController(false), runner.getProgressIndicator(), mgr,
                 fop);
         runner.getProgressIndicator().assertNoErrorsOrWarnings();

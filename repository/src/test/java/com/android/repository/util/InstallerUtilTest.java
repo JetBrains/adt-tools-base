@@ -23,10 +23,8 @@ import com.android.repository.impl.meta.RepositoryPackages;
 import com.android.repository.testframework.FakeDependency;
 import com.android.repository.testframework.FakePackage;
 import com.android.repository.testframework.FakeProgressIndicator;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import junit.framework.TestCase;
@@ -371,7 +369,7 @@ public class InstallerUtilTest extends TestCase {
     }
 
     private static class RepositoryPackagesBuilder {
-        private Multimap<String, RemotePackage> mRemotes = HashMultimap.create();
+        private Map<String, RemotePackage> mRemotes = Maps.newHashMap();
         private Map<String, LocalPackage> mLocals = Maps.newHashMap();
 
         public RepositoryPackagesBuilder addLocal(LocalPackage p) {

@@ -249,7 +249,7 @@ public class InstallerUtil {
         Queue<RemotePackage> current = Lists.newLinkedList();
         for (RemotePackage request : requests) {
             UpdatablePackage updatable = consolidatedPackages.get(request.getPath());
-            if (!updatable.hasLocal() || updatable.isUpdate(true)) {
+            if (!updatable.hasLocal() || updatable.isUpdate()) {
                 current.add(request);
                 roots.add(request);
                 requiredPackages.add(request);
@@ -286,8 +286,7 @@ public class InstallerUtil {
                                 requiredMinRevision.compareTo(localDependency.getVersion()) <= 0)) {
                     continue;
                 }
-                // TODO: channels
-                RemotePackage remoteDependency = updatableDependency.getRemote(true);
+                RemotePackage remoteDependency = updatableDependency.getRemote();
                 if (remoteDependency == null || (requiredMinRevision != null
                         && requiredMinRevision.compareTo(remoteDependency.getVersion()) > 0)) {
                     logger.logWarning(String
@@ -314,7 +313,7 @@ public class InstallerUtil {
             for (Dependency d : root.getAllDependencies()) {
                 Collection<Dependency> nodeDeps = allDependencies.get(d.getPath());
                 if (nodeDeps.size() == 1) {
-                    roots.add(consolidatedPackages.get(d.getPath()).getRemote(true));
+                    roots.add(consolidatedPackages.get(d.getPath()).getRemote());
                 }
                 nodeDeps.remove(d);
             }
