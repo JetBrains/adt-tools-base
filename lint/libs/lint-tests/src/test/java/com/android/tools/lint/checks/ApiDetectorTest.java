@@ -867,7 +867,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
             lintProject(
                     "apicheck/classpath=>.classpath",
                     "apicheck/minsdk4.xml=>AndroidManifest.xml",
-                    "project.properties1=>project.properties",
+                    "project.properties19=>project.properties",
                     "apicheck/ApiCallTest12.java.txt=>src/test/pkg/ApiCallTest12.java",
                     "apicheck/ApiCallTest12.class.data=>bin/classes/test/pkg/ApiCallTest12.class"
                 ));
@@ -880,7 +880,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
             lintProject(
                     "apicheck/classpath=>.classpath",
                     "apicheck/minsdk10.xml=>AndroidManifest.xml",
-                    "project.properties1=>project.properties",
+                    "project.properties19=>project.properties",
                     "apicheck/ApiCallTest12.java.txt=>src/test/pkg/ApiCallTest12.java",
                     "apicheck/ApiCallTest12.class.data=>bin/classes/test/pkg/ApiCallTest12.class"
                 ));
@@ -927,12 +927,12 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/ApiSourceCheck.java:90: Warning: Field requires API level 8 (current min is 1): android.R.id#custom [InlinedApi]\n"
                 + "        int custom = android.R.id.custom; // API 8\n"
                 + "                     ~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/ApiSourceCheck.java:94: Warning: Field requires API level 13 (current min is 1): android.Manifest.permission#SET_POINTER_SPEED [InlinedApi]\n"
-                + "        String setPointerSpeed = permission.SET_POINTER_SPEED;\n"
-                + "                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/ApiSourceCheck.java:95: Warning: Field requires API level 13 (current min is 1): android.Manifest.permission#SET_POINTER_SPEED [InlinedApi]\n"
-                + "        String setPointerSpeed2 = Manifest.permission.SET_POINTER_SPEED;\n"
-                + "                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/ApiSourceCheck.java:94: Warning: Field requires API level 19 (current min is 1): android.Manifest.permission#BLUETOOTH_PRIVILEGED [InlinedApi]\n"
+                + "        String setPointerSpeed = permission.BLUETOOTH_PRIVILEGED;\n"
+                + "                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/ApiSourceCheck.java:95: Warning: Field requires API level 19 (current min is 1): android.Manifest.permission#BLUETOOTH_PRIVILEGED [InlinedApi]\n"
+                + "        String setPointerSpeed2 = Manifest.permission.BLUETOOTH_PRIVILEGED;\n"
+                + "                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "src/test/pkg/ApiSourceCheck.java:120: Warning: Field requires API level 11 (current min is 1): android.view.View#MEASURED_STATE_MASK [InlinedApi]\n"
                 + "        int y = View.MEASURED_STATE_MASK; // Not OK\n"
                 + "                ~~~~~~~~~~~~~~~~~~~~~~~~\n"
@@ -947,7 +947,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 lintProject(
                         "apicheck/classpath=>.classpath",
                         "apicheck/minsdk1.xml=>AndroidManifest.xml",
-                        "project.properties1=>project.properties",
+                        "project.properties19=>project.properties",
                         "apicheck/ApiSourceCheck.java.txt=>src/test/pkg/ApiSourceCheck.java",
                         "apicheck/ApiSourceCheck.class.data=>bin/classes/test/pkg/ApiSourceCheck.class"
                 ));
@@ -963,7 +963,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 lintProject(
                         "apicheck/classpath=>.classpath",
                         "apicheck/minsdk10.xml=>AndroidManifest.xml",
-                        "project.properties1=>project.properties",
+                        "project.properties19=>project.properties",
                         "res/values/styles2.xml"
                 ));
     }
@@ -978,7 +978,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 lintProject(
                         "apicheck/classpath=>.classpath",
                         "apicheck/minsdk10.xml=>AndroidManifest.xml",
-                        "project.properties1=>project.properties",
+                        "project.properties19=>project.properties",
                         "res/values/styles2.xml=>res/values-v9/styles2.xml"
                 ));
     }
@@ -990,7 +990,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 lintProject(
                         "apicheck/classpath=>.classpath",
                         "apicheck/minsdk10.xml=>AndroidManifest.xml",
-                        "project.properties1=>project.properties",
+                        "project.properties19=>project.properties",
                         "res/values/styles2.xml=>res/values-v11/styles2.xml"
                 ));
     }
@@ -1002,7 +1002,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 lintProject(
                         "apicheck/classpath=>.classpath",
                         "apicheck/minsdk10.xml=>AndroidManifest.xml",
-                        "project.properties1=>project.properties",
+                        "project.properties19=>project.properties",
                         "res/values/styles2.xml=>res/values-v14/styles2.xml"
                 ));
     }
@@ -1022,7 +1022,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 lintProject(
                         "apicheck/classpath=>.classpath",
                         "apicheck/minsdk1.xml=>AndroidManifest.xml",
-                        "project.properties1=>project.properties",
+                        "project.properties19=>project.properties",
                         "apicheck/ApiSourceCheck2.java.txt=>src/test/pkg/ApiSourceCheck2.java",
                         "apicheck/ApiSourceCheck2.class.data=>bin/classes/test/pkg/ApiSourceCheck2.class"
                 ));
