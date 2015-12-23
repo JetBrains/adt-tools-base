@@ -1949,9 +1949,9 @@ public class ApiDetector extends ResourceXmlDetector
                 @NonNull TypeDescriptor classType,
                 @Nullable TypeDescriptor interfaceType) {
             if (interfaceType != null && !interfaceType.equals(classType)) {
-                int api = mApiDatabase.getValidCastVersion(classOwner,
-                        interfaceType.getInternalName());
-                if (api != -1) {
+                String interfaceInternalName = interfaceType.getInternalName();
+                int api = mApiDatabase.getValidCastVersion(classOwner, interfaceInternalName);
+                if (api != -1 && !"java/lang/Object".equals(interfaceInternalName)) {
                     int minSdk = getMinSdk(mContext);
                     if (api > minSdk && api > getLocalMinSdk(node)) {
                         LintDriver driver = mContext.getDriver();

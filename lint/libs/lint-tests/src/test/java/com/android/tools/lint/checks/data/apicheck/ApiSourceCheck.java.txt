@@ -91,8 +91,8 @@ final class ApiSourceCheck extends LinearLayout {
     }
 
     private void innerclass() {
-        String setPointerSpeed = permission.SET_POINTER_SPEED;
-        String setPointerSpeed2 = Manifest.permission.SET_POINTER_SPEED;
+        String setPointerSpeed = permission.BLUETOOTH_PRIVILEGED;
+        String setPointerSpeed2 = Manifest.permission.BLUETOOTH_PRIVILEGED;
     }
 
     private void test() {
