@@ -23,6 +23,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.FluentIterable;
@@ -30,10 +31,13 @@ import com.google.common.collect.Iterables;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -285,5 +289,43 @@ public final class FileUtils {
                 .preOrderTraversal(base)
                 .filter(Predicates.compose(Predicates.equalTo(name), GET_NAME))
                 .last();
+    }
+
+    /**
+     * Reads a portion of a file to memory.
+     * @param file the file to read data from
+     * @param start the offset in the file to start reading
+     * @param length the number of bytes to read
+     * @return the bytes read
+     * @throws Exception failed to read the file
+     */
+    @NonNull
+    public static byte[] readSegment(@NonNull File file, long start, int length) throws Exception {
+        Preconditions.checkArgument(start >= 0, "start < 0");
+        Preconditions.checkArgument(length >= 0, "length < 0");
+
+        byte data[];
+        boolean threw = true;
+        RandomAccessFile raf = new RandomAccessFile(file, "r");
+        try {
+            raf.seek(start);
+
+            data = new byte[length];
+            int tot = 0;
+            while (tot < length) {
+                int r = raf.read(data, tot, length - tot);
+                if (r < 0) {
+                    throw new EOFException();
+                }
+
+                tot += r;
+            }
+
+            threw = false;
+        } finally {
+            Closeables.close(raf, threw);
+        }
+
+        return data;
     }
 }
