@@ -66,10 +66,10 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
     public void testDataMissing() throws Exception {
         assertEquals(AppIndexingApiDetector.IssueType.DATA_MISSING, AppIndexingApiDetector.IssueType.parse("Missing data element"));
         assertEquals(""
-                        + "AndroidManifest.xml:15: Error: Missing data element [GoogleAppIndexingDeepLinkError]\n"
+                        + "AndroidManifest.xml:15: Error: Missing data element [GoogleAppIndexingUrlError]\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "            ^\n"
-                        + "AndroidManifest.xml:15: Warning: Missing deep link [GoogleAppIndexingWarning]\n"
+                        + "AndroidManifest.xml:15: Warning: Missing URL [GoogleAppIndexingWarning]\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "            ^\n"
                         + "1 errors, 1 warnings\n",
@@ -103,10 +103,10 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
     public void testNoUrl() throws Exception {
         assertEquals(AppIndexingApiDetector.IssueType.URL_MISSING, AppIndexingApiDetector.IssueType.parse("Missing URL for the intent filter"));
         assertEquals(""
-                        + "AndroidManifest.xml:17: Error: Missing URL for the intent filter [GoogleAppIndexingDeepLinkError]\n"
+                        + "AndroidManifest.xml:17: Error: Missing URL for the intent filter [GoogleAppIndexingUrlError]\n"
                         + "                <data />\n"
                         + "                ~~~~~~~~\n"
-                        + "AndroidManifest.xml:15: Warning: Missing deep link [GoogleAppIndexingWarning]\n"
+                        + "AndroidManifest.xml:15: Warning: Missing URL [GoogleAppIndexingWarning]\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "            ^\n"
                         + "1 errors, 1 warnings\n",
@@ -139,7 +139,7 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
     }
 
     public void testMimeType() throws Exception {
-        assertEquals("AndroidManifest.xml:15: Warning: Missing deep link [GoogleAppIndexingWarning]\n"
+        assertEquals("AndroidManifest.xml:15: Warning: Missing URL [GoogleAppIndexingWarning]\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "            ^\n"
                         + "0 errors, 1 warnings\n",
@@ -298,7 +298,7 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
     public void testWrongPathPrefix() throws Exception {
         assertEquals(AppIndexingApiDetector.IssueType.MISSING_SLASH, AppIndexingApiDetector.IssueType.parse("android:pathPrefix attribute should start with '/', but it is : gizmos"));
         assertEquals(""
-                        + "AndroidManifest.xml:19: Error: android:pathPrefix attribute should start with '/', but it is : gizmos [GoogleAppIndexingDeepLinkError]\n"
+                        + "AndroidManifest.xml:19: Error: android:pathPrefix attribute should start with '/', but it is : gizmos [GoogleAppIndexingUrlError]\n"
                         + "                    android:pathPrefix=\"gizmos\" />\n"
                         + "                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "1 errors, 0 warnings\n",
@@ -335,7 +335,7 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
     public void testWrongPort() throws Exception {
         assertEquals(AppIndexingApiDetector.IssueType.ILLEGAL_NUMBER, AppIndexingApiDetector.IssueType.parse("android:port is not a legal number"));
         assertEquals(""
-                        + "AndroidManifest.xml:19: Error: android:port is not a legal number [GoogleAppIndexingDeepLinkError]\n"
+                        + "AndroidManifest.xml:19: Error: android:port is not a legal number [GoogleAppIndexingUrlError]\n"
                         + "                    android:port=\"ABCD\"\n"
                         + "                    ~~~~~~~~~~~~~~~~~~~\n"
                         + "1 errors, 0 warnings\n",
@@ -374,16 +374,16 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
         assertEquals(AppIndexingApiDetector.IssueType.SCHEME_MISSING, AppIndexingApiDetector.IssueType.parse("android:scheme is missing"));
         assertEquals(AppIndexingApiDetector.IssueType.HOST_MISSING, AppIndexingApiDetector.IssueType.parse("android:host is missing"));
         assertEquals(""
-                        + "AndroidManifest.xml:17: Error: Missing URL for the intent filter [GoogleAppIndexingDeepLinkError]\n"
+                        + "AndroidManifest.xml:17: Error: Missing URL for the intent filter [GoogleAppIndexingUrlError]\n"
                         + "                <data android:pathPrefix=\"/gizmos\" />\n"
                         + "                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "AndroidManifest.xml:17: Error: android:host is missing [GoogleAppIndexingDeepLinkError]\n"
+                        + "AndroidManifest.xml:17: Error: android:host is missing [GoogleAppIndexingUrlError]\n"
                         + "                <data android:pathPrefix=\"/gizmos\" />\n"
                         + "                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "AndroidManifest.xml:17: Error: android:scheme is missing [GoogleAppIndexingDeepLinkError]\n"
+                        + "AndroidManifest.xml:17: Error: android:scheme is missing [GoogleAppIndexingUrlError]\n"
                         + "                <data android:pathPrefix=\"/gizmos\" />\n"
                         + "                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "AndroidManifest.xml:15: Warning: Missing deep link [GoogleAppIndexingWarning]\n"
+                        + "AndroidManifest.xml:15: Warning: Missing URL [GoogleAppIndexingWarning]\n"
                         + "            <intent-filter android:label=\"@string/title_activity_fullscreen\">\n"
                         + "            ^\n"
                         + "3 errors, 1 warnings\n",
@@ -485,7 +485,7 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
 
     public void testMultiIntentWithError() throws Exception {
         assertEquals(""
-                        + "AndroidManifest.xml:20: Error: android:host is missing [GoogleAppIndexingDeepLinkError]\n"
+                        + "AndroidManifest.xml:20: Error: android:host is missing [GoogleAppIndexingUrlError]\n"
                         + "                <data android:scheme=\"http\"\n"
                         + "                ^\n"
                         + "1 errors, 0 warnings\n",
@@ -523,7 +523,7 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
     }
 
     public void testNotExported() throws Exception {
-        assertEquals("AndroidManifest.xml:10: Error: Activity supporting ACTION_VIEW is not exported [GoogleAppIndexingDeepLinkError]\n"
+        assertEquals("AndroidManifest.xml:10: Error: Activity supporting ACTION_VIEW is not exported [GoogleAppIndexingUrlError]\n"
                         + "        <activity android:exported=\"false\"\n"
                         + "        ^\n"
                         + "1 errors, 0 warnings\n",
@@ -566,10 +566,10 @@ public class AppIndexingApiDetectorTest extends AbstractCheckTest {
     }
 
     public void testWrongWithResource() throws Exception {
-        assertEquals("" + "AndroidManifest.xml:18: Error: android:pathPrefix attribute should start with '/', but it is : pathprefix [GoogleAppIndexingDeepLinkError]\n"
+        assertEquals("" + "AndroidManifest.xml:18: Error: android:pathPrefix attribute should start with '/', but it is : pathprefix [GoogleAppIndexingUrlError]\n"
                         + "                      android:pathPrefix=\"@string/path_prefix\"\n"
                         + "                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                        + "AndroidManifest.xml:19: Error: android:port is not a legal number [GoogleAppIndexingDeepLinkError]\n"
+                        + "AndroidManifest.xml:19: Error: android:port is not a legal number [GoogleAppIndexingUrlError]\n"
                         + "                      android:port=\"@string/port\"/>\n"
                         + "                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "2 errors, 0 warnings\n",

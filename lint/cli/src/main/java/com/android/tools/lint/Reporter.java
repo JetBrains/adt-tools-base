@@ -468,7 +468,7 @@ public abstract class Reporter {
                         AnnotationDetector.SWITCH_TYPE_DEF,
                         ApiDetector.INLINED,
                         ApiDetector.UNSUPPORTED,
-                        AppIndexingApiDetector.ISSUE_DEEP_LINK_ERROR,
+                        AppIndexingApiDetector.ISSUE_URL_ERROR,
                         AppIndexingApiDetector.ISSUE_APP_INDEXING,
                         AppIndexingApiDetector.ISSUE_APP_INDEXING_API,
                         AppCompatCallDetector.ISSUE,
