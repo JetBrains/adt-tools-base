@@ -1821,7 +1821,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
     public void testHigherCompileSdkVersionThanPlatformTools() throws Exception {
         // Warn if the platform tools are too old on the system
         assertTrue(Pattern.matches(""
-                + "ApiDetectorTest_testHigherCompileSdkVersionThanPlatformTools: Error: The SDK platform-tools version \\(\\([^)]+\\)\\) is too old  to check APIs compiled with API 400; please update \\[NewApi\\]\n"
+                + "ApiDetectorTest_testHigherCompileSdkVersionThanPlatformTools: Error: The SDK platform-tools version \\([^)]+\\) is too old  to check APIs compiled with API 400; please update \\[NewApi\\]\n"
                 + "1 errors, 0 warnings\n",
 
                 lintProject(
@@ -1835,7 +1835,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
     public void testHigherCompileSdkVersionThanPlatformToolsInEditor() throws Exception {
         // When editing a file we place the error on the first line of the file instead
         assertTrue(Pattern.matches(""
-                + "src/test/pkg/ApiCallTest12.java:1: Error: The SDK platform-tools version \\(\\([^)]+\\)\\) is too old  to check APIs compiled with API 400; please update \\[NewApi\\]\n"
+                + "src/test/pkg/ApiCallTest12.java:1: Error: The SDK platform-tools version \\([^)]+\\) is too old  to check APIs compiled with API 400; please update \\[NewApi\\]\n"
                 + "package test.pkg;\n"
                 + "~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
