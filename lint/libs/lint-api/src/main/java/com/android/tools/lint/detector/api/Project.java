@@ -609,9 +609,6 @@ public class Project {
      */
     @Nullable
     public String getPackage() {
-        //assert !mLibrary; // Should call getPackage on the master project, not the library
-        // Assertion disabled because you might be running lint on a standalone library project.
-
         return mPackage;
     }
 

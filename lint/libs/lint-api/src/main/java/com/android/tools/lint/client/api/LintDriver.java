@@ -1833,6 +1833,7 @@ public class LintDriver {
         private final LintClient mDelegate;
 
         public LintClientWrapper(@NonNull LintClient delegate) {
+            super(getClientName());
             mDelegate = delegate;
         }
 

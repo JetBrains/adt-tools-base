@@ -63,7 +63,7 @@ public class LintGradleClient extends LintCliClient {
             @Nullable File sdkHome,
             @NonNull Variant variant,
             @Nullable BuildToolInfo buildToolInfo) {
-        super(flags);
+        super(flags, CLIENT_GRADLE);
         mGradleProject = gradleProject;
         mModelProject = modelProject;
         mSdkHome = sdkHome;

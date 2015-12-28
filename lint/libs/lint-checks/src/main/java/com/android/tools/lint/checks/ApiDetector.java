@@ -995,7 +995,7 @@ public class ApiDetector extends ResourceXmlDetector
                                 owner = null;
                             }
                         } else if (owner.startsWith("java/")) {    //$NON-NLS-1$
-                            if (owner.equals(LocaleDetector.DATE_FORMAT_OWNER)) {
+                            if (owner.equals("java/text/SimpleDateFormat")) {
                                 checkSimpleDateFormat(context, method, node, minSdk);
                             }
                             // Already inlined; see comment above

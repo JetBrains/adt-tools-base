@@ -16,40 +16,35 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.CLASS_VIEW;
+import static com.android.tools.lint.checks.CleanupDetector.CURSOR_CLS;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.LintDriver;
-import com.android.tools.lint.client.api.SdkInfo;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.ClassScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
-import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
-import com.android.utils.AsmUtils;
-
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.analysis.Analyzer;
-import org.objectweb.asm.tree.analysis.AnalyzerException;
-import org.objectweb.asm.tree.analysis.BasicInterpreter;
-import org.objectweb.asm.tree.analysis.BasicValue;
-import org.objectweb.asm.tree.analysis.Frame;
+import com.android.tools.lint.detector.api.TypeEvaluator;
 
 import java.util.Collections;
 import java.util.List;
 
+import lombok.ast.AstVisitor;
+import lombok.ast.Expression;
+import lombok.ast.MethodInvocation;
+
 /**
  * Checks for missing view tag detectors
  */
-public class ViewTagDetector extends Detector implements ClassScanner {
+public class ViewTagDetector extends Detector implements Detector.JavaScanner {
     /** Using setTag and leaking memory */
     public static final Issue ISSUE = Issue.create(
             "ViewTag", //$NON-NLS-1$
@@ -68,110 +63,69 @@ public class ViewTagDetector extends Detector implements ClassScanner {
             Severity.WARNING,
             new Implementation(
                     ViewTagDetector.class,
-                    Scope.CLASS_FILE_SCOPE));
+                    Scope.JAVA_FILE_SCOPE));
 
     /** Constructs a new {@link ViewTagDetector} */
     public ViewTagDetector() {
     }
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
+    // ---- Implements JavaScanner ----
 
-    // ---- Implements ClassScanner ----
-
-    @Override
     @Nullable
-    public List<String> getApplicableCallNames() {
-        return Collections.singletonList("setTag"); //$NON-NLS-1$
+    @Override
+    public List<String> getApplicableMethodNames() {
+        return Collections.singletonList("setTag");
     }
 
     @Override
-    public void checkCall(@NonNull ClassContext context, @NonNull ClassNode classNode,
-            @NonNull MethodNode method, @NonNull MethodInsnNode call) {
+    public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
+            @NonNull MethodInvocation call) {
         // The leak behavior is fixed in ICS:
         // http://code.google.com/p/android/issues/detail?id=18273
         if (context.getMainProject().getMinSdk() >= 14) {
             return;
         }
 
-        String owner = call.owner;
-        String desc = call.desc;
-        if (owner.equals("android/view/View")                 //$NON-NLS-1$
-                && desc.equals("(ILjava/lang/Object;)V")) {   //$NON-NLS-1$
-            Analyzer analyzer = new Analyzer(new BasicInterpreter() {
-                @Override
-                public BasicValue newValue(Type type) {
-                    if (type == null) {
-                        return BasicValue.UNINITIALIZED_VALUE;
-                    } else if (type.getSort() == Type.VOID) {
-                        return null;
-                    } else {
-                        return new BasicValue(type);
-                    }
-                }
-            });
-            try {
-                Frame[] frames = analyzer.analyze(classNode.name, method);
-                InsnList instructions = method.instructions;
-                Frame frame = frames[instructions.indexOf(call)];
-                if (frame.getStackSize() < 3) {
-                    return;
-                }
-                BasicValue stackValue = (BasicValue) frame.getStack(2);
-                Type type = stackValue.getType();
-                if (type == null) {
-                    return;
-                }
-
-                String internalName = type.getInternalName();
-                String className = type.getClassName();
-                LintDriver driver = context.getDriver();
-
-                SdkInfo sdkInfo = context.getClient().getSdkInfo(context.getMainProject());
-                String objectType = null;
-                while (className != null) {
-                    if (className.equals("android.view.View")) {         //$NON-NLS-1$
-                        objectType = "views";
-                        break;
-                    } else if (className.endsWith("ViewHolder")) {       //$NON-NLS-1$
-                        objectType = "view holders";
-                        break;
-                    } else if (className.endsWith("Cursor")              //$NON-NLS-1$
-                                && className.startsWith("android.")) {   //$NON-NLS-1$
-                        objectType = "cursors";
-                        break;
-                    }
-
-                    // TBD: Bitmaps, drawables? That's tricky, because as explained in
-                    // http://android-developers.blogspot.com/2009/01/avoiding-memory-leaks.html
-                    // apparently these are used along with nulling out the callbacks,
-                    // and that's harder to detect here
-
-                    String parent = sdkInfo.getParentViewClass(className);
-                    if (parent == null) {
-                        if (internalName == null) {
-                            internalName = AsmUtils.toInternalName(className);
-                        }
-                        assert internalName != null;
-                        parent = driver.getSuperClass(internalName);
-                    }
-                    className = parent;
-                    internalName = null;
-                }
-
-                if (objectType != null) {
-                    Location location = context.getLocation(call);
-                    String message = String.format("Avoid setting %1$s as values for `setTag`: " +
-                        "Can lead to memory leaks in versions older than Android 4.0",
-                        objectType);
-                    context.report(ISSUE, method, call, location, message);
-                }
-            } catch (AnalyzerException e) {
-                context.log(e, null);
-            }
+        ResolvedNode resolved = context.resolve(call);
+        if (!(resolved instanceof ResolvedMethod)) {
+            return;
         }
+        ResolvedMethod method = (ResolvedMethod) resolved;
+        if (method.getArgumentCount() != 2) {
+            return;
+        }
+        Expression tagArgument = call.astArguments().last();
+        if (tagArgument == null) {
+            return;
+        }
+        ResolvedClass containingClass = method.getContainingClass();
+        if (!containingClass.matches(CLASS_VIEW)) {
+            return;
+        }
+
+        TypeDescriptor type = TypeEvaluator.evaluate(context, tagArgument);
+        if (type == null) {
+            return;
+        }
+        ResolvedClass typeClass = type.getTypeClass();
+        if (typeClass == null) {
+            return;
+        }
+
+        String objectType;
+        if (typeClass.isSubclassOf(CLASS_VIEW, false)) {
+            objectType = "views";
+        } else if (typeClass.isImplementing(CURSOR_CLS, false)) {
+            objectType = "cursors";
+        } else if (typeClass.getSimpleName().endsWith("ViewHolder")) {
+            objectType = "view holders";
+        } else {
+            return;
+        }
+        String message = String.format("Avoid setting %1$s as values for `setTag`: " +
+                        "Can lead to memory leaks in versions older than Android 4.0",
+                objectType);
+
+        context.report(ISSUE, call, context.getLocation(tagArgument), message);
     }
 }

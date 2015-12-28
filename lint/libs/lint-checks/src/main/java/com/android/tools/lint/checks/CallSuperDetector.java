@@ -120,7 +120,7 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
                 String methodName = method.getName();
                 String message = "Overriding method should call `super."
                         + methodName + "`";
-                Location location = context.getLocation(declaration.astMethodName());
+                Location location = context.getNameLocation(declaration);
                 context.report(ISSUE, declaration, location, message);
             }
         }
