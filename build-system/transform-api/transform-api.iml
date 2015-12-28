@@ -14,7 +14,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/gradle-core-2.8.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/gradle-core-2.10.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -23,7 +23,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/gradle-model-core-2.8.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/gradle-model-core-2.10.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

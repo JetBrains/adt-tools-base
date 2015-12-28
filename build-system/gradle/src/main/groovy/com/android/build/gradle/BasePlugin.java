@@ -112,8 +112,8 @@ import java.util.regex.Pattern;
  */
 public abstract class BasePlugin {
 
-    private static final String GRADLE_MIN_VERSION = "2.8";
-    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.([8-9]|\\d{2,}).*");
+    private static final String GRADLE_MIN_VERSION = "2.10";
+    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.\\d{2,}.*");
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck";
     private static final String SKIP_PATH_CHECK_PROPERTY =
