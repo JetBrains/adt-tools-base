@@ -49,7 +49,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.sun.istack.internal.NotNull;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -397,7 +396,7 @@ public final class AndroidSdkHandler {
          *
          * @param progress Used for error logging.
          */
-        public RepoConfig(@NonNull ProgressIndicator progress, @NotNull FileOp fileOp) {
+        public RepoConfig(@NonNull ProgressIndicator progress, @NonNull FileOp fileOp) {
             try {
                 mAddonModule = new SchemaModule(
                         "com.android.sdklib.repositoryv2.generated.addon.v%d.ObjectFactory",
@@ -511,9 +510,9 @@ public final class AndroidSdkHandler {
         }
 
         @NonNull
-        public RepoManager createRepoManager(@NotNull ProgressIndicator progress,
+        public RepoManager createRepoManager(@NonNull ProgressIndicator progress,
                 @Nullable File localLocation,
-                @Nullable FallbackRemoteRepoLoader remoteFallbackLoader, @NotNull FileOp fop) {
+                @Nullable FallbackRemoteRepoLoader remoteFallbackLoader, @NonNull FileOp fop) {
             RepoManager result = RepoManager.create(fop);
 
             // Create the schema modules etc. if they haven't been already.
