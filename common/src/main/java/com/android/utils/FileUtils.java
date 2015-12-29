@@ -175,6 +175,7 @@ public final class FileUtils {
     /**
      * Joins a set of segment into a string, separating each segments with a host-specific
      * path separator.
+     *
      * @param paths the segments.
      * @return a string with the segments.
      */
@@ -186,6 +187,7 @@ public final class FileUtils {
     /**
      * Joins a set of segment into a string, separating each segments with a host-specific
      * path separator.
+     *
      * @param paths the segments.
      * @return a string with the segments.
      */
@@ -203,13 +205,32 @@ public final class FileUtils {
         return UNIX_NEW_LINE_JOINER.join(Files.readLines(file, Charsets.UTF_8));
     }
 
+    /**
+     * Computes the relative of a file or directory with respect to a directory.
+     *
+     * @param file the file or directory, which must exist in the filesystem
+     * @param dir the directory to compute the path relative to
+     * @return the relative path from {@code dir} to {@code file}; if {@code file} is a directory
+     * the path comes appended with the file separator (see documentation on {@code relativize}
+     * on java's {@code URI} class)
+     */
     @NonNull
     public static String relativePath(@NonNull File file, @NonNull File dir) {
-        checkArgument(file.isFile(), "%s is not a file.", file.getPath());
+        checkArgument(file.isFile() || file.isDirectory(), "%s is not a file nor a directory.",
+                file.getPath());
         checkArgument(dir.isDirectory(), "%s is not a directory.", dir.getPath());
         return relativePossiblyNonExistingPath(file, dir);
     }
 
+    /**
+     * Computes the relative of a file or directory with respect to a directory.
+     *
+     * @param file the path that may not correspond to any existing path in the filesystem
+     * @param dir the directory to compute the path relative to
+     * @return the relative path from {@code dir} to {@code file}; if {@code file} is a directory
+     * the path comes appended with the file separator (see documentation on {@code relativize}
+     * on java's {@code URI} class)
+     */
     @NonNull
     public static String relativePossiblyNonExistingPath(@NonNull File file, @NonNull File dir) {
         String path = dir.toURI().relativize(file.toURI()).getPath();
@@ -293,6 +314,7 @@ public final class FileUtils {
 
     /**
      * Reads a portion of a file to memory.
+     *
      * @param file the file to read data from
      * @param start the offset in the file to start reading
      * @param length the number of bytes to read
